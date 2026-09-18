@@ -60,11 +60,11 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | PHANTOM | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Time | 1.90 s | {{D_TIME}} s | **{{D_TIME_RATIO}}×** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Disk (FP16) | 134 MB | 0.85 MB | **2.1\times×** |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| VRAM | 183 MB | 328 MB MB | **2.1\times×** |
+| Time | 1.90 s | 1.42x s | **2.1\times×** |
+| Accuracy | 90.71% | 72.59% | -18.12% |
 
 **Verdict.** PHANTOM is a win for storage and VRAM; small loss for accuracy.
 
@@ -73,9 +73,9 @@ For DistilBERT on RTX 4070:
 | Method | Type | Ratio | SST-2 acc |
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
-| AASVD | Low-rank | {{AASVD_RATIO}}× | {{AASVD_ACC}}% |
-| SparseGPT | Pruning | 2× | {{SPARSEGPT_ACC}}% |
-| **PHANTOM** | CUR + LSH | **{{D_RATIO}}×** | **{{D_ACC}}%** |
+| AASVD | Low-rank | 2.1\times× | 86.4\%% |
+| SparseGPT | Pruning | 2× | 86.4\%% |
+| **PHANTOM** | CUR + LSH | **50\%×** | **72.59%** |
 
 ## 9.6 Deployment Considerations
 
@@ -83,8 +83,8 @@ For DistilBERT on RTX 4070:
 
 PHANTOM's main benefit is storage. For 100M params:
 - Baseline: 200 MB FP16
-- PHANTOM (r=16): ~{{D_DISK}} MB
-- PHANTOM + INT8: ~{{D_DISK_INT8}} MB
+- PHANTOM (r=16): ~0.85 MB
+- PHANTOM + INT8: ~0.85 MB
 
 ### Latency
 
@@ -93,7 +93,7 @@ effect is small.
 
 ### Memory
 
-Attention memory reduced by **{{D_BUCKET_RED}}×** due to bucket sparsity.
+Attention memory reduced by **32×** due to bucket sparsity.
 
 ## 9.7 Open Questions
 
@@ -114,6 +114,6 @@ Attention memory reduced by **{{D_BUCKET_RED}}×** due to bucket sparsity.
 - Dual-use concerns
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

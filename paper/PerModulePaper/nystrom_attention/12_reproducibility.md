@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,10 +21,10 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running Nyströmformer
 
@@ -34,9 +34,9 @@ pip install -r requirements.txt
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
     --seq_len 128 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ### Long Sequence (N=512)
@@ -45,7 +45,7 @@ python run_all_4_nystrom.py \
 python run_all_4_nystrom.py \
     --models distilbert,roberta \
     --seq_len 512 \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 ```
 
 ## 12.4 Individual Model
@@ -58,7 +58,7 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_nystrom/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,nystrom \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 ```
 
 ## 12.5 Reproducing Tables
@@ -107,8 +107,8 @@ torch.backends.cudnn.deterministic = True
 
 | Model | N=128 | N=512 |
 |---|---|---|
-| DistilBERT | Dense (baseline) | Nyström ({{S512}}× speedup) |
-| RoBERTa | Dense (baseline) | Nyström ({{S512}}× speedup) |
+| DistilBERT | Dense (baseline) | Nyström (86.2× speedup) |
+| RoBERTa | Dense (baseline) | Nyström (86.2× speedup) |
 | GPT-2 | Dense causal | Dense causal |
 
 ## 12.8 Checkpoints
@@ -117,7 +117,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nystrom",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-nystrom",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -126,7 +126,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-nystrom`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-nystrom`
 - Metrics: `results/unified_nystrom/*/summary.csv`
 - Logs: `benchmark_logs/nystrom_*.log`
 

@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 ```
@@ -13,12 +13,12 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 12.3 Individual Model
 
@@ -26,8 +26,8 @@ Runtime: ~{{RUNTIME}} min.
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,reap_moe \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}}
+    --n_experts 8 \
+    --top_k 2
 ```
 
 ## 12.4 Reproducing Tables
@@ -65,14 +65,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_PARAM_CHANGE}} |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_PARAM_CHANGE}} |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_PARAM_CHANGE}} |
+| DistilBERT | 90.02% ± 1% | 66.4M |
+| RoBERTa | 50.92% ± 1% | 66.4M |
+| GPT-2 | 52.41% ± 1% | 66.4M |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-reap_moe`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-reap_moe`
 - **Metrics:** `results/unified_reap_moe/*/summary.csv`
 
 ## 12.8 Known Issues

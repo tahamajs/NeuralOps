@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{salr}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_salr/roberta/summary.csv} \& salr \& PASS & 80.96\% & 364.29 MB \\
+\texttt{results/unified\_salr/distilbert/summary.csv} \& salr \& PASS & 90.37\% & 310.69 MB \\
+\texttt{results/unified\_salr/gpt2/summary.csv} \& salr \& PASS & 58.94\% & 635.79 MB \\
+all\_121\_gpu\_matrix \& salr \& PASS & 30.96x (0.786s) & 106.1 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

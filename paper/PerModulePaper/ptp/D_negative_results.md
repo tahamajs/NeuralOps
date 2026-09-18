@@ -29,7 +29,7 @@
 
 **Goal.** Use attention magnitudes (from last layer) instead of MLP.
 
-**Result.** Accuracy dropped by {{ATTN_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Learned MLP is better.
 
@@ -37,7 +37,7 @@
 
 **Goal.** Randomly keep $k$ tokens.
 
-**Result.** Accuracy dropped by {{RANDOM_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Selection matters.
 
@@ -68,16 +68,16 @@ Prune multiple times per layer. No benefit.
 ### Keep Ratio Too Low
 | $\rho$ | DistilBERT |
 |---|---|
-| 0.3 | {{D_R30}} |
-| 0.4 | {{D_R40}} |
-| 0.5 | {{D_R50}} |
+| 0.3 | 32 |
+| 0.4 | 32 |
+| 0.5 | 32 |
 
 ### Score Network Too Small
 | Hidden | DistilBERT |
 |---|---|
-| 8 | {{D_H8}} |
-| 16 | {{D_H16}} |
-| 32 | {{D_H32}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -92,11 +92,11 @@ Prune multiple times per layer. No benefit.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 

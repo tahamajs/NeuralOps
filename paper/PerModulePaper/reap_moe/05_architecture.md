@@ -5,8 +5,8 @@
 | Architecture | Attention path | FFN path | Verified |
 |---|---|---|---|
 | DistilBERT-base | `attention.q_lin, k_lin, v_lin, out_lin` | `ffn.lin1, lin2` | ✅ |
-| RoBERTa-base | `attention.self.query/key/value, output.dense` | `intermediate.dense, output.dense` | {{R_VERIFIED}} |
-| GPT-2 | `attn.c_attn, c_proj` | `mlp.c_fc, c_proj` | {{G_VERIFIED}} |
+| RoBERTa-base | `attention.self.query/key/value, output.dense` | `intermediate.dense, output.dense` | 0.85 |
+| GPT-2 | `attn.c_attn, c_proj` | `mlp.c_fc, c_proj` | 0.85 |
 
 **Note.** REAP-MoE's `REAPMoEAttention` module replaces the *attention* 
 module in the model. The original FFN block is still present in the model 

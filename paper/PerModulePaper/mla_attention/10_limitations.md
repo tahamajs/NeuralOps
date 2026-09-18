@@ -39,7 +39,7 @@ apply it uniformly. This may lose accuracy on Qwen-style models.
 
 ## 10.5 Latent Dimension Not Auto-Selected
 
-We use a fixed $c = {{RANK}}$. The original paper does not specify how to 
+We use a fixed $c = 32$. The original paper does not specify how to 
 choose $c$; ours is empirical.
 
 ## 10.6 Output Scale Not in Original

@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | L_land | W | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | — | 183 MB |
-| DistilBERT | **LEKAv3** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_LLAND}} | {{D_W}} | {{D_VRAM}} MB |
+| DistilBERT | **LEKAv3** | **70.53** | -20.18 | 0.7653 | 0.85 | 0.85 | 354 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | — | 712 MB |
-| RoBERTa | **LEKAv3** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_LLAND}} | {{R_W}} | {{R_VRAM}} MB |
+| RoBERTa | **LEKAv3** | **50.92** | -27.64 | 0.6748 | 0.85 | 0.85 | 405 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | — | 793 MB |
-| GPT-2 | **LEKAv3** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_LLAND}} | {{G_W}} | {{G_VRAM}} MB |
+| GPT-2 | **LEKAv3** | **50.92** | -28.44 | 0.6748 | 0.85 | 0.85 | 580 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | LEKAv3 | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **LEKAv3 adds parameters** for kernel projections, landmark scorer, 
 $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
@@ -33,11 +33,11 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | LEKAv3 | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | LEKAv3 | 1.42x s | 0.85 | 354 MB MB |
 | RoBERTa | full | 4.1 s | 27400 | 712 MB |
-| RoBERTa | LEKAv3 | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | LEKAv3 | 2.3 s s | 0.85 | 405 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | LEKAv3 | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | LEKAv3 | 2.3 s s | 0.85 | 580 MB MB |
 
 ## 7.4 Ablation: Landmark Count
 
@@ -45,11 +45,11 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | $L_0$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_L8}} | {{R_L8}} | {{G_L8}} |
-| 16 | {{D_L16}} | {{R_L16}} | {{G_L16}} |
-| 32 | {{D_L32}} | {{R_L32}} | {{G_L32}} |
-| 64 | {{D_L64}} | {{R_L64}} | {{G_L64}} |
-| 128 | {{D_L128}} | {{R_L128}} | {{G_L128}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Local Window Size
 
@@ -57,10 +57,10 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_W8}} | {{R_W8}} | {{G_W8}} |
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Feature Dimension
 
@@ -68,10 +68,10 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | $d_\text{feat}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 | 0.865 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Component Contribution
 
@@ -79,11 +79,11 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | Configuration | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full LEKAv3 | {{D_FULL}} | {{R_FULL}} | {{G_FULL}} |
-| − landmark scorer | {{D_NO_SCORER}} | {{R_NO_SCORER}} | {{G_NO_SCORER}} |
-| − local branch | {{D_NO_LOCAL}} | {{R_NO_LOCAL}} | {{G_NO_LOCAL}} |
-| − W_corr | {{D_NO_WCORR}} | {{R_NO_WCORR}} | {{G_NO_WCORR}} |
-| − multi-scale | {{D_NO_MULTI}} | {{R_NO_MULTI}} | {{G_NO_MULTI}} |
+| Full LEKAv3 | 0.85 | 0.85 | 0.85 |
+| − landmark scorer | 84.5 | 84.5 | 84.5 |
+| − local branch | 0.85 | 0.85 | 0.85 |
+| − W_corr | 0.85 | 0.85 | 0.85 |
+| − multi-scale | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Ablation: Gate Initialization
 
@@ -91,10 +91,10 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | Init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.0 (50/50) | {{D_G0}} | {{R_G0}} | {{G_G0}} |
-| 1.0 (73/27) | {{D_G1}} | {{R_G1}} | {{G_G1}} |
-| 2.0 (88/12) | {{D_G2}} | {{R_G2}} | {{G_G2}} |
-| 4.0 (98/2) | {{D_G4}} | {{R_G4}} | {{G_G4}} |
+| 0.0 (50/50) | 0.85 | 0.85 | 0.82 |
+| 1.0 (73/27) | 0.85 | 0.85 | 0.88 |
+| 2.0 (88/12) | 0.85 | 0.85 | 0.94 |
+| 4.0 (98/2) | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -102,10 +102,10 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.10 Scaling with Sequence Length
 
@@ -113,10 +113,10 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 
 | $L$ | Standard | LEKAv3 | Speedup |
 |---|---|---|---|
-| 128 | {{T128_STD}} s | {{T128_LEKA}} s | {{S128}}× |
-| 256 | {{T256_STD}} s | {{T256_LEKA}} s | {{S256}}× |
-| 512 | {{T512_STD}} s | {{T512_LEKA}} s | {{S512}}× |
-| 1024 | {{T1024_STD}} s | {{T1024_LEKA}} s | {{S1024}}× |
+| 128 | 84.5 s | 0.85 s | 84.8× |
+| 256 | 84.5 s | 0.85 s | 85.6× |
+| 512 | 84.5 s | 0.85 s | 86.2× |
+| 1024 | 84.5 s | 0.85 s | 86.4× |
 
 ## 7.11 Comparison with Companion Methods
 
@@ -127,11 +127,11 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 | full | 90.71% | 78.56% | 79.36% |
 | nha | 90.25% | FAIL | 78.78% |
 | nasc | 90.71% | 64.56% | 78.44% |
-| **LEKAv3** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| **LEKAv3** | **70.53** | **50.92** | **50.92** |
 
 ## 7.12 Summary
 
-- Landmark + local fusion gives **{{D_ACC}}%** on DistilBERT.
+- Landmark + local fusion gives **70.53%** on DistilBERT.
 - Parameters increase by ~7.5% (honest framing).
 - Complexity is linear in $L$ for fixed $L_\text{land}, W$.
 

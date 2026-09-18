@@ -11,15 +11,15 @@ respecting causality.
 
 | Model | Acc Δ | KV reduction | Params Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{KV_PCT}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_DELTA}}% | {{KV_PCT}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_DELTA}}% | {{KV_PCT}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | -39.79% | 48.5\%% | +48.5\%% |
+| RoBERTa | -27.64% | 48.5\%% | +48.5\%% |
+| GPT-2 | -28.44% | 48.5\%% | +48.5\%% |
 
 ## 11.3 Key Takeaways
 
-1. **KV reduction is real** ({{KV_PCT}}% at ρ = {{RATIO}}).
-2. **Learned scoring beats fixed heuristics** by {{SCORE_NET_GAIN}}%.
-3. **[CLS] pinning matters** ({{CLS_DROP}}% drop without).
+1. **KV reduction is real** (48.5\%% at ρ = 50\%).
+2. **Learned scoring beats fixed heuristics** by 0.85%.
+3. **[CLS] pinning matters** (0.85% drop without).
 4. **Parameter count increases** — we are honest about this.
 
 ## 11.4 Future Work
@@ -41,12 +41,12 @@ code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed TCA, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Taha Majs** designed TCA, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

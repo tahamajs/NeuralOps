@@ -90,7 +90,7 @@ We make the following contributions:
   RoBERTa, GPT-2), reporting accuracy, KV-cache reduction, and inference 
   memory.
 - **Full reproducibility.** Code, weights, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 We emphasize: **this paper is a reproduction and portability study, not a 
 novel architecture.** We do not claim to improve MLA. We report where it 

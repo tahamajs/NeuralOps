@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
@@ -21,22 +21,22 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --rala_rank {{RALA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --rala_rank 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Downloading Checkpoints
 
@@ -45,7 +45,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-rala",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-rala",
         filename="weights.pt",
     )
     print(f"Downloaded {model}")
@@ -88,9 +88,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 60.09% ± 1% |
+| RoBERTa | 50.80% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.8 Known Issues
 
@@ -101,7 +101,7 @@ torch.cuda.manual_seed_all(seed)
 ## 12.9 Data Availability
 
 - Code: `framework/attentions/rala_linear_attention.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-rala`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-rala`
 - Metrics: `results/unified_rala/*/summary.csv`
 - Logs: `benchmark_logs/rala_*.log`
 

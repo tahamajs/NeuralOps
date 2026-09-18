@@ -1,3 +1,21 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{slim_compressor}.
+\subsection{Algorithmic Formulation}
+The \texttt{slim_compressor} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{SLiM: Structured Low-Rank Integrated Matrix Compression (Quantization + 2:4 Sparsity + SVD Residual Correction).
+Registered in COMPRESSOR\_REGISTRY as 'slim' and 'slim\_compressor'.
+
+Mathematical Formulation:
+1. Uniform/Non-Uniform b-bit Quantization:
+   $$W\_q = \\\\operatorname{Quant}\_b(W\_0)$$
+2. 2:4 Semi-Structured Sparsity:
+   $$W\_{sp} = \\\\Pi\_{2:4}(W\_q, |W\_q|)$$
+3. Pruning \& Quantization Residual:
+   $$R = W\_0 - W\_{sp}$$
+4. Low-Rank Singular Value Decomposition Correction:
+   $$R \\\\approx U\_r \\\\Sigma\_r V\_r^\\\\top = L\_r$$
+5. Final Reconstructed Weight:
+   $$W\_{slim} = W\}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

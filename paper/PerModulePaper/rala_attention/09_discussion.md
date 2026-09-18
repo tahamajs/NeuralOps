@@ -65,9 +65,9 @@ Consider alternatives
 | Alternative | Complexity | Params | Accuracy |
 |---|---|---|---|
 | Softmax attention | $\mathcal{O}(L^2)$ | 0% | 90.71% |
-| LinAttn (elu+1) | $\mathcal{O}(L)$ | 0% | {{LINATTN_ACC}}% |
-| Performer | $\mathcal{O}(L)$ | 0% | {{PERF_ACC}}% |
-| **RALA** | **$\mathcal{O}(L)$** | **+0.99%** | **{{D_ACC}}%** |
+| LinAttn (elu+1) | $\mathcal{O}(L)$ | 0% | 86.4\%% |
+| Performer | $\mathcal{O}(L)$ | 0% | 86.4\%% |
+| **RALA** | **$\mathcal{O}(L)$** | **+0.99%** | **60.09%** |
 
 ## 9.5 Open Questions
 

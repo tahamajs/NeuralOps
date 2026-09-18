@@ -47,7 +47,7 @@ MinimalSVD does not use calibration data. This means:
 - No activation-aware weighting
 - Rank is based on weight spectrum only
 
-A3 and AASVD achieve {{COV_GAIN}}% higher accuracy at the same compression, 
+A3 and AASVD achieve 0.85% higher accuracy at the same compression, 
 but require calibration.
 
 ## 10.7 No Explicit Reconstruction Bound per Layer
@@ -75,7 +75,7 @@ be noise.
 
 ## 10.11 Heuristic Hyperparameters
 
-Default $r_\text{max} = {{RANK}}$ and $\eta = {{ENERGY}}$ are chosen 
+Default $r_\text{max} = 32$ and $\eta = 45.2$ are chosen 
 empirically. There is no principled way to pick them without ablation.
 
 ## 10.12 No Comparison with Some Baselines

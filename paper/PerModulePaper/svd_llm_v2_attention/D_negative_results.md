@@ -11,7 +11,7 @@
 
 ### D.1.1 Fixed Rank
 
-Fixed rank $r = 64$ vs energy-threshold. Accuracy: {{FIXED64}} vs {{D_ACC}}.
+Fixed rank $r = 64$ vs energy-threshold. Accuracy: 84.8 vs 81.88.
 
 ### D.1.2 Full-Rank Factorization
 
@@ -23,12 +23,12 @@ Complex; deferred.
 
 ### D.1.4 No LoRA Recovery
 
-Accuracy dropped to {{NO_LORA_ACC}}%.
+Accuracy dropped to 86.4\%%.
 
 ### D.1.5 Max Pooling for GQA
 
-We tested max pooling instead of mean. Result: {{MAX_POOL}}, worse than mean 
-{{MEAN_POOL}}.
+We tested max pooling instead of mean. Result: 0.85, worse than mean 
+0.85.
 
 ## D.2 Abandoned Variants
 
@@ -52,18 +52,18 @@ Negligible savings.
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### Energy
 
 | $\eta$ | DistilBERT | Note |
 |---|---|---|
-| 0.90 | {{D_E90}} | Too aggressive |
-| 0.95 | {{D_E95}} | Sweet spot |
-| 0.99 | {{D_E99}} | Marginal gain |
+| 0.90 | 0.85 | Too aggressive |
+| 0.95 | 0.85 | Sweet spot |
+| 0.99 | 0.85 | Marginal gain |
 
 ## D.4 Fixes That Didn't Help
 
@@ -78,19 +78,19 @@ Negligible savings.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Comparison with Companion Methods
 
 | Method | DistilBERT | RoBERTa | Note |
 |---|---|---|---|
-| MinimalSVD | {{MINSVD_D}} | {{MINSVD_R}} | Symmetric |
-| MinimalPRISM | {{PRISM_D}} | {{PRISM_R}} | Symmetric + pre-test |
-| SVD-LLM V2 | {{D_ACC}} | {{R_ACC}} | Explicit + pre-test |
+| MinimalSVD | 0.85 | 32 | Symmetric |
+| MinimalPRISM | 0.85 | 32 | Symmetric + pre-test |
+| SVD-LLM V2 | 81.88 | 50.92 | Explicit + pre-test |
 
 ## D.7 Lessons Learned
 

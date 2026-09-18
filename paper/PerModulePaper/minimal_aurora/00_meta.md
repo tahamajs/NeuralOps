@@ -1,19 +1,19 @@
 # MinimalAURORA: Energy-Preserving SVD-Factorized Attention for Efficient Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/minimal_aurora.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/minimal_aurora.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -41,11 +41,11 @@ nested (RoBERTa/BERT), causal Conv1D (GPT-2), and grouped-query with
 rotary embeddings (Qwen/LLaMA) — via a single `copy_weights` routine 
 with Frobenius validation and automatic nested-encoder detection.
 
-On SST-2 with {{RECOVERY_STEPS}} LoRA recovery steps and energy threshold 
-$\varepsilon = {{ENERGY}}$, MinimalAURORA achieves **{{D_ACC}}%** on 
-DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). Total parameter count 
-decreases by **{{D_RATIO}}×–{{G_RATIO}}×**. Peak VRAM drops by **{{VRAM_REDUCTION}}%**.
+On SST-2 with 50 LoRA recovery steps and energy threshold 
+$\varepsilon = 45.2$, MinimalAURORA achieves **85.44%** on 
+DistilBERT (Δ = -5.27), **50.92%** on RoBERTa (Δ = -27.64), 
+and **50.92%** on GPT-2 (Δ = -28.44). Total parameter count 
+decreases by **50\%×–2.1\times×**. Peak VRAM drops by **380 MB%**.
 
 <!-- CRITICAL HONESTY -->
 MinimalAURORA **reduces** parameter count. The LoRA adapters add 

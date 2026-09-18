@@ -34,7 +34,7 @@ MinimalNOVA does not use calibration data. This means:
 - No activation-aware weighting
 - Rank is based on weight spectrum only
 
-**A3 and AASVD** achieve {{COV_GAIN}}% higher accuracy at the same 
+**A3 and AASVD** achieve 0.85% higher accuracy at the same 
 compression, but require calibration. This is a deliberate trade-off.
 
 ## 10.5 No Reconstruction Validation
@@ -74,12 +74,12 @@ task accuracy is not characterized.
 
 ## 10.10 Rank Cap Heuristic
 
-The default $r_\text{max} = {{RANK}}$ is chosen empirically. There is no 
+The default $r_\text{max} = 32$ is chosen empirically. There is no 
 principled way to pick it without ablation.
 
 ## 10.11 Energy Threshold Choice
 
-$\eta = {{ENERGY}}$ is a heuristic. Optimal values may differ per model.
+$\eta = 45.2$ is a heuristic. Optimal values may differ per model.
 
 ## 10.12 No Comparison with Some Baselines
 

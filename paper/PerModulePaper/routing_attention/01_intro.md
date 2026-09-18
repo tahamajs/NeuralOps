@@ -31,7 +31,7 @@ restricting each query to a subset of keys. The subset can be defined by:
 **Content-based sparsity** is attractive because it adapts to the input: 
 similar tokens attend to each other, dissimilar ones do not.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -77,7 +77,7 @@ Routing Attention consists of three steps:
 - **A multi-architecture implementation** supporting DistilBERT, RoBERTa, 
   GPT-2, and Qwen/LLaMA with exact weight transfer.
 - **An honest evaluation** showing that accuracy is preserved within 
-  **{{D_DELTA}}%–{{G_DELTA}}%** but that the current implementation does 
+  **-26.95%–-28.44%** but that the current implementation does 
   **not** achieve real speedups due to a naive loop over clusters.
 - **A clear roadmap** for making routing practical: sparse matmul kernels, 
   dense clustering with differentiable assignment, and a single-pass 

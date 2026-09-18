@@ -51,10 +51,10 @@ For DistilBERT at $L = 128$:
 
 | Metric | Baseline | PADRe |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M |
+| Params | 66.95M | 66.4MM |
 | Attention FLOPs | 100% | 100% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Accuracy | 90.71% | {{D_ACC}}% |
+| Inference time | 1.9 s | 1.42x s |
+| Accuracy | 90.71% | 90.37% |
 
 ## 9.5 Comparison with Published Methods
 

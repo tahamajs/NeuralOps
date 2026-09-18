@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{soa_fused_module}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_soa\_fused\_module/roberta/summary.csv} \& soa\_fused\_module \& PASS\_LOW & 53.21\% & 573.39 MB \\
+\texttt{results/unified\_soa\_fused\_module/distilbert/summary.csv} \& soa\_fused\_module \& PASS & 81.77\% & 280.44 MB \\
+\texttt{results/unified\_soa\_fused\_module/gpt2/summary.csv} \& soa\_fused\_module \& PASS\_LOW & 50.92\% & 296.89 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

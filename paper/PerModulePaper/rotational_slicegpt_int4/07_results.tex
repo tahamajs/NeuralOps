@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{rotational_slicegpt_int4}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 87.5\% & 360.79 MB \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 88.99\% & 339.84 MB \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 61.7\% & 636.04 MB \\
+all\_121\_gpu\_matrix \& rotational\_slicegpt\_int4 \& PASS & 1.0x (19.574s) & 254.5 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

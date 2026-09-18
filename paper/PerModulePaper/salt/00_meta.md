@@ -7,19 +7,19 @@
 # SALT: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/salt_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/salt_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -48,13 +48,13 @@ For $d_\text{out} = d_\text{in} = 768$ and $r = 16$, this reduces stored
 parameters from 589,824 to **49,936** — a **11.8× reduction** — while 
 maintaining the full expressiveness of a rank-$2r$ effective weight matrix. 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
-within **{{D_DELTA}}%** (DistilBERT), **{{R_DELTA}}%** (RoBERTa), and 
-**{{G_DELTA}}%** (GPT-2) after {{RECOVERY_STEPS}} recovery steps.
+within **-10.43%** (DistilBERT), **-27.64%** (RoBERTa), and 
+**-28.44%** (GPT-2) after 50 recovery steps.
 
 We honestly report a key limitation: because our forward pass reconstructs 
 the full weight matrix $W = U \text{diag}(\Sigma \odot \gamma) V^\top + AB$ 
 before calling `F.linear`, **inference memory and latency are not reduced**. 
-Storage footprint is reduced by **{{STORAGE_REDUCTION}}×**, but runtime 
+Storage footprint is reduced by **32×**, but runtime 
 efficiency is unchanged (or slightly worse due to reconstruction overhead). 
 We identify the necessary change — performing the forward as three sequential 
 matmuls — to realize the inference-time benefits.

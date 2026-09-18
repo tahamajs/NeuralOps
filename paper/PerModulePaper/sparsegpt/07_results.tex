@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{sparsegpt}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_sparsegpt/roberta/summary.csv} \& sparsegpt \& PASS\_LOW & 50.92\% & 363.54 MB \\
+\texttt{results/unified\_sparsegpt/distilbert/summary.csv} \& sparsegpt \& PASS & 86.93\% & 340.09 MB \\
+\texttt{results/unified\_sparsegpt/gpt2/summary.csv} \& sparsegpt \& PASS\_LOW & 53.33\% & 634.41 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 27.98 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 31.15 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 32.37 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 38.08 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 52.92 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

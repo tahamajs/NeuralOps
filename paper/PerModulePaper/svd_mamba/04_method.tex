@@ -108,7 +108,7 @@ matrix.
 The hidden states are projected to a gated 2$\times$inner dimension:
 
 \[
-[x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
+{[}x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
 \tag{4.7}
 \]
 
@@ -130,7 +130,7 @@ with kernel size $d_\text{conv}$ and no padding (causal).
 The SSM parameters are computed:
 
 \[
-[\Delta; B; C] = \text{SVDLinear}_{x}(x_\text{conv})
+{[}\Delta; B; C] = \text{SVDLinear}_{x}(x_\text{conv})
 \tag{4.9}
 \]
 

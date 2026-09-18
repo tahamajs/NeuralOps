@@ -43,10 +43,15 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
     if not main_tex.exists():
         return False, 0, 0
     # Sanitize any \\ followed immediately by [ in .tex files which LaTeX parses as vertical spacing
+    # Also sanitize any line starting with whitespace + [ inside tabular environments
     for tf in mod_dir.glob("*.tex"):
         try:
             t = tf.read_text(encoding="utf-8", errors="ignore")
             fixed = re.sub(r'\\\\(\s*)\[', r'\\\\\1{[}', t)
+            fixed = re.sub(r'(?m)^(\s*)\[', r'\1{[}', fixed)
+            fixed = re.sub(r'(&\s*)\[', r'\1{[}', fixed)
+            # Escape unescaped & in prose (like "Learning & Efficiency")
+            fixed = re.sub(r'(?<!\\)&\s*(?=[a-zA-Z])', r'\\& ', fixed)
             if fixed != t:
                 tf.write_text(fixed, encoding="utf-8")
         except Exception:

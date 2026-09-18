@@ -36,12 +36,12 @@ Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
-| LR | {{LR}} |
-| WD | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `recovery_steps` | 50 |
+| Batch size | 32 |
+| LR | 1e-4 |
+| WD | 0.01 |
 
 ## 6.5 Evaluation
 

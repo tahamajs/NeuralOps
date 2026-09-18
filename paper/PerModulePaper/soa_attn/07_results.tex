@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{soa_attn}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} \& soa\_attn \& FAIL & 0.0\% & 712.34 MB \\
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} \& soa\_attn \& PASS & 83.49\% & 279.93 MB \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} \& soa\_attn \& PASS\_LOW & 50.92\% & 301.23 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

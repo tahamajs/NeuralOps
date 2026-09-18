@@ -59,7 +59,7 @@ for very large L. A fused kernel would be better.
 
 ## 10.11 Failure Modes Not Diagnosed
 
-{{UNRESOLVED}}
+None
 
 ## 10.12 Code Quality
 

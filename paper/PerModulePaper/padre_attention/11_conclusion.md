@@ -11,9 +11,9 @@ kernelization — the source of theoretical speedup — is left to future work.
 
 | Model | Acc Δ |
 |---|---|
-| DistilBERT | {{D_DELTA}}% |
-| RoBERTa | {{R_DELTA}}% |
-| GPT-2 | {{G_DELTA}}% |
+| DistilBERT | -0.34% |
+| RoBERTa | -14.00% |
+| GPT-2 | -28.44% |
 
 ## 11.3 Key Takeaways
 
@@ -41,12 +41,12 @@ transformers. Code and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

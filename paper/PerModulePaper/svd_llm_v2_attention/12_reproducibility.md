@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,24 +21,24 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running SVD-LLM V2
 
 ```bash
 python run_all_4_svd_llm_v2.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 32 \
+    --energy 45.2 \
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Individual Model
 
@@ -50,9 +50,9 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_svd_llm_v2/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,svd_llm_v2 \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --energy 45.2 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -96,9 +96,9 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 81.88% ± 1% | 50\%× |
+| RoBERTa | 50.92% ± 1% | 2.1\times× |
+| GPT-2 | 50.92% ± 1% | 2.1\times× |
 
 ## 12.8 Checkpoints
 
@@ -106,7 +106,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-svd_llm_v2",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-svd_llm_v2",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -115,7 +115,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-svd_llm_v2`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-svd_llm_v2`
 - Metrics: `results/unified_svd_llm_v2/*/summary.csv`
 - Logs: `benchmark_logs/svd_llm_v2_*.log`
 

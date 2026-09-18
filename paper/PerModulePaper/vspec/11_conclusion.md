@@ -46,9 +46,9 @@ We thank the anonymous reviewers for their constructive feedback and computation
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, wrote 
+- **Taha Majs** designed the method, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

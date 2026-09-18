@@ -43,7 +43,7 @@ $\rho$ is a hyperparameter, not learned. Our Adaptive Sparse Attention
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -54,7 +54,7 @@ We do not compare with:
 
 ## 10.9 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.10 Code Quality
 

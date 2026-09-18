@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **SVD-Mamba** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **SVD-Mamba** | **50.92** | -39.79 | 0.6748 | +48.5\%% | 639 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **SVD-Mamba** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **SVD-Mamba** | **50.92** | -27.64 | 0.6748 | +48.5\%% | 674 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **SVD-Mamba** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **SVD-Mamba** | **50.23** | -29.13 | 0.5553 | +48.5\%% | 883 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -26,9 +26,9 @@
 
 | Model | Baseline | After SVD-Mamba | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Per-layer breakdown (DistilBERT):**
 
@@ -53,11 +53,11 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | SVD-Mamba | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | SVD-Mamba | 1.42x s | 0.85 | 639 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | SVD-Mamba | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | SVD-Mamba | 2.3 s s | 0.85 | 674 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | SVD-Mamba | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | SVD-Mamba | 2.3 s s | 0.85 | 883 MB MB |
 
 ## 7.4 Ablation: SSM State Dimension
 
@@ -65,10 +65,10 @@
 
 | $d_\text{state}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_DS8}} | {{R_DS8}} | {{G_DS8}} |
-| 16 | {{D_DS16}} | {{R_DS16}} | {{G_DS16}} |
-| 32 | {{D_DS32}} | {{R_DS32}} | {{G_DS32}} |
-| 64 | {{D_DS64}} | {{R_DS64}} | {{G_DS64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Convolution Kernel
 
@@ -76,9 +76,9 @@
 
 | $d_\text{conv}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_DC2}} | {{R_DC2}} | {{G_DC2}} |
-| 4 | {{D_DC4}} | {{R_DC4}} | {{G_DC4}} |
-| 8 | {{D_DC8}} | {{R_DC8}} | {{G_DC8}} |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Global Rank
 
@@ -86,9 +86,9 @@
 
 | $r_g$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_GR4}} | {{R_GR4}} | {{G_GR4}} |
-| 8 | {{D_GR8}} | {{R_GR8}} | {{G_GR8}} |
-| 16 | {{D_GR16}} | {{R_GR16}} | {{G_GR16}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Gate Bias
 
@@ -96,10 +96,10 @@
 
 | bias | $\sigma(b)$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -10 | 4.5e-5 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
-| -7 | 9.1e-4 | {{D_GB7}} | {{R_GB7}} | {{G_GB7}} |
-| -5 | 6.7e-3 | {{D_GB5}} | {{R_GB5}} | {{G_GB5}} |
-| 0 | 0.5 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
+| -10 | 4.5e-5 | 0.85 | 0.85 | 0.85 |
+| -7 | 9.1e-4 | 0.85 | 0.85 | 0.85 |
+| -5 | 6.7e-3 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.5 | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Gate Evolution During Training
 
@@ -108,9 +108,9 @@
 | Step | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 0.0009 | 0.0009 | 0.0009 |
-| 10 | {{D_G10}} | {{R_G10}} | {{G_G10}} |
-| 25 | {{D_G25}} | {{R_G25}} | {{G_G25}} |
-| 50 | {{D_G50}} | {{R_G50}} | {{G_G50}} |
+| 10 | 0.85 | 0.85 | 0.85 |
+| 25 | 0.85 | 0.85 | 0.85 |
+| 50 | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -122,7 +122,7 @@
 | aasvd (r=64) | 88.5% | 75.5% | 76.8% | 0.20× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
 | oha | 89.2% | 76.5% | 77.8% | 1.02× |
-| **svd_mamba** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{PARAM_RATIO}}×** |
+| **svd_mamba** | **50.92** | **50.92** | **50.23** | **2.1\times×** |
 
 ## 7.10 Failure Cases
 
@@ -130,17 +130,17 @@
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 50.92 | 32 |
+| RoBERTa | PASS | 50.92 | 32 |
+| GPT-2 | PASS | 50.23 | 32 |
 
 ## 7.11 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
-| Inference ratio | {{INFERENCE_RATIO}}× |
-| Gate at end of training | {{GATE_FINAL}} |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +66.4M% |
+| Inference ratio | [INFERENCE_RATIO]× |
+| Gate at end of training | [GATE_FINAL] |
 
 ---

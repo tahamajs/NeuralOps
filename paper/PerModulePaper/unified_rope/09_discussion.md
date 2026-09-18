@@ -53,10 +53,10 @@ For DistilBERT:
 
 | Metric | Baseline | UnifiedRoPE | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Accuracy | 90.71% | 87.96% | -2.75% |
 | Params | 66.95M | 66.95M | 1.00× |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| VRAM | 183 MB | 341 MB MB | 2.1\times× |
 
 ## 9.5 Comparison with Companion Methods
 
@@ -96,6 +96,6 @@ No change.
 - Dual-use concerns
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

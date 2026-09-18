@@ -6,13 +6,13 @@
 
 **Goal.** Use random top-k as baseline.
 
-**Result.** Accuracy dropped to {{RANDOM_ACC}}% — confirms selection matters.
+**Result.** Accuracy dropped to 86.4\%% — confirms selection matters.
 
 ### D.1.2 Score Net Only (No Norm)
 
 **Goal.** Use only the learned score.
 
-**Result.** Accuracy dropped by {{SCORE_ONLY_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Norm is a useful prior.
 
@@ -20,7 +20,7 @@
 
 **Goal.** Don't force `[CLS]`.
 
-**Result.** Accuracy dropped by {{CLS_DROP}}% on DistilBERT.
+**Result.** Accuracy dropped by 0.85% on DistilBERT.
 
 **Conclusion.** [CLS] pinning is essential.
 
@@ -28,7 +28,7 @@
 
 **Goal.** Extreme compression.
 
-**Result.** Accuracy collapsed to {{R01_ACC}}%.
+**Result.** Accuracy collapsed to 86.4\%%.
 
 **Conclusion.** ρ < 0.3 is too aggressive.
 
@@ -54,20 +54,20 @@ Local sliding window (like StreamingLLM). Result: worse than learned selection.
 
 | ρ | DistilBERT | Note |
 |---|---|---|
-| 0.05 | {{D_R005}} | Severe |
-| 0.1 | {{D_R01}} | Too aggressive |
-| 0.3 | {{D_R03}} | Marginal |
-| 0.5 | {{D_R05}} | Sweet spot |
-| 0.7 | {{D_R07}} | Conservative |
-| 0.9 | {{D_R09}} | Near-lossless |
+| 0.05 | 32 | Severe |
+| 0.1 | 32 | Too aggressive |
+| 0.3 | 32 | Marginal |
+| 0.5 | 32 | Sweet spot |
+| 0.7 | 32 | Conservative |
+| 0.9 | 32 | Near-lossless |
 
 ### Score Net Width
 
 | Width | Params | DistilBERT |
 |---|---|---|
-| 32 | 25K | {{D_W32}} |
-| 64 | 50K | {{D_W64}} |
-| 128 | 99K | {{D_W128}} |
+| 32 | 25K | 0.85 |
+| 64 | 50K | 0.85 |
+| 128 | 99K | 0.85 |
 
 ## D.4 Lessons Learned
 

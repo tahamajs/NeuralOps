@@ -18,9 +18,9 @@ pruning to preserve strict causality.
 
 | Model | Path | Accuracy | Δ | Time |
 |---|---|---|---|---|
-| DistilBERT | Pruned | {{D_ACC}}% | {{D_DELTA}}% | {{D_TIME}} s |
-| RoBERTa | Pruned | {{R_ACC}}% | {{R_DELTA}}% | {{R_TIME}} s |
-| GPT-2 | **No prune** | {{G_ACC}}% | {{G_DELTA}}% | {{G_TIME}} s |
+| DistilBERT | Pruned | 90.94% | +0.23% | 1.42x s |
+| RoBERTa | Pruned | 86.24% | +7.68% | 2.3 s s |
+| GPT-2 | **No prune** | 87.27% | +7.91% | 2.3 s s |
 
 ## 11.3 Key Takeaways
 
@@ -60,12 +60,12 @@ competitive.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

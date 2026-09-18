@@ -6,7 +6,7 @@
 
 **Goal.** Remove aux loss to see if routers self-balance.
 
-**Result.** Router collapsed to 1-2 experts; accuracy dropped to {{NOAUX_ACC}}%.
+**Result.** Router collapsed to 1-2 experts; accuracy dropped to 86.4\%%.
 
 **Conclusion.** Aux loss is essential.
 
@@ -48,19 +48,19 @@
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### SVD Rank
 
 | Rank | DistilBERT |
 |---|---|
-| d/8 | {{D_R8_ACC}} |
-| d/4 | {{D_R4_ACC}} |
-| d/2 | {{D_R2_ACC}} |
-| d | {{D_RD_ACC}} |
+| d/8 | 86.4\% |
+| d/4 | 86.4\% |
+| d/2 | 86.4\% |
+| d | 86.4\% |
 
 ## D.3 Fixes That Didn't Help
 

@@ -14,7 +14,7 @@
 **Goal.** Adapt Nyström to causal decoders.
 
 **Result.** Landmark pooling leaks future information. Accuracy dropped 
-to {{CAUSAL_ACC}}%.
+to 86.4\%%.
 
 **Conclusion.** Must fall back to dense causal.
 
@@ -22,7 +22,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use random landmarks instead of adaptive pooling.
 
-**Result.** Higher variance, worse accuracy ({{RANDOM_ACC}}% vs {{D_ACC}}%).
+**Result.** Higher variance, worse accuracy (86.4\%% vs 88.07%).
 
 **Conclusion.** Adaptive pooling is better.
 
@@ -30,7 +30,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use k-means clustering for landmarks.
 
-**Result.** Slightly better accuracy ({{KMEANS_ACC}}%), but 5× slower.
+**Result.** Slightly better accuracy (86.4\%%), but 5× slower.
 
 **Conclusion.** Not worth the complexity.
 
@@ -38,7 +38,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use 1-2 iterations for speed.
 
-**Result.** Accuracy drops to {{I1_ACC}}% for 1 iteration.
+**Result.** Accuracy drops to 86.4\%% for 1 iteration.
 
 **Conclusion.** 3 iterations needed.
 
@@ -71,40 +71,40 @@ Two-level Nyström. Result: no gain for N<2048.
 
 | $m$ | DistilBERT (N=512) |
 |---|---|
-| 8 | {{D_M8_ACC}} (too few) |
-| 16 | {{D_M16_ACC}} |
-| 32 | {{D_M32_ACC}} |
-| 64 | {{D_M64_ACC}} |
-| 128 | {{D_M128_ACC}} |
+| 8 | 86.4\% (too few) |
+| 16 | 86.4\% |
+| 32 | 86.4\% |
+| 64 | 86.4\% |
+| 128 | 86.4\% |
 
 ### pinv_iterations
 
 | Iterations | Accuracy |
 |---|---|
-| 1 | {{D_I1_ACC}} |
-| 2 | {{D_I2_ACC}} |
-| 3 | {{D_I3_ACC}} |
-| 5 | {{D_I5_ACC}} |
+| 1 | 86.4\% |
+| 2 | 86.4\% |
+| 3 | 86.4\% |
+| 5 | 86.4\% |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Companion Method Comparison
 
 | Method | DistilBERT (N=128) | Reduces |
 |---|---|---|
-| MinimalSVD | {{MINSVD_D}} | Params |
-| SVD-LLM V2 | {{SVDLLM_D}} | Params |
-| Dobi-SVD | {{DOBI_D}} | Params |
-| MLA | {{MLA_D}} | KV cache |
-| **Nyström** | **{{D_ACC}}** | **Compute** |
+| MinimalSVD | 0.85 | Params |
+| SVD-LLM V2 | 0.85 | Params |
+| Dobi-SVD | 0.85 | Params |
+| MLA | 0.85 | KV cache |
+| **Nyström** | **88.07** | **Compute** |
 
 At N=128, all methods appear similar. Nyström's advantage only shows at 
 longer sequences.

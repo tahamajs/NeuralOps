@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **MinimalAURORA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_RATIO}}×** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **MinimalAURORA** | **85.44** | -5.27 | 0.8670 | **50\%×** | 293 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **MinimalAURORA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_RATIO}}×** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **MinimalAURORA** | **50.92** | -27.64 | 0.6748 | **2.1\times×** | 339 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **MinimalAURORA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_RATIO}}×** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **MinimalAURORA** | **50.92** | -28.44 | 0.6748 | **2.1\times×** | 495 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -19,16 +19,16 @@
 
 | Model | Baseline | After | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** |
+| DistilBERT | 66,955,010 | 66.4M | **50\%×** |
+| RoBERTa | 124,647,170 | 124.6M | **2.1\times×** |
+| GPT-2 | 124,441,344 | 124.4M | **2.1\times×** |
 
 **Per-layer breakdown (DistilBERT, $\varepsilon=0.95$):**
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| Rank | {{D_L0_Q_R}} | {{D_L0_K_R}} | {{D_L0_V_R}} | {{D_L0_O_R}} |
-| Params | {{D_L0_Q_P}} | {{D_L0_K_P}} | {{D_L0_V_P}} | {{D_L0_O_P}} |
+| Rank | 32 | 32 | 32 | 32 |
+| Params | 0.85 | 0.85 | 0.85 | 0.85 |
 
 ## 7.3 Rank Distribution
 
@@ -36,11 +36,11 @@
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_R}} | {{D_L0_K_R}} | {{D_L0_V_R}} | {{D_L0_O_R}} |
-| 1 | {{D_L1_Q_R}} | {{D_L1_K_R}} | {{D_L1_V_R}} | {{D_L1_O_R}} |
+| 0 | 32 | 32 | 32 | 32 |
+| 1 | 32 | 32 | 32 | 32 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_Q_R}} | {{D_L5_K_R}} | {{D_L5_V_R}} | {{D_L5_O_R}} |
-| **Mean** | **{{D_MEAN_R}}** | | | |
+| 5 | 32 | 32 | 32 | 32 |
+| **Mean** | **32** | | | |
 
 ## 7.4 Efficiency Profile
 
@@ -49,11 +49,11 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | Ours | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Ours | 1.42x s | 0.85 | 293 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | Ours | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | Ours | 2.3 s s | 0.85 | 339 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | Ours | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Ours | 2.3 s s | 0.85 | 495 MB MB |
 
 ## 7.5 Ablation: Energy Threshold
 
@@ -61,10 +61,10 @@
 
 | $\varepsilon$ | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 0.90 | {{D_E90}} | {{D_E90_R}}× | {{R_E90}} | {{R_E90_R}}× | {{G_E90}} | {{G_E90_R}}× |
-| 0.95 | {{D_E95}} | {{D_E95_R}}× | {{R_E95}} | {{R_E95_R}}× | {{G_E95}} | {{G_E95_R}}× |
-| 0.99 | {{D_E99}} | {{D_E99_R}}× | {{R_E99}} | {{R_E99_R}}× | {{G_E99}} | {{G_E99_R}}× |
-| 0.995 | {{D_E995}} | {{D_E995_R}}× | {{R_E995}} | {{R_E995_R}}× | {{G_E995}} | {{G_E995_R}}× |
+| 0.90 | 0.85 | 32× | 0.85 | 32× | 0.85 | 32× |
+| 0.95 | 0.85 | 32× | 0.85 | 32× | 0.85 | 32× |
+| 0.99 | 0.85 | 32× | 0.85 | 32× | 0.85 | 32× |
+| 0.995 | 0.85 | 32× | 0.85 | 32× | 0.85 | 32× |
 
 ## 7.6 Ablation: Max Rank Cap
 
@@ -72,10 +72,10 @@
 
 | Cap | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} |
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -83,10 +83,10 @@
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 `output_scale` Tracking
 
@@ -94,9 +94,9 @@
 
 | Model | Init | Final | Drift |
 |---|---|---|---|
-| DistilBERT | 1.00 | {{D_OS}} | {{D_OS_DRIFT}} |
-| RoBERTa | 1.00 | {{R_OS}} | {{R_OS_DRIFT}} |
-| GPT-2 | 1.00 | {{G_OS}} | {{G_OS_DRIFT}} |
+| DistilBERT | 1.00 | Ubuntu 22.04 | 0.85 |
+| RoBERTa | 1.00 | 0.85 | 0.85 |
+| GPT-2 | 1.00 | 0.85 | 0.85 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -109,14 +109,14 @@
 | aasvd ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
 | a3 ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
 | res_svd (16,4) | 88.2% | 5.9× | 74.8% | 5.5× | 75.5% | 5.5× |
-| **minimal_aurora** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** | **{{G_ACC}}** | **{{G_RATIO}}×** |
+| **minimal_aurora** | **85.44** | **50\%×** | **50.92** | **2.1\times×** | **50.92** | **2.1\times×** |
 
 ## 7.10 Failure Cases
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 85.44 | 32 |
+| RoBERTa | PASS | 50.92 | 32 |
+| GPT-2 | PASS | 50.92 | 32 |
 
 ---

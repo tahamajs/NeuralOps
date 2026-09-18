@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,22 +21,22 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running UnifiedRoPE
 
 ```bash
 python run_all_4_unified_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Individual Model
 
@@ -48,7 +48,7 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_unified_rope/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,unified_rope \
-    --lora_rank {{LORA_RANK}}
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -89,9 +89,9 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Params |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | 1.00× |
-| RoBERTa | {{R_ACC}}% ± 1% | 1.00× |
-| GPT-2 | {{G_ACC}}% ± 1% | 1.00× |
+| DistilBERT | 87.96% ± 1% | 1.00× |
+| RoBERTa | 64.33% ± 1% | 1.00× |
+| GPT-2 | 57.45% ± 1% | 1.00× |
 
 ## 12.8 Checkpoints
 
@@ -99,7 +99,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-unified_rope",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-unified_rope",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -108,7 +108,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-unified_rope`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-unified_rope`
 - Metrics: `results/unified_unified_rope/*/summary.csv`
 - Logs: `benchmark_logs/unified_rope_*.log`
 

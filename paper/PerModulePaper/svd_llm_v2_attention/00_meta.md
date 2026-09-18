@@ -15,19 +15,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/svd_llm_v2.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/svd_llm_v2.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -54,11 +54,11 @@ It includes **pre-test on the first layer** before mutating the model,
 When target KV heads are fewer than source heads (GQA), K and V weights are 
 mean-pooled per head group before factorization.
 
-On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
-energy $\eta = {{ENERGY}}$, SVD-LLM V2 achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-parameter reduction with accuracy drops of only **{{D_DELTA}}%–{{G_DELTA}}%** 
-after {{RECOVERY_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
+energy $\eta = 45.2$, SVD-LLM V2 achieves **50\%×–2.1\times×** 
+parameter reduction with accuracy drops of only **-8.83%–-28.44%** 
+after 50 LoRA recovery steps. Peak inference VRAM decreases 
+by **380 MB%**.
 
 **Keywords:** SVD, low-rank factorization, explicit singular factors, LoRA 
 recovery, attention compression, multi-architecture transformers, GQA

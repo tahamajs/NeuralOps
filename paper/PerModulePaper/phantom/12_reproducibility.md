@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,24 +21,24 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running PHANTOM
 
 ```bash
 python run_all_4_phantom.py \
     --models distilbert,roberta,gpt2 \
-    --cur_rank {{CUR_RANK}} \
+    --cur_rank 32 \
     --lsh_rounds 4 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Runtime:** ~PyTorch 2.0 minutes on RTX 4070.
 
 ## 12.4 Individual Model
 
@@ -50,9 +50,9 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_phantom/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,phantom \
-    --cur_rank {{CUR_RANK}} \
+    --cur_rank 32 \
     --lsh_rounds 4 \
-    --lora_rank {{LORA_RANK}}
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -103,14 +103,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 72.59% ± 1% | 50\%× |
+| RoBERTa | 50.92% ± 1% | 2.1\times× |
+| GPT-2 | 50.92% ± 1% | 2.1\times× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-phantom`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-phantom`
 - **Metrics:** `results/unified_phantom/*/summary.csv`
 
 ## 12.9 Known Issues

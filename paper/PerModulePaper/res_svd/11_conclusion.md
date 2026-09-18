@@ -10,13 +10,13 @@ spectral-init LoRA.
 
 | Model | Acc Δ | Ratio |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** |
+| DistilBERT | -1.15% | **50\%×** |
+| RoBERTa | -1.95% | **2.1\times×** |
+| GPT-2 | -8.03% | **2.1\times×** |
 
 ## 11.3 Key Takeaways
 
-1. **Real compression** of ~{{D_RATIO}}×.
+1. **Real compression** of ~50\%×.
 2. **Two-level decomposition** equivalent to equal-rank SVD at init.
 3. **Spectral initialization** ensures optimal start.
 4. **Silent injection failure** requires caller attention.
@@ -40,12 +40,12 @@ parameter-efficient fine-tuning. We release all code.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Res-SVD, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** designed Res-SVD, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

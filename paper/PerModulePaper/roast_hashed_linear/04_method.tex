@@ -1,3 +1,10 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{roast_hashed_linear}.
+\subsection{Algorithmic Formulation}
+The \texttt{roast_hashed_linear} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{ROAST: Hardware-Aware Weight Sharing with Tiling.
+Reference: 'ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks'
+Registered in COMPRESSOR\_REGISTRY as 'roast', 'roast\_compressor', and 'roast\_factory'.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

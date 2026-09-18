@@ -10,9 +10,9 @@ causal-safe fallback.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | -39.79% | +48.5\%% |
+| RoBERTa | -30.39% | +48.5\%% |
+| GPT-2 | 0.85% | +48.5\%% |
 
 ## 11.3 Key Takeaways
 
@@ -39,12 +39,12 @@ Code and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Taha Majs** implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

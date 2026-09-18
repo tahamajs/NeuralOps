@@ -72,10 +72,10 @@ GaLore (Zhao et al., 2024) projects gradients into a low-rank subspace.
 \toprule
 \textbf{Axis} & \textbf{LoRA} & \textbf{PiSSA} & \textbf{SVD Comp} & \textbf{SALT} \\
 \midrule
-Total params reduced? & No & No & Yes & \textbf{Yes} \\
-Trainable adaptation? & Yes & Yes & No & \textbf{Yes} \\
-Pretrained init? & Base only & SVD init & Base & \textbf{SVD + $\gamma$ + AB} \\
-Inference speedup? & No & No & Yes (if fused) & No (naive) \\
+Total params reduced? \& No \& No \& Yes & \textbf{Yes} \\
+Trainable adaptation? \& Yes \& Yes \& No & \textbf{Yes} \\
+Pretrained init? \& Base only \& SVD init \& Base & \textbf{SVD + $\gamma$ + AB} \\
+Inference speedup? \& No \& No \& Yes (if fused) \& No (naive) \\
 \bottomrule
 \end{tabular}
 \end{table}

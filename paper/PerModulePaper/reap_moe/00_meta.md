@@ -1,19 +1,19 @@
 # REAP-MoE: Robust Expert Allocation and Pruning for Transformer Mixture-of-Experts
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/reap_moe.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/reap_moe.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -29,18 +29,18 @@ experts per token. However, standard MoE implementations face three problems:
 by combining **SVD-factorized expert networks** with **load-balancing 
 regularization** and **noise-injected routing**. Each expert is a two-layer 
 MLP whose weights are factored into $U \Sigma V^\top$, reducing per-expert 
-parameters by **{{SVD_REDUCTION}}×** while preserving expressive capacity. 
+parameters by **32×** while preserving expressive capacity. 
 The router uses top-$k$ selection with auxiliary load-balancing loss 
 $\mathcal{L}_\text{aux} = E \sum_i \rho_i \pi_i$, where $\rho_i$ is expert 
 utilization and $\pi_i$ is the mean routing probability. REAP-MoE integrates 
 attention and MoE into a single module with pre-LayerNorm around each.
 
 On SST-2 with DistilBERT, RoBERTa-base, and GPT-2, REAP-MoE achieves 
-**{{D_ACC}}%**, **{{R_ACC}}%**, and **{{G_ACC}}%** respectively after 
-{{RECOVERY_STEPS}} LoRA recovery steps, compared to baselines of 90.71%, 
-78.56%, and 79.36%. Parameter count changes by **{{D_PARAM_CHANGE}}%** 
-because MoE replaces the FFN block: with {{N_EXPERTS}} experts at SVD rank 
-{{SVD_RANK}}, per-layer parameters scale as {{N_EXPERTS}}× the FFN size, 
+**90.02%**, **50.92%**, and **52.41%** respectively after 
+50 LoRA recovery steps, compared to baselines of 90.71%, 
+78.56%, and 79.36%. Parameter count changes by **66.4M%** 
+because MoE replaces the FFN block: with 8 experts at SVD rank 
+32, per-layer parameters scale as 8× the FFN size, 
 mitigated by SVD factorization. We report honest negative results for 
 parameter-sensitive deployments.
 

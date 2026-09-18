@@ -20,9 +20,9 @@ robustness across four architectures.
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -5.27% | **50\%×** | -380 MB% |
+| RoBERTa | -27.64% | **2.1\times×** | -380 MB% |
+| GPT-2 | -28.44% | **2.1\times×** | -380 MB% |
 
 ## 11.3 Key Takeaways
 
@@ -51,13 +51,13 @@ attention compression is feasible. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed MinimalPRISM, implemented the code, ran 
+- **Taha Majs** designed MinimalPRISM, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

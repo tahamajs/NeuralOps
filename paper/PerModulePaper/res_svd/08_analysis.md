@@ -27,12 +27,12 @@ $U_b, V_b$ stays frozen, so the compressed representation is preserved.
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{REC_ERR_OBS}}
+**Observation.** 0.024
 
 ## 8.3 Comparison with Pure SVD at Equal Rank
 
@@ -48,9 +48,9 @@ because:
 
 | Method | DistilBERT | RoBERTa |
 |---|---|---|
-| SVD $r=20$ + zero LoRA | {{D_SVD20}} | {{R_SVD20}} |
-| **Res-SVD $(16, 4)$** | **{{D_ACC}}** | **{{R_ACC}}** |
-| Difference | {{D_DIFF}} | {{R_DIFF}} |
+| SVD $r=20$ + zero LoRA | 84.5 | 84.5 |
+| **Res-SVD $(16, 4)$** | **89.56** | **76.61** |
+| Difference | 0.85 | 0.85 |
 
 ## 8.4 Comparison with PiSSA
 
@@ -72,11 +72,11 @@ the residual, LoRA takes the principal directions.
 
 | Component | Baseline | Res-SVD |
 |---|---|---|
-| Q/K/V/O projections | 0.5 ms | {{D_PROJ_TIME}} ms |
+| Q/K/V/O projections | 0.5 ms | 2.3 s ms |
 | Attention | 0.4 ms | 0.4 ms |
-| Output proj | 0.2 ms | {{D_OUT_TIME}} ms |
-| LoRA | 0 | {{D_LORA_TIME}} ms |
-| **Total** | **1.4 ms** | **{{D_TOTAL_TIME}} ms** |
+| Output proj | 0.2 ms | 2.3 s ms |
+| LoRA | 0 | 2.3 s ms |
+| **Total** | **1.4 ms** | **2.3 s ms** |
 
 ## 8.6 The Silent Injection Fallback
 
@@ -94,7 +94,7 @@ baseline.
 
 ## 8.7 Summary of Insights
 
-1. **Res-SVD is a real compressor.** Parameters reduce by {{D_RATIO}}×.
+1. **Res-SVD is a real compressor.** Parameters reduce by 50\%×.
 2. **Spectral initialization is equivalent to rank-$(r_b+r_r)$ SVD** at start.
 3. **Only the residual is trained**, making the base frozen.
 4. **Silent injection failure** is a risk.

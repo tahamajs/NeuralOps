@@ -1,3 +1,16 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{swift_svd}.
+\subsection{Algorithmic Formulation}
+The \texttt{swift_svd} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Swift-SVD: fast closed-form truncated SVD with symmetric square-root singular value distribution.
+Registered as 'swift\_svd'.
+Production-hardened with:
+- Relative Frobenius reconstruction error validation (err <= max\_error)
+- Adaptive rank retries stepping up rank if error threshold is exceeded
+- Safe fallback preserving original layer on failure (fallback\_to\_original default True)
+- Accurate Conv1D (GPT-2) and linear layer detection by class name and nf attribute
+- Correct raw\_shape reporting as (out\_features, in\_features)
+- Unified critical classification/embedding/head protection via }\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

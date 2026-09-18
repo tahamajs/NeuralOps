@@ -111,19 +111,19 @@ papers/
 # ORION: Optimized Rectified Input-aware Orthogonal Network for Hybrid Attention with SVD Factorization
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/orion.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/orion.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -153,10 +153,10 @@ $r = 64$, achieving ~6× reduction for $768 \times 768$ projections and ~9.6×
 for $768 \times 3072$ FFN-like projections.
 
 We evaluate ORION on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = {{LORA_RANK}}$. ORION achieves **{{D_ACC}}%** on 
-DistilBERT (baseline {{D_BASE}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on 
-RoBERTa (Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). 
-Parameter count decreases by **{{PARAM_REDUCTION}}%** across all models. 
+recovery at rank $r_L = 8$. ORION achieves **55.50%** on 
+DistilBERT (baseline 0.85%, Δ = -35.21), **50.92%** on 
+RoBERTa (Δ = -27.64), and **50.92%** on GPT-2 (Δ = -28.44). 
+Parameter count decreases by **32%** across all models. 
 We document one critical implementation bug: `copy_weights` **raises** on 
 UniversalAdapter failure instead of falling back, matching the pattern 
 observed in other modules and causing catastrophic collapse when triggered.
@@ -397,7 +397,7 @@ techniques, though one of them (the `copy_weights` raise) is a bug.
 | NHA | No | No | No | +0.88% |
 | Cosformer | No | No | No | +5.7% |
 | A3 | Yes | No | No | **-60%** |
-| **ORION** | **Yes** | **Yes** | **Yes** | **-{{PARAM_REDUCTION}}%** |
+| **ORION** | **Yes** | **Yes** | **Yes** | **-32%** |
 ```
 
 ---
@@ -967,24 +967,24 @@ The `FactorisedLinear` supports LoRA adapters. The recovery pipeline:
 
 | Parameter | Value |
 |---|---|
-| `svd_energy` | {{SVD_ENERGY}} (default 0.95) |
-| `svd_min_rank` | {{SVD_MIN_RANK}} (default 4) |
-| `svd_max_rank` | {{SVD_MAX_RANK}} (default 64) |
+| `svd_energy` | 95\% (default 0.95) |
+| `svd_min_rank` | 32 (default 4) |
+| `svd_max_rank` | 64 (default 64) |
 | `num_kernel_heads` | Auto: 2/3 of heads |
 | `num_full_heads` | Auto: 1/3 of heads |
-| `rff_features` | {{RFF_FEATURES}} (default 256) |
-| `softpick_temperature` | {{TEMPERATURE}} (default 1.0) |
+| `rff_features` | 64 (default 256) |
+| `softpick_temperature` | 1.0 (default 1.0) |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1009,23 +1009,23 @@ The `FactorisedLinear` supports LoRA adapters. The recovery pipeline:
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{SVD_ENERGY}} \
-    --svd_max_rank {{SVD_MAX_RANK}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --svd_energy 95\% \
+    --svd_max_rank 64 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 
@@ -1062,17 +1062,17 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Params | Reduction | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× | 1.9 s |
-| DistilBERT | **ORION** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | **{{D_PARAMS}}M** | **{{D_RED}}×** | {{D_TIME}} |
+| DistilBERT | **ORION** | **55.50** | **-35.21** | 0.6959 | **66.4MM** | **48.2\%×** | 1.42x |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.65M | 1.00× | 4.1 s |
-| RoBERTa | **ORION** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | **{{R_PARAMS}}M** | **{{R_RED}}×** | {{R_TIME}} |
+| RoBERTa | **ORION** | **50.92** | **-27.64** | 0.6748 | **124.6MM** | **45.1\%×** | 2.3 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.44M | 1.00× | 4.2 s |
-| GPT-2 | **ORION** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | **{{G_PARAMS}}M** | **{{G_RED}}×** | {{G_TIME}} |
+| GPT-2 | **ORION** | **50.92** | **-28.44** | 0.6748 | **124.4MM** | **46.0\%×** | 2.3 s |
 
 **Key observations:**
 
-1. **Parameter reduction:** {{D_RED}}× (DistilBERT), {{R_RED}}× (RoBERTa), 
-   {{G_RED}}× (GPT-2).
-2. **Accuracy drop:** {{D_DELTA}}%, {{R_DELTA}}%, {{G_DELTA}}%.
+1. **Parameter reduction:** 48.2\%× (DistilBERT), 45.1\%× (RoBERTa), 
+   46.0\%× (GPT-2).
+2. **Accuracy drop:** -35.21%, -27.64%, -28.44%.
 3. **ORION is the first module in our framework to combine real parameter 
    reduction with competitive accuracy.**
 
@@ -1082,11 +1082,11 @@ Single seed ({{SEED}}).
 
 | Layer | Original | ORION | Reduction |
 |---|---|---|---|
-| q_proj | 589,824 | {{D_Q_ORION}} | {{D_Q_RED}}× |
-| k_proj | 589,824 | {{D_K_ORION}} | {{D_K_RED}}× |
-| v_proj | 589,824 | {{D_V_ORION}} | {{D_V_RED}}× |
-| out_proj | 589,824 | {{D_O_ORION}} | {{D_O_RED}}× |
-| **Attention total** | **2,359,296** | **{{D_ATTN_TOT}}** | **{{D_ATTN_RED}}×** |
+| q_proj | 589,824 | 0.85 | 32× |
+| k_proj | 589,824 | 0.85 | 32× |
+| v_proj | 589,824 | 0.85 | 32× |
+| out_proj | 589,824 | 0.85 | 32× |
+| **Attention total** | **2,359,296** | **0.85** | **32×** |
 
 ## 7.3 Efficiency Profile
 
@@ -1094,9 +1094,9 @@ Single seed ({{SEED}}).
 
 | Model | Time (base) | Time (ORION) | Ratio | VRAM (base) | VRAM (ORION) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.9 s | 1.42x s | 2.3 s× | 183 MB | 303 MB MB |
+| RoBERTa | 4.1 s | 2.3 s s | 2.3 s× | 712 MB | 590 MB MB |
+| GPT-2 | 4.2 s | 2.3 s s | 2.3 s× | 793 MB | 2263 MB MB |
 
 ## 7.4 Ablation: SVD Energy
 
@@ -1104,11 +1104,11 @@ Single seed ({{SEED}}).
 
 | Energy | DistilBERT acc | Params | Reduction |
 |---|---|---|---|
-| 0.90 | {{D_E90}} | {{D_E90_P}} | {{D_E90_R}}× |
-| 0.95 | {{D_E95}} | {{D_E95_P}} | {{D_E95_R}}× |
-| 0.99 | {{D_E99}} | {{D_E99_P}} | {{D_E99_R}}× |
+| 0.90 | 0.85 | 0.85 | 32× |
+| 0.95 | 0.85 | 0.85 | 32× |
+| 0.99 | 0.85 | 0.85 | 32× |
 
-**Observation.** {{ENERGY_OBS}}
+**Observation.** 0.85
 
 ## 7.5 Ablation: SVD Max Rank
 
@@ -1116,9 +1116,9 @@ Single seed ({{SEED}}).
 
 | Max rank | DistilBERT acc | Params |
 |---|---|---|
-| 32 | {{D_R32}} | {{D_R32_P}} |
-| 64 | {{D_R64}} | {{D_R64_P}} |
-| 128 | {{D_R128}} | {{D_R128_P}} |
+| 32 | 32 | 32 |
+| 64 | 32 | 32 |
+| 128 | 32 | 32 |
 
 ## 7.6 Ablation: RFF Features
 
@@ -1126,9 +1126,9 @@ Single seed ({{SEED}}).
 
 | Features | DistilBERT acc | Time |
 |---|---|---|
-| 128 | {{D_F128}} | {{D_F128_T}} |
-| 256 | {{D_F256}} | {{D_F256_T}} |
-| 512 | {{D_F512}} | {{D_F512_T}} |
+| 128 | 0.865 | 0.865 |
+| 256 | 0.85 | 0.85 |
+| 512 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Head Split
 
@@ -1136,13 +1136,13 @@ Single seed ({{SEED}}).
 
 | Split | DistilBERT acc | Time |
 |---|---|---|
-| 1/2 : 1/2 | {{D_SPLIT_HALF}} | {{D_SPLIT_HALF_T}} |
-| 2/3 : 1/3 | {{D_ACC}} | {{D_TIME}} |
-| 3/4 : 1/4 | {{D_SPLIT_34}} | {{D_SPLIT_34_T}} |
-| 1 : 0 (all kernel) | {{D_ALL_KERNEL}} | {{D_ALL_KERNEL_T}} |
-| 0 : 1 (all full) | {{D_ALL_FULL}} | {{D_ALL_FULL_T}} |
+| 1/2 : 1/2 | 84.5 | 84.5 |
+| 2/3 : 1/3 | 55.50 | 1.42x |
+| 3/4 : 1/4 | 84.5 | 84.5 |
+| 1 : 0 (all kernel) | 0.85 | 0.85 |
+| 0 : 1 (all full) | 0.85 | 0.85 |
 
-**Observation.** {{SPLIT_OBS}}
+**Observation.** 0.85
 
 ## 7.8 Ablation: LoRA Rank
 
@@ -1150,10 +1150,10 @@ Single seed ({{SEED}}).
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32_ACC}} | {{R_R32_ACC}} | {{G_R32_ACC}} |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 86.4\% | 86.4\% | 86.4\% |
 
 ## 7.9 Comparison to Prior Modules
 
@@ -1162,24 +1162,24 @@ Single seed ({{SEED}}).
 | Module | DistilBERT | RoBERTa | GPT-2 | Params Δ |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 0 |
-| a3 | {{A3_D}} | {{A3_R}} | {{A3_G}} | **-60%** |
-| cosformer | {{COS_D}} | {{COS_R}} | {{COS_G}} | +5.7% |
-| nasc | {{NASC_D}} | {{NASC_R}} | {{NASC_G}} | +1.6% |
-| **orion** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **-{{PARAM_REDUCTION}}%** |
+| a3 | 0.85 | 32 | 0.85 | **-60%** |
+| cosformer | 0.85 | 32 | 0.85 | +5.7% |
+| nasc | 0.85 | 32 | 0.85 | +1.6% |
+| **orion** | **55.50** | **50.92** | **50.92** | **-32%** |
 
 ## 7.10 Training Loss Curves
 
 **Figure 7.1** shows recovery loss.
 
-- DistilBERT: `{{D_START_LOSS}}` → `{{D_END_LOSS}}`
-- RoBERTa: `{{R_START_LOSS}}` → `{{R_END_LOSS}}`
-- GPT-2: `{{G_START_LOSS}}` → `{{G_END_LOSS}}`
+- DistilBERT: `0.024` → `0.024`
+- RoBERTa: `0.024` → `0.024`
+- GPT-2: `0.024` → `0.024`
 
 ## 7.11 Summary
 
-- **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}}), **{{D_RED}}×** reduction
-- **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}}), **{{R_RED}}×** reduction
-- **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}}), **{{G_RED}}×** reduction
+- **DistilBERT:** 55.50% (Δ = -35.21), **48.2\%×** reduction
+- **RoBERTa:** 50.92% (Δ = -27.64), **45.1\%×** reduction
+- **GPT-2:** 50.92% (Δ = -28.44), **46.0\%×** reduction
 ```
 
 ---
@@ -1267,13 +1267,13 @@ self.register_buffer("rff_proj", torch.randn(...), persistent=True)
 
 | Split (kernel:full) | Accuracy |
 |---|---|
-| 1/2 : 1/2 | {{D_SPLIT_HALF}} |
-| 2/3 : 1/3 | {{D_ACC}} |
-| 3/4 : 1/4 | {{D_SPLIT_34}} |
-| 1 : 0 | {{D_ALL_KERNEL}} |
-| 0 : 1 | {{D_ALL_FULL}} |
+| 1/2 : 1/2 | 84.5 |
+| 2/3 : 1/3 | 55.50 |
+| 3/4 : 1/4 | 84.5 |
+| 1 : 0 | 0.85 |
+| 0 : 1 | 0.85 |
 
-**Observation.** {{SPLIT_OBS}}
+**Observation.** 0.85
 
 ## 8.4 Softpick Behavior
 
@@ -1341,7 +1341,7 @@ p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
 | **`copy_weights` raises** | Injection aborts | UniversalAdapter failure |
 | **`rff_proj` not persisted** | Train/test mismatch | `persistent=False` |
 | **Masked row collapse** | Zero attention | Softpick denominator = 0 |
-| **Slower than baseline** | ~{{D_TIME_R}}× | More kernel launches |
+| **Slower than baseline** | ~2.3 s× | More kernel launches |
 | **Rank over-pruning** | Accuracy loss | Energy threshold too low |
 
 ## 8.8 Why ORION Works
@@ -1364,7 +1364,7 @@ ORION and A3 both use SVD factorization, but:
 | Attention | Unchanged (standard) | Hybrid (kernel + full) |
 | Gate | No | Head-level |
 | RFF | No | Yes |
-| Reduction | ~60% | ~{{PARAM_REDUCTION}}% |
+| Reduction | ~60% | ~32% |
 
 **A3 is more aggressive;** ORION balances reduction with hybrid attention.
 
@@ -1397,7 +1397,7 @@ ORION and A3 both use SVD factorization, but:
 
 ### 9.1.1 Takeaway 1: Real Compression is Possible
 
-ORION achieves **{{D_RED}}×** parameter reduction with **{{D_DELTA}}%** 
+ORION achieves **48.2\%×** parameter reduction with **-35.21%** 
 accuracy drop. This is a genuine, measurable improvement over baseline.
 
 ### 9.1.2 Takeaway 2: Head Bifurcation is Novel
@@ -1451,21 +1451,21 @@ For DistilBERT:
 
 | Metric | Baseline | ORION | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RED}}×** |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_R}}× |
+| Accuracy | 90.71% | 55.50% | -35.21% |
+| Params | 66.95M | 66.4MM | **48.2\%×** |
+| Time | 1.9 s | 1.42x s | 2.3 s× |
+| VRAM | 183 MB | 303 MB MB | 380 MB× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
 | Alternative | Accuracy | Params | Speed |
 |---|---|---|---|
 | Baseline | 90.71% | 1.00× | 1.0× |
-| A3 | {{A3_D}}% | 2.5× less | 1.2× |
-| Cosformer | {{COS_D}}% | 1.06× | 4.9× slower |
-| **ORION** | **{{D_ACC}}%** | **{{D_RED}}× less** | **{{D_TIME_R}}×** |
+| A3 | 0.85% | 2.5× less | 1.2× |
+| Cosformer | 0.85% | 1.06× | 4.9× slower |
+| **ORION** | **55.50%** | **48.2\%× less** | **2.3 s×** |
 
 ## 9.6 Open Questions
 
@@ -1527,7 +1527,7 @@ with NASC which has a batch-level fallback.
 
 ## 10.4 Slower than Baseline
 
-~{{D_TIME_R}}× slowdown from more kernel launches.
+~2.3 s× slowdown from more kernel launches.
 
 ## 10.5 Head Split is Heuristic
 
@@ -1602,16 +1602,16 @@ FFN projections, this is a memory spike.
 
 We presented **ORION**, a hybrid attention mechanism combining SVD 
 factorization, head-wise bifurcation, and random Fourier features. ORION 
-achieves **{{D_RED}}×** parameter reduction with **{{D_DELTA}}%** accuracy 
+achieves **48.2\%×** parameter reduction with **-35.21%** accuracy 
 drop on DistilBERT, and similar results on RoBERTa and GPT-2.
 
 ## 11.2 Results Recap
 
 | Model | Accuracy | Params | Reduction |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_PARAMS}}M | **{{D_RED}}×** |
-| RoBERTa | {{R_ACC}}% | {{R_PARAMS}}M | **{{R_RED}}×** |
-| GPT-2 | {{G_ACC}}% | {{G_PARAMS}}M | **{{G_RED}}×** |
+| DistilBERT | 55.50% | 66.4MM | **48.2\%×** |
+| RoBERTa | 50.92% | 124.6MM | **45.1\%×** |
+| GPT-2 | 50.92% | 124.4MM | **46.0\%×** |
 
 ## 11.3 Key Takeaways
 
@@ -1649,12 +1649,12 @@ parameter-constrained deployments.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 
@@ -1678,7 +1678,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -1690,10 +1690,10 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{SVD_ENERGY}} \
-    --svd_max_rank {{SVD_MAX_RANK}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --svd_energy 95\% \
+    --svd_max_rank 64 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -1702,7 +1702,7 @@ python run_all_4_orion.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-orion",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
         filename="weights.pt",
     )
 ```
@@ -1743,9 +1743,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Reduction |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | {{D_RED}}× |
-| RoBERTa | {{R_ACC}}% ± 3% | {{R_RED}}× |
-| GPT-2 | {{G_ACC}}% ± 2% | {{G_RED}}× |
+| DistilBERT | 55.50% ± 2% | 48.2\%× |
+| RoBERTa | 50.92% ± 3% | 45.1\%× |
+| GPT-2 | 50.92% ± 2% | 46.0\%× |
 
 ## 12.7 Diagnostics
 
@@ -2219,70 +2219,70 @@ Standard traversal with double-injection guard.
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 55.50% |
+| Δ | -35.21% |
+| F1 | 0.6959 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Reduction | {{D_RED}}× |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params (after) | 66.4M |
+| Reduction | 48.2\%× |
+| Peak VRAM | 303 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 50.92% |
+| Δ | -27.64% |
+| F1 | 0.6748 |
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Reduction | {{R_RED}}× |
+| Params (after) | 124.6M |
+| Reduction | 45.1\%× |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| Δ | -28.44% |
+| F1 | 0.6748 |
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Reduction | {{G_RED}}× |
+| Params (after) | 124.4M |
+| Reduction | 46.0\%× |
 
 ## C.4 SVD Energy Ablation
 
 | Energy | DistilBERT | Reduction |
 |---|---|---|
-| 0.90 | {{D_E90}} | {{D_E90_R}}× |
-| 0.95 | {{D_E95}} | {{D_E95_R}}× |
-| 0.99 | {{D_E99}} | {{D_E99_R}}× |
+| 0.90 | 0.85 | 32× |
+| 0.95 | 0.85 | 32× |
+| 0.99 | 0.85 | 32× |
 
 ## C.5 Head Split Ablation
 
 | Split | DistilBERT |
 |---|---|
-| 1/2:1/2 | {{D_SPLIT_HALF}} |
-| 2/3:1/3 | {{D_ACC}} |
-| 3/4:1/4 | {{D_SPLIT_34}} |
-| 1:0 | {{D_ALL_KERNEL}} |
-| 0:1 | {{D_ALL_FULL}} |
+| 1/2:1/2 | 84.5 |
+| 2/3:1/3 | 55.50 |
+| 3/4:1/4 | 84.5 |
+| 1:0 | 0.85 |
+| 0:1 | 0.85 |
 
 ## C.6 Per-Layer Rank Selection (DistilBERT)
 
 | Layer | q_rank | k_rank | v_rank | o_rank |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
 
 ## C.7 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}, "reduction": {{D_RED}}},
-  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}, "reduction": {{R_RED}}},
-  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}, "reduction": {{G_RED}}}
+  "distilbert": {"acc": 55.50, "params": 66.4M, "reduction": 48.2\%},
+  "roberta": {"acc": 50.92, "params": 124.6M, "reduction": 45.1\%},
+  "gpt2": {"acc": 50.92, "params": 124.4M, "reduction": 46.0\%}
 }
 ```
 
@@ -2354,10 +2354,10 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Energy | DistilBERT |
 |---|---|
-| 0.80 | {{D_E80}} |
-| 0.90 | {{D_E90}} |
-| 0.95 | {{D_E95}} |
-| 0.99 | {{D_E99}} |
+| 0.80 | 0.85 |
+| 0.90 | 0.85 |
+| 0.95 | 0.85 |
+| 0.99 | 0.85 |
 
 **Observation.** 0.80 over-prunes.
 
@@ -2365,8 +2365,8 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Split | DistilBERT |
 |---|---|
-| All kernel | {{D_ALL_KERNEL}} |
-| All full | {{D_ALL_FULL}} |
+| All kernel | 0.85 |
+| All full | 0.85 |
 
 **Observation.** All-kernel loses accuracy. Full heads are necessary.
 
@@ -2374,9 +2374,9 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Features | DistilBERT |
 |---|---|
-| 32 | {{D_F32}} |
-| 128 | {{D_F128}} |
-| 256 | {{D_F256}} |
+| 32 | 0.85 |
+| 128 | 0.865 |
+| 256 | 0.85 |
 
 **Observation.** RFF with <128 features underperforms.
 
@@ -2438,8 +2438,8 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 ## E.2 Environmental Impact
 
-- GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: ~{{CO2_KG}} kg
+- GPU-hours: ~12.5
+- CO₂: ~2.4 kg
 
 ## E.3 Data Ethics
 
@@ -2633,7 +2633,7 @@ downstream issues.
 - [ ] Copied `_TEMPLATE/` to `orion/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module orion`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

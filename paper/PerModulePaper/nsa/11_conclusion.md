@@ -18,9 +18,9 @@ parameter-free, and compatible with four pretrained architectures.
 
 | Model | Acc Δ | Density |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_DENSITY}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_DENSITY}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_DENSITY}}% |
+| DistilBERT | +0.12% | 50\%% |
+| RoBERTa | -27.64% | 0.85% |
+| GPT-2 | -28.44% | 0.85% |
 
 ## 11.3 Key Takeaways
 
@@ -49,12 +49,12 @@ mechanism for long-context inference.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed NSA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed NSA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

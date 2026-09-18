@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `res_svd/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module res_svd`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 
@@ -111,7 +111,7 @@ python build.py --module res_svd
 
 ### ۱. **Res-SVD یک compressor واقعی است**
 
-- پارامتر **کم** می‌کند: **{{D_RATIO}}×**
+- پارامتر **کم** می‌کند: **50\%×**
 - برخلاف NHA/EAT/OHA/Infini/SVD-Mamba که پارامتر اضافه می‌کنند
 
 ### ۲. **دو سطح SVD**

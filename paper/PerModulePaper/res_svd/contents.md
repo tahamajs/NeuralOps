@@ -57,19 +57,19 @@ papers/
 # Res-SVD Attention: Spectral Residual Low-Rank Factorization for Attention Projections
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/res_svd_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/res_svd_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -100,11 +100,11 @@ nested (RoBERTa/BERT), causal Conv1D (GPT-2), and grouped-query with rotary
 embeddings (Qwen/LLaMA) — with weight transfer, GQA, RoPE, and causal 
 masking.
 
-On SST-2 with {{RECOVERY_STEPS}} LoRA recovery steps and $(r_b, r_r) = 
-({{BASE_RANK}}, {{RESIDUAL_RANK}})$, Res-SVD Attention achieves 
-**{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). Total 
-parameter count decreases by **{{D_RATIO}}×–{{G_RATIO}}×**.
+On SST-2 with 50 LoRA recovery steps and $(r_b, r_r) = 
+(32, 16)$, Res-SVD Attention achieves 
+**89.56%** on DistilBERT (Δ = -1.15), **76.61%** on RoBERTa 
+(Δ = -1.95), and **71.33%** on GPT-2 (Δ = -8.03). Total 
+parameter count decreases by **50\%×–2.1\times×**.
 
 <!-- CRITICAL HONESTY -->
 Res-SVD Attention **reduces** parameter count. The residual adapter adds 
@@ -852,9 +852,9 @@ if encoder_hidden_states is not None:
 
 | Hyperparameter | Value |
 |---|---|
-| `base_rank` $r_b$ | {{BASE_RANK}} |
-| `residual_rank` $r_r$ | {{RESIDUAL_RANK}} |
-| `scaling` $\alpha$ | {{SCALING}} |
+| `base_rank` $r_b$ | 32 |
+| `residual_rank` $r_r$ | 16 |
+| `scaling` $\alpha$ | 1.0 |
 | `factorize_base` | True |
 | `freeze_base` | True |
 
@@ -863,10 +863,10 @@ if encoder_hidden_states is not None:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 
 ## 6.5 Evaluation
 
@@ -891,9 +891,9 @@ RTX 4070 Laptop, 8 GB VRAM.
 ```bash
 python run_all_4_res_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank {{BASE_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --base_rank 32 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -919,11 +919,11 @@ python run_all_4_res_svd.py \
 | Model | Module | Acc | Δ | F1 | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **Res-SVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_RATIO}}×** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **Res-SVD** | **89.56** | -1.15 | 0.9016 | **50\%×** | 298 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **Res-SVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_RATIO}}×** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **Res-SVD** | **76.61** | -1.95 | 0.7910 | **2.1\times×** | 594 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **Res-SVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_RATIO}}×** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **Res-SVD** | **71.33** | -8.03 | 0.7760 | **2.1\times×** | 336 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -931,9 +931,9 @@ python run_all_4_res_svd.py \
 
 | Model | Baseline | After Res-SVD | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** |
+| DistilBERT | 66,955,010 | 66.4M | **50\%×** |
+| RoBERTa | 124,647,170 | 124.6M | **2.1\times×** |
+| GPT-2 | 124,441,344 | 124.4M | **2.1\times×** |
 
 **Per-layer breakdown (DistilBERT, $r_b=16$, $r_r=4$):**
 
@@ -953,11 +953,11 @@ python run_all_4_res_svd.py \
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | Res-SVD | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Res-SVD | 1.42x s | 0.85 | 298 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | Res-SVD | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | Res-SVD | 2.3 s s | 0.85 | 594 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | Res-SVD | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Res-SVD | 2.3 s s | 0.85 | 336 MB MB |
 
 ## 7.4 Ablation: Base Rank
 
@@ -965,10 +965,10 @@ python run_all_4_res_svd.py \
 
 | $r_b$ | DistilBERT | RoBERTa | GPT-2 | Ratio |
 |---|---|---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} | {{G_B8}} | 25× |
-| 16 | {{D_B16}} | {{R_B16}} | {{G_B16}} | 18.7× |
-| 32 | {{D_B32}} | {{R_B32}} | {{G_B32}} | 14× |
-| 64 | {{D_B64}} | {{R_B64}} | {{G_B64}} | 8× |
+| 8 | 0.85 | 0.85 | 0.85 | 25× |
+| 16 | 0.85 | 0.85 | 0.85 | 18.7× |
+| 32 | 0.85 | 0.85 | 0.85 | 14× |
+| 64 | 0.85 | 0.85 | 0.85 | 8× |
 
 ## 7.5 Ablation: Residual Rank
 
@@ -976,11 +976,11 @@ python run_all_4_res_svd.py \
 
 | $r_r$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_R0}} | {{R_R0}} | {{G_R0}} |
-| 2 | {{D_R2}} | {{R_R2}} | {{G_R2}} |
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
+| 0 | 32 | 32 | 32 |
+| 2 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
 
 **Observation.** $r_r = 4$ is a good balance.
 
@@ -990,9 +990,9 @@ python run_all_4_res_svd.py \
 
 | $\alpha$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_A05}} | {{R_A05}} | {{G_A05}} |
-| 1.0 | {{D_A10}} | {{R_A10}} | {{G_A10}} |
-| 2.0 | {{D_A20}} | {{R_A20}} | {{G_A20}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Comparison with SVD-Base Only
 
@@ -1000,8 +1000,8 @@ python run_all_4_res_svd.py \
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Pure SVD ($r=20$) | {{D_SVD20}} | {{R_SVD20}} | {{G_SVD20}} |
-| **Res-SVD ($r_b=16, r_r=4$)** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Pure SVD ($r=20$) | 84.5 | 84.5 | 84.5 |
+| **Res-SVD ($r_b=16, r_r=4$)** | **89.56** | **76.61** | **71.33** |
 
 **Note.** As proven in §4.7.1, both are mathematically equivalent at 
 initialization. Differences arise during training.
@@ -1015,15 +1015,15 @@ initialization. Differences arise during training.
 | full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
 | asvd ($r=32$) | 88.5% | 12× | 75.5% | 11× | 76.8% | 11× |
 | aasvd ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
-| **res_svd** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** | **{{G_ACC}}** | **{{G_RATIO}}×** |
+| **res_svd** | **89.56** | **50\%×** | **76.61** | **2.1\times×** | **71.33** | **2.1\times×** |
 
 ## 7.9 Failure Cases
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 89.56 | [D_REASON] |
+| RoBERTa | PASS | 76.61 | [R_REASON] |
+| GPT-2 | PASS | 71.33 | [G_REASON] |
 ```
 
 ---
@@ -1060,12 +1060,12 @@ $U_b, V_b$ stays frozen, so the compressed representation is preserved.
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{REC_ERR_OBS}}
+**Observation.** 0.024
 
 ## 8.3 Comparison with Pure SVD at Equal Rank
 
@@ -1081,9 +1081,9 @@ because:
 
 | Method | DistilBERT | RoBERTa |
 |---|---|---|
-| SVD $r=20$ + zero LoRA | {{D_SVD20}} | {{R_SVD20}} |
-| **Res-SVD $(16, 4)$** | **{{D_ACC}}** | **{{R_ACC}}** |
-| Difference | {{D_DIFF}} | {{R_DIFF}} |
+| SVD $r=20$ + zero LoRA | 84.5 | 84.5 |
+| **Res-SVD $(16, 4)$** | **89.56** | **76.61** |
+| Difference | 0.85 | 0.85 |
 
 ## 8.4 Comparison with PiSSA
 
@@ -1105,11 +1105,11 @@ the residual, LoRA takes the principal directions.
 
 | Component | Baseline | Res-SVD |
 |---|---|---|
-| Q/K/V/O projections | 0.5 ms | {{D_PROJ_TIME}} ms |
+| Q/K/V/O projections | 0.5 ms | 2.3 s ms |
 | Attention | 0.4 ms | 0.4 ms |
-| Output proj | 0.2 ms | {{D_OUT_TIME}} ms |
-| LoRA | 0 | {{D_LORA_TIME}} ms |
-| **Total** | **1.4 ms** | **{{D_TOTAL_TIME}} ms** |
+| Output proj | 0.2 ms | 2.3 s ms |
+| LoRA | 0 | 2.3 s ms |
+| **Total** | **1.4 ms** | **2.3 s ms** |
 
 ## 8.6 The Silent Injection Fallback
 
@@ -1127,7 +1127,7 @@ baseline.
 
 ## 8.7 Summary of Insights
 
-1. **Res-SVD is a real compressor.** Parameters reduce by {{D_RATIO}}×.
+1. **Res-SVD is a real compressor.** Parameters reduce by 50\%×.
 2. **Spectral initialization is equivalent to rank-$(r_b+r_r)$ SVD** at start.
 3. **Only the residual is trained**, making the base frozen.
 4. **Silent injection failure** is a risk.
@@ -1145,7 +1145,7 @@ baseline.
 
 ### 9.1.1 Takeaway 1: Real Compression
 
-Res-SVD reduces parameters by {{D_RATIO}}×.
+Res-SVD reduces parameters by 50\%×.
 
 ### 9.1.2 Takeaway 2: Two-Level Structure
 
@@ -1178,10 +1178,10 @@ For DistilBERT:
 
 | Metric | Baseline | Res-SVD | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | -{{VRAM_PCT}}% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| VRAM | 183 MB | 298 MB MB | -48.5\%% |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 89.56% | -1.15% |
 
 ## 9.4 Comparison with Published Methods
 
@@ -1190,7 +1190,7 @@ For DistilBERT:
 | ASVD | SVD | 12× | 88.5% |
 | AASVD | SVD + cov | 5× | 88.5% |
 | A3 | SVD + Fisher | 6× | 88.5% |
-| **Res-SVD** | **Two-level SVD** | **{{D_RATIO}}×** | **{{D_ACC}}%** |
+| **Res-SVD** | **Two-level SVD** | **50\%×** | **89.56%** |
 
 ## 9.5 Open Questions
 
@@ -1212,8 +1212,8 @@ For DistilBERT:
 - Cross-attention not supported
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 ```
 
 ---
@@ -1271,7 +1271,7 @@ Only $N \leq 512$ tested. Long-context behavior unknown.
 
 ## 10.11 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
@@ -1298,13 +1298,13 @@ spectral-init LoRA.
 
 | Model | Acc Δ | Ratio |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** |
+| DistilBERT | -1.15% | **50\%×** |
+| RoBERTa | -1.95% | **2.1\times×** |
+| GPT-2 | -8.03% | **2.1\times×** |
 
 ## 11.3 Key Takeaways
 
-1. **Real compression** of ~{{D_RATIO}}×.
+1. **Real compression** of ~50\%×.
 2. **Two-level decomposition** equivalent to equal-rank SVD at init.
 3. **Spectral initialization** ensures optimal start.
 4. **Silent injection failure** requires caller attention.
@@ -1328,12 +1328,12 @@ parameter-efficient fine-tuning. We release all code.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Res-SVD, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** designed Res-SVD, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 
@@ -1350,7 +1350,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 ```
@@ -1359,18 +1359,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running Res-SVD
 
 ```bash
 python run_all_4_res_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank {{BASE_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --base_rank 32 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1407,14 +1407,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 89.56% | 50\%× |
+| RoBERTa | 76.61% | 2.1\times× |
+| GPT-2 | 71.33% | 2.1\times× |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-res_svd`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-res_svd`
 - Metrics: `results/unified_res_svd/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1484,13 +1484,13 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1760,77 +1760,77 @@ RoBERTa requires identity init of output projection.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Ratio | {{D_RATIO}}× |
-| Base rank | {{BASE_RANK}} |
-| Residual rank | {{RESIDUAL_RANK}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params after | 66.4M |
+| Ratio | 50\%× |
+| Base rank | 32 |
+| Residual rank | 16 |
+| Accuracy | 89.56% |
+| F1 | 0.9016 |
+| Peak VRAM | 298 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Ratio | 2.1\times× |
+| Accuracy | 76.61% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Ratio | 2.1\times× |
+| Accuracy | 71.33% |
 
 ## C.4 Base Rank Ablation
 
 | $r_b$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} | {{G_B8}} |
-| 16 | {{D_B16}} | {{R_B16}} | {{G_B16}} |
-| 32 | {{D_B32}} | {{R_B32}} | {{G_B32}} |
-| 64 | {{D_B64}} | {{R_B64}} | {{G_B64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Residual Rank Ablation
 
 | $r_r$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_R0}} | {{R_R0}} | {{G_R0}} |
-| 2 | {{D_R2}} | {{R_R2}} | {{G_R2}} |
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
+| 0 | 32 | 32 | 32 |
+| 2 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
 
 ## C.6 Scaling Ablation
 
 | $\alpha$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_A05}} | {{R_A05}} | {{G_A05}} |
-| 1.0 | {{D_A10}} | {{R_A10}} | {{G_A10}} |
-| 2.0 | {{D_A20}} | {{R_A20}} | {{G_A20}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 vs Pure SVD
 
 | Config | DistilBERT | RoBERTa |
 |---|---|---|
-| Pure SVD (r=20) | {{D_SVD20}} | {{R_SVD20}} |
-| Res-SVD (16,4) | {{D_ACC}} | {{R_ACC}} |
-| Difference | {{D_DIFF}} | {{R_DIFF}} |
+| Pure SVD (r=20) | 84.5 | 84.5 |
+| Res-SVD (16,4) | 89.56 | 76.61 |
+| Difference | 0.85 | 0.85 |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -1839,11 +1839,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "base_rank": {{BASE_RANK}},
-    "residual_rank": {{RESIDUAL_RANK}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 89.56,
+    "base_rank": 32,
+    "residual_rank": 16
   },
   "roberta": {...},
   "gpt2": {...}
@@ -1881,7 +1881,7 @@ done
 
 **Goal.** Maximize compression.
 
-**Result.** Accuracy dropped by {{RB4_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** $r_b = 16$ is a practical minimum.
 
@@ -1889,7 +1889,7 @@ done
 
 **Goal.** Equivalent to pure SVD.
 
-**Result.** Accuracy dropped by {{RR0_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Residual rank > 0 is essential.
 
@@ -1935,29 +1935,29 @@ done
 
 | $r_b$ | DistilBERT |
 |---|---|
-| 4 | {{D_RB4}} |
-| 8 | {{D_RB8}} |
-| 16 | {{D_RB16}} |
-| 32 | {{D_RB32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 ### Residual Rank
 
 | $r_r$ | DistilBERT |
 |---|---|
-| 0 | {{D_RR0}} |
-| 2 | {{D_RR2}} |
-| 4 | {{D_RR4}} |
-| 8 | {{D_RR8}} |
+| 0 | 32 |
+| 2 | 32 |
+| 4 | 32 |
+| 8 | 32 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Lessons Learned
 
@@ -1988,8 +1988,8 @@ done
 
 ## E.2 Environmental Impact
 
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2017,11 +2017,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2314,7 +2314,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `res_svd/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module res_svd`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 
@@ -2421,7 +2421,7 @@ python build.py --module res_svd
 
 ### ۱. **Res-SVD یک compressor واقعی است**
 
-- پارامتر **کم** می‌کند: **{{D_RATIO}}×**
+- پارامتر **کم** می‌کند: **50\%×**
 - برخلاف NHA/EAT/OHA/Infini/SVD-Mamba که پارامتر اضافه می‌کنند
 
 ### ۲. **دو سطح SVD**

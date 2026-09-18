@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `leka_v3/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module leka_v3`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

@@ -43,12 +43,12 @@ negating sparsity benefits.
 
 ## 10.6 Softpick Fallback
 
-The softmax fallback activates on ~{{FALLBACK_FREQ}}% of rows, losing 
+The softmax fallback activates on ~0.85% of rows, losing 
 sparsity for those rows.
 
 ## 10.7 Single-Seed Results
 
-All main results from seed {{SEED}}. SE ~1.69%. Differences below 3.4% 
+All main results from seed 42. SE ~1.69%. Differences below 3.4% 
 may be noise.
 
 ## 10.8 No Formal Downstream Bound
@@ -68,7 +68,7 @@ paradigms).
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `moe_deltakv_paged/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module moe_deltakv_paged`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Critical Honesty Checks
 - [ ] **Delta-KV is simulation, stated in abstract**

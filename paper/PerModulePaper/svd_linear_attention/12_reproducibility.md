@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,18 +21,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running SVD-Linear
 
 ```bash
 python run_all_4_svd_linear_attention.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --mode {{MODE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --mode standard \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -69,14 +69,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 80.73% | 50\%× |
+| RoBERTa | 50.92% | 2.1\times× |
+| GPT-2 | 77.5% | 2.1\times× |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-svd_linear`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-svd_linear`
 - Metrics: `results/unified_svd_linear_attention/*/summary.csv`
 
 ## 12.8 Streaming Example

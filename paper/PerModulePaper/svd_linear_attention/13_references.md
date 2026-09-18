@@ -73,7 +73,7 @@
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -87,13 +87,13 @@
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }

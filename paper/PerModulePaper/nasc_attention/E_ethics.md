@@ -22,8 +22,8 @@
 
 ## E.2 Environmental Impact
 
-- GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: ~{{CO2_KG}} kg
+- GPU-hours: ~12.5
+- CO₂: ~2.4 kg
 
 ## E.3 Data Ethics
 

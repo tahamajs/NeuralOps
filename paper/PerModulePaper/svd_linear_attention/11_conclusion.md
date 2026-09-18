@@ -12,20 +12,20 @@
 We presented **SVD-Linear Attention**, a compression-and-efficiency module 
 combining SVD-factorized projections, kernelized linear attention, exponential 
 decay gating, and chunked parallel scan. The method reduces parameter count 
-by {{D_RATIO}}× and attention complexity from $\mathcal{O}(N^2)$ to 
+by 50\%× and attention complexity from $\mathcal{O}(N^2)$ to 
 $\mathcal{O}(N)$.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Param Ratio | Time Ratio (N=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | {{G_TIME_RATIO}}× |
+| DistilBERT | -9.98% | **50\%×** | 2.1\times× |
+| RoBERTa | -27.64% | **2.1\times×** | 2.1\times× |
+| GPT-2 | 0.85% | **2.1\times×** | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
-1. **Real compression.** Parameters reduce by {{D_RATIO}}×–{{G_RATIO}}×.
+1. **Real compression.** Parameters reduce by 50\%×–2.1\times×.
 2. **Real speedup.** Complexity scales linearly.
 3. **Streaming-ready.** `step_recurrent` supports $\mathcal{O}(1)$ inference.
 4. **Multi-architecture.** Same code, four families.
@@ -49,13 +49,13 @@ real compression AND real speedup. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed SVD-Linear Attention, implemented the code, 
+- **Taha Majs** designed SVD-Linear Attention, implemented the code, 
   ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

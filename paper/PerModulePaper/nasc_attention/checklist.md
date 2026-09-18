@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `nasc/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module nasc`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

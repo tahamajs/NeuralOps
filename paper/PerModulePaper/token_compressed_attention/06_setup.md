@@ -23,20 +23,20 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `compression_ratio` ρ | {{RATIO}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
+| `compression_ratio` ρ | 50\% |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `rank` | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 **Trainable parameters per layer:**
@@ -77,17 +77,17 @@ For 6 layers (DistilBERT): ~888K trainable.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_token_compressed.py \
     --models distilbert,roberta,gpt2 \
-    --compression_ratio {{RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --compression_ratio 50\% \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Baselines
@@ -102,6 +102,6 @@ python run_all_4_token_compressed.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Single-seed limitation stated in Section 10.
+Single seed (42). Single-seed limitation stated in Section 10.
 
 ---

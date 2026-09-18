@@ -124,7 +124,7 @@ We make the following contributions:
   on SST-2 with ablations over rank cap $r_\text{max}$, energy threshold 
   $\eta$, and LoRA rank.
 - **Full reproducibility.** Code, checkpoints, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.5 Paper Organization
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `svd_mamba/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module svd_mamba`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 

@@ -45,11 +45,11 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} & \textbf{Note} \\
 \midrule
-Rank $r$ & 32 & SVD and residual \\
+Rank $r$ & 32 \& SVD and residual \\
 $\gamma$ init & 1.0 & -- \\
 $A$ init & $\mathcal{N}(0, 0.01^2)$ & -- \\
 $B$ init & 0 & -- \\
-Freeze SVD & Yes & Buffers \\
+Freeze SVD \& Yes \& Buffers \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -63,12 +63,12 @@ Freeze SVD & Yes & Buffers \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
 Recovery steps & 50 \\
 Batch size & 32 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -122,7 +122,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & RTX 4070 Laptop (8 GB) \\
+GPU \& RTX 4070 Laptop (8 GB) \\
 CUDA & 12.1 \\
 PyTorch & 2.1.2 \\
 Transformers & 4.36.0 \\

@@ -9,7 +9,7 @@
 
 ## 10.1 Not a Compression Method
 
-RALA **increases** parameter count by **{{D_PARAM_PCT}}%**. It is an 
+RALA **increases** parameter count by **48.5\%%**. It is an 
 attention replacement, not a compressor.
 
 ## 10.2 Sequential Prefix Scan

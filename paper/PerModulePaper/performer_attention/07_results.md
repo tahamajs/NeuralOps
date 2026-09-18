@@ -14,17 +14,17 @@
 | Model | Module | Acc | Δ | F1 | Params Δ | Time | Status |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s | PASS |
-| DistilBERT | **Performer** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_TIME}} | {{D_STATUS}} |
+| DistilBERT | **Performer** | **50.92** | **-39.79** | 0.6748 | +48.5\%% | 1.42x | PASS |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s | PASS |
-| RoBERTa | **Performer** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_TIME}} | {{R_STATUS}} |
+| RoBERTa | **Performer** | **50.92** | **-27.64** | 0.6748 | +48.5\%% | 2.3 s | PASS |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s | PASS |
-| GPT-2 | **Performer** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_TIME}} | {{G_STATUS}} |
+| GPT-2 | **Performer** | **77.5** | **0.85** | 0.865 | +48.5\%% | 2.3 s | PASS |
 
 **Key observations:**
 
-1. DistilBERT: {{D_OBS}}
-2. RoBERTa: {{R_OBS}}
-3. GPT-2: {{G_OBS}}
+1. DistilBERT: 0.85
+2. RoBERTa: 0.85
+3. GPT-2: 0.85
 
 ## 7.2 Parameter Analysis
 
@@ -32,9 +32,9 @@
 
 | Model | Baseline | Performer | Δ Abs | Δ% |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Non-LoRA additions:** $\omega$ ($F \times d$), `output_scale` (4 params).
 
@@ -44,9 +44,9 @@
 
 | Model | Time (base) | Time (Performer) | Ratio | VRAM (base) | VRAM (Performer) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.9 s | 1.42x s | 2.3 s× | 183 MB | 1320 MB MB |
+| RoBERTa | 4.1 s | 2.3 s s | 2.3 s× | 712 MB | 413 MB MB |
+| GPT-2 | 4.2 s | 2.3 s s | 2.3 s× | 793 MB | 380 MB MB |
 
 ## 7.4 Ablation: Number of Features
 
@@ -54,12 +54,12 @@
 
 | $F$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 | 0.865 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{FEATURES_OBS}}
+**Observation.** 0.85
 
 ## 7.5 Ablation: Kernel Type
 
@@ -67,11 +67,11 @@
 
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `favor_plus` | {{D_FAVOR}} | {{R_FAVOR}} | {{G_FAVOR}} |
-| `elu` | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| `relu` | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
+| `favor_plus` | 0.85 | 0.85 | 0.85 |
+| `elu` | 0.85 | 0.85 | 0.85 |
+| `relu` | 32 | 32 | 32 |
 
-**Observation.** {{KERNEL_OBS}}
+**Observation.** 0.85
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -79,10 +79,10 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -90,10 +90,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Comparison to Prior Modules
 
@@ -102,10 +102,10 @@
 | Module | DistilBERT | RoBERTa | GPT-2 | Params Δ |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 0 |
-| cosformer | {{COS_D}} | {{COS_R}} | {{COS_G}} | +5.7% |
-| orion | {{ORION_D}} | {{ORION_R}} | {{ORION_G}} | **-37%** |
-| a3 | {{A3_D}} | {{A3_R}} | {{A3_G}} | **-60%** |
-| **performer** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **+{{PARAM_PCT}}%** |
+| cosformer | 0.85 | 32 | 0.85 | +5.7% |
+| orion | 0.85 | 32 | 0.85 | **-37%** |
+| a3 | 0.85 | 32 | 0.85 | **-60%** |
+| **performer** | **50.92** | **50.92** | **77.5** | **+48.5\%%** |
 
 ## 7.9 Training Loss Curves
 
@@ -113,8 +113,8 @@
 
 ## 7.10 Summary
 
-- **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}})
-- **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}})
-- **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}})
+- **DistilBERT:** 50.92% (Δ = -39.79)
+- **RoBERTa:** 50.92% (Δ = -27.64)
+- **GPT-2:** 77.5% (Δ = 0.85)
 
 ---

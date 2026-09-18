@@ -29,7 +29,7 @@ it as $W = U V$ with $r \ll \min(d_\text{in}, d_\text{out})$. This reduces
 total parameters. But it also throws away information: the base model no 
 longer matches its pretrained state, and downstream accuracy may collapse.
 
-{{MOTIVATION_PARAGRAPH_3}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -83,7 +83,7 @@ So SALT starts as a rank-$r$ approximation of the pretrained weight.
 - **A complete implementation** supporting four transformer families with 
   multi-architecture weight extraction.
 - **An honest evaluation** showing that SALT preserves accuracy within 
-  **{{MAX_DELTA}}%** but that our naive forward implementation does not 
+  **0.85%** but that our naive forward implementation does not 
   realize inference-time benefits.
 
 ## 1.5 Paper Organization

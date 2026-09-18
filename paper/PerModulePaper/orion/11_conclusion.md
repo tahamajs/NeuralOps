@@ -11,16 +11,16 @@
 
 We presented **ORION**, a hybrid attention mechanism combining SVD 
 factorization, head-wise bifurcation, and random Fourier features. ORION 
-achieves **{{D_RED}}×** parameter reduction with **{{D_DELTA}}%** accuracy 
+achieves **48.2\%×** parameter reduction with **-35.21%** accuracy 
 drop on DistilBERT, and similar results on RoBERTa and GPT-2.
 
 ## 11.2 Results Recap
 
 | Model | Accuracy | Params | Reduction |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_PARAMS}}M | **{{D_RED}}×** |
-| RoBERTa | {{R_ACC}}% | {{R_PARAMS}}M | **{{R_RED}}×** |
-| GPT-2 | {{G_ACC}}% | {{G_PARAMS}}M | **{{G_RED}}×** |
+| DistilBERT | 55.50% | 66.4MM | **48.2\%×** |
+| RoBERTa | 50.92% | 124.6MM | **45.1\%×** |
+| GPT-2 | 50.92% | 124.4MM | **46.0\%×** |
 
 ## 11.3 Key Takeaways
 
@@ -58,12 +58,12 @@ parameter-constrained deployments.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

@@ -28,10 +28,10 @@ how much each contributes.
 
 **NASC** uses three branches with complementary inductive biases:
 
-1. **Local window:** sliding window of size $W = {{WINDOW_SIZE}}$, with 
+1. **Local window:** sliding window of size $W = 128$, with 
    strict causal masking.
 2. **Sparse block:** partitions the sequence into blocks of size 
-   $B_s = {{BLOCK_SIZE}}$ and selects the top-$k$ blocks by mean 
+   $B_s = 64$ and selects the top-$k$ blocks by mean 
    query-key alignment.
 3. **Global spectral RFF:** random Fourier features (RFF) with cos/sin 
    concatenation, computed via state accumulation for $\mathcal{O}(L)$ 

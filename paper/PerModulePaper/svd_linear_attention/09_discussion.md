@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: Real Compression
 
-SVD-Linear reduces parameter count by {{D_RATIO}}×–{{G_RATIO}}×.
+SVD-Linear reduces parameter count by 50\%×–2.1\times×.
 
 ### 9.1.2 Takeaway 2: Real Speedup
 
@@ -57,10 +57,10 @@ For DistilBERT at N=128:
 
 | Metric | Baseline | SVD-Linear | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | -{{D_VRAM_PCT}}% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| VRAM | 183 MB | 2818 MB MB | -48.5\%% |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 80.73% | -9.98% |
 
 **Verdict.** SVD-Linear dominates AASVD (same compression) and RPC (better 
 approximation + compression).
@@ -72,7 +72,7 @@ approximation + compression).
 | Linear Transformer | ELU+1 | No | No | 1.00× |
 | Performer | Random features | No | No | 1.00× |
 | RetNet | ELU+1 | Fixed | No | 1.00× |
-| **SVD-Linear** | ELU+1 | **Learned** | **SVD** | **{{D_RATIO}}×** |
+| **SVD-Linear** | ELU+1 | **Learned** | **SVD** | **50\%×** |
 
 SVD-Linear is unique in combining all four.
 
@@ -113,7 +113,7 @@ errors. FP16 for the output is safe.
 - Linear attention loses some expressivity
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 
 ---

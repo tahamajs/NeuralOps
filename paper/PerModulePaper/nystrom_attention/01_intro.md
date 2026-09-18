@@ -75,7 +75,7 @@ We make the following contributions:
 - **An honest empirical evaluation** on SST-2 (short sequence, dense 
   fallback) and analysis of when the Nyström branch activates.
 - **Full reproducibility.** Code, weights, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 We emphasize: **this paper is a reproduction, not a novel architecture.** 
 We do not claim to improve Nyströmformer.

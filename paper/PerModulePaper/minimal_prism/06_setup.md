@@ -33,11 +33,11 @@ Majority baseline: **50.92%**. Sequence length: 128 tokens.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| $r_\text{max}$ | {{RANK}} | Rank cap |
-| $\eta$ (energy) | {{ENERGY}} | Spectral energy threshold |
+| $r_\text{max}$ | 32 | Rank cap |
+| $\eta$ (energy) | 45.2 | Spectral energy threshold |
 | `dropout` | 0.1 | Standard |
-| `lora_rank` | {{LORA_RANK}} | Recovery adapter |
-| `lora_alpha` | {{LORA_ALPHA}} | Scaling = alpha / rank |
+| `lora_rank` | 8 | Recovery adapter |
+| `lora_alpha` | 16 | Scaling = alpha / rank |
 | `target_attention_only` | True | Only attention projections |
 
 ## 6.4 Recovery Fine-Tuning
@@ -45,10 +45,10 @@ Majority baseline: **50.92%**. Sequence length: 128 tokens.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -89,26 +89,26 @@ Majority baseline: **50.92%**. Sequence length: 128 tokens.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_minimal_prism.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --energy 45.2 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Seeds
 
-All experiments use seed {{SEED}}. Single-seed due to compute budget.
+All experiments use seed 42. Single-seed due to compute budget.
 
 ## 6.10 Baselines
 

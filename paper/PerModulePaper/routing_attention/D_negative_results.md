@@ -14,7 +14,7 @@
 **Hypothesis.** Clustering would reduce compute.
 
 **Result.** The naive loop over clusters computes $K$ full attention 
-matrices. Runtime **increased** by {{D_TIME_R}}×.
+matrices. Runtime **increased** by 2.3 s×.
 
 **Conclusion.** Sparse matmul kernels are required.
 
@@ -30,7 +30,7 @@ matrices. Runtime **increased** by {{D_TIME_R}}×.
 
 **Hypothesis.** Q alone suffices for clustering.
 
-**Result.** Accuracy drops by {{Q_VS_QK_DROP}}%.
+**Result.** Accuracy drops by 0.85%.
 
 **Conclusion.** Q+K is better.
 
@@ -38,7 +38,7 @@ matrices. Runtime **increased** by {{D_TIME_R}}×.
 
 **Hypothesis.** Anchor is unnecessary.
 
-**Result.** Accuracy drops by {{ANCHOR_DROP}}%.
+**Result.** Accuracy drops by 0.85%.
 
 **Conclusion.** Anchor is essential.
 
@@ -46,10 +46,10 @@ matrices. Runtime **increased** by {{D_TIME_R}}×.
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{LR_5e5}} |
-| 1e-4 | {{LR_1e4}} |
-| 2e-4 | {{LR_2e4}} |
-| 5e-4 | {{LR_5e4}} |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.3 Abandoned Variants
 

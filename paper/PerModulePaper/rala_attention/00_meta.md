@@ -7,19 +7,19 @@
 # RALA: Rank-Augmented Linear Attention with a Softplus Kernel
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/rala_linear_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/rala_linear_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -52,10 +52,10 @@ augmented outputs. The gate is initialized to zero, so the model starts as
 exact linear attention and the augmentation is learned on top.
 
 We evaluate RALA on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
-On DistilBERT, RALA achieves **{{D_ACC}}%** (baseline {{D_BASE}}%, 
-Δ = {{D_DELTA}}). Parameter count increases by **{{D_PARAM_PCT}}%** due to 
+On DistilBERT, RALA achieves **60.09%** (baseline 0.85%, 
+Δ = -30.62). Parameter count increases by **48.5\%%** due to 
 LoRA adapters and the augmentation matrices; RALA is **not** a compression 
-method. Wall-clock inference increases by **{{D_TIME_R}}×** because the 
+method. Wall-clock inference increases by **2.3 s×** because the 
 causal prefix scan is implemented as a Python loop. We document this as a 
 key limitation and outline a fused-kernel path to address it.
 

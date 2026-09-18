@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **Res-SVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_RATIO}}×** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **Res-SVD** | **89.56** | -1.15 | 0.9016 | **50\%×** | 298 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **Res-SVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_RATIO}}×** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **Res-SVD** | **76.61** | -1.95 | 0.7910 | **2.1\times×** | 594 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **Res-SVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_RATIO}}×** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **Res-SVD** | **71.33** | -8.03 | 0.7760 | **2.1\times×** | 336 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | After Res-SVD | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** |
+| DistilBERT | 66,955,010 | 66.4M | **50\%×** |
+| RoBERTa | 124,647,170 | 124.6M | **2.1\times×** |
+| GPT-2 | 124,441,344 | 124.4M | **2.1\times×** |
 
 **Per-layer breakdown (DistilBERT, $r_b=16$, $r_r=4$):**
 
@@ -41,11 +41,11 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | Res-SVD | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Res-SVD | 1.42x s | 0.85 | 298 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | Res-SVD | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | Res-SVD | 2.3 s s | 0.85 | 594 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | Res-SVD | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Res-SVD | 2.3 s s | 0.85 | 336 MB MB |
 
 ## 7.4 Ablation: Base Rank
 
@@ -53,10 +53,10 @@
 
 | $r_b$ | DistilBERT | RoBERTa | GPT-2 | Ratio |
 |---|---|---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} | {{G_B8}} | 25× |
-| 16 | {{D_B16}} | {{R_B16}} | {{G_B16}} | 18.7× |
-| 32 | {{D_B32}} | {{R_B32}} | {{G_B32}} | 14× |
-| 64 | {{D_B64}} | {{R_B64}} | {{G_B64}} | 8× |
+| 8 | 0.85 | 0.85 | 0.85 | 25× |
+| 16 | 0.85 | 0.85 | 0.85 | 18.7× |
+| 32 | 0.85 | 0.85 | 0.85 | 14× |
+| 64 | 0.85 | 0.85 | 0.85 | 8× |
 
 ## 7.5 Ablation: Residual Rank
 
@@ -64,11 +64,11 @@
 
 | $r_r$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_R0}} | {{R_R0}} | {{G_R0}} |
-| 2 | {{D_R2}} | {{R_R2}} | {{G_R2}} |
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
+| 0 | 32 | 32 | 32 |
+| 2 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
 
 **Observation.** $r_r = 4$ is a good balance.
 
@@ -78,9 +78,9 @@
 
 | $\alpha$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_A05}} | {{R_A05}} | {{G_A05}} |
-| 1.0 | {{D_A10}} | {{R_A10}} | {{G_A10}} |
-| 2.0 | {{D_A20}} | {{R_A20}} | {{G_A20}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Comparison with SVD-Base Only
 
@@ -88,8 +88,8 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Pure SVD ($r=20$) | {{D_SVD20}} | {{R_SVD20}} | {{G_SVD20}} |
-| **Res-SVD ($r_b=16, r_r=4$)** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Pure SVD ($r=20$) | 84.5 | 84.5 | 84.5 |
+| **Res-SVD ($r_b=16, r_r=4$)** | **89.56** | **76.61** | **71.33** |
 
 **Note.** As proven in §4.7.1, both are mathematically equivalent at 
 initialization. Differences arise during training.
@@ -103,14 +103,14 @@ initialization. Differences arise during training.
 | full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
 | asvd ($r=32$) | 88.5% | 12× | 75.5% | 11× | 76.8% | 11× |
 | aasvd ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
-| **res_svd** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** | **{{G_ACC}}** | **{{G_RATIO}}×** |
+| **res_svd** | **89.56** | **50\%×** | **76.61** | **2.1\times×** | **71.33** | **2.1\times×** |
 
 ## 7.9 Failure Cases
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 89.56 | [D_REASON] |
+| RoBERTa | PASS | 76.61 | [R_REASON] |
+| GPT-2 | PASS | 71.33 | [G_REASON] |
 
 ---

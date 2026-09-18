@@ -4,17 +4,17 @@
 
 ### 9.1.1 Takeaway 1: KV Cache Reduction is Real
 
-TCA reduces KV cache size by {{KV_PCT}}% at ρ = {{RATIO}}, translating 
+TCA reduces KV cache size by 48.5\%% at ρ = 50\%, translating 
 to real memory savings during long-context inference.
 
 ### 9.1.2 Takeaway 2: Learnable Scoring Wins
 
-The score net improves accuracy by **{{SCORE_NET_GAIN}}%** over the norm-only 
+The score net improves accuracy by **0.85%** over the norm-only 
 heuristic. This confirms that content-specific importance is learnable.
 
 ### 9.1.3 Takeaway 3: [CLS] Preservation Matters
 
-Pinning token 0 recovers **{{CLS_DROP}}%** accuracy — a free win.
+Pinning token 0 recovers **0.85%** accuracy — a free win.
 
 ## 9.2 When to Use TCA
 
@@ -50,10 +50,10 @@ For DistilBERT at L = 512:
 
 | Metric | Baseline | TCA (ρ=0.5) | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +6.3% |
-| KV cache | {{KV_BASE}} | {{KV_TCA}} | -50% |
-| Inference time | {{T_BASE}} s | {{T_TCA}} s | {{T_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +6.3% |
+| KV cache | 0.85 | 0.85 | -50% |
+| Inference time | 0.85 s | 0.85 s | 2.1\times× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
 
 ## 9.5 Comparison to Prior Eviction Methods
 

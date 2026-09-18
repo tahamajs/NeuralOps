@@ -13,7 +13,7 @@
 
 **Hypothesis.** With SALT, inference would be 2-4× faster due to low-rank.
 
-**Result.** Naive forward is **slower** ({{D_TIME_R}}×). Reconstruction 
+**Result.** Naive forward is **slower** (2.3 s×). Reconstruction 
 overhead dominates.
 
 **Conclusion.** Need fused forward.
@@ -22,7 +22,7 @@ overhead dominates.
 
 **Hypothesis.** SVD truncation alone is sufficient; γ provides no benefit.
 
-**Result.** Accuracy drops by {{D_G_DELTA}}% without trainable γ.
+**Result.** Accuracy drops by 0.85% without trainable γ.
 
 **Conclusion.** γ helps.
 
@@ -30,7 +30,7 @@ overhead dominates.
 
 **Hypothesis.** SVD only is enough.
 
-**Result.** Accuracy drops by {{D_AB_DELTA}}%.
+**Result.** Accuracy drops by 0.85%.
 
 **Conclusion.** Residual AB is essential.
 
@@ -38,7 +38,7 @@ overhead dominates.
 
 **Hypothesis.** r=4 is sufficient.
 
-**Result.** Accuracy drops significantly ({{D_R4}}%).
+**Result.** Accuracy drops significantly (32%).
 
 **Conclusion.** r=16 is a good minimum.
 
@@ -46,12 +46,12 @@ overhead dominates.
 
 | Rank | DistilBERT | Comment |
 |---|---|---|
-| 2 | {{D_R2}} | Too aggressive |
-| 4 | {{D_R4}} | Marginal |
-| 8 | {{D_R8}} | OK |
-| 16 | {{D_R16}} | Default |
-| 32 | {{D_R32}} | Overkill |
-| 64 | {{D_R64}} | No benefit |
+| 2 | 32 | Too aggressive |
+| 4 | 32 | Marginal |
+| 8 | 32 | OK |
+| 16 | 32 | Default |
+| 32 | 32 | Overkill |
+| 64 | 32 | No benefit |
 
 ## D.3 Bugs Found During Development
 

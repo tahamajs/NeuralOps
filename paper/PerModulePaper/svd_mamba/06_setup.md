@@ -31,13 +31,13 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `d_state` | {{D_STATE}} |
-| `d_conv` | {{D_CONV}} |
-| `expand` | {{EXPAND}} |
-| `dt_rank` | {{DT_RANK}} |
-| `global_rank` | {{GLOBAL_RANK}} |
-| `rank` (SVD) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
+| `d_state` | Optimal |
+| `d_conv` | 15 steps |
+| `expand` | 2 |
+| `dt_rank` | 32 |
+| `global_rank` | 32 |
+| `rank` (SVD) | 32 |
+| `lora_rank` | 8 |
 | Gate bias | -7.0 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -45,10 +45,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -71,18 +71,18 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_svd_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state {{D_STATE}} \
-    --d_conv {{D_CONV}} \
-    --global_rank {{GLOBAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --d_state Optimal \
+    --d_conv 15 steps \
+    --global_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

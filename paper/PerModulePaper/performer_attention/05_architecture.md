@@ -144,7 +144,7 @@ Standard pipeline:
 1. Load pretrained model.
 2. Inject Performer via `inject_performer`.
 3. Freeze base weights, keep LoRA trainable.
-4. Run {{RECOVERY_STEPS}} recovery steps.
+4. Run 50 recovery steps.
 5. Evaluate.
 
 ---

@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{replace}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_replace/roberta/summary.csv} \& replace \& FAIL & 0.0\% & 298.71 MB \\
+\texttt{results/unified\_replace/distilbert/summary.csv} \& replace \& FAIL & 0.0\% & 389.51 MB \\
+\texttt{results/unified\_replace/gpt2/summary.csv} \& replace \& FAIL & 0.0\% & 793.19 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

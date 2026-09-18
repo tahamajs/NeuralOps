@@ -50,7 +50,7 @@ RFF projection ($dF$), gate ($3d$), and LoRA all add parameters.
 
 ## 10.8 Inference Overhead
 
-NASC is slower than baseline (~{{G_TIME_R}}×) at L=128.
+NASC is slower than baseline (~2.3 s×) at L=128.
 
 ## 10.9 Task Coverage
 

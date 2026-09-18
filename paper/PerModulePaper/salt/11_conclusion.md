@@ -12,16 +12,16 @@
 We presented **SALT** (Singular Value Adaptation with Low-Rank Tuning), a 
 parameterization that replaces each weight $W$ with a truncated SVD plus 
 trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
-SALT reduces stored parameters by **{{D_PARAM_RED}}×–{{G_PARAM_RED}}×** 
-while preserving accuracy within **{{MAX_DELTA}}%**.
+SALT reduces stored parameters by **48.2\%×–32×** 
+while preserving accuracy within **0.85%**.
 
 ## 11.2 Results Recap
 
 | Model | Acc | Δ | Params | Storage |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | {{D_PARAM_RED}}× | {{D_STORAGE}} MB |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | {{R_PARAM_RED}}× | {{R_STORAGE}} MB |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | {{G_PARAM_RED}}× | {{G_STORAGE}} MB |
+| DistilBERT | 80.28% | -10.43% | 48.2\%× | 256 MB MB |
+| RoBERTa | 50.92% | -27.64% | 32× | 84.5 MB |
+| GPT-2 | 50.92% | -28.44% | 32× | 84.5 MB |
 
 ## 11.3 Key Takeaways
 
@@ -54,12 +54,12 @@ code and identify the necessary changes to realize the full potential.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented SALT, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented SALT, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

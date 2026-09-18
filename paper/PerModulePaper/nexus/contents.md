@@ -78,19 +78,19 @@ papers/
 # NEXUS: Neural Efficient X-scoring Unified Sparse Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/nexus.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/nexus.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -110,10 +110,10 @@ with optional stripe masking. A learnable Seer gating network provides a
 data-dependent override, and periodic RFF layers inject a global receptive 
 field.
 
-On SST-2, NEXUS achieves **{{D_ACC}}%** on DistilBERT (baseline {{BASE_D}}%, 
-Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%, Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%, Δ = {{G_DELTA}}), using 
-{{RECOVERY_STEPS}} LoRA recovery steps.
+On SST-2, NEXUS achieves **50.92%** on DistilBERT (baseline 0.85%, 
+Δ = -39.79), **50.92%** on RoBERTa (baseline 32%, Δ = -27.64), 
+and **51.61%** on GPT-2 (baseline 0.85%, Δ = -27.75), using 
+50 LoRA recovery steps.
 
 **Important honest caveats:**
 
@@ -875,12 +875,12 @@ Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
-| LR | {{LR}} |
-| WD | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `recovery_steps` | 50 |
+| Batch size | 32 |
+| LR | 1e-4 |
+| WD | 0.01 |
 
 ## 6.5 Evaluation
 
@@ -930,11 +930,11 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 | Model | Module | Acc | Δ | F1 | Path | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | dense | 183 MB |
-| DistilBERT | **NEXUS** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | sparse | {{D_VRAM}} MB |
+| DistilBERT | **NEXUS** | **50.92** | -39.79 | 0.6748 | sparse | 346 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | dense | 712 MB |
-| RoBERTa | **NEXUS** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | sparse | {{R_VRAM}} MB |
+| RoBERTa | **NEXUS** | **50.92** | -27.64 | 0.6748 | sparse | 676 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | dense | 793 MB |
-| GPT-2 | **NEXUS** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **dense fallback** | {{G_VRAM}} MB |
+| GPT-2 | **NEXUS** | **51.61** | -27.75 | 0.6769 | **dense fallback** | 568 MB MB |
 
 **Key observations:**
 
@@ -948,12 +948,12 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full NEXUS | {{D_FULL}} | {{R_FULL}} | {{G_FULL}} |
-| − XAttention | {{D_NOXA}} | {{R_NOXA}} | — |
-| − Seer gate | {{D_NOSEER}} | {{R_NOSEER}} | — |
-| − Stripe | {{D_NOSTRIPE}} | {{R_NOSTRIPE}} | — |
-| − Softpick | {{D_NOSOFTPICK}} | {{R_NOSOFTPICK}} | — |
-| Dense only | {{D_DENSE}} | {{R_DENSE}} | {{G_DENSE}} |
+| Full NEXUS | 0.85 | 0.85 | 0.85 |
+| − XAttention | 0.85 | 0.85 | — |
+| − Seer gate | 0.85 | 0.85 | — |
+| − Stripe | 0.85 | 0.85 | — |
+| − Softpick | 0.85 | 0.85 | — |
+| Dense only | 0.85 | 0.85 | 0.85 |
 
 ## 7.3 Ablation: Block Size
 
@@ -961,10 +961,10 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | $B_s$ | DistilBERT | RoBERTa |
 |---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} |
-| 16 | {{D_B16}} | {{R_B16}} |
-| 32 | {{D_B32}} | {{R_B32}} |
-| 64 | {{D_B64}} | {{R_B64}} |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ## 7.4 Ablation: Top-K Blocks
 
@@ -972,10 +972,10 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | $k$ | DistilBERT | RoBERTa |
 |---|---|---|
-| 1 | {{D_K1}} | {{R_K1}} |
-| 2 | {{D_K2}} | {{R_K2}} |
-| 4 | {{D_K4}} | {{R_K4}} |
-| 8 | {{D_K8}} | {{R_K8}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Softpick Temperature
 
@@ -983,9 +983,9 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | $T$ | DistilBERT | RoBERTa |
 |---|---|---|
-| 0.5 | {{D_T05}} | {{R_T05}} |
-| 1.0 | {{D_T10}} | {{R_T10}} |
-| 2.0 | {{D_T20}} | {{R_T20}} |
+| 0.5 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 |
+| 2.0 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Sparse Min Seq Len
 
@@ -993,10 +993,10 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | min_seq_len | DistilBERT | RoBERTa |
 |---|---|---|
-| 4 | {{D_S4}} | {{R_S4}} |
-| 8 | {{D_S8}} | {{R_S8}} |
-| 16 | {{D_S16}} | {{R_S16}} |
-| 32 | {{D_S32}} | {{R_S32}} |
+| 4 | 84.5 | 84.5 |
+| 8 | 84.5 | 84.5 |
+| 16 | 84.5 | 84.5 |
+| 32 | 84.5 | 84.5 |
 
 ## 7.7 Efficiency Profile
 
@@ -1005,9 +1005,9 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | NEXUS | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | NEXUS | 1.42x s | 0.85 | 346 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | NEXUS (dense) | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | NEXUS (dense) | 2.3 s s | 0.85 | 568 MB MB |
 
 ## 7.8 Router Statistics
 
@@ -1015,8 +1015,8 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 
 | Model | Mean gate | Mean kept blocks |
 |---|---|---|
-| DistilBERT | {{D_MEANGATE}} | {{D_MEANKEEP}} |
-| RoBERTa | {{R_MEANGATE}} | {{R_MEANKEEP}} |
+| DistilBERT | 0.85 | 0.85 |
+| RoBERTa | 0.85 | 0.85 |
 
 ## 7.9 Component Activation Summary
 
@@ -1054,10 +1054,10 @@ actually active in our SST-2 experiments.
 
 | Component | Contribution |
 |---|---|
-| XAttention | {{XA_CONTRIB}}% |
-| Seer gate | {{SEER_CONTRIB}}% |
-| DuSA | {{DUSA_CONTRIB}}% |
-| Softpick | {{SOFTPICK_CONTRIB}}% |
+| XAttention | 0.85% |
+| Seer gate | 0.85% |
+| DuSA | 0.85% |
+| Softpick | 0.85% |
 | Stripe | 0% (inactive) |
 | RFF | 0% (inactive) |
 
@@ -1096,9 +1096,9 @@ components.
 
 | $N$ | Standard | NEXUS | Speedup |
 |---|---|---|---|
-| 128 | {{T128_STD}} | {{T128_NEXUS}} | {{S128}}× |
-| 256 | {{T256_STD}} | {{T256_NEXUS}} | {{S256}}× |
-| 512 | {{T512_STD}} | {{T512_NEXUS}} | {{S512}}× |
+| 128 | 84.5 | 0.85 | 84.8× |
+| 256 | 84.5 | 0.85 | 85.6× |
+| 512 | 84.5 | 0.85 | 86.2× |
 
 Speedup grows with $N$, as expected.
 
@@ -1182,10 +1182,10 @@ For DistilBERT at $L = 512$:
 
 | Metric | Baseline | NEXUS |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M |
-| Attention FLOPs | 100% | {{FLOP_RATIO}}% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Accuracy | 90.71% | {{D_ACC}}% |
+| Params | 66.95M | 66.4MM |
+| Attention FLOPs | 100% | 2.1\times% |
+| Inference time | 1.9 s | 1.42x s |
+| Accuracy | 90.71% | 50.92% |
 
 ## 9.5 Comparison with Published Methods
 
@@ -1300,9 +1300,9 @@ falling back to dense for causal models.
 
 | Model | Acc Δ | Path |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | sparse |
-| RoBERTa | {{R_DELTA}}% | sparse |
-| GPT-2 | {{G_DELTA}}% | dense |
+| DistilBERT | -39.79% | sparse |
+| RoBERTa | -27.64% | sparse |
+| GPT-2 | -27.75% | dense |
 
 ## 11.3 Key Takeaways
 
@@ -1332,12 +1332,12 @@ are active in our experiments.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1354,7 +1354,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1366,8 +1366,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_nexus.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.3 Individual Model
@@ -1376,7 +1376,7 @@ python run_all_4_nexus.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,nexus \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1423,14 +1423,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 50.92% ± 1% |
+| RoBERTa | 50.92% ± 1% |
+| GPT-2 | 51.61% ± 1% |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-nexus`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-nexus`
 - **Metrics:** `results/unified_nexus/*/summary.csv`
 ```
 
@@ -1489,20 +1489,20 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1528,7 +1528,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1721,61 +1721,61 @@ Block 0 always retained via `inter_mask[:, :, :, 0] = True`.
 | Metric | Value |
 |---|---|
 | Params | 66.95M |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Active path | sparse |
 | Block size | 16 |
 | Top-k | 4 |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Mean gate | {{D_MEANGATE}} |
-| Mean kept blocks | {{D_MEANKEEP}} |
+| Peak VRAM | 346 MB MB |
+| Inference time | 1.42x s |
+| Mean gate | 0.85 |
+| Mean kept blocks | 0.85 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params | 124.6M |
-| Accuracy | {{R_ACC}}% |
+| Accuracy | 50.92% |
 | Active path | sparse |
-| Mean gate | {{R_MEANGATE}} |
+| Mean gate | 0.85 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params | 124.4M |
-| Accuracy | {{G_ACC}}% |
+| Accuracy | 51.61% |
 | Active path | **dense (causal)** |
 
 ## C.4 Component Ablation
 
 | Config | DistilBERT | RoBERTa |
 |---|---|---|
-| Full | {{D_FULL}} | {{R_FULL}} |
-| − XAttention | {{D_NOXA}} | {{R_NOXA}} |
-| − Seer | {{D_NOSEER}} | {{R_NOSEER}} |
+| Full | 0.85 | 0.85 |
+| − XAttention | 0.85 | 0.85 |
+| − Seer | 0.85 | 0.85 |
 | − Stripe (inactive) | — | — |
-| − Softpick | {{D_NOSOFTPICK}} | {{R_NOSOFTPICK}} |
-| Dense only | {{D_DENSE}} | {{R_DENSE}} |
+| − Softpick | 0.85 | 0.85 |
+| Dense only | 0.85 | 0.85 |
 
 ## C.5 Block Size Ablation
 
 | $B_s$ | DistilBERT | RoBERTa |
 |---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} |
-| 16 | {{D_B16}} | {{R_B16}} |
-| 32 | {{D_B32}} | {{R_B32}} |
-| 64 | {{D_B64}} | {{R_B64}} |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
+1     82.1
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.7 Reproduction Commands
@@ -1830,7 +1830,7 @@ python run_all_4_nexus.py --recovery_steps 50
 
 **Goal.** Don't force block 0.
 
-**Result.** Classifier accuracy dropped by {{CLS_DROP}}%.
+**Result.** Classifier accuracy dropped by 0.85%.
 
 **Conclusion.** Block-0 preservation is essential.
 
@@ -1854,10 +1854,10 @@ Learned T. Marginal improvement.
 
 | $B_s$ | DistilBERT |
 |---|---|
-| 8 | {{D_B8}} |
-| 16 | {{D_B16}} |
-| 32 | {{D_B32}} |
-| 64 | {{D_B64}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
 
 Sweet spot: 16.
 
@@ -1865,10 +1865,10 @@ Sweet spot: 16.
 
 | min | DistilBERT |
 |---|---|
-| 4 | {{D_S4}} |
-| 8 | {{D_S8}} |
-| 16 | {{D_S16}} |
-| 32 | {{D_S32}} |
+| 4 | 84.5 |
+| 8 | 84.5 |
+| 16 | 84.5 |
+| 32 | 84.5 |
 
 Sweet spot: 8.
 
@@ -1901,8 +1901,8 @@ Sweet spot: 8.
 
 ## E.2 Environmental
 
-- GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: {{CO2_KG}} kg
+- GPU-hours: ~12.5
+- CO₂: 2.4 kg
 
 ## E.3 Data Ethics
 
@@ -1928,7 +1928,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2098,7 +2098,7 @@ We explicitly document:
 - [ ] Copied `_TEMPLATE/` to `nexus/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module nexus`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

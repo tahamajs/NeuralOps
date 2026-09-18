@@ -15,20 +15,20 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/mla.py
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/mla.py
 **Original paper:** https://arxiv.org/abs/2405.04434
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -52,12 +52,12 @@ K and V weights,
 expansion,
 (iv) uses LoRA adapters for recovery fine-tuning.
 
-On SST-2, MLA achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}). The KV-cache latent dimension is 
-{{RANK}}, reducing per-token KV memory by a factor of 
-**{{KV_REDUCTION}}×** compared to standard attention.
+On SST-2, MLA achieves **50.92%** on DistilBERT (baseline 
+0.85%, Δ = -39.79), **50.92%** on RoBERTa (baseline 
+32%, Δ = -27.64), and **57.22%** on GPT-2 (baseline 
+0.85%, Δ = -22.14). The KV-cache latent dimension is 
+32, reducing per-token KV memory by a factor of 
+**32×** compared to standard attention.
 
 We release all code, weights, and evaluation scripts. This is a 
 **reproduction and portability study**, not a novel architecture.

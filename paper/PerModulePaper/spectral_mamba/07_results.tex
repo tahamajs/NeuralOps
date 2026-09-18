@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{spectral_mamba}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} \& spectral\_mamba \& PASS\_LOW & 50.92\% & 749.82 MB \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} \& spectral\_mamba \& PASS & 90.71\% & 378.15 MB \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} \& spectral\_mamba \& PASS\_LOW & 51.03\% & 650.47 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 59.34 ms & 1243.5 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 59.26 ms & 1243.5 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 60.69 ms & 1253.4 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 60.06 ms & 1253.4 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 61.36 ms & 1227.8 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

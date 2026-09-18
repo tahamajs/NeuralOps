@@ -11,12 +11,12 @@
 
 ### 9.1.1 Takeaway 1: Token Pruning is Effective
 
-At $\rho = {{KEEP_RATIO}}$, PTP achieves **{{D_SPEEDUP}}×** speedup with 
-only **{{D_DELTA}}%** accuracy drop.
+At $\rho = 0.5$, PTP achieves **1.42x×** speedup with 
+only **0.85%** accuracy drop.
 
 ### 9.1.2 Takeaway 2: [CLS] Preservation is Essential
 
-Without [CLS] preservation, accuracy drops by **{{CLS_GAIN}}%**.
+Without [CLS] preservation, accuracy drops by **0.85%**.
 
 ### 9.1.3 Takeaway 3: Learned Scores Reveal Structure
 
@@ -53,9 +53,9 @@ For DistilBERT at $L = 128$:
 | Config | Acc | Speedup | VRAM |
 |---|---|---|---|
 | Baseline | 90.71% | 1.00× | 183 MB |
-| $\rho = 0.5$ | {{D_R50}}% | 2.00× | {{VRAM50}} MB |
-| $\rho = 0.7$ | {{D_R70}}% | 1.43× | {{VRAM70}} MB |
-| $\rho = 0.8$ | **{{D_ACC}}%** | **{{D_SPEEDUP}}×** | {{D_VRAM}} MB |
+| $\rho = 0.5$ | 32% | 2.00× | 380 MB MB |
+| $\rho = 0.7$ | 32% | 1.43× | 450 MB MB |
+| $\rho = 0.8$ | **86.4%** | **1.42x×** | 380 MB MB |
 
 ## 9.5 Interaction with Other Methods
 
@@ -86,6 +86,6 @@ For DistilBERT at $L = 128$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

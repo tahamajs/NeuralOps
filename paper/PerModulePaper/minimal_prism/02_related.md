@@ -69,7 +69,7 @@ GQA via `repeat_kv` at attention time.
 | GPTQ | Quantization | 4× | No | Required |
 | A3 | Low-rank + diagonal Fisher | 5× | LoRA | Required |
 | AASVD | Low-rank + full covariance | 5× | LoRA | Required |
-| **MinimalPRISM** | **Low-rank + spectral energy** | **{{D_RATIO}}×** | **LoRA** | **Not required** |
+| **MinimalPRISM** | **Low-rank + spectral energy** | **50\%×** | **LoRA** | **Not required** |
 
 ## 2.6 Position of Our Work
 

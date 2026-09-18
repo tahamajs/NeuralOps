@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{swift_svd}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_swift\_svd/roberta/summary.csv} \& swift\_svd \& PASS\_LOW & 50.92\% & 629.7 MB \\
+\texttt{results/unified\_swift\_svd/distilbert/summary.csv} \& swift\_svd \& PASS & 90.71\% & 335.49 MB \\
+\texttt{results/unified\_swift\_svd/gpt2/summary.csv} \& swift\_svd \& PASS\_LOW & 50.92\% & 755.65 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 35.1 ms & 717.9 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 36.66 ms & 717.9 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 36.72 ms & 727.8 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 37.33 ms & 727.8 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 50.19 ms & 1082.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

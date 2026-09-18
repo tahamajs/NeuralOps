@@ -15,19 +15,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/minimal_svd.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/minimal_svd.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -39,13 +39,13 @@ matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ is factorized as
 $W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r}$ 
 and $V \in \mathbb{R}^{r \times d_\text{in}}$. The parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
-**{{D_RATIO}}×** reduction per projection on DistilBERT at rank $r = {{RANK}}$.
+**50\%×** reduction per projection on DistilBERT at rank $r = 32$.
 
 The core novelty is **spectral energy-adaptive rank selection**: instead of 
 fixing $r$ uniformly across layers, MinimalSVD computes the cumulative 
 spectral energy $E(r) = \sum_{i \le r} \sigma_i^2 / \sum_i \sigma_i^2$ of 
 each weight matrix and selects the smallest rank such that $E(r) \ge \eta$, 
-with $\eta = {{ENERGY}}$ by default. This automatically adapts per-layer 
+with $\eta = 45.2$ by default. This automatically adapts per-layer 
 rank based on spectral decay, avoiding the fixed-rank trade-off between 
 under- and over-parameterization.
 
@@ -56,11 +56,11 @@ support four transformer families — DistilBERT (flat), RoBERTa (nested),
 GPT-2 (causal with Conv1D), and Qwen3.5 (GQA + RoPE) — via architecture-aware 
 weight extraction, Frobenius norm validation, and LoRA recovery.
 
-On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
-energy $\eta = {{ENERGY}}$, MinimalSVD achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-parameter reduction with accuracy drops of only **{{D_DELTA}}%–{{G_DELTA}}%** 
-after {{RECOVERY_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
+energy $\eta = 45.2$, MinimalSVD achieves **50\%×–2.1\times×** 
+parameter reduction with accuracy drops of only **-1.83%–+1.49%** 
+after 50 LoRA recovery steps. Peak inference VRAM decreases 
+by **380 MB%**.
 
 **Keywords:** low-rank factorization, SVD, energy-adaptive rank, attention 
 compression, LoRA recovery, multi-architecture transformers

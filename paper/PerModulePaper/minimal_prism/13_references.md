@@ -26,7 +26,7 @@
 }
 
 @inproceedings{zhang2023adalora,
-  title={{AdaLoRA}},
+  title=[AdaLoRA],
   author={Zhang, Qingru and others},
   booktitle={ICLR}, year={2023}
 }
@@ -38,19 +38,19 @@
 }
 
 @inproceedings{xiao2023smoothquant,
-  title={{SmoothQuant}},
+  title=[SmoothQuant],
   author={Xiao, Guangxuan and others},
   booktitle={ICML}, year={2023}
 }
 
 @inproceedings{frantar2023gptq,
-  title={{GPTQ}},
+  title=Yes,
   author={Frantar, Elias and others},
   booktitle={ICLR}, year={2023}
 }
 
 @inproceedings{frantar2023sparsegpt,
-  title={{SparseGPT}},
+  title=[SparseGPT],
   author={Frantar, Elias and Alistarh, Dan},
   booktitle={ICML}, year={2023}
 }
@@ -86,13 +86,13 @@
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108}, year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692}, year={2019}
 }

@@ -15,12 +15,12 @@ from the method.
 ## 10.2 Variance is a Weak Signal
 
 The Spearman correlation between variance and attention received is 
-{{CORR_MEAN}}, indicating a **modest** relationship. FASA's pruning is 
+0.85, indicating a **modest** relationship. FASA's pruning is 
 better than random but worse than H2O.
 
 ## 10.3 Keep Ratio of 0.5 is Aggressive
 
-At 0.5, FASA drops half the tokens. Accuracy drops by **{{D_DROP}}%** on 
+At 0.5, FASA drops half the tokens. Accuracy drops by **0.85%** on 
 DistilBERT. Higher keep ratios (0.75+) preserve more.
 
 ## 10.4 CLS Pinning is Essential

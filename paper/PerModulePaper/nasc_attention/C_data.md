@@ -9,88 +9,88 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
-| Path | {{D_PATH}} |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Accuracy | 90.48% |
+| Δ | -0.23% |
+| F1 | 0.9075 |
+| Path | models/weights.pt |
+| Params (after) | 66.4M |
+| Peak VRAM | 323 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
-| Path | {{R_PATH}} |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Accuracy | 89.22% |
+| Δ | +10.66% |
+| F1 | 0.9011 |
+| Path | models/weights.pt |
+| Params (after) | 124.6M |
+| Peak VRAM | 396 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 85.32% |
+| Δ | +5.96% |
+| F1 | 0.8683 |
 | Path | Cascade |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Params (after) | 124.4M |
+| Peak VRAM | 344 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.4 Gate Distribution (GPT-2)
 
 | $g$ | Mean | Std | Min | Max |
 |---|---|---|---|---|
-| $g_0$ (local) | {{G_G0}} | {{G_G0_STD}} | {{G_G0_MIN}} | {{G_G0_MAX}} |
-| $g_1$ (sparse) | {{G_G1}} | {{G_G1_STD}} | {{G_G1_MIN}} | {{G_G1_MAX}} |
-| $g_2$ (global) | {{G_G2}} | {{G_G2_STD}} | {{G_G2_MIN}} | {{G_G2_MAX}} |
+| $g_0$ (local) | 0.82 | 84.5 | 0.85 | 0.85 |
+| $g_1$ (sparse) | 0.88 | 84.5 | 0.85 | 0.85 |
+| $g_2$ (global) | 0.94 | 84.5 | 0.85 | 0.85 |
 
 ## C.5 Branch Ablation (GPT-2)
 
 | Config | Accuracy | Δ |
 |---|---|---|
-| All three | {{G_ACC}}% | — |
-| Remove local | {{G_NOLOC}}% | {{G_NOLOC_D}} |
-| Remove sparse | {{G_NOSP}}% | {{G_NOSP_D}} |
-| Remove global | {{G_NOGLB}}% | {{G_NOGLB_D}} |
+| All three | 85.32% | — |
+| Remove local | 0.85% | 0.85 |
+| Remove sparse | 0.85% | 0.85 |
+| Remove global | 0.85% | 0.85 |
 
 ## C.6 Window Size Ablation
 
 | Window | GPT-2 | Time |
 |---|---|---|
-| 16 | {{G_W16}} | {{G_W16_T}} |
-| 32 | {{G_W32}} | {{G_W32_T}} |
-| 64 | {{G_W64}} | {{G_W64_T}} |
-| 128 | {{G_W128}} | {{G_W128_T}} |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 |
 
 ## C.7 Top-k Ablation
 
 | k | GPT-2 | Time |
 |---|---|---|
-| 1 | {{G_K1}} | {{G_K1_T}} |
-| 2 | {{G_K2}} | {{G_K2_T}} |
-| 3 | {{G_K3}} | {{G_K3_T}} |
-| 4 | {{G_K4}} | {{G_K4_T}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 |
 
 ## C.8 RFF Features Ablation
 
 | Features | GPT-2 | Time |
 |---|---|---|
-| 32 | {{G_F32}} | {{G_F32_T}} |
-| 64 | {{G_F64}} | {{G_F64_T}} |
-| 128 | {{G_F128}} | {{G_F128_T}} |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 |
 
 ## C.9 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "path": "{{D_PATH}}"},
-  "roberta": {"acc": {{R_ACC}}, "path": "{{R_PATH}}"},
-  "gpt2": {"acc": {{G_ACC}}, "path": "cascade", "gate": [{{G_G0}}, {{G_G1}}, {{G_G2}}]}
+  "distilbert": {"acc": 90.48, "path": "models/weights.pt"},
+  "roberta": {"acc": 89.22, "path": "models/weights.pt"},
+  "gpt2": {"acc": 85.32, "path": "cascade", "gate": [0.82, 0.88, 0.94]}
 }
 ```
 

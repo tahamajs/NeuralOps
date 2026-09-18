@@ -110,7 +110,7 @@ PHANTOM makes three contributions to the existing compression landscape:
   attention on SST-2.
 - **A production-hardened implementation.** PyTorch module with fallback, 
   Frobenius validation, GPT-2 Conv1D support, and LoRA recovery.
-- **Full reproducibility.** Code, weights, and scripts released under {{LICENSE}}.
+- **Full reproducibility.** Code, weights, and scripts released under Apache 2.0.
 
 ## 1.5 Paper Organization
 

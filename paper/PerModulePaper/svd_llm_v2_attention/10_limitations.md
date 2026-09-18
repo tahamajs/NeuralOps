@@ -38,7 +38,7 @@ on the energy bound $\sqrt{1 - \eta}$.
 
 ## 10.6 Calibration-Free Trade-off
 
-No calibration data used. A3 and AASVD achieve {{COV_GAIN}}% higher accuracy 
+No calibration data used. A3 and AASVD achieve 0.85% higher accuracy 
 at the same compression but require calibration.
 
 ## 10.7 Inference Latency on CPU
@@ -55,7 +55,7 @@ All main results from a single seed. SE ~1.69%.
 
 ## 10.10 Heuristic Hyperparameters
 
-$r_\text{max} = {{RANK}}$ and $\eta = {{ENERGY}}$ are empirical.
+$r_\text{max} = 32$ and $\eta = 45.2$ are empirical.
 
 ## 10.11 No Comparison with Some Baselines
 

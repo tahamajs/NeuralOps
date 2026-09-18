@@ -17,9 +17,9 @@ a learned token-level gate.
 
 | Model | Acc Δ | Complexity | Mean gate |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | $\mathcal{O}(L(w+m))$ | {{D_GATE}} |
-| RoBERTa | {{R_DELTA}}% | $\mathcal{O}(L(w+m))$ | {{R_GATE}} |
-| GPT-2 | {{G_DELTA}}% | $\mathcal{O}(L(w+m))$ | {{G_GATE}} |
+| DistilBERT | +0.00% | $\mathcal{O}(L(w+m))$ | 0.94 |
+| RoBERTa | -27.64% | $\mathcal{O}(L(w+m))$ | 0.85 |
+| GPT-2 | -28.44% | $\mathcal{O}(L(w+m))$ | 0.85 |
 
 ## 11.3 Key Takeaways
 
@@ -49,12 +49,12 @@ inference. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed NHA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed NHA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

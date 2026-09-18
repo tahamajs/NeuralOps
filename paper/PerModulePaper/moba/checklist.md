@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `mamba/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module mamba`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Critical Honesty Checks
 - [ ] **Docstring O(L) claim is contradicted in paper** — paper says O(L²d)

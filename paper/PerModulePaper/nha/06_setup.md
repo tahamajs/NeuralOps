@@ -33,21 +33,21 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Window size $w$ | {{WINDOW_SIZE}} |
-| RFF features $m$ | {{RFF_FEATURES}} |
-| Gate bias | {{GATE_BIAS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Window size $w$ | 128 |
+| RFF features $m$ | 64 |
+| Gate bias | 0.0 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -79,17 +79,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_nha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations

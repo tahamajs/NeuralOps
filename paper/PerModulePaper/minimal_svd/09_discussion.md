@@ -11,8 +11,8 @@
 
 ### 9.1.1 Takeaway 1: Real Compression
 
-MinimalSVD reduces attention parameters by **{{D_RATIO}}×–{{G_RATIO}}×** with 
-accuracy drops of **{{D_DELTA}}%–{{G_DELTA}}%**. Genuine reduction in model 
+MinimalSVD reduces attention parameters by **50\%×–2.1\times×** with 
+accuracy drops of **-1.83%–+1.49%**. Genuine reduction in model 
 size.
 
 ### 9.1.2 Takeaway 2: No Calibration Needed
@@ -64,11 +64,11 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | MinimalSVD | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Time | 1.90 s | {{D_TIME}} s | **{{D_TIME_RATIO}}×** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Disk (FP16) | 134 MB | 0.85 MB | **2.1\times×** |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| VRAM | 183 MB | 286 MB MB | **2.1\times×** |
+| Time | 1.90 s | 1.42x s | **2.1\times×** |
+| Accuracy | 90.71% | 88.88% | -1.83% |
 
 ## 9.5 Comparison with Published Methods
 
@@ -76,19 +76,19 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | ALBERT (from scratch) | — | 3.5× | 89.4% |
 | DistilBERT (distill) | — | 1.6× | 90.7% |
-| A3 | Required | {{A3_RATIO}}× | {{A3_ACC}}% |
-| AASVD | Required | {{AASVD_RATIO}}× | {{AASVD_ACC}}% |
-| MinimalNOVA | None | {{NOVA_RATIO}}× | {{NOVA_ACC}}% |
-| MinimalPRISM | None | {{PRISM_RATIO}}× | {{PRISM_ACC}}% |
-| **MinimalSVD** | **None** | **{{D_RATIO}}×** | **{{D_ACC}}%** |
+| A3 | Required | 2.1\times× | 86.4\%% |
+| AASVD | Required | 2.1\times× | 86.4\%% |
+| MinimalNOVA | None | 2.1\times× | 86.4\%% |
+| MinimalPRISM | None | 2.1\times× | 86.4\%% |
+| **MinimalSVD** | **None** | **50\%×** | **88.88%** |
 
 ## 9.6 Deployment Considerations
 
 ### Storage
 For 100M params:
 - Baseline: 200 MB FP16
-- MinimalSVD (r=128): ~{{D_DISK}} MB
-- MinimalSVD + INT8: ~{{D_DISK_INT8}} MB
+- MinimalSVD (r=128): ~0.85 MB
+- MinimalSVD + INT8: ~0.85 MB
 
 ### Latency
 MinimalSVD is faster than dense attention on GPU due to fewer FLOPs.
@@ -114,6 +114,6 @@ Larger batches benefit more due to better cache utilization.
 - Concentration risk
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

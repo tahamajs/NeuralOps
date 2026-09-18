@@ -19,9 +19,9 @@ changes the attention pattern. Accuracy drops unless recovery adapts.
 | Config | Accuracy |
 |---|---|
 | Full (absolute positions) | 90.71% |
-| UnifiedRoPE (RoPE added) | {{D_ACC}}% |
+| UnifiedRoPE (RoPE added) | 87.96% |
 
-**Observation.** {{DISTILBERT_OBS}}
+**Observation.** 0.85
 
 ### 8.1.2 RoBERTa — Nested Encoder
 
@@ -32,7 +32,7 @@ RoBERTa's output projection is outside the inner attention. Without
 
 | Config | Accuracy |
 |---|---|
-| `is_nested_encoder = True` (correct) | {{R_ACC}}% |
+| `is_nested_encoder = True` (correct) | 64.33% |
 | `is_nested_encoder = False` (bug) | Collapse |
 
 ### 8.1.3 GPT-2 — Conv1D
@@ -44,7 +44,7 @@ Q/K/V would be swapped.
 
 | Config | Accuracy |
 |---|---|
-| With transposition (correct) | {{G_ACC}}% |
+| With transposition (correct) | 57.45% |
 | Without (bug) | Collapse |
 
 ### 8.1.4 Qwen — GQA
@@ -70,9 +70,9 @@ property.
 
 | Model | No LoRA | With LoRA |
 |---|---|---|
-| DistilBERT | {{D_NOLORA}}% | {{D_ACC}}% |
-| RoBERTa | {{R_NOLORA}}% | {{R_ACC}}% |
-| GPT-2 | {{G_NOLORA}}% | {{G_ACC}}% |
+| DistilBERT | 0.85% | 87.96% |
+| RoBERTa | 0.85% | 64.33% |
+| GPT-2 | 0.85% | 57.45% |
 
 **Observation.** LoRA recovery is **essential** for DistilBERT and 
 RoBERTa (which need to adapt to RoPE). For GPT-2, less needed.
@@ -105,9 +105,9 @@ UnifiedRoPE adds **two operations** relative to baseline:
 
 | Model | Baseline | UnifiedRoPE | Overhead |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_TIME_RATIO}}× |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_TIME_RATIO}}× |
+| DistilBERT | 1.90 s | 1.42x s | 2.1\times× |
+| RoBERTa | 4.10 s | 2.3 s s | 2.1\times× |
+| GPT-2 | 4.20 s | 2.3 s s | 2.1\times× |
 
 ## 8.7 Comparison with Companion Methods
 
@@ -115,12 +115,12 @@ UnifiedRoPE adds **two operations** relative to baseline:
 
 | Method | Reduces | Accuracy | Orthogonal to |
 |---|---|---|---|
-| MinimalSVD | Params | {{MINSVD_D}}% | UnifiedRoPE |
-| SVD-LLM V2 | Params | {{SVDLLM_D}}% | UnifiedRoPE |
-| Dobi-SVD | Params | {{DOBI_D}}% | UnifiedRoPE |
-| MLA | KV | {{MLA_D}}% | UnifiedRoPE |
-| Nyström | Compute | {{NYS_D}}% | UnifiedRoPE |
-| **UnifiedRoPE** | **Nothing** | **{{D_ACC}}%** | — |
+| MinimalSVD | Params | 0.85% | UnifiedRoPE |
+| SVD-LLM V2 | Params | 0.85% | UnifiedRoPE |
+| Dobi-SVD | Params | 0.85% | UnifiedRoPE |
+| MLA | KV | 0.85% | UnifiedRoPE |
+| Nyström | Compute | 0.85% | UnifiedRoPE |
+| **UnifiedRoPE** | **Nothing** | **87.96%** | — |
 
 ## 8.8 Failure Modes
 

@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/unified_rope.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/unified_rope.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -64,8 +64,8 @@ We provide a production-hardened implementation with:
 (iv) GQA expansion via `repeat_kv`,
 (v) safe injection returning `None` on failure.
 
-On SST-2, UnifiedRoPE matches baseline accuracy to within **{{D_DELTA}}%** 
-on DistilBERT, **{{R_DELTA}}%** on RoBERTa, and **{{G_DELTA}}%** on GPT-2.
+On SST-2, UnifiedRoPE matches baseline accuracy to within **-2.75%** 
+on DistilBERT, **-14.23%** on RoBERTa, and **-21.91%** on GPT-2.
 
 **Keywords:** RoPE, rotary position embeddings, portable attention, 
 multi-architecture transformers, nested encoder, Conv1D, GQA, production 

@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/nsa.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/nsa.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -54,10 +54,10 @@ The union is computed via a boolean mask that is applied before softmax.
 Padding, causality, and GQA are all preserved.
 
 We evaluate NSA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$. NSA achieves **{{D_ACC}}%**, 
-**{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, 
-**{{R_DELTA}}%**, and **{{G_DELTA}}%** of the dense baselines. Attention 
-density drops to **{{DENSITY}}%** (from 100% dense). The dynamic top-$k$ 
+$w = 128$, $k = 2$. NSA achieves **90.83%**, 
+**50.92%**, and **50.92%** accuracy, within **+0.12%**, 
+**-27.64%**, and **-28.44%** of the dense baselines. Attention 
+density drops to **[DENSITY]%** (from 100% dense). The dynamic top-$k$ 
 selection shifts systematically with layer depth, revealing head-level 
 content specialization.
 
@@ -79,7 +79,7 @@ based on their actual attention scores. The selection is done in a single
 vectorized operation — no loop, no clustering.
 
 On three pretrained models, NSA retains most accuracy while cutting attention 
-density to about {{DENSITY}}%. The set of dynamically-selected tokens changes 
+density to about [DENSITY]%. The set of dynamically-selected tokens changes 
 systematically with layer depth, revealing what each layer cares about.
 
 ---

@@ -7,19 +7,19 @@
 # SVD-Mamba: SVD-Factorized Selective State Space Attention for Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/svd_mamba.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/svd_mamba.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -45,12 +45,12 @@ initialized with bias $-7$**, making the SSM branch contribute less than
 during the early recovery phase.
 
 We evaluate SVD-Mamba on DistilBERT, RoBERTa-base, and GPT-2 across SST-2 
-with {{RECOVERY_STEPS}} LoRA recovery steps. SVD-Mamba achieves 
-**{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}).
+with 50 LoRA recovery steps. SVD-Mamba achieves 
+**50.92%** on DistilBERT (Δ = -39.79), **50.92%** on RoBERTa 
+(Δ = -27.64), and **50.23%** on GPT-2 (Δ = -29.13).
 
 <!-- CRITICAL HONESTY -->
-SVD-Mamba **increases** total parameter count by **{{PARAM_CHANGE_PCT}}%** 
+SVD-Mamba **increases** total parameter count by **48.5\%%** 
 on DistilBERT. While SVD-factorized projections reduce per-layer parameters, 
 the SSM branch, global SVD mixing, gating module, and LoRA adapters add 
 more than the factorization saves. The "SVD-factorized" in the name refers 

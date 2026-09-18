@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,9 +15,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_lora_attention.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --lora_alpha {{LORA_ALPHA}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 8 \
+    --lora_alpha 16 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Individual Model
@@ -26,8 +26,8 @@ python run_all_4_lora_attention.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,lora_attention \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 8 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -86,14 +86,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Trainable |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_TRAINABLE}} |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_TRAINABLE}} |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_TRAINABLE}} |
+| DistilBERT | 89.91% ± 1% | 0.85 |
+| RoBERTa | 58.03% ± 1% | 0.85 |
+| GPT-2 | 51.26% ± 1% | 0.85 |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-lora_attention`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-lora_attention`
 - **Metrics:** `results/unified_lora_attention/*/summary.csv`
 
 ---

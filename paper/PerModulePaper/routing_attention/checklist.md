@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `routing/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module routing`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

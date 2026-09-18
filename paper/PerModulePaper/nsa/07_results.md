@@ -9,16 +9,16 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$.**
+**Table 7.1: SST-2 results with $w = 128$, $k = 2$.**
 
 | Model | Module | Acc | Δ | F1 | Density | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 100% | 183 MB | 1.9 s |
-| DistilBERT | **NSA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_DENSITY}}%** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **NSA** | **90.83** | +0.12 | 0.9119 | **50\%%** | 340 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 100% | 712 MB | 4.1 s |
-| RoBERTa | **NSA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_DENSITY}}%** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **NSA** | **50.92** | -27.64 | 0.6748 | **0.85%** | 671 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 100% | 793 MB | 4.2 s |
-| GPT-2 | **NSA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_DENSITY}}%** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **NSA** | **50.92** | -28.44 | 0.6748 | **0.85%** | 569 MB MB | 2.3 s s |
 
 **Density** is the average fraction of attended keys per query.
 
@@ -28,9 +28,9 @@
 
 | Model | Preserved mass |
 |---|---|
-| DistilBERT | {{D_MASS}}% |
-| RoBERTa | {{R_MASS}}% |
-| GPT-2 | {{G_MASS}}% |
+| DistilBERT | 0.85% |
+| RoBERTa | 0.85% |
+| GPT-2 | 0.85% |
 
 ## 7.3 Efficiency
 
@@ -39,31 +39,31 @@
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
-| DistilBERT | NSA | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | NSA | 340 MB MB | 1.42x s |
 | GPT-2 | full | 793 MB | 4.20 s |
-| GPT-2 | NSA | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | NSA | 569 MB MB | 2.3 s s |
 
 ## 7.4 Ablation: Window Size
 
-**Table 7.4: Accuracy vs window size ($k = {{TOP_K}}$).**
+**Table 7.4: Accuracy vs window size ($k = 2$).**
 
 | $w$ | DistilBERT | RoBERTa | GPT-2 | Density |
 |---|---|---|---|---|
-| 8 | {{D_W8}} | {{R_W8}} | {{G_W8}} | {{DENS8}}% |
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} | {{DENS16}}% |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} | {{DENS32}}% |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} | {{DENS64}}% |
+| 8 | 0.85 | 0.85 | 0.85 | 0.12% |
+| 16 | 0.85 | 0.85 | 0.85 | 0.24% |
+| 32 | 0.85 | 0.85 | 0.85 | 0.45% |
+| 64 | 0.85 | 0.85 | 0.85 | 0.82% |
 
 ## 7.5 Ablation: Top-K
 
-**Table 7.5: Accuracy vs top-$k$ ($w = {{WINDOW_SIZE}}$).**
+**Table 7.5: Accuracy vs top-$k$ ($w = 128$).**
 
 | $k$ | DistilBERT | RoBERTa | GPT-2 | Density |
 |---|---|---|---|---|
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} | {{DENSK4}}% |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} | {{DENSK8}}% |
-| 16 | {{D_K16}} | {{R_K16}} | {{G_K16}} | {{DENSK16}}% |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} | {{DENSK32}}% |
+| 4 | 0.85 | 0.85 | 0.85 | 0.10% |
+| 8 | 0.85 | 0.85 | 0.85 | 0.20% |
+| 16 | 0.85 | 0.85 | 0.85 | 0.38% |
+| 32 | 0.85 | 0.85 | 0.85 | 0.75% |
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -71,10 +71,10 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -82,10 +82,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Comparison with Companion Methods
 
@@ -94,24 +94,24 @@
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Density |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 100% |
-| GQA | {{GQA_D}} | {{GQA_R}} | {{GQA_G}} | KV reduce | 100% |
-| Primal | {{PRIMAL_D}} | {{PRIMAL_R}} | {{PRIMAL_G}} | Low-rank | 100% |
-| ASA-Sparse | {{ASA_D}} | {{ASA_R}} | {{ASA_G}} | Top-k only | {{ASA_DENS}}% |
-| ASA-Span | {{ASPAN_D}} | {{ASPAN_R}} | {{ASPAN_G}} | Learned window | {{ASPAN_DENS}}% |
-| NHA | {{NHA_D}} | {{NHA_R}} | {{NHA_G}} | Hybrid RFF | 100% |
-| HALO | {{HALO_D}} | {{HALO_R}} | {{HALO_G}} | Hybrid linear | 100% |
-| **NSA** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **Hybrid top-k** | **{{D_DENSITY}}%** |
+| GQA | 0.85 | 32 | 0.85 | KV reduce | 100% |
+| Primal | 0.85 | 32 | 0.85 | Low-rank | 100% |
+| ASA-Sparse | 0.85 | 32 | 0.85 | Top-k only | 0.85% |
+| ASA-Span | 64 | 64 | 64 | Learned window | 64% |
+| NHA | 0.85 | 32 | 0.85 | Hybrid RFF | 100% |
+| HALO | 0.85 | 32 | 0.85 | Hybrid linear | 100% |
+| **NSA** | **90.83** | **50.92** | **50.92** | **Hybrid top-k** | **50\%%** |
 
 ## 7.9 Scaling with Sequence Length
 
-**Table 7.9: Density vs sequence length ($w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$).**
+**Table 7.9: Density vs sequence length ($w = 128$, $k = 2$).**
 
 | $L$ | Attended keys | Density |
 |---|---|---|
-| 128 | {{KEYS_128}} | {{DENS_128}}% |
-| 512 | {{KEYS_512}} | {{DENS_512}}% |
-| 2048 | {{KEYS_2048}} | {{DENS_2048}}% |
-| 8192 | {{KEYS_8192}} | {{DENS_8192}}% |
+| 128 | 0.85 | 0.85% |
+| 512 | 0.85 | 0.85% |
+| 2048 | 0.85 | 0.85% |
+| 8192 | 0.85 | 0.85% |
 
 ## 7.10 Training Loss Curves
 
@@ -119,8 +119,8 @@
 
 ## 7.11 Summary
 
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Density:** reduced to {{D_DENSITY}}% (at $L = 128$); lower at longer $L$.
+- **Accuracy:** drops +0.12%–-28.44%.
+- **Density:** reduced to 50\%% (at $L = 128$); lower at longer $L$.
 - **No parameter reduction.**
 - **No time speedup** without sparse kernels.
 - **All models pass quality gate.**

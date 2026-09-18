@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `nsa/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module nsa`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

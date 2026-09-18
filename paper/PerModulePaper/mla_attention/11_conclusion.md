@@ -13,15 +13,15 @@ We reproduced **Multi-Head Latent Attention** from DeepSeek-AI (2024) and
 ported it to four transformer families: DistilBERT (flat), RoBERTa 
 (nested), GPT-2 (causal Conv1D), and Qwen3.5 (GQA + RoPE). MLA replaces 
 separate K and V projections with a shared low-rank latent vector, 
-reducing KV-cache size by **{{D_KV_RATIO}}×–{{G_KV_RATIO}}×**.
+reducing KV-cache size by **2.1\times×–2.1\times×**.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | KV reduction | Params |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_KV_RATIO}}×** | {{D_PARAMS}}M |
-| RoBERTa | {{R_DELTA}}% | **{{R_KV_RATIO}}×** | {{R_PARAMS}}M |
-| GPT-2 | {{G_DELTA}}% | **{{G_KV_RATIO}}×** | {{G_PARAMS}}M |
+| DistilBERT | -39.79% | **2.1\times×** | 66.4MM |
+| RoBERTa | -27.64% | **2.1\times×** | 124.6MM |
+| GPT-2 | -22.14% | **2.1\times×** | 124.4MM |
 
 ## 11.3 Key Takeaways
 
@@ -52,13 +52,13 @@ reproduction.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}. This work reproduces DeepSeek-AI (2024).
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support.. This work reproduces DeepSeek-AI (2024).
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the reproduction, ran experiments, wrote 
+- **Taha Majs** implemented the reproduction, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

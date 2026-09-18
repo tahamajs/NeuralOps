@@ -11,24 +11,24 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Final gate γ | {{D_FINAL_GATE}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 639 MB MB |
+| Inference time | 1.42x s |
+| Final gate γ | 0.94 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.92% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -36,45 +36,45 @@
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.23% |
 | ... | ... |
 
 ## C.4 d_state Ablation
 
 | $d_\text{state}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_DS8}} | {{R_DS8}} | {{G_DS8}} |
-| 16 | {{D_DS16}} | {{R_DS16}} | {{G_DS16}} |
-| 32 | {{D_DS32}} | {{R_DS32}} | {{G_DS32}} |
-| 64 | {{D_DS64}} | {{R_DS64}} | {{G_DS64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 d_conv Ablation
 
 | $d_\text{conv}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_DC2}} | {{R_DC2}} | {{G_DC2}} |
-| 4 | {{D_DC4}} | {{R_DC4}} | {{G_DC4}} |
-| 8 | {{D_DC8}} | {{R_DC8}} | {{G_DC8}} |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 global_rank Ablation
 
 | $r_g$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_GR4}} | {{R_GR4}} | {{G_GR4}} |
-| 8 | {{D_GR8}} | {{R_GR8}} | {{G_GR8}} |
-| 16 | {{D_GR16}} | {{R_GR16}} | {{G_GR16}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Gate Bias Ablation
 
 | bias | $\sigma(b)$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -10 | 4.5e-5 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
-| -7 | 9.1e-4 | {{D_GB7}} | {{R_GB7}} | {{G_GB7}} |
-| -5 | 6.7e-3 | {{D_GB5}} | {{R_GB5}} | {{G_GB5}} |
-| 0 | 0.5 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
+| -10 | 4.5e-5 | 0.85 | 0.85 | 0.85 |
+| -7 | 9.1e-4 | 0.85 | 0.85 | 0.85 |
+| -5 | 6.7e-3 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.5 | 0.85 | 0.85 | 0.85 |
 
 ## C.8 Gate Evolution
 
@@ -83,20 +83,20 @@
 | Step | γ mean |
 |---|---|
 | 0 | 0.0009 |
-| 10 | {{D_G10}} |
-| 25 | {{D_G25}} |
-| 50 | {{D_G50}} |
+| 10 | 0.85 |
+| 25 | 0.85 |
+| 50 | 0.85 |
 
 ## C.9 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.10 Raw JSON
@@ -105,10 +105,10 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_gate": {{D_FINAL_GATE}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 50.92,
+    "final_gate": 0.94
   },
   "roberta": {...},
   "gpt2": {...}

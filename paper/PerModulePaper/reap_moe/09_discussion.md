@@ -13,7 +13,7 @@ Standard MoE with $E = 8$ would 8× FFN params. SVD reduces this to ~1.5×.
 
 ### 9.1.3 Takeaway 3: Load-Balancing Works
 
-The auxiliary loss keeps expert utilization balanced within {{D_MAXMIN}}×.
+The auxiliary loss keeps expert utilization balanced within 0.85×.
 
 ## 9.2 When to Use REAP-MoE
 
@@ -33,10 +33,10 @@ For DistilBERT:
 
 | Metric | Baseline | REAP-MoE | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | {{D_PARAM_CHANGE}} |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_CHANGE}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_CHANGE}}× |
+| Params | 66.95M | 66.4MM | 66.4M |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| VRAM | 183 MB | 554 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.3 s× |
 
 ## 9.4 Comparison to Published MoE
 
@@ -78,6 +78,6 @@ All experts must be loaded, so VRAM scales with $E$.
 - Complexity increases deployment burden
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

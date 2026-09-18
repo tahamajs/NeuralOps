@@ -1,3 +1,8 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{proxsparse_pruner}.
+\subsection{Algorithmic Formulation}
+The \texttt{proxsparse_pruner} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{ProxSparse: regularized learning of semi-structured sparsity. Registered as 'proxsparse'.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

@@ -66,7 +66,7 @@ papers/
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-16
@@ -1433,9 +1433,9 @@ We thank the anonymous reviewers for their constructive feedback and computation
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, wrote 
+- **Taha Majs** designed the method, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1551,7 +1551,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1634,13 +1634,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -2643,7 +2643,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `vspec/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module vspec`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

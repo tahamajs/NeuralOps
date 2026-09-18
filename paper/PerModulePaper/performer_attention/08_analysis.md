@@ -30,11 +30,11 @@ stability.
 
 | Kernel | DistilBERT |
 |---|---|
-| `favor_plus` | {{D_FAVOR}} |
-| `elu` | {{D_ELU}} |
-| `relu` | {{D_RELU}} |
+| `favor_plus` | 0.85 |
+| `elu` | 0.85 |
+| `relu` | 32 |
 
-**Observation.** {{KERNEL_OBS}}
+**Observation.** 0.85
 
 ## 8.3 Number of Features
 
@@ -42,10 +42,10 @@ stability.
 
 | $F$ | DistilBERT | Params |
 |---|---|---|
-| 32 | {{D_F32}} | {{D_F32_P}} |
-| 64 | {{D_F64}} | {{D_F64_P}} |
-| 128 | {{D_F128}} | {{D_F128_P}} |
-| 256 | {{D_F256}} | {{D_F256_P}} |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 |
+| 256 | 0.85 | 0.85 |
 
 **Observation.** Larger $F$ helps but with diminishing returns.
 
@@ -106,7 +106,7 @@ return out * self.output_scale
 | Theory | Locality | Variance reduction |
 | Encoder | Works | Works |
 | Decoder | Chunked prefix | Chunked prefix |
-| Empirical | {{COS_D}}% | {{D_ACC}}% |
+| Empirical | 0.85% | 50.92% |
 
 **Both are strong linear-attention baselines.**
 

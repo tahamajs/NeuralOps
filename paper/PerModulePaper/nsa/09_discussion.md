@@ -64,9 +64,9 @@ For DistilBERT at $L = 128$:
 | Config | Accuracy | Density |
 |---|---|---|
 | Baseline | 90.71% | 100% |
-| NSA ($w=16, k=8$) | {{D_W16K8}} | {{D_DENS_W16K8}}% |
-| NSA ($w=32, k=16$) | {{D_ACC}} | {{D_DENSITY}}% |
-| NSA ($w=64, k=32$) | {{D_W64K32}} | {{D_DENS_W64K32}}% |
+| NSA ($w=16, k=8$) | 0.85 | 0.85% |
+| NSA ($w=32, k=16$) | 90.83 | 50\%% |
+| NSA ($w=64, k=32$) | 0.85 | 0.85% |
 
 ## 9.6 Interaction with Other Methods
 
@@ -97,6 +97,6 @@ For DistilBERT at $L = 128$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

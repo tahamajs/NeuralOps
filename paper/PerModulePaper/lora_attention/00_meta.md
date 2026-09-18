@@ -1,19 +1,19 @@
 # LoRA Attention: Production-Hardened Parameter-Efficient Attention Fine-Tuning Across Four Transformer Architectures
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/lora_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/lora_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -31,15 +31,15 @@ RoBERTa (nested), GPT-2 (Conv1D), and Qwen3.5 (GQA + RoPE).
 We are explicit that **this module does not reduce parameter count** — LoRA 
 adapters add $r_L (2d + 2H d_h)$ parameters per layer on top of the frozen 
 $4 d^2$ base projection parameters. What it does reduce is:
-(i) **trainable parameters** by a factor of roughly **${{TRAIN_REDUCTION}}×$**,
-(ii) **training memory** by a factor of roughly **${{MEM_REDUCTION}}×$**, and
+(i) **trainable parameters** by a factor of roughly **$[TRAIN_REDUCTION]×$**,
+(ii) **training memory** by a factor of roughly **$[MEM_REDUCTION]×$**, and
 (iii) **training time**.
 
-On SST-2, LoRA Attention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using only {{RECOVERY_STEPS}} steps and 
-{{TRAINABLE_PARAMS}} trainable parameters.
+On SST-2, LoRA Attention achieves **89.91%** on DistilBERT 
+(baseline 0.85%, Δ = -0.80), **58.03%** on RoBERTa (baseline 
+32%, Δ = -20.53), and **51.26%** on GPT-2 (baseline 
+0.85%, Δ = -28.10), using only 50 steps and 
+66.4M trainable parameters.
 
 We position LoRA Attention as a **recovery mechanism** for compression 
 methods (SVD, pruning, quantization) — any compressed model can be equipped 

@@ -23,24 +23,24 @@
 
 | Parameter | Value |
 |---|---|
-| `svd_energy` | {{SVD_ENERGY}} (default 0.95) |
-| `svd_min_rank` | {{SVD_MIN_RANK}} (default 4) |
-| `svd_max_rank` | {{SVD_MAX_RANK}} (default 64) |
+| `svd_energy` | 95\% (default 0.95) |
+| `svd_min_rank` | 32 (default 4) |
+| `svd_max_rank` | 64 (default 64) |
 | `num_kernel_heads` | Auto: 2/3 of heads |
 | `num_full_heads` | Auto: 1/3 of heads |
-| `rff_features` | {{RFF_FEATURES}} (default 256) |
-| `softpick_temperature` | {{TEMPERATURE}} (default 1.0) |
+| `rff_features` | 64 (default 256) |
+| `softpick_temperature` | 1.0 (default 1.0) |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -65,23 +65,23 @@
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{SVD_ENERGY}} \
-    --svd_max_rank {{SVD_MAX_RANK}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --svd_energy 95\% \
+    --svd_max_rank 64 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 

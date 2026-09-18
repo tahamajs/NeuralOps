@@ -50,10 +50,10 @@ For DistilBERT at L = 512:
 
 | Metric | Baseline | MoE-DeltaKV |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M |
-| Attention FLOPs | 100% | {{FLOP_RATIO}}% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Accuracy | 90.71% | {{D_ACC}}% |
+| Params | 66.95M | 66.4MM |
+| Attention FLOPs | 100% | 2.1\times% |
+| Inference time | 1.9 s | 1.42x s |
+| Accuracy | 90.71% | 86.47% |
 | KV memory | unchanged | **unchanged** |
 
 ## 9.5 Comparison with Published Methods

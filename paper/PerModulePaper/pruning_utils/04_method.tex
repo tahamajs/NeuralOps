@@ -1,3 +1,16 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{pruning_utils}.
+\subsection{Algorithmic Formulation}
+The \texttt{pruning_utils} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Pruning Utilities and Saliency Estimation for Structural Pruning and Layer Shedding.
+
+Provides shared mathematical routines:
+1. First-order Taylor expansion saliency: S\_ij = |W\_ij * g\_ij| or data-driven S\_ij = |W\_ij| * E[|x\_j|]
+2. Second-order Empirical Hessian / Inverse Hessian saliency: S\_ij = |W\_ij|^2 / [H^-1]\_jj
+3. Semi-structured 2:4 sparsity projection: Pi\_2:4(W, S)
+4. Block-structured sparsity projection: Pi\_BxB(W, S)
+5. Layer shedding sensitivity / residual magnitude metrics
+6. Fallback calibration data generation}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

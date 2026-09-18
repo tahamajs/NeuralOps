@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `performer/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module performer`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

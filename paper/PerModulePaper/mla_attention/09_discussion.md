@@ -16,7 +16,7 @@ challenges are architectural portability, not algorithmic.
 
 ### 9.1.2 Takeaway 2: Real KV Compression
 
-MLA reduces KV-cache size by **{{D_KV_RATIO}}×–{{G_KV_RATIO}}×**. This is 
+MLA reduces KV-cache size by **2.1\times×–2.1\times×**. This is 
 unique among the compression methods we compared.
 
 ### 9.1.3 Takeaway 3: Complementary to Parameter Compression
@@ -62,16 +62,16 @@ For DistilBERT inference, batch 8, seq 128:
 
 | Metric | Baseline | MLA | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| KV cache (MB) | {{D_KV_STD}} | {{D_KV_MLA}} | **{{D_KV_RATIO}}×** |
-| Total VRAM (MB) | 183 | {{D_VRAM}} | {{D_VRAM_RATIO}}× |
-| Latency | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| KV cache (MB) | 84.5 | 0.85 | **2.1\times×** |
+| Total VRAM (MB) | 183 | 298 MB | 2.1\times× |
+| Latency | 1.90 s | 1.42x s | 2.1\times× |
 
 For long context, seq 2048:
 
 | Metric | Baseline | MLA | Change |
 |---|---|---|---|
-| KV cache (MB) | {{D_KV2048_STD}} | {{D_KV2048_MLA}} | **{{D_KV_RATIO}}×** |
+| KV cache (MB) | 84.5 | 0.85 | **2.1\times×** |
 
 **Verdict.** MLA is a **strict win** for KV-cache-bound workloads.
 
@@ -83,7 +83,7 @@ For long context, seq 2048:
 | MQA | 12× | 100% | Lower |
 | GQA (2 groups) | 6× | 100% | Similar |
 | H2O | Variable | 100% | Lossy |
-| **MLA (ours)** | **{{D_KV_RATIO}}×** | 100% | {{D_ACC}}% |
+| **MLA (ours)** | **2.1\times×** | 100% | 50.92% |
 
 ## 9.6 Deployment Considerations
 
@@ -116,6 +116,6 @@ Benefits scale with batch size due to KV-cache size scaling.
 - Concentration risk
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

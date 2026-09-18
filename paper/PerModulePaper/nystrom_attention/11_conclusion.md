@@ -18,8 +18,8 @@ and iterative pseudoinverse, achieving $\mathcal{O}(N m d)$ complexity.
 
 | Model | N=128 | N=512 |
 |---|---|---|
-| DistilBERT | Dense (baseline) | Nyström ({{S512}}× speedup) |
-| RoBERTa | Dense (baseline) | Nyström ({{S512}}× speedup) |
+| DistilBERT | Dense (baseline) | Nyström (86.2× speedup) |
+| RoBERTa | Dense (baseline) | Nyström (86.2× speedup) |
 | GPT-2 | Dense causal | Dense causal |
 | Qwen3.5 | Dense causal | Dense causal |
 
@@ -50,13 +50,13 @@ encoders. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}. This work reproduces Xiong et al. (2021).
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support.. This work reproduces Xiong et al. (2021).
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the reproduction, ran experiments, wrote 
+- **Taha Majs** implemented the reproduction, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

@@ -130,7 +130,7 @@ extraction fails. This is critical for production correctness.
 - **A systematic evaluation.** Benchmark on three models on SST-2 with 
   ablations over $r_\text{max}$, $\eta$, and LoRA rank.
 - **Full reproducibility.** Code, checkpoints, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.5 Paper Organization
 

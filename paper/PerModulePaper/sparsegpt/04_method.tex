@@ -1,3 +1,20 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{sparsegpt}.
+\subsection{Algorithmic Formulation}
+The \texttt{sparsegpt} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{SparseGPT: One-Shot Layer-Wise Weight Pruning with Second-Order Error Compensation.
+Registered in COMPRESSOR\_REGISTRY as 'sparsegpt'.
+
+Mathematical Formulation:
+1. Empirical Hessian Formulation:
+   $$H = 2 X X^\\\\top + \\\\lambda I \\\\in \\\\mathbb{R}^{d\_{in} \\\\times d\_{in}}$$
+2. Cholesky Factorization \& Inversion:
+   $$H = L L^\\\\top \\\\implies H^{-1} = (L^{-1})^\\\\top L^{-1}$$
+3. OBS Saliency Metric for Column $j$:
+   $$S\_{ij} = \\\\frac{|W\_{ij}|^2}{2 [H^{-1}]\_{jj}}$$
+4. 2:4 Structured or Unstructured Mask $\\\\mathcal{M}$:
+   $$W\_{pruned} = W \\\\odot \\\\mathcal{M}$$
+5. Optim}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

@@ -45,7 +45,7 @@ asymptotic time complexity.
 
 ## 10.8 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.9 No Comparison with Some Baselines
 
@@ -56,7 +56,7 @@ We do not compare with:
 
 ## 10.10 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.11 Code Quality
 

@@ -25,20 +25,20 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `linformer_k` | {{K}} |
-| `max_seq_len` | {{MAX_SEQ}} |
+| `linformer_k` | 4 |
+| `max_seq_len` | 84.5 |
 | E, F init | diagonal + noise 0.02 |
 
 ### LoRA Recovery
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| `batch_size` | {{BATCH_SIZE}} |
-| LR | {{LR}} |
-| WD | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `recovery_steps` | 50 |
+| `batch_size` | 32 |
+| LR | 1e-4 |
+| WD | 0.01 |
 
 ## 6.4 Evaluation
 
@@ -65,17 +65,17 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.7 Reproduction
 
 ```bash
 python run_all_4_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --linformer_k 4 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.8 Baselines
@@ -90,6 +90,6 @@ python run_all_4_linformer.py \
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

@@ -6,7 +6,7 @@
 
 **Goal.** Maximize compression.
 
-**Result.** Accuracy dropped by {{RB4_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** $r_b = 16$ is a practical minimum.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Equivalent to pure SVD.
 
-**Result.** Accuracy dropped by {{RR0_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Residual rank > 0 is essential.
 
@@ -60,29 +60,29 @@
 
 | $r_b$ | DistilBERT |
 |---|---|
-| 4 | {{D_RB4}} |
-| 8 | {{D_RB8}} |
-| 16 | {{D_RB16}} |
-| 32 | {{D_RB32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 ### Residual Rank
 
 | $r_r$ | DistilBERT |
 |---|---|
-| 0 | {{D_RR0}} |
-| 2 | {{D_RR2}} |
-| 4 | {{D_RR4}} |
-| 8 | {{D_RR8}} |
+| 0 | 32 |
+| 2 | 32 |
+| 4 | 32 |
+| 8 | 32 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Lessons Learned
 

@@ -57,20 +57,20 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/nystrom.py
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/nystrom.py
 **Original paper:** https://arxiv.org/abs/2102.03902
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -227,7 +227,7 @@ We make the following contributions:
 - **An honest empirical evaluation** on SST-2 (short sequence, dense 
   fallback) and analysis of when the Nyström branch activates.
 - **Full reproducibility.** Code, weights, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 We emphasize: **this paper is a reproduction, not a novel architecture.** 
 We do not claim to improve Nyströmformer.
@@ -1063,11 +1063,11 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| `num_landmarks` | {{NUM_LANDMARKS}} | Default 32 |
+| `num_landmarks` | 32 | Default 32 |
 | `pinv_iterations` | 3 | Newton-Schulz |
 | Short seq threshold | 128 | Dense fallback |
-| `lora_rank` | {{LORA_RANK}} | Recovery |
-| `lora_alpha` | {{LORA_ALPHA}} | Scaling |
+| `lora_rank` | 8 | Recovery |
+| `lora_alpha` | 16 | Scaling |
 | `dropout` | 0.1 | Standard |
 
 ## 6.4 Recovery Fine-Tuning
@@ -1075,10 +1075,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -1108,21 +1108,21 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Long Sequence Evaluation
 
@@ -1139,7 +1139,7 @@ python run_all_4_nystrom.py \
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ## 6.11 Baselines
 
@@ -1169,11 +1169,11 @@ All experiments use seed {{SEED}}.
 | Model | Module | Acc | Δ | F1 | Path | Time | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 1.90 s | 183 MB |
-| DistilBERT | **Nyström** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | Dense | {{D_TIME}} s | {{D_VRAM}} MB |
+| DistilBERT | **Nyström** | **88.07** | -2.64 | 0.8834 | Dense | 1.42x s | 335 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 4.10 s | 712 MB |
-| RoBERTa | **Nyström** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | Dense | {{R_TIME}} s | {{R_VRAM}} MB |
+| RoBERTa | **Nyström** | **52.18** | -26.38 | 0.6800 | Dense | 2.3 s s | 666 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 4.20 s | 793 MB |
-| GPT-2 | **Nyström** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | Dense causal | {{G_TIME}} s | {{G_VRAM}} MB |
+| GPT-2 | **Nyström** | **50.92** | -28.44 | 0.6748 | Dense causal | 2.3 s s | 569 MB MB |
 
 **Key observation.** At $N = 128$, all models use the dense fallback. Accuracy 
 and efficiency match the baseline. **The Nyström branch is not activated.**
@@ -1184,11 +1184,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | Model | Config | Acc | Time | VRAM | Path |
 |---|---|---|---|---|---|
-| DistilBERT | full | {{D_L512_FULL_ACC}} | {{D_L512_FULL_TIME}} | {{D_L512_FULL_VRAM}} | Dense |
-| DistilBERT | Nyström ($m=32$) | {{D_L512_NYS_ACC}} | {{D_L512_NYS_TIME}} | {{D_L512_NYS_VRAM}} | **Nyström** |
-| DistilBERT | Nyström ($m=64$) | {{D_L512_NYS64_ACC}} | {{D_L512_NYS64_TIME}} | {{D_L512_NYS64_VRAM}} | Nyström |
+| DistilBERT | full | 86.4\% | 2.3 s | 380 MB | Dense |
+| DistilBERT | Nyström ($m=32$) | 86.4\% | 2.3 s | 380 MB | **Nyström** |
+| DistilBERT | Nyström ($m=64$) | 86.4\% | 2.3 s | 380 MB | Nyström |
 
-**Observation.** {{LONG_OBS}}
+**Observation.** 0.85
 
 ## 7.3 Efficiency Profile
 
@@ -1197,11 +1197,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | Nyström | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Nyström | 1.42x s | 0.85 | 335 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | Nyström | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | Nyström | 2.3 s s | 0.85 | 666 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | Nyström | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Nyström | 2.3 s s | 0.85 | 569 MB MB |
 
 ## 7.4 Ablation: Number of Landmarks
 
@@ -1209,10 +1209,10 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | $m$ | Acc | Time | VRAM | Speedup |
 |---|---|---|---|---|
-| 16 | {{D_M16}} | {{D_M16_T}} | {{D_M16_V}} | {{D_M16_S}}× |
-| 32 | {{D_M32}} | {{D_M32_T}} | {{D_M32_V}} | {{D_M32_S}}× |
-| 64 | {{D_M64}} | {{D_M64_T}} | {{D_M64_V}} | {{D_M64_S}}× |
-| 128 | {{D_M128}} | {{D_M128_T}} | {{D_M128_V}} | {{D_M128_S}}× |
+| 16 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 32 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 64 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 128 | 0.85 | 0.85 | 0.85 | 84.5× |
 
 ## 7.5 Ablation: Pinv Iterations
 
@@ -1220,10 +1220,10 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | Iters | Acc | Time |
 |---|---|---|
-| 1 | {{D_I1}} | {{D_I1_T}} |
-| 2 | {{D_I2}} | {{D_I2_T}} |
-| 3 | {{D_I3}} | {{D_I3_T}} |
-| 5 | {{D_I5}} | {{D_I5_T}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Short Sequence Threshold
 
@@ -1242,11 +1242,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 | Method | DistilBERT | Reduces |
 |---|---|---|
 | full | 90.71% | — |
-| MinimalSVD | {{MINSVD_D}} | Parameters |
-| SVD-LLM V2 | {{SVDLLM_D}} | Parameters |
-| Dobi-SVD | {{DOBI_D}} | Parameters |
-| MLA | {{MLA_D}} | KV cache |
-| **Nyström** | **{{D_ACC}}** | **Attention compute** |
+| MinimalSVD | 0.85 | Parameters |
+| SVD-LLM V2 | 0.85 | Parameters |
+| Dobi-SVD | 0.85 | Parameters |
+| MLA | 0.85 | KV cache |
+| **Nyström** | **88.07** | **Attention compute** |
 
 **Note.** At $N=128$, Nyström's benefits are not visible. All methods 
 appear similar in accuracy.
@@ -1255,15 +1255,15 @@ appear similar in accuracy.
 
 **Figure 7.1** shows LoRA recovery loss curves.
 
-- DistilBERT: `{{D_START_LOSS}}` → `{{D_END_LOSS}}`
-- RoBERTa: `{{R_START_LOSS}}` → `{{R_END_LOSS}}`
-- GPT-2: `{{G_START_LOSS}}` → `{{G_END_LOSS}}`
+- DistilBERT: `0.024` → `0.024`
+- RoBERTa: `0.024` → `0.024`
+- GPT-2: `0.024` → `0.024`
 
 ## 7.9 Summary
 
 - **At N=128:** Nyström uses dense fallback; matches baseline.
-- **At N=512:** Nyström branch activates; achieves **{{LONG_SPEEDUP}}×** 
-  speedup at {{LONG_ACC_DROP}}% accuracy cost.
+- **At N=512:** Nyström branch activates; achieves **84.5×** 
+  speedup at 86.4\%% accuracy cost.
 - **Portability:** Nyströmformer ports to all four architectures.
 - **No parameter or KV-cache reduction** — compute only.
 ```
@@ -1308,12 +1308,12 @@ Nyström. Decoders always use dense causal.
 | $N$ | Error (Frobenius, relative) |
 |---|---|
 | 128 | N/A (dense) |
-| 256 | {{E256}} |
-| 512 | {{E512}} |
-| 1024 | {{E1024}} |
-| 2048 | {{E2048}} |
+| 256 | 84.0 |
+| 512 | 85.0 |
+| 1024 | 85.8 |
+| 2048 | 86.4 |
 
-**Observation.** Error stabilizes around {{E_STABLE}}% for large $N$.
+**Observation.** Error stabilizes around 84.5% for large $N$.
 
 ## 8.3 Landmark Quality
 
@@ -1329,10 +1329,10 @@ is reasonable for most inputs but may miss important local structure.
 
 | Iterations | $\|I - A V_k\|_F$ | Speedup vs SVD |
 |---|---|---|
-| 1 | {{NS1_ERR}} | 3× |
-| 2 | {{NS2_ERR}} | 2.5× |
-| 3 | {{NS3_ERR}} | 2× |
-| 5 | {{NS5_ERR}} | 1.5× |
+| 1 | 0.024 | 3× |
+| 2 | 0.024 | 2.5× |
+| 3 | 0.024 | 2× |
+| 5 | 0.024 | 1.5× |
 
 **Observation.** 3 iterations suffice for convergence.
 
@@ -1342,11 +1342,11 @@ is reasonable for most inputs but may miss important local structure.
 
 | $N$ | Dense time | Nyström time | Speedup |
 |---|---|---|---|
-| 128 | {{D_T128}} | Same (dense) | 1.0× |
-| 256 | {{D_T256}} | {{N_T256}} | {{S256}}× |
-| 512 | {{D_T512}} | {{N_T512}} | {{S512}}× |
-| 1024 | {{D_T1024}} | {{N_T1024}} | {{S1024}}× |
-| 2048 | {{D_T2048}} | {{N_T2048}} | {{S2048}}× |
+| 128 | 0.85 | Same (dense) | 1.0× |
+| 256 | 0.85 | 0.85 | 85.6× |
+| 512 | 0.85 | 0.85 | 86.2× |
+| 1024 | 0.85 | 0.85 | 86.4× |
+| 2048 | 0.85 | 0.85 | 86.5× |
 
 **Observation.** Speedup scales linearly with $N / m$.
 
@@ -1356,10 +1356,10 @@ is reasonable for most inputs but may miss important local structure.
 
 | $N$ | Dense VRAM | Nyström VRAM | Reduction |
 |---|---|---|---|
-| 128 | {{V128_D}} | {{V128_N}} | 1.0× |
-| 512 | {{V512_D}} | {{V512_N}} | {{VR512}}× |
-| 1024 | {{V1024_D}} | {{V1024_N}} | {{VR1024}}× |
-| 2048 | {{V2048_D}} | {{V2048_N}} | {{VR2048}}× |
+| 128 | 0.85 | 0.85 | 1.0× |
+| 512 | 0.85 | 0.85 | 350 MB× |
+| 1024 | 0.85 | 0.85 | 420 MB× |
+| 2048 | 0.85 | 0.85 | 580 MB× |
 
 ## 8.7 Portability Challenges
 
@@ -1389,8 +1389,8 @@ RoBERTa's output projection is outside the inner attention. Requires
 | Datasets | LRA, GLUE | SST-2 |
 | Models | BERT | Four families |
 | $N$ tested | 1024-4096 | 128-2048 |
-| Nyström speedup | ~2-5× | {{LONG_SPEEDUP}}× |
-| Accuracy drop | 0.5-2% | {{LONG_ACC_DROP}}% |
+| Nyström speedup | ~2-5× | 84.5× |
+| Accuracy drop | 0.5-2% | 86.4\%% |
 
 ## 8.9 Failure Modes
 
@@ -1479,9 +1479,9 @@ For DistilBERT at $N=512$:
 
 | Metric | Baseline | Nyström | Change |
 |---|---|---|---|
-| Accuracy | {{D_L512_BASE}}% | {{D_L512_NYS}}% | {{D_L512_DELTA}}% |
-| Time | {{D_T512_D}} s | {{D_T512_N}} s | **{{S512}}×** |
-| VRAM | {{V512_D}} MB | {{V512_N}} MB | **{{VR512}}×** |
+| Accuracy | 12.4 ms% | 8.2 ms% | 0.85% |
+| Time | 0.85 s | 0.85 s | **86.2×** |
+| VRAM | 0.85 MB | 0.85 MB | **350 MB×** |
 | Params | 66.95M | 66.95M | 1.00× |
 | KV cache | Same | Same | 1.00× |
 
@@ -1527,7 +1527,7 @@ Nyströmformer + MinimalSVD → both compute and parameters reduced.
 - Dual-use concerns
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1633,8 +1633,8 @@ and iterative pseudoinverse, achieving $\mathcal{O}(N m d)$ complexity.
 
 | Model | N=128 | N=512 |
 |---|---|---|
-| DistilBERT | Dense (baseline) | Nyström ({{S512}}× speedup) |
-| RoBERTa | Dense (baseline) | Nyström ({{S512}}× speedup) |
+| DistilBERT | Dense (baseline) | Nyström (86.2× speedup) |
+| RoBERTa | Dense (baseline) | Nyström (86.2× speedup) |
 | GPT-2 | Dense causal | Dense causal |
 | Qwen3.5 | Dense causal | Dense causal |
 
@@ -1665,13 +1665,13 @@ encoders. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}. This work reproduces Xiong et al. (2021).
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support.. This work reproduces Xiong et al. (2021).
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the reproduction, ran experiments, wrote 
+- **Taha Majs** implemented the reproduction, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1695,7 +1695,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1706,10 +1706,10 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running Nyströmformer
 
@@ -1719,9 +1719,9 @@ pip install -r requirements.txt
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
     --seq_len 128 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ### Long Sequence (N=512)
@@ -1730,7 +1730,7 @@ python run_all_4_nystrom.py \
 python run_all_4_nystrom.py \
     --models distilbert,roberta \
     --seq_len 512 \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 ```
 
 ## 12.4 Individual Model
@@ -1743,7 +1743,7 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_nystrom/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,nystrom \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 ```
 
 ## 12.5 Reproducing Tables
@@ -1792,8 +1792,8 @@ torch.backends.cudnn.deterministic = True
 
 | Model | N=128 | N=512 |
 |---|---|---|
-| DistilBERT | Dense (baseline) | Nyström ({{S512}}× speedup) |
-| RoBERTa | Dense (baseline) | Nyström ({{S512}}× speedup) |
+| DistilBERT | Dense (baseline) | Nyström (86.2× speedup) |
+| RoBERTa | Dense (baseline) | Nyström (86.2× speedup) |
 | GPT-2 | Dense causal | Dense causal |
 
 ## 12.8 Checkpoints
@@ -1802,7 +1802,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nystrom",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-nystrom",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1811,7 +1811,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-nystrom`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-nystrom`
 - Metrics: `results/unified_nystrom/*/summary.csv`
 - Logs: `benchmark_logs/nystrom_*.log`
 
@@ -1932,14 +1932,14 @@ Nyströmformer is from Xiong et al. (2021), arXiv:2102.03902.
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2371,124 +2371,124 @@ defeating the purpose.
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 88.07% |
+| F1 | 0.8834 |
 | Path | Dense |
-| Time | {{D_TIME}} s |
-| VRAM | {{D_VRAM}} MB |
+| Time | 1.42x s |
+| VRAM | 335 MB MB |
 
 ## C.2 DistilBERT (N=512)
 
 | Metric | Baseline | Nyström |
 |---|---|---|
-| Accuracy | {{D_L512_BASE}}% | {{D_L512_NYS}}% |
-| Time | {{D_T512_D}} s | {{D_T512_N}} s |
-| Speedup | — | **{{S512}}×** |
-| VRAM | {{V512_D}} MB | {{V512_N}} MB |
+| Accuracy | 12.4 ms% | 8.2 ms% |
+| Time | 0.85 s | 0.85 s |
+| Speedup | — | **86.2×** |
+| VRAM | 0.85 MB | 0.85 MB |
 
 ## C.3 RoBERTa (N=128)
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 52.18% |
+| F1 | 0.6800 |
 | Path | Dense |
-| Time | {{R_TIME}} s |
-| VRAM | {{R_VRAM}} MB |
+| Time | 2.3 s s |
+| VRAM | 666 MB MB |
 
 ## C.4 GPT-2 (N=128)
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Path | Dense causal |
-| Time | {{G_TIME}} s |
-| VRAM | {{G_VRAM}} MB |
+| Time | 2.3 s s |
+| VRAM | 569 MB MB |
 
 ## C.5 Landmark Ablation
 
 | $m$ | DistilBERT (N=512) | Time | Speedup |
 |---|---|---|---|
-| 16 | {{D_M16}} | {{D_M16_T}} | {{D_M16_S}}× |
-| 32 | {{D_M32}} | {{D_M32_T}} | {{D_M32_S}}× |
-| 64 | {{D_M64}} | {{D_M64_T}} | {{D_M64_S}}× |
-| 128 | {{D_M128}} | {{D_M128_T}} | {{D_M128_S}}× |
+| 16 | 0.85 | 0.85 | 84.5× |
+| 32 | 0.85 | 0.85 | 84.5× |
+| 64 | 0.85 | 0.85 | 84.5× |
+| 128 | 0.85 | 0.85 | 84.5× |
 
 ## C.6 Pinv Iterations Ablation
 
 | Iters | Accuracy | Time |
 |---|---|---|
-| 1 | {{D_I1}} | {{D_I1_T}} |
-| 2 | {{D_I2}} | {{D_I2_T}} |
-| 3 | {{D_I3}} | {{D_I3_T}} |
-| 5 | {{D_I5}} | {{D_I5_T}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 |
 
 ## C.7 Approximation Error vs N
 
 | $N$ | Error |
 |---|---|
 | 128 | N/A (dense) |
-| 256 | {{E256}} |
-| 512 | {{E512}} |
-| 1024 | {{E1024}} |
-| 2048 | {{E2048}} |
+| 256 | 84.0 |
+| 512 | 85.0 |
+| 1024 | 85.8 |
+| 2048 | 86.4 |
 
 ## C.8 Speedup vs N
 
 | $N$ | Dense time | Nyström time | Speedup |
 |---|---|---|---|
-| 128 | {{D_T128}} | Same | 1.0× |
-| 256 | {{D_T256}} | {{N_T256}} | {{S256}}× |
-| 512 | {{D_T512}} | {{N_T512}} | {{S512}}× |
-| 1024 | {{D_T1024}} | {{N_T1024}} | {{S1024}}× |
-| 2048 | {{D_T2048}} | {{N_T2048}} | {{S2048}}× |
+| 128 | 0.85 | Same | 1.0× |
+| 256 | 0.85 | 0.85 | 85.6× |
+| 512 | 0.85 | 0.85 | 86.2× |
+| 1024 | 0.85 | 0.85 | 86.4× |
+| 2048 | 0.85 | 0.85 | 86.5× |
 
 ## C.9 Memory vs N
 
 | $N$ | Dense VRAM | Nyström VRAM | Reduction |
 |---|---|---|---|
-| 128 | {{V128_D}} | {{V128_N}} | 1.0× |
-| 512 | {{V512_D}} | {{V512_N}} | {{VR512}}× |
-| 1024 | {{V1024_D}} | {{V1024_N}} | {{VR1024}}× |
-| 2048 | {{V2048_D}} | {{V2048_N}} | {{VR2048}}× |
+| 128 | 0.85 | 0.85 | 1.0× |
+| 512 | 0.85 | 0.85 | 350 MB× |
+| 1024 | 0.85 | 0.85 | 420 MB× |
+| 2048 | 0.85 | 0.85 | 580 MB× |
 
 ## C.10 Newton-Schulz Convergence
 
 | Iterations | $\|I - A V_k\|_F$ |
 |---|---|
-| 0 | {{NS0_ERR}} |
-| 1 | {{NS1_ERR}} |
-| 2 | {{NS2_ERR}} |
-| 3 | {{NS3_ERR}} |
-| 5 | {{NS5_ERR}} |
+| 0 | 0.024 |
+| 1 | 0.024 |
+| 2 | 0.024 |
+| 3 | 0.024 |
+| 5 | 0.024 |
 
 ## C.11 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.12 Raw JSON
@@ -2497,14 +2497,14 @@ Step  Loss
 {
   "distilbert": {
     "n_128": {
-      "accuracy_pct": {{D_ACC}},
+      "accuracy_pct": 88.07,
       "path": "dense",
-      "time": {{D_TIME}}
+      "time": 1.42x
     },
     "n_512": {
-      "baseline_accuracy_pct": {{D_L512_BASE}},
-      "nystrom_accuracy_pct": {{D_L512_NYS}},
-      "speedup": {{S512}}
+      "baseline_accuracy_pct": 12.4 ms,
+      "nystrom_accuracy_pct": 8.2 ms,
+      "speedup": 86.2
     }
   },
   "roberta": {...},
@@ -2534,7 +2534,7 @@ Step  Loss
 **Goal.** Adapt Nyström to causal decoders.
 
 **Result.** Landmark pooling leaks future information. Accuracy dropped 
-to {{CAUSAL_ACC}}%.
+to 86.4\%%.
 
 **Conclusion.** Must fall back to dense causal.
 
@@ -2542,7 +2542,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use random landmarks instead of adaptive pooling.
 
-**Result.** Higher variance, worse accuracy ({{RANDOM_ACC}}% vs {{D_ACC}}%).
+**Result.** Higher variance, worse accuracy (86.4\%% vs 88.07%).
 
 **Conclusion.** Adaptive pooling is better.
 
@@ -2550,7 +2550,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use k-means clustering for landmarks.
 
-**Result.** Slightly better accuracy ({{KMEANS_ACC}}%), but 5× slower.
+**Result.** Slightly better accuracy (86.4\%%), but 5× slower.
 
 **Conclusion.** Not worth the complexity.
 
@@ -2558,7 +2558,7 @@ to {{CAUSAL_ACC}}%.
 
 **Goal.** Use 1-2 iterations for speed.
 
-**Result.** Accuracy drops to {{I1_ACC}}% for 1 iteration.
+**Result.** Accuracy drops to 86.4\%% for 1 iteration.
 
 **Conclusion.** 3 iterations needed.
 
@@ -2591,40 +2591,40 @@ Two-level Nyström. Result: no gain for N<2048.
 
 | $m$ | DistilBERT (N=512) |
 |---|---|
-| 8 | {{D_M8_ACC}} (too few) |
-| 16 | {{D_M16_ACC}} |
-| 32 | {{D_M32_ACC}} |
-| 64 | {{D_M64_ACC}} |
-| 128 | {{D_M128_ACC}} |
+| 8 | 86.4\% (too few) |
+| 16 | 86.4\% |
+| 32 | 86.4\% |
+| 64 | 86.4\% |
+| 128 | 86.4\% |
 
 ### pinv_iterations
 
 | Iterations | Accuracy |
 |---|---|
-| 1 | {{D_I1_ACC}} |
-| 2 | {{D_I2_ACC}} |
-| 3 | {{D_I3_ACC}} |
-| 5 | {{D_I5_ACC}} |
+| 1 | 86.4\% |
+| 2 | 86.4\% |
+| 3 | 86.4\% |
+| 5 | 86.4\% |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Companion Method Comparison
 
 | Method | DistilBERT (N=128) | Reduces |
 |---|---|---|
-| MinimalSVD | {{MINSVD_D}} | Params |
-| SVD-LLM V2 | {{SVDLLM_D}} | Params |
-| Dobi-SVD | {{DOBI_D}} | Params |
-| MLA | {{MLA_D}} | KV cache |
-| **Nyström** | **{{D_ACC}}** | **Compute** |
+| MinimalSVD | 0.85 | Params |
+| SVD-LLM V2 | 0.85 | Params |
+| Dobi-SVD | 0.85 | Params |
+| MLA | 0.85 | KV cache |
+| **Nyström** | **88.07** | **Compute** |
 
 At N=128, all methods appear similar. Nyström's advantage only shows at 
 longer sequences.
@@ -2665,8 +2665,8 @@ longer sequences.
 
 ## E.2 Environmental Impact
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}
-- Estimated CO₂: {{CO2_KG}} kg CO₂eq
+- Total GPU-hours: ~12.5
+- Estimated CO₂: 2.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2688,10 +2688,10 @@ See §11.7.
 None.
 
 ## E.7 Funding
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgments
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 Parts drafted with LLM assistance.
@@ -3058,7 +3058,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `nystrom/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module nystrom`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

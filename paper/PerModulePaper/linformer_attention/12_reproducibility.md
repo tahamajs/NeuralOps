@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,9 +15,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --linformer_k 4 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.3 Individual Model
@@ -26,8 +26,8 @@ python run_all_4_linformer.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,linformer \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --linformer_k 4 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -57,14 +57,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 50.92% ± 1% |
+| RoBERTa | 48.17% ± 1% |
+| GPT-2 | 77.5% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-linformer`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-linformer`
 - **Metrics:** `results/unified_linformer/*/summary.csv`
 
 ---

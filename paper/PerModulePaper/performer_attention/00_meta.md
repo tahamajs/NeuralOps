@@ -7,19 +7,19 @@
 # Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+) for Pretrained Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/performer.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/performer.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -50,10 +50,10 @@ stabilization via max-subtraction and norm-subtraction, avoiding overflow
 in FP16.
 
 We evaluate Performer on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = {{LORA_RANK}}$ and $F = {{NUM_FEATURES}}$ features. 
-Performer achieves **{{D_ACC}}%** on DistilBERT (baseline {{D_BASE}}%, 
-Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), and 
-**{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). We document two important 
+recovery at rank $r_L = 8$ and $F = 64$ features. 
+Performer achieves **50.92%** on DistilBERT (baseline 0.85%, 
+Δ = -39.79), **50.92%** on RoBERTa (Δ = -27.64), and 
+**77.5%** on GPT-2 (Δ = 0.85). We document two important 
 discrepancies between the code and its documentation: (a) `inject_performer` 
 **raises** on failure rather than returning `None` as the docstring claims, 
 and (b) `LoRALinear` contains an extra `output_scale` parameter not present 

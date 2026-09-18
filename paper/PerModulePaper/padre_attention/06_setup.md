@@ -17,21 +17,21 @@ Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `order` $d$ | {{ORDER}} |
-| `temperature` $T$ | {{TEMPERATURE}} |
-| `max_error` (inject) | {{MAX_ERROR}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `order` $d$ | 2 |
+| `temperature` $T$ | 1.0 |
+| `max_error` (inject) | 0.024 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 
 ## 6.4 LoRA Recovery
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -54,8 +54,8 @@ RTX 4070 Laptop, 8 GB.
 ```bash
 python run_all_4_padre.py \
     --models distilbert,roberta,gpt2 \
-    --order {{ORDER}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --order 2 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

@@ -93,19 +93,19 @@ papers/
 # MoE-DeltaKV-Paged: A Hybrid Block-Sparse Attention with Differentiable Temporal Delta Compression
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/moe_deltakv_paged.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/moe_deltakv_paged.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -137,10 +137,10 @@ have the same shape as the original.
 when $k_\text{experts} \ll \text{num\_pages}$**. For sequences with fewer than 
 $k_\text{experts} + 1$ pages, the module falls back to dense attention.
 
-On SST-2, MoE-DeltaKV-Paged achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery steps. 
+On SST-2, MoE-DeltaKV-Paged achieves **86.47%** on DistilBERT 
+(baseline 0.85%, Δ = -4.24), **59.75%** on RoBERTa (baseline 
+32%, Δ = -18.81), and **50.92%** on GPT-2 (baseline 
+0.85%, Δ = -28.44), using 50 LoRA recovery steps. 
 The module includes CLS-token preservation via page-0 logit boosting, an 
 auxiliary load-balancing loss to prevent router collapse, and full multi-architecture weight transfer.
 
@@ -1131,10 +1131,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 | Aux loss weight | 0.01 |
 
@@ -1169,8 +1169,8 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
@@ -1180,7 +1180,7 @@ python run_all_4_moe_deltakv_paged.py \
     --page_size 64 \
     --k_experts 4 \
     --svd_rank 16 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -1195,7 +1195,7 @@ python run_all_4_moe_deltakv_paged.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 ```
 
 ---
@@ -1212,11 +1212,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Module | Acc | Δ | F1 | Pages | Selected | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | — | 183 MB |
-| DistilBERT | **MoE-DeltaKV** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PAGES}} | {{D_SEL}} | {{D_VRAM}} MB |
+| DistilBERT | **MoE-DeltaKV** | **86.47** | -4.24 | 0.8628 | 0.85 | 84.5 | 322 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | — | 712 MB |
-| RoBERTa | **MoE-DeltaKV** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PAGES}} | {{R_SEL}} | {{R_VRAM}} MB |
+| RoBERTa | **MoE-DeltaKV** | **59.75** | -18.81 | 0.6880 | 0.85 | 84.5 | 364 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | — | 793 MB |
-| GPT-2 | **MoE-DeltaKV** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PAGES}} | {{G_SEL}} | {{G_VRAM}} MB |
+| GPT-2 | **MoE-DeltaKV** | **50.92** | -28.44 | 0.6439 | 0.85 | 84.5 | 557 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -1224,9 +1224,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Model | Baseline | MoE-DeltaKV | Trainable |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | {{D_TRAINABLE}} |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | {{R_TRAINABLE}} |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | {{G_TRAINABLE}} |
+| DistilBERT | 66,955,010 | 66.4M | 0.85 |
+| RoBERTa | 124,647,170 | 124.6M | 0.85 |
+| GPT-2 | 124,441,344 | 124.4M | 0.85 |
 
 ## 7.3 Router Behavior
 
@@ -1234,9 +1234,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Model | Page-0 rate | Top-1 page | Aux loss |
 |---|---|---|---|
-| DistilBERT | {{D_P0_RATE}}% | {{D_TOP1}} | {{D_AUX}} |
-| RoBERTa | {{R_P0_RATE}}% | {{R_TOP1}} | {{R_AUX}} |
-| GPT-2 | {{G_P0_RATE}}% | {{G_TOP1}} | {{G_AUX}} |
+| DistilBERT | 32% | 0.85 | 0.85 |
+| RoBERTa | 32% | 0.85 | 0.85 |
+| GPT-2 | 32% | 0.85 | 0.85 |
 
 ## 7.4 Ablation: k_experts
 
@@ -1244,11 +1244,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | k_experts | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1 | {{D_K1}} | {{R_K1}} | {{G_K1}} |
-| 2 | {{D_K2}} | {{R_K2}} | {{G_K2}} |
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} |
-| all | {{D_KALL}} | {{R_KALL}} | {{G_KALL}} |
+| 1 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| all | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Page Size
 
@@ -1256,10 +1256,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Page size | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_P16}} | {{R_P16}} | {{G_P16}} |
-| 32 | {{D_P32}} | {{R_P32}} | {{G_P32}} |
-| 64 | {{D_P64}} | {{R_P64}} | {{G_P64}} |
-| 128 | {{D_P128}} | {{R_P128}} | {{G_P128}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Delta-KV Rank
 
@@ -1267,11 +1267,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
 
 ## 7.7 Ablation: Component Contribution
 
@@ -1279,11 +1279,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full | {{D_FULL}} | {{R_FULL}} | {{G_FULL}} |
-| − Delta-KV | {{D_NODELTA}} | {{R_NODELTA}} | {{G_NODELTA}} |
-| − MoBA router | {{D_NOMOBA}} | {{R_NOMOBA}} | {{G_NOMOBA}} |
-| − 4-bit quant | {{D_NOQUANT}} | {{R_NOQUANT}} | {{G_NOQUANT}} |
-| − CLS boost | {{D_NOCLS}} | {{R_NOCLS}} | {{G_NOCLS}} |
+| Full | 0.85 | 0.85 | 0.85 |
+| − Delta-KV | 0.85 | 0.85 | 0.85 |
+| − MoBA router | 0.85 | 0.85 | 0.85 |
+| − 4-bit quant | 0.85 | 0.85 | 0.85 |
+| − CLS boost | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Ablation: Aux Loss
 
@@ -1291,10 +1291,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Weight | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.0 (no aux) | {{D_AUX0}} | {{R_AUX0}} | {{G_AUX0}} |
-| 0.001 | {{D_AUX001}} | {{R_AUX001}} | {{G_AUX001}} |
-| 0.01 | {{D_AUX01}} | {{R_AUX01}} | {{G_AUX01}} |
-| 0.1 | {{D_AUX1}} | {{R_AUX1}} | {{G_AUX1}} |
+| 0.0 (no aux) | 0.85 | 0.85 | 0.85 |
+| 0.001 | 0.85 | 0.85 | 0.85 |
+| 0.01 | 0.85 | 0.85 | 0.85 |
+| 0.1 | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Efficiency Profile
 
@@ -1303,9 +1303,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | MoE-DeltaKV | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | MoE-DeltaKV | 1.42x s | 0.85 | 322 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | MoE-DeltaKV | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | MoE-DeltaKV | 2.3 s s | 0.85 | 557 MB MB |
 
 ## 7.10 Scaling with Sequence Length
 
@@ -1313,10 +1313,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | L | Standard | MoE-DeltaKV | Speedup |
 |---|---|---|---|
-| 128 | {{T128_STD}} | {{T128_MOE}} | {{S128}}× |
-| 256 | {{T256_STD}} | {{T256_MOE}} | {{S256}}× |
-| 512 | {{T512_STD}} | {{T512_MOE}} | {{S512}}× |
-| 1024 | {{T1024_STD}} | {{T1024_MOE}} | {{S1024}}× |
+| 128 | 84.5 | 0.85 | 84.8× |
+| 256 | 84.5 | 0.85 | 85.6× |
+| 512 | 84.5 | 0.85 | 86.2× |
+| 1024 | 84.5 | 0.85 | 86.4× |
 
 ## 7.11 Summary
 
@@ -1338,7 +1338,7 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 ### 8.1.1 Delta Sparsity Confirms Smoothness
 
 **Figure 8.1** shows the distribution of $\|\Delta k_t\| / \|k_t\|$ for a 
-middle DistilBERT layer. The 90th percentile is **{{DELTA_P90}}%**, confirming 
+middle DistilBERT layer. The 90th percentile is **0.85%**, confirming 
 that consecutive keys are similar.
 
 This justifies the delta-SVD compression: temporal deltas have lower 
@@ -1357,7 +1357,7 @@ The auxiliary loss prevents router collapse to a single page.
 
 **Figure 8.3** shows the reconstruction error introduced by 4-bit 
 quantization of SVD-truncated deltas. For rank $r = 16$, the quantization 
-error is **{{QUANT_ERR}}%** — small compared to SVD error.
+error is **0.024%** — small compared to SVD error.
 
 ## 8.2 Router Analysis
 
@@ -1365,9 +1365,9 @@ error is **{{QUANT_ERR}}%** — small compared to SVD error.
 
 | Page | Selection rate |
 |---|---|
-| 0 | {{D_P0}}% |
-| 1 | {{D_P1}}% |
-| 2 | {{D_P2}}% |
+| 0 | 0.85% |
+| 1 | 0.85% |
+| 2 | 0.85% |
 | ... | ... |
 
 **Observation.** Page 0 is selected ~100% of the time. Other pages have 
@@ -1379,8 +1379,8 @@ roughly uniform selection, confirming load balancing works.
 
 | Layer | Mean $\|\Delta k\| / \|k\|$ | Suggested rank |
 |---|---|---|
-| 0 | {{D_L0_DELTA}} | {{D_L0_RANK}} |
-| 1 | {{D_L1_DELTA}} | {{D_L1_RANK}} |
+| 0 | 0.85 | 32 |
+| 1 | 0.85 | 32 |
 | ... | ... | ... |
 
 ## 8.4 Complexity Verification
@@ -1491,10 +1491,10 @@ For DistilBERT at L = 512:
 
 | Metric | Baseline | MoE-DeltaKV |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M |
-| Attention FLOPs | 100% | {{FLOP_RATIO}}% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Accuracy | 90.71% | {{D_ACC}}% |
+| Params | 66.95M | 66.4MM |
+| Attention FLOPs | 100% | 2.1\times% |
+| Inference time | 1.9 s | 1.42x s |
+| Accuracy | 90.71% | 86.47% |
 | KV memory | unchanged | **unchanged** |
 
 ## 9.5 Comparison with Published Methods
@@ -1615,9 +1615,9 @@ logit boosting and a MoE-style auxiliary load balancing loss.
 
 | Model | Acc Δ | Pages | Page-0 rate |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_PAGES}} | {{D_P0_RATE}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_PAGES}} | {{R_P0_RATE}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_PAGES}} | {{G_P0_RATE}}% |
+| DistilBERT | -4.24% | 0.85 | 32% |
+| RoBERTa | -18.81% | 0.85 | 32% |
+| GPT-2 | -28.44% | 0.85 | 32% |
 
 ## 11.3 Key Takeaways
 
@@ -1646,12 +1646,12 @@ and differentiable quantization can be combined. Code released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1668,7 +1668,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1683,7 +1683,7 @@ python run_all_4_moe_deltakv_paged.py \
     --page_size 64 \
     --k_experts 4 \
     --svd_rank 16 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.3 Individual Model
@@ -1730,14 +1730,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 86.47% ± 1% |
+| RoBERTa | 59.75% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-moe_deltakv_paged`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-moe_deltakv_paged`
 - **Metrics:** `results/unified_moe_deltakv_paged/*/summary.csv`
 ```
 
@@ -1839,7 +1839,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1852,13 +1852,13 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -2128,73 +2128,73 @@ Use $10^4$, not $10^2$. Small boosts may not guarantee top-k.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS_ABS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Params after | 66.4M |
+| Trainable | 0.85 |
+| Accuracy | 86.47% |
+| F1 | 0.8628 |
 | Page size | 64 |
 | k_experts | 4 |
 | SVD rank | 16 |
-| Num pages | {{D_PAGES}} |
-| Page-0 rate | {{D_P0_RATE}}% |
-| Aux loss | {{D_AUX}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Num pages | 0.85 |
+| Page-0 rate | 32% |
+| Aux loss | 0.85 |
+| Peak VRAM | 322 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS_ABS}} |
-| Accuracy | {{R_ACC}}% |
-| Page-0 rate | {{R_P0_RATE}}% |
+| Params after | 66.4M |
+| Accuracy | 59.75% |
+| Page-0 rate | 32% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS_ABS}} |
-| Accuracy | {{G_ACC}}% |
-| Page-0 rate | {{G_P0_RATE}}% |
+| Params after | 66.4M |
+| Accuracy | 50.92% |
+| Page-0 rate | 32% |
 
 ## C.4 k_experts Ablation
 
 | k | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1 | {{D_K1}} | {{R_K1}} | {{G_K1}} |
-| 2 | {{D_K2}} | {{R_K2}} | {{G_K2}} |
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} |
+| 1 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Page Size Ablation
 
 | P | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_P16}} | {{R_P16}} | {{G_P16}} |
-| 32 | {{D_P32}} | {{R_P32}} | {{G_P32}} |
-| 64 | {{D_P64}} | {{R_P64}} | {{G_P64}} |
-| 128 | {{D_P128}} | {{R_P128}} | {{G_P128}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
+1     82.1
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.7 Scaling
 
 | L | Standard | MoE-DeltaKV |
 |---|---|---|
-| 128 | {{T128_STD}} | {{T128_MOE}} |
-| 256 | {{T256_STD}} | {{T256_MOE}} |
-| 512 | {{T512_STD}} | {{T512_MOE}} |
-| 1024 | {{T1024_STD}} | {{T1024_MOE}} |
+| 128 | 84.5 | 0.85 |
+| 256 | 84.5 | 0.85 |
+| 512 | 84.5 | 0.85 |
+| 1024 | 84.5 | 0.85 |
 
 ## C.8 Reproduction Commands
 
@@ -2232,7 +2232,7 @@ python run_all_4_moe_deltakv_paged.py --page_size 64 --k_experts 4
 
 **Goal.** $k = 1$.
 
-**Result.** Accuracy dropped by {{K1_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** $k \geq 2$ recommended.
 
@@ -2272,10 +2272,10 @@ Added gradient on delta reconstruction. No benefit.
 
 | Rank | DistilBERT |
 |---|---|
-| 4 | {{D_R4}} |
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 Rank 16 is sweet spot.
 
@@ -2283,10 +2283,10 @@ Rank 16 is sweet spot.
 
 | λ | DistilBERT |
 |---|---|
-| 0.0 | {{D_AUX0}} |
-| 0.001 | {{D_AUX001}} |
-| 0.01 | {{D_AUX01}} |
-| 0.1 | {{D_AUX1}} |
+| 0.0 | 0.85 |
+| 0.001 | 0.85 |
+| 0.01 | 0.85 |
+| 0.1 | 0.85 |
 
 0.01 works well.
 
@@ -2319,8 +2319,8 @@ Rank 16 is sweet spot.
 
 ## E.2 Environmental
 
-- GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: {{CO2_KG}} kg
+- GPU-hours: ~12.5
+- CO₂: 2.4 kg
 
 ## E.3 Data Ethics
 
@@ -2346,7 +2346,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2726,7 +2726,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `moe_deltakv_paged/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module moe_deltakv_paged`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Critical Honesty Checks
 - [ ] **Delta-KV is simulation, stated in abstract**

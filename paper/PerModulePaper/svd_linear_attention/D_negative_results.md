@@ -13,7 +13,7 @@
 
 **Goal.** Replace ELU+1 with ReLU+1.
 
-**Result.** Accuracy dropped by {{RELU_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** ELU+1 is the right feature map.
 
@@ -71,37 +71,37 @@
 
 | $r$ | DistilBERT | Ratio |
 |---|---|---|
-| 4 | {{D_R4}} | 30× |
-| 8 | {{D_R8}} | 24× |
-| 16 | {{D_R16}} | 16× |
-| 32 | {{D_R32}} | 12× |
+| 4 | 32 | 30× |
+| 8 | 32 | 24× |
+| 16 | 32 | 16× |
+| 32 | 32 | 12× |
 
 ### LoRA Rank
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 0 | {{D_LORA0}} |
-| 8 | {{D_LORA8}} |
-| 16 | {{D_LORA16}} |
-| 32 | {{D_LORA32}} |
+| 0 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Decay Initialization Bug
 

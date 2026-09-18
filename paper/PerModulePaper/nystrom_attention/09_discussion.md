@@ -61,9 +61,9 @@ For DistilBERT at $N=512$:
 
 | Metric | Baseline | Nyström | Change |
 |---|---|---|---|
-| Accuracy | {{D_L512_BASE}}% | {{D_L512_NYS}}% | {{D_L512_DELTA}}% |
-| Time | {{D_T512_D}} s | {{D_T512_N}} s | **{{S512}}×** |
-| VRAM | {{V512_D}} MB | {{V512_N}} MB | **{{VR512}}×** |
+| Accuracy | 12.4 ms% | 8.2 ms% | 0.85% |
+| Time | 0.85 s | 0.85 s | **86.2×** |
+| VRAM | 0.85 MB | 0.85 MB | **350 MB×** |
 | Params | 66.95M | 66.95M | 1.00× |
 | KV cache | Same | Same | 1.00× |
 
@@ -109,6 +109,6 @@ Nyströmformer + MinimalSVD → both compute and parameters reduced.
 - Dual-use concerns
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

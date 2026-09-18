@@ -30,22 +30,22 @@ Sequence length truncated to 128.
 
 | Parameter | Value | Note |
 |---|---|---|
-| Rank $r$ (augmentation) | {{RALA_RANK}} | Per-head rank |
+| Rank $r$ (augmentation) | 32 | Per-head rank |
 | `alpha` init | 0.0 | Pure linear attention at start |
 | Softplus kernel | Yes | — |
-| Frozen $U, V$ | {{U_V_FROZEN}} | If LoRA active |
-| LoRA rank | {{LORA_RANK}} | — |
-| LoRA alpha | {{LORA_ALPHA}} | — |
+| Frozen $U, V$ | 0.85 | If LoRA active |
+| LoRA rank | 8 | — |
+| LoRA alpha | 16 | — |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -69,22 +69,22 @@ Sequence length truncated to 128.
 | Component | Spec |
 |---|---|
 | GPU | RTX 4070 Laptop (8 GB) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Seeds
 
-Single seed {{SEED}}.
+Single seed 42.
 
 ## 6.10 Baselines
 

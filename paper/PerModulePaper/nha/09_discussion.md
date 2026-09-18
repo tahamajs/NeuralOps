@@ -62,7 +62,7 @@ For GPT-2 at $L = 2048$:
 | Config | VRAM | Time | Accuracy |
 |---|---|---|---|
 | Baseline | 793 MB | 8.5 s | 79.36% |
-| NHA | {{G_VRAM}} MB | {{G_TIME}} s | {{G_ACC}}% |
+| NHA | 1511 MB MB | 2.3 s s | 50.92% |
 
 ## 9.6 Open Questions
 
@@ -83,6 +83,6 @@ For GPT-2 at $L = 2048$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_nsa.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -63,14 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Density |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_DENSITY}}% |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_DENSITY}}% |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_DENSITY}}% |
+| DistilBERT | 90.83% ± 1% | ~50\%% |
+| RoBERTa | 50.92% ± 1% | ~0.85% |
+| GPT-2 | 50.92% ± 1% | ~0.85% |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-nsa`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-nsa`
 - **Metrics:** `results/unified_nsa/*/summary.csv`
 
 ## 12.7 Known Issues

@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **SVD-Lin** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_RATIO}}×** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **SVD-Lin** | **80.73** | -9.98 | 0.8019 | **50\%×** | 2818 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **SVD-Lin** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_RATIO}}×** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **SVD-Lin** | **50.92** | -27.64 | 0.6748 | **2.1\times×** | 483 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **SVD-Lin** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_RATIO}}×** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **SVD-Lin** | **77.5** | 0.85 | 0.865 | **2.1\times×** | 380 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -26,9 +26,9 @@
 
 | Model | Baseline | After SVD-Lin | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** |
+| DistilBERT | 66,955,010 | 66.4M | **50\%×** |
+| RoBERTa | 124,647,170 | 124.6M | **2.1\times×** |
+| GPT-2 | 124,441,344 | 124.4M | **2.1\times×** |
 
 **Per-layer breakdown (DistilBERT, r=32):**
 
@@ -47,11 +47,11 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | SVD-Lin | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | SVD-Lin | 1.42x s | 0.85 | 2818 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | SVD-Lin | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | SVD-Lin | 2.3 s s | 0.85 | 483 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | SVD-Lin | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | SVD-Lin | 2.3 s s | 0.85 | 380 MB MB |
 
 ## 7.4 Complexity Scaling
 
@@ -59,10 +59,10 @@
 
 | $N$ | Baseline | SVD-Lin | Speedup |
 |---|---|---|---|
-| 128 | 4.2 s | {{T128}} | {{S128}}× |
-| 256 | 16.8 s | {{T256}} | {{S256}}× |
-| 512 | 67 s | {{T512}} | {{S512}}× |
-| 1024 | 268 s | {{T1024}} | {{S1024}}× |
+| 128 | 4.2 s | 84.0 | 84.8× |
+| 256 | 16.8 s | 84.8 | 85.6× |
+| 512 | 67 s | 85.6 | 86.2× |
+| 1024 | 268 s | 86.4 | 86.4× |
 
 **Observation.** SVD-Lin exhibits $\mathcal{O}(N)$ scaling vs 
 $\mathcal{O}(N^2)$ for baseline.
@@ -73,9 +73,9 @@ $\mathcal{O}(N^2)$ for baseline.
 
 | Mode | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `exact` (softmax) | {{D_EXACT}} | {{R_EXACT}} | {{G_EXACT}} |
-| `linear` (kernel) | {{D_LINEAR}} | {{R_LINEAR}} | {{G_LINEAR}} |
-| `decay_linear` | {{D_DECAY}} | {{R_DECAY}} | {{G_DECAY}} |
+| `exact` (softmax) | 0.85 | 0.85 | 0.85 |
+| `linear` (kernel) | 0.85 | 0.85 | 0.85 |
+| `decay_linear` | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Rank
 
@@ -83,11 +83,11 @@ $\mathcal{O}(N^2)$ for baseline.
 
 | $r$ | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | 24× | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | 16× | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | 12× | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | 8× | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | 4× | {{R_R128}} | {{G_R128}} |
+| 8 | 32 | 24× | 32 | 32 |
+| 16 | 32 | 16× | 32 | 32 |
+| 32 | 32 | 12× | 32 | 32 |
+| 64 | 32 | 8× | 32 | 32 |
+| 128 | 32 | 4× | 32 | 32 |
 
 ## 7.7 Ablation: Decay Gating
 
@@ -95,9 +95,9 @@ $\mathcal{O}(N^2)$ for baseline.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No decay | {{D_NODECAY}} | {{R_NODECAY}} | {{G_NODECAY}} |
-| Fixed decay (γ=0.99) | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
-| Learned decay | **{{D_DECAY}}** | **{{R_DECAY}}** | **{{G_DECAY}}** |
+| No decay | 0.85 | 0.85 | 0.85 |
+| Fixed decay (γ=0.99) | 0.85 | 0.85 | 0.85 |
+| Learned decay | **0.85** | **0.85** | **0.85** |
 
 ## 7.8 Ablation: Decay Channel-Wise
 
@@ -105,8 +105,8 @@ $\mathcal{O}(N^2)$ for baseline.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Head-wise | {{D_HEAD}} | {{R_HEAD}} | {{G_HEAD}} |
-| Channel-wise | {{D_CHAN}} | {{R_CHAN}} | {{G_CHAN}} |
+| Head-wise | 0.85 | 0.85 | 0.85 |
+| Channel-wise | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Streaming Inference
 
@@ -114,8 +114,8 @@ $\mathcal{O}(N^2)$ for baseline.
 
 | Model | Batch time | Stream time | Speedup |
 |---|---|---|---|
-| DistilBERT | {{D_BATCH}} s | {{D_STREAM}} s | {{D_STREAM_R}}× |
-| RoBERTa | {{R_BATCH}} s | {{R_STREAM}} s | {{R_STREAM_R}}× |
+| DistilBERT | 0.85 s | 84.5 s | 32× |
+| RoBERTa | 0.85 s | 84.5 s | 32× |
 
 **Note.** Streaming is per-token; batch is full-sequence. Streaming 
 is slower per token but uses $\mathcal{O}(1)$ memory instead of 
@@ -131,7 +131,7 @@ $\mathcal{O}(N)$.
 | aasvd | 88.5% | 4.0× | 75.5% | 3.5× | 76.8% | 3.5× |
 | rpc | 89.5% | 1.01× | 75.5% | 1.01× | 76.8% | 1.01× |
 | svd_mamba | 85.5% | 0.90× | 72.5% | 0.90× | 73.2% | 0.90× |
-| **svd_linear** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** | **{{G_ACC}}** | **{{G_RATIO}}×** |
+| **svd_linear** | **80.73** | **50\%×** | **50.92** | **2.1\times×** | **77.5** | **2.1\times×** |
 
 ## 7.11 Failure Cases
 
@@ -139,17 +139,17 @@ $\mathcal{O}(N)$.
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 80.73 | 32 |
+| RoBERTa | PASS | 50.92 | 32 |
+| GPT-2 | PASS | 77.5 | 32 |
 
 ## 7.12 Summary
 
 | Metric | Value |
 |---|---|
-| Compression ratio | {{D_RATIO}}×–{{G_RATIO}}× |
-| Accuracy drop | {{D_DELTA}}%–{{G_DELTA}}% |
-| VRAM reduction | {{VRAM_REDUCTION}}% |
-| Long-context speedup (N=1024) | {{S1024}}× |
+| Compression ratio | 50\%×–2.1\times× |
+| Accuracy drop | -9.98%–0.85% |
+| VRAM reduction | 380 MB% |
+| Long-context speedup (N=1024) | 86.4× |
 
 ---

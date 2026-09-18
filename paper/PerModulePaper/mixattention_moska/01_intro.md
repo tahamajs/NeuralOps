@@ -18,7 +18,7 @@ instead of $O(L^2)$, and $AV$ becomes $O(L \cdot L' \cdot d_h)$.
 **Token pruning** methods exploit this by dropping a subset of KV tokens 
 at inference time. The question is **which tokens to drop**.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:

@@ -109,6 +109,6 @@ We use pure PyTorch for portability.
 | NHA | Local + RFF | +LoRA | $\mathcal{O}(N \cdot W)$ | No |
 | SVD-Mamba | Attention + SSM | +10% | $\mathcal{O}(N)$ | No |
 | RPC | Sketched softmax | +LoRA | $\mathcal{O}(N^2)$ | No |
-| **SVD-Linear** | **Linear + decay** | **−{{D_PARAM_PCT}}%** | **$\mathcal{O}(N)$** | **Yes** |
+| **SVD-Linear** | **Linear + decay** | **−[D_PARAM_PCT]%** | **$\mathcal{O}(N)$** | **Yes** |
 
 ---

@@ -3,16 +3,16 @@
 ## 11.1 Summary
 
 We presented **MinimalAURORA**, an energy-preserving SVD-factorized 
-attention module that reduces parameter count by {{D_RATIO}}× while 
-maintaining accuracy within {{D_DELTA}}%.
+attention module that reduces parameter count by 50\%× while 
+maintaining accuracy within -5.27%.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Ratio |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** |
+| DistilBERT | -5.27% | **50\%×** |
+| RoBERTa | -27.64% | **2.1\times×** |
+| GPT-2 | -28.44% | **2.1\times×** |
 
 ## 11.3 Key Takeaways
 
@@ -40,13 +40,13 @@ compression. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed MinimalAURORA, implemented the code, ran 
+- **Taha Majs** designed MinimalAURORA, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

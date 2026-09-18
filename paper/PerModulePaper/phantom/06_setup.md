@@ -34,13 +34,13 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| CUR rank $r$ | {{CUR_RANK}} |
+| CUR rank $r$ | 32 |
 | LSH rounds $R_\ell$ | 4 |
 | LSH bucket size $k$ | 4 |
 | Softpick enabled | True |
 | Softpick temperature $\tau_s$ | 1.0 |
 | Dropout | 0.1 |
-| `max_error` $\tau$ | {{MAX_ERROR}} |
+| `max_error` $\tau$ | 0.024 |
 | `fallback_to_original` | True |
 
 ## 6.4 Recovery Fine-Tuning
@@ -48,12 +48,12 @@ Majority baseline: 50.92%. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -91,22 +91,22 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_phantom.py \
     --models distilbert,roberta,gpt2 \
-    --cur_rank {{CUR_RANK}} \
+    --cur_rank 32 \
     --lsh_rounds 4 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 6.9 Baselines
 
@@ -120,6 +120,6 @@ Runtime: ~{{RUNTIME}} min.
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}. No multi-seed due to compute budget.
+All experiments use seed 42. No multi-seed due to compute budget.
 
 ---

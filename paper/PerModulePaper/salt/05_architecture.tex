@@ -10,10 +10,10 @@
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
-RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & 0.85 \\
-GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No & 0.85 \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & 0.85 \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No & 0.85 \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) \& No \& No \& No & 0.85 \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -122,9 +122,9 @@ Output: M with SALTLinear projections
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weight & \texttt{copy\_weights} & \textbf{Raises RuntimeError} \\
-Zero norm & Frobenius check & \textbf{Raises RuntimeError} \\
-Injection exception & try/except in inject & \textbf{Raises RuntimeError} \\
-Nested encoder & \texttt{has\_out\_proj} & Set \texttt{is\_nested\_encoder} \\
+Zero norm \& Frobenius check & \textbf{Raises RuntimeError} \\
+Injection exception \& try/except in inject & \textbf{Raises RuntimeError} \\
+Nested encoder & \texttt{has\_out\_proj} \& Set \texttt{is\_nested\_encoder} \\
 \bottomrule
 \end{tabular}
 \end{table}

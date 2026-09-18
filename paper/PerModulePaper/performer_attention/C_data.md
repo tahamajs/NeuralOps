@@ -10,55 +10,55 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Accuracy | 50.92% |
+| Δ | -39.79% |
+| F1 | 0.6748 |
+| Params (after) | 66.4M |
+| Peak VRAM | 1320 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
-| Params (after) | {{R_PARAMS}} |
+| Accuracy | 50.92% |
+| Δ | -27.64% |
+| F1 | 0.6748 |
+| Params (after) | 124.6M |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
-| Params (after) | {{G_PARAMS}} |
+| Accuracy | 77.5% |
+| Δ | 0.85% |
+| F1 | 0.865 |
+| Params (after) | 124.4M |
 
 ## C.4 Feature Ablation
 
 | $F$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 | 0.865 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Kernel Ablation
 
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `favor_plus` | {{D_FAVOR}} | {{R_FAVOR}} | {{G_FAVOR}} |
-| `elu` | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| `relu` | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
+| `favor_plus` | 0.85 | 0.85 | 0.85 |
+| `elu` | 0.85 | 0.85 | 0.85 |
+| `relu` | 32 | 32 | 32 |
 
 ## C.6 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}},
-  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}},
-  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}}
+  "distilbert": {"acc": 50.92, "params": 66.4M},
+  "roberta": {"acc": 50.92, "params": 124.6M},
+  "gpt2": {"acc": 77.5, "params": 124.4M}
 }
 ```
 

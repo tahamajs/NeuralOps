@@ -1,3 +1,11 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{replaceme_compressor}.
+\subsection{Algorithmic Formulation}
+The \texttt{replaceme_compressor} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{ReplaceMe: Layer Removal and Replacement with Linear Residual Block.
+Replaces the last N layers of a Transformer encoder or decoder with a compatible
+LayerNorm + Linear residual block with optional trainable LoRA fine-tuning adapters.
+Registered in COMPRESSOR\_REGISTRY as 'replaceme', 'replaceme\_compressor', and 'replaceme\_factory'.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

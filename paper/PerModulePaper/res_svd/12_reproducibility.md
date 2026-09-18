@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 ```
@@ -12,18 +12,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running Res-SVD
 
 ```bash
 python run_all_4_res_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank {{BASE_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --base_rank 32 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -60,14 +60,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 89.56% | 50\%× |
+| RoBERTa | 76.61% | 2.1\times× |
+| GPT-2 | 71.33% | 2.1\times× |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-res_svd`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-res_svd`
 - Metrics: `results/unified_res_svd/*/summary.csv`
 
 ## 12.8 Known Issues

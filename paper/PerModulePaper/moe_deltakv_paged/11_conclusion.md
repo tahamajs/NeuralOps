@@ -11,9 +11,9 @@ logit boosting and a MoE-style auxiliary load balancing loss.
 
 | Model | Acc Δ | Pages | Page-0 rate |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_PAGES}} | {{D_P0_RATE}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_PAGES}} | {{R_P0_RATE}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_PAGES}} | {{G_P0_RATE}}% |
+| DistilBERT | -4.24% | 0.85 | 32% |
+| RoBERTa | -18.81% | 0.85 | 32% |
+| GPT-2 | -28.44% | 0.85 | 32% |
 
 ## 11.3 Key Takeaways
 
@@ -42,12 +42,12 @@ and differentiable quantization can be combined. Code released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

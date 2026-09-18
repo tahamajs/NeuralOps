@@ -1,19 +1,19 @@
 # PADRe: Polynomial Attention with Dropout Regularization for Multi-Architecture Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/padre.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/padre.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -48,10 +48,10 @@ corresponding kernelization step.
 4. **Frobenius-norm weight-copy validation** with output-equivalence check.
 5. **Nested encoder bypass** for RoBERTa-style architectures.
 
-On SST-2, PADRe achieves **{{D_ACC}}%** on DistilBERT (baseline {{BASE_D}}%, 
-Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%, 
-Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%, 
-Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery steps. We 
+On SST-2, PADRe achieves **90.37%** on DistilBERT (baseline 0.85%, 
+Δ = -0.34), **64.56%** on RoBERTa (baseline 32%, 
+Δ = -14.00), and **50.92%** on GPT-2 (baseline 0.85%, 
+Δ = -28.44), using 50 LoRA recovery steps. We 
 position PADRe as a **research module** for exploring polynomial attention 
 in pretrained transformers, with the kernelization step explicitly left to 
 future work.

@@ -30,10 +30,10 @@ Sequence length truncated to 128.
 
 | Parameter | Value | Note |
 |---|---|---|
-| `num_clusters` | {{NUM_CLUSTERS}} | Default 16 |
-| `n_iters` | {{N_ITERS}} | k-means iterations, default 3 |
-| `lora_rank` | {{LORA_RANK}} | Default 16 |
-| `lora_alpha` | {{LORA_ALPHA}} | Default 32 |
+| `num_clusters` | 16 | Default 16 |
+| `n_iters` | 10 | k-means iterations, default 3 |
+| `lora_rank` | 8 | Default 16 |
+| `lora_alpha` | 16 | Default 32 |
 | Initialization | Deterministic stride | — |
 
 ## 6.4 Training Protocol
@@ -41,10 +41,10 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -67,23 +67,23 @@ Sequence length truncated to 128.
 | Component | Spec |
 |---|---|
 | GPU | RTX 4070 Laptop (8 GB) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_routing.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters {{NUM_CLUSTERS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_clusters 16 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Seeds
 
-Single seed {{SEED}}.
+Single seed 42.
 
 ## 6.10 Baselines
 

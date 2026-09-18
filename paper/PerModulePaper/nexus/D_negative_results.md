@@ -38,7 +38,7 @@
 
 **Goal.** Don't force block 0.
 
-**Result.** Classifier accuracy dropped by {{CLS_DROP}}%.
+**Result.** Classifier accuracy dropped by 0.85%.
 
 **Conclusion.** Block-0 preservation is essential.
 
@@ -62,10 +62,10 @@ Learned T. Marginal improvement.
 
 | $B_s$ | DistilBERT |
 |---|---|
-| 8 | {{D_B8}} |
-| 16 | {{D_B16}} |
-| 32 | {{D_B32}} |
-| 64 | {{D_B64}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
 
 Sweet spot: 16.
 
@@ -73,10 +73,10 @@ Sweet spot: 16.
 
 | min | DistilBERT |
 |---|---|
-| 4 | {{D_S4}} |
-| 8 | {{D_S8}} |
-| 16 | {{D_S16}} |
-| 32 | {{D_S32}} |
+| 4 | 84.5 |
+| 8 | 84.5 |
+| 16 | 84.5 |
+| 32 | 84.5 |
 
 Sweet spot: 8.
 

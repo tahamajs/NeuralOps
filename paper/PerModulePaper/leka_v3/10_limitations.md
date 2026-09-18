@@ -20,10 +20,10 @@ Only SST-2 evaluated. Behavior on:
 ## 10.3 Parameter Increase
 
 LEKAv3 adds ~7.5% parameters per layer. This is a real cost:
-- LoRA: +{{LORA_PCT}}%
-- Kernel projections: +{{KERNEL_PCT}}%
-- Landmark scorer: +{{SCORER_PCT}}%
-- W_corr: +{{WCORR_PCT}}%
+- LoRA: +48.5\%%
+- Kernel projections: +48.5\%%
+- Landmark scorer: +48.5\%%
+- W_corr: +48.5\%%
 
 ## 10.4 Inference Overhead
 

@@ -281,7 +281,7 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r = 32$, $r_L = 16$, $N_\ell =
 | Decay gate | 9,228 | 55,368 |
 | **Total** | **304,396** | **1,826,376** |
 
-Baseline per layer: 2,359,296. **Reduction: ~{{D_RATIO}}×**.
+Baseline per layer: 2,359,296. **Reduction: ~50\%×**.
 
 ## 4.9 Theoretical Notes
 

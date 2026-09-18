@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{squeezing_heads}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_squeezing\_heads/roberta/summary.csv} \& squeezing\_heads \& PASS\_LOW & 50.92\% & 371.96 MB \\
+\texttt{results/unified\_squeezing\_heads/distilbert/summary.csv} \& squeezing\_heads \& PASS & 90.6\% & 196.03 MB \\
+\texttt{results/unified\_squeezing\_heads/gpt2/summary.csv} \& squeezing\_heads \& PASS\_LOW & 53.67\% & 325.93 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

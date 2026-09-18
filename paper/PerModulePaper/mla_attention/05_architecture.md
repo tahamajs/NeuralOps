@@ -171,14 +171,14 @@ are not applicable.
 | Aspect | Original | Our reproduction |
 |---|---|---|
 | Target architecture | DeepSeek-V2 | Four families |
-| Latent dim | 512 (V2), 1536 (V3) | {{RANK}} |
+| Latent dim | 512 (V2), 1536 (V3) | 32 |
 | RoPE on K | Decomposed | After projection |
 | GQA | Native | Supported via pool |
 | Output scale | Not specified | Trainable scalar |
 
 **Differences from original.**
 
-1. **Latent dimension.** We use {{RANK}} instead of 512.
+1. **Latent dimension.** We use 32 instead of 512.
 2. **RoPE handling.** The original applies RoPE on a decoupled head 
    dimension; we apply it uniformly after up-projection.
 3. **Multi-architecture support.** The original does not target DistilBERT, 

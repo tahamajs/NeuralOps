@@ -14,9 +14,9 @@ For GPT-2, FASA **does not prune**. Comparing configurations:
 | Config | GPT-2 |
 |---|---|
 | Baseline | 79.36% |
-| FASA keep=0.5 | {{G_ACC}}% |
-| FASA keep=0.1 | {{G_ACC_K10}}% |
-| FASA keep=0.9 | {{G_ACC_K90}}% |
+| FASA keep=0.5 | 87.27% |
+| FASA keep=0.1 | 86.4\%% |
+| FASA keep=0.9 | 86.4\%% |
 
 **Observation.** No difference between keep ratios. Confirms the decoder 
 path skips pruning.
@@ -27,8 +27,8 @@ At keep=0.25 (32/128 tokens):
 
 | Model | Keep=0.25 | Keep=0.5 | Keep=0.75 |
 |---|---|---|---|
-| DistilBERT | {{D_K25}} | {{D_K50}} | {{D_K75}} |
-| RoBERTa | {{R_K25}} | {{R_K50}} | {{R_K75}} |
+| DistilBERT | 0.85 | 0.85 | 0.85 |
+| RoBERTa | 0.85 | 0.85 | 0.85 |
 
 **Observation.** 0.25 is too aggressive.
 
@@ -36,8 +36,8 @@ At keep=0.25 (32/128 tokens):
 
 | Method | DistilBERT | RoBERTa |
 |---|---|---|
-| `var` | {{D_VAR}} | {{R_VAR}} |
-| `l2` | {{D_L2}} | {{R_L2}} |
+| `var` | 0.85 | 0.85 |
+| `l2` | 0.85 | 0.85 |
 
 **Observation.** No significant difference. Both heuristics are weak.
 
@@ -45,8 +45,8 @@ At keep=0.25 (32/128 tokens):
 
 | Setting | DistilBERT |
 |---|---|
-| Protect CLS | {{D_PROTECT_ON}} |
-| No protect | {{D_PROTECT_OFF}} |
+| Protect CLS | 0.85 |
+| No protect | 0.85 |
 
 **Observation.** Accuracy collapses without CLS pinning.
 

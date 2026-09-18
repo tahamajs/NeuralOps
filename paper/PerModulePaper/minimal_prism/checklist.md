@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `minimal_prism/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module minimal_prism`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

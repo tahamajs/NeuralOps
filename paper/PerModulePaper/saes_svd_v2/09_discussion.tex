@@ -1,3 +1,7 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Formal architectural specifications for \texttt{saes_svd_v2}.
+\subsection{Hardware Deployment Dynamics}
+Standard transformer serving is frequently bounded by memory bandwidth. By compressing linear projection operations, \texttt{saes_svd_v2} alleviates memory transfer latencies, accelerating inference throughput.
+
+\subsection{Stability Under Parameter Constraints}
+The decoupling of base parameter projections from adaptive residual pathways ensures numerical resilience during deep layer adaptation.

@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{spectraformer_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_spectraformer\_attention/roberta/summary.csv} \& spectraformer\_attention \& PASS & 57.45\% & 376.24 MB \\
+\texttt{results/unified\_spectraformer\_attention/distilbert/summary.csv} \& spectraformer\_attention \& PASS & 77.64\% & 325.42 MB \\
+\texttt{results/unified\_spectraformer\_attention/gpt2/summary.csv} \& spectraformer\_attention \& PASS\_LOW & 50.92\% & 568.81 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

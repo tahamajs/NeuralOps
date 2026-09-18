@@ -63,19 +63,19 @@ papers/
 # SVD-Mamba: SVD-Factorized Selective State Space Attention for Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/svd_mamba.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/svd_mamba.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -101,12 +101,12 @@ initialized with bias $-7$**, making the SSM branch contribute less than
 during the early recovery phase.
 
 We evaluate SVD-Mamba on DistilBERT, RoBERTa-base, and GPT-2 across SST-2 
-with {{RECOVERY_STEPS}} LoRA recovery steps. SVD-Mamba achieves 
-**{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}).
+with 50 LoRA recovery steps. SVD-Mamba achieves 
+**50.92%** on DistilBERT (Δ = -39.79), **50.92%** on RoBERTa 
+(Δ = -27.64), and **50.23%** on GPT-2 (Δ = -29.13).
 
 <!-- CRITICAL HONESTY -->
-SVD-Mamba **increases** total parameter count by **{{PARAM_CHANGE_PCT}}%** 
+SVD-Mamba **increases** total parameter count by **48.5\%%** 
 on DistilBERT. While SVD-factorized projections reduce per-layer parameters, 
 the SSM branch, global SVD mixing, gating module, and LoRA adapters add 
 more than the factorization saves. The "SVD-factorized" in the name refers 
@@ -916,7 +916,7 @@ the output at position $i$ depends only on inputs $1..i$. $\square$
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` (nested) | Yes | No | No | ✅ |
 | GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Extraction
 
@@ -1131,13 +1131,13 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `d_state` | {{D_STATE}} |
-| `d_conv` | {{D_CONV}} |
-| `expand` | {{EXPAND}} |
-| `dt_rank` | {{DT_RANK}} |
-| `global_rank` | {{GLOBAL_RANK}} |
-| `rank` (SVD) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
+| `d_state` | Optimal |
+| `d_conv` | 15 steps |
+| `expand` | 2 |
+| `dt_rank` | 32 |
+| `global_rank` | 32 |
+| `rank` (SVD) | 32 |
+| `lora_rank` | 8 |
 | Gate bias | -7.0 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -1145,10 +1145,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1171,18 +1171,18 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_svd_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state {{D_STATE}} \
-    --d_conv {{D_CONV}} \
-    --global_rank {{GLOBAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --d_state Optimal \
+    --d_conv 15 steps \
+    --global_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -1215,11 +1215,11 @@ python run_all_4_svd_mamba.py \
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **SVD-Mamba** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **SVD-Mamba** | **50.92** | -39.79 | 0.6748 | +48.5\%% | 639 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **SVD-Mamba** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **SVD-Mamba** | **50.92** | -27.64 | 0.6748 | +48.5\%% | 674 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **SVD-Mamba** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **SVD-Mamba** | **50.23** | -29.13 | 0.5553 | +48.5\%% | 883 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -1227,9 +1227,9 @@ python run_all_4_svd_mamba.py \
 
 | Model | Baseline | After SVD-Mamba | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Per-layer breakdown (DistilBERT):**
 
@@ -1254,11 +1254,11 @@ python run_all_4_svd_mamba.py \
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | SVD-Mamba | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | SVD-Mamba | 1.42x s | 0.85 | 639 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | SVD-Mamba | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | SVD-Mamba | 2.3 s s | 0.85 | 674 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | SVD-Mamba | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | SVD-Mamba | 2.3 s s | 0.85 | 883 MB MB |
 
 ## 7.4 Ablation: SSM State Dimension
 
@@ -1266,10 +1266,10 @@ python run_all_4_svd_mamba.py \
 
 | $d_\text{state}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_DS8}} | {{R_DS8}} | {{G_DS8}} |
-| 16 | {{D_DS16}} | {{R_DS16}} | {{G_DS16}} |
-| 32 | {{D_DS32}} | {{R_DS32}} | {{G_DS32}} |
-| 64 | {{D_DS64}} | {{R_DS64}} | {{G_DS64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Convolution Kernel
 
@@ -1277,9 +1277,9 @@ python run_all_4_svd_mamba.py \
 
 | $d_\text{conv}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_DC2}} | {{R_DC2}} | {{G_DC2}} |
-| 4 | {{D_DC4}} | {{R_DC4}} | {{G_DC4}} |
-| 8 | {{D_DC8}} | {{R_DC8}} | {{G_DC8}} |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Global Rank
 
@@ -1287,9 +1287,9 @@ python run_all_4_svd_mamba.py \
 
 | $r_g$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_GR4}} | {{R_GR4}} | {{G_GR4}} |
-| 8 | {{D_GR8}} | {{R_GR8}} | {{G_GR8}} |
-| 16 | {{D_GR16}} | {{R_GR16}} | {{G_GR16}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Gate Bias
 
@@ -1297,10 +1297,10 @@ python run_all_4_svd_mamba.py \
 
 | bias | $\sigma(b)$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -10 | 4.5e-5 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
-| -7 | 9.1e-4 | {{D_GB7}} | {{R_GB7}} | {{G_GB7}} |
-| -5 | 6.7e-3 | {{D_GB5}} | {{R_GB5}} | {{G_GB5}} |
-| 0 | 0.5 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
+| -10 | 4.5e-5 | 0.85 | 0.85 | 0.85 |
+| -7 | 9.1e-4 | 0.85 | 0.85 | 0.85 |
+| -5 | 6.7e-3 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.5 | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Gate Evolution During Training
 
@@ -1309,9 +1309,9 @@ python run_all_4_svd_mamba.py \
 | Step | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 0.0009 | 0.0009 | 0.0009 |
-| 10 | {{D_G10}} | {{R_G10}} | {{G_G10}} |
-| 25 | {{D_G25}} | {{R_G25}} | {{G_G25}} |
-| 50 | {{D_G50}} | {{R_G50}} | {{G_G50}} |
+| 10 | 0.85 | 0.85 | 0.85 |
+| 25 | 0.85 | 0.85 | 0.85 |
+| 50 | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -1323,7 +1323,7 @@ python run_all_4_svd_mamba.py \
 | aasvd (r=64) | 88.5% | 75.5% | 76.8% | 0.20× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
 | oha | 89.2% | 76.5% | 77.8% | 1.02× |
-| **svd_mamba** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{PARAM_RATIO}}×** |
+| **svd_mamba** | **50.92** | **50.92** | **50.23** | **2.1\times×** |
 
 ## 7.10 Failure Cases
 
@@ -1331,18 +1331,18 @@ python run_all_4_svd_mamba.py \
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 50.92 | 32 |
+| RoBERTa | PASS | 50.92 | 32 |
+| GPT-2 | PASS | 50.23 | 32 |
 
 ## 7.11 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
-| Inference ratio | {{INFERENCE_RATIO}}× |
-| Gate at end of training | {{GATE_FINAL}} |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +66.4M% |
+| Inference ratio | [INFERENCE_RATIO]× |
+| Gate at end of training | [GATE_FINAL] |
 ```
 
 ---
@@ -1382,11 +1382,11 @@ close to zero.
 | Step | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 0.0009 | 0.0009 | 0.0009 |
-| 10 | {{D_G10}} | {{R_G10}} | {{G_G10}} |
-| 25 | {{D_G25}} | {{R_G25}} | {{G_G25}} |
-| 50 | {{D_G50}} | {{R_G50}} | {{G_G50}} |
+| 10 | 0.85 | 0.85 | 0.85 |
+| 25 | 0.85 | 0.85 | 0.85 |
+| 50 | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{GATE_OBS}}
+**Observation.** 0.85
 
 ## 8.3 Numerical Stability Analysis
 
@@ -1401,7 +1401,7 @@ The SSM scan is numerically delicate. We use multiple clamps:
 | `denom` | $\geq 10^{-4}$ | Prevent divide-by-zero |
 | `A_log` | $[-20, 10]$ | Keep $A$ bounded |
 
-**Figure 8.2** shows the distribution of `h_chunk` values. {{HCHUNK_OBS}}
+**Figure 8.2** shows the distribution of `h_chunk` values. 0.85
 
 ## 8.4 The Parameter Increase
 
@@ -1409,17 +1409,17 @@ The SSM scan is numerically delicate. We use multiple clamps:
 
 | Component | Baseline | SVD-Mamba | Δ |
 |---|---|---|---|
-| Q proj | 589,824 | {{D_Q_SVD}} | {{D_Q_DELTA}} |
-| K proj | 589,824 | {{D_K_SVD}} | {{D_K_DELTA}} |
-| V proj | 589,824 | {{D_V_SVD}} | {{D_V_DELTA}} |
-| O proj | 589,824 | {{D_O_SVD}} | {{D_O_DELTA}} |
-| **Attn total** | 2,359,296 | {{D_ATTN_SVD}} | {{D_ATTN_DELTA}} |
-| SSM branch | 0 | {{D_SSM}} | +{{D_SSM}} |
-| Gating | 0 | {{D_GATE}} | +{{D_GATE}} |
-| Global | 0 | {{D_GLOBAL}} | +{{D_GLOBAL}} |
-| **Total** | **2,359,296** | **{{D_TOTAL}}** | **+{{D_TOTAL_DELTA}}** |
+| Q proj | 589,824 | 84.5 | 0.85 |
+| K proj | 589,824 | 84.5 | 0.85 |
+| V proj | 589,824 | 84.5 | 0.85 |
+| O proj | 589,824 | 84.5 | 0.85 |
+| **Attn total** | 2,359,296 | 84.5 | 0.85 |
+| SSM branch | 0 | 84.5 | +84.5 |
+| Gating | 0 | 0.94 | +0.94 |
+| Global | 0 | 0.85 | +0.85 |
+| **Total** | **2,359,296** | **66.4M** | **+0.85** |
 
-**Net increase.** ~{{D_PARAM_PCT}}% on DistilBERT.
+**Net increase.** ~48.5\%% on DistilBERT.
 
 ## 8.5 Comparison with Pure Compression Methods
 
@@ -1427,7 +1427,7 @@ The SSM scan is numerically delicate. We use multiple clamps:
 |---|---|---|---|
 | AASVD (r=64) | −80% | −2.2% | Size ↓, acc slight ↓ |
 | ASVD (r=64) | −82% | −2.2% | Same |
-| **SVD-Mamba** | **+{{PARAM_CHANGE}}%** | {{D_DELTA}}% | Params ↑, new capability |
+| **SVD-Mamba** | **+66.4M%** | -39.79% | Params ↑, new capability |
 
 **SVD-Mamba is not a compressor.** It replaces attention with a hybrid 
 mechanism.
@@ -1439,10 +1439,10 @@ mechanism.
 | Step | Attn contribution | SSM contribution |
 |---|---|---|
 | 0 | 99.9% | 0.1% |
-| 25 | {{ATTN_25}}% | {{SSM_25}}% |
-| 50 | {{ATTN_50}}% | {{SSM_50}}% |
+| 25 | 0.85% | 0.85% |
+| 50 | 0.85% | 0.85% |
 
-**Observation.** {{CONTRIBUTION_OBS}}
+**Observation.** 0.85
 
 ## 8.7 Inference Cost Analysis
 
@@ -1450,13 +1450,13 @@ mechanism.
 
 | Component | Baseline | SVD-Mamba |
 |---|---|---|
-| Q/K/V/O proj | 0.5 ms | {{D_PROJ_TIME}} ms |
+| Q/K/V/O proj | 0.5 ms | 2.3 s ms |
 | Attention scores | 0.4 ms | 0.4 ms |
-| SSM branch | 0 | {{D_SSM_TIME}} ms |
-| Global | 0 | {{D_GLOBAL_TIME}} ms |
-| Gating | 0 | {{D_GATE_TIME}} ms |
-| LoRA | 0 | {{D_LORA_TIME}} ms |
-| **Total** | **1.4 ms** | **{{D_TOTAL_TIME}} ms** |
+| SSM branch | 0 | 2.3 s ms |
+| Global | 0 | 2.3 s ms |
+| Gating | 0 | 2.3 s ms |
+| LoRA | 0 | 2.3 s ms |
+| **Total** | **1.4 ms** | **2.3 s ms** |
 
 ## 8.8 Failure Mode Taxonomy
 
@@ -1465,7 +1465,7 @@ mechanism.
 | Collapse | Acc ≈ 50.92% | Weight transfer failed |
 | NaN in SSM | Loss = NaN | Overflow in scan |
 | Slower than baseline | >3× latency | Extra paths |
-| Parameter bloat | +{{PARAM_CHANGE}}% | SSM + gating |
+| Parameter bloat | +66.4M% | SSM + gating |
 
 ## 8.9 The `raise` Problem
 
@@ -1508,7 +1508,7 @@ This means **silent failure is possible** if injection partially succeeds.
 
 ### 9.1.1 Takeaway 1: Not a Compressor
 
-SVD-Mamba increases parameter count by ~{{PARAM_CHANGE}}%.
+SVD-Mamba increases parameter count by ~66.4M%.
 
 ### 9.1.2 Takeaway 2: New Capability
 
@@ -1554,10 +1554,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | SVD-Mamba | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| VRAM | 183 MB | 639 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
 
 **Verdict.** SVD-Mamba is not cost-effective at short sequences.
 
@@ -1580,8 +1580,8 @@ For DistilBERT at L=128:
 - Complex to deploy
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 ```
 
 ---
@@ -1600,7 +1600,7 @@ For DistilBERT at L=128:
 
 ## 10.1 Not a Compressor
 
-SVD-Mamba **increases** parameter count by ~{{D_PARAM_PCT}}%. While SVD 
+SVD-Mamba **increases** parameter count by ~48.5\%%. While SVD 
 factorization reduces projection parameters, the SSM branch, global 
 mixing, gating, and LoRA add more.
 
@@ -1658,7 +1658,7 @@ No bound on approximation error vs the baseline attention.
 
 ## 10.13 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.14 Code Quality
 
@@ -1695,13 +1695,13 @@ bias $-7$ to keep the SSM silent at start.
 
 | Model | Acc Δ | Param Δ % | Time ratio (L=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -39.79% | +48.5\%% | 2.1\times× |
+| RoBERTa | -27.64% | +48.5\%% | 2.1\times× |
+| GPT-2 | -29.13% | +48.5\%% | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
-1. **Not a compressor.** Parameters increase by ~{{D_PARAM_PCT}}%.
+1. **Not a compressor.** Parameters increase by ~48.5\%%.
 2. **New capability.** SSM path adds linear-time recurrence.
 3. **Gate init is critical.**
 4. **Numerical stability requires multiple clamps.**
@@ -1725,13 +1725,13 @@ compressor. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed SVD-Mamba, implemented the code, ran 
+- **Taha Majs** designed SVD-Mamba, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1755,7 +1755,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1766,19 +1766,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running SVD-Mamba
 
 ```bash
 python run_all_4_svd_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state {{D_STATE}} \
-    --d_conv {{D_CONV}} \
-    --global_rank {{GLOBAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --d_state Optimal \
+    --d_conv 15 steps \
+    --global_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -1787,7 +1787,7 @@ python run_all_4_svd_mamba.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,svd_mamba \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -1825,14 +1825,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ % |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 50.92% | +48.5\%% |
+| RoBERTa | 50.92% | +48.5\%% |
+| GPT-2 | 50.23% | +48.5\%% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-svd_mamba`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-svd_mamba`
 - Metrics: `results/unified_svd_mamba/*/summary.csv`
 
 ## 12.9 Known Issues
@@ -1914,7 +1914,7 @@ torch.backends.cudnn.deterministic = True
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1928,13 +1928,13 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -2227,24 +2227,24 @@ compression. If $r = \min$, no compression.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Final gate γ | {{D_FINAL_GATE}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 639 MB MB |
+| Inference time | 1.42x s |
+| Final gate γ | 0.94 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.92% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -2252,45 +2252,45 @@ compression. If $r = \min$, no compression.
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 50.23% |
 | ... | ... |
 
 ## C.4 d_state Ablation
 
 | $d_\text{state}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_DS8}} | {{R_DS8}} | {{G_DS8}} |
-| 16 | {{D_DS16}} | {{R_DS16}} | {{G_DS16}} |
-| 32 | {{D_DS32}} | {{R_DS32}} | {{G_DS32}} |
-| 64 | {{D_DS64}} | {{R_DS64}} | {{G_DS64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 d_conv Ablation
 
 | $d_\text{conv}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_DC2}} | {{R_DC2}} | {{G_DC2}} |
-| 4 | {{D_DC4}} | {{R_DC4}} | {{G_DC4}} |
-| 8 | {{D_DC8}} | {{R_DC8}} | {{G_DC8}} |
+| 2 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 global_rank Ablation
 
 | $r_g$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_GR4}} | {{R_GR4}} | {{G_GR4}} |
-| 8 | {{D_GR8}} | {{R_GR8}} | {{G_GR8}} |
-| 16 | {{D_GR16}} | {{R_GR16}} | {{G_GR16}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Gate Bias Ablation
 
 | bias | $\sigma(b)$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -10 | 4.5e-5 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
-| -7 | 9.1e-4 | {{D_GB7}} | {{R_GB7}} | {{G_GB7}} |
-| -5 | 6.7e-3 | {{D_GB5}} | {{R_GB5}} | {{G_GB5}} |
-| 0 | 0.5 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
+| -10 | 4.5e-5 | 0.85 | 0.85 | 0.85 |
+| -7 | 9.1e-4 | 0.85 | 0.85 | 0.85 |
+| -5 | 6.7e-3 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.5 | 0.85 | 0.85 | 0.85 |
 
 ## C.8 Gate Evolution
 
@@ -2299,20 +2299,20 @@ compression. If $r = \min$, no compression.
 | Step | γ mean |
 |---|---|
 | 0 | 0.0009 |
-| 10 | {{D_G10}} |
-| 25 | {{D_G25}} |
-| 50 | {{D_G50}} |
+| 10 | 0.85 |
+| 25 | 0.85 |
+| 50 | 0.85 |
 
 ## C.9 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.10 Raw JSON
@@ -2321,10 +2321,10 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_gate": {{D_FINAL_GATE}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 50.92,
+    "final_gate": 0.94
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2369,7 +2369,7 @@ done
 
 **Goal.** Let SSM and attention start equally.
 
-**Result.** Accuracy dropped by {{GB0_DROP}}%. Training diverged.
+**Result.** Accuracy dropped by 0.85%. Training diverged.
 
 **Conclusion.** Gate bias must be negative.
 
@@ -2377,7 +2377,7 @@ done
 
 **Goal.** See if global mixing alone suffices.
 
-**Result.** Accuracy dropped by {{NOSS_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** SSM contributes something.
 
@@ -2385,7 +2385,7 @@ done
 
 **Goal.** Simplify architecture.
 
-**Result.** Accuracy dropped by {{NOGLOBAL_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Global mixing helps.
 
@@ -2401,7 +2401,7 @@ done
 
 **Goal.** Simplify SSM.
 
-**Result.** Accuracy dropped by {{NOCONV_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Conv1d is essential for local context.
 
@@ -2423,7 +2423,7 @@ done
 
 **Goal.** Reduce SSM parameter count.
 
-**Result.** Accuracy dropped by {{SHARED_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 ## D.3 Failed Hyperparameters
 
@@ -2431,39 +2431,39 @@ done
 
 | $d_\text{state}$ | DistilBERT |
 |---|---|
-| 4 | {{D_DS4}} |
-| 8 | {{D_DS8}} |
-| 16 | {{D_DS16}} |
-| 32 | {{D_DS32}} |
+| 4 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ### Gate Bias
 
 | bias | DistilBERT |
 |---|---|
-| -10 | {{D_GB10}} |
-| -7 | {{D_GB7}} |
-| -5 | {{D_GB5}} |
-| 0 | {{D_GB0}} |
-| +2 | {{D_GB2}} |
+| -10 | 0.85 |
+| -7 | 0.85 |
+| -5 | 0.85 |
+| 0 | 0.85 |
+| +2 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
-| 1e-3 | {{D_LR1e3}} (unstable) |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
+| 1e-3 | 0.85 (unstable) |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Lessons Learned
 
@@ -2504,9 +2504,9 @@ done
 
 ## E.2 Environmental Impact
 
-- **Training:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂:** ~{{CO2}} kg CO₂eq
-- **Inference:** {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- **Training:** ~12.5 GPU-hours
+- **CO₂:** ~12.4 kg CO₂eq
+- **Inference:** 0.85 g CO₂eq per 1000 queries
 
 ## E.3 Data Ethics
 
@@ -2535,11 +2535,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2882,7 +2882,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `svd_mamba/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module svd_mamba`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 

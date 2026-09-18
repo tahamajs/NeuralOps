@@ -194,7 +194,7 @@ Output: FactorisedLinear with frozen base + trainable LoRA
 
 For DistilBERT with 4 projections per layer, 6 layers: ~30 SVDs.
 
-**Total compression time:** ~{{D_COMPRESS_TIME}} seconds.
+**Total compression time:** ~2.3 s seconds.
 
 ## 4.8 Theoretical Notes
 

@@ -1,3 +1,18 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{spectraformer_attention}.
+\subsection{Algorithmic Formulation}
+The \texttt{spectraformer_attention} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Spectraformer: Random Feature Linear Attention with Flexible Kernel Approximation.
+Replaces softmax attention with random orthogonal feature projections,
+enabling true linear O(N·r·d) time and memory complexity.
+
+Production-Hardened with:
+- Multi-architecture copy\_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Frobenius norm validation (>= 1e-4)
+- Grouped-Query Attention (GQA) with repeat\_kv
+- Rotary Position Embedding (RoPE) support
+- Persistent orthogonal random feature buffer R (deterministic across forward passes)
+- O(N·r·d) linear recurrent running state causal decoding }\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

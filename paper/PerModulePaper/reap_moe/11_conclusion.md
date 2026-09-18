@@ -11,9 +11,9 @@ addresses MoE parameter bloat, router collapse, and training instability.
 
 | Model | Accuracy | Params Δ | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_PARAM_CHANGE}} | {{D_VRAM_CHANGE}} |
-| RoBERTa | {{R_ACC}}% | {{R_PARAM_CHANGE}} | {{R_VRAM_CHANGE}} |
-| GPT-2 | {{G_ACC}}% | {{G_PARAM_CHANGE}} | {{G_VRAM_CHANGE}} |
+| DistilBERT | 90.02% | 66.4M | 380 MB |
+| RoBERTa | 50.92% | 66.4M | 380 MB |
+| GPT-2 | 52.41% | 66.4M | 380 MB |
 
 ## 11.3 Key Takeaways
 
@@ -42,13 +42,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}**: designed REAP-MoE, implemented the code, ran experiments, 
+- **Taha Majs**: designed REAP-MoE, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}**: provided feedback and edited the manuscript.
+- **Collaborative Research Team**: provided feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

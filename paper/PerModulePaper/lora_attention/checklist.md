@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `lora_attention/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module lora_attention`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

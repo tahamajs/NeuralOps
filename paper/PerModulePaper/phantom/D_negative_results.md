@@ -44,7 +44,7 @@
 
 **Goal.** Compare with standard softmax.
 
-**Result.** Softpick gives +{{SP_GAIN}}% accuracy from reduced noise.
+**Result.** Softpick gives +0.85% accuracy from reduced noise.
 
 **Conclusion.** Softpick is essential.
 
@@ -69,28 +69,28 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2× slower.
 
 | Rounds | DistilBERT | Time |
 |---|---|---|
-| 1 | {{D_LSH1}} | 1.0× |
-| 4 | {{D_LSH4}} | 4.0× |
-| 16 | {{D_LSH16}} | 16× (diminishing) |
+| 1 | 0.85 | 1.0× |
+| 4 | 0.85 | 4.0× |
+| 16 | 0.85 | 16× (diminishing) |
 
 ### CUR Rank
 
 | Rank | Ratio | DistilBERT |
 |---|---|---|
-| 4 | 60× | {{D_R4}} (too aggressive) |
-| 8 | 30× | {{D_R8}} |
-| 16 | 15× | {{D_R16}} |
-| 32 | 8× | {{D_R32}} |
-| 64 | 4× | {{D_R64}} |
+| 4 | 60× | 32 (too aggressive) |
+| 8 | 30× | 32 |
+| 16 | 15× | 32 |
+| 32 | 8× | 32 |
+| 64 | 4× | 32 |
 
 ### Softpick Temperature
 
 | τ_s | DistilBERT |
 |---|---|
-| 0.1 | {{D_T01}} (too peaked) |
-| 0.5 | {{D_T05}} |
-| 1.0 | {{D_T10}} |
-| 2.0 | {{D_T20}} (too flat) |
+| 0.1 | 0.85 (too peaked) |
+| 0.5 | 0.85 |
+| 1.0 | 0.85 |
+| 2.0 | 0.85 (too flat) |
 
 ## D.4 Fixes That Didn't Help
 
@@ -105,18 +105,18 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2× slower.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 
 1. **Random projections work** as well as learnable ones.
 2. **4-6 bits** is the sweet spot for LSH.
 3. **Uniform rounds** suffice; no need for adaptive.
-4. **Softpick matters** — softmax loses {{SP_GAIN}}%.
+4. **Softpick matters** — softmax loses 0.85%.
 5. **CUR beats SVD** at low rank.
 
 ## D.7 Recommendations

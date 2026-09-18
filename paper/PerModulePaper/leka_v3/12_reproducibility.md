@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,19 +14,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running LEKAv3
 
 ```bash
 python run_all_4_leka_v3.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{L0}} \
-    --local_window_size {{WINDOW}} \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_landmarks 0.0 \
+    --local_window_size 128 \
+    --feature_dim 64 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -35,9 +35,9 @@ python run_all_4_leka_v3.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,leka_v3 \
-    --num_landmarks {{L0}} \
-    --local_window_size {{WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_landmarks 0.0 \
+    --local_window_size 128 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -76,14 +76,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 70.53% ± 1% |
+| RoBERTa | 50.92% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-leka_v3`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-leka_v3`
 - **Metrics:** `results/unified_leka_v3/*/summary.csv`
 
 ---

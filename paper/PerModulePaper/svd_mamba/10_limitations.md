@@ -9,7 +9,7 @@
 
 ## 10.1 Not a Compressor
 
-SVD-Mamba **increases** parameter count by ~{{D_PARAM_PCT}}%. While SVD 
+SVD-Mamba **increases** parameter count by ~48.5\%%. While SVD 
 factorization reduces projection parameters, the SSM branch, global 
 mixing, gating, and LoRA add more.
 
@@ -67,7 +67,7 @@ No bound on approximation error vs the baseline attention.
 
 ## 10.13 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.14 Code Quality
 

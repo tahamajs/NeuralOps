@@ -23,8 +23,8 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Default |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | `A_log` init | $\log(1), \log(2), \ldots, \log(d)$ |
 | `pres_gate` init | 2.0 |
 
@@ -33,10 +33,10 @@ Majority baseline: 50.92%. Max sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -67,16 +67,16 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Baselines
@@ -91,6 +91,6 @@ python run_all_4_mamba.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

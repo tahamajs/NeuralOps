@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -22,10 +22,10 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{SVD_ENERGY}} \
-    --svd_max_rank {{SVD_MAX_RANK}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --svd_energy 95\% \
+    --svd_max_rank 64 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -34,7 +34,7 @@ python run_all_4_orion.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-orion",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
         filename="weights.pt",
     )
 ```
@@ -75,9 +75,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Reduction |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | {{D_RED}}× |
-| RoBERTa | {{R_ACC}}% ± 3% | {{R_RED}}× |
-| GPT-2 | {{G_ACC}}% ± 2% | {{G_RED}}× |
+| DistilBERT | 55.50% ± 2% | 48.2\%× |
+| RoBERTa | 50.92% ± 3% | 45.1\%× |
+| GPT-2 | 50.92% ± 2% | 46.0\%× |
 
 ## 12.7 Diagnostics
 

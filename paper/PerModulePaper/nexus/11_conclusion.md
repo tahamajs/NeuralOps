@@ -10,9 +10,9 @@ falling back to dense for causal models.
 
 | Model | Acc Δ | Path |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | sparse |
-| RoBERTa | {{R_DELTA}}% | sparse |
-| GPT-2 | {{G_DELTA}}% | dense |
+| DistilBERT | -39.79% | sparse |
+| RoBERTa | -27.64% | sparse |
+| GPT-2 | -27.75% | dense |
 
 ## 11.3 Key Takeaways
 
@@ -42,12 +42,12 @@ are active in our experiments.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

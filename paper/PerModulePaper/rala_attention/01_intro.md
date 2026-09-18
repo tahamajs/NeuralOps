@@ -36,7 +36,7 @@ query head $h_q$ and key head $h_k$ is determined entirely by the kernel
 feature map, not by a learned interaction matrix. In softmax attention, the 
 full $QK^\top$ matrix provides head-specific structure.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:

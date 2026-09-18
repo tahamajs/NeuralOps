@@ -20,9 +20,9 @@
 
 | Hyperparameter | Value |
 |---|---|
-| `base_rank` $r_b$ | {{BASE_RANK}} |
-| `residual_rank` $r_r$ | {{RESIDUAL_RANK}} |
-| `scaling` $\alpha$ | {{SCALING}} |
+| `base_rank` $r_b$ | 32 |
+| `residual_rank` $r_r$ | 16 |
+| `scaling` $\alpha$ | 1.0 |
 | `factorize_base` | True |
 | `freeze_base` | True |
 
@@ -31,10 +31,10 @@
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 
 ## 6.5 Evaluation
 
@@ -59,9 +59,9 @@ RTX 4070 Laptop, 8 GB VRAM.
 ```bash
 python run_all_4_res_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank {{BASE_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --base_rank 32 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

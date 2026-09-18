@@ -12,9 +12,9 @@
 | Architecture | Class | Nested? | RoPE? | GQA? | Verified |
 |---|---|---|---|---|---|
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
-| RoBERTa | `BertSelfAttention` | Yes | No | No | {{R_VERIFIED}} |
-| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | {{G_VERIFIED}} |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| RoBERTa | `BertSelfAttention` | Yes | No | No | 0.85 |
+| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | 0.85 |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Transfer
 

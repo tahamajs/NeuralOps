@@ -26,21 +26,21 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `num_landmarks` (base $L_0$) | {{L0}} |
-| `local_window_size` | {{WINDOW}} |
-| `feature_dim` ($d_\text{feat}$) | {{FEATURE_DIM}} |
+| `num_landmarks` (base $L_0$) | 0.0 |
+| `local_window_size` | 128 |
+| `feature_dim` ($d_\text{feat}$) | 64 |
 | Gate init | 2.0 |
 
 ### LoRA Recovery
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| `batch_size` | {{BATCH_SIZE}} |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `recovery_steps` | 50 |
+| `batch_size` | 32 |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
 | Optimizer | AdamW |
 | Precision | FP16 |
 
@@ -69,17 +69,17 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.7 Reproduction
 
 ```bash
 python run_all_4_leka_v3.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{L0}} \
-    --local_window_size {{WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_landmarks 0.0 \
+    --local_window_size 128 \
+    --recovery_steps 50
 ```
 
 ## 6.8 Baselines
@@ -94,6 +94,6 @@ python run_all_4_leka_v3.py \
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

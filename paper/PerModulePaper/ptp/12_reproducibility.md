@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,8 +22,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.5 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -61,14 +61,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Kept |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_KEPT}}% |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_KEPT}}% |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_KEPT}}% |
+| DistilBERT | 86.4% ± 1% | ~0.85% |
+| RoBERTa | 78.2% ± 1% | ~0.85% |
+| GPT-2 | 77.5% ± 1% | ~0.85% |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-ptp`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-ptp`
 - **Metrics:** `results/unified_ptp/*/summary.csv`
 
 ## 12.7 Known Issues

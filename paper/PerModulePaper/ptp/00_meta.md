@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/progressive_token_pruning.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/progressive_token_pruning.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -49,11 +49,11 @@ projections are copied exactly, and only the score network plus LoRA adapters
 are trainable.
 
 We evaluate PTP on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$k/L = {{KEEP_RATIO}}$. PTP achieves **{{D_ACC}}%**, **{{R_ACC}}%**, and 
-**{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, **{{R_DELTA}}%**, and 
-**{{G_DELTA}}%** of the dense baselines. Attention memory is reduced by 
-**{{MEM_REDUCTION}}×** and inference latency by **{{TIME_REDUCTION}}×** at 
-$L = {{SEQ_LEN}}$. The learned scores reveal systematic token importance: 
+$k/L = 0.5$. PTP achieves **86.4%**, **78.2%**, and 
+**77.5%** accuracy, within **0.85%**, **0.85%**, and 
+**0.85%** of the dense baselines. Attention memory is reduced by 
+**32×** and inference latency by **2.3 s×** at 
+$L = 0.85$. The learned scores reveal systematic token importance: 
 the [CLS] token and content words dominate, while function words and 
 duplicate subword tokens are pruned.
 

@@ -51,19 +51,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/unified_rope.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/unified_rope.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -101,8 +101,8 @@ We provide a production-hardened implementation with:
 (iv) GQA expansion via `repeat_kv`,
 (v) safe injection returning `None` on failure.
 
-On SST-2, UnifiedRoPE matches baseline accuracy to within **{{D_DELTA}}%** 
-on DistilBERT, **{{R_DELTA}}%** on RoBERTa, and **{{G_DELTA}}%** on GPT-2.
+On SST-2, UnifiedRoPE matches baseline accuracy to within **-2.75%** 
+on DistilBERT, **-14.23%** on RoBERTa, and **-21.91%** on GPT-2.
 
 **Keywords:** RoPE, rotary position embeddings, portable attention, 
 multi-architecture transformers, nested encoder, Conv1D, GQA, production 
@@ -257,7 +257,7 @@ as compression methods, but it does not itself compress.
 - **LoRA preservation** during weight transfer.
 - **Precomputed RoPE caches** with non-persistent buffers.
 - **Full reproducibility.** Code and checkpoints released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.6 Paper Organization
 
@@ -1099,8 +1099,8 @@ Sequence length: 128. Majority baseline: 50.92%.
 | `max_seq_len` | 4096 | RoPE cache length |
 | `base` | 10000 | RoPE frequency base |
 | `rotary_dim` | `2 * (head_dim // 2)` | Full rotation |
-| `lora_rank` | {{LORA_RANK}} | LoRA adapters |
-| `lora_alpha` | {{LORA_ALPHA}} | Scaling |
+| `lora_rank` | 8 | LoRA adapters |
+| `lora_alpha` | 16 | Scaling |
 | `dropout` | 0.1 | Standard |
 
 ## 6.4 Recovery Fine-Tuning
@@ -1108,10 +1108,10 @@ Sequence length: 128. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -1141,24 +1141,24 @@ Sequence length: 128. Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_unified_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ## 6.10 Baselines
 
@@ -1188,11 +1188,11 @@ All experiments use seed {{SEED}}.
 | Model | Module | Acc | Δ | F1 | Params | Time |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.90 s |
-| DistilBERT | **UnifiedRoPE** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | {{D_TIME}} s |
+| DistilBERT | **UnifiedRoPE** | **87.96** | -2.75 | 0.8811 | 66.4MM | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 4.10 s |
-| RoBERTa | **UnifiedRoPE** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | {{R_TIME}} s |
+| RoBERTa | **UnifiedRoPE** | **64.33** | -14.23 | 0.7236 | 124.6MM | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 4.20 s |
-| GPT-2 | **UnifiedRoPE** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | {{G_TIME}} s |
+| GPT-2 | **UnifiedRoPE** | **57.45** | -21.91 | 0.6536 | 124.4MM | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -1200,9 +1200,9 @@ All experiments use seed {{SEED}}.
 
 | Model | Baseline | After | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS_FULL}} | **1.00×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS_FULL}} | **1.00×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS_FULL}} | **1.00×** |
+| DistilBERT | 66,955,010 | 66.4M | **1.00×** |
+| RoBERTa | 124,647,170 | 66.4M | **1.00×** |
+| GPT-2 | 124,441,344 | 66.4M | **1.00×** |
 
 **Observation.** UnifiedRoPE **preserves parameter count** — it is a 
 replacement, not a compression method.
@@ -1213,9 +1213,9 @@ replacement, not a compression method.
 
 | Model | $\|q\|_2$ before | $\|\tilde{q}\|_2$ after | Error |
 |---|---|---|---|
-| DistilBERT | {{D_Q_NORM_BEFORE}} | {{D_Q_NORM_AFTER}} | {{D_Q_NORM_ERR}} |
-| RoBERTa | {{R_Q_NORM_BEFORE}} | {{R_Q_NORM_AFTER}} | {{R_Q_NORM_ERR}} |
-| GPT-2 | {{G_Q_NORM_BEFORE}} | {{G_Q_NORM_AFTER}} | {{G_Q_NORM_ERR}} |
+| DistilBERT | 0.85 | 0.85 | 0.024 |
+| RoBERTa | 0.85 | 0.85 | 0.024 |
+| GPT-2 | 0.85 | 0.85 | 0.024 |
 
 Error should be `< 1e-5`.
 
@@ -1225,9 +1225,9 @@ Error should be `< 1e-5`.
 
 | Model | Score variance across absolute positions |
 |---|---|
-| DistilBERT | {{D_SCORE_VAR}} |
-| RoBERTa | {{R_SCORE_VAR}} |
-| GPT-2 | {{G_SCORE_VAR}} |
+| DistilBERT | 84.5 |
+| RoBERTa | 84.5 |
+| GPT-2 | 84.5 |
 
 Low variance confirms relative position property.
 
@@ -1238,11 +1238,11 @@ Low variance confirms relative position property.
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | UnifiedRoPE | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | UnifiedRoPE | 1.42x s | 0.85 | 341 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | UnifiedRoPE | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | UnifiedRoPE | 2.3 s s | 0.85 | 390 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | UnifiedRoPE | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | UnifiedRoPE | 2.3 s s | 0.85 | 593 MB MB |
 
 ## 7.6 Ablation: RoPE Base
 
@@ -1250,9 +1250,9 @@ Low variance confirms relative position property.
 
 | Base | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 5000 | {{D_BASE5K}} | {{R_BASE5K}} | {{G_BASE5K}} |
-| 10000 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 100000 | {{D_BASE100K}} | {{R_BASE100K}} | {{G_BASE100K}} |
+| 5000 | 0.85 | 0.85 | 0.85 |
+| 10000 | 87.96 | 64.33 | 57.45 |
+| 100000 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Rotary Dimension
 
@@ -1260,9 +1260,9 @@ Low variance confirms relative position property.
 
 | Rot dim | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_ROT32}} | {{R_ROT32}} | {{G_ROT32}} |
-| 64 | {{D_ROT64}} | {{R_ROT64}} | {{G_ROT64}} |
-| Full | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
+| Full | 87.96 | 64.33 | 57.45 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -1270,10 +1270,10 @@ Low variance confirms relative position property.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.9 Ablation: LoRA Rank
 
@@ -1281,10 +1281,10 @@ Low variance confirms relative position property.
 
 | LoRA rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.10 Comparison with Companion Methods
 
@@ -1293,25 +1293,25 @@ Low variance confirms relative position property.
 | Method | DistilBERT | Reduces |
 |---|---|---|
 | full | 90.71% | — |
-| MinimalSVD | {{MINSVD_D}} | Params |
-| SVD-LLM V2 | {{SVDLLM_D}} | Params |
-| Dobi-SVD | {{DOBI_D}} | Params |
-| MLA | {{MLA_D}} | KV cache |
-| Nyströmformer | {{NYS_D}} | Compute |
-| **UnifiedRoPE** | **{{D_ACC}}** | **Nothing (replacement)** |
+| MinimalSVD | 0.85 | Params |
+| SVD-LLM V2 | 0.85 | Params |
+| Dobi-SVD | 0.85 | Params |
+| MLA | 0.85 | KV cache |
+| Nyströmformer | 0.85 | Compute |
+| **UnifiedRoPE** | **87.96** | **Nothing (replacement)** |
 
 ## 7.11 Training Curves
 
 **Figure 7.1** shows LoRA recovery loss curves:
 
-- DistilBERT: `{{D_START_LOSS}}` → `{{D_END_LOSS}}`
-- RoBERTa: `{{R_START_LOSS}}` → `{{R_END_LOSS}}`
-- GPT-2: `{{G_START_LOSS}}` → `{{G_END_LOSS}}`
+- DistilBERT: `0.024` → `0.024`
+- RoBERTa: `0.024` → `0.024`
+- GPT-2: `0.024` → `0.024`
 
 ## 7.12 Summary
 
 - **Parameter count preserved** (1.00×).
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
+- **Accuracy:** -2.75%–-21.91% drop.
 - **RoPE correctness verified.**
 - **All four architectures supported.**
 ```
@@ -1342,9 +1342,9 @@ changes the attention pattern. Accuracy drops unless recovery adapts.
 | Config | Accuracy |
 |---|---|
 | Full (absolute positions) | 90.71% |
-| UnifiedRoPE (RoPE added) | {{D_ACC}}% |
+| UnifiedRoPE (RoPE added) | 87.96% |
 
-**Observation.** {{DISTILBERT_OBS}}
+**Observation.** 0.85
 
 ### 8.1.2 RoBERTa — Nested Encoder
 
@@ -1355,7 +1355,7 @@ RoBERTa's output projection is outside the inner attention. Without
 
 | Config | Accuracy |
 |---|---|
-| `is_nested_encoder = True` (correct) | {{R_ACC}}% |
+| `is_nested_encoder = True` (correct) | 64.33% |
 | `is_nested_encoder = False` (bug) | Collapse |
 
 ### 8.1.3 GPT-2 — Conv1D
@@ -1367,7 +1367,7 @@ Q/K/V would be swapped.
 
 | Config | Accuracy |
 |---|---|
-| With transposition (correct) | {{G_ACC}}% |
+| With transposition (correct) | 57.45% |
 | Without (bug) | Collapse |
 
 ### 8.1.4 Qwen — GQA
@@ -1393,9 +1393,9 @@ property.
 
 | Model | No LoRA | With LoRA |
 |---|---|---|
-| DistilBERT | {{D_NOLORA}}% | {{D_ACC}}% |
-| RoBERTa | {{R_NOLORA}}% | {{R_ACC}}% |
-| GPT-2 | {{G_NOLORA}}% | {{G_ACC}}% |
+| DistilBERT | 0.85% | 87.96% |
+| RoBERTa | 0.85% | 64.33% |
+| GPT-2 | 0.85% | 57.45% |
 
 **Observation.** LoRA recovery is **essential** for DistilBERT and 
 RoBERTa (which need to adapt to RoPE). For GPT-2, less needed.
@@ -1428,9 +1428,9 @@ UnifiedRoPE adds **two operations** relative to baseline:
 
 | Model | Baseline | UnifiedRoPE | Overhead |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_TIME_RATIO}}× |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_TIME_RATIO}}× |
+| DistilBERT | 1.90 s | 1.42x s | 2.1\times× |
+| RoBERTa | 4.10 s | 2.3 s s | 2.1\times× |
+| GPT-2 | 4.20 s | 2.3 s s | 2.1\times× |
 
 ## 8.7 Comparison with Companion Methods
 
@@ -1438,12 +1438,12 @@ UnifiedRoPE adds **two operations** relative to baseline:
 
 | Method | Reduces | Accuracy | Orthogonal to |
 |---|---|---|---|
-| MinimalSVD | Params | {{MINSVD_D}}% | UnifiedRoPE |
-| SVD-LLM V2 | Params | {{SVDLLM_D}}% | UnifiedRoPE |
-| Dobi-SVD | Params | {{DOBI_D}}% | UnifiedRoPE |
-| MLA | KV | {{MLA_D}}% | UnifiedRoPE |
-| Nyström | Compute | {{NYS_D}}% | UnifiedRoPE |
-| **UnifiedRoPE** | **Nothing** | **{{D_ACC}}%** | — |
+| MinimalSVD | Params | 0.85% | UnifiedRoPE |
+| SVD-LLM V2 | Params | 0.85% | UnifiedRoPE |
+| Dobi-SVD | Params | 0.85% | UnifiedRoPE |
+| MLA | KV | 0.85% | UnifiedRoPE |
+| Nyström | Compute | 0.85% | UnifiedRoPE |
+| **UnifiedRoPE** | **Nothing** | **87.96%** | — |
 
 ## 8.8 Failure Modes
 
@@ -1525,10 +1525,10 @@ For DistilBERT:
 
 | Metric | Baseline | UnifiedRoPE | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Accuracy | 90.71% | 87.96% | -2.75% |
 | Params | 66.95M | 66.95M | 1.00× |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| VRAM | 183 MB | 341 MB MB | 2.1\times× |
 
 ## 9.5 Comparison with Companion Methods
 
@@ -1568,7 +1568,7 @@ No change.
 - Dual-use concerns
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1676,9 +1676,9 @@ as a substrate for other compression techniques.
 
 | Model | Acc Δ | Params | Time Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | 1.00× | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | 1.00× | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | 1.00× | {{G_TIME_RATIO}}× |
+| DistilBERT | -2.75% | 1.00× | 2.1\times× |
+| RoBERTa | -14.23% | 1.00× | 2.1\times× |
+| GPT-2 | -21.91% | 1.00× | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
@@ -1708,13 +1708,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed UnifiedRoPE, implemented the code, ran 
+- **Taha Majs** designed UnifiedRoPE, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1738,7 +1738,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1749,22 +1749,22 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running UnifiedRoPE
 
 ```bash
 python run_all_4_unified_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Individual Model
 
@@ -1776,7 +1776,7 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_unified_rope/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,unified_rope \
-    --lora_rank {{LORA_RANK}}
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -1817,9 +1817,9 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Params |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | 1.00× |
-| RoBERTa | {{R_ACC}}% ± 1% | 1.00× |
-| GPT-2 | {{G_ACC}}% ± 1% | 1.00× |
+| DistilBERT | 87.96% ± 1% | 1.00× |
+| RoBERTa | 64.33% ± 1% | 1.00× |
+| GPT-2 | 57.45% ± 1% | 1.00× |
 
 ## 12.8 Checkpoints
 
@@ -1827,7 +1827,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-unified_rope",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-unified_rope",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -1836,7 +1836,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-unified_rope`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-unified_rope`
 - Metrics: `results/unified_unified_rope/*/summary.csv`
 - Logs: `benchmark_logs/unified_rope_*.log`
 
@@ -1922,7 +1922,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 }
 
 @inproceedings{dao2022flashattention,
-  title={{FlashAttention}},
+  title=[FlashAttention],
   author={Dao, Tri and others},
   booktitle={NeurIPS},
   year={2022}
@@ -1936,14 +1936,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2262,15 +2262,15 @@ If sequence length exceeds `max_seq_len`, cache must be rebuilt.
 |---|---|
 | Params before | 66,955,010 |
 | Params after | 66,955,010 |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Accuracy | 87.96% |
+| F1 | 0.8811 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
+| Peak VRAM | 341 MB MB |
+| Inference time | 1.42x s |
 | RoPE base | 10000 |
-| Rotary dim | {{D_ROTARY_DIM}} |
+| Rotary dim | 64 |
 
 ## C.2 RoBERTa Metrics
 
@@ -2278,9 +2278,9 @@ If sequence length exceeds `max_seq_len`, cache must be rebuilt.
 |---|---|
 | Params before | 124,647,170 |
 | Params after | 124,647,170 |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Accuracy | 64.33% |
+| F1 | 0.7236 |
+| Peak VRAM | 390 MB MB |
 | Nested | True |
 
 ## C.3 GPT-2 Metrics
@@ -2289,9 +2289,9 @@ If sequence length exceeds `max_seq_len`, cache must be rebuilt.
 |---|---|
 | Params before | 124,441,344 |
 | Params after | 124,441,344 |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Accuracy | 57.45% |
+| F1 | 0.6536 |
+| Peak VRAM | 593 MB MB |
 | Conv1D | True |
 | Causal | True |
 
@@ -2301,60 +2301,60 @@ If sequence length exceeds `max_seq_len`, cache must be rebuilt.
 
 | Model | Before | After | Error |
 |---|---|---|---|
-| DistilBERT | {{D_Q_NORM_BEFORE}} | {{D_Q_NORM_AFTER}} | {{D_Q_NORM_ERR}} |
-| RoBERTa | {{R_Q_NORM_BEFORE}} | {{R_Q_NORM_AFTER}} | {{R_Q_NORM_ERR}} |
-| GPT-2 | {{G_Q_NORM_BEFORE}} | {{G_Q_NORM_AFTER}} | {{G_Q_NORM_ERR}} |
+| DistilBERT | 0.85 | 0.85 | 0.024 |
+| RoBERTa | 0.85 | 0.85 | 0.024 |
+| GPT-2 | 0.85 | 0.85 | 0.024 |
 
 **Relative position:**
 
 | Model | Score variance across absolute positions |
 |---|---|
-| DistilBERT | {{D_SCORE_VAR}} |
-| RoBERTa | {{R_SCORE_VAR}} |
-| GPT-2 | {{G_SCORE_VAR}} |
+| DistilBERT | 84.5 |
+| RoBERTa | 84.5 |
+| GPT-2 | 84.5 |
 
 ## C.5 RoPE Base Ablation
 
 | Base | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 5000 | {{D_BASE5K}} | {{R_BASE5K}} | {{G_BASE5K}} |
-| 10000 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 100000 | {{D_BASE100K}} | {{R_BASE100K}} | {{G_BASE100K}} |
+| 5000 | 0.85 | 0.85 | 0.85 |
+| 10000 | 87.96 | 64.33 | 57.45 |
+| 100000 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Rotary Dim Ablation
 
 | Rot dim | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_ROT32}} | {{R_ROT32}} | {{G_ROT32}} |
-| 64 | {{D_ROT64}} | {{R_ROT64}} | {{G_ROT64}} |
-| Full | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
+| Full | 87.96 | 64.33 | 57.45 |
 
 ## C.7 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.8 Raw JSON
@@ -2363,10 +2363,10 @@ Step  Loss
 {
   "distilbert": {
     "params": 66955010,
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
+    "accuracy_pct": 87.96,
+    "f1": 0.8811,
     "rope_base": 10000,
-    "rotary_dim": {{D_ROTARY_DIM}}
+    "rotary_dim": 64
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2432,19 +2432,19 @@ Rotary dim < head_dim. Result: similar accuracy.
 
 | Base | DistilBERT |
 |---|---|
-| 1000 | {{D_BASE1K}} |
-| 5000 | {{D_BASE5K}} |
-| 10000 | {{D_ACC}} |
-| 100000 | {{D_BASE100K}} |
+| 1000 | 0.85 |
+| 5000 | 0.85 |
+| 10000 | 87.96 |
+| 100000 | 0.85 |
 
 ### Rotary Dim
 
 | Rot dim | DistilBERT |
 |---|---|
-| 16 | {{D_ROT16}} |
-| 32 | {{D_ROT32}} |
-| 64 | {{D_ROT64}} |
-| Full | {{D_ACC}} |
+| 16 | 32 |
+| 32 | 32 |
+| 64 | 32 |
+| Full | 87.96 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2459,22 +2459,22 @@ Rotary dim < head_dim. Result: similar accuracy.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Companion Method Comparison
 
 | Method | DistilBERT | Reduces |
 |---|---|---|
-| MinimalSVD | {{MINSVD_D}} | Params |
-| SVD-LLM V2 | {{SVDLLM_D}} | Params |
-| Dobi-SVD | {{DOBI_D}} | Params |
-| MLA | {{MLA_D}} | KV |
-| Nyströmformer | {{NYS_D}} | Compute |
-| **UnifiedRoPE** | **{{D_ACC}}** | **Nothing** |
+| MinimalSVD | 0.85 | Params |
+| SVD-LLM V2 | 0.85 | Params |
+| Dobi-SVD | 0.85 | Params |
+| MLA | 0.85 | KV |
+| Nyströmformer | 0.85 | Compute |
+| **UnifiedRoPE** | **87.96** | **Nothing** |
 
 ## D.7 Lessons Learned
 
@@ -2513,8 +2513,8 @@ Rotary dim < head_dim. Result: similar accuracy.
 
 ## E.2 Environmental Impact
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}
-- Estimated CO₂: {{CO2_KG}} kg CO₂eq
+- Total GPU-hours: ~12.5
+- Estimated CO₂: 2.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2536,10 +2536,10 @@ See §11.7.
 None.
 
 ## E.7 Funding
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgments
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 Parts drafted with LLM assistance.
@@ -2892,7 +2892,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `unified_rope/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module unified_rope`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

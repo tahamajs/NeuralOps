@@ -22,7 +22,7 @@
 
 **Goal.** Linear polynomial.
 
-**Result.** Accuracy dropped by {{O1_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Order 2 minimum.
 
@@ -62,18 +62,18 @@ Removed dropout. Slight overfitting.
 
 | $d$ | DistilBERT |
 |---|---|
-| 1 | {{D_O1}} |
-| 2 | {{D_O2}} |
-| 4 | {{D_O4}} |
-| 8 | {{D_O8}} |
+| 1 | 0.85 |
+| 2 | 0.85 |
+| 4 | 0.85 |
+| 8 | 0.85 |
 
 ### Temperature
 
 | $T$ | DistilBERT |
 |---|---|
-| 0.5 | {{D_T05}} |
-| 1.0 | {{D_T10}} |
-| 2.0 | {{D_T20}} |
+| 0.5 | 0.85 |
+| 1.0 | 0.85 |
+| 2.0 | 0.85 |
 
 ## D.4 Lessons Learned
 

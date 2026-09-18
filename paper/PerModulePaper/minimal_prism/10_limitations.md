@@ -34,7 +34,7 @@ MinimalPRISM does not use calibration data. This means:
 - No activation-aware weighting
 - Rank is based on weight spectrum only
 
-A3 and AASVD achieve {{COV_GAIN}}% higher accuracy at the same compression, 
+A3 and AASVD achieve 0.85% higher accuracy at the same compression, 
 but require calibration. This is a deliberate trade-off.
 
 ## 10.5 No Explicit Reconstruction Bound per Layer
@@ -69,12 +69,12 @@ be noise.
 
 ## 10.9 Rank Cap Heuristic
 
-Default $r_\text{max} = {{RANK}}$ is chosen empirically. There is no 
+Default $r_\text{max} = 32$ is chosen empirically. There is no 
 principled way to pick it without ablation.
 
 ## 10.10 Energy Threshold Heuristic
 
-$\eta = {{ENERGY}}$ is a heuristic. Optimal values may differ per model.
+$\eta = 45.2$ is a heuristic. Optimal values may differ per model.
 
 ## 10.11 No Comparison with Some Baselines
 

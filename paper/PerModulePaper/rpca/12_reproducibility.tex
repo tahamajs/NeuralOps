@@ -1,3 +1,8 @@
-\section{12 Reproducibility}
-
-Formal architectural specifications for \texttt{rpca}.
+\section{Reproducibility Guide}
+Evaluation commands can be reproduced directly using the unified framework runner:
+\begin{lstlisting}[language=bash]
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor rpca \
+    --output_dir results/unified_rpca
+\end{lstlisting}

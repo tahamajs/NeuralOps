@@ -30,7 +30,7 @@ Sequence length truncated to 128.
 
 | Parameter | Value | Note |
 |---|---|---|
-| Rank $r$ | {{RANK}} | SVD and residual |
+| Rank $r$ | 32 | SVD and residual |
 | $\gamma$ init | 1.0 | — |
 | $A$ init | $\mathcal{N}(0, 0.01^2)$ | — |
 | $B$ init | 0 | — |
@@ -41,10 +41,10 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 **Note.** SALT has no separate LoRA adapters — the trainable parameters are 
@@ -80,22 +80,22 @@ $\gamma, A, B$.
 | Component | Spec |
 |---|---|
 | GPU | RTX 4070 Laptop (8 GB) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_salt.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Seeds
 
-Single seed {{SEED}}.
+Single seed 42.
 
 ## 6.10 Baselines
 

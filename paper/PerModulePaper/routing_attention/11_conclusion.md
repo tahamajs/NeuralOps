@@ -12,16 +12,16 @@
 We presented **Routing Attention**, a content-based sparse attention method 
 that clusters tokens via online k-means on the joint query-key 
 representation, then restricts attention to intra-cluster tokens plus a 
-token-0 anchor. On SST-2, accuracy is preserved within **{{D_DELTA}}%** 
-(DistilBERT), **{{R_DELTA}}%** (RoBERTa), and **{{G_DELTA}}%** (GPT-2).
+token-0 anchor. On SST-2, accuracy is preserved within **-26.95%** 
+(DistilBERT), **-27.64%** (RoBERTa), and **-28.44%** (GPT-2).
 
 ## 11.2 Results Recap
 
 | Model | Acc | Δ | Params Δ | Time |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_R}}× |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_R}}× |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_R}}× |
+| DistilBERT | 63.76% | -26.95% | +48.5\%% | 2.3 s× |
+| RoBERTa | 50.92% | -27.64% | +48.5\%% | 2.3 s× |
+| GPT-2 | 50.92% | -28.44% | +48.5\%% | 2.3 s× |
 
 ## 11.3 Key Takeaways
 
@@ -53,12 +53,12 @@ sparse attention.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

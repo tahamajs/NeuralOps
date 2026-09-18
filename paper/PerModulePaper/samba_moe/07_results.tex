@@ -1,3 +1,9 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{samba_moe}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 3126.87 ms & 5085.0 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 3108.56 ms & 5085.0 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 3134.02 ms & 5094.8 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 3144.01 ms & 5094.8 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 3176.26 ms & 5101.3 MB \\
+benchmark\_summary\_v2 \& t5-mrpc \& PASS & 3170.7 ms & 5101.3 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

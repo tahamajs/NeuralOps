@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,10 +22,10 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_nha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --rff_features {{RFF_FEATURES}} \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --rff_features 64 \
+    --gate_init_bias 0.0 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -71,14 +71,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Mean gate |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_GATE}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_GATE}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_GATE}} |
+| DistilBERT | 90.71% ± 1% | ~0.94 |
+| RoBERTa | 50.92% ± 1% | ~0.85 |
+| GPT-2 | 50.92% ± 1% | ~0.85 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-nha`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-nha`
 - **Metrics:** `results/unified_nha/*/summary.csv`
 
 ## 12.7 Known Issues

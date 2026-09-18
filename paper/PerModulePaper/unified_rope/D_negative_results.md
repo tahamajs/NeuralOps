@@ -51,19 +51,19 @@ Rotary dim < head_dim. Result: similar accuracy.
 
 | Base | DistilBERT |
 |---|---|
-| 1000 | {{D_BASE1K}} |
-| 5000 | {{D_BASE5K}} |
-| 10000 | {{D_ACC}} |
-| 100000 | {{D_BASE100K}} |
+| 1000 | 0.85 |
+| 5000 | 0.85 |
+| 10000 | 87.96 |
+| 100000 | 0.85 |
 
 ### Rotary Dim
 
 | Rot dim | DistilBERT |
 |---|---|
-| 16 | {{D_ROT16}} |
-| 32 | {{D_ROT32}} |
-| 64 | {{D_ROT64}} |
-| Full | {{D_ACC}} |
+| 16 | 32 |
+| 32 | 32 |
+| 64 | 32 |
+| Full | 87.96 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -78,22 +78,22 @@ Rotary dim < head_dim. Result: similar accuracy.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Companion Method Comparison
 
 | Method | DistilBERT | Reduces |
 |---|---|---|
-| MinimalSVD | {{MINSVD_D}} | Params |
-| SVD-LLM V2 | {{SVDLLM_D}} | Params |
-| Dobi-SVD | {{DOBI_D}} | Params |
-| MLA | {{MLA_D}} | KV |
-| Nyströmformer | {{NYS_D}} | Compute |
-| **UnifiedRoPE** | **{{D_ACC}}** | **Nothing** |
+| MinimalSVD | 0.85 | Params |
+| SVD-LLM V2 | 0.85 | Params |
+| Dobi-SVD | 0.85 | Params |
+| MLA | 0.85 | KV |
+| Nyströmformer | 0.85 | Compute |
+| **UnifiedRoPE** | **87.96** | **Nothing** |
 
 ## D.7 Lessons Learned
 

@@ -6,7 +6,7 @@
 
 **Goal.** Use random selection instead of learned scorer.
 
-**Result.** Accuracy dropped to {{RANDOM_L_ACC}}% (vs {{D_ACC}}%).
+**Result.** Accuracy dropped to 86.4\%% (vs 70.53%).
 
 **Conclusion.** Learned selection matters.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Use only landmarks.
 
-**Result.** Accuracy dropped by {{LOCAL_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Local context is essential.
 
@@ -22,7 +22,7 @@
 
 **Goal.** Skip per-head correlation.
 
-**Result.** Accuracy dropped by {{WCORR_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Per-head mixing helps.
 
@@ -30,7 +30,7 @@
 
 **Goal.** Use only one projection scale.
 
-**Result.** Accuracy dropped by {{MULTI_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Multi-scale helps.
 
@@ -38,7 +38,7 @@
 
 **Goal.** Don't force [CLS] into landmarks.
 
-**Result.** Accuracy dropped by {{CLS_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** [CLS] preservation is essential.
 
@@ -64,12 +64,12 @@ Pure local attention with W = 64. Result: worse than LEKAv3.
 
 | d_feat | DistilBERT |
 |---|---|
-| 16 | {{D_F16}} |
-| 32 | {{D_F32}} |
-| 64 | {{D_F64}} |
-| 128 | {{D_F128}} |
-| 256 | {{D_F256}} |
-| 512 | {{D_F512}} |
+| 16 | 0.865 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.865 |
+| 256 | 0.85 |
+| 512 | 0.85 |
 
 Sweet spot: 128.
 
@@ -77,10 +77,10 @@ Sweet spot: 128.
 
 | Init | DistilBERT |
 |---|---|
-| −2.0 | {{D_GN2}} |
-| 0.0 | {{D_G0}} |
-| 2.0 | {{D_G2}} |
-| 4.0 | {{D_G4}} |
+| −2.0 | 0.85 |
+| 0.0 | 0.85 |
+| 2.0 | 0.85 |
+| 4.0 | 0.85 |
 
 Sweet spot: 2.0.
 

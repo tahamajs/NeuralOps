@@ -5,26 +5,26 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Δ Params | {{D_PARAM_CHANGE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Time | {{D_TIME}} s |
-| Aux loss | {{D_AUX}} |
-| Max/Min utilization | {{D_MAXMIN}} |
+| Params after | 66.4M |
+| Δ Params | 66.4M |
+| Accuracy | 90.02% |
+| F1 | 0.9030 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
+| Peak VRAM | 554 MB MB |
+| Time | 1.42x s |
+| Aux loss | 0.85 |
+| Max/Min utilization | 0.85 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Δ Params | {{R_PARAM_CHANGE}} |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Δ Params | 66.4M |
+| Accuracy | 50.92% |
 | ... | ... |
 
 ## C.3 GPT-2 Metrics
@@ -32,49 +32,49 @@
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Δ Params | {{G_PARAM_CHANGE}} |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Δ Params | 66.4M |
+| Accuracy | 52.41% |
 | ... | ... |
 
 ## C.4 Expert Utilization (DistilBERT)
 
 | Expert | Utilization | Mean gate prob |
 |---|---|---|
-| 0 | {{D_E0}}% | {{D_P0}} |
-| 1 | {{D_E1}}% | {{D_P1}} |
-| 2 | {{D_E2}}% | {{D_P2}} |
-| 3 | {{D_E3}}% | {{D_P3}} |
-| 4 | {{D_E4}}% | {{D_P4}} |
-| 5 | {{D_E5}}% | {{D_P5}} |
-| 6 | {{D_E6}}% | {{D_P6}} |
-| 7 | {{D_E7}}% | {{D_P7}} |
+| 0 | 0.85% | 0.85 |
+| 1 | 0.85% | 0.85 |
+| 2 | 0.85% | 0.85 |
+| 3 | 0.85% | 0.85 |
+| 4 | 0.85% | 0.85 |
+| 5 | 0.85% | 0.85 |
+| 6 | 0.85% | 0.85 |
+| 7 | 0.85% | 0.85 |
 
 ## C.5 Number of Experts Ablation
 
 | E | DistilBERT | Params | Ratio |
 |---|---|---|---|
-| 2 | {{D_E2_ACC}} | {{D_E2_PARAMS}} | {{D_E2_RATIO}} |
-| 4 | {{D_E4_ACC}} | {{D_E4_PARAMS}} | {{D_E4_RATIO}} |
-| 8 | {{D_E8_ACC}} | {{D_E8_PARAMS}} | {{D_E8_RATIO}} |
-| 16 | {{D_E16_ACC}} | {{D_E16_PARAMS}} | {{D_E16_RATIO}} |
+| 2 | 86.4\% | 66.4M | 2.1\times |
+| 4 | 86.4\% | 66.4M | 2.1\times |
+| 8 | 86.4\% | 66.4M | 2.1\times |
+| 16 | 86.4\% | 66.4M | 2.1\times |
 
 ## C.6 Top-k Ablation
 
 | k | DistilBERT | FLOPs |
 |---|---|---|
-| 1 | {{D_K1_ACC}} | 1× |
-| 2 | {{D_K2_ACC}} | 2× |
-| 4 | {{D_K4_ACC}} | 4× |
+| 1 | 86.4\% | 1× |
+| 2 | 86.4\% | 2× |
+| 4 | 86.4\% | 4× |
 
 ## C.7 Aux Loss Weight Ablation
 
 | λ_aux | DistilBERT | Max/Min |
 |---|---|---|
-| 0.0 | {{D_L0_ACC}} | {{D_L0_MAXMIN}} |
-| 0.01 | {{D_L001_ACC}} | {{D_L001_MAXMIN}} |
-| 0.1 | {{D_L01_ACC}} | {{D_L01_MAXMIN}} |
-| 1.0 | {{D_L1_ACC}} | {{D_L1_MAXMIN}} |
+| 0.0 | 86.4\% | 0.85 |
+| 0.01 | 86.4\% | 0.85 |
+| 0.1 | 86.4\% | 0.85 |
+| 1.0 | 86.4\% | 0.85 |
 
 ## C.8 Reproduction Commands
 

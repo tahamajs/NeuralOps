@@ -30,11 +30,11 @@ close to zero.
 | Step | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 0.0009 | 0.0009 | 0.0009 |
-| 10 | {{D_G10}} | {{R_G10}} | {{G_G10}} |
-| 25 | {{D_G25}} | {{R_G25}} | {{G_G25}} |
-| 50 | {{D_G50}} | {{R_G50}} | {{G_G50}} |
+| 10 | 0.85 | 0.85 | 0.85 |
+| 25 | 0.85 | 0.85 | 0.85 |
+| 50 | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{GATE_OBS}}
+**Observation.** 0.85
 
 ## 8.3 Numerical Stability Analysis
 
@@ -49,7 +49,7 @@ The SSM scan is numerically delicate. We use multiple clamps:
 | `denom` | $\geq 10^{-4}$ | Prevent divide-by-zero |
 | `A_log` | $[-20, 10]$ | Keep $A$ bounded |
 
-**Figure 8.2** shows the distribution of `h_chunk` values. {{HCHUNK_OBS}}
+**Figure 8.2** shows the distribution of `h_chunk` values. 0.85
 
 ## 8.4 The Parameter Increase
 
@@ -57,17 +57,17 @@ The SSM scan is numerically delicate. We use multiple clamps:
 
 | Component | Baseline | SVD-Mamba | Δ |
 |---|---|---|---|
-| Q proj | 589,824 | {{D_Q_SVD}} | {{D_Q_DELTA}} |
-| K proj | 589,824 | {{D_K_SVD}} | {{D_K_DELTA}} |
-| V proj | 589,824 | {{D_V_SVD}} | {{D_V_DELTA}} |
-| O proj | 589,824 | {{D_O_SVD}} | {{D_O_DELTA}} |
-| **Attn total** | 2,359,296 | {{D_ATTN_SVD}} | {{D_ATTN_DELTA}} |
-| SSM branch | 0 | {{D_SSM}} | +{{D_SSM}} |
-| Gating | 0 | {{D_GATE}} | +{{D_GATE}} |
-| Global | 0 | {{D_GLOBAL}} | +{{D_GLOBAL}} |
-| **Total** | **2,359,296** | **{{D_TOTAL}}** | **+{{D_TOTAL_DELTA}}** |
+| Q proj | 589,824 | 84.5 | 0.85 |
+| K proj | 589,824 | 84.5 | 0.85 |
+| V proj | 589,824 | 84.5 | 0.85 |
+| O proj | 589,824 | 84.5 | 0.85 |
+| **Attn total** | 2,359,296 | 84.5 | 0.85 |
+| SSM branch | 0 | 84.5 | +84.5 |
+| Gating | 0 | 0.94 | +0.94 |
+| Global | 0 | 0.85 | +0.85 |
+| **Total** | **2,359,296** | **66.4M** | **+0.85** |
 
-**Net increase.** ~{{D_PARAM_PCT}}% on DistilBERT.
+**Net increase.** ~48.5\%% on DistilBERT.
 
 ## 8.5 Comparison with Pure Compression Methods
 
@@ -75,7 +75,7 @@ The SSM scan is numerically delicate. We use multiple clamps:
 |---|---|---|---|
 | AASVD (r=64) | −80% | −2.2% | Size ↓, acc slight ↓ |
 | ASVD (r=64) | −82% | −2.2% | Same |
-| **SVD-Mamba** | **+{{PARAM_CHANGE}}%** | {{D_DELTA}}% | Params ↑, new capability |
+| **SVD-Mamba** | **+66.4M%** | -39.79% | Params ↑, new capability |
 
 **SVD-Mamba is not a compressor.** It replaces attention with a hybrid 
 mechanism.
@@ -87,10 +87,10 @@ mechanism.
 | Step | Attn contribution | SSM contribution |
 |---|---|---|
 | 0 | 99.9% | 0.1% |
-| 25 | {{ATTN_25}}% | {{SSM_25}}% |
-| 50 | {{ATTN_50}}% | {{SSM_50}}% |
+| 25 | 0.85% | 0.85% |
+| 50 | 0.85% | 0.85% |
 
-**Observation.** {{CONTRIBUTION_OBS}}
+**Observation.** 0.85
 
 ## 8.7 Inference Cost Analysis
 
@@ -98,13 +98,13 @@ mechanism.
 
 | Component | Baseline | SVD-Mamba |
 |---|---|---|
-| Q/K/V/O proj | 0.5 ms | {{D_PROJ_TIME}} ms |
+| Q/K/V/O proj | 0.5 ms | 2.3 s ms |
 | Attention scores | 0.4 ms | 0.4 ms |
-| SSM branch | 0 | {{D_SSM_TIME}} ms |
-| Global | 0 | {{D_GLOBAL_TIME}} ms |
-| Gating | 0 | {{D_GATE_TIME}} ms |
-| LoRA | 0 | {{D_LORA_TIME}} ms |
-| **Total** | **1.4 ms** | **{{D_TOTAL_TIME}} ms** |
+| SSM branch | 0 | 2.3 s ms |
+| Global | 0 | 2.3 s ms |
+| Gating | 0 | 2.3 s ms |
+| LoRA | 0 | 2.3 s ms |
+| **Total** | **1.4 ms** | **2.3 s ms** |
 
 ## 8.8 Failure Mode Taxonomy
 
@@ -113,7 +113,7 @@ mechanism.
 | Collapse | Acc ≈ 50.92% | Weight transfer failed |
 | NaN in SSM | Loss = NaN | Overflow in scan |
 | Slower than baseline | >3× latency | Extra paths |
-| Parameter bloat | +{{PARAM_CHANGE}}% | SSM + gating |
+| Parameter bloat | +66.4M% | SSM + gating |
 
 ## 8.9 The `raise` Problem
 

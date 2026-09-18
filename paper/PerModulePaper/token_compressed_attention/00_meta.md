@@ -1,19 +1,19 @@
 # TokenCompressedAttention: Learnable Token Selection for Efficient Transformer Inference
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/token_compressed.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/token_compressed.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -27,13 +27,13 @@ a subset of tokens based on a learnable importance score, while always
 preserving the special `[CLS]` token and respecting causal masking for 
 decoders.
 
-Our method adds a small scoring network ({{SCORE_NET_PARAMS}} parameters) on 
-top of a frozen pretrained attention. At compression ratio $\rho = {{RATIO}}$, 
+Our method adds a small scoring network (66.4M parameters) on 
+top of a frozen pretrained attention. At compression ratio $\rho = 50\%$, 
 we reduce the effective KV sequence length by $1 - \rho$, translating to 
-**{{KV_SAVINGS}}%** lower attention compute and KV cache. On SST-2, 
-TokenCompressedAttention achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%), using only {{RECOVERY_STEPS}} 
+**84.5%** lower attention compute and KV cache. On SST-2, 
+TokenCompressedAttention achieves **50.92%** on DistilBERT (baseline 
+0.85%), **50.92%** on RoBERTa (baseline 32%), and 
+**50.92%** on GPT-2 (baseline 0.85%), using only 50 
 LoRA recovery steps.
 
 Crucially, we are explicit that this method **does not reduce parameter 

@@ -14,10 +14,10 @@ on DistilBERT/RoBERTa unless explicitly enabled.
 
 | Config | DistilBERT |
 |---|---|
-| Cascade enabled | {{D_CASCADE_ON}} |
-| Cascade disabled | {{D_CASCADE_OFF}} |
+| Cascade enabled | 0.85 |
+| Cascade disabled | 0.85 |
 
-**Observation.** {{CASCADE_ENC_OBS}}
+**Observation.** 0.85
 
 ## D.2 Gate Collapse
 

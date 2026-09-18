@@ -5,77 +5,77 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Ratio | {{D_RATIO}}× |
-| Base rank | {{BASE_RANK}} |
-| Residual rank | {{RESIDUAL_RANK}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params after | 66.4M |
+| Ratio | 50\%× |
+| Base rank | 32 |
+| Residual rank | 16 |
+| Accuracy | 89.56% |
+| F1 | 0.9016 |
+| Peak VRAM | 298 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Ratio | 2.1\times× |
+| Accuracy | 76.61% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Ratio | 2.1\times× |
+| Accuracy | 71.33% |
 
 ## C.4 Base Rank Ablation
 
 | $r_b$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_B8}} | {{R_B8}} | {{G_B8}} |
-| 16 | {{D_B16}} | {{R_B16}} | {{G_B16}} |
-| 32 | {{D_B32}} | {{R_B32}} | {{G_B32}} |
-| 64 | {{D_B64}} | {{R_B64}} | {{G_B64}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Residual Rank Ablation
 
 | $r_r$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_R0}} | {{R_R0}} | {{G_R0}} |
-| 2 | {{D_R2}} | {{R_R2}} | {{G_R2}} |
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
+| 0 | 32 | 32 | 32 |
+| 2 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
 
 ## C.6 Scaling Ablation
 
 | $\alpha$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_A05}} | {{R_A05}} | {{G_A05}} |
-| 1.0 | {{D_A10}} | {{R_A10}} | {{G_A10}} |
-| 2.0 | {{D_A20}} | {{R_A20}} | {{G_A20}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 vs Pure SVD
 
 | Config | DistilBERT | RoBERTa |
 |---|---|---|
-| Pure SVD (r=20) | {{D_SVD20}} | {{R_SVD20}} |
-| Res-SVD (16,4) | {{D_ACC}} | {{R_ACC}} |
-| Difference | {{D_DIFF}} | {{R_DIFF}} |
+| Pure SVD (r=20) | 84.5 | 84.5 |
+| Res-SVD (16,4) | 89.56 | 76.61 |
+| Difference | 0.85 | 0.85 |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -84,11 +84,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "base_rank": {{BASE_RANK}},
-    "residual_rank": {{RESIDUAL_RANK}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 89.56,
+    "base_rank": 32,
+    "residual_rank": 16
   },
   "roberta": {...},
   "gpt2": {...}

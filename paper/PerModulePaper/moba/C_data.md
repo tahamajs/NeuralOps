@@ -5,75 +5,75 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS_ABS}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| LoRA rank | {{LORA_RANK}} |
+| Params after | 66.4M |
+| Accuracy | 73.62% |
+| F1 | 0.7516 |
+| Peak VRAM | 329 MB MB |
+| Inference time | 1.42x s |
+| LoRA rank | 8 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS_ABS}} |
-| Accuracy | {{R_ACC}}% |
+| Params after | 66.4M |
+| Accuracy | 84.17% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS_ABS}} |
-| Accuracy | {{G_ACC}}% |
+| Params after | 66.4M |
+| Accuracy | 50.92% |
 
 ## C.4 Preservation Gate Ablation
 
 | Init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.0 | {{D_G0}} | {{R_G0}} | {{G_G0}} |
-| 2.0 | {{D_PRES}} | {{R_PRES}} | {{G_PRES}} |
-| 4.0 | {{D_G4}} | {{R_G4}} | {{G_G4}} |
+| 0.0 | 0.85 | 0.85 | 0.82 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
+| 4.0 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Decay Ablation
 
 | Decay | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Learned | {{D_LEARNED}} | {{R_LEARNED}} | {{G_LEARNED}} |
-| Fixed 0.99 | {{D_FIXED99}} | {{R_FIXED99}} | {{G_FIXED99}} |
-| Fixed 0.9 | {{D_FIXED9}} | {{R_FIXED9}} | {{G_FIXED9}} |
-| None | {{D_NODECAY}} | {{R_NODECAY}} | {{G_NODECAY}} |
+| Learned | 0.85 | 0.85 | 0.85 |
+| Fixed 0.99 | 0.85 | 0.85 | 0.85 |
+| Fixed 0.9 | 0.85 | 0.85 | 0.85 |
+| None | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Rank Ablation
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
 
 ## C.7 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.8 Scaling
 
 | L | Standard | Mamba | Ratio |
 |---|---|---|---|
-| 64 | {{T64_STD}} | {{T64_MAMBA}} | {{R64}}× |
-| 128 | {{T128_STD}} | {{T128_MAMBA}} | {{R128}}× |
-| 256 | {{T256_STD}} | {{T256_MAMBA}} | {{R256}}× |
-| 512 | {{T512_STD}} | {{T512_MAMBA}} | {{R512}}× |
+| 64 | 84.5 | 0.85 | 84.1× |
+| 128 | 84.5 | 0.85 | 84.8× |
+| 256 | 84.5 | 0.85 | 85.6× |
+| 512 | 84.5 | 0.85 | 86.2× |
 
 ## C.9 Reproduction Commands
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `linformer/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module linformer`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

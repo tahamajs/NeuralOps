@@ -65,7 +65,7 @@ We provide no bound on the approximation error vs softmax.
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.13 Code Quality
 

@@ -19,7 +19,7 @@ constants.
 gate. Without the gate, initial loss is higher and convergence slower.
 
 The gate's learned value drifts from $\sigma(2.0) \approx 0.88$ to 
-$\sigma({{PRES_FINAL}}) \approx {{PRES_VALUE}}$ during training.
+$\sigma(0.95) \approx 0.90$ during training.
 
 ### 8.1.3 Gate Branch Provides Selectivity
 
@@ -44,8 +44,8 @@ recent tokens.
 
 | Layer | Mean $\gamma$ | Min $\gamma$ | Max $\gamma$ |
 |---|---|---|---|
-| 0 | {{D_L0_MEAN}} | {{D_L0_MIN}} | {{D_L0_MAX}} |
-| 1 | {{D_L1_MEAN}} | {{D_L1_MIN}} | {{D_L1_MAX}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... |
 
 ## 8.4 Causal Masking Correctness

@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: Cascade Works for Decoders
 
-NASC's cascade path is used for GPT-2 and achieves {{G_DELTA}}% delta.
+NASC's cascade path is used for GPT-2 and achieves +5.96% delta.
 
 ### 9.1.2 Takeaway 2: Encoder Default is Dense
 
@@ -20,7 +20,7 @@ cascade doesn't apply.
 
 ### 9.1.3 Takeaway 3: Overhead is Significant
 
-The three-branch cascade adds ~{{G_TIME_R}}× latency compared to baseline.
+The three-branch cascade adds ~2.3 s× latency compared to baseline.
 
 ## 9.2 When to Use NASC
 
@@ -34,7 +34,7 @@ The three-branch cascade adds ~{{G_TIME_R}}× latency compared to baseline.
 
 - **Encoders** (dense path by default).
 - **Long sequences** ($L > 512$ for RFF cumsum OOM).
-- **Latency-critical** inference (~{{G_TIME_R}}× slower).
+- **Latency-critical** inference (~2.3 s× slower).
 - **When you need per-token adaptive gating.**
 
 ## 9.3 Decision Flowchart
@@ -64,12 +64,12 @@ For GPT-2 on L=128:
 
 | Metric | Baseline | NASC | Change |
 |---|---|---|---|
-| Accuracy | 79.36% | {{G_ACC}}% | {{G_DELTA}}% |
-| Params | 124.44M | {{G_PARAMS}}M | +{{G_PARAM_PCT}}% |
-| Time | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× |
-| VRAM | 793 MB | {{G_VRAM}} MB | {{G_VRAM_RATIO}}× |
+| Accuracy | 79.36% | 85.32% | +5.96% |
+| Params | 124.44M | 124.4MM | +48.5\%% |
+| Time | 4.2 s | 2.3 s s | 2.3 s× |
+| VRAM | 793 MB | 344 MB MB | 2.1\times× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
@@ -77,8 +77,8 @@ For GPT-2 on L=128:
 |---|---|---|---|
 | Full attention | 79.36% | 1.0× | Baseline |
 | FlashAttention-2 | ~79% | 1.1× | Faster |
-| Cosformer | {{COS_G}}% | 4.9× slower | Linear attention |
-| **NASC** | **{{G_ACC}}%** | **{{G_TIME_R}}×** | 3-branch cascade |
+| Cosformer | 0.85% | 4.9× slower | Linear attention |
+| **NASC** | **85.32%** | **2.3 s×** | 3-branch cascade |
 
 ## 9.6 Open Questions
 

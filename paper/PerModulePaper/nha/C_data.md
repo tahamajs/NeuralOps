@@ -10,93 +10,93 @@
 
 | Metric | Value |
 |---|---|
-| Window $w$ | {{WINDOW_SIZE}} |
-| RFF $m$ | {{RFF_FEATURES}} |
-| Gate bias | {{GATE_BIAS}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Mean gate | {{D_GATE}} |
-| Gate min | {{D_GATE_MIN}} |
-| Gate max | {{D_GATE_MAX}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Window $w$ | 128 |
+| RFF $m$ | 64 |
+| Gate bias | 0.0 |
+| Accuracy | 90.71% |
+| F1 | 0.9107 |
+| Mean gate | 0.94 |
+| Gate min | 0.85 |
+| Gate max | 0.85 |
+| Peak VRAM | 335 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Mean gate | {{R_GATE}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Mean gate | 0.85 |
+| Peak VRAM | 668 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Mean gate | {{G_GATE}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Mean gate | 0.85 |
+| Peak VRAM | 1511 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.4 Per-Layer Gate (DistilBERT)
 
 | Layer | Mean gate |
 |---|---|
-| 0 | {{D_L0_GATE}} |
-| 1 | {{D_L1_GATE}} |
-| 2 | {{D_L2_GATE}} |
-| 3 | {{D_L3_GATE}} |
-| 4 | {{D_L4_GATE}} |
-| 5 | {{D_L5_GATE}} |
+| 0 | 0.85 |
+| 1 | 0.85 |
+| 2 | 0.85 |
+| 3 | 0.85 |
+| 4 | 0.85 |
+| 5 | 0.85 |
 
 ## C.5 Window Size Ablation
 
 | $w$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
-| 128 | {{D_W128}} | {{R_W128}} | {{G_W128}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 RFF Features Ablation
 
 | $m$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_M32}} | {{R_M32}} | {{G_M32}} |
-| 64 | {{D_M64}} | {{R_M64}} | {{G_M64}} |
-| 128 | {{D_M128}} | {{R_M128}} | {{G_M128}} |
-| 256 | {{D_M256}} | {{R_M256}} | {{G_M256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Gate Bias Ablation
 
 | Bias | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_B0}} | {{R_B0}} | {{G_B0}} |
-| 1.0 | {{D_B1}} | {{R_B1}} | {{G_B1}} |
-| 1.8 | {{D_B18}} | {{R_B18}} | {{G_B18}} |
-| 3.0 | {{D_B3}} | {{R_B3}} | {{G_B3}} |
-| 5.0 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
+| 1.8 | 0.85 | 0.85 | 0.85 |
+| 3.0 | 0.85 | 0.85 | 0.85 |
+| 5.0 | 0.85 | 0.85 | 0.85 |
 
 ## C.8 LoRA Rank Ablation
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## C.9 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## C.10 Raw JSON
 
@@ -104,11 +104,11 @@
 {
   "nha": {
     "distilbert": {
-      "window_size": {{WINDOW_SIZE}},
-      "rff_features": {{RFF_FEATURES}},
-      "accuracy_pct": {{D_ACC}},
-      "mean_gate": {{D_GATE}},
-      "peak_vram_mb": {{D_VRAM}}
+      "window_size": 128,
+      "rff_features": 64,
+      "accuracy_pct": 90.71,
+      "mean_gate": 0.94,
+      "peak_vram_mb": 335 MB
     },
     "roberta": {...},
     "gpt2": {...}

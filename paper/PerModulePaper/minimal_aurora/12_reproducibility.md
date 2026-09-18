@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 ```
@@ -12,18 +12,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running MinimalAURORA
 
 ```bash
 python run_all_4_minimal_aurora.py \
     --models distilbert,roberta,gpt2 \
-    --energy {{ENERGY}} \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy 45.2 \
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -60,14 +60,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 85.44% | 50\%× |
+| RoBERTa | 50.92% | 2.1\times× |
+| GPT-2 | 50.92% | 2.1\times× |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-minimal_aurora`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-minimal_aurora`
 - Metrics: `results/unified_minimal_aurora/*/summary.csv`
 
 ## 12.8 Known Issues

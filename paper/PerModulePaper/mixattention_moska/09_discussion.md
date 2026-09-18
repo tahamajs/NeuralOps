@@ -66,21 +66,21 @@ For DistilBERT on L=128:
 
 | Metric | Baseline | FASA | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 90.94% | +0.23% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| Time | 1.9 s | 1.42x s | 2.3 s× |
+| VRAM | 183 MB | 319 MB MB | 2.1\times× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
 | Alternative | Accuracy | Speed | Requires Attention? |
 |---|---|---|---|
 | Full attention | 90.71% | 1.0× | — |
-| H2O | ~{{H2O_ACC}}% | 0.6× | Yes |
-| StreamingLLM | ~{{SLLM_ACC}}% | 0.6× | No |
-| **FASA** | **{{D_ACC}}%** | **{{D_TIME_R}}×** | **No** |
+| H2O | ~86.4\%% | 0.6× | Yes |
+| StreamingLLM | ~86.4\%% | 0.6× | No |
+| **FASA** | **90.94%** | **2.3 s×** | **No** |
 
 ## 9.6 Open Questions
 

@@ -38,12 +38,12 @@ quality.
 
 ## 10.7 No Speedup at Short $L$
 
-At $L = 128$, NHA is {{D_TIME_RATIO}}× slower than baseline due to dual 
+At $L = 128$, NHA is 2.1\times× slower than baseline due to dual 
 streams.
 
 ## 10.8 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.9 No Comparison with Some Baselines
 
@@ -60,7 +60,7 @@ $d_h=64$: 786 KB per state.
 
 ## 10.11 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Ethical Considerations
 

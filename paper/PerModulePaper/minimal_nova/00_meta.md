@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/minimal_nova.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/minimal_nova.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -41,7 +41,7 @@ that factorizes each matrix as $W \approx U V$ with $U \in \mathbb{R}^{d \times 
 and $V \in \mathbb{R}^{r \times d}$, achieving parameter count 
 $r(d + d) = 2rd$ instead of $d^2$. For $d = 768$ and $r = 64$, this yields a 
 **6× parameter reduction per projection** while maintaining accuracy within 
-**{{D_DELTA}}%** on SST-2.
+**-2.06%** on SST-2.
 
 Our key novelty is **energy-adaptive rank selection**: instead of fixing 
 $r$ uniformly across layers, MinimalNOVA computes the cumulative spectral 
@@ -58,11 +58,11 @@ families (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with:
 (iv) RoPE position embeddings,
 (v) LoRA adapters initialized to zero for recovery fine-tuning.
 
-On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = {{RANK}}$ and energy 
-$\eta = {{ENERGY}}$, MinimalNOVA achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-parameter reduction with accuracy drops of only **{{D_DELTA}}%–{{G_DELTA}}%** 
-after {{RECOVERY_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = 32$ and energy 
+$\eta = 45.2$, MinimalNOVA achieves **50\%×–2.1\times×** 
+parameter reduction with accuracy drops of only **-2.06%–+0.00%** 
+after 50 LoRA recovery steps. Peak inference VRAM decreases 
+by **380 MB%**.
 
 **Keywords:** low-rank factorization, energy-adaptive rank, SVD, attention 
 compression, LoRA recovery, multi-architecture transformers

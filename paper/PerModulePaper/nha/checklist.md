@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `nha/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module nha`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

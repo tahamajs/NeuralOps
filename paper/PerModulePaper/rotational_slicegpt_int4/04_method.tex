@@ -1,3 +1,16 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{rotational_slicegpt_int4}.
+\subsection{Algorithmic Formulation}
+The \texttt{rotational_slicegpt_int4} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Rotational SliceGPT INT4 Compressor: Rotational Invariance, Subspace Slicing, and Second-Order INT4 Quantization.
+Registered in COMPRESSOR\_REGISTRY as 'rotational\_slicegpt\_int4' and 'rotational\_slicegpt'.
+
+Mathematical Formulation:
+1. Orthogonal Coordinate Rotation:
+   $$\\\\widetilde{W} = W Q, \\\\quad \\\\widetilde{X} = Q^\\\\top X, \\\\quad Q^\\\\top Q = I$$
+2. Variance-Based Subspace Slicing:
+   $$\\\\mathcal{I} = \\\\operatorname{Top-}r(\\\\operatorname{Var}(\\\\widetilde{X})), \\\\quad P\_r = [e\_i]\_{i \\\\in \\\\mathcal{I}}$$
+   $$W\_{sliced} = \\\\widetilde{W} P\_r, \\\\quad X\_{s}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

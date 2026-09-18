@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{sdrm}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_sdrm/roberta/summary.csv} \& sdrm \& PASS\_LOW & 50.92\% & 781.79 MB \\
+\texttt{results/unified\_sdrm/distilbert/summary.csv} \& sdrm \& PASS & 85.78\% & 338.98 MB \\
+\texttt{results/unified\_sdrm/gpt2/summary.csv} \& sdrm \& PASS & 67.66\% & 446.9 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 25.51 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 25.67 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 26.54 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 27.13 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 53.04 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

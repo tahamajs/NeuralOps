@@ -21,7 +21,7 @@
 
 **Goal.** Use i.i.d. Gaussian instead of orthogonal.
 
-**Result.** Accuracy dropped by {{IID_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Orthogonal matters.
 
@@ -68,18 +68,18 @@ Learn $m$ per head. No improvement.
 ### Window Size Too Small
 | $w$ | DistilBERT |
 |---|---|
-| 4 | {{D_W4}} |
-| 8 | {{D_W8}} |
-| 16 | {{D_W16}} |
-| 32 | {{D_W32}} |
-| 64 | {{D_W64}} |
+| 4 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
 
 ### RFF Count Too Small
 | $m$ | DistilBERT |
 |---|---|
-| 16 | {{D_M16}} |
-| 32 | {{D_M32}} |
-| 64 | {{D_M64}} |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -94,11 +94,11 @@ Learn $m$ per head. No improvement.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 

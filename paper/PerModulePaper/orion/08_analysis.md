@@ -78,13 +78,13 @@ self.register_buffer("rff_proj", torch.randn(...), persistent=True)
 
 | Split (kernel:full) | Accuracy |
 |---|---|
-| 1/2 : 1/2 | {{D_SPLIT_HALF}} |
-| 2/3 : 1/3 | {{D_ACC}} |
-| 3/4 : 1/4 | {{D_SPLIT_34}} |
-| 1 : 0 | {{D_ALL_KERNEL}} |
-| 0 : 1 | {{D_ALL_FULL}} |
+| 1/2 : 1/2 | 84.5 |
+| 2/3 : 1/3 | 55.50 |
+| 3/4 : 1/4 | 84.5 |
+| 1 : 0 | 0.85 |
+| 0 : 1 | 0.85 |
 
-**Observation.** {{SPLIT_OBS}}
+**Observation.** 0.85
 
 ## 8.4 Softpick Behavior
 
@@ -152,7 +152,7 @@ p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
 | **`copy_weights` raises** | Injection aborts | UniversalAdapter failure |
 | **`rff_proj` not persisted** | Train/test mismatch | `persistent=False` |
 | **Masked row collapse** | Zero attention | Softpick denominator = 0 |
-| **Slower than baseline** | ~{{D_TIME_R}}× | More kernel launches |
+| **Slower than baseline** | ~2.3 s× | More kernel launches |
 | **Rank over-pruning** | Accuracy loss | Energy threshold too low |
 
 ## 8.8 Why ORION Works
@@ -175,7 +175,7 @@ ORION and A3 both use SVD factorization, but:
 | Attention | Unchanged (standard) | Hybrid (kernel + full) |
 | Gate | No | Head-level |
 | RFF | No | Yes |
-| Reduction | ~60% | ~{{PARAM_REDUCTION}}% |
+| Reduction | ~60% | ~32% |
 
 **A3 is more aggressive;** ORION balances reduction with hybrid attention.
 

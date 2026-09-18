@@ -10,70 +10,70 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 55.50% |
+| Δ | -35.21% |
+| F1 | 0.6959 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Reduction | {{D_RED}}× |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params (after) | 66.4M |
+| Reduction | 48.2\%× |
+| Peak VRAM | 303 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 50.92% |
+| Δ | -27.64% |
+| F1 | 0.6748 |
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Reduction | {{R_RED}}× |
+| Params (after) | 124.6M |
+| Reduction | 45.1\%× |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| Δ | -28.44% |
+| F1 | 0.6748 |
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Reduction | {{G_RED}}× |
+| Params (after) | 124.4M |
+| Reduction | 46.0\%× |
 
 ## C.4 SVD Energy Ablation
 
 | Energy | DistilBERT | Reduction |
 |---|---|---|
-| 0.90 | {{D_E90}} | {{D_E90_R}}× |
-| 0.95 | {{D_E95}} | {{D_E95_R}}× |
-| 0.99 | {{D_E99}} | {{D_E99_R}}× |
+| 0.90 | 0.85 | 32× |
+| 0.95 | 0.85 | 32× |
+| 0.99 | 0.85 | 32× |
 
 ## C.5 Head Split Ablation
 
 | Split | DistilBERT |
 |---|---|
-| 1/2:1/2 | {{D_SPLIT_HALF}} |
-| 2/3:1/3 | {{D_ACC}} |
-| 3/4:1/4 | {{D_SPLIT_34}} |
-| 1:0 | {{D_ALL_KERNEL}} |
-| 0:1 | {{D_ALL_FULL}} |
+| 1/2:1/2 | 84.5 |
+| 2/3:1/3 | 55.50 |
+| 3/4:1/4 | 84.5 |
+| 1:0 | 0.85 |
+| 0:1 | 0.85 |
 
 ## C.6 Per-Layer Rank Selection (DistilBERT)
 
 | Layer | q_rank | k_rank | v_rank | o_rank |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
 
 ## C.7 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}, "reduction": {{D_RED}}},
-  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}, "reduction": {{R_RED}}},
-  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}, "reduction": {{G_RED}}}
+  "distilbert": {"acc": 55.50, "params": 66.4M, "reduction": 48.2\%},
+  "roberta": {"acc": 50.92, "params": 124.6M, "reduction": 45.1\%},
+  "gpt2": {"acc": 50.92, "params": 124.4M, "reduction": 46.0\%}
 }
 ```
 

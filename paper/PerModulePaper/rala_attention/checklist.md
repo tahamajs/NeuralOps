@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `rala/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module rala`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

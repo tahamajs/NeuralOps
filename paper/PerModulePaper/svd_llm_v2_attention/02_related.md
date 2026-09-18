@@ -64,7 +64,7 @@ mean-pooling of K and V weights.
 | A3 | Low-rank + Fisher | 5× | LoRA | No |
 | AASVD | Low-rank + covariance | 5× | LoRA | No |
 | MinimalSVD | Low-rank + energy | 3-6× | LoRA | No |
-| **SVD-LLM V2** | **Low-rank + explicit Σ** | **{{D_RATIO}}×** | **LoRA** | **Yes** |
+| **SVD-LLM V2** | **Low-rank + explicit Σ** | **50\%×** | **LoRA** | **Yes** |
 
 ## 2.6 Position of Our Work
 

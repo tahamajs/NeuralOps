@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_fasa.py \
     --models distilbert,roberta,gpt2 \
-    --fasa_keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --fasa_keep_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -33,7 +33,7 @@ python run_all_4_fasa.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-fasa",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-fasa",
         filename="weights.pt",
     )
 ```
@@ -80,9 +80,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | Pruned |
-| RoBERTa | {{R_ACC}}% ± 3% | Pruned |
-| GPT-2 | {{G_ACC}}% ± 1% | No-prune |
+| DistilBERT | 90.94% ± 2% | Pruned |
+| RoBERTa | 86.24% ± 3% | Pruned |
+| GPT-2 | 87.27% ± 1% | No-prune |
 
 ## 12.7 Diagnostics
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `unified_rope/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module unified_rope`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

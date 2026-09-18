@@ -11,13 +11,13 @@ and serves as an effective recovery mechanism for compression methods.
 
 | Model | Acc Δ | Trainable | Merge fidelity |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_TRAINABLE}} | ✓ |
-| RoBERTa | {{R_DELTA}}% | {{R_TRAINABLE}} | ✓ |
-| GPT-2 | {{G_DELTA}}% | {{G_TRAINABLE}} | ✓ |
+| DistilBERT | -0.80% | 0.85 | ✓ |
+| RoBERTa | -20.53% | 0.85 | ✓ |
+| GPT-2 | -28.10% | 0.85 | ✓ |
 
 ## 11.3 Key Takeaways
 
-1. **Trainable parameters reduced by {{TRAIN_RATIO}}×.**
+1. **Trainable parameters reduced by 2.1\times×.**
 2. **Attention LoRA outperforms FFN LoRA** for classification.
 3. **Merge preserves accuracy** to numerical precision.
 4. **Effective recovery mechanism for compression** — 90%+ recovery.
@@ -41,13 +41,13 @@ attention-specific fine-tuning. Code and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed LoRA Attention, implemented, ran experiments, 
+- **Taha Majs** designed LoRA Attention, implemented, ran experiments, 
   wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

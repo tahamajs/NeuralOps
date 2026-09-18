@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `svd_llm_v2/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module svd_llm_v2`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

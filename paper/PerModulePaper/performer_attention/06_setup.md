@@ -25,8 +25,8 @@ Sequence length truncated to 128.
 
 | Parameter | Value |
 |---|---|
-| `kernel_type` | {{KERNEL_TYPE}} (`favor_plus`) |
-| `num_features` | {{NUM_FEATURES}} (default 64) |
+| `kernel_type` | Gaussian (`favor_plus`) |
+| `num_features` | 64 (default 64) |
 | `eps` | $10^{-6}$ |
 | `dropout` | 0.1 |
 
@@ -35,11 +35,11 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -63,23 +63,23 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_performer.py \
     --models distilbert,roberta,gpt2 \
-    --num_features {{NUM_FEATURES}} \
-    --kernel_type {{KERNEL_TYPE}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_features 64 \
+    --kernel_type Gaussian \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 

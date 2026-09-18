@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,8 +15,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_padre.py \
     --models distilbert,roberta,gpt2 \
-    --order {{ORDER}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --order 2 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Individual Model
@@ -25,7 +25,7 @@ python run_all_4_padre.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,padre \
-    --order {{ORDER}}
+    --order 2
 ```
 
 ## 12.4 Reproducing Tables
@@ -62,14 +62,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 90.37% ± 1% |
+| RoBERTa | 64.56% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-padre`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-padre`
 - **Metrics:** `results/unified_padre/*/summary.csv`
 
 ---

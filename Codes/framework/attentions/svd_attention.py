@@ -753,5 +753,8 @@ def inject_svd_linear_attention(
         layer.self_attn = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
-
     return new_attn
+
+
+inject_svd_attention = inject_svd_linear_attention
+SVDAttention = SVDLinearAttention

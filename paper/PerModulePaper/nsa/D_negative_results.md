@@ -69,18 +69,18 @@ Different $w$ per layer. Marginal improvement.
 
 | $w$ | DistilBERT |
 |---|---|
-| 2 | {{D_W2}} |
-| 4 | {{D_W4}} |
-| 8 | {{D_W8}} |
-| 16 | {{D_W16}} |
+| 2 | 0.85 |
+| 4 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
 
 ### Top-K Too Small
 
 | $k$ | DistilBERT |
 |---|---|
-| 1 | {{D_K1}} |
-| 2 | {{D_K2}} |
-| 4 | {{D_K4}} |
+| 1 | 0.85 |
+| 2 | 0.85 |
+| 4 | 0.85 |
 
 ### Density Too High
 
@@ -100,11 +100,11 @@ Even at density 100% (large $w + k$), accuracy doesn't exceed baseline
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 

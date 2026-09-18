@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `vspec/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module vspec`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

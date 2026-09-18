@@ -40,7 +40,7 @@ module $\mathcal{A}'$ such that:
 3. **Differentiable:** Selection is differentiable (or at least 
    trainable end-to-end).
 4. **Vectorized:** No Python loop over queries.
-5. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+5. **Quality:** $\Delta\text{Acc} \leq 0.02\%$ on SST-2.
 6. **Pretrained compatibility:** Only LoRA + $O(1)$ parameters are trainable.
 
 ## 1.3 Our Approach: NSA

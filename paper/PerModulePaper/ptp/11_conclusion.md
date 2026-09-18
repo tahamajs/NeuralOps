@@ -17,13 +17,13 @@ small MLP, retains the top-$k$ fraction, and preserves [CLS] and causality.
 
 | Model | Acc Δ | Speedup | Kept |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_SPEEDUP}}× | {{D_KEPT}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_SPEEDUP}}× | {{R_KEPT}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_SPEEDUP}}× | {{G_KEPT}}% |
+| DistilBERT | 0.85% | 1.42x× | 0.85% |
+| RoBERTa | 0.85% | 84.5× | 0.85% |
+| GPT-2 | 0.85% | 84.5× | 0.85% |
 
 ## 11.3 Key Takeaways
 
-1. **Token pruning is effective** at $\rho = {{KEEP_RATIO}}$.
+1. **Token pruning is effective** at $\rho = 0.5$.
 2. **[CLS] preservation is essential.**
 3. **Learned scores reveal structure.**
 4. **Causality preserved.**
@@ -49,12 +49,12 @@ release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed PTP, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed PTP, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

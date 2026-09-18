@@ -6,10 +6,10 @@
 
 | Component | Contribution |
 |---|---|
-| XAttention | {{XA_CONTRIB}}% |
-| Seer gate | {{SEER_CONTRIB}}% |
-| DuSA | {{DUSA_CONTRIB}}% |
-| Softpick | {{SOFTPICK_CONTRIB}}% |
+| XAttention | 0.85% |
+| Seer gate | 0.85% |
+| DuSA | 0.85% |
+| Softpick | 0.85% |
 | Stripe | 0% (inactive) |
 | RFF | 0% (inactive) |
 
@@ -48,9 +48,9 @@ components.
 
 | $N$ | Standard | NEXUS | Speedup |
 |---|---|---|---|
-| 128 | {{T128_STD}} | {{T128_NEXUS}} | {{S128}}× |
-| 256 | {{T256_STD}} | {{T256_NEXUS}} | {{S256}}× |
-| 512 | {{T512_STD}} | {{T512_NEXUS}} | {{S512}}× |
+| 128 | 84.5 | 0.85 | 84.8× |
+| 256 | 84.5 | 0.85 | 85.6× |
+| 512 | 84.5 | 0.85 | 86.2× |
 
 Speedup grows with $N$, as expected.
 

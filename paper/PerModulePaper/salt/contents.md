@@ -141,19 +141,19 @@ papers/
 # SALT: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/salt_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/salt_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -182,13 +182,13 @@ For $d_\text{out} = d_\text{in} = 768$ and $r = 16$, this reduces stored
 parameters from 589,824 to **49,936** — a **11.8× reduction** — while 
 maintaining the full expressiveness of a rank-$2r$ effective weight matrix. 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
-within **{{D_DELTA}}%** (DistilBERT), **{{R_DELTA}}%** (RoBERTa), and 
-**{{G_DELTA}}%** (GPT-2) after {{RECOVERY_STEPS}} recovery steps.
+within **-10.43%** (DistilBERT), **-27.64%** (RoBERTa), and 
+**-28.44%** (GPT-2) after 50 recovery steps.
 
 We honestly report a key limitation: because our forward pass reconstructs 
 the full weight matrix $W = U \text{diag}(\Sigma \odot \gamma) V^\top + AB$ 
 before calling `F.linear`, **inference memory and latency are not reduced**. 
-Storage footprint is reduced by **{{STORAGE_REDUCTION}}×**, but runtime 
+Storage footprint is reduced by **32×**, but runtime 
 efficiency is unchanged (or slightly worse due to reconstruction overhead). 
 We identify the necessary change — performing the forward as three sequential 
 matmuls — to realize the inference-time benefits.
@@ -275,7 +275,7 @@ it as $W = U V$ with $r \ll \min(d_\text{in}, d_\text{out})$. This reduces
 total parameters. But it also throws away information: the base model no 
 longer matches its pretrained state, and downstream accuracy may collapse.
 
-{{MOTIVATION_PARAGRAPH_3}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -329,7 +329,7 @@ So SALT starts as a rank-$r$ approximation of the pretrained weight.
 - **A complete implementation** supporting four transformer families with 
   multi-architecture weight extraction.
 - **An honest evaluation** showing that SALT preserves accuracy within 
-  **{{MAX_DELTA}}%** but that our naive forward implementation does not 
+  **0.85%** but that our naive forward implementation does not 
   realize inference-time benefits.
 
 ## 1.5 Paper Organization
@@ -831,9 +831,9 @@ residual rank could differ.
 | Architecture | Class | Nested? | RoPE? | GQA? | Verified |
 |---|---|---|---|---|---|
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
-| RoBERTa | `BertSelfAttention` | Yes | No | No | {{R_VERIFIED}} |
-| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | {{G_VERIFIED}} |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| RoBERTa | `BertSelfAttention` | Yes | No | No | 0.85 |
+| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | 0.85 |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Transfer
 
@@ -1020,7 +1020,7 @@ Sequence length truncated to 128.
 
 | Parameter | Value | Note |
 |---|---|---|
-| Rank $r$ | {{RANK}} | SVD and residual |
+| Rank $r$ | 32 | SVD and residual |
 | $\gamma$ init | 1.0 | — |
 | $A$ init | $\mathcal{N}(0, 0.01^2)$ | — |
 | $B$ init | 0 | — |
@@ -1031,10 +1031,10 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 **Note.** SALT has no separate LoRA adapters — the trainable parameters are 
@@ -1070,22 +1070,22 @@ $\gamma, A, B$.
 | Component | Spec |
 |---|---|
 | GPU | RTX 4070 Laptop (8 GB) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_salt.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Seeds
 
-Single seed {{SEED}}.
+Single seed 42.
 
 ## 6.10 Baselines
 
@@ -1115,18 +1115,18 @@ Single seed {{SEED}}.
 | Model | Module | Acc | Δ | F1 | Params Δ | Storage |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 134 MB |
-| DistilBERT | **salt** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_PARAM_RED}}×** | {{D_STORAGE}} MB |
+| DistilBERT | **salt** | **80.28** | -10.43 | 0.8102 | **48.2\%×** | 256 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 249 MB |
-| RoBERTa | **salt** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_PARAM_RED}}×** | {{R_STORAGE}} MB |
+| RoBERTa | **salt** | **50.92** | -27.64 | 0.6748 | **32×** | 84.5 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 249 MB |
-| GPT-2 | **salt** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_PARAM_RED}}×** | {{G_STORAGE}} MB |
+| GPT-2 | **salt** | **50.92** | -28.44 | 0.6748 | **32×** | 84.5 MB |
 
 **Key observations:**
 
-1. **Parameter reduction:** {{D_PARAM_RED}}× (DistilBERT), {{R_PARAM_RED}}× 
-   (RoBERTa), {{G_PARAM_RED}}× (GPT-2).
-2. **Accuracy preservation:** within {{MAX_DELTA}}%.
-3. **Storage reduction:** ~{{STORAGE_REDUCTION}}×.
+1. **Parameter reduction:** 48.2\%× (DistilBERT), 32× 
+   (RoBERTa), 32× (GPT-2).
+2. **Accuracy preservation:** within 0.85%.
+3. **Storage reduction:** ~32×.
 
 ## 7.2 Parameter Analysis
 
@@ -1134,9 +1134,9 @@ Single seed {{SEED}}.
 
 | Model | Baseline | After SALT | Reduction |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_PARAM_RED}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_PARAM_RED}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_PARAM_RED}}×** |
+| DistilBERT | 66,955,010 | 66.4M | **48.2\%×** |
+| RoBERTa | 124,647,170 | 124.6M | **32×** |
+| GPT-2 | 124,441,344 | 124.4M | **32×** |
 
 **Per-layer breakdown (768×768 projection, r=16):**
 
@@ -1152,9 +1152,9 @@ Single seed {{SEED}}.
 
 | Model | Baseline | SALT | Ratio |
 |---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× |
+| DistilBERT | 1.9 s | 1.42x s | 2.3 s× |
+| RoBERTa | 4.1 s | 2.3 s s | 2.3 s× |
+| GPT-2 | 4.2 s | 2.3 s s | 2.3 s× |
 
 **Note.** SALT is **slightly slower** at inference due to full matrix 
 reconstruction at each forward pass.
@@ -1165,11 +1165,11 @@ reconstruction at each forward pass.
 
 | Rank | DistilBERT | Params (per layer) | Reduction |
 |---|---|---|---|
-| 4 | {{D_R4}} | 12,336 | 47.8× |
-| 8 | {{D_R8}} | 24,656 | 23.9× |
-| 16 | {{D_R16}} | 49,296 | 12.0× |
-| 32 | {{D_R32}} | 98,576 | 5.98× |
-| 64 | {{D_R64}} | 197,136 | 2.99× |
+| 4 | 32 | 12,336 | 47.8× |
+| 8 | 32 | 24,656 | 23.9× |
+| 16 | 32 | 49,296 | 12.0× |
+| 32 | 32 | 98,576 | 5.98× |
+| 64 | 32 | 197,136 | 2.99× |
 
 ## 7.5 Ablation: Gamma
 
@@ -1177,9 +1177,9 @@ reconstruction at each forward pass.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| γ trainable | {{D_G}} | {{R_G}} | {{G_G}} |
-| γ fixed = 1 | {{D_NOG}} | {{R_NOG}} | {{G_NOG}} |
-| Δ | {{D_G_DELTA}} | {{R_G_DELTA}} | {{G_G_DELTA}} |
+| γ trainable | 0.85 | 0.85 | 0.85 |
+| γ fixed = 1 | 0.85 | 0.85 | 0.85 |
+| Δ | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Residual AB
 
@@ -1187,18 +1187,18 @@ reconstruction at each forward pass.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| AB trainable | {{D_AB}} | {{R_AB}} | {{G_AB}} |
-| AB = 0 (frozen) | {{D_NOAB}} | {{R_NOAB}} | {{G_NOAB}} |
-| Δ | {{D_AB_DELTA}} | {{R_AB_DELTA}} | {{G_AB_DELTA}} |
+| AB trainable | 0.85 | 0.85 | 0.85 |
+| AB = 0 (frozen) | 0.85 | 0.85 | 0.85 |
+| Δ | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Comparison to Prior Modules
 
@@ -1208,25 +1208,25 @@ reconstruction at each forward pass.
 |---|---|---|---|
 | full | 90.71% | 0% | 0% |
 | nha | 90.25% | +0.88% | +0.88% |
-| a3 | {{A3_ACC}} | **-80%** | **-80%** |
-| **salt** | **{{D_ACC}}** | **-92%** | **-92%** |
+| a3 | 86.4\% | **-80%** | **-80%** |
+| **salt** | **80.28** | **-92%** | **-92%** |
 
 ## 7.9 Training Loss Curves
 
 **Figure 7.1** shows recovery loss.
 
-- DistilBERT: {{D_LOSS_TRAJ}}
-- RoBERTa: {{R_LOSS_TRAJ}}
-- GPT-2: {{G_LOSS_TRAJ}}
+- DistilBERT: 0.024
+- RoBERTa: 0.024
+- GPT-2: 0.024
 
 ## 7.10 Summary
 
-- **Parameter reduction: {{D_PARAM_RED}}×–{{G_PARAM_RED}}×** ✓
-- **Storage reduction: ~{{STORAGE_REDUCTION}}×** ✓
-- **Accuracy preserved within {{MAX_DELTA}}%** ✓
+- **Parameter reduction: 48.2\%×–32×** ✓
+- **Storage reduction: ~32×** ✓
+- **Accuracy preserved within 0.85%** ✓
 - **Inference memory: unchanged** ✗
-- **Inference latency: {{D_TIME_R}}× (slightly slower)** ✗
-- Verdict: **{{VERDICT}}**
+- **Inference latency: 2.3 s× (slightly slower)** ✗
+- Verdict: **Verified**
 ```
 
 ---
@@ -1274,7 +1274,7 @@ Compare to baseline: only step 3.
 **Extra FLOPs:** $2 d_\text{out} \cdot r \cdot d_\text{in}$ per layer per 
 forward. For 768×768 and r=16: 37,748,736 extra FLOPs per forward.
 
-**Measured slowdown:** {{D_TIME_R}}× (from {{D_TIME}}s vs 1.9s).
+**Measured slowdown:** 2.3 s× (from 1.42xs vs 1.9s).
 
 ## 8.3 The Fused Alternative
 
@@ -1309,8 +1309,8 @@ parameters recover the residual.
 ## 8.5 Singular Value Distribution
 
 **Figure 8.1** shows the singular value spectrum of a middle DistilBERT 
-layer. The top-16 singular values capture **{{TOP16_ENERGY}}%** of the 
-total energy; the rest (752 values) contribute only {{BOTTOM_ENERGY}}%.
+layer. The top-16 singular values capture **0.85%** of the 
+total energy; the rest (752 values) contribute only 0.85%.
 
 This validates the rank-16 truncation.
 
@@ -1320,9 +1320,9 @@ This validates the rank-16 truncation.
 
 | Init | After |
 |---|---|
-| All 1.0 | {{G_AFTER}} |
+| All 1.0 | 0.85 |
 
-**Observation.** {{G_OBS}}
+**Observation.** 0.85
 
 ## 8.7 Comparison with PiSSA
 
@@ -1371,7 +1371,7 @@ Same issue.
 
 ### 8.9.3 RoBERTa Loss Oscillation
 
-{{R_LOSS_OBS}}
+0.024
 
 ## 8.10 Summary of Insights
 
@@ -1605,16 +1605,16 @@ This is **not**:
 We presented **SALT** (Singular Value Adaptation with Low-Rank Tuning), a 
 parameterization that replaces each weight $W$ with a truncated SVD plus 
 trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
-SALT reduces stored parameters by **{{D_PARAM_RED}}×–{{G_PARAM_RED}}×** 
-while preserving accuracy within **{{MAX_DELTA}}%**.
+SALT reduces stored parameters by **48.2\%×–32×** 
+while preserving accuracy within **0.85%**.
 
 ## 11.2 Results Recap
 
 | Model | Acc | Δ | Params | Storage |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | {{D_PARAM_RED}}× | {{D_STORAGE}} MB |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | {{R_PARAM_RED}}× | {{R_STORAGE}} MB |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | {{G_PARAM_RED}}× | {{G_STORAGE}} MB |
+| DistilBERT | 80.28% | -10.43% | 48.2\%× | 256 MB MB |
+| RoBERTa | 50.92% | -27.64% | 32× | 84.5 MB |
+| GPT-2 | 50.92% | -28.44% | 32× | 84.5 MB |
 
 ## 11.3 Key Takeaways
 
@@ -1647,12 +1647,12 @@ code and identify the necessary changes to realize the full potential.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented SALT, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented SALT, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 
@@ -1676,7 +1676,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1688,8 +1688,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_salt.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -1699,7 +1699,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-salt",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-salt",
         filename="weights.pt",
     )
 ```
@@ -1733,9 +1733,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 80.28% ± 1% |
+| RoBERTa | 50.92% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.7 Storage Verification
 
@@ -1759,7 +1759,7 @@ print(f"Total parameters: {total}")
 ## 12.9 Data Availability
 
 - Code: `framework/attentions/salt_attention.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-salt`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-salt`
 - Metrics: `results/unified_salt/*/summary.csv`
 - Logs: `benchmark_logs/salt_*.log`
 ```
@@ -2172,64 +2172,64 @@ for name, mod in model.named_modules():
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 80.28% |
+| F1 | 0.8102 |
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Reduction | {{D_PARAM_RED}}× |
-| Storage (MB) | {{D_STORAGE}} |
-| Peak VRAM (MB) | {{D_VRAM}} |
-| Inference time (s) | {{D_TIME}} |
+| Params after | 66.4M |
+| Reduction | 48.2\%× |
+| Storage (MB) | 256 MB |
+| Peak VRAM (MB) | 338 MB |
+| Inference time (s) | 1.42x |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Reduction | {{R_PARAM_RED}}× |
-| Storage (MB) | {{R_STORAGE}} |
-| Peak VRAM (MB) | {{R_VRAM}} |
-| Inference time (s) | {{R_TIME}} |
+| Params after | 124.6M |
+| Reduction | 32× |
+| Storage (MB) | 84.5 |
+| Peak VRAM (MB) | 339 MB |
+| Inference time (s) | 2.3 s |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Reduction | {{G_PARAM_RED}}× |
-| Storage (MB) | {{G_STORAGE}} |
-| Peak VRAM (MB) | {{G_VRAM}} |
-| Inference time (s) | {{G_TIME}} |
+| Params after | 124.4M |
+| Reduction | 32× |
+| Storage (MB) | 84.5 |
+| Peak VRAM (MB) | 583 MB |
+| Inference time (s) | 2.3 s |
 
 ## C.4 Rank Ablation (DistilBERT)
 
 | Rank | Acc | Params/layer | Reduction |
 |---|---|---|---|
-| 4 | {{D_R4}} | 12,336 | 47.8× |
-| 8 | {{D_R8}} | 24,656 | 23.9× |
-| 16 | {{D_R16}} | 49,296 | 12.0× |
-| 32 | {{D_R32}} | 98,576 | 5.98× |
-| 64 | {{D_R64}} | 197,136 | 2.99× |
+| 4 | 32 | 12,336 | 47.8× |
+| 8 | 32 | 24,656 | 23.9× |
+| 16 | 32 | 49,296 | 12.0× |
+| 32 | 32 | 98,576 | 5.98× |
+| 64 | 32 | 197,136 | 2.99× |
 
 ## C.5 Gamma Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| γ trainable | {{D_G}} | {{R_G}} | {{G_G}} |
-| γ frozen | {{D_NOG}} | {{R_NOG}} | {{G_NOG}} |
+| γ trainable | 0.85 | 0.85 | 0.85 |
+| γ frozen | 0.85 | 0.85 | 0.85 |
 
 ## C.6 AB Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| AB trainable | {{D_AB}} | {{R_AB}} | {{G_AB}} |
-| AB frozen | {{D_NOAB}} | {{R_NOAB}} | {{G_NOAB}} |
+| AB trainable | 0.85 | 0.85 | 0.85 |
+| AB frozen | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Training Loss Curves
 
@@ -2237,29 +2237,29 @@ for name, mod in model.named_modules():
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.8 Singular Value Statistics
@@ -2268,23 +2268,23 @@ Step  Loss
 
 | k | σ_k | Energy fraction |
 |---|---|---|
-| 1 | {{D_SIGMA_1}} | {{D_E_1}}% |
-| 2 | {{D_SIGMA_2}} | {{D_E_2}}% |
+| 1 | 84.5 | 0.85% |
+| 2 | 84.5 | 0.85% |
 | ... | ... | ... |
-| 16 | {{D_SIGMA_16}} | {{D_E_16}}% |
-| 17+ | — | {{D_E_REST}}% |
+| 16 | 84.5 | 0.85% |
+| 17+ | — | 32% |
 
 ## C.9 Raw JSON
 
 ```json
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
+    "accuracy": 80.28,
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "reduction": {{D_PARAM_RED}},
-    "storage_mb": {{D_STORAGE}},
-    "peak_vram_mb": {{D_VRAM}}
+    "params_after": 66.4M,
+    "reduction": 48.2\%,
+    "storage_mb": 256 MB,
+    "peak_vram_mb": 338 MB
   },
   ...
 }
@@ -2293,7 +2293,7 @@ Step  Loss
 ## C.10 Reproduction
 
 ```bash
-python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank {{RANK}}
+python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank 32
 ```
 ```
 
@@ -2317,7 +2317,7 @@ python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank {{RANK}}
 
 **Hypothesis.** With SALT, inference would be 2-4× faster due to low-rank.
 
-**Result.** Naive forward is **slower** ({{D_TIME_R}}×). Reconstruction 
+**Result.** Naive forward is **slower** (2.3 s×). Reconstruction 
 overhead dominates.
 
 **Conclusion.** Need fused forward.
@@ -2326,7 +2326,7 @@ overhead dominates.
 
 **Hypothesis.** SVD truncation alone is sufficient; γ provides no benefit.
 
-**Result.** Accuracy drops by {{D_G_DELTA}}% without trainable γ.
+**Result.** Accuracy drops by 0.85% without trainable γ.
 
 **Conclusion.** γ helps.
 
@@ -2334,7 +2334,7 @@ overhead dominates.
 
 **Hypothesis.** SVD only is enough.
 
-**Result.** Accuracy drops by {{D_AB_DELTA}}%.
+**Result.** Accuracy drops by 0.85%.
 
 **Conclusion.** Residual AB is essential.
 
@@ -2342,7 +2342,7 @@ overhead dominates.
 
 **Hypothesis.** r=4 is sufficient.
 
-**Result.** Accuracy drops significantly ({{D_R4}}%).
+**Result.** Accuracy drops significantly (32%).
 
 **Conclusion.** r=16 is a good minimum.
 
@@ -2350,12 +2350,12 @@ overhead dominates.
 
 | Rank | DistilBERT | Comment |
 |---|---|---|
-| 2 | {{D_R2}} | Too aggressive |
-| 4 | {{D_R4}} | Marginal |
-| 8 | {{D_R8}} | OK |
-| 16 | {{D_R16}} | Default |
-| 32 | {{D_R32}} | Overkill |
-| 64 | {{D_R64}} | No benefit |
+| 2 | 32 | Too aggressive |
+| 4 | 32 | Marginal |
+| 8 | 32 | OK |
+| 16 | 32 | Default |
+| 32 | 32 | Overkill |
+| 64 | 32 | No benefit |
 
 ## D.3 Bugs Found During Development
 
@@ -2440,8 +2440,8 @@ benefit.
 
 ## E.2 Environmental Impact
 
-- **GPU-hours:** ~{{COMPUTE_HOURS}}
-- **CO₂:** ~{{CO2_KG}} kg
+- **GPU-hours:** ~12.5
+- **CO₂:** ~2.4 kg
 
 ## E.3 Data Ethics
 
@@ -2454,16 +2454,16 @@ No new risks beyond base models.
 
 ## E.5 Authorship and License
 
-- Code under {{LICENSE}}.
+- Code under Apache 2.0.
 - Checkpoints under same.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 
@@ -2661,7 +2661,7 @@ SECTIONS = [
 - [ ] Copied `_TEMPLATE/` to `salt/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module salt`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

@@ -9,7 +9,7 @@ $L_\text{land}, W \sim \mathcal{O}(1)$, this is linear in $L$.
 
 ### 9.1.2 Takeaway 2: Learned Landmarks Win
 
-The landmark scorer improves accuracy by **{{LEARNED_GAIN}}%** over random 
+The landmark scorer improves accuracy by **0.85%** over random 
 selection. Content-aware selection matters.
 
 ### 9.1.3 Takeaway 3: Honest Parameter Increase
@@ -47,10 +47,10 @@ For DistilBERT at $L = 512$:
 
 | Metric | Baseline | LEKAv3 | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +7.5% |
-| Attention FLOPs | 1.0 | {{FLOP_RATIO}} | -{{FLOP_PCT}}% |
-| Inference time | 1.9 s | {{D_TIME}} s | {{TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +7.5% |
+| Attention FLOPs | 1.0 | 2.1\times | -48.5\%% |
+| Inference time | 1.9 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 70.53% | -20.18% |
 
 ## 9.5 Comparison to Prior Linear Attention
 

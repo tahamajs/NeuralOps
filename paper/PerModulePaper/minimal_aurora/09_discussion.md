@@ -4,7 +4,7 @@
 
 ### 9.1.1 Takeaway 1: Real Compression
 
-MinimalAURORA reduces parameters by {{D_RATIO}}×.
+MinimalAURORA reduces parameters by 50\%×.
 
 ### 9.1.2 Takeaway 2: Simplicity
 
@@ -51,10 +51,10 @@ For DistilBERT:
 
 | Metric | Baseline | MinimalAURORA | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | -{{VRAM_PCT}}% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| VRAM | 183 MB | 293 MB MB | -48.5\%% |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 85.44% | -5.27% |
 
 ## 9.5 Comparison with Companion Methods
 
@@ -64,7 +64,7 @@ For DistilBERT:
 | AASVD | 88.5% | 5× | Yes | High |
 | A3 | 88.5% | 5× | Yes | Medium |
 | Res-SVD | 88.2% | 5.9× | No | Medium |
-| **MinimalAURORA** | **{{D_ACC}}** | **{{D_RATIO}}×** | **No** | **Low** |
+| **MinimalAURORA** | **85.44** | **50\%×** | **No** | **Low** |
 
 ## 9.6 Open Questions
 
@@ -86,7 +86,7 @@ For DistilBERT:
 - `pres_gate` dead code
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 
 ---

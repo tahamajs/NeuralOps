@@ -70,7 +70,7 @@ MinimalNOVA supports GQA via `repeat_kv` at attention time.
 | GPTQ | Quantization | 4× | No |
 | A3 | Low-rank + diagonal | 5× | LoRA |
 | AASVD | Low-rank + full cov | 5× | LoRA |
-| **MinimalNOVA** | **Low-rank + energy-adaptive** | **{{D_RATIO}}×** | **LoRA** |
+| **MinimalNOVA** | **Low-rank + energy-adaptive** | **50\%×** | **LoRA** |
 
 ## 2.6 Position of Our Work
 

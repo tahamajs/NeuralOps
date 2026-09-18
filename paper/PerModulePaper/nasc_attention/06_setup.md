@@ -30,22 +30,22 @@ Sequence length truncated to 128.
 
 | Parameter | Value |
 |---|---|
-| `window_size` | {{WINDOW_SIZE}} (default 64) |
-| `block_size` | {{BLOCK_SIZE}} (default 32) |
-| `top_k` | {{TOP_K}} (default 2) |
-| `rff_features` | {{RFF_FEATURES}} (default 64) |
-| `enable_cascade_on_encoders` | {{ENABLE_CASCADE_ENCODERS}} |
+| `window_size` | 128 (default 64) |
+| `block_size` | 64 (default 32) |
+| `top_k` | 2 (default 2) |
+| `rff_features` | 64 (default 64) |
+| `enable_cascade_on_encoders` | 0.85 |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -70,24 +70,24 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_nasc.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k {{TOP_K}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --block_size 64 \
+    --top_k 2 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 

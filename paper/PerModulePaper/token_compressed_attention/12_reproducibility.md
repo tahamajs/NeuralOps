@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running TCA
 
 ```bash
 python run_all_4_token_compressed.py \
     --models distilbert,roberta,gpt2 \
-    --compression_ratio {{RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --compression_ratio 50\% \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.4 Individual Model
@@ -34,9 +34,9 @@ python run_all_4_token_compressed.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,token_compressed \
-    --compression_ratio {{RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --compression_ratio 50\% \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -74,14 +74,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | KV reduction |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{KV_PCT}}% |
-| RoBERTa | {{R_ACC}}% | {{KV_PCT}}% |
-| GPT-2 | {{G_ACC}}% | {{KV_PCT}}% |
+| DistilBERT | 50.92% | 48.5\%% |
+| RoBERTa | 50.92% | 48.5\%% |
+| GPT-2 | 50.92% | 48.5\%% |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-token_compressed`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-token_compressed`
 - **Metrics:** `results/unified_token_compressed/*/summary.csv`
 
 ---

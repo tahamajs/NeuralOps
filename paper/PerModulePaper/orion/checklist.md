@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `orion/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module orion`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

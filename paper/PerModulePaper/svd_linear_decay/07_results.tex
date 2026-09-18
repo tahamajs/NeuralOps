@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{svd_linear_decay}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_svd\_linear\_decay/roberta/summary.csv} \& svd\_linear\_decay \& SKIP\_ROBERTA\_ARCHITECTURAL & 0.0\% & 712.34 MB \\
+\texttt{results/unified\_svd\_linear\_decay/distilbert/summary.csv} \& svd\_linear\_decay \& SKIP\_BERT\_ARCHITECTURAL & 0.0\% & 389.51 MB \\
+\texttt{results/unified\_svd\_linear\_decay/gpt2/summary.csv} \& svd\_linear\_decay \& SKIP\_GPT\_ARCHITECTURAL & 0.0\% & 793.19 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

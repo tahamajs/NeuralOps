@@ -40,7 +40,7 @@ we seek a compressed model $\mathcal{M}'$ such that:
 1. Each projection $W^{(\ell)}$ is replaced by $U^{(\ell)} V^{(\ell)\top}$ 
    with rank $r^{(\ell)}$ selected by energy threshold.
 2. Parameter count reduces by factor $R > 3$.
-3. Accuracy drop is bounded: $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$.
+3. Accuracy drop is bounded: $\Delta\text{Acc} \leq 0.02\%$.
 4. Weight transfer works across four attention families.
 5. Trainable LoRA adapters provide recovery capacity.
 

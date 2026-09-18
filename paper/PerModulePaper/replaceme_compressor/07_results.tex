@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{replaceme_compressor}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_replaceme/roberta/summary.csv} \& replaceme \& PASS & 80.62\% & 325.0 MB \\
+\texttt{results/unified\_replaceme/distilbert/summary.csv} \& replaceme \& PASS & 82.0\% & 280.53 MB \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} \& replaceme \& PASS & 56.77\% & 573.61 MB \\
+all\_121\_gpu\_matrix \& replaceme\_compressor \& PASS & 1.0x (0.161s) & 127.0 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

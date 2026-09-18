@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `salt/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module salt`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

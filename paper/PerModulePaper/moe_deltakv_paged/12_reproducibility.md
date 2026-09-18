@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -18,7 +18,7 @@ python run_all_4_moe_deltakv_paged.py \
     --page_size 64 \
     --k_experts 4 \
     --svd_rank 16 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.3 Individual Model
@@ -65,14 +65,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 86.47% ± 1% |
+| RoBERTa | 59.75% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-moe_deltakv_paged`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-moe_deltakv_paged`
 - **Metrics:** `results/unified_moe_deltakv_paged/*/summary.csv`
 
 ---

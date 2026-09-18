@@ -66,12 +66,12 @@ For DistilBERT on L=128:
 
 | Metric | Baseline | Performer | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_R}}× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| Time | 1.9 s | 1.42x s | 2.3 s× |
+| VRAM | 183 MB | 1320 MB MB | 380 MB× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
@@ -79,8 +79,8 @@ For DistilBERT on L=128:
 |---|---|---|---|
 | Full attention | 90.71% | 1.0× | Baseline |
 | FlashAttention-2 | ~90% | 1.1× | Exact, fast |
-| Cosformer | {{COS_D}}% | 4.9× slower | cos/sin reweighting |
-| **Performer** | **{{D_ACC}}%** | **{{D_TIME_R}}×** | FAVOR+ |
+| Cosformer | 0.85% | 4.9× slower | cos/sin reweighting |
+| **Performer** | **50.92%** | **2.3 s×** | FAVOR+ |
 
 ## 9.6 Open Questions
 

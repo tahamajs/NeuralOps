@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,13 +22,13 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_routing.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters {{NUM_CLUSTERS}} \
-    --n_iters {{N_ITERS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_clusters 16 \
+    --n_iters 10 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.3 Downloading Checkpoints
 
@@ -37,7 +37,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-routing",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-routing",
         filename="weights.pt",
     )
 ```
@@ -71,9 +71,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 63.76% ± 1% |
+| RoBERTa | 50.92% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.7 Known Issues
 
@@ -84,7 +84,7 @@ torch.cuda.manual_seed_all(seed)
 ## 12.8 Data Availability
 
 - Code: `framework/attentions/routing_attention.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-routing`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-routing`
 - Metrics: `results/unified_routing/*/summary.csv`
 - Logs: `benchmark_logs/routing_*.log`
 

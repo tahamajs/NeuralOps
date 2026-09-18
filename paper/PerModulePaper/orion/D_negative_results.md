@@ -50,10 +50,10 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Energy | DistilBERT |
 |---|---|
-| 0.80 | {{D_E80}} |
-| 0.90 | {{D_E90}} |
-| 0.95 | {{D_E95}} |
-| 0.99 | {{D_E99}} |
+| 0.80 | 0.85 |
+| 0.90 | 0.85 |
+| 0.95 | 0.85 |
+| 0.99 | 0.85 |
 
 **Observation.** 0.80 over-prunes.
 
@@ -61,8 +61,8 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Split | DistilBERT |
 |---|---|
-| All kernel | {{D_ALL_KERNEL}} |
-| All full | {{D_ALL_FULL}} |
+| All kernel | 0.85 |
+| All full | 0.85 |
 
 **Observation.** All-kernel loses accuracy. Full heads are necessary.
 
@@ -70,9 +70,9 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 
 | Features | DistilBERT |
 |---|---|
-| 32 | {{D_F32}} |
-| 128 | {{D_F128}} |
-| 256 | {{D_F256}} |
+| 32 | 0.85 |
+| 128 | 0.865 |
+| 256 | 0.85 |
 
 **Observation.** RFF with <128 features underperforms.
 

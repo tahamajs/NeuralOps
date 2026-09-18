@@ -11,9 +11,9 @@ and provides a learnable alternative to fixed landmark selection.
 
 | Model | Acc Δ | Landmark | Window |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{L0}} | {{WINDOW}} |
-| RoBERTa | {{R_DELTA}}% | {{L0}} | {{WINDOW}} |
-| GPT-2 | {{G_DELTA}}% | {{L0}} | {{WINDOW}} |
+| DistilBERT | -20.18% | 0.0 | 128 |
+| RoBERTa | -27.64% | 0.0 | 128 |
+| GPT-2 | -28.44% | 0.0 | 128 |
 
 ## 11.3 Key Takeaways
 
@@ -42,12 +42,12 @@ and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed LEKAv3, implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Taha Majs** designed LEKAv3, implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

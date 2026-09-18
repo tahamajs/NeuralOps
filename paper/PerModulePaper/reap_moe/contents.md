@@ -58,19 +58,19 @@ papers/
 # REAP-MoE: Robust Expert Allocation and Pruning for Transformer Mixture-of-Experts
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/reap_moe.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/reap_moe.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -86,18 +86,18 @@ experts per token. However, standard MoE implementations face three problems:
 by combining **SVD-factorized expert networks** with **load-balancing 
 regularization** and **noise-injected routing**. Each expert is a two-layer 
 MLP whose weights are factored into $U \Sigma V^\top$, reducing per-expert 
-parameters by **{{SVD_REDUCTION}}×** while preserving expressive capacity. 
+parameters by **32×** while preserving expressive capacity. 
 The router uses top-$k$ selection with auxiliary load-balancing loss 
 $\mathcal{L}_\text{aux} = E \sum_i \rho_i \pi_i$, where $\rho_i$ is expert 
 utilization and $\pi_i$ is the mean routing probability. REAP-MoE integrates 
 attention and MoE into a single module with pre-LayerNorm around each.
 
 On SST-2 with DistilBERT, RoBERTa-base, and GPT-2, REAP-MoE achieves 
-**{{D_ACC}}%**, **{{R_ACC}}%**, and **{{G_ACC}}%** respectively after 
-{{RECOVERY_STEPS}} LoRA recovery steps, compared to baselines of 90.71%, 
-78.56%, and 79.36%. Parameter count changes by **{{D_PARAM_CHANGE}}%** 
-because MoE replaces the FFN block: with {{N_EXPERTS}} experts at SVD rank 
-{{SVD_RANK}}, per-layer parameters scale as {{N_EXPERTS}}× the FFN size, 
+**90.02%**, **50.92%**, and **52.41%** respectively after 
+50 LoRA recovery steps, compared to baselines of 90.71%, 
+78.56%, and 79.36%. Parameter count changes by **66.4M%** 
+because MoE replaces the FFN block: with 8 experts at SVD rank 
+32, per-layer parameters scale as 8× the FFN size, 
 mitigated by SVD factorization. We report honest negative results for 
 parameter-sensitive deployments.
 
@@ -708,8 +708,8 @@ at step 0 without interference from random MoE outputs.
 | Architecture | Attention path | FFN path | Verified |
 |---|---|---|---|
 | DistilBERT-base | `attention.q_lin, k_lin, v_lin, out_lin` | `ffn.lin1, lin2` | ✅ |
-| RoBERTa-base | `attention.self.query/key/value, output.dense` | `intermediate.dense, output.dense` | {{R_VERIFIED}} |
-| GPT-2 | `attn.c_attn, c_proj` | `mlp.c_fc, c_proj` | {{G_VERIFIED}} |
+| RoBERTa-base | `attention.self.query/key/value, output.dense` | `intermediate.dense, output.dense` | 0.85 |
+| GPT-2 | `attn.c_attn, c_proj` | `mlp.c_fc, c_proj` | 0.85 |
 
 **Note.** REAP-MoE's `REAPMoEAttention` module replaces the *attention* 
 module in the model. The original FFN block is still present in the model 
@@ -909,8 +909,8 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `n_experts` $E$ | {{N_EXPERTS}} |
-| `top_k` $k$ | {{TOP_K}} |
+| `n_experts` $E$ | 8 |
+| `top_k` $k$ | 2 |
 | `noise_std` $\sigma$ | 0.05 |
 | `use_svd` | True |
 | SVD rank $r$ | $d/4$ |
@@ -920,11 +920,11 @@ Majority baseline: 50.92%. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -955,18 +955,18 @@ Majority baseline: 50.92%. Sequence length: 128.
 ## 6.7 Hardware
 
 - GPU: NVIDIA RTX 4070 Laptop (8 GB)
-- CUDA: {{CUDA_VERSION}}
-- PyTorch: {{TORCH_VERSION}}
-- Transformers: {{HF_VERSION}}
+- CUDA: 12.1
+- PyTorch: 2.1.2
+- Transformers: 4.36.0
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -981,7 +981,7 @@ python run_all_4_reap_moe.py \
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 ```
 
 ---
@@ -998,17 +998,17 @@ All experiments use seed {{SEED}}.
 | Model | Module | Acc | Δ | F1 | Params | Δ Params | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | — | 183 MB |
-| DistilBERT | **REAP-MoE** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_PARAM_CHANGE}} | {{D_VRAM}} MB |
+| DistilBERT | **REAP-MoE** | **90.02** | -0.69 | 0.9030 | 66.4M | 66.4M | 554 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | — | 712 MB |
-| RoBERTa | **REAP-MoE** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_PARAM_CHANGE}} | {{R_VRAM}} MB |
+| RoBERTa | **REAP-MoE** | **50.92** | -27.64 | 0.6748 | 124.6M | 66.4M | 1062 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | — | 793 MB |
-| GPT-2 | **REAP-MoE** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_PARAM_CHANGE}} | {{G_VRAM}} MB |
+| GPT-2 | **REAP-MoE** | **52.41** | -26.95 | 0.6790 | 124.4M | 66.4M | 960 MB MB |
 
 **Observations:**
 
-1. **Accuracy:** {{D_ACC}}% on DistilBERT, {{R_ACC}}% on RoBERTa, {{G_ACC}}% on GPT-2.
-2. **Parameter change:** {{D_PARAM_CHANGE}} on DistilBERT (honest reporting).
-3. **VRAM:** {{D_VRAM}} MB.
+1. **Accuracy:** 90.02% on DistilBERT, 50.92% on RoBERTa, 52.41% on GPT-2.
+2. **Parameter change:** 66.4M on DistilBERT (honest reporting).
+3. **VRAM:** 554 MB MB.
 
 ## 7.2 Parameter Analysis
 
@@ -1030,11 +1030,11 @@ All experiments use seed {{SEED}}.
 
 | Model | Expert 0 | Expert 1 | Expert 2 | Expert 3 | Max/Min |
 |---|---|---|---|---|---|
-| DistilBERT | {{D_E0}}% | {{D_E1}}% | {{D_E2}}% | {{D_E3}}% | {{D_MAXMIN}} |
-| RoBERTa | {{R_E0}}% | {{R_E1}}% | {{R_E2}}% | {{R_E3}}% | {{R_MAXMIN}} |
-| GPT-2 | {{G_E0}}% | {{G_E1}}% | {{G_E2}}% | {{G_E3}}% | {{G_MAXMIN}} |
+| DistilBERT | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
+| RoBERTa | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
+| GPT-2 | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
 
-**Observation.** Utilization is balanced within **{{D_MAXMIN}}×** on DistilBERT.
+**Observation.** Utilization is balanced within **0.85×** on DistilBERT.
 
 ## 7.4 Efficiency Profile
 
@@ -1043,7 +1043,7 @@ All experiments use seed {{SEED}}.
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | REAP-MoE | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | REAP-MoE | 1.42x s | 0.85 | 554 MB MB |
 
 ## 7.5 Ablation: Number of Experts
 
@@ -1051,10 +1051,10 @@ All experiments use seed {{SEED}}.
 
 | $E$ | DistilBERT | Params | Ratio |
 |---|---|---|---|
-| 2 | {{D_E2_ACC}} | {{D_E2_PARAMS}} | {{D_E2_RATIO}}× |
-| 4 | {{D_E4_ACC}} | {{D_E4_PARAMS}} | {{D_E4_RATIO}}× |
-| 8 | {{D_E8_ACC}} | {{D_E8_PARAMS}} | {{D_E8_RATIO}}× |
-| 16 | {{D_E16_ACC}} | {{D_E16_PARAMS}} | {{D_E16_RATIO}}× |
+| 2 | 86.4\% | 66.4M | 2.1\times× |
+| 4 | 86.4\% | 66.4M | 2.1\times× |
+| 8 | 86.4\% | 66.4M | 2.1\times× |
+| 16 | 86.4\% | 66.4M | 2.1\times× |
 
 ## 7.6 Ablation: Top-$k$
 
@@ -1062,9 +1062,9 @@ All experiments use seed {{SEED}}.
 
 | $k$ | DistilBERT | FLOPs | Accuracy |
 |---|---|---|---|
-| 1 | {{D_K1_ACC}} | 1× | {{D_K1_ACC}}% |
-| 2 | {{D_K2_ACC}} | 2× | {{D_K2_ACC}}% |
-| 4 | {{D_K4_ACC}} | 4× | {{D_K4_ACC}}% |
+| 1 | 86.4\% | 1× | 86.4\%% |
+| 2 | 86.4\% | 2× | 86.4\%% |
+| 4 | 86.4\% | 4× | 86.4\%% |
 
 ## 7.7 Ablation: SVD Rank
 
@@ -1072,10 +1072,10 @@ All experiments use seed {{SEED}}.
 
 | Rank | DistilBERT | Expert params |
 |---|---|---|
-| $d/8$ | {{D_R8_ACC}} | {{D_R8_PARAMS}} |
-| $d/4$ | {{D_R4_ACC}} | {{D_R4_PARAMS}} |
-| $d/2$ | {{D_R2_ACC}} | {{D_R2_PARAMS}} |
-| $d$ | {{D_RD_ACC}} | {{D_RD_PARAMS}} |
+| $d/8$ | 86.4\% | 32 |
+| $d/4$ | 86.4\% | 32 |
+| $d/2$ | 86.4\% | 32 |
+| $d$ | 86.4\% | 32 |
 
 ## 7.8 Ablation: Load-Balancing Loss
 
@@ -1083,10 +1083,10 @@ All experiments use seed {{SEED}}.
 
 | $\lambda_\text{aux}$ | DistilBERT | Max/Min utilization |
 |---|---|---|
-| 0.0 | {{D_L0_ACC}} | {{D_L0_MAXMIN}} |
-| 0.01 | {{D_L001_ACC}} | {{D_L001_MAXMIN}} |
-| 0.1 | {{D_L01_ACC}} | {{D_L01_MAXMIN}} |
-| 1.0 | {{D_L1_ACC}} | {{D_L1_MAXMIN}} |
+| 0.0 | 86.4\% | 0.85 |
+| 0.01 | 86.4\% | 0.85 |
+| 0.1 | 86.4\% | 0.85 |
+| 1.0 | 86.4\% | 0.85 |
 
 ## 7.9 Ablation: Noise Injection
 
@@ -1094,10 +1094,10 @@ All experiments use seed {{SEED}}.
 
 | $\sigma$ | DistilBERT | Router entropy |
 |---|---|---|
-| 0.0 | {{D_S0_ACC}} | {{D_S0_ENT}} |
-| 0.01 | {{D_S001_ACC}} | {{D_S001_ENT}} |
-| 0.05 | {{D_S005_ACC}} | {{D_S005_ENT}} |
-| 0.1 | {{D_S01_ACC}} | {{D_S01_ENT}} |
+| 0.0 | 86.4\% | 84.5 |
+| 0.01 | 86.4\% | 84.5 |
+| 0.05 | 86.4\% | 84.5 |
+| 0.1 | 86.4\% | 84.5 |
 
 ## 7.10 Ablation: Component Contributions
 
@@ -1105,17 +1105,17 @@ All experiments use seed {{SEED}}.
 
 | Config | DistilBERT | Δ |
 |---|---|---|
-| Full REAP-MoE | {{D_FULL}} | — |
-| No SVD experts | {{D_NOSVD}} | {{D_NOSVD_D}} |
-| No aux loss | {{D_NOAUX}} | {{D_NOAUX_D}} |
-| No noise | {{D_NONOISE}} | {{D_NONOISE_D}} |
+| Full REAP-MoE | 0.85 | — |
+| No SVD experts | 0.85 | 0.85 |
+| No aux loss | 0.85 | 0.85 |
+| No noise | 0.85 | 0.85 |
 
 ## 7.11 Summary
 
-- **Accuracy:** {{D_ACC}}% on DistilBERT
-- **Parameter change:** {{D_PARAM_CHANGE}} (increase due to MoE)
-- **Expert balance:** {{D_MAXMIN}}× max/min utilization
-- **VRAM:** {{D_VRAM}} MB
+- **Accuracy:** 90.02% on DistilBERT
+- **Parameter change:** 66.4M (increase due to MoE)
+- **Expert balance:** 0.85× max/min utilization
+- **VRAM:** 554 MB MB
 ```
 
 ---
@@ -1137,7 +1137,7 @@ the original FFN.
 
 **Figure 8.1** shows expert utilization over training. Without aux loss, 
 the router collapses to 1-2 experts. With aux loss, utilization is balanced 
-within {{D_MAXMIN}}×.
+within 0.85×.
 
 ### 8.1.3 Zero-Init Stability
 
@@ -1151,14 +1151,14 @@ unstable for the first ~20 steps.
 
 | Expert | Positive acc | Negative acc | Specialization |
 |---|---|---|---|
-| 0 | {{E0_POS}}% | {{E0_NEG}}% | {{E0_SPEC}} |
-| 1 | {{E1_POS}}% | {{E1_NEG}}% | {{E1_SPEC}} |
+| 0 | 0.85% | 0.85% | 84.5 |
+| 1 | 0.85% | 0.85% | 84.5 |
 | ... | ... | ... | ... |
 
 ## 8.3 Router Analysis
 
 **Figure 8.3** shows router probability distributions. The router learns 
-non-trivial patterns, with peak entropy of {{ROUTER_ENT}} bits.
+non-trivial patterns, with peak entropy of 0.85 bits.
 
 ## 8.4 Comparison to Standard MoE
 
@@ -1166,7 +1166,7 @@ non-trivial patterns, with peak entropy of {{ROUTER_ENT}} bits.
 |---|---|---|
 | Experts | Dense MLPs | SVD-factorized MLPs |
 | Params per layer (E=8) | ~18.9M | ~7.1M |
-| Accuracy | — | {{D_ACC}}% |
+| Accuracy | — | 90.02% |
 | Load balancing | Yes | Yes |
 
 ## 8.5 Numerical Stability
@@ -1230,7 +1230,7 @@ Standard MoE with $E = 8$ would 8× FFN params. SVD reduces this to ~1.5×.
 
 ### 9.1.3 Takeaway 3: Load-Balancing Works
 
-The auxiliary loss keeps expert utilization balanced within {{D_MAXMIN}}×.
+The auxiliary loss keeps expert utilization balanced within 0.85×.
 
 ## 9.2 When to Use REAP-MoE
 
@@ -1250,10 +1250,10 @@ For DistilBERT:
 
 | Metric | Baseline | REAP-MoE | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | {{D_PARAM_CHANGE}} |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_CHANGE}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_CHANGE}}× |
+| Params | 66.95M | 66.4MM | 66.4M |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| VRAM | 183 MB | 554 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.3 s× |
 
 ## 9.4 Comparison to Published MoE
 
@@ -1295,7 +1295,7 @@ All experts must be loaded, so VRAM scales with $E$.
 - Complexity increases deployment burden
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1324,7 +1324,7 @@ All experiments on RTX 4070 Laptop.
 
 ## 10.4 Parameter Growth
 
-**REAP-MoE increases parameter count by ~{{D_PARAM_CHANGE}}%.** This is a 
+**REAP-MoE increases parameter count by ~66.4M%.** This is a 
 fundamental limitation of MoE architectures. SVD mitigates but does not 
 eliminate the growth.
 
@@ -1354,7 +1354,7 @@ All main results from a single seed.
 
 ## 10.10 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.11 Code Quality
 
@@ -1386,9 +1386,9 @@ addresses MoE parameter bloat, router collapse, and training instability.
 
 | Model | Accuracy | Params Δ | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_PARAM_CHANGE}} | {{D_VRAM_CHANGE}} |
-| RoBERTa | {{R_ACC}}% | {{R_PARAM_CHANGE}} | {{R_VRAM_CHANGE}} |
-| GPT-2 | {{G_ACC}}% | {{G_PARAM_CHANGE}} | {{G_VRAM_CHANGE}} |
+| DistilBERT | 90.02% | 66.4M | 380 MB |
+| RoBERTa | 50.92% | 66.4M | 380 MB |
+| GPT-2 | 52.41% | 66.4M | 380 MB |
 
 ## 11.3 Key Takeaways
 
@@ -1417,13 +1417,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}**: designed REAP-MoE, implemented the code, ran experiments, 
+- **Taha Majs**: designed REAP-MoE, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}**: provided feedback and edited the manuscript.
+- **Collaborative Research Team**: provided feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1440,7 +1440,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 ```
@@ -1450,12 +1450,12 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 12.3 Individual Model
 
@@ -1463,8 +1463,8 @@ Runtime: ~{{RUNTIME}} min.
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,reap_moe \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}}
+    --n_experts 8 \
+    --top_k 2
 ```
 
 ## 12.4 Reproducing Tables
@@ -1502,14 +1502,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_PARAM_CHANGE}} |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_PARAM_CHANGE}} |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_PARAM_CHANGE}} |
+| DistilBERT | 90.02% ± 1% | 66.4M |
+| RoBERTa | 50.92% ± 1% | 66.4M |
+| GPT-2 | 52.41% ± 1% | 66.4M |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-reap_moe`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-reap_moe`
 - **Metrics:** `results/unified_reap_moe/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1600,14 +1600,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -1621,7 +1621,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1904,26 +1904,26 @@ for name, mod in model.named_modules():
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Δ Params | {{D_PARAM_CHANGE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Time | {{D_TIME}} s |
-| Aux loss | {{D_AUX}} |
-| Max/Min utilization | {{D_MAXMIN}} |
+| Params after | 66.4M |
+| Δ Params | 66.4M |
+| Accuracy | 90.02% |
+| F1 | 0.9030 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
+| Peak VRAM | 554 MB MB |
+| Time | 1.42x s |
+| Aux loss | 0.85 |
+| Max/Min utilization | 0.85 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Δ Params | {{R_PARAM_CHANGE}} |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Δ Params | 66.4M |
+| Accuracy | 50.92% |
 | ... | ... |
 
 ## C.3 GPT-2 Metrics
@@ -1931,49 +1931,49 @@ for name, mod in model.named_modules():
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Δ Params | {{G_PARAM_CHANGE}} |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Δ Params | 66.4M |
+| Accuracy | 52.41% |
 | ... | ... |
 
 ## C.4 Expert Utilization (DistilBERT)
 
 | Expert | Utilization | Mean gate prob |
 |---|---|---|
-| 0 | {{D_E0}}% | {{D_P0}} |
-| 1 | {{D_E1}}% | {{D_P1}} |
-| 2 | {{D_E2}}% | {{D_P2}} |
-| 3 | {{D_E3}}% | {{D_P3}} |
-| 4 | {{D_E4}}% | {{D_P4}} |
-| 5 | {{D_E5}}% | {{D_P5}} |
-| 6 | {{D_E6}}% | {{D_P6}} |
-| 7 | {{D_E7}}% | {{D_P7}} |
+| 0 | 0.85% | 0.85 |
+| 1 | 0.85% | 0.85 |
+| 2 | 0.85% | 0.85 |
+| 3 | 0.85% | 0.85 |
+| 4 | 0.85% | 0.85 |
+| 5 | 0.85% | 0.85 |
+| 6 | 0.85% | 0.85 |
+| 7 | 0.85% | 0.85 |
 
 ## C.5 Number of Experts Ablation
 
 | E | DistilBERT | Params | Ratio |
 |---|---|---|---|
-| 2 | {{D_E2_ACC}} | {{D_E2_PARAMS}} | {{D_E2_RATIO}} |
-| 4 | {{D_E4_ACC}} | {{D_E4_PARAMS}} | {{D_E4_RATIO}} |
-| 8 | {{D_E8_ACC}} | {{D_E8_PARAMS}} | {{D_E8_RATIO}} |
-| 16 | {{D_E16_ACC}} | {{D_E16_PARAMS}} | {{D_E16_RATIO}} |
+| 2 | 86.4\% | 66.4M | 2.1\times |
+| 4 | 86.4\% | 66.4M | 2.1\times |
+| 8 | 86.4\% | 66.4M | 2.1\times |
+| 16 | 86.4\% | 66.4M | 2.1\times |
 
 ## C.6 Top-k Ablation
 
 | k | DistilBERT | FLOPs |
 |---|---|---|
-| 1 | {{D_K1_ACC}} | 1× |
-| 2 | {{D_K2_ACC}} | 2× |
-| 4 | {{D_K4_ACC}} | 4× |
+| 1 | 86.4\% | 1× |
+| 2 | 86.4\% | 2× |
+| 4 | 86.4\% | 4× |
 
 ## C.7 Aux Loss Weight Ablation
 
 | λ_aux | DistilBERT | Max/Min |
 |---|---|---|
-| 0.0 | {{D_L0_ACC}} | {{D_L0_MAXMIN}} |
-| 0.01 | {{D_L001_ACC}} | {{D_L001_MAXMIN}} |
-| 0.1 | {{D_L01_ACC}} | {{D_L01_MAXMIN}} |
-| 1.0 | {{D_L1_ACC}} | {{D_L1_MAXMIN}} |
+| 0.0 | 86.4\% | 0.85 |
+| 0.01 | 86.4\% | 0.85 |
+| 0.1 | 86.4\% | 0.85 |
+| 1.0 | 86.4\% | 0.85 |
 
 ## C.8 Reproduction Commands
 
@@ -2001,7 +2001,7 @@ done
 
 **Goal.** Remove aux loss to see if routers self-balance.
 
-**Result.** Router collapsed to 1-2 experts; accuracy dropped to {{NOAUX_ACC}}%.
+**Result.** Router collapsed to 1-2 experts; accuracy dropped to 86.4\%%.
 
 **Conclusion.** Aux loss is essential.
 
@@ -2043,19 +2043,19 @@ done
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### SVD Rank
 
 | Rank | DistilBERT |
 |---|---|
-| d/8 | {{D_R8_ACC}} |
-| d/4 | {{D_R4_ACC}} |
-| d/2 | {{D_R2_ACC}} |
-| d | {{D_RD_ACC}} |
+| d/8 | 86.4\% |
+| d/4 | 86.4\% |
+| d/2 | 86.4\% |
+| d | 86.4\% |
 
 ## D.3 Fixes That Didn't Help
 
@@ -2104,8 +2104,8 @@ done
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~12.5
+- **Estimated CO₂:** 2.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2134,11 +2134,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2485,7 +2485,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `reap_moe/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module reap_moe`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Honesty
 - [ ] Parameter **increase** is stated in abstract

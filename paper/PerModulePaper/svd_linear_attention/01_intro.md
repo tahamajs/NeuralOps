@@ -88,7 +88,7 @@ between 1 and 1024 tokens, providing diverse temporal scales across heads.
 - **Multi-architecture drop-in.** Same codebase handles flat, nested, 
   causal, and GQA+RoPE models.
 - **Honest reporting.** SVD-Linear Attention **reduces** parameter count 
-  by {{D_RATIO}}×–{{G_RATIO}}×. This is one of the few modules in our 
+  by 50\%×–2.1\times×. This is one of the few modules in our 
   benchmark suite that achieves real compression AND real speedup.
 
 ## 1.5 Paper Organization

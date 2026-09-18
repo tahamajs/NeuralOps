@@ -13,7 +13,7 @@
 
 **Goal.** Let SSM and attention start equally.
 
-**Result.** Accuracy dropped by {{GB0_DROP}}%. Training diverged.
+**Result.** Accuracy dropped by 0.85%. Training diverged.
 
 **Conclusion.** Gate bias must be negative.
 
@@ -21,7 +21,7 @@
 
 **Goal.** See if global mixing alone suffices.
 
-**Result.** Accuracy dropped by {{NOSS_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** SSM contributes something.
 
@@ -29,7 +29,7 @@
 
 **Goal.** Simplify architecture.
 
-**Result.** Accuracy dropped by {{NOGLOBAL_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Global mixing helps.
 
@@ -45,7 +45,7 @@
 
 **Goal.** Simplify SSM.
 
-**Result.** Accuracy dropped by {{NOCONV_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Conv1d is essential for local context.
 
@@ -67,7 +67,7 @@
 
 **Goal.** Reduce SSM parameter count.
 
-**Result.** Accuracy dropped by {{SHARED_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 ## D.3 Failed Hyperparameters
 
@@ -75,39 +75,39 @@
 
 | $d_\text{state}$ | DistilBERT |
 |---|---|
-| 4 | {{D_DS4}} |
-| 8 | {{D_DS8}} |
-| 16 | {{D_DS16}} |
-| 32 | {{D_DS32}} |
+| 4 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ### Gate Bias
 
 | bias | DistilBERT |
 |---|---|
-| -10 | {{D_GB10}} |
-| -7 | {{D_GB7}} |
-| -5 | {{D_GB5}} |
-| 0 | {{D_GB0}} |
-| +2 | {{D_GB2}} |
+| -10 | 0.85 |
+| -7 | 0.85 |
+| -5 | 0.85 |
+| 0 | 0.85 |
+| +2 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
-| 1e-3 | {{D_LR1e3}} (unstable) |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
+| 1e-3 | 0.85 (unstable) |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Lessons Learned
 

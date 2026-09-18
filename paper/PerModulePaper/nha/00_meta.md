@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/nha_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/nha_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -52,10 +52,10 @@ stream uses a **chunked prefix scan** with cumulative state $S \in
 causality.
 
 We evaluate NHA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. With LoRA 
-recovery at rank {{LORA_RANK}}, NHA achieves **{{D_ACC}}%**, **{{R_ACC}}%**, 
-and **{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, **{{R_DELTA}}%**, and 
-**{{G_DELTA}}%** of the respective dense baselines. Attention memory is 
-reduced by up to **{{MEM_REDUCTION}}×** for long sequences. Learned gates 
+recovery at rank 8, NHA achieves **90.71%**, **50.92%**, 
+and **50.92%** accuracy, within **+0.00%**, **-27.64%**, and 
+**-28.44%** of the respective dense baselines. Attention memory is 
+reduced by up to **32×** for long sequences. Learned gates 
 show systematic token-level structure that correlates with attention entropy.
 
 **Keywords:** hybrid attention, local window, Random Fourier Features, 

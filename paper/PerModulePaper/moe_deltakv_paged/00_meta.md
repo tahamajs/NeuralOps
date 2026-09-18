@@ -1,19 +1,19 @@
 # MoE-DeltaKV-Paged: A Hybrid Block-Sparse Attention with Differentiable Temporal Delta Compression
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/moe_deltakv_paged.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/moe_deltakv_paged.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -45,10 +45,10 @@ have the same shape as the original.
 when $k_\text{experts} \ll \text{num\_pages}$**. For sequences with fewer than 
 $k_\text{experts} + 1$ pages, the module falls back to dense attention.
 
-On SST-2, MoE-DeltaKV-Paged achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery steps. 
+On SST-2, MoE-DeltaKV-Paged achieves **86.47%** on DistilBERT 
+(baseline 0.85%, Δ = -4.24), **59.75%** on RoBERTa (baseline 
+32%, Δ = -18.81), and **50.92%** on GPT-2 (baseline 
+0.85%, Δ = -28.44), using 50 LoRA recovery steps. 
 The module includes CLS-token preservation via page-0 logit boosting, an 
 auxiliary load-balancing loss to prevent router collapse, and full multi-architecture weight transfer.
 

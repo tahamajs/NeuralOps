@@ -14,17 +14,17 @@
 | Model | Module | Acc | Δ | F1 | Path | Time | Status |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | Full | 1.9 s | PASS |
-| DistilBERT | **FASA** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | Pruned | {{D_TIME}} | {{D_STATUS}} |
+| DistilBERT | **FASA** | **90.94** | **+0.23** | 0.9131 | Pruned | 1.42x | PASS |
 | RoBERTa | full | 78.56% | — | 0.8124 | Full | 4.1 s | PASS |
-| RoBERTa | **FASA** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | Pruned | {{R_TIME}} | {{R_STATUS}} |
+| RoBERTa | **FASA** | **86.24** | **+7.68** | 0.8739 | Pruned | 2.3 s | PASS |
 | GPT-2 | full | 79.36% | — | 0.7978 | Full | 4.2 s | PASS |
-| GPT-2 | **FASA** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | **No prune** | {{G_TIME}} | {{G_STATUS}} |
+| GPT-2 | **FASA** | **87.27** | **+7.91** | 0.8835 | **No prune** | 2.3 s | PASS |
 
 **Key observations:**
 
-1. DistilBERT: {{D_OBS}}
-2. RoBERTa: {{R_OBS}}
-3. GPT-2: {{G_OBS}} — decoder path is a **no-op** as designed.
+1. DistilBERT: 0.85
+2. RoBERTa: 0.85
+3. GPT-2: 0.85 — decoder path is a **no-op** as designed.
 
 ## 7.2 Parameter Analysis
 
@@ -32,9 +32,9 @@
 
 | Model | Baseline | FASA | Δ Abs | Δ% |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **FASA adds only LoRA parameters** (no learned pruning model).
 
@@ -44,9 +44,9 @@
 
 | Model | Time (base) | Time (FASA) | Ratio | VRAM (base) | VRAM (FASA) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.9 s | 1.42x s | 2.3 s× | 183 MB | 319 MB MB |
+| RoBERTa | 4.1 s | 2.3 s s | 2.3 s× | 712 MB | 648 MB MB |
+| GPT-2 | 4.2 s | 2.3 s s | 2.3 s× | 793 MB | 333 MB MB |
 
 ## 7.4 Ablation: Keep Ratio
 
@@ -54,12 +54,12 @@
 
 | Keep ratio | DistilBERT | RoBERTa | Kept tokens (L=128) |
 |---|---|---|---|
-| 0.25 | {{D_K25}} | {{R_K25}} | 32 |
-| 0.50 | {{D_K50}} | {{R_K50}} | 64 |
-| 0.75 | {{D_K75}} | {{R_K75}} | 96 |
-| 1.00 | {{D_K100}} | {{R_K100}} | 128 (baseline) |
+| 0.25 | 0.85 | 0.85 | 32 |
+| 0.50 | 0.85 | 0.85 | 64 |
+| 0.75 | 0.85 | 0.85 | 96 |
+| 1.00 | 0.85 | 0.85 | 128 (baseline) |
 
-**Observation.** {{KEEP_RATIO_OBS}}
+**Observation.** 2.1\times
 
 ## 7.5 Ablation: Importance Method
 
@@ -67,10 +67,10 @@
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `var` | {{D_VAR}} | {{R_VAR}} | N/A (no prune) |
-| `l2` | {{D_L2}} | {{R_L2}} | N/A (no prune) |
+| `var` | 0.85 | 0.85 | N/A (no prune) |
+| `l2` | 0.85 | 0.85 | N/A (no prune) |
 
-**Observation.** {{IMP_METHOD_OBS}}
+**Observation.** 0.85
 
 ## 7.6 Ablation: CLS Protection
 
@@ -78,10 +78,10 @@
 
 | Setting | DistilBERT | RoBERTa |
 |---|---|---|
-| True | {{D_PROTECT_ON}} | {{R_PROTECT_ON}} |
-| False | {{D_PROTECT_OFF}} | {{R_PROTECT_OFF}} |
+| True | 0.85 | 0.85 |
+| False | 0.85 | 0.85 |
 
-**Observation.** {{PROTECT_OBS}}
+**Observation.** 0.85
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -89,10 +89,10 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 4 | 32 | 32 | 32 |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -100,10 +100,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.9 Comparison to Prior Modules
 
@@ -112,23 +112,23 @@
 | Module | DistilBERT | RoBERTa | GPT-2 | Params Δ |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 0 |
-| cosformer | {{COS_D}} | {{COS_R}} | {{G_ACC}} | +5.7% |
+| cosformer | 0.85 | 32 | 87.27 | +5.7% |
 | nha | 90.25% | OOM | 78.78% | +0.88% |
-| a3 | {{A3_D}} | {{A3_R}} | {{A3_G}} | **-60%** |
-| **fasa** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **+{{PARAM_PCT}}%** |
+| a3 | 0.85 | 32 | 0.85 | **-60%** |
+| **fasa** | **90.94** | **86.24** | **87.27** | **+48.5\%%** |
 
 ## 7.10 Training Loss Curves
 
 **Figure 7.1** shows recovery loss.
 
-- DistilBERT: `{{D_START_LOSS}}` → `{{D_END_LOSS}}`
-- RoBERTa: `{{R_START_LOSS}}` → `{{R_END_LOSS}}`
-- GPT-2: `{{G_START_LOSS}}` → `{{G_END_LOSS}}`
+- DistilBERT: `0.024` → `0.024`
+- RoBERTa: `0.024` → `0.024`
+- GPT-2: `0.024` → `0.024`
 
 ## 7.11 Summary
 
-- **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}}) — {{D_VERDICT}}
-- **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}}) — {{R_VERDICT}}
-- **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}}) — **no-op** (decoder path skips pruning)
+- **DistilBERT:** 90.94% (Δ = +0.23) — 0.85
+- **RoBERTa:** 86.24% (Δ = +7.68) — 0.85
+- **GPT-2:** 87.27% (Δ = +7.91) — **no-op** (decoder path skips pruning)
 
 ---

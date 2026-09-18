@@ -20,10 +20,10 @@
 
 | Hyperparameter | Value |
 |---|---|
-| `energy` $\varepsilon$ | {{ENERGY}} |
-| `rank` (max cap) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `energy` $\varepsilon$ | 45.2 |
+| `rank` (max cap) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | `dropout` | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -31,10 +31,10 @@
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 
 ## 6.5 Evaluation
 
@@ -60,9 +60,9 @@ RTX 4070 Laptop, 8 GB VRAM.
 ```bash
 python run_all_4_minimal_aurora.py \
     --models distilbert,roberta,gpt2 \
-    --energy {{ENERGY}} \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy 45.2 \
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

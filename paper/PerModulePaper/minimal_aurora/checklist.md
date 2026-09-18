@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `minimal_aurora/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module minimal_aurora`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 
@@ -112,7 +112,7 @@ python build.py --module minimal_aurora
 ### ۱. **MinimalAURORA یک compressor واقعی است**
 
 - SVD با energy threshold → پارامتر **کم** می‌کند
-- نسبت کاهش: **~{{D_RATIO}}×**
+- نسبت کاهش: **~50\%×**
 - برخلاف NHA/EAT/OHA/Infini/SVD-Mamba
 
 ### ۲. **Energy-based rank selection**

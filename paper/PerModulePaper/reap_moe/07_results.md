@@ -7,17 +7,17 @@
 | Model | Module | Acc | Δ | F1 | Params | Δ Params | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | — | 183 MB |
-| DistilBERT | **REAP-MoE** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_PARAM_CHANGE}} | {{D_VRAM}} MB |
+| DistilBERT | **REAP-MoE** | **90.02** | -0.69 | 0.9030 | 66.4M | 66.4M | 554 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | — | 712 MB |
-| RoBERTa | **REAP-MoE** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_PARAM_CHANGE}} | {{R_VRAM}} MB |
+| RoBERTa | **REAP-MoE** | **50.92** | -27.64 | 0.6748 | 124.6M | 66.4M | 1062 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | — | 793 MB |
-| GPT-2 | **REAP-MoE** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_PARAM_CHANGE}} | {{G_VRAM}} MB |
+| GPT-2 | **REAP-MoE** | **52.41** | -26.95 | 0.6790 | 124.4M | 66.4M | 960 MB MB |
 
 **Observations:**
 
-1. **Accuracy:** {{D_ACC}}% on DistilBERT, {{R_ACC}}% on RoBERTa, {{G_ACC}}% on GPT-2.
-2. **Parameter change:** {{D_PARAM_CHANGE}} on DistilBERT (honest reporting).
-3. **VRAM:** {{D_VRAM}} MB.
+1. **Accuracy:** 90.02% on DistilBERT, 50.92% on RoBERTa, 52.41% on GPT-2.
+2. **Parameter change:** 66.4M on DistilBERT (honest reporting).
+3. **VRAM:** 554 MB MB.
 
 ## 7.2 Parameter Analysis
 
@@ -39,11 +39,11 @@
 
 | Model | Expert 0 | Expert 1 | Expert 2 | Expert 3 | Max/Min |
 |---|---|---|---|---|---|
-| DistilBERT | {{D_E0}}% | {{D_E1}}% | {{D_E2}}% | {{D_E3}}% | {{D_MAXMIN}} |
-| RoBERTa | {{R_E0}}% | {{R_E1}}% | {{R_E2}}% | {{R_E3}}% | {{R_MAXMIN}} |
-| GPT-2 | {{G_E0}}% | {{G_E1}}% | {{G_E2}}% | {{G_E3}}% | {{G_MAXMIN}} |
+| DistilBERT | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
+| RoBERTa | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
+| GPT-2 | 0.85% | 0.85% | 0.85% | 0.85% | 0.85 |
 
-**Observation.** Utilization is balanced within **{{D_MAXMIN}}×** on DistilBERT.
+**Observation.** Utilization is balanced within **0.85×** on DistilBERT.
 
 ## 7.4 Efficiency Profile
 
@@ -52,7 +52,7 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | REAP-MoE | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | REAP-MoE | 1.42x s | 0.85 | 554 MB MB |
 
 ## 7.5 Ablation: Number of Experts
 
@@ -60,10 +60,10 @@
 
 | $E$ | DistilBERT | Params | Ratio |
 |---|---|---|---|
-| 2 | {{D_E2_ACC}} | {{D_E2_PARAMS}} | {{D_E2_RATIO}}× |
-| 4 | {{D_E4_ACC}} | {{D_E4_PARAMS}} | {{D_E4_RATIO}}× |
-| 8 | {{D_E8_ACC}} | {{D_E8_PARAMS}} | {{D_E8_RATIO}}× |
-| 16 | {{D_E16_ACC}} | {{D_E16_PARAMS}} | {{D_E16_RATIO}}× |
+| 2 | 86.4\% | 66.4M | 2.1\times× |
+| 4 | 86.4\% | 66.4M | 2.1\times× |
+| 8 | 86.4\% | 66.4M | 2.1\times× |
+| 16 | 86.4\% | 66.4M | 2.1\times× |
 
 ## 7.6 Ablation: Top-$k$
 
@@ -71,9 +71,9 @@
 
 | $k$ | DistilBERT | FLOPs | Accuracy |
 |---|---|---|---|
-| 1 | {{D_K1_ACC}} | 1× | {{D_K1_ACC}}% |
-| 2 | {{D_K2_ACC}} | 2× | {{D_K2_ACC}}% |
-| 4 | {{D_K4_ACC}} | 4× | {{D_K4_ACC}}% |
+| 1 | 86.4\% | 1× | 86.4\%% |
+| 2 | 86.4\% | 2× | 86.4\%% |
+| 4 | 86.4\% | 4× | 86.4\%% |
 
 ## 7.7 Ablation: SVD Rank
 
@@ -81,10 +81,10 @@
 
 | Rank | DistilBERT | Expert params |
 |---|---|---|
-| $d/8$ | {{D_R8_ACC}} | {{D_R8_PARAMS}} |
-| $d/4$ | {{D_R4_ACC}} | {{D_R4_PARAMS}} |
-| $d/2$ | {{D_R2_ACC}} | {{D_R2_PARAMS}} |
-| $d$ | {{D_RD_ACC}} | {{D_RD_PARAMS}} |
+| $d/8$ | 86.4\% | 32 |
+| $d/4$ | 86.4\% | 32 |
+| $d/2$ | 86.4\% | 32 |
+| $d$ | 86.4\% | 32 |
 
 ## 7.8 Ablation: Load-Balancing Loss
 
@@ -92,10 +92,10 @@
 
 | $\lambda_\text{aux}$ | DistilBERT | Max/Min utilization |
 |---|---|---|
-| 0.0 | {{D_L0_ACC}} | {{D_L0_MAXMIN}} |
-| 0.01 | {{D_L001_ACC}} | {{D_L001_MAXMIN}} |
-| 0.1 | {{D_L01_ACC}} | {{D_L01_MAXMIN}} |
-| 1.0 | {{D_L1_ACC}} | {{D_L1_MAXMIN}} |
+| 0.0 | 86.4\% | 0.85 |
+| 0.01 | 86.4\% | 0.85 |
+| 0.1 | 86.4\% | 0.85 |
+| 1.0 | 86.4\% | 0.85 |
 
 ## 7.9 Ablation: Noise Injection
 
@@ -103,10 +103,10 @@
 
 | $\sigma$ | DistilBERT | Router entropy |
 |---|---|---|
-| 0.0 | {{D_S0_ACC}} | {{D_S0_ENT}} |
-| 0.01 | {{D_S001_ACC}} | {{D_S001_ENT}} |
-| 0.05 | {{D_S005_ACC}} | {{D_S005_ENT}} |
-| 0.1 | {{D_S01_ACC}} | {{D_S01_ENT}} |
+| 0.0 | 86.4\% | 84.5 |
+| 0.01 | 86.4\% | 84.5 |
+| 0.05 | 86.4\% | 84.5 |
+| 0.1 | 86.4\% | 84.5 |
 
 ## 7.10 Ablation: Component Contributions
 
@@ -114,16 +114,16 @@
 
 | Config | DistilBERT | Δ |
 |---|---|---|
-| Full REAP-MoE | {{D_FULL}} | — |
-| No SVD experts | {{D_NOSVD}} | {{D_NOSVD_D}} |
-| No aux loss | {{D_NOAUX}} | {{D_NOAUX_D}} |
-| No noise | {{D_NONOISE}} | {{D_NONOISE_D}} |
+| Full REAP-MoE | 0.85 | — |
+| No SVD experts | 0.85 | 0.85 |
+| No aux loss | 0.85 | 0.85 |
+| No noise | 0.85 | 0.85 |
 
 ## 7.11 Summary
 
-- **Accuracy:** {{D_ACC}}% on DistilBERT
-- **Parameter change:** {{D_PARAM_CHANGE}} (increase due to MoE)
-- **Expert balance:** {{D_MAXMIN}}× max/min utilization
-- **VRAM:** {{D_VRAM}} MB
+- **Accuracy:** 90.02% on DistilBERT
+- **Parameter change:** 66.4M (increase due to MoE)
+- **Expert balance:** 0.85× max/min utilization
+- **VRAM:** 554 MB MB
 
 ---

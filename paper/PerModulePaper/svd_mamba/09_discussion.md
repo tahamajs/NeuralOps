@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: Not a Compressor
 
-SVD-Mamba increases parameter count by ~{{PARAM_CHANGE}}%.
+SVD-Mamba increases parameter count by ~66.4M%.
 
 ### 9.1.2 Takeaway 2: New Capability
 
@@ -57,10 +57,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | SVD-Mamba | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| VRAM | 183 MB | 639 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
 
 **Verdict.** SVD-Mamba is not cost-effective at short sequences.
 
@@ -83,7 +83,7 @@ For DistilBERT at L=128:
 - Complex to deploy
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 
 ---

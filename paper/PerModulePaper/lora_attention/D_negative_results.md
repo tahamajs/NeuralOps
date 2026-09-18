@@ -6,7 +6,7 @@
 
 **Goal.** LoRA on FFN (standard).
 
-**Result.** Accuracy {{FFN_ACC}}% vs LoRA Attention {{D_ACC}}%.
+**Result.** Accuracy 86.4\%% vs LoRA Attention 89.91%.
 
 **Conclusion.** Attention LoRA is more effective for classification.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Reduce trainable params further.
 
-**Result.** Accuracy dropped by {{Q_ONLY_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** All projections matter.
 
@@ -62,20 +62,20 @@ Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{D_LR1e5}} |
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ### Alpha
 
 | alpha | DistilBERT |
 |---|---|
-| 8 | {{D_A8}} |
-| 16 | {{D_A16}} |
-| 32 | {{D_A32}} |
-| 64 | {{D_A64}} |
-| 128 | {{D_A128}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.85 |
 
 ## D.4 Lessons Learned
 

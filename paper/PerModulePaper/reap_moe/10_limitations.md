@@ -19,7 +19,7 @@ All experiments on RTX 4070 Laptop.
 
 ## 10.4 Parameter Growth
 
-**REAP-MoE increases parameter count by ~{{D_PARAM_CHANGE}}%.** This is a 
+**REAP-MoE increases parameter count by ~66.4M%.** This is a 
 fundamental limitation of MoE architectures. SVD mitigates but does not 
 eliminate the growth.
 
@@ -49,7 +49,7 @@ All main results from a single seed.
 
 ## 10.10 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.11 Code Quality
 

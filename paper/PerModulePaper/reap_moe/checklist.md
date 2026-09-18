@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `reap_moe/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module reap_moe`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Honesty
 - [ ] Parameter **increase** is stated in abstract

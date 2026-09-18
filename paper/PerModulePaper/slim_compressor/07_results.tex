@@ -1,3 +1,8 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{slim_compressor}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_slim/roberta/summary.csv} \& slim \& PASS\_LOW & 50.92\% & 361.54 MB \\
+\texttt{results/unified\_slim/distilbert/summary.csv} \& slim \& PASS & 87.96\% & 339.21 MB \\
+\texttt{results/unified\_slim/gpt2/summary.csv} \& slim \& PASS\_LOW & 52.41\% & 640.66 MB \\
+all\_121\_gpu\_matrix \& slim \& PASS & 1.0x (1.028s) & 196.4 MB \\
+all\_121\_gpu\_matrix \& slim\_compressor \& PASS & 1.0x (0.781s) & 196.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

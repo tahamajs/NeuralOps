@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{saes_svd_v2}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_saes\_svd\_v2/roberta/summary.csv} \& saes\_svd\_v2 \& PASS & 85.44\% & 364.29 MB \\
+\texttt{results/unified\_saes\_svd\_v2/distilbert/summary.csv} \& saes\_svd\_v2 \& PASS & 87.5\% & 338.84 MB \\
+\texttt{results/unified\_saes\_svd\_v2/gpt2/summary.csv} \& saes\_svd\_v2 \& PASS & 56.88\% & 635.79 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 35.9 ms & 717.9 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 35.97 ms & 717.9 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 37.2 ms & 727.8 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 36.01 ms & 727.8 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 50.03 ms & 1082.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

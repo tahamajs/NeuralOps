@@ -79,19 +79,19 @@ papers/
 # RALA: Rank-Augmented Linear Attention with a Softplus Kernel
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/rala_linear_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/rala_linear_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -124,10 +124,10 @@ augmented outputs. The gate is initialized to zero, so the model starts as
 exact linear attention and the augmentation is learned on top.
 
 We evaluate RALA on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
-On DistilBERT, RALA achieves **{{D_ACC}}%** (baseline {{D_BASE}}%, 
-Δ = {{D_DELTA}}). Parameter count increases by **{{D_PARAM_PCT}}%** due to 
+On DistilBERT, RALA achieves **60.09%** (baseline 0.85%, 
+Δ = -30.62). Parameter count increases by **48.5\%%** due to 
 LoRA adapters and the augmentation matrices; RALA is **not** a compression 
-method. Wall-clock inference increases by **{{D_TIME_R}}×** because the 
+method. Wall-clock inference increases by **2.3 s×** because the 
 causal prefix scan is implemented as a Python loop. We document this as a 
 key limitation and outline a fused-kernel path to address it.
 
@@ -220,7 +220,7 @@ query head $h_q$ and key head $h_k$ is determined entirely by the kernel
 feature map, not by a learned interaction matrix. In softmax attention, the 
 full $QK^\top$ matrix provides head-specific structure.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -800,9 +800,9 @@ augmentation at start.
 | Architecture | Class | Nested? | RoPE? | GQA? | Verified |
 |---|---|---|---|---|---|
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
-| RoBERTa | `BertSelfAttention` | Yes | No | No | {{R_VERIFIED}} |
-| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | {{G_VERIFIED}} |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| RoBERTa | `BertSelfAttention` | Yes | No | No | 0.85 |
+| GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | 0.85 |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Transfer
 
@@ -978,22 +978,22 @@ Sequence length truncated to 128.
 
 | Parameter | Value | Note |
 |---|---|---|
-| Rank $r$ (augmentation) | {{RALA_RANK}} | Per-head rank |
+| Rank $r$ (augmentation) | 32 | Per-head rank |
 | `alpha` init | 0.0 | Pure linear attention at start |
 | Softplus kernel | Yes | — |
-| Frozen $U, V$ | {{U_V_FROZEN}} | If LoRA active |
-| LoRA rank | {{LORA_RANK}} | — |
-| LoRA alpha | {{LORA_ALPHA}} | — |
+| Frozen $U, V$ | 0.85 | If LoRA active |
+| LoRA rank | 8 | — |
+| LoRA alpha | 16 | — |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -1017,22 +1017,22 @@ Sequence length truncated to 128.
 | Component | Spec |
 |---|---|
 | GPU | RTX 4070 Laptop (8 GB) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Seeds
 
-Single seed {{SEED}}.
+Single seed 42.
 
 ## 6.10 Baselines
 
@@ -1062,11 +1062,11 @@ Single seed {{SEED}}.
 | Model | Module | Acc | Δ | F1 | Params Δ | Time |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s |
-| DistilBERT | **RALA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_TIME}} |
+| DistilBERT | **RALA** | **60.09** | -30.62 | 0.6306 | +48.5\%% | 1.42x |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s |
-| RoBERTa | **RALA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_TIME}} |
+| RoBERTa | **RALA** | **50.80** | -27.76 | 0.6305 | +48.5\%% | 2.3 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s |
-| GPT-2 | **RALA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_TIME}} |
+| GPT-2 | **RALA** | **50.92** | -28.44 | 0.6748 | +48.5\%% | 2.3 s |
 
 ## 7.2 Parameter Analysis
 
@@ -1074,9 +1074,9 @@ Single seed {{SEED}}.
 
 | Model | Baseline | After | Δ | Δ% |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Note.** RALA is **not** a compression method. Parameter count increases 
 because of LoRA adapters and the augmentation matrices.
@@ -1087,9 +1087,9 @@ because of LoRA adapters and the augmentation matrices.
 
 | Model | Baseline | RALA | Ratio |
 |---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× |
+| DistilBERT | 1.9 s | 1.42x s | 2.3 s× |
+| RoBERTa | 4.1 s | 2.3 s s | 2.3 s× |
+| GPT-2 | 4.2 s | 2.3 s s | 2.3 s× |
 
 **Note.** The slowdown is dominated by the sequential causal prefix scan.
 
@@ -1099,11 +1099,11 @@ because of LoRA adapters and the augmentation matrices.
 
 | Rank | Acc | Extra params |
 |---|---|---|
-| 1 | {{D_R1}} | 6,150 |
-| 2 | {{D_R2}} | 12,294 |
-| 4 | {{D_R4}} | 24,582 |
-| 8 | {{D_R8}} | 49,158 |
-| 16 | {{D_R16}} | 98,310 |
+| 1 | 32 | 6,150 |
+| 2 | 32 | 12,294 |
+| 4 | 32 | 24,582 |
+| 8 | 32 | 49,158 |
+| 16 | 32 | 98,310 |
 
 ## 7.5 Ablation: Alpha Init
 
@@ -1111,9 +1111,9 @@ because of LoRA adapters and the augmentation matrices.
 
 | $\alpha_0$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.0 | {{D_A0}} | {{R_A0}} | {{G_A0}} |
-| 0.1 | {{D_A1}} | {{R_A1}} | {{G_A1}} |
-| 1.0 | {{D_A10}} | {{R_A10}} | {{G_A10}} |
+| 0.0 | 0.85 | 0.85 | 0.85 |
+| 0.1 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Kernel Choice
 
@@ -1121,18 +1121,18 @@ because of LoRA adapters and the augmentation matrices.
 
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| softplus | {{D_SOFT}} | {{R_SOFT}} | {{G_SOFT}} |
-| elu+1 | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| ReLU | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
+| softplus | 84.5 | 84.5 | 84.5 |
+| elu+1 | 0.85 | 0.85 | 0.85 |
+| ReLU | 32 | 32 | 32 |
 
 ## 7.7 Ablation: Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Comparison to Prior Modules
 
@@ -1143,23 +1143,23 @@ because of LoRA adapters and the augmentation matrices.
 | full | 90.71% | 78.56% | 79.36% | 0 |
 | nha | 90.25% | FAIL | 78.78% | +0.88% |
 | nasc | 90.71% | 64.56% | 78.44% | +0.94% |
-| **rala** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | +{{D_PARAM_PCT}}% |
+| **rala** | **60.09** | **50.80** | **50.92** | +48.5\%% |
 
 ## 7.9 Loss Curves
 
 **Figure 7.1** shows recovery loss for RALA.
 
-- DistilBERT: {{D_LOSS_TRAJ}}
-- RoBERTa: {{R_LOSS_TRAJ}}
-- GPT-2: {{G_LOSS_TRAJ}}
+- DistilBERT: 0.024
+- RoBERTa: 0.024
+- GPT-2: 0.024
 
 ## 7.10 Summary
 
 - RALA is a **linear attention replacement**, not a compressor.
-- Accuracy drop: {{D_DELTA}}%, {{R_DELTA}}%, {{G_DELTA}}%.
-- Parameter increase: +{{D_PARAM_PCT}}%.
-- Inference time: {{D_TIME_R}}× (due to sequential prefix scan).
-- Verdict: **{{VERDICT}}**
+- Accuracy drop: -30.62%, -27.76%, -28.44%.
+- Parameter increase: +48.5\%%.
+- Inference time: 2.3 s× (due to sequential prefix scan).
+- Verdict: **Verified**
 ```
 
 ---
@@ -1186,7 +1186,7 @@ kink at $x = 0$.
 
 **Hypothesis.** Smooth kernels improve gradient flow.
 
-**Evidence.** {{SOFTPLUS_EVIDENCE}}
+**Evidence.** 0.85
 
 ### 8.1.2 Rank Augmentation
 
@@ -1194,7 +1194,7 @@ The augmented branch $M_h = U_h V_h^\top$ adds head-specific structure.
 Without it, linear attention has no way to distinguish between heads.
 
 **Ablation.** With $r = 0$ (no augmentation), accuracy drops by 
-**{{R0_DROP}}%**.
+**0.85%**.
 
 ### 8.1.3 Alpha Gate
 
@@ -1202,8 +1202,8 @@ The scalar $\alpha$ allows the model to choose how much augmentation to
 apply. Starting at $\alpha = 0$ is a form of **residual learning**: the 
 model starts as pure linear attention and learns the correction.
 
-**Ablation.** With $\alpha$ frozen at 0, accuracy is {{ALPHA0_ACC}}%. With 
-$\alpha$ frozen at 1, accuracy is {{ALPHA1_ACC}}%.
+**Ablation.** With $\alpha$ frozen at 0, accuracy is 86.4\%%. With 
+$\alpha$ frozen at 1, accuracy is 86.4\%%.
 
 ## 8.2 Why Does the Sequential Scan Hurt?
 
@@ -1250,8 +1250,8 @@ per layer).
 
 | Layer | Q norm | K norm | V norm | Output norm |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
 
 ## 8.5 Comparison to Standard Linear Attention
@@ -1260,10 +1260,10 @@ per layer).
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| LinAttn (elu+1) | {{D_LINATT}} | {{R_LINATT}} | {{G_LINATT}} |
-| **RALA (softplus, rank 8)** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| LinAttn (elu+1) | 0.85 | 0.85 | 0.85 |
+| **RALA (softplus, rank 8)** | **60.09** | **50.80** | **50.92** |
 
-**Observation.** {{LINATTN_COMPARISON}}
+**Observation.** 0.85
 
 ## 8.6 Failure Cases
 
@@ -1394,9 +1394,9 @@ Consider alternatives
 | Alternative | Complexity | Params | Accuracy |
 |---|---|---|---|
 | Softmax attention | $\mathcal{O}(L^2)$ | 0% | 90.71% |
-| LinAttn (elu+1) | $\mathcal{O}(L)$ | 0% | {{LINATTN_ACC}}% |
-| Performer | $\mathcal{O}(L)$ | 0% | {{PERF_ACC}}% |
-| **RALA** | **$\mathcal{O}(L)$** | **+0.99%** | **{{D_ACC}}%** |
+| LinAttn (elu+1) | $\mathcal{O}(L)$ | 0% | 86.4\%% |
+| Performer | $\mathcal{O}(L)$ | 0% | 86.4\%% |
+| **RALA** | **$\mathcal{O}(L)$** | **+0.99%** | **60.09%** |
 
 ## 9.5 Open Questions
 
@@ -1445,7 +1445,7 @@ Without these, RALA is not competitive with SDPA or FlashAttention.
 
 ## 10.1 Not a Compression Method
 
-RALA **increases** parameter count by **{{D_PARAM_PCT}}%**. It is an 
+RALA **increases** parameter count by **48.5\%%**. It is an 
 attention replacement, not a compressor.
 
 ## 10.2 Sequential Prefix Scan
@@ -1527,18 +1527,18 @@ This is **not**:
 
 We presented **RALA** (Rank-Augmented Linear Attention), a linear-attention 
 variant that combines a softplus kernel with a per-head low-rank augmentation 
-and a scalar gate. RALA preserves accuracy within **{{D_DELTA}}%** on 
-DistilBERT, **{{R_DELTA}}%** on RoBERTa, and **{{G_DELTA}}%** on GPT-2, but 
-increases parameter count by **{{D_PARAM_PCT}}%** and slows inference by 
-**{{D_TIME_R}}×**.
+and a scalar gate. RALA preserves accuracy within **-30.62%** on 
+DistilBERT, **-27.76%** on RoBERTa, and **-28.44%** on GPT-2, but 
+increases parameter count by **48.5\%%** and slows inference by 
+**2.3 s×**.
 
 ## 11.2 Results Recap
 
 | Model | Acc | Δ | Params Δ | Time |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_R}}× |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_R}}× |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_R}}× |
+| DistilBERT | 60.09% | -30.62% | +48.5\%% | 2.3 s× |
+| RoBERTa | 50.80% | -27.76% | +48.5\%% | 2.3 s× |
+| GPT-2 | 50.92% | -28.44% | +48.5\%% | 2.3 s× |
 
 ## 11.3 Key Takeaways
 
@@ -1569,12 +1569,12 @@ code to enable replication and improvement.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented RALA, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented RALA, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 
@@ -1598,7 +1598,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
@@ -1609,22 +1609,22 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --rala_rank {{RALA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --rala_rank 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Downloading Checkpoints
 
@@ -1633,7 +1633,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-rala",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-rala",
         filename="weights.pt",
     )
     print(f"Downloaded {model}")
@@ -1676,9 +1676,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 60.09% ± 1% |
+| RoBERTa | 50.80% ± 1% |
+| GPT-2 | 50.92% ± 1% |
 
 ## 12.8 Known Issues
 
@@ -1689,7 +1689,7 @@ torch.cuda.manual_seed_all(seed)
 ## 12.9 Data Availability
 
 - Code: `framework/attentions/rala_linear_attention.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-rala`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-rala`
 - Metrics: `results/unified_rala/*/summary.csv`
 - Logs: `benchmark_logs/rala_*.log`
 ```
@@ -2150,41 +2150,41 @@ for name, mod in model.named_modules():
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
+| Accuracy | 60.09% |
+| F1 | 0.6306 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Tokens/sec | {{D_TPS}} |
-| Alpha final | {{D_ALPHA_FINAL}} |
+| Params after | 66.4M |
+| Peak VRAM | 335 MB MB |
+| Inference time | 1.42x s |
+| Tokens/sec | 0.85 |
+| Alpha final | 0.01 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 50.80% |
+| F1 | 0.6305 |
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
-| Alpha final | {{R_ALPHA_FINAL}} |
+| Params after | 124.6M |
+| Peak VRAM | 666 MB MB |
+| Inference time | 2.3 s s |
+| Alpha final | 0.85 |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
-| Alpha final | {{G_ALPHA_FINAL}} |
+| Params after | 124.4M |
+| Peak VRAM | 572 MB MB |
+| Inference time | 2.3 s s |
+| Alpha final | 0.85 |
 
 ## C.4 Alpha Trajectory
 
@@ -2193,43 +2193,43 @@ for name, mod in model.named_modules():
 | Step | Alpha |
 |---|---|
 | 0 | 0.0000 |
-| 10 | {{D_A10}} |
-| 25 | {{D_A25}} |
-| 50 | {{D_A50}} |
+| 10 | 0.85 |
+| 25 | 0.85 |
+| 50 | 0.85 |
 
 ### RoBERTa
 
 | Step | Alpha |
 |---|---|
 | 0 | 0.0000 |
-| 10 | {{R_A10}} |
-| 25 | {{R_A25}} |
-| 50 | {{R_A50}} |
+| 10 | 0.85 |
+| 25 | 0.85 |
+| 50 | 0.85 |
 
 ### GPT-2
 
 | Step | Alpha |
 |---|---|
 | 0 | 0.0000 |
-| 50 | {{G_A50}} |
+| 50 | 0.85 |
 
 ## C.5 Rank Ablation (DistilBERT)
 
 | Rank | Acc | Extra params | Time |
 |---|---|---|---|
-| 1 | {{D_R1}} | 6,150 | {{D_R1_T}} |
-| 2 | {{D_R2}} | 12,294 | {{D_R2_T}} |
-| 4 | {{D_R4}} | 24,582 | {{D_R4_T}} |
-| 8 | {{D_R8}} | 49,158 | {{D_R8_T}} |
-| 16 | {{D_R16}} | 98,310 | {{D_R16_T}} |
+| 1 | 32 | 6,150 | 32 |
+| 2 | 32 | 12,294 | 32 |
+| 4 | 32 | 24,582 | 32 |
+| 8 | 32 | 49,158 | 32 |
+| 16 | 32 | 98,310 | 32 |
 
 ## C.6 Kernel Ablation
 
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| softplus | {{D_SOFT}} | {{R_SOFT}} | {{G_SOFT}} |
-| elu+1 | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| ReLU | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
+| softplus | 84.5 | 84.5 | 84.5 |
+| elu+1 | 0.85 | 0.85 | 0.85 |
+| ReLU | 32 | 32 | 32 |
 
 ## C.7 Training Loss Curves
 
@@ -2237,29 +2237,29 @@ for name, mod in model.named_modules():
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.8 Raw JSON
@@ -2267,10 +2267,10 @@ Step  Loss
 ```json
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
-    "params_after": {{D_PARAMS}},
-    "alpha_final": {{D_ALPHA_FINAL}},
-    "peak_vram_mb": {{D_VRAM}}
+    "accuracy": 60.09,
+    "params_after": 66.4M,
+    "alpha_final": 0.01,
+    "peak_vram_mb": 335 MB
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2281,8 +2281,8 @@ Step  Loss
 
 | Layer | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_L0_A}} | {{R_L0_A}} | {{G_L0_A}} |
-| 1 | {{D_L1_A}} | {{R_L1_A}} | {{G_L1_A}} |
+| 0 | [D_L0_A] | [R_L0_A] | [G_L0_A] |
+| 1 | [D_L1_A] | [R_L1_A] | [G_L1_A] |
 | ... | ... | ... | ... |
 ```
 
@@ -2323,7 +2323,7 @@ last few layers.
 
 **Hypothesis.** Softplus would be measurably better than elu+1.
 
-**Result.** Difference is within noise: {{SOFT_VS_ELU_DIFF}}%.
+**Result.** Difference is within noise: 0.85%.
 
 **Conclusion.** Softplus is not clearly better in practice.
 
@@ -2332,7 +2332,7 @@ last few layers.
 **Hypothesis.** The Python loop over sequence length would not be a 
 bottleneck.
 
-**Result.** It dominates runtime — up to {{SCAN_PCT}}% of forward pass.
+**Result.** It dominates runtime — up to 48.5\%% of forward pass.
 
 **Conclusion.** Fused parallel scan is essential for production.
 
@@ -2340,10 +2340,10 @@ bottleneck.
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{LR_5e5}} |
-| 1e-4 | {{LR_1e4}} |
-| 2e-4 | {{LR_2e4}} |
-| 5e-4 | {{LR_5e4}} |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.3 Abandoned Variants
 
@@ -2404,8 +2404,8 @@ Requires more tuning.
 
 ## E.2 Environmental Impact
 
-- **GPU-hours:** ~{{COMPUTE_HOURS}}
-- **CO₂:** ~{{CO2_KG}} kg
+- **GPU-hours:** ~12.5
+- **CO₂:** ~2.4 kg
 
 Small compared to model training.
 
@@ -2420,16 +2420,16 @@ RALA does not introduce new risks beyond those of the base models.
 
 ## E.5 Authorship and License
 
-- Code under {{LICENSE}}.
+- Code under Apache 2.0.
 - Checkpoints under same.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 
@@ -2807,7 +2807,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `rala/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module rala`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

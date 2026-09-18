@@ -33,11 +33,11 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| `num_landmarks` | {{NUM_LANDMARKS}} | Default 32 |
+| `num_landmarks` | 32 | Default 32 |
 | `pinv_iterations` | 3 | Newton-Schulz |
 | Short seq threshold | 128 | Dense fallback |
-| `lora_rank` | {{LORA_RANK}} | Recovery |
-| `lora_alpha` | {{LORA_ALPHA}} | Scaling |
+| `lora_rank` | 8 | Recovery |
+| `lora_alpha` | 16 | Scaling |
 | `dropout` | 0.1 | Standard |
 
 ## 6.4 Recovery Fine-Tuning
@@ -45,10 +45,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -78,21 +78,21 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Long Sequence Evaluation
 
@@ -109,7 +109,7 @@ python run_all_4_nystrom.py \
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ## 6.11 Baselines
 

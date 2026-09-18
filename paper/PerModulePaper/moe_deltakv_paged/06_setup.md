@@ -35,10 +35,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 | Aux loss weight | 0.01 |
 
@@ -73,8 +73,8 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
@@ -84,7 +84,7 @@ python run_all_4_moe_deltakv_paged.py \
     --page_size 64 \
     --k_experts 4 \
     --svd_rank 16 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -99,6 +99,6 @@ python run_all_4_moe_deltakv_paged.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

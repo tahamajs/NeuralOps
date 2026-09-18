@@ -10,7 +10,7 @@
 - [ ] Copied `_TEMPLATE/` to `nexus/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module nexus`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

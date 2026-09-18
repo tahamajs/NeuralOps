@@ -31,13 +31,13 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `mode` | {{MODE}} (exact or linear) |
-| `rank` (SVD) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `use_decay_gating` | {{USE_DECAY}} |
+| `mode` | standard (exact or linear) |
+| `rank` (SVD) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `use_decay_gating` | 0.85 |
 | `decay_activation` | softplus |
-| `decay_channel_wise` | {{CHANNEL_WISE}} |
+| `decay_channel_wise` | 0.85 |
 | `chunk_size` | 64 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -45,10 +45,10 @@ Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -72,17 +72,17 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_svd_linear_attention.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --mode {{MODE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --mode standard \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

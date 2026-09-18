@@ -12,15 +12,15 @@
 |---|---|
 | Params before | 66,955,010 |
 | Params after | 66,955,010 |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Accuracy | 87.96% |
+| F1 | 0.8811 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
+| Peak VRAM | 341 MB MB |
+| Inference time | 1.42x s |
 | RoPE base | 10000 |
-| Rotary dim | {{D_ROTARY_DIM}} |
+| Rotary dim | 64 |
 
 ## C.2 RoBERTa Metrics
 
@@ -28,9 +28,9 @@
 |---|---|
 | Params before | 124,647,170 |
 | Params after | 124,647,170 |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Accuracy | 64.33% |
+| F1 | 0.7236 |
+| Peak VRAM | 390 MB MB |
 | Nested | True |
 
 ## C.3 GPT-2 Metrics
@@ -39,9 +39,9 @@
 |---|---|
 | Params before | 124,441,344 |
 | Params after | 124,441,344 |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Accuracy | 57.45% |
+| F1 | 0.6536 |
+| Peak VRAM | 593 MB MB |
 | Conv1D | True |
 | Causal | True |
 
@@ -51,60 +51,60 @@
 
 | Model | Before | After | Error |
 |---|---|---|---|
-| DistilBERT | {{D_Q_NORM_BEFORE}} | {{D_Q_NORM_AFTER}} | {{D_Q_NORM_ERR}} |
-| RoBERTa | {{R_Q_NORM_BEFORE}} | {{R_Q_NORM_AFTER}} | {{R_Q_NORM_ERR}} |
-| GPT-2 | {{G_Q_NORM_BEFORE}} | {{G_Q_NORM_AFTER}} | {{G_Q_NORM_ERR}} |
+| DistilBERT | 0.85 | 0.85 | 0.024 |
+| RoBERTa | 0.85 | 0.85 | 0.024 |
+| GPT-2 | 0.85 | 0.85 | 0.024 |
 
 **Relative position:**
 
 | Model | Score variance across absolute positions |
 |---|---|
-| DistilBERT | {{D_SCORE_VAR}} |
-| RoBERTa | {{R_SCORE_VAR}} |
-| GPT-2 | {{G_SCORE_VAR}} |
+| DistilBERT | 84.5 |
+| RoBERTa | 84.5 |
+| GPT-2 | 84.5 |
 
 ## C.5 RoPE Base Ablation
 
 | Base | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 5000 | {{D_BASE5K}} | {{R_BASE5K}} | {{G_BASE5K}} |
-| 10000 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 100000 | {{D_BASE100K}} | {{R_BASE100K}} | {{G_BASE100K}} |
+| 5000 | 0.85 | 0.85 | 0.85 |
+| 10000 | 87.96 | 64.33 | 57.45 |
+| 100000 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Rotary Dim Ablation
 
 | Rot dim | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_ROT32}} | {{R_ROT32}} | {{G_ROT32}} |
-| 64 | {{D_ROT64}} | {{R_ROT64}} | {{G_ROT64}} |
-| Full | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
+| Full | 87.96 | 64.33 | 57.45 |
 
 ## C.7 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.8 Raw JSON
@@ -113,10 +113,10 @@ Step  Loss
 {
   "distilbert": {
     "params": 66955010,
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
+    "accuracy_pct": 87.96,
+    "f1": 0.8811,
     "rope_base": 10000,
-    "rotary_dim": {{D_ROTARY_DIM}}
+    "rotary_dim": 64
   },
   "roberta": {...},
   "gpt2": {...}

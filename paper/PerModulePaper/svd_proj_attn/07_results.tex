@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{svd_proj_attn}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} \& svd\_proj\_attn \& PASS\_LOW & 50.92\% & 328.38 MB \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} \& svd\_proj\_attn \& PASS & 76.15\% & 283.77 MB \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} \& svd\_proj\_attn \& PASS\_LOW & 50.92\% & 468.71 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

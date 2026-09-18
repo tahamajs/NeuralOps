@@ -7,19 +7,19 @@
 # Routing Attention: Content-Based Clustering for Sparse Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/routing_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/routing_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -46,11 +46,11 @@ attention** where each query attends only to keys in its assigned cluster;
 and (iii) **token-0 anchoring** which preserves the first token as a universal 
 context key. Base weights are transferred from the pretrained attention via 
 a multi-architecture `copy_weights` procedure, and trainable capacity is 
-provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+provided by LoRA adapters at rank $r = 8$.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
-within **{{D_DELTA}}%** (DistilBERT), **{{R_DELTA}}%** (RoBERTa), and 
-**{{G_DELTA}}%** (GPT-2). Parameter count increases by **{{D_PARAM_PCT}}%** 
+within **-26.95%** (DistilBERT), **-27.64%** (RoBERTa), and 
+**-28.44%** (GPT-2). Parameter count increases by **48.5\%%** 
 due to LoRA adapters; this is **not** a compression method. We honestly report 
 that the current implementation does **not** achieve real sparsity speedups: 
 the loop over $K$ clusters recomputes $K$ full attention matrices, making the 

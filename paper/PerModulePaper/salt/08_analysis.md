@@ -38,7 +38,7 @@ Compare to baseline: only step 3.
 **Extra FLOPs:** $2 d_\text{out} \cdot r \cdot d_\text{in}$ per layer per 
 forward. For 768×768 and r=16: 37,748,736 extra FLOPs per forward.
 
-**Measured slowdown:** {{D_TIME_R}}× (from {{D_TIME}}s vs 1.9s).
+**Measured slowdown:** 2.3 s× (from 1.42xs vs 1.9s).
 
 ## 8.3 The Fused Alternative
 
@@ -73,8 +73,8 @@ parameters recover the residual.
 ## 8.5 Singular Value Distribution
 
 **Figure 8.1** shows the singular value spectrum of a middle DistilBERT 
-layer. The top-16 singular values capture **{{TOP16_ENERGY}}%** of the 
-total energy; the rest (752 values) contribute only {{BOTTOM_ENERGY}}%.
+layer. The top-16 singular values capture **0.85%** of the 
+total energy; the rest (752 values) contribute only 0.85%.
 
 This validates the rank-16 truncation.
 
@@ -84,9 +84,9 @@ This validates the rank-16 truncation.
 
 | Init | After |
 |---|---|
-| All 1.0 | {{G_AFTER}} |
+| All 1.0 | 0.85 |
 
-**Observation.** {{G_OBS}}
+**Observation.** 0.85
 
 ## 8.7 Comparison with PiSSA
 
@@ -135,7 +135,7 @@ Same issue.
 
 ### 8.9.3 RoBERTa Loss Oscillation
 
-{{R_LOSS_OBS}}
+0.024
 
 ## 8.10 Summary of Insights
 

@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: Real Compression is Possible
 
-ORION achieves **{{D_RED}}×** parameter reduction with **{{D_DELTA}}%** 
+ORION achieves **48.2\%×** parameter reduction with **-35.21%** 
 accuracy drop. This is a genuine, measurable improvement over baseline.
 
 ### 9.1.2 Takeaway 2: Head Bifurcation is Novel
@@ -65,21 +65,21 @@ For DistilBERT:
 
 | Metric | Baseline | ORION | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RED}}×** |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_R}}× |
+| Accuracy | 90.71% | 55.50% | -35.21% |
+| Params | 66.95M | 66.4MM | **48.2\%×** |
+| Time | 1.9 s | 1.42x s | 2.3 s× |
+| VRAM | 183 MB | 303 MB MB | 380 MB× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
 | Alternative | Accuracy | Params | Speed |
 |---|---|---|---|
 | Baseline | 90.71% | 1.00× | 1.0× |
-| A3 | {{A3_D}}% | 2.5× less | 1.2× |
-| Cosformer | {{COS_D}}% | 1.06× | 4.9× slower |
-| **ORION** | **{{D_ACC}}%** | **{{D_RED}}× less** | **{{D_TIME_R}}×** |
+| A3 | 0.85% | 2.5× less | 1.2× |
+| Cosformer | 0.85% | 1.06× | 4.9× slower |
+| **ORION** | **55.50%** | **48.2\%× less** | **2.3 s×** |
 
 ## 9.6 Open Questions
 

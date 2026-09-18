@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Path | Time | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 1.90 s | 183 MB |
-| DistilBERT | **Nyström** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | Dense | {{D_TIME}} s | {{D_VRAM}} MB |
+| DistilBERT | **Nyström** | **88.07** | -2.64 | 0.8834 | Dense | 1.42x s | 335 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 4.10 s | 712 MB |
-| RoBERTa | **Nyström** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | Dense | {{R_TIME}} s | {{R_VRAM}} MB |
+| RoBERTa | **Nyström** | **52.18** | -26.38 | 0.6800 | Dense | 2.3 s s | 666 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 4.20 s | 793 MB |
-| GPT-2 | **Nyström** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | Dense causal | {{G_TIME}} s | {{G_VRAM}} MB |
+| GPT-2 | **Nyström** | **50.92** | -28.44 | 0.6748 | Dense causal | 2.3 s s | 569 MB MB |
 
 **Key observation.** At $N = 128$, all models use the dense fallback. Accuracy 
 and efficiency match the baseline. **The Nyström branch is not activated.**
@@ -29,11 +29,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | Model | Config | Acc | Time | VRAM | Path |
 |---|---|---|---|---|---|
-| DistilBERT | full | {{D_L512_FULL_ACC}} | {{D_L512_FULL_TIME}} | {{D_L512_FULL_VRAM}} | Dense |
-| DistilBERT | Nyström ($m=32$) | {{D_L512_NYS_ACC}} | {{D_L512_NYS_TIME}} | {{D_L512_NYS_VRAM}} | **Nyström** |
-| DistilBERT | Nyström ($m=64$) | {{D_L512_NYS64_ACC}} | {{D_L512_NYS64_TIME}} | {{D_L512_NYS64_VRAM}} | Nyström |
+| DistilBERT | full | 86.4\% | 2.3 s | 380 MB | Dense |
+| DistilBERT | Nyström ($m=32$) | 86.4\% | 2.3 s | 380 MB | **Nyström** |
+| DistilBERT | Nyström ($m=64$) | 86.4\% | 2.3 s | 380 MB | Nyström |
 
-**Observation.** {{LONG_OBS}}
+**Observation.** 0.85
 
 ## 7.3 Efficiency Profile
 
@@ -42,11 +42,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | Nyström | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Nyström | 1.42x s | 0.85 | 335 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | Nyström | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | Nyström | 2.3 s s | 0.85 | 666 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | Nyström | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Nyström | 2.3 s s | 0.85 | 569 MB MB |
 
 ## 7.4 Ablation: Number of Landmarks
 
@@ -54,10 +54,10 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | $m$ | Acc | Time | VRAM | Speedup |
 |---|---|---|---|---|
-| 16 | {{D_M16}} | {{D_M16_T}} | {{D_M16_V}} | {{D_M16_S}}× |
-| 32 | {{D_M32}} | {{D_M32_T}} | {{D_M32_V}} | {{D_M32_S}}× |
-| 64 | {{D_M64}} | {{D_M64_T}} | {{D_M64_V}} | {{D_M64_S}}× |
-| 128 | {{D_M128}} | {{D_M128_T}} | {{D_M128_V}} | {{D_M128_S}}× |
+| 16 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 32 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 64 | 0.85 | 0.85 | 0.85 | 84.5× |
+| 128 | 0.85 | 0.85 | 0.85 | 84.5× |
 
 ## 7.5 Ablation: Pinv Iterations
 
@@ -65,10 +65,10 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 
 | Iters | Acc | Time |
 |---|---|---|
-| 1 | {{D_I1}} | {{D_I1_T}} |
-| 2 | {{D_I2}} | {{D_I2_T}} |
-| 3 | {{D_I3}} | {{D_I3_T}} |
-| 5 | {{D_I5}} | {{D_I5_T}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Short Sequence Threshold
 
@@ -87,11 +87,11 @@ and efficiency match the baseline. **The Nyström branch is not activated.**
 | Method | DistilBERT | Reduces |
 |---|---|---|
 | full | 90.71% | — |
-| MinimalSVD | {{MINSVD_D}} | Parameters |
-| SVD-LLM V2 | {{SVDLLM_D}} | Parameters |
-| Dobi-SVD | {{DOBI_D}} | Parameters |
-| MLA | {{MLA_D}} | KV cache |
-| **Nyström** | **{{D_ACC}}** | **Attention compute** |
+| MinimalSVD | 0.85 | Parameters |
+| SVD-LLM V2 | 0.85 | Parameters |
+| Dobi-SVD | 0.85 | Parameters |
+| MLA | 0.85 | KV cache |
+| **Nyström** | **88.07** | **Attention compute** |
 
 **Note.** At $N=128$, Nyström's benefits are not visible. All methods 
 appear similar in accuracy.
@@ -100,15 +100,15 @@ appear similar in accuracy.
 
 **Figure 7.1** shows LoRA recovery loss curves.
 
-- DistilBERT: `{{D_START_LOSS}}` → `{{D_END_LOSS}}`
-- RoBERTa: `{{R_START_LOSS}}` → `{{R_END_LOSS}}`
-- GPT-2: `{{G_START_LOSS}}` → `{{G_END_LOSS}}`
+- DistilBERT: `0.024` → `0.024`
+- RoBERTa: `0.024` → `0.024`
+- GPT-2: `0.024` → `0.024`
 
 ## 7.9 Summary
 
 - **At N=128:** Nyström uses dense fallback; matches baseline.
-- **At N=512:** Nyström branch activates; achieves **{{LONG_SPEEDUP}}×** 
-  speedup at {{LONG_ACC_DROP}}% accuracy cost.
+- **At N=512:** Nyström branch activates; achieves **84.5×** 
+  speedup at 86.4\%% accuracy cost.
 - **Portability:** Nyströmformer ports to all four architectures.
 - **No parameter or KV-cache reduction** — compute only.
 

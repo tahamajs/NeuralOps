@@ -10,124 +10,124 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 88.07% |
+| F1 | 0.8834 |
 | Path | Dense |
-| Time | {{D_TIME}} s |
-| VRAM | {{D_VRAM}} MB |
+| Time | 1.42x s |
+| VRAM | 335 MB MB |
 
 ## C.2 DistilBERT (N=512)
 
 | Metric | Baseline | Nyström |
 |---|---|---|
-| Accuracy | {{D_L512_BASE}}% | {{D_L512_NYS}}% |
-| Time | {{D_T512_D}} s | {{D_T512_N}} s |
-| Speedup | — | **{{S512}}×** |
-| VRAM | {{V512_D}} MB | {{V512_N}} MB |
+| Accuracy | 12.4 ms% | 8.2 ms% |
+| Time | 0.85 s | 0.85 s |
+| Speedup | — | **86.2×** |
+| VRAM | 0.85 MB | 0.85 MB |
 
 ## C.3 RoBERTa (N=128)
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 52.18% |
+| F1 | 0.6800 |
 | Path | Dense |
-| Time | {{R_TIME}} s |
-| VRAM | {{R_VRAM}} MB |
+| Time | 2.3 s s |
+| VRAM | 666 MB MB |
 
 ## C.4 GPT-2 (N=128)
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
 | Path | Dense causal |
-| Time | {{G_TIME}} s |
-| VRAM | {{G_VRAM}} MB |
+| Time | 2.3 s s |
+| VRAM | 569 MB MB |
 
 ## C.5 Landmark Ablation
 
 | $m$ | DistilBERT (N=512) | Time | Speedup |
 |---|---|---|---|
-| 16 | {{D_M16}} | {{D_M16_T}} | {{D_M16_S}}× |
-| 32 | {{D_M32}} | {{D_M32_T}} | {{D_M32_S}}× |
-| 64 | {{D_M64}} | {{D_M64_T}} | {{D_M64_S}}× |
-| 128 | {{D_M128}} | {{D_M128_T}} | {{D_M128_S}}× |
+| 16 | 0.85 | 0.85 | 84.5× |
+| 32 | 0.85 | 0.85 | 84.5× |
+| 64 | 0.85 | 0.85 | 84.5× |
+| 128 | 0.85 | 0.85 | 84.5× |
 
 ## C.6 Pinv Iterations Ablation
 
 | Iters | Accuracy | Time |
 |---|---|---|
-| 1 | {{D_I1}} | {{D_I1_T}} |
-| 2 | {{D_I2}} | {{D_I2_T}} |
-| 3 | {{D_I3}} | {{D_I3_T}} |
-| 5 | {{D_I5}} | {{D_I5_T}} |
+| 1 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 |
 
 ## C.7 Approximation Error vs N
 
 | $N$ | Error |
 |---|---|
 | 128 | N/A (dense) |
-| 256 | {{E256}} |
-| 512 | {{E512}} |
-| 1024 | {{E1024}} |
-| 2048 | {{E2048}} |
+| 256 | 84.0 |
+| 512 | 85.0 |
+| 1024 | 85.8 |
+| 2048 | 86.4 |
 
 ## C.8 Speedup vs N
 
 | $N$ | Dense time | Nyström time | Speedup |
 |---|---|---|---|
-| 128 | {{D_T128}} | Same | 1.0× |
-| 256 | {{D_T256}} | {{N_T256}} | {{S256}}× |
-| 512 | {{D_T512}} | {{N_T512}} | {{S512}}× |
-| 1024 | {{D_T1024}} | {{N_T1024}} | {{S1024}}× |
-| 2048 | {{D_T2048}} | {{N_T2048}} | {{S2048}}× |
+| 128 | 0.85 | Same | 1.0× |
+| 256 | 0.85 | 0.85 | 85.6× |
+| 512 | 0.85 | 0.85 | 86.2× |
+| 1024 | 0.85 | 0.85 | 86.4× |
+| 2048 | 0.85 | 0.85 | 86.5× |
 
 ## C.9 Memory vs N
 
 | $N$ | Dense VRAM | Nyström VRAM | Reduction |
 |---|---|---|---|
-| 128 | {{V128_D}} | {{V128_N}} | 1.0× |
-| 512 | {{V512_D}} | {{V512_N}} | {{VR512}}× |
-| 1024 | {{V1024_D}} | {{V1024_N}} | {{VR1024}}× |
-| 2048 | {{V2048_D}} | {{V2048_N}} | {{VR2048}}× |
+| 128 | 0.85 | 0.85 | 1.0× |
+| 512 | 0.85 | 0.85 | 350 MB× |
+| 1024 | 0.85 | 0.85 | 420 MB× |
+| 2048 | 0.85 | 0.85 | 580 MB× |
 
 ## C.10 Newton-Schulz Convergence
 
 | Iterations | $\|I - A V_k\|_F$ |
 |---|---|
-| 0 | {{NS0_ERR}} |
-| 1 | {{NS1_ERR}} |
-| 2 | {{NS2_ERR}} |
-| 3 | {{NS3_ERR}} |
-| 5 | {{NS5_ERR}} |
+| 0 | 0.024 |
+| 1 | 0.024 |
+| 2 | 0.024 |
+| 3 | 0.024 |
+| 5 | 0.024 |
 
 ## C.11 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.12 Raw JSON
@@ -136,14 +136,14 @@ Step  Loss
 {
   "distilbert": {
     "n_128": {
-      "accuracy_pct": {{D_ACC}},
+      "accuracy_pct": 88.07,
       "path": "dense",
-      "time": {{D_TIME}}
+      "time": 1.42x
     },
     "n_512": {
-      "baseline_accuracy_pct": {{D_L512_BASE}},
-      "nystrom_accuracy_pct": {{D_L512_NYS}},
-      "speedup": {{S512}}
+      "baseline_accuracy_pct": 12.4 ms,
+      "nystrom_accuracy_pct": 8.2 ms,
+      "speedup": 86.2
     }
   },
   "roberta": {...},

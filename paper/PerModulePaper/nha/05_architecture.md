@@ -14,7 +14,7 @@
 | DistilBERT | Flat | No | No | ✅ |
 | RoBERTa | Nested | No | No | ✅ |
 | GPT-2 | Causal | No | No | ✅ |
-| Qwen3.5 | Causal + RoPE | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | Causal + RoPE | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Transfer
 

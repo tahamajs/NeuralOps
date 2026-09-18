@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `minimal_svd/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module minimal_svd`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

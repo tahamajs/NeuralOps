@@ -18,13 +18,13 @@ bias $-7$ to keep the SSM silent at start.
 
 | Model | Acc Δ | Param Δ % | Time ratio (L=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -39.79% | +48.5\%% | 2.1\times× |
+| RoBERTa | -27.64% | +48.5\%% | 2.1\times× |
+| GPT-2 | -29.13% | +48.5\%% | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
-1. **Not a compressor.** Parameters increase by ~{{D_PARAM_PCT}}%.
+1. **Not a compressor.** Parameters increase by ~48.5\%%.
 2. **New capability.** SSM path adds linear-time recurrence.
 3. **Gate init is critical.**
 4. **Numerical stability requires multiple clamps.**
@@ -48,13 +48,13 @@ compressor. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed SVD-Mamba, implemented the code, ran 
+- **Taha Majs** designed SVD-Mamba, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

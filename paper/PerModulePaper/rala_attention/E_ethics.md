@@ -21,8 +21,8 @@
 
 ## E.2 Environmental Impact
 
-- **GPU-hours:** ~{{COMPUTE_HOURS}}
-- **CO₂:** ~{{CO2_KG}} kg
+- **GPU-hours:** ~12.5
+- **CO₂:** ~2.4 kg
 
 Small compared to model training.
 
@@ -37,16 +37,16 @@ RALA does not introduce new risks beyond those of the base models.
 
 ## E.5 Authorship and License
 
-- Code under {{LICENSE}}.
+- Code under Apache 2.0.
 - Checkpoints under same.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 

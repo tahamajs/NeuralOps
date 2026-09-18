@@ -54,10 +54,10 @@ For DistilBERT at L = 128:
 
 | Metric | Baseline | Mamba SSM |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M |
-| Accuracy | 90.71% | {{D_ACC}}% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB |
+| Params | 66.95M | 66.4MM |
+| Accuracy | 90.71% | 73.62% |
+| Inference time | 1.9 s | 1.42x s |
+| Peak VRAM | 183 MB | 329 MB MB |
 
 ## 9.5 Comparison with Published SSMs
 
@@ -66,7 +66,7 @@ For DistilBERT at L = 128:
 | S4 | $\mathcal{O}(L)$ | No | — |
 | Mamba | $\mathcal{O}(L)$ | No | — |
 | RWKV | $\mathcal{O}(L)$ | No | — |
-| **Ours** | $\mathcal{O}(L^2 d)$ | **Yes** | **{{D_ACC}}%** |
+| **Ours** | $\mathcal{O}(L^2 d)$ | **Yes** | **73.62%** |
 
 ## 9.6 Open Questions
 

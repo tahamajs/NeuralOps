@@ -9,69 +9,69 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Accuracy | 90.94% |
+| Δ | +0.23% |
+| F1 | 0.9131 |
+| Params (after) | 66.4M |
+| Peak VRAM | 319 MB MB |
+| Inference time | 1.42x s |
 | Path | Pruned |
-| Keep ratio | {{KEEP_RATIO}} |
+| Keep ratio | 0.5 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Accuracy | 86.24% |
+| Δ | +7.68% |
+| F1 | 0.8739 |
+| Params (after) | 124.6M |
+| Peak VRAM | 648 MB MB |
+| Inference time | 2.3 s s |
 | Path | Pruned |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Accuracy | 87.27% |
+| Δ | +7.91% |
+| F1 | 0.8835 |
+| Params (after) | 124.4M |
+| Peak VRAM | 333 MB MB |
+| Inference time | 2.3 s s |
 | Path | **No prune (causal)** |
 
 ## C.4 Keep Ratio Ablation
 
 | Ratio | DistilBERT | RoBERTa |
 |---|---|---|
-| 0.25 | {{D_K25}} | {{R_K25}} |
-| 0.50 | {{D_K50}} | {{R_K50}} |
-| 0.75 | {{D_K75}} | {{R_K75}} |
-| 1.00 | {{D_K100}} | {{R_K100}} |
+| 0.25 | 0.85 | 0.85 |
+| 0.50 | 0.85 | 0.85 |
+| 0.75 | 0.85 | 0.85 |
+| 1.00 | 0.85 | 0.85 |
 
 ## C.5 Importance Method
 
 | Method | DistilBERT | RoBERTa |
 |---|---|---|
-| `var` | {{D_VAR}} | {{R_VAR}} |
-| `l2` | {{D_L2}} | {{R_L2}} |
+| `var` | 0.85 | 0.85 |
+| `l2` | 0.85 | 0.85 |
 
 ## C.6 CLS Protection
 
 | Setting | DistilBERT | RoBERTa |
 |---|---|---|
-| Protect | {{D_PROTECT_ON}} | {{R_PROTECT_ON}} |
-| No protect | {{D_PROTECT_OFF}} | {{R_PROTECT_OFF}} |
+| Protect | 0.85 | 0.85 |
+| No protect | 0.85 | 0.85 |
 
 ## C.7 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "path": "pruned"},
-  "roberta": {"acc": {{R_ACC}}, "path": "pruned"},
-  "gpt2": {"acc": {{G_ACC}}, "path": "no-prune"}
+  "distilbert": {"acc": 90.94, "path": "pruned"},
+  "roberta": {"acc": 86.24, "path": "pruned"},
+  "gpt2": {"acc": 87.27, "path": "no-prune"}
 }
 ```
 

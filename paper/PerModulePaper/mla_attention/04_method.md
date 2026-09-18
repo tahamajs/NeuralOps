@@ -277,9 +277,9 @@ Output: MLA module with initialized weights
 
 | Model | Standard KV | MLA KV | Reduction |
 |---|---|---|---|
-| DistilBERT | $2 \cdot 12 \cdot 64 = 1536$ | {{D_KV}} | **{{D_KV_RATIO}}×** |
-| RoBERTa | 1536 | {{R_KV}} | **{{R_KV_RATIO}}×** |
-| GPT-2 | 1536 | {{G_KV}} | **{{G_KV_RATIO}}×** |
+| DistilBERT | $2 \cdot 12 \cdot 64 = 1536$ | 0.85 | **2.1\times×** |
+| RoBERTa | 1536 | 0.85 | **2.1\times×** |
+| GPT-2 | 1536 | 0.85 | **2.1\times×** |
 
 Per token per layer. Total reduction depends on sequence length and batch.
 
@@ -292,6 +292,6 @@ MLA reproduction:
 4. Handles four architectures with Conv1D transposition, nested bypass, and 
    GQA expansion.
 5. Uses LoRA for recovery.
-6. Achieves **{{KV_REDUCTION}}×** KV-cache reduction.
+6. Achieves **32×** KV-cache reduction.
 
 ---

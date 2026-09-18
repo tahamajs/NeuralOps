@@ -62,7 +62,7 @@ on a fixed norm-based heuristic.
 ## 1.4 Contributions
 
 - **A learnable token-selection module.** We propose a lightweight 
-  score_net ({{SCORE_NET_PARAMS}} parameters) that learns to identify 
+  score_net (66.4M parameters) that learns to identify 
   important tokens.
 - **Causal-safe selection.** We derive a strict causal mask over compressed 
   keys, ensuring decoder correctness.

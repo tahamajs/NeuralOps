@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{soka}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_soka/roberta/summary.csv} \& soka \& PASS & 84.06\% & 359.04 MB \\
+\texttt{results/unified\_soka/distilbert/summary.csv} \& soka \& PASS & 89.91\% & 339.22 MB \\
+\texttt{results/unified\_soka/gpt2/summary.csv} \& soka \& PASS & 60.78\% & 637.1 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 34.47 ms & 711.7 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 33.71 ms & 711.7 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 36.18 ms & 721.6 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 36.11 ms & 721.6 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 49.91 ms & 1077.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

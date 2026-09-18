@@ -41,7 +41,7 @@ seek a modified attention module $\mathcal{A}'$ that:
 3. **Handles padding:** Invalid tokens are excluded.
 4. **Preserves causality:** For decoders, no future information leaks.
 5. **Drop-in:** Pretrained projections are copied exactly.
-6. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+6. **Quality:** $\Delta\text{Acc} \leq 0.02\%$ on SST-2.
 
 ## 1.3 Our Approach: PTP
 

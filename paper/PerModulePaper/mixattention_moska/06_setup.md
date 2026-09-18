@@ -30,9 +30,9 @@ Sequence length truncated to 128.
 
 | Parameter | Value |
 |---|---|
-| `fasa_keep_ratio` | {{KEEP_RATIO}} (default 0.5) |
-| `importance_method` | {{IMP_METHOD}} (`var`) |
-| `protect_first_token` | {{PROTECT_FIRST}} (True) |
+| `fasa_keep_ratio` | 0.5 (default 0.5) |
+| `importance_method` | 0.85 (`var`) |
+| `protect_first_token` | 0.85 (True) |
 | Min keep | 8 tokens |
 
 ## 6.4 Training Protocol
@@ -40,11 +40,11 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -69,22 +69,22 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_fasa.py \
     --models distilbert,roberta,gpt2 \
-    --fasa_keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --fasa_keep_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 

@@ -10,7 +10,7 @@
 - [ ] Copied `_TEMPLATE/` to `padre/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module padre`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

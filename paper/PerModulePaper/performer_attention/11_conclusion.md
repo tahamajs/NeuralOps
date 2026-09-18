@@ -17,9 +17,9 @@ exact weight transfer, GQA, RoPE, and both bidirectional and causal paths.
 
 | Model | Accuracy | Δ | Time |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | {{D_TIME}} s |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | {{R_TIME}} s |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | {{G_TIME}} s |
+| DistilBERT | 50.92% | -39.79% | 1.42x s |
+| RoBERTa | 50.92% | -27.64% | 2.3 s s |
+| GPT-2 | 77.5% | 0.85% | 2.3 s s |
 
 ## 11.3 Key Takeaways
 
@@ -52,12 +52,12 @@ fixed, it is a solid choice for long-context inference.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

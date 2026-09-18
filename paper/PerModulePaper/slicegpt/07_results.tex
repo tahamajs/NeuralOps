@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{slicegpt}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_slicegpt/roberta/summary.csv} \& slicegpt \& PASS\_LOW & 50.92\% & 366.79 MB \\
+\texttt{results/unified\_slicegpt/distilbert/summary.csv} \& slicegpt \& PASS & 80.62\% & 339.71 MB \\
+\texttt{results/unified\_slicegpt/gpt2/summary.csv} \& slicegpt \& PASS & 59.06\% & 637.16 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 25.77 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 27.4 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 26.9 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 26.83 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 52.42 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -27,26 +27,26 @@ Loaded from `results/*_baseline/finetuned_model.pt`.
 | Validation | 872 |
 | Test | 1,821 |
 
-Majority baseline: 50.92%. Sequence length: {{SEQ_LEN}}.
+Majority baseline: 50.92%. Sequence length: 0.85.
 
 ## 6.3 PTP Configuration
 
 | Parameter | Value |
 |---|---|
-| Keep ratio $\rho$ | {{KEEP_RATIO}} |
+| Keep ratio $\rho$ | 0.5 |
 | Score network hidden | 64 |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -78,16 +78,16 @@ Majority baseline: 50.92%. Sequence length: {{SEQ_LEN}}.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.5 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations

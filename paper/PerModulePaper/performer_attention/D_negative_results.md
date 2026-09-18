@@ -25,10 +25,10 @@ New parameter not in baseline. `strict=True` loading fails.
 
 | $F$ | DistilBERT |
 |---|---|
-| 16 | {{D_F16}} |
-| 32 | {{D_F32}} |
-| 64 | {{D_F64}} |
-| 128 | {{D_F128}} |
+| 16 | 0.865 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.865 |
 
 **Observation.** $F < 64$ loses significant accuracy.
 

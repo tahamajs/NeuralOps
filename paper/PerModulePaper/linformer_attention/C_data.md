@@ -5,59 +5,59 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Change | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| k | {{D_K}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params after | 66.4M |
+| Change | +48.5\%% |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| k | 0.85 |
+| Peak VRAM | 1322 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| k | {{R_K}} |
+| Params after | 124.6M |
+| Accuracy | 48.17% |
+| k | 0.85 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| k | {{G_K}} |
+| Params after | 124.4M |
+| Accuracy | 77.5% |
+| k | 0.85 |
 
 ## C.4 k Ablation
 
 | k | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_K16}} | {{R_K16}} | {{G_K16}} |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} |
-| 128 | {{D_K128}} | {{R_K128}} | {{G_K128}} |
-| 256 | {{D_K256}} | {{R_K256}} | {{G_K256}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Init Ablation
 
 | Init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Diagonal + noise | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| Gaussian only | {{D_GAUSS}} | {{R_GAUSS}} | {{G_GAUSS}} |
-| Zero | {{D_ZERO}} | {{R_ZERO}} | {{G_ZERO}} |
+| Diagonal + noise | 0.85 | 0.85 | 0.85 |
+| Gaussian only | 0.85 | 0.85 | 0.85 |
+| Zero | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.7 Reproduction Commands

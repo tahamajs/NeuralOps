@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `minimal_nova/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module minimal_nova`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

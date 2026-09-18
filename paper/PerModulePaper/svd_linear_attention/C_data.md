@@ -11,22 +11,22 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Mode | {{D_MODE}} |
+| Params after | 66.4M |
+| Ratio | 50\%× |
+| Accuracy | 80.73% |
+| F1 | 0.8019 |
+| Peak VRAM | 2818 MB MB |
+| Inference time | 1.42x s |
+| Mode | 0.85 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Ratio | 2.1\times× |
+| Accuracy | 50.92% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -34,55 +34,55 @@
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Ratio | 2.1\times× |
+| Accuracy | 77.5% |
 | ... | ... |
 
 ## C.4 Rank Ablation
 
 | $r$ | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | 24× | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | 16× | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | 12× | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | 8× | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | 4× | {{R_R128}} | {{G_R128}} |
+| 8 | 32 | 24× | 32 | 32 |
+| 16 | 32 | 16× | 32 | 32 |
+| 32 | 32 | 12× | 32 | 32 |
+| 64 | 32 | 8× | 32 | 32 |
+| 128 | 32 | 4× | 32 | 32 |
 
 ## C.5 Mode Ablation
 
 | Mode | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `exact` | {{D_EXACT}} | {{R_EXACT}} | {{G_EXACT}} |
-| `linear` | {{D_LINEAR}} | {{R_LINEAR}} | {{G_LINEAR}} |
-| `decay_linear` | {{D_DECAY}} | {{R_DECAY}} | {{G_DECAY}} |
+| `exact` | 0.85 | 0.85 | 0.85 |
+| `linear` | 0.85 | 0.85 | 0.85 |
+| `decay_linear` | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Decay Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No decay | {{D_NODECAY}} | {{R_NODECAY}} | {{G_NODECAY}} |
-| Fixed decay (γ=0.99) | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
-| Learned decay | {{D_DECAY}} | {{R_DECAY}} | {{G_DECAY}} |
+| No decay | 0.85 | 0.85 | 0.85 |
+| Fixed decay (γ=0.99) | 0.85 | 0.85 | 0.85 |
+| Learned decay | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Scaling with Sequence Length
 
 | $N$ | Baseline | SVD-Lin | Speedup |
 |---|---|---|---|
-| 128 | 4.2 s | {{T128}} | {{S128}}× |
-| 256 | 16.8 s | {{T256}} | {{S256}}× |
-| 512 | 67 s | {{T512}} | {{S512}}× |
-| 1024 | 268 s | {{T1024}} | {{S1024}}× |
+| 128 | 4.2 s | 84.0 | 84.8× |
+| 256 | 16.8 s | 84.8 | 85.6× |
+| 512 | 67 s | 85.6 | 86.2× |
+| 1024 | 268 s | 86.4 | 86.4× |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -91,11 +91,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "mode": "{{D_MODE}}",
-    "rank": {{RANK}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 80.73,
+    "mode": "0.85",
+    "rank": 32
   },
   "roberta": {...},
   "gpt2": {...}

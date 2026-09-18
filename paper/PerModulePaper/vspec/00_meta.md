@@ -6,7 +6,7 @@
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-16

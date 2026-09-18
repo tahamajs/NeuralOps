@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `token_compressed/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module token_compressed`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

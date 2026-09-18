@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{subspace_projection}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_subspace\_projection/roberta/summary.csv} \& subspace\_projection \& PASS & 84.17\% & 364.29 MB \\
+\texttt{results/unified\_subspace\_projection/distilbert/summary.csv} \& subspace\_projection \& PASS & 89.91\% & 338.84 MB \\
+\texttt{results/unified\_subspace\_projection/gpt2/summary.csv} \& subspace\_projection \& PASS & 59.52\% & 637.29 MB \\
+all\_121\_gpu\_matrix \& subspace\_projection \& PASS & 30.96x (0.757s) & 115.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -7,19 +7,19 @@
 # ORION: Optimized Rectified Input-aware Orthogonal Network for Hybrid Attention with SVD Factorization
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/orion.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/orion.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -49,10 +49,10 @@ $r = 64$, achieving ~6× reduction for $768 \times 768$ projections and ~9.6×
 for $768 \times 3072$ FFN-like projections.
 
 We evaluate ORION on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = {{LORA_RANK}}$. ORION achieves **{{D_ACC}}%** on 
-DistilBERT (baseline {{D_BASE}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on 
-RoBERTa (Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). 
-Parameter count decreases by **{{PARAM_REDUCTION}}%** across all models. 
+recovery at rank $r_L = 8$. ORION achieves **55.50%** on 
+DistilBERT (baseline 0.85%, Δ = -35.21), **50.92%** on 
+RoBERTa (Δ = -27.64), and **50.92%** on GPT-2 (Δ = -28.44). 
+Parameter count decreases by **32%** across all models. 
 We document one critical implementation bug: `copy_weights` **raises** on 
 UniversalAdapter failure instead of falling back, matching the pattern 
 observed in other modules and causing catastrophic collapse when triggered.

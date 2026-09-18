@@ -7,19 +7,19 @@
 # SVD-Linear Attention: Factorized Low-Rank Linear Attention with Exponential Decay Gating
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/svd_linear_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/svd_linear_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -32,8 +32,8 @@ via a kernelized linear attention approximation. Our method combines four
 mechanisms within a single drop-in replacement for multi-head self-attention:
 
 1. **SVD-factorized projections:** $W_Q, W_K, W_V, W_O$ stored as $U V^\top$ 
-   with rank $r$, reducing projection parameters by factor ~{{D_RATIO}}× at 
-   $r = {{RANK}}$.
+   with rank $r$, reducing projection parameters by factor ~50\%× at 
+   $r = 32$.
 2. **Kernelized linear attention:** $\phi(x) = \text{ELU}(x) + 1$ feature map, 
    enabling the identity 
    $\text{attn} = \phi(Q)(\phi(K)^\top V) / (\phi(Q) \phi(K)^\top \mathbf{1})$, 
@@ -50,15 +50,15 @@ embeddings (Qwen/LLaMA) — and provides both a **batch mode** and a
 **step-recurrent mode** (`step_recurrent`) for incremental streaming inference 
 with $\mathcal{O}(1)$ per-step cost.
 
-On SST-2 with {{RECOVERY_STEPS}} LoRA recovery steps, SVD-Linear Attention 
-achieves **{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on 
-RoBERTa (Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}), 
-with peak VRAM reductions of **{{VRAM_REDUCTION}}%**.
+On SST-2 with 50 LoRA recovery steps, SVD-Linear Attention 
+achieves **80.73%** on DistilBERT (Δ = -9.98), **50.92%** on 
+RoBERTa (Δ = -27.64), and **77.5%** on GPT-2 (Δ = 0.85), 
+with peak VRAM reductions of **380 MB%**.
 
 <!-- CRITICAL HONESTY -->
 Unlike attention-replacement methods that add parameters (NHA, EAT, OHA, 
 Infini-Attention, SVD-Mamba), SVD-Linear Attention **reduces** parameter count 
-by factor {{D_RATIO}}×–{{G_RATIO}}×. LoRA adapters add a small number of 
+by factor 50\%×–2.1\times×. LoRA adapters add a small number of 
 recovery parameters on top.
 
 **Keywords:** linear attention, SVD factorization, exponential decay, 

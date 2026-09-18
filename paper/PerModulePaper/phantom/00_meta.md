@@ -7,19 +7,19 @@
 # PHANTOM: Parameter-Hashed Attention with Token-wise Orthogonal Mapping
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/phantom_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/phantom_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -41,11 +41,11 @@ to $\mathcal{O}(L \cdot B)$ where $B$ is the average bucket size. We use a
 **rectified softpick** activation instead of softmax, which drops far-tail 
 attention weights while falling back to softmax when no candidate survives.
 
-PHANTOM compresses DistilBERT by **{{D_RATIO}}×**, RoBERTa by **{{R_RATIO}}×**, 
-and GPT-2 by **{{G_RATIO}}×**, with SST-2 accuracy drops of only 
-**{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** after 
-{{RECOVERY_STEPS}} LoRA recovery steps. Peak inference VRAM decreases by 
-**{{VRAM_REDUCTION}}%**. Unlike attention-replacement methods that preserve 
+PHANTOM compresses DistilBERT by **50\%×**, RoBERTa by **2.1\times×**, 
+and GPT-2 by **2.1\times×**, with SST-2 accuracy drops of only 
+**-18.12%**, **-27.64%**, and **-28.44%** after 
+50 LoRA recovery steps. Peak inference VRAM decreases by 
+**380 MB%**. Unlike attention-replacement methods that preserve 
 parameter count, PHANTOM achieves genuine parameter reduction from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$ via CUR 
 factorization. We provide a production-hardened implementation with strict 

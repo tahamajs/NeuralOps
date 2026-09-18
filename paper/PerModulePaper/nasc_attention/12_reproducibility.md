@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -22,11 +22,11 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_nasc.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k {{TOP_K}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --block_size 64 \
+    --top_k 2 \
+    --rff_features 64 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -35,7 +35,7 @@ python run_all_4_nasc.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nasc",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-nasc",
         filename="weights.pt",
     )
 ```
@@ -83,9 +83,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | Dense |
-| RoBERTa | {{R_ACC}}% ± 3% | Dense |
-| GPT-2 | {{G_ACC}}% ± 2% | Cascade |
+| DistilBERT | 90.48% ± 2% | Dense |
+| RoBERTa | 89.22% ± 3% | Dense |
+| GPT-2 | 85.32% ± 2% | Cascade |
 
 ## 12.7 Diagnostics
 

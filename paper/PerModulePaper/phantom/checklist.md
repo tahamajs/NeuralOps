@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `phantom/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module phantom`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

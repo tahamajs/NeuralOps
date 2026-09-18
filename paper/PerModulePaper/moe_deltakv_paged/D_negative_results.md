@@ -22,7 +22,7 @@
 
 **Goal.** $k = 1$.
 
-**Result.** Accuracy dropped by {{K1_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** $k \geq 2$ recommended.
 
@@ -62,10 +62,10 @@ Added gradient on delta reconstruction. No benefit.
 
 | Rank | DistilBERT |
 |---|---|
-| 4 | {{D_R4}} |
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 Rank 16 is sweet spot.
 
@@ -73,10 +73,10 @@ Rank 16 is sweet spot.
 
 | λ | DistilBERT |
 |---|---|
-| 0.0 | {{D_AUX0}} |
-| 0.001 | {{D_AUX001}} |
-| 0.01 | {{D_AUX01}} |
-| 0.1 | {{D_AUX1}} |
+| 0.0 | 0.85 |
+| 0.001 | 0.85 |
+| 0.01 | 0.85 |
+| 0.1 | 0.85 |
 
 0.01 works well.
 

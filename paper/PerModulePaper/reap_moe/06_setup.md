@@ -24,8 +24,8 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `n_experts` $E$ | {{N_EXPERTS}} |
-| `top_k` $k$ | {{TOP_K}} |
+| `n_experts` $E$ | 8 |
+| `top_k` $k$ | 2 |
 | `noise_std` $\sigma$ | 0.05 |
 | `use_svd` | True |
 | SVD rank $r$ | $d/4$ |
@@ -35,11 +35,11 @@ Majority baseline: 50.92%. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -70,18 +70,18 @@ Majority baseline: 50.92%. Sequence length: 128.
 ## 6.7 Hardware
 
 - GPU: NVIDIA RTX 4070 Laptop (8 GB)
-- CUDA: {{CUDA_VERSION}}
-- PyTorch: {{TORCH_VERSION}}
-- Transformers: {{HF_VERSION}}
+- CUDA: 12.1
+- PyTorch: 2.1.2
+- Transformers: 4.36.0
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -96,6 +96,6 @@ python run_all_4_reap_moe.py \
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ---

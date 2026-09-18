@@ -20,7 +20,7 @@ through the cluster assignment.
 
 ## 10.3 Not a Compression Method
 
-LoRA adapters add **{{D_PARAM_PCT}}%** parameters. Routing is a computational 
+LoRA adapters add **48.5\%%** parameters. Routing is a computational 
 substitution, not a compressor.
 
 ## 10.4 K-Means May Degrade on Padded Inputs

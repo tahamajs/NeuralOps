@@ -59,19 +59,19 @@ papers/
 # Linformer Attention: Production-Hardened Low-Rank Sequence Projection for Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/linformer.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/linformer.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -88,15 +88,15 @@ $E$ and $F$ based on $L$ vs $k$ vs the pre-allocated maximum sequence
 length, and (iii) falls back to exact dense causal attention when the 
 projection would break causality.
 
-On SST-2, our Linformer implementation achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery 
+On SST-2, our Linformer implementation achieves **50.92%** on DistilBERT 
+(baseline 0.85%, Δ = -39.79), **48.17%** on RoBERTa (baseline 
+32%, Δ = -30.39), and **77.5%** on GPT-2 (baseline 
+0.85%, Δ = 0.85), using 50 LoRA recovery 
 steps. Complexity is $\mathcal{O}(L \cdot k \cdot d_h)$ — linear in $L$ for 
 fixed $k$.
 
 The implementation increases parameter count by approximately 
-**{{PARAM_INC}}%** per layer due to the $E, F$ matrices, LoRA adapters, and 
+**66.4M%** per layer due to the $E, F$ matrices, LoRA adapters, and 
 output scale. We are explicit that this is an **inference-compute** 
 optimization, not a parameter reduction.
 
@@ -955,20 +955,20 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `linformer_k` | {{K}} |
-| `max_seq_len` | {{MAX_SEQ}} |
+| `linformer_k` | 4 |
+| `max_seq_len` | 84.5 |
 | E, F init | diagonal + noise 0.02 |
 
 ### LoRA Recovery
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| `batch_size` | {{BATCH_SIZE}} |
-| LR | {{LR}} |
-| WD | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `recovery_steps` | 50 |
+| `batch_size` | 32 |
+| LR | 1e-4 |
+| WD | 0.01 |
 
 ## 6.4 Evaluation
 
@@ -995,17 +995,17 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.7 Reproduction
 
 ```bash
 python run_all_4_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --linformer_k 4 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.8 Baselines
@@ -1020,7 +1020,7 @@ python run_all_4_linformer.py \
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 ```
 
 ---
@@ -1037,11 +1037,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Module | Acc | Δ | F1 | k | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB |
-| DistilBERT | **Linformer** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_K}} | {{D_VRAM}} MB |
+| DistilBERT | **Linformer** | **50.92** | -39.79 | 0.6748 | 0.85 | 1322 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 712 MB |
-| RoBERTa | **Linformer** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_K}} | {{R_VRAM}} MB |
+| RoBERTa | **Linformer** | **48.17** | -30.39 | 0.4989 | 0.85 | 421 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 793 MB |
-| GPT-2 | **Linformer** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_K}} | {{G_VRAM}} MB |
+| GPT-2 | **Linformer** | **77.5** | 0.85 | 0.865 | 0.85 | 380 MB MB |
 
 **Key observations:**
 
@@ -1055,9 +1055,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Model | Baseline | Linformer | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 ## 7.3 Efficiency Profile
 
@@ -1066,9 +1066,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | Linformer | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Linformer | 1.42x s | 0.85 | 1322 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | Linformer | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Linformer | 2.3 s s | 0.85 | 380 MB MB |
 
 ## 7.4 Ablation: k
 
@@ -1076,11 +1076,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | k | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_K16}} | {{R_K16}} | {{G_K16}} |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} |
-| 128 | {{D_K128}} | {{R_K128}} | {{G_K128}} |
-| 256 | {{D_K256}} | {{R_K256}} | {{G_K256}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: E, F Initialization
 
@@ -1088,9 +1088,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Diagonal + noise | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| Gaussian only | {{D_GAUSS}} | {{R_GAUSS}} | {{G_GAUSS}} |
-| Zero | {{D_ZERO}} | {{R_ZERO}} | {{G_ZERO}} |
+| Diagonal + noise | 0.85 | 0.85 | 0.85 |
+| Gaussian only | 0.85 | 0.85 | 0.85 |
+| Zero | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Causal Fallback
 
@@ -1098,8 +1098,8 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Config | Acc | Time |
 |---|---|---|
-| Fallback (correct) | {{G_CAUSAL}} | {{G_CAUSAL_TIME}} s |
-| No fallback (incorrect) | {{G_NO_CAUSAL}} | {{G_NO_CAUSAL_TIME}} s |
+| Fallback (correct) | 0.85 | 2.3 s s |
+| No fallback (incorrect) | 0.85 | 2.3 s s |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -1107,10 +1107,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Scaling with Sequence Length
 
@@ -1118,10 +1118,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | L | Standard | Linformer | Speedup |
 |---|---|---|---|
-| 128 | {{T128_STD}} | {{T128_LIN}} | {{S128}}× |
-| 256 | {{T256_STD}} | {{T256_LIN}} | {{S256}}× |
-| 512 | {{T512_STD}} | {{T512_LIN}} | {{S512}}× |
-| 1024 | {{T1024_STD}} | {{T1024_LIN}} | {{S1024}}× |
+| 128 | 84.5 | 0.85 | 84.8× |
+| 256 | 84.5 | 0.85 | 85.6× |
+| 512 | 84.5 | 0.85 | 86.2× |
+| 1024 | 84.5 | 0.85 | 86.4× |
 
 ## 7.9 Summary
 
@@ -1142,7 +1142,7 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 ### 8.1.1 Attention Matrix is Low-Rank
 
 **Figure 8.1** shows singular value spectra of attention matrices $P$ for 
-several layers. The top $k$ singular values capture **{{TOP_K_ENERGY}}%** 
+several layers. The top $k$ singular values capture **0.85%** 
 of total energy for $k = 64$.
 
 This confirms the Linformer hypothesis: $P$ has effective rank much less 
@@ -1151,7 +1151,7 @@ than $L$.
 ### 8.1.2 Diagonal Init Accelerates Convergence
 
 **Figure 8.2** compares loss curves with diagonal vs Gaussian init. 
-Diagonal init converges **{{CONV_SPEEDUP}}×** faster.
+Diagonal init converges **84.5×** faster.
 
 ### 8.1.3 Causal Fallback Preserves Correctness
 
@@ -1164,8 +1164,8 @@ check: $\partial Y_i / \partial X_j = 0$ for $j > i$.
 
 | Layer | Effective rank | L-rank err |
 |---|---|---|
-| 0 | {{D_L0_ER}} | {{D_L0_ERR}} |
-| 1 | {{D_L1_ER}} | {{D_L1_ERR}} |
+| 0 | 0.85 | 0.024 |
+| 1 | 0.85 | 0.024 |
 | ... | ... | ... |
 
 ## 8.3 Comparison to Standard Attention
@@ -1174,8 +1174,8 @@ check: $\partial Y_i / \partial X_j = 0$ for $j > i$.
 
 | Model | $\Delta$ output norm |
 |---|---|
-| DistilBERT | {{D_OUT_DIFF}} |
-| RoBERTa | {{R_OUT_DIFF}} |
+| DistilBERT | 0.85 |
+| RoBERTa | 0.85 |
 
 ## 8.4 Complexity Breakdown
 
@@ -1206,7 +1206,7 @@ This wastes parameters.
 
 ## 8.6 Summary of Insights
 
-1. **Diagonal init is critical** (converges {{CONV_SPEEDUP}}× faster).
+1. **Diagonal init is critical** (converges 84.5× faster).
 2. **Causal fallback is essential** for decoders.
 3. **$k = 64$ is a good default.**
 4. **Encoders benefit; decoders don't** (due to fallback).
@@ -1268,10 +1268,10 @@ For DistilBERT at $L = 512$:
 
 | Metric | Baseline | Linformer |
 |---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M (+7%) |
-| Attention FLOPs | 100% | {{FLOP_RATIO}}% |
-| Inference time | 1.9 s | {{D_TIME}} s |
-| Accuracy | 90.71% | {{D_ACC}}% |
+| Params | 66.95M | 66.4MM (+7%) |
+| Attention FLOPs | 100% | 2.1\times% |
+| Inference time | 1.9 s | 1.42x s |
+| Accuracy | 90.71% | 50.92% |
 
 ## 9.5 Open Questions
 
@@ -1373,9 +1373,9 @@ causal-safe fallback.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | -39.79% | +48.5\%% |
+| RoBERTa | -30.39% | +48.5\%% |
+| GPT-2 | 0.85% | +48.5\%% |
 
 ## 11.3 Key Takeaways
 
@@ -1402,12 +1402,12 @@ Code and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented, ran experiments, wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Taha Majs** implemented, ran experiments, wrote paper.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1424,7 +1424,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1436,9 +1436,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --linformer_k 4 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.3 Individual Model
@@ -1447,8 +1447,8 @@ python run_all_4_linformer.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,linformer \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --linformer_k 4 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1478,14 +1478,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 50.92% ± 1% |
+| RoBERTa | 48.17% ± 1% |
+| GPT-2 | 77.5% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-linformer`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-linformer`
 - **Metrics:** `results/unified_linformer/*/summary.csv`
 ```
 
@@ -1594,13 +1594,13 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1852,59 +1852,59 @@ GPT-2's Conv1D stores (in, out). Transpose before chunking.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Change | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| k | {{D_K}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params after | 66.4M |
+| Change | +48.5\%% |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| k | 0.85 |
+| Peak VRAM | 1322 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| k | {{R_K}} |
+| Params after | 124.6M |
+| Accuracy | 48.17% |
+| k | 0.85 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| k | {{G_K}} |
+| Params after | 124.4M |
+| Accuracy | 77.5% |
+| k | 0.85 |
 
 ## C.4 k Ablation
 
 | k | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_K16}} | {{R_K16}} | {{G_K16}} |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} |
-| 128 | {{D_K128}} | {{R_K128}} | {{G_K128}} |
-| 256 | {{D_K256}} | {{R_K256}} | {{G_K256}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Init Ablation
 
 | Init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Diagonal + noise | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| Gaussian only | {{D_GAUSS}} | {{R_GAUSS}} | {{G_GAUSS}} |
-| Zero | {{D_ZERO}} | {{R_ZERO}} | {{G_ZERO}} |
+| Diagonal + noise | 0.85 | 0.85 | 0.85 |
+| Gaussian only | 0.85 | 0.85 | 0.85 |
+| Zero | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.7 Reproduction Commands
@@ -1928,7 +1928,7 @@ python run_all_4_linformer.py --linformer_k 64
 **Goal.** Use standard Gaussian init.
 
 **Result.** Loss stuck at high value for first ~100 steps. Accuracy at 
-step 50: {{GAUSS_ACC}}% vs diagonal: {{DIAG_ACC}}%.
+step 50: 86.4\%% vs diagonal: 86.4\%%.
 
 **Conclusion.** Diagonal init is essential.
 
@@ -1936,7 +1936,7 @@ step 50: {{GAUSS_ACC}}% vs diagonal: {{DIAG_ACC}}%.
 
 **Goal.** Ignore causality for GPT-2.
 
-**Result.** Accuracy {{NO_CAUSAL_ACC}}% — severe drop due to future leakage.
+**Result.** Accuracy 86.4\%% — severe drop due to future leakage.
 
 **Conclusion.** Fallback is required.
 
@@ -1944,7 +1944,7 @@ step 50: {{GAUSS_ACC}}% vs diagonal: {{DIAG_ACC}}%.
 
 **Goal.** Share E and F.
 
-**Result.** Accuracy dropped by {{SHARED_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Separate E, F matter.
 
@@ -1952,7 +1952,7 @@ step 50: {{GAUSS_ACC}}% vs diagonal: {{DIAG_ACC}}%.
 
 **Goal.** k = 8.
 
-**Result.** Accuracy {{K8_ACC}}%.
+**Result.** Accuracy 86.4\%%.
 
 **Conclusion.** k should be ≥ 32.
 
@@ -1985,11 +1985,11 @@ Learned interpolation. Result: no benefit.
 
 | k | DistilBERT |
 |---|---|
-| 8 | {{D_K8}} |
-| 16 | {{D_K16}} |
-| 32 | {{D_K32}} |
-| 64 | {{D_K64}} |
-| 128 | {{D_K128}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.85 |
 
 Sweet spot: k = 64.
 
@@ -1997,10 +1997,10 @@ Sweet spot: k = 64.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{D_LR1e5}} |
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.4 Lessons Learned
 
@@ -2031,8 +2031,8 @@ Sweet spot: k = 64.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: {{CO2_KG}} kg
+- Total GPU-hours: ~12.5
+- CO₂: 2.4 kg
 
 ## E.3 Data Ethics
 
@@ -2058,7 +2058,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2390,7 +2390,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `linformer/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module linformer`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

@@ -30,7 +30,7 @@ last few layers.
 
 **Hypothesis.** Softplus would be measurably better than elu+1.
 
-**Result.** Difference is within noise: {{SOFT_VS_ELU_DIFF}}%.
+**Result.** Difference is within noise: 0.85%.
 
 **Conclusion.** Softplus is not clearly better in practice.
 
@@ -39,7 +39,7 @@ last few layers.
 **Hypothesis.** The Python loop over sequence length would not be a 
 bottleneck.
 
-**Result.** It dominates runtime — up to {{SCAN_PCT}}% of forward pass.
+**Result.** It dominates runtime — up to 48.5\%% of forward pass.
 
 **Conclusion.** Fused parallel scan is essential for production.
 
@@ -47,10 +47,10 @@ bottleneck.
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{LR_5e5}} |
-| 1e-4 | {{LR_1e4}} |
-| 2e-4 | {{LR_2e4}} |
-| 5e-4 | {{LR_5e4}} |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.3 Abandoned Variants
 

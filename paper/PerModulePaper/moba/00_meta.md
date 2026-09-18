@@ -1,19 +1,19 @@
 # Mamba-Inspired Gated State-Space Attention: A Drop-In Replacement for Multi-Head Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/mamba.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/mamba.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -42,10 +42,10 @@ weight tensor, resulting in $\mathcal{O}(L^2 D)$ memory and time, **not**
 $\mathcal{O}(L)$. The SSM-inspired decay enforces a soft causal structure 
 but does not achieve the linear complexity of true Mamba.
 
-On SST-2, Mamba-Inspired Gated SSM Attention achieves **{{D_ACC}}%** on 
-DistilBERT (baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(baseline {{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 
-(baseline {{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA 
+On SST-2, Mamba-Inspired Gated SSM Attention achieves **73.62%** on 
+DistilBERT (baseline 0.85%, Δ = -17.09), **84.17%** on RoBERTa 
+(baseline 32%, Δ = +5.61), and **50.92%** on GPT-2 
+(baseline 0.85%, Δ = -28.44), using 50 LoRA 
 recovery steps. We position this module as a **state-space-inspired 
 alternative** to standard attention with a preservation gate, and we 
 explicitly discuss the gap between the SSM formulation and the actual 

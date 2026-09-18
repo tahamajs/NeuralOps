@@ -75,7 +75,7 @@ reproduce MLA and study its portability to non-DeepSeek architectures.
 | Aspect | DeepSeek-AI 2024 | Our work |
 |---|---|---|
 | **Original architecture** | DeepSeek-V2 | Four families |
-| **Latent dimension** | 512 (V2), 1536 (V3) | {{RANK}} |
+| **Latent dimension** | 512 (V2), 1536 (V3) | 32 |
 | **Multi-architecture** | No | Yes |
 | **Portability study** | No | Yes |
 | **Reproduction** | — | This paper |

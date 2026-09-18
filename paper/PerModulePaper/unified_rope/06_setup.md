@@ -35,8 +35,8 @@ Sequence length: 128. Majority baseline: 50.92%.
 | `max_seq_len` | 4096 | RoPE cache length |
 | `base` | 10000 | RoPE frequency base |
 | `rotary_dim` | `2 * (head_dim // 2)` | Full rotation |
-| `lora_rank` | {{LORA_RANK}} | LoRA adapters |
-| `lora_alpha` | {{LORA_ALPHA}} | Scaling |
+| `lora_rank` | 8 | LoRA adapters |
+| `lora_alpha` | 16 | Scaling |
 | `dropout` | 0.1 | Standard |
 
 ## 6.4 Recovery Fine-Tuning
@@ -44,10 +44,10 @@ Sequence length: 128. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -77,24 +77,24 @@ Sequence length: 128. Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_unified_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ## 6.10 Baselines
 

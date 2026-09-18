@@ -28,7 +28,7 @@ with NASC which has a batch-level fallback.
 
 ## 10.4 Slower than Baseline
 
-~{{D_TIME_R}}× slowdown from more kernel launches.
+~2.3 s× slowdown from more kernel launches.
 
 ## 10.5 Head Split is Heuristic
 

@@ -335,6 +335,6 @@ $$
 \tag{4.10}
 $$
 
-**Empirical observation.** $\rho^* \approx {{KEEP_RATIO}}$ for SST-2.
+**Empirical observation.** $\rho^* \approx 0.5$ for SST-2.
 
 ---

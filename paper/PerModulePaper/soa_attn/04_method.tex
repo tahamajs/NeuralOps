@@ -1,3 +1,13 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{soa_attn}.
+\subsection{Algorithmic Formulation}
+The \texttt{soa_attn} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
+Hardened for production use across diverse transformer architectures:
+- DistilBERT (Flat MHA)
+- RoBERTa / BERT (Nested Encoder Self-Attention)
+- GPT-2 (Causal Decoder with Conv1D)
+- Qwen / LLaMA (GQA with Rotary Position Embeddings)}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

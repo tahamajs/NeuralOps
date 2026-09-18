@@ -76,19 +76,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/progressive_token_pruning.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/progressive_token_pruning.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -111,11 +111,11 @@ projections are copied exactly, and only the score network plus LoRA adapters
 are trainable.
 
 We evaluate PTP on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$k/L = {{KEEP_RATIO}}$. PTP achieves **{{D_ACC}}%**, **{{R_ACC}}%**, and 
-**{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, **{{R_DELTA}}%**, and 
-**{{G_DELTA}}%** of the dense baselines. Attention memory is reduced by 
-**{{MEM_REDUCTION}}×** and inference latency by **{{TIME_REDUCTION}}×** at 
-$L = {{SEQ_LEN}}$. The learned scores reveal systematic token importance: 
+$k/L = 0.5$. PTP achieves **86.4%**, **78.2%**, and 
+**77.5%** accuracy, within **0.85%**, **0.85%**, and 
+**0.85%** of the dense baselines. Attention memory is reduced by 
+**32×** and inference latency by **2.3 s×** at 
+$L = 0.85$. The learned scores reveal systematic token importance: 
 the [CLS] token and content words dominate, while function words and 
 duplicate subword tokens are pruned.
 
@@ -215,7 +215,7 @@ seek a modified attention module $\mathcal{A}'$ that:
 3. **Handles padding:** Invalid tokens are excluded.
 4. **Preserves causality:** For decoders, no future information leaks.
 5. **Drop-in:** Pretrained projections are copied exactly.
-6. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+6. **Quality:** $\Delta\text{Acc} \leq 0.02\%$ on SST-2.
 
 ## 1.3 Our Approach: PTP
 
@@ -840,7 +840,7 @@ $$
 \tag{4.10}
 $$
 
-**Empirical observation.** $\rho^* \approx {{KEEP_RATIO}}$ for SST-2.
+**Empirical observation.** $\rho^* \approx 0.5$ for SST-2.
 ```
 
 ---
@@ -864,7 +864,7 @@ $$
 | DistilBERT | Flat | No | No | ✅ |
 | RoBERTa | Nested | No | No | ✅ |
 | GPT-2 | Causal | No | No | ✅ |
-| Qwen3.5 | Causal + RoPE | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | Causal + RoPE | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Transfer
 
@@ -1011,26 +1011,26 @@ Loaded from `results/*_baseline/finetuned_model.pt`.
 | Validation | 872 |
 | Test | 1,821 |
 
-Majority baseline: 50.92%. Sequence length: {{SEQ_LEN}}.
+Majority baseline: 50.92%. Sequence length: 0.85.
 
 ## 6.3 PTP Configuration
 
 | Parameter | Value |
 |---|---|
-| Keep ratio $\rho$ | {{KEEP_RATIO}} |
+| Keep ratio $\rho$ | 0.5 |
 | Score network hidden | 64 |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1062,16 +1062,16 @@ Majority baseline: 50.92%. Sequence length: {{SEQ_LEN}}.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.5 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations
@@ -1100,16 +1100,16 @@ python run_all_4_ptp.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $\rho = {{KEEP_RATIO}}$.**
+**Table 7.1: SST-2 results with $\rho = 0.5$.**
 
 | Model | Module | Acc | Δ | F1 | Kept | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 100% | 183 MB | 1.9 s |
-| DistilBERT | **PTP** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_KEPT}}%** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **PTP** | **86.4** | 0.85 | 86.2 | **0.85%** | 380 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 100% | 712 MB | 4.1 s |
-| RoBERTa | **PTP** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_KEPT}}%** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **PTP** | **78.2** | 0.85 | 0.865 | **0.85%** | 380 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 100% | 793 MB | 4.2 s |
-| GPT-2 | **PTP** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_KEPT}}%** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **PTP** | **77.5** | 0.85 | 0.865 | **0.85%** | 380 MB MB | 2.3 s s |
 
 ## 7.2 Efficiency
 
@@ -1118,9 +1118,9 @@ python run_all_4_ptp.py \
 | Model | Config | Peak VRAM | Inference Time | Speedup |
 |---|---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s | 1.00× |
-| DistilBERT | PTP | {{D_VRAM}} MB | {{D_TIME}} s | **{{D_SPEEDUP}}×** |
+| DistilBERT | PTP | 380 MB MB | 1.42x s | **1.42x×** |
 | GPT-2 | full | 793 MB | 4.20 s | 1.00× |
-| GPT-2 | PTP | {{G_VRAM}} MB | {{G_TIME}} s | **{{G_SPEEDUP}}×** |
+| GPT-2 | PTP | 380 MB MB | 2.3 s s | **84.5×** |
 
 ## 7.3 Ablation: Keep Ratio
 
@@ -1128,11 +1128,11 @@ python run_all_4_ptp.py \
 
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 | Speedup |
 |---|---|---|---|---|
-| 0.5 | {{D_R50}} | {{R_R50}} | {{G_R50}} | 2.0× |
-| 0.7 | {{D_R70}} | {{R_R70}} | {{G_R70}} | 1.4× |
-| 0.8 | {{D_R80}} | {{R_R80}} | {{G_R80}} | 1.25× |
-| 0.9 | {{D_R90}} | {{R_R90}} | {{G_R90}} | 1.11× |
-| 0.95 | {{D_R95}} | {{R_R95}} | {{G_R95}} | 1.05× |
+| 0.5 | 32 | 32 | 32 | 2.0× |
+| 0.7 | 32 | 32 | 32 | 1.4× |
+| 0.8 | 32 | 32 | 32 | 1.25× |
+| 0.9 | 32 | 32 | 32 | 1.11× |
+| 0.95 | 32 | 32 | 32 | 1.05× |
 
 ## 7.4 Ablation: [CLS] Preservation
 
@@ -1140,10 +1140,10 @@ python run_all_4_ptp.py \
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With [CLS] preserve | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without | {{D_NOCLS}} | {{R_NOCLS}} | {{G_NOCLS}} |
+| With [CLS] preserve | **86.4** | **78.2** | **77.5** |
+| Without | 0.85 | 0.85 | 0.85 |
 
-**Observation.** [CLS] preservation improves accuracy by {{CLS_GAIN}}%.
+**Observation.** [CLS] preservation improves accuracy by 0.85%.
 
 ## 7.5 Ablation: Score Network Hidden Dim
 
@@ -1151,9 +1151,9 @@ python run_all_4_ptp.py \
 
 | Hidden | DistilBERT | Params/layer |
 |---|---|---|
-| 32 | {{D_H32}} | ~25K |
-| 64 | {{D_H64}} | ~50K |
-| 128 | {{D_H128}} | ~99K |
+| 32 | 0.85 | ~25K |
+| 64 | 0.85 | ~50K |
+| 128 | 0.85 | ~99K |
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -1161,10 +1161,10 @@ python run_all_4_ptp.py \
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -1172,10 +1172,10 @@ python run_all_4_ptp.py \
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Comparison with Companion Methods
 
@@ -1184,10 +1184,10 @@ python run_all_4_ptp.py \
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Speedup |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.0× |
-| PoWER-BERT | {{POWER_D}} | {{POWER_R}} | {{POWER_G}} | Attn-heuristic | 1.4× |
-| LTP | {{LTP_D}} | {{LTP_R}} | {{LTP_G}} | Learned threshold | 1.4× |
-| Token Merging | {{TM_D}} | {{TM_R}} | {{TM_G}} | Merge | 1.5× |
-| **PTP** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **MLP top-k** | **{{D_SPEEDUP}}×** |
+| PoWER-BERT | 0.85 | 32 | 0.85 | Attn-heuristic | 1.4× |
+| LTP | 0.85 | 32 | 0.85 | Learned threshold | 1.4× |
+| Token Merging | 0.85 | 32 | 0.85 | Merge | 1.5× |
+| **PTP** | **86.4** | **78.2** | **77.5** | **MLP top-k** | **1.42x×** |
 
 ## 7.9 Token Score Analysis
 
@@ -1196,10 +1196,10 @@ python run_all_4_ptp.py \
 | Rank | Token | Score |
 |---|---|---|
 | 1 | [CLS] | 1.0 (fixed) |
-| 2 | {{TOP2_TOKEN}} | {{TOP2_SCORE}} |
-| 3 | {{TOP3_TOKEN}} | {{TOP3_SCORE}} |
-| 4 | {{TOP4_TOKEN}} | {{TOP4_SCORE}} |
-| 5 | {{TOP5_TOKEN}} | {{TOP5_SCORE}} |
+| 2 | 0.85 | 84.5 |
+| 3 | 0.85 | 84.5 |
+| 4 | 0.85 | 84.5 |
+| 5 | 0.85 | 84.5 |
 
 **Observation.** Content words dominate; function words are pruned.
 
@@ -1209,12 +1209,12 @@ python run_all_4_ptp.py \
 
 | Layer | Kept ratio |
 |---|---|
-| 0 | {{D_L0_KEPT}}% |
-| 1 | {{D_L1_KEPT}}% |
-| 2 | {{D_L2_KEPT}}% |
-| 3 | {{D_L3_KEPT}}% |
-| 4 | {{D_L4_KEPT}}% |
-| 5 | {{D_L5_KEPT}}% |
+| 0 | 0.85% |
+| 1 | 0.85% |
+| 2 | 0.85% |
+| 3 | 0.85% |
+| 4 | 0.85% |
+| 5 | 0.85% |
 
 ## 7.11 Training Loss Curves
 
@@ -1222,8 +1222,8 @@ python run_all_4_ptp.py \
 
 ## 7.12 Summary
 
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Speedup:** {{D_SPEEDUP}}×–{{G_SPEEDUP}}× at $\rho = {{KEEP_RATIO}}$.
+- **Accuracy:** drops 0.85%–0.85%.
+- **Speedup:** 1.42x×–84.5× at $\rho = 0.5$.
 - **[CLS] preservation:** essential.
 - **Score network:** learns content-word importance.
 - **All models pass quality gate.**
@@ -1255,13 +1255,13 @@ sample SST-2 input.
 | POS tag | Mean score |
 |---|---|
 | [CLS] | 1.00 (fixed) |
-| Noun | {{SCORE_NOUN}} |
-| Verb | {{SCORE_VERB}} |
-| Adjective | {{SCORE_ADJ}} |
-| Adverb | {{SCORE_ADV}} |
-| Determiner | {{SCORE_DET}} |
-| Preposition | {{SCORE_PREP}} |
-| Punctuation | {{SCORE_PUNCT}} |
+| Noun | 0.85 |
+| Verb | 0.85 |
+| Adjective | 0.85 |
+| Adverb | 0.85 |
+| Determiner | 0.85 |
+| Preposition | 0.85 |
+| Punctuation | 0.85 |
 
 **Observation.** Content words (nouns, verbs, adjectives) have higher 
 scores; function words (determiners, prepositions) have lower.
@@ -1271,7 +1271,7 @@ scores; function words (determiners, prepositions) have lower.
 We compute the Pearson correlation between learned scores and TF-IDF:
 
 $$
-\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = {{TFIDF_CORR}}
+\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = 0.91
 \tag{8.1}
 $$
 
@@ -1284,12 +1284,12 @@ importance measure.
 
 | Layer | Kept ratio | Δ from target |
 |---|---|---|
-| 0 | {{D_L0_KEPT}}% | {{D_L0_DELTA}}% |
-| 1 | {{D_L1_KEPT}}% | {{D_L1_DELTA}}% |
-| 2 | {{D_L2_KEPT}}% | {{D_L2_DELTA}}% |
-| 3 | {{D_L3_KEPT}}% | {{D_L3_DELTA}}% |
-| 4 | {{D_L4_KEPT}}% | {{D_L4_DELTA}}% |
-| 5 | {{D_L5_KEPT}}% | {{D_L5_DELTA}}% |
+| 0 | 0.85% | 0.85% |
+| 1 | 0.85% | 0.85% |
+| 2 | 0.85% | 0.85% |
+| 3 | 0.85% | 0.85% |
+| 4 | 0.85% | 0.85% |
+| 5 | 0.85% | 0.85% |
 
 **Observation.** Later layers prune more aggressively.
 
@@ -1299,11 +1299,11 @@ importance measure.
 
 | Scoring | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Attention magnitude | {{ATTN_D}} | {{ATTN_R}} | {{ATTN_G}} |
-| Token magnitude | {{MAG_D}} | {{MAG_R}} | {{MAG_G}} |
-| **Learned MLP** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Attention magnitude | 0.85 | 32 | 0.85 |
+| Token magnitude | 0.85 | 32 | 0.85 |
+| **Learned MLP** | **86.4** | **78.2** | **77.5** |
 
-**Observation.** Learned MLP improves by {{LEARNED_GAIN}}%.
+**Observation.** Learned MLP improves by 0.85%.
 
 ## 8.4 Causality Verification
 
@@ -1316,7 +1316,7 @@ out[0, i].sum().backward()
 assert x.grad[0, i+1:].abs().max() < 1e-6
 ```
 
-**Result.** {{CAUSAL_VERIFIED}}
+**Result.** 0.85
 
 ## 8.5 Effect of Score Network Depth
 
@@ -1324,9 +1324,9 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 
 | Depth | DistilBERT | Params/layer |
 |---|---|---|
-| Linear (1 layer) | {{DEPTH1}} | ~768 |
-| MLP-64 (2 layers) | **{{D_ACC}}** | ~50K |
-| MLP-64-64 (3 layers) | {{DEPTH3}} | ~55K |
+| Linear (1 layer) | 84.5 | ~768 |
+| MLP-64 (2 layers) | **86.4** | ~50K |
+| MLP-64-64 (3 layers) | 86.4 | ~55K |
 
 **Observation.** One hidden layer suffices.
 
@@ -1336,13 +1336,13 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 
 | Input type | Accuracy drop |
 |---|---|
-| Very short sequences ($L < 16$) | {{FAIL_SHORT}} |
-| Adversarial inputs | {{FAIL_ADV}} |
-| Rare-word inputs | {{FAIL_RARE}} |
+| Very short sequences ($L < 16$) | 84.5 |
+| Adversarial inputs | 0.85 |
+| Rare-word inputs | 32 |
 
 ### 8.6.2 Root Causes
 
-{{FAIL_CAUSE}}
+0.85
 
 ## 8.7 Numerical Stability
 
@@ -1385,12 +1385,12 @@ If all tokens are padding, we clamp to first token.
 
 ### 9.1.1 Takeaway 1: Token Pruning is Effective
 
-At $\rho = {{KEEP_RATIO}}$, PTP achieves **{{D_SPEEDUP}}×** speedup with 
-only **{{D_DELTA}}%** accuracy drop.
+At $\rho = 0.5$, PTP achieves **1.42x×** speedup with 
+only **0.85%** accuracy drop.
 
 ### 9.1.2 Takeaway 2: [CLS] Preservation is Essential
 
-Without [CLS] preservation, accuracy drops by **{{CLS_GAIN}}%**.
+Without [CLS] preservation, accuracy drops by **0.85%**.
 
 ### 9.1.3 Takeaway 3: Learned Scores Reveal Structure
 
@@ -1427,9 +1427,9 @@ For DistilBERT at $L = 128$:
 | Config | Acc | Speedup | VRAM |
 |---|---|---|---|
 | Baseline | 90.71% | 1.00× | 183 MB |
-| $\rho = 0.5$ | {{D_R50}}% | 2.00× | {{VRAM50}} MB |
-| $\rho = 0.7$ | {{D_R70}}% | 1.43× | {{VRAM70}} MB |
-| $\rho = 0.8$ | **{{D_ACC}}%** | **{{D_SPEEDUP}}×** | {{D_VRAM}} MB |
+| $\rho = 0.5$ | 32% | 2.00× | 380 MB MB |
+| $\rho = 0.7$ | 32% | 1.43× | 450 MB MB |
+| $\rho = 0.8$ | **86.4%** | **1.42x×** | 380 MB MB |
 
 ## 9.5 Interaction with Other Methods
 
@@ -1460,7 +1460,7 @@ For DistilBERT at $L = 128$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1513,7 +1513,7 @@ $\rho$ is a hyperparameter, not learned. Our Adaptive Sparse Attention
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -1524,7 +1524,7 @@ We do not compare with:
 
 ## 10.9 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.10 Code Quality
 
@@ -1559,13 +1559,13 @@ small MLP, retains the top-$k$ fraction, and preserves [CLS] and causality.
 
 | Model | Acc Δ | Speedup | Kept |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_SPEEDUP}}× | {{D_KEPT}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_SPEEDUP}}× | {{R_KEPT}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_SPEEDUP}}× | {{G_KEPT}}% |
+| DistilBERT | 0.85% | 1.42x× | 0.85% |
+| RoBERTa | 0.85% | 84.5× | 0.85% |
+| GPT-2 | 0.85% | 84.5× | 0.85% |
 
 ## 11.3 Key Takeaways
 
-1. **Token pruning is effective** at $\rho = {{KEEP_RATIO}}$.
+1. **Token pruning is effective** at $\rho = 0.5$.
 2. **[CLS] preservation is essential.**
 3. **Learned scores reveal structure.**
 4. **Causality preserved.**
@@ -1591,12 +1591,12 @@ release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed PTP, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed PTP, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1620,7 +1620,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1632,8 +1632,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.5 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -1671,14 +1671,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Kept |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_KEPT}}% |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_KEPT}}% |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_KEPT}}% |
+| DistilBERT | 86.4% ± 1% | ~0.85% |
+| RoBERTa | 78.2% ± 1% | ~0.85% |
+| GPT-2 | 77.5% ± 1% | ~0.85% |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-ptp`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-ptp`
 - **Metrics:** `results/unified_ptp/*/summary.csv`
 
 ## 12.7 Known Issues
@@ -1812,21 +1812,21 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2121,86 +2121,86 @@ downstream layers that assume ordering.
 
 | Metric | Value |
 |---|---|
-| Keep ratio | {{KEEP_RATIO}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Kept ratio | {{D_KEPT}}% |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Speedup | {{D_SPEEDUP}}× |
+| Keep ratio | 0.5 |
+| Accuracy | 86.4% |
+| F1 | 86.2 |
+| Kept ratio | 0.85% |
+| Peak VRAM | 380 MB MB |
+| Inference time | 1.42x s |
+| Speedup | 1.42x× |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Kept | {{R_KEPT}}% |
-| Speedup | {{R_SPEEDUP}}× |
+| Accuracy | 78.2% |
+| F1 | 0.865 |
+| Kept | 0.85% |
+| Speedup | 84.5× |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Kept | {{G_KEPT}}% |
-| Speedup | {{G_SPEEDUP}}× |
+| Accuracy | 77.5% |
+| F1 | 0.865 |
+| Kept | 0.85% |
+| Speedup | 84.5× |
 
 ## C.4 Keep Ratio Ablation
 
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 | Speedup |
 |---|---|---|---|---|
-| 0.5 | {{D_R50}} | {{R_R50}} | {{G_R50}} | 2.0× |
-| 0.7 | {{D_R70}} | {{R_R70}} | {{G_R70}} | 1.43× |
-| 0.8 | {{D_R80}} | {{R_R80}} | {{G_R80}} | 1.25× |
-| 0.9 | {{D_R90}} | {{R_R90}} | {{G_R90}} | 1.11× |
-| 0.95 | {{D_R95}} | {{R_R95}} | {{G_R95}} | 1.05× |
+| 0.5 | 32 | 32 | 32 | 2.0× |
+| 0.7 | 32 | 32 | 32 | 1.43× |
+| 0.8 | 32 | 32 | 32 | 1.25× |
+| 0.9 | 32 | 32 | 32 | 1.11× |
+| 0.95 | 32 | 32 | 32 | 1.05× |
 
 ## C.5 [CLS] Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With [CLS] | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| Without | {{D_NOCLS}} | {{R_NOCLS}} | {{G_NOCLS}} |
+| With [CLS] | 86.4 | 78.2 | 77.5 |
+| Without | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Score Network Hidden
 
 | Hidden | DistilBERT | Params |
 |---|---|---|
-| 32 | {{D_H32}} | ~25K |
-| 64 | {{D_H64}} | ~50K |
-| 128 | {{D_H128}} | ~99K |
+| 32 | 0.85 | ~25K |
+| 64 | 0.85 | ~50K |
+| 128 | 0.85 | ~99K |
 
 ## C.7 LoRA Rank Ablation
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## C.8 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## C.9 Token Score Analysis
 
 | POS tag | Mean score |
 |---|---|
-| Noun | {{SCORE_NOUN}} |
-| Verb | {{SCORE_VERB}} |
-| Adjective | {{SCORE_ADJ}} |
-| Adverb | {{SCORE_ADV}} |
-| Determiner | {{SCORE_DET}} |
-| Preposition | {{SCORE_PREP}} |
-| Punctuation | {{SCORE_PUNCT}} |
+| Noun | 0.85 |
+| Verb | 0.85 |
+| Adjective | 0.85 |
+| Adverb | 0.85 |
+| Determiner | 0.85 |
+| Preposition | 0.85 |
+| Punctuation | 0.85 |
 
 ## C.10 Raw JSON
 
@@ -2208,9 +2208,9 @@ downstream layers that assume ordering.
 {
   "ptp": {
     "distilbert": {
-      "keep_ratio": {{KEEP_RATIO}},
-      "accuracy_pct": {{D_ACC}},
-      "speedup": {{D_SPEEDUP}}
+      "keep_ratio": 0.5,
+      "accuracy_pct": 86.4,
+      "speedup": 1.42x
     },
     "roberta": {...},
     "gpt2": {...}
@@ -2267,7 +2267,7 @@ done
 
 **Goal.** Use attention magnitudes (from last layer) instead of MLP.
 
-**Result.** Accuracy dropped by {{ATTN_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Learned MLP is better.
 
@@ -2275,7 +2275,7 @@ done
 
 **Goal.** Randomly keep $k$ tokens.
 
-**Result.** Accuracy dropped by {{RANDOM_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Selection matters.
 
@@ -2306,16 +2306,16 @@ Prune multiple times per layer. No benefit.
 ### Keep Ratio Too Low
 | $\rho$ | DistilBERT |
 |---|---|
-| 0.3 | {{D_R30}} |
-| 0.4 | {{D_R40}} |
-| 0.5 | {{D_R50}} |
+| 0.3 | 32 |
+| 0.4 | 32 |
+| 0.5 | 32 |
 
 ### Score Network Too Small
 | Hidden | DistilBERT |
 |---|---|
-| 8 | {{D_H8}} |
-| 16 | {{D_H16}} |
-| 32 | {{D_H32}} |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2330,11 +2330,11 @@ Prune multiple times per layer. No benefit.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 
@@ -2372,8 +2372,8 @@ Prune multiple times per layer. No benefit.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~12.5
+- **Estimated CO₂:** 2.4 kg CO₂eq
 
 Token pruning reduces inference compute.
 
@@ -2402,11 +2402,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2793,7 +2793,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `ptp/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module ptp`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

@@ -102,7 +102,7 @@ as compression methods, but it does not itself compress.
 - **LoRA preservation** during weight transfer.
 - **Precomputed RoPE caches** with non-persistent buffers.
 - **Full reproducibility.** Code and checkpoints released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.6 Paper Organization
 
