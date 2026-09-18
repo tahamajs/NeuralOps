@@ -211,7 +211,7 @@ compressed_model = a3_compressor_factory(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **roberta-base** | sst2 | `PASS` | 88.76% | **85.67%** | -3.09% | 0.8731 | 0.83x | 0 | N/A | 2026-09-07 |
+| **roberta-base** | sst2 | `PASS` | 72.25% | **63.07%** | -9.18% | 0.7262 | 1.04x | 32 | N/A | 2026-09-18 |
 | **gpt2** | sst2 | `PASS` | 79.36% | **63.19%** | -16.17% | 0.7216 | 1.00x | 2 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.71% | **82.00%** | -8.71% | 0.8456 | 1.09x | 24 | N/A | 2026-09-18 |
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
