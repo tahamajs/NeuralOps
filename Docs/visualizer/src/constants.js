@@ -36,10 +36,10 @@ export const VISUAL_CONFIG = {
 
     // ── Semantic Zoom & Level-of-Detail (LOD) ─────────────────
     ZOOM: {
-        macroThreshold: 40,     // camDist > 40: Layers collapse to macro bounding blocks
-        transitionStart: 25,    // 25 < camDist <= 40: Granular nodes fade in
-        microThreshold: 18,     // camDist <= 18: Full matrix tensor resolution & badges
-        badgeFadeRange: 7,      // Delta distance units over which badges reach full opacity
+        macroThreshold: 34,     // camDist > 34: Layers collapse to macro bounding blocks
+        transitionStart: 28,    // 24 < camDist <= 34: Granular nodes fade in
+        microThreshold: 24,     // camDist <= 24: Full matrix tensor resolution & badges
+        badgeFadeRange: 5,      // Delta distance units over which badges reach full opacity
     },
 
     // ── Animation & Transition Timings ────────────────────────

@@ -65,6 +65,12 @@ export function setupControls(handlers = {}) {
             inspector.classList.toggle('hidden');
         });
     }
+    const detailInspectBtn = document.getElementById('btn-detail-inspect');
+    if (detailInspectBtn && inspector) {
+        detailInspectBtn.addEventListener('click', () => {
+            inspector.classList.remove('hidden');
+        });
+    }
     if (closeInspBtn && inspector) {
         closeInspBtn.addEventListener('click', () => {
             inspector.classList.add('hidden');

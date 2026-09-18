@@ -74,6 +74,33 @@ export function selectPartIn3D(target, interactableMeshes = [], options = {}) {
         const targetKey = target.toLowerCase();
         if (targetKey === 'dense' || targetKey === 'baseline') {
             targetMeshes = interactableMeshes.filter(m => m.userData && m.userData.side === 'baseline' && !m.userData.isMacro);
+        } else if (targetKey.includes('attn_add') || targetKey.includes('ffn_add') || targetKey === 'add_operator') {
+            targetMeshes = interactableMeshes.filter(m => {
+                const u = m.userData || {};
+                return u.type === 'residual_add' || u.sub_type === 'add_operator' || (u.id && u.id.includes('add'));
+            });
+        } else if (targetKey.includes('norm')) {
+            targetMeshes = interactableMeshes.filter(m => {
+                const u = m.userData || {};
+                return u.type === 'norm' || (u.id && (u.id.includes('norm') || u.id.includes('ln')));
+            });
+        } else if (targetKey.includes('attention') || targetKey === 'attn') {
+            targetMeshes = interactableMeshes.filter(m => {
+                const u = m.userData || {};
+                const id = (u.id || '').toLowerCase();
+                return id.includes('q_') || id.includes('k_') || id.includes('v_') || id.includes('attn') || id.includes('proj') || u.type === 'svd' || u.type === 'mla';
+            });
+        } else if (targetKey.includes('ffn') || targetKey.includes('mlp')) {
+            targetMeshes = interactableMeshes.filter(m => {
+                const u = m.userData || {};
+                const id = (u.id || '').toLowerCase();
+                return id.includes('ffn') || id.includes('mlp') || id.includes('intermediate') || id.includes('output') || id.includes('gate') || id.includes('up') || id.includes('down') || u.type === 'moe';
+            });
+        } else if (targetKey.includes('embed')) {
+            targetMeshes = interactableMeshes.filter(m => {
+                const u = m.userData || {};
+                return u.type === 'embedding' || (u.id && u.id.includes('embed'));
+            });
         } else {
             targetMeshes = interactableMeshes.filter(m => {
                 const u = m.userData || {};
