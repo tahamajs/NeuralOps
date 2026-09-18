@@ -1,17 +1,21 @@
 
 \section{Limitations}
 
-\subsection{Task Coverage}
+\subsection{Primary Empirical Limitations}
 
-Only SST-2 is evaluated. A3 may behave differently on:
+Our rigorous experimental evaluation revealed five fundamental constraints of the current A3 framework:
 
-\begin{itemize}
-\item Generation tasks (summarization, translation)
-\item Multi-class classification (MNLI, AG News)
-\item Token-level tasks (NER, POS)
-\item Long-context tasks (>512 tokens)
+\begin{enumerate}
+\item \textbf{Modest Whole-Model Compression Ratio:} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256$), A3 achieves modest whole-model parameter reduction (1.02$\times$ on DistilBERT, 1.005$\times$ on RoBERTa and GPT-2), saving between 0.53M and 1.25M parameters. Because embeddings and feed-forward networks account for the majority of parameters in compact transformers, compressing attention projections alone inherently caps overall compression ratio.
+\item \textbf{Degradation on Autoregressive Decoders (GPT-2):} While encoder architectures (DistilBERT and RoBERTa) demonstrate resilient representations, GPT-2 suffers severe accuracy degradation (-16.17\%, dropping from 79.36\% to 63.19\%). Causal masking, non-symmetric activation dynamics, and transposed Conv1D parameter structures make autoregressive decoders substantially less receptive to activation-weighted low-rank factorization.
+\item \textbf{Lack of Generalization to Multi-Class Tasks (MNLI, AG News):} Multi-class classification benchmarks without pre-converged task-specific heads yield near-random accuracies (25.3\% on 4-class AG News and 36--44\% on 3-class MNLI). A3 does not generalize across downstream tasks unless the underlying base checkpoints have been fully fine-tuned for the target classification head before compression.
+\item \textbf{High Fallback Rates:} To guarantee that compressed layers satisfy the strict reconstruction error threshold ($\tau = 0.40$), 75.0\% of layers in DistilBERT and 91.7\% of layers in RoBERTa and GPT-2 fall back to original dense weights. This conservative threshold preserves accuracy but limits the fraction of factorized layers to 8.3\%--25.0\%.
+\item \textbf{RoBERTa Apparent Improvement:} On RoBERTa, A3 post-recovery accuracy (83.26\%) exceeds the baseline (78.56\%) by +4.70\%. This apparent gain reflects the fact that the underlying base checkpoint was partially converged, allowing the 50-step LoRA recovery phase to perform additional gradient adaptation on SST-2 rather than reflecting an intrinsic feature of low-rank factorization.
+\end{enumerate}
 
-\end{itemize}
+\subsection{Task and Architecture Coverage}
+
+A3 has been validated primarily on binary classification (SST-2). It has not been benchmarked on:
 \subsection{Model Coverage}
 
 We test on models with $\le$124M parameters. Not tested:
