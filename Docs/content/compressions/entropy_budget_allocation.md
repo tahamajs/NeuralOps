@@ -282,6 +282,13 @@ EntropyBudgetAllocation (registered as `"entropy_budget"`) introduces a principl
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9081 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-entropy-budget](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-entropy-budget) | 2026-09-19 |
+
+
 The empirical evaluation of `entropy_budget_allocation` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
