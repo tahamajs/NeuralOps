@@ -1,16 +1,46 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_sdrm/roberta/summary.csv | sdrm | PASS_LOW | 50.92% <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 781.79 MB <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> |
-| results/unified_sdrm/distilbert/summary.csv | sdrm | PASS | 85.78% <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 338.98 MB <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> |
-| results/unified_sdrm/gpt2/summary.csv | sdrm | PASS | 67.66% <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 446.9 MB <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 25.51 ms <!-- source: results/benchmark_summary_v2.csv line 686 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 686 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 25.67 ms <!-- source: results/benchmark_summary_v2.csv line 687 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 687 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 26.54 ms <!-- source: results/benchmark_summary_v2.csv line 688 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 688 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 27.13 ms <!-- source: results/benchmark_summary_v2.csv line 689 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 689 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 53.04 ms <!-- source: results/benchmark_summary_v2.csv line 690 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 690 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 52.07 ms <!-- source: results/benchmark_summary_v2.csv line 691 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 691 --> |
-| results/all_121_compressors_gpu_matrix.csv | sdrm | PASS | Comp Ratio: 1.43x, Time: 0.896s <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | 149.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_sdrm/distilbert/summary.csv | distilbert | full | PASS | 90.94% <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 0.9125 <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> |
+| results/unified_sdrm/distilbert/summary.csv | distilbert | sdrm | PASS | 85.78% <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 0.8631 <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | full | PASS | 87.84% <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 0.8776 <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | sdrm | PASS | 67.66% <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 0.7482 <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> |
+| results/unified_sdrm/qwen3_5/summary.csv | qwen3_5 | full | PASS | 63.88% <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 0.6392 <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | full | PASS | 75.46% <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 0.7277 <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | sdrm | PASS_LOW | 50.92% <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 0.6748 <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | sdrm | PASS | Comp 1.43x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_sdrm/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> |
+| results/unified_sdrm/distilbert/summary.csv | distilbert | sdrm | 66955010 <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 54181670 <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 633638 <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 1.2358x <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | full | 126800640 <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 126800640 <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | sdrm | 126800640 <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 100744296 <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 1812792 <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 1.2586x <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> |
+| results/unified_sdrm/qwen3_5/summary.csv | qwen3_5 | full | 763217728 <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 763217728 <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 0 <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 1.0x <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | sdrm | 124647170 <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 99813190 <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 672070 <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 1.2488x <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | sdrm | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | Reduced (1.43x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | 1.43x <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_sdrm/distilbert/summary.csv | distilbert | full | 46799.28 tok/s <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_sdrm/distilbert/summary.csv line 2 --> |
+| results/unified_sdrm/distilbert/summary.csv | distilbert | sdrm | 32743.48 tok/s <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 338.98 MB <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> | 0.39 <!-- source: results/unified_sdrm/distilbert/summary.csv line 3 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | full | 26331.17 tok/s <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 391.24 MB <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_sdrm/gpt2/summary.csv line 2 --> |
+| results/unified_sdrm/gpt2/summary.csv | gpt2 | sdrm | 10921.04 tok/s <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 446.9 MB <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> | 0.283 <!-- source: results/unified_sdrm/gpt2/summary.csv line 3 --> |
+| results/unified_sdrm/qwen3_5/summary.csv | qwen3_5 | full | 1181.72 tok/s <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 1796.79 MB <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_sdrm/qwen3_5/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | full | 23765.16 tok/s <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_sdrm/roberta/summary.csv line 2 --> |
+| results/unified_sdrm/roberta/summary.csv | roberta | sdrm | 16739.56 tok/s <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 781.79 MB <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> | 0.3811 <!-- source: results/unified_sdrm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | sdrm | Elapsed 0.896s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | 149.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 103 --> |
