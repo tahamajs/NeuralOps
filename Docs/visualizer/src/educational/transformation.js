@@ -193,4 +193,15 @@ export function renderStructuralTransformation(moduleMeta, modelKey) {
             explEl.innerHTML = `💡 <strong>Paper Mechanism & Math:</strong> ${moduleMeta.description || 'Optimized architectural transformation derived directly from research implementation.'}`;
         }
     }
+
+    if (window.katex && explEl) {
+        const raw = explEl.innerHTML;
+        explEl.innerHTML = raw.replace(/\$([^\$]+)\$/g, (match, formula) => {
+            try {
+                return window.katex.renderToString(formula, { throwOnError: false, displayMode: false });
+            } catch (e) {
+                return match;
+            }
+        });
+    }
 }
