@@ -850,6 +850,13 @@ def inject_adasplash(
 
 ## 5. Empirical Benchmark Results: Unified 4-Model Sweep
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **roberta-base** | sst2 | `PASS` | 50.92% | **59.98%** | +9.06% | 0.7160 | 1.00x | 12 | [svd-linear-attention-roberta-base-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-adasplash) | 2026-09-19 |
+
+
 The unified benchmark was conducted on the remote GPU server (`NVIDIA GeForce RTX 4070 Laptop GPU`, 8GB VRAM, driver 566.07, CUDA 12.7) under strict standardized evaluation criteria:
 - **Benchmark Dataset**: Stanford Sentiment Treebank (SST-2, Binary Classification, validation $N=872$)
 - **Fine-Tuning Schedule**: Strict 50 recovery steps with AdamW optimizer
