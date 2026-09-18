@@ -2768,6 +2768,37 @@ def main():
             else:
                 try:
                     from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
+                    # Always ensure hf_export_dir exists with metrics so HF upload is never silently skipped
+                    hf_export_dir.mkdir(parents=True, exist_ok=True)
+                    # Write metrics.json into export dir if not already present
+                    _metrics_out = hf_export_dir / "metrics.json"
+                    if not _metrics_out.exists():
+                        try:
+                            import json as _json
+                            _metrics_out.write_text(
+                                _json.dumps({"performance": perf_metrics, "compression": comp_metrics}, indent=2),
+                                encoding="utf-8",
+                            )
+                        except Exception:
+                            pass
+                    # Copy summary.csv into export dir if available
+                    _summary_src = out / "summary.csv"
+                    _summary_dst = hf_export_dir / "summary.csv"
+                    if _summary_src.exists() and not _summary_dst.exists():
+                        try:
+                            import shutil as _shutil
+                            _shutil.copy2(_summary_src, _summary_dst)
+                        except Exception:
+                            pass
+                    # Copy finetuned weights if produced by this sweep run
+                    _weights_src = out / "finetuned_model.pt"
+                    _weights_dst = hf_export_dir / "weights.pt"
+                    if _weights_src.exists() and not _weights_dst.exists():
+                        try:
+                            import shutil as _shutil
+                            _shutil.copy2(_weights_src, _weights_dst)
+                        except Exception:
+                            pass
                     handle_benchmark_run_export(
                         model=None,
                         tokenizer=tokenizer,
@@ -2782,7 +2813,7 @@ def main():
                         config_dict=vars(args) if hasattr(args, "__dict__") else {},
                         out_dir=out,
                         allow_pass_low=False,
-                        export_dir=hf_export_dir if hf_export_dir.exists() else None,
+                        export_dir=hf_export_dir,
                     )
                 except Exception as export_exc:
                     LOG.warning("Automated export exception for %s: %s", name, export_exc)
