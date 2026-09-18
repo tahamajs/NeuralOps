@@ -1,0 +1,73 @@
+{
+  "compressor_name": "a3",
+  "original_parameters": 124441344,
+  "compressed_parameters": 123298560,
+  "saved_parameters": 1142784,
+  "compression_ratio": 0.9908166854899928,
+  "reduction_percentage": 0.918331451000722,
+  "factorized_layers": 8,
+  "skipped_layers": 16,
+  "num_compressed": 8,
+  "num_fallback": 16,
+  "num_compressed_layers": 8,
+  "num_fallback_layers": 16,
+  "r_ceiling": 320,
+  "compressed_layers": [
+    "transformer.h.0.attn.c_proj",
+    "transformer.h.1.attn.c_proj",
+    "transformer.h.2.attn.c_proj",
+    "transformer.h.3.attn.c_proj",
+    "transformer.h.4.attn.c_proj",
+    "transformer.h.6.attn.c_proj",
+    "transformer.h.7.attn.c_proj",
+    "transformer.h.8.attn.c_proj"
+  ],
+  "rank": 128,
+  "use_fisher": true,
+  "recalibrate_ln": true,
+  "avg_reconstruction_error": 0.36833192287951216,
+  "weighted_reconstruction_error": 0.3683319228795122,
+  "layer_stats": {
+    "transformer.h.0.attn.c_proj": {
+      "rank": 166,
+      "rel_error": 0.3520327947483098,
+      "weighted": true
+    },
+    "transformer.h.1.attn.c_proj": {
+      "rank": 242,
+      "rel_error": 0.3595590845071096,
+      "weighted": true
+    },
+    "transformer.h.2.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.3498042517594847,
+      "weighted": true
+    },
+    "transformer.h.3.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.37416050175691407,
+      "weighted": true
+    },
+    "transformer.h.4.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.3838227124849223,
+      "weighted": true
+    },
+    "transformer.h.6.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.35594858543685554,
+      "weighted": true
+    },
+    "transformer.h.7.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.39592062323011246,
+      "weighted": true
+    },
+    "transformer.h.8.attn.c_proj": {
+      "rank": 320,
+      "rel_error": 0.37540682911238904,
+      "weighted": true
+    }
+  },
+  "method": "a3_activation_aware_factorized_svd"
+}
