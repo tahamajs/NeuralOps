@@ -106,8 +106,19 @@ export function renderStructuralTransformation(moduleMeta, modelKey) {
             `;
         }
         if (explEl) {
+            let modelSpecificNote = '';
+            if (modelKey === 'gpt2') {
+                modelSpecificNote = ` In <strong>GPT-2</strong>, Q, K, and V projections are unified into a single fused Conv1D tensor $W_{\\text{c\\_attn}} \\in \\mathbb{R}^{${d} \\times ${d * 3}}$, factorized directly into rank $r=${r}$.`;
+            } else if (modelKey === 'qwen') {
+                modelSpecificNote = ` In <strong>Qwen2.5</strong>, Grouped Query Attention splits Query into 14 heads while Key/Value share only 2 heads ($d_{\\text{kv}}=128$), and the FFN utilizes SwiGLU 3-factor gating ($W_{\\text{gate}}, W_{\\text{up}}, W_{\\text{down}}$).`;
+            } else if (modelKey === 'roberta') {
+                modelSpecificNote = ` In <strong>RoBERTa-Base</strong> (12 layers), token mixing is full bidirectional self-attention with independent $[${d} \\times ${d}]$ matrices per projection operator.`;
+            } else {
+                modelSpecificNote = ` In <strong>DistilBERT</strong> (6 layers), half the transformer layers of BERT-base are retained while maintaining $>97\\%$ of linguistic capacity via knowledge distillation.`;
+            }
+
             explEl.innerHTML = `
-                💡 <strong>Mathematical Mechanics:</strong> Decomposes dense weight matrix $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ into two low-rank matrices $V \\in \\mathbb{R}^{r \\times d_{\\text{in}}}$ and $U \\in \\mathbb{R}^{d_{\\text{out}} \\times r}$ ($r=${r}$). Token features compress through rank bottleneck $r$ before re-expanding to model dimension.
+                💡 <strong>Mathematical Mechanics:</strong> Decomposes dense weight matrix $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ into two low-rank matrices $V \\in \\mathbb{R}^{r \\times d_{\\text{in}}}$ and $U \\in \\mathbb{R}^{d_{\\text{out}} \\times r}$ ($r=${r}$). Token features compress through rank bottleneck $r$ before re-expanding to model dimension.${modelSpecificNote}
             `;
         }
     } else if (paradigm === 'moe') {
