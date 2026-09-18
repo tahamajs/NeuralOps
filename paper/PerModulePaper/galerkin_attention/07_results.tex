@@ -1,11 +1,85 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 49.2\% & 653.87 MB \\
-\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 65.94\% & 322.36 MB \\
-\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 79.36\% & 567.91 MB \\
-\texttt{results/agnews\_unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 36.0\% & 541.99 MB \\
-\texttt{results/mnli\_unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 36.4\% & 356.28 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 36.59 ms & 497.4 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 36.94 ms & 497.4 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 38.29 ms & 507.3 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_galerkinattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & galerkin & PASS\_NO\_COMPRESSION & 65.94 & 0.6426 \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & galerkin & PASS\_NO\_COMPRESSION & 79.36 & 0.7982 \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & galerkin & PASS\_NO\_COMPRESSION & 49.2 & 0.4656 \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & galerkin\_attention & PASS\_NO\_COMPRESSION & 65.94 & 0.6426 \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & galerkin\_attention & PASS\_NO\_COMPRESSION & 79.36 & 0.7982 \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & galerkin\_attention & PASS\_NO\_COMPRESSION & 49.2 & 0.4656 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{galerkinattention}.}
+\label{tab:results_acc_galerkinattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_galerkinattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & galerkin & 66955010 & 67544834 & 589824 & 1.0x \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & galerkin & 124441344 & 125620992 & 1179648 & 1.0x \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & galerkin & 124647170 & 132913922 & 1179648 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & galerkin\_attention & 66955010 & 67544834 & 589824 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & galerkin\_attention & 124441344 & 125620992 & 1179648 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & galerkin\_attention & 124647170 & 132913922 & 1179648 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{galerkinattention}.}
+\label{tab:results_params_galerkinattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_galerkinattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & full & 53548.04 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_galerkin/distilbert/summary.csv} & distilbert & galerkin & 16310.58 & 322.36 MB & 0.0000 \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & full & 28080.02 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_galerkin/gpt2/summary.csv} & gpt2 & galerkin & 12433.25 & 567.91 MB & 0.0000 \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & full & 28429.45 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_galerkin/roberta/summary.csv} & roberta & galerkin & 8148.5 & 653.87 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & full & 47421.57 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & distilbert & galerkin\_attention & 15725.49 & 322.36 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & full & 26733.0 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & gpt2 & galerkin\_attention & 12149.25 & 567.91 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & full & 27040.11 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & roberta & galerkin\_attention & 7834.15 & 653.87 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{galerkinattention}.}
+\label{tab:results_vram_galerkinattention}
+\end{table*}

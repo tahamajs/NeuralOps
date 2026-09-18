@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & granite\_hybrid & PASS\_LOW & 53.33\% & 2501.8 MB \\
-\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & granite\_hybrid & PASS & 63.65\% & 1604.75 MB \\
-\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & granite\_hybrid & PASS\_LOW & 51.72\% & 2393.89 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 1704.51 ms & 4166.7 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 1707.27 ms & 4166.7 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 1714.33 ms & 4176.6 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 1709.78 ms & 4176.6 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 1719.55 ms & 4265.1 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_granitehybrid} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & granite\_hybrid & PASS & 63.65 & 0.7325 \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & granite\_hybrid & PASS\_LOW & 51.72 & 0.6774 \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & full & PASS & 75.0 & 0.7578 \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & granite\_hybrid & PASS\_LOW & 53.33 & 0.6772 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{granitehybrid}.}
+\label{tab:results_acc_granitehybrid}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_granitehybrid} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & granite\_hybrid & 66955010 & 216526142 & 1181984 & 0.3092x \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & granite\_hybrid & 124441344 & 423583608 & 1181256 & 0.2938x \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & granite\_hybrid & 124647170 & 430876538 & 1771838 & 0.2893x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{granitehybrid}.}
+\label{tab:results_params_granitehybrid}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_granitehybrid} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & full & 44704.41 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_granite\_hybrid/distilbert/summary.csv} & distilbert & granite\_hybrid & 8212.62 & 1604.75 MB & 0.0000 \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & full & 27504.15 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_granite\_hybrid/gpt2/summary.csv} & gpt2 & granite\_hybrid & 4214.39 & 2393.89 MB & 0.0000 \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & full & 26766.82 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_granite\_hybrid/roberta/summary.csv} & roberta & granite\_hybrid & 4243.84 & 2501.8 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{granitehybrid}.}
+\label{tab:results_vram_granitehybrid}
+\end{table*}

@@ -1,15 +1,40 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_granite_hybrid/roberta/summary.csv | granite_hybrid | PASS_LOW | 53.33% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 2501.8 MB <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
-| results/unified_granite_hybrid/distilbert/summary.csv | granite_hybrid | PASS | 63.65% <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 1604.75 MB <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> |
-| results/unified_granite_hybrid/gpt2/summary.csv | granite_hybrid | PASS_LOW | 51.72% <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 2393.89 MB <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 1704.51 ms <!-- source: results/benchmark_summary_v2.csv line 440 --> | 4166.7 MB <!-- source: results/benchmark_summary_v2.csv line 440 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 1707.27 ms <!-- source: results/benchmark_summary_v2.csv line 441 --> | 4166.7 MB <!-- source: results/benchmark_summary_v2.csv line 441 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 1714.33 ms <!-- source: results/benchmark_summary_v2.csv line 442 --> | 4176.6 MB <!-- source: results/benchmark_summary_v2.csv line 442 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 1709.78 ms <!-- source: results/benchmark_summary_v2.csv line 443 --> | 4176.6 MB <!-- source: results/benchmark_summary_v2.csv line 443 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 1719.55 ms <!-- source: results/benchmark_summary_v2.csv line 444 --> | 4265.1 MB <!-- source: results/benchmark_summary_v2.csv line 444 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 1711.84 ms <!-- source: results/benchmark_summary_v2.csv line 445 --> | 4265.1 MB <!-- source: results/benchmark_summary_v2.csv line 445 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> |
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | granite_hybrid | PASS | 63.65% <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 0.7325 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | full | PASS | 57.91% <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 0.301 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | granite_hybrid | PASS_LOW | 51.72% <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 0.6774 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | granite_hybrid | PASS_LOW | 53.33% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 0.6772 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> |
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | granite_hybrid | 66955010 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 216526142 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 1181984 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 0.3092x <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | granite_hybrid | 124441344 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 423583608 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 1181256 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 0.2938x <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | granite_hybrid | 124647170 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 430876538 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 1771838 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 0.2893x <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | full | 44704.41 tok/s <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 2 --> |
+| results/unified_granite_hybrid/distilbert/summary.csv | distilbert | granite_hybrid | 8212.62 tok/s <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 1604.75 MB <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | full | 27504.15 tok/s <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> |
+| results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | granite_hybrid | 4214.39 tok/s <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 2393.89 MB <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | full | 26766.82 tok/s <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> |
+| results/unified_granite_hybrid/roberta/summary.csv | roberta | granite_hybrid | 4243.84 tok/s <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 2501.8 MB <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
