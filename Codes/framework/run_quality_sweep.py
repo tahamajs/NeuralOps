@@ -3111,7 +3111,7 @@ def main():
 
         import threading
         if not hasattr(path, "_csv_lock"):
-            path._csv_lock = threading.Lock()
+            pass
         with path._csv_lock:
             existing_rows = {}
             if path.exists():
