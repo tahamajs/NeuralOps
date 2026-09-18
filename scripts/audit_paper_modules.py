@@ -2,50 +2,44 @@
 import json
 import re
 from pathlib import Path
+import pypdf
 
 PAPER_DIR = Path("paper/PerModulePaper")
-TEMPLATE_DIR = PAPER_DIR / "_TEMPLATE"
+VAR_REGEX = re.compile(r"\{\{[A-Z0-9_]{3,}\}\}")
 
 def classify(module_dir: Path) -> str:
     if module_dir.name.startswith("_"):
         return "skip"
     
-    md_files = list(module_dir.glob("*.md"))
-    tex_files = list(module_dir.glob("*.tex"))
+    md_files = [f for f in module_dir.glob("*.md") if f.is_file()]
+    tex_files = [f for f in module_dir.glob("*.tex") if f.is_file()]
     all_files = md_files + tex_files
     if not all_files:
         return "empty"
     
-    # Check if module intro is a stub
-    intro_tex = module_dir / "01_intro.tex"
-    intro_md = module_dir / "01_intro.md"
-    is_stub = False
-    if intro_tex.exists():
-        t = intro_tex.read_text(encoding="utf-8", errors="ignore")
-        if "Formal architectural specifications for" in t:
-            is_stub = True
-    elif intro_md.exists():
-        t = intro_md.read_text(encoding="utf-8", errors="ignore")
-        if "Formal architectural specifications for" in t:
-            is_stub = True
-    
-    if is_stub:
-        return "stub"
-    
-    # Check for template variables like {{MODULE_NAME}} or {{ACCURACY}}
-    has_template_var = False
+    # Check for unresolved template variables like {{MODULE_NAME}}
     for f in all_files:
         try:
             text = f.read_text(encoding="utf-8", errors="ignore")
         except Exception:
             continue
-        if re.search(r"\{\{[A-Z0-9_]+\}\}", text):
-            has_template_var = True
-            break
+        if VAR_REGEX.search(text):
+            return "template_var"
             
-    if has_template_var:
-        return "template_var"
-    
+    pdf = module_dir / "main.pdf"
+    if not pdf.exists():
+        return "unknown"
+        
+    try:
+        reader = pypdf.PdfReader(str(pdf))
+        num_pages = len(reader.pages)
+    except Exception:
+        return "unknown"
+        
+    # Papers with <= 5 pages or stub phrase are thin skeleton stubs
+    if num_pages <= 5:
+        return "stub"
+        
     return "complete"
 
 def main():
