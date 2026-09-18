@@ -95,6 +95,8 @@ def train_task(
     intermediate_size: int = 1024,
     gradient_checkpointing: bool = False,
     warmup_ratio: float = 0.1,
+    warmup_steps: int = None,
+    precision: str = "bf16",
 ):
     cfg = TASK_CONFIG[task]
     num_epochs = epochs if epochs is not None else cfg.get("epochs", 100)
@@ -162,21 +164,28 @@ def train_task(
     train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
     
     total_steps = num_epochs * len(train_loader) if max_steps is None else min(max_steps, num_epochs * len(train_loader))
-    warmup_steps = max(1, int(total_steps * warmup_ratio))
+    actual_warmup_steps = warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
 
     from transformers import get_cosine_schedule_with_warmup
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=warmup_steps,
+        num_warmup_steps=actual_warmup_steps,
         num_training_steps=total_steps,
     )
 
-    use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
-    amp_dtype = torch.bfloat16 if use_bf16 else torch.float32
-    scaler = torch.amp.GradScaler("cuda", enabled=False)
+    if precision == "fp16":
+        use_amp = torch.cuda.is_available()
+        amp_dtype = torch.float16
+    elif precision == "bf16":
+        use_amp = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        amp_dtype = torch.bfloat16
+    else:
+        use_amp = False
+        amp_dtype = torch.float32
+
     best_acc = 0.0
     global_step = 0
-    print(f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, bf16={use_bf16}, warmup_steps={warmup_steps}, total_steps={total_steps}", flush=True)
+    print(f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, precision={precision} (amp={use_amp}), warmup_steps={actual_warmup_steps}, total_steps={total_steps}", flush=True)
 
     for epoch in range(num_epochs):
         model.train()
@@ -254,6 +263,8 @@ if __name__ == "__main__":
     parser.add_argument("--intermediate_size", type=int, default=1024, help="Intermediate FFN dimension")
     parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing")
     parser.add_argument("--warmup_ratio", type=float, default=0.1, help="Warmup ratio for cosine schedule")
+    parser.add_argument("--warmup_steps", type=int, default=None, help="Explicit warmup steps")
+    parser.add_argument("--precision", type=str, default="bf16", choices=["bf16", "fp16", "fp32"], help="Training precision")
     args = parser.parse_args()
 
     acc = train_task(
@@ -271,5 +282,7 @@ if __name__ == "__main__":
         intermediate_size=args.intermediate_size,
         gradient_checkpointing=args.gradient_checkpointing,
         warmup_ratio=args.warmup_ratio,
+        warmup_steps=args.warmup_steps,
+        precision=args.precision,
     )
     print(f"Final: {args.task}/{args.module} = {acc:.2f}%")
