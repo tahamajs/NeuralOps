@@ -1,11 +1,73 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_faq/roberta/summary.csv} & faq & PASS\_NO\_COMPRESSION & 80.05\% & 916.21 MB \\
-\texttt{results/unified\_faq/distilbert/summary.csv} & faq & PASS\_NO\_COMPRESSION & 90.48\% & 416.0 MB \\
-\texttt{results/unified\_faq/gpt2/summary.csv} & faq & PASS\_NO\_COMPRESSION & 78.56\% & 884.17 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 26.39 ms & 571.8 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 25.82 ms & 571.8 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.83 ms & 581.7 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 26.56 ms & 581.7 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 52.49 ms & 1107.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_faqquantizer} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & faq & PASS\_NO\_COMPRESSION & 90.48 & 0.9071 \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & faq & PASS\_NO\_COMPRESSION & 78.56 & 0.7848 \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & faq & PASS\_NO\_COMPRESSION & 80.05 & 0.8184 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq & PASS & Comp 1.0x & Mem -0.0\% \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq\_quantizer & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{faqquantizer}.}
+\label{tab:results_acc_faqquantizer}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_faqquantizer} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & faq & 66955010 & 68282150 & 1327140 & 0.9806x \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & faq & 124441344 & 126800688 & 2359344 & 0.9814x \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & faq & 124647170 & 127301450 & 2654280 & 0.9791x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq\_quantizer & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{faqquantizer}.}
+\label{tab:results_params_faqquantizer}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_faqquantizer} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & full & 50879.26 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_faq/distilbert/summary.csv} & distilbert & faq & 10050.43 & 416.0 MB & 0.0000 \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & full & 26858.28 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_faq/gpt2/summary.csv} & gpt2 & faq & 6946.16 & 884.17 MB & 0.0000 \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & full & 27260.04 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_faq/roberta/summary.csv} & roberta & faq & 5085.38 & 916.21 MB & 0.0000 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq & Elapsed 0.243s & 127.0 MB & Verified \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & faq\_quantizer & Elapsed 0.233s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{faqquantizer}.}
+\label{tab:results_vram_faqquantizer}
+\end{table*}

@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 52.87\% & 672.35 MB \\
-\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 76.49\% & 339.99 MB \\
-\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 57.8\% & 574.03 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 6681.92 ms & 3811.3 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 6655.93 ms & 3811.3 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 6668.92 ms & 3821.2 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 6678.48 ms & 3821.2 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 6675.09 ms & 3894.7 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_factorisedmatrixstate} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 76.49 & 0.7491 \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 57.8 & 0.6535 \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 52.87 & 0.5136 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{factorisedmatrixstate}.}
+\label{tab:results_acc_factorisedmatrixstate}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_factorisedmatrixstate} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & factorised\_matrix\_state & 66955010 & 67839842 & 884832 & 1.0x \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & factorised\_matrix\_state & 124441344 & 126211008 & 1769664 & 1.0x \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & factorised\_matrix\_state & 124647170 & 133503938 & 1769664 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{factorisedmatrixstate}.}
+\label{tab:results_params_factorisedmatrixstate}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_factorisedmatrixstate} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & full & 50938.83 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & distilbert & factorised\_matrix\_state & 15493.53 & 339.99 MB & 0.0000 \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & full & 26285.77 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & gpt2 & factorised\_matrix\_state & 9921.96 & 574.03 MB & 0.0000 \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & full & 27504.61 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & roberta & factorised\_matrix\_state & 7844.34 & 672.35 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{factorisedmatrixstate}.}
+\label{tab:results_vram_factorisedmatrixstate}
+\end{table*}
