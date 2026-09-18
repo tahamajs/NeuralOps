@@ -15,7 +15,7 @@ os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
 sys.path.insert(0, "Codes")
 
 import torch
-from transformers import AutoConfig, AutoModelForSequenceClassification
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 MODEL_PATHS = {
     "distilbert": r"models\distilbert_sst2",
@@ -56,6 +56,13 @@ def test_one(module_name):
     for model_name, model_path in models_to_test.items():
         try:
             cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+                if tokenizer.pad_token is None:
+                    tokenizer.pad_token = tokenizer.eos_token
+                    tokenizer.pad_token_id = tokenizer.eos_token_id
+            except Exception:
+                pass
             if getattr(cfg, "pad_token_id", None) is None:
                 cfg.pad_token_id = getattr(cfg, "eos_token_id", 0) or 0
             model = AutoModelForSequenceClassification.from_pretrained(
