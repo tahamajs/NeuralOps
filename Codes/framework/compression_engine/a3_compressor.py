@@ -238,7 +238,7 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = True,
-        max_error: float = 0.20,
+        max_error: float = 0.40,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
@@ -489,17 +489,19 @@ class A3Compressor(BaseCompressor):
             logger.debug("No calibration data available for %s; falling back to unweighted SVD.", name)
             W_w = W
 
-        # Pull SVD Out of the Retry Loop
-        try:
-            U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
-        except Exception:
-            U, S, Vt = torch.linalg.svd(W_w.cpu(), full_matrices=False)
-            U, S, Vt = U.to(W.device), S.to(W.device), Vt.to(W.device)
+        # Compute SVD on CPU in FP32 for numerical stability and zero GPU VRAM workspace pressure
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        W_cpu = W_w.detach().cpu().float()
+        U_cpu, S_cpu, Vt_cpu = torch.linalg.svd(W_cpu, full_matrices=False)
+        U = U_cpu.to(device=W.device, dtype=W.dtype)
+        S = S_cpu.to(device=W.device, dtype=W.dtype)
+        Vt = Vt_cpu.to(device=W.device, dtype=W.dtype)
 
         norm_orig = torch.linalg.norm(W).item()
         
-        # Calculate ceiling BEFORE the retry loop
-        r_ceiling = min(int(0.5 * min(in_f, out_f)), 192)
+        # Calculate ceiling BEFORE the retry loop (Option A: max 256, below break-even)
+        r_ceiling = min(int(0.5 * min(in_f, out_f)), 256)
         current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
@@ -613,6 +615,9 @@ class A3Compressor(BaseCompressor):
             self.recalibrate_ln = False
         else:
             cov_map, fisher_map = self._collect_activations_and_fisher()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         factorized_count = 0
         skipped_count = 0
