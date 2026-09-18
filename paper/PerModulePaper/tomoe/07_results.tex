@@ -1,7 +1,73 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_tomoe/roberta/summary.csv} \& tomoe \& PASS\_LOW & 50.92\% & 571.84 MB \\
-\texttt{results/unified\_tomoe/distilbert/summary.csv} \& tomoe \& PASS & 69.5\% & 427.0 MB \\
-\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} \& tomoe \& SKIP\_QWEN3\_5\_TIMEOUT & 0.0\% & 1796.78 MB \\
-\texttt{results/unified\_tomoe/gpt2/summary.csv} \& tomoe \& PASS\_LOW & 54.24\% & 874.64 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_tomoe} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & tomoe & PASS & 69.5 & 0.7569 \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & tomoe & PASS\_LOW & 54.24 & 0.678 \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.89 & 0.557 \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & tomoe & SKIP\_QWEN3\_5\_TIMEOUT & 0.0 & 0.557 \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & tomoe & PASS\_LOW & 50.92 & 0.6748 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{tomoe}.}
+\label{tab:results_acc_tomoe}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_tomoe} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & tomoe & 66955010 & 67121078 & 4154174 & 0.9975x \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & tomoe & 124441344 & 124699632 & 1584 & 0.9979x \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & tomoe & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & tomoe & 124647170 & 124979306 & 7716218 & 0.9973x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{tomoe}.}
+\label{tab:results_params_tomoe}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_tomoe} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & full & 147673.36 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & tomoe & 9433.02 & 427.0 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & full & 63973.09 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & tomoe & 7291.62 & 874.64 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & full & 1277.88 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & tomoe & 1277.88 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & full & 90454.69 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & tomoe & 5276.98 & 571.84 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{tomoe}.}
+\label{tab:results_vram_tomoe}
+\end{table*}

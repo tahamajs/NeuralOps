@@ -1,6 +1,85 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} \& tlinformer\_attention \& PASS\_LOW & 53.56\% & 660.78 MB \\
-\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} \& tlinformer\_attention \& PASS & 90.25\% & 331.47 MB \\
-\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} \& tlinformer\_attention \& PASS\_LOW & 51.03\% & 571.59 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_tlinformerattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & tlinformer & PASS & 90.83 & 0.9119 \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & tlinformer & PASS\_LOW & 51.03 & 0.6753 \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & tlinformer & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & tlinformer\_attention & PASS & 90.25 & 0.9063 \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & tlinformer\_attention & PASS\_LOW & 51.03 & 0.6753 \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & tlinformer\_attention & PASS\_LOW & 53.56 & 0.6853 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{tlinformerattention}.}
+\label{tab:results_acc_tlinformerattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_tlinformerattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & tlinformer & 66955010 & 67938080 & 1575200 & 0.9855x \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & tlinformer & 124441344 & 127193916 & 1181244 & 0.9784x \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & tlinformer & 124647170 & 133703486 & 1182014 & 0.9323x \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & tlinformer\_attention & 66955010 & 67741472 & 1378592 & 0.9884x \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & tlinformer\_attention & 124441344 & 126407484 & 1967676 & 0.9844x \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & tlinformer\_attention & 124647170 & 133308734 & 1576766 & 0.935x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{tlinformerattention}.}
+\label{tab:results_params_tlinformerattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_tlinformerattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & full & 139742.52 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer/distilbert/summary.csv} & distilbert & tlinformer & 70831.26 & 335.97 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & full & 61495.11 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer/gpt2/summary.csv} & gpt2 & tlinformer & 35240.24 & 574.72 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & full & 79049.94 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer/roberta/summary.csv} & roberta & tlinformer & 34963.34 & 664.64 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & full & 137757.17 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} & distilbert & tlinformer\_attention & 75937.59 & 331.47 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & full & 63407.14 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} & gpt2 & tlinformer\_attention & 35641.54 & 571.59 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & full & 82711.85 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} & roberta & tlinformer\_attention & 36981.95 & 660.78 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{tlinformerattention}.}
+\label{tab:results_vram_tlinformerattention}
+\end{table*}
