@@ -153,6 +153,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("adaptive_sparse_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSparseAttention(BaseAttention):
+    is_custom_attention: bool = True
     supports_causal = True
     supports_bidirectional = True
     supports_gqa = True
@@ -547,9 +548,9 @@ class AdaptiveSparseAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)

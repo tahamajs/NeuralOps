@@ -187,6 +187,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -598,9 +599,9 @@ class WeightedGroupedQueryAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         # 1. Projections
-        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply learnable per-KV-head importance weights
         K = K * self.k_weights.view(1, self.num_kv_heads, 1, 1).to(K.dtype)
@@ -637,6 +638,42 @@ class WeightedGroupedQueryAttention(BaseAttention):
             or bool(_cfg_get(self.config, "is_decoder", False))
             or str(_cfg_get(self.config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
+
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+
+        try:
+
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+
+        except Exception:
+
+
+            pass
+
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 

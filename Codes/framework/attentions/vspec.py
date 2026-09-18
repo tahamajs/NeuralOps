@@ -326,6 +326,7 @@ class VSpecAttention(BaseAttention):
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -687,9 +688,9 @@ class VSpecAttention(BaseAttention):
         H_kv = self.num_kv_heads
         Dh = self.head_dim
 
-        Q = Q.view(B, k_len, H, Dh).transpose(1, 2)
-        K = K.view(B, k_len, H_kv, Dh).transpose(1, 2)
-        V = V.view(B, k_len, H_kv, Dh).transpose(1, 2)
+        Q = Q.view(B, k_len, H, Dh).transpose(1, 2).contiguous()
+        K = K.view(B, k_len, H_kv, Dh).transpose(1, 2).contiguous()
+        V = V.view(B, k_len, H_kv, Dh).transpose(1, 2).contiguous()
 
         # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings", None)

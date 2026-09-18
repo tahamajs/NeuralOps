@@ -18,6 +18,7 @@ from framework.attentions.svd_linear_attention import (
 @ATTENTION_REGISTRY.register("decay_gated_linear_attention")
 class DecayGatedLinearAttention(SVDLinearAttention):
     r"""Decay Gated SVD Linear Attention."""
+    is_custom_attention: bool = True
     def __init__(self, *args, **kwargs):
         kwargs["use_decay_gating"] = True
         super().__init__(*args, **kwargs)

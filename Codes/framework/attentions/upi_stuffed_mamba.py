@@ -115,6 +115,7 @@ class UPIMambaBlock(BaseAttention):
 
     supports_causal: bool = True
     supports_bidirectional: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -518,7 +519,7 @@ class UPIMambaBlock(BaseAttention):
         xz = self.in_proj(hidden_states)
         x_in, z = xz.chunk(2, dim=-1)
 
-        x_conv = self.conv1d(x_in.transpose(1, 2))[:, :, :L].transpose(1, 2)
+        x_conv = self.conv1d(x_in.transpose(1, 2))[:, :, :L].transpose(1, 2).contiguous()
         x_ssm = F.silu(x_conv)
 
         # Selective projections: dt_raw [inner_dim], B_t [d_state], C_t [d_state]

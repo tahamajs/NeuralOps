@@ -422,6 +422,7 @@ class WeightedEnsembleAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
     supports_delta_net: bool = True
 
     def __init__(
@@ -616,9 +617,9 @@ class WeightedEnsembleAttention(BaseAttention):
         if valid_mask is None:
             valid_mask = torch.ones(B, N_k, device=device, dtype=torch.bool)
 
-        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Rotary position embeddings if provided
         position_embeddings = kwargs.get("position_embeddings", None)
@@ -653,7 +654,7 @@ class WeightedEnsembleAttention(BaseAttention):
         out_linear = self._linear_branch(Q, K, V, valid_mask)
 
         # Learned dynamic gating
-        gate = torch.sigmoid(self.ensemble_gate(hidden_states)).view(B, N, self.num_heads, 1).transpose(1, 2)
+        gate = torch.sigmoid(self.ensemble_gate(hidden_states)).view(B, N, self.num_heads, 1).transpose(1, 2).contiguous()
         fused = gate * out_standard + (1.0 - gate) * out_linear
 
         if head_mask is not None:

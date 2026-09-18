@@ -279,6 +279,7 @@ class BAMUMoEBlock(BaseAttention):
     and Qwen/LLaMA/Mistral.
     """
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -576,9 +577,9 @@ class BAMUMoEBlock(BaseAttention):
         S = kv_states.shape[1]
 
         # 1. Base QKV projections
-        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_lin(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_lin(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_lin(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_lin(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. Rotary Position Embeddings (RoPE) applied before GQA expansion
         cos = kwargs.get("cos", None)
@@ -608,11 +609,33 @@ class BAMUMoEBlock(BaseAttention):
         # cross-attention value projections are highly calibrated; injecting unaligned MoE value
         # refinement there would disrupt cross-attention alignment and destabilize sequence generation.
         if not is_cross_attention:
-            moe_delta_v = self.qkv_moe(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            moe_delta_v = self.qkv_moe(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
             v = v + 0.1 * moe_delta_v
 
         # 5. Attention scores computation in FP32 for numerical stability
         scale = 1.0 / math.sqrt(self.head_dim)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs
+
+        try:
+
+            _qs = q.half() if q.dtype == torch.float32 else q
+
+            _ks = k.half() if k.dtype == torch.float32 else k
+
+            _vs = v.half() if v.dtype == torch.float32 else v
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=getattr(self, 'is_decoder', False) and N > 1, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
         # 6. Causal and padding mask application

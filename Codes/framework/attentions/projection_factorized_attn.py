@@ -11,6 +11,7 @@ from framework.attentions.svd_linear_attention import (
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 class ProjectionFactorizedAttention(SVDLinearAttention):
     r"""Projection Factorized SVD Linear Attention."""
+    is_custom_attention: bool = True
     pass
 
 

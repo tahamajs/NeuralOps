@@ -160,6 +160,7 @@ class TokenCompressedAttention(BaseAttention):
 
     supports_gqa: bool = True
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -588,9 +589,9 @@ class TokenCompressedAttention(BaseAttention):
         H_kv = self.num_kv_heads
         Dh = self.head_dim
 
-        q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
-        v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2)
+        q = self.q_lin(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
+        v = self.v_lin(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)

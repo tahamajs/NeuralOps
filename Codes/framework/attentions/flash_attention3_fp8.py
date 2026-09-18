@@ -184,6 +184,7 @@ class LoRALinear(nn.Module):
 class FlashAttention3FP8(BaseAttention):
     r"""FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -506,9 +507,9 @@ class FlashAttention3FP8(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Projections
-        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:

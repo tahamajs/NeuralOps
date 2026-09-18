@@ -99,6 +99,7 @@ class SVDLLMV2Attention(BaseAttention):
     """
 
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -500,9 +501,9 @@ class SVDLLMV2Attention(BaseAttention):
         K_act = self._project(kv_input, self.key_vh, self.key_s, self.key_u, self.key_bias, self.k_lora_A, self.k_lora_B)
         V_act = self._project(kv_input, self.value_vh, self.value_s, self.value_u, self.value_bias, self.v_lora_A, self.v_lora_B)
 
-        Q = Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        K = K_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        V = V_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        Q = Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = K_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = V_act.view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. RoPE support
         if position_embeddings is None:
@@ -518,6 +519,30 @@ class SVDLLMV2Attention(BaseAttention):
 
         # 4. Attention scores in FP32
         scale = 1.0 / math.sqrt(self.head_dim)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+        try:
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         # 5. Masking

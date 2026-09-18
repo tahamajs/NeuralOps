@@ -151,6 +151,7 @@ class LoRALinear(nn.Module):
 class OptimizedHybridAttention(BaseAttention):
     r"""Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
