@@ -244,3 +244,8 @@ The `FactorisedMatrixState` architecture incorporates telemetry hooks for tracki
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **77.06%** | -13.54% | 0.7579 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-factorised-matrix-state](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-factorised-matrix-state) | 2026-09-18 |
