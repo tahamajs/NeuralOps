@@ -95,7 +95,7 @@ Accuracy & 90.71\% & 90.02\% & \textbf{-0.69\%} \\
 \midrule
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-\textbf{A3} & Low-rank & \textbf{1.02$\times$} & \textbf{90.02\%} \\
+\textbf{A3 (r=128)} & Low-rank & \textbf{1.02$\times$} & \textbf{90.02\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,12 +106,12 @@ A3 preserves 90.02\% validation accuracy on DistilBERT with \textbf{no retrainin
 
 \subsubsection{Storage}
 
-A3's main benefit is storage. For a 100M-parameter model:
+A3's main benefit is verified parameter and disk reduction. For DistilBERT (66.95M parameters):
 
 \begin{itemize}
-\item Baseline: 200 MB FP16
-\item A3 (r=64): ~27 MB
-\item A3 + INT8: ~14 MB
+\item Baseline: 134 MB FP16 (66.95M parameters)
+\item A3 ($r=128$): 131.5 MB (65.71M parameters, 1.02$\times$)
+\item A3 + INT8: $\sim$66 MB (2.03$\times$)
 
 \end{itemize}
 \subsubsection{Latency}

@@ -103,10 +103,10 @@ Neglecting $\epsilon \ll \sigma^2$ for normalized transformer activations yields
 \tag{A.11}
 \]
 
-Similarly, when centering shifts occur, the bias vector is adjusted via:
+Similarly, when centering shifts occur, equating the constant terms $\beta_{\mathrm{new}} - \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{post}}}{\sigma_{\mathrm{post}}} = \beta - \gamma \odot \frac{\mu_{\mathrm{pre}}}{\sigma_{\mathrm{pre}}}$ gives the exact bias adjustment:
 
 \[
-\beta_{\mathrm{new}} = \beta + \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{pre}} - \mu_{\mathrm{post}}}{\sigma_{\mathrm{post}}}
+\beta_{\mathrm{new}} = \beta + \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{post}} - \mu_{\mathrm{pre}}}{\sigma_{\mathrm{post}}} = \beta + \gamma \odot \frac{\mu_{\mathrm{post}} - \mu_{\mathrm{pre}}}{\sigma_{\mathrm{pre}}}
 \tag{A.12}
 \]
 

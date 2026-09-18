@@ -227,12 +227,12 @@ the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\t
 We can compensate by adjusting $\gamma$:
 
 \[
-\gamma \leftarrow \gamma \cdot \frac{\sigma_\text{target}}{\sigma_\text{current}}
+\gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{current}}{\sigma_\text{target}}
 \tag{4.13}
 \]
 
-where $\sigma_\text{target}$ is the pre-compression standard deviation and 
-$\sigma_\text{current}$ is the post-compression one.
+where $\sigma_\text{target}$ is the pre-compression standard deviation ($\sigma_\text{pre}$) and 
+$\sigma_\text{current}$ is the post-compression standard deviation ($\sigma_\text{post}$).
 
 \subsubsection{Procedure}
 
@@ -275,7 +275,7 @@ Output: compressed model M', statistics
 20: if recalibrate_ln:
 21:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
 22:     for ln in layernorms(M') do
-23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$   $\sigma$_target[ln] / $\sigma$_current[ln]
+23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$ $\cdot$ $\sigma$_current[ln] / $\sigma$_target[ln]
 24:     end for
 25: end if
 26: return M'
@@ -362,7 +362,8 @@ For any $W$, $U_r$, $V_r$ from weighted SVD:
 \tag{4.14}
 \]
 
-where $W^*_r$ is the unweighted optimal rank-$r$ approximation. In practice, 
-the weighted SVD often achieves lower $\|W - U_r V_r\|_F$ than unweighted 
-because the weighting suppresses reconstruction error in low-variance 
-directions.
+where $W^*_r$ is the unweighted optimal rank-$r$ approximation. Combined with the weighted SVD bound from Appendix A.3:
+\[
+\|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2(W_\text{weighted})}}{\sqrt{\min_j F_j}}
+\]
+This makes the bound non-trivial: the reconstruction error is explicitly controlled by the tail singular values of the weighted matrix scaled by the minimal Fisher sensitivity. In practice, the weighted SVD achieves lower task degradation because the weighting suppresses reconstruction error in directions with small Fisher entries.

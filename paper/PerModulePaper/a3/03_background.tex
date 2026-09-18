@@ -62,8 +62,7 @@ diagonal Fisher is approximately:
 \tag{3.6}
 \]
 
-This \textbf{activation energy} is cheap to compute and correlates well with the 
-true Fisher in practice.
+This is a heuristic approximation under the assumptions that (i) the downstream loss has roughly uniform sensitivity across output dimensions, and (ii) cross-channel correlations are negligible. It is not an exact identity; we use it as a cheap proxy for the true Fisher diagonal. This \textbf{activation energy} is cheap to compute and correlates well with the true Fisher in practice.
 
 \subsection{Streaming Covariance Accumulation}
 
@@ -143,7 +142,7 @@ bulk of the computation; LoRA provides the recovery signal.
 $W$ & Weight matrix & $d_\text{out} \times d_\text{in}$ \\
 $U$ & Left factor & $d_\text{out} \times r$ \\
 $V$ & Right factor & $r \times d_\text{in}$ \\
-$\Sigma$ & Singular value diagonal & $\min(d_\text{out}, d_\text{in})$ \\
+$\Sigma$ & Singular value diagonal & $r \times r$ \\
 $r$ & Compression rank & scalar \\
 $\tau$ & Error threshold & scalar \\
 $F$ & Empirical Fisher diagonal & $d_\text{in}$ \\
