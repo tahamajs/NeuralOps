@@ -67,3 +67,17 @@ Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_
 Cannot access content at: https://huggingface.co/api/repos/create.
 Make sure your token has the correct permissions.
 2026-09-18 20:49:35,769 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\a3_compressor.md
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+error: unable to unlink old 'results/bs_test/bs_32/stderr.log': Invalid argument
+error: unable to unlink old 'results/bs_test/bs_32/stdout.log': Invalid argument
+fatal: could not reset --hard
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   6d9e6500d..1feaa7e90  main -> main
+2026-09-18 20:49:44,514 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 1feaa7e9
+2026-09-18 20:49:44,737 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:49:44,738 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-18 20:49:44,746 [INFO] QwenQualitySweep: 
+Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+    a3   PASS   86.12%    -4.48% 0.8706                 24            1.09x  330.1 MB               0.86              0.99
+2026-09-18 20:49:44,746 [INFO] QwenQualitySweep: ================================================================================
