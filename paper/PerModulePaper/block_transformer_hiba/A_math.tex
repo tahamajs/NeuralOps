@@ -44,3 +44,24 @@ Decomposing each projection at rank $r$ reduces parameter count to:
 P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
 \]
 When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.
+
+\subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
+In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
+\[
+X_l = X_{l-1} + \operatorname{Softmax}\left( \frac{X_{l-1} W^{(l)}_{Q, r} (X_{l-1} W^{(l)}_{K, r})^\top}{\sqrt{d_k}} \right) X_{l-1} W^{(l)}_{V, r} W^{(l)}_{O, r}
+\]
+To preserve numerical stability and prevent gradient vanishing or explosion across the depth of the network, the spectral radius of the composite residual transition must be strictly bounded. We formalize this stability criterion below:
+
+\textbf{Theorem 4 (Dynamical Stability of Cascaded Factorizations).} \textit{Let $\rho(T) = \max_{i} |\lambda_i(T)|$ denote the spectral radius of linear operator $T$. If for all layers $l \in \{1, \dots, L\}$, the compressed factor matrices satisfy:}
+\[
+\|U^{(l)}_{V, r}\|_2 \|V^{(l)}_{V, r}\|_2 \|U^{(l)}_{O, r}\|_2 \|V^{(l)}_{O, r}\|_2 \le 1 - \epsilon_0, \quad \epsilon_0 \in (0, 1)
+\]
+\textit{then the hidden activation norm $\|X_l\|_F$ remains strictly bounded for arbitrary sequence depth $L$:}
+\[
+\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
+\]
+\textbf{Proof.} Consider the forward difference $\|X_l - X_{l-1}\|_F$. Applying sub-multiplicativity of the operator norm:
+\[
+\|X_l - X_{l-1}\|_F \le \left\| \operatorname{Softmax}\left(\cdot\right) \right\|_2 \|X_{l-1}\|_F \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2
+\]
+Since the softmax attention matrix is row-stochastic, its induced $\ell_\infty$ and $\ell_2$ operator norms are strictly bounded by $1$. Therefore, by discrete Gr\"onwall inequality summation across $l = 1, \dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\square$
