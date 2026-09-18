@@ -1,0 +1,5 @@
+[main 8186c549b] feat(benchmark): record successful a3 on distilbert-sst2 (Acc: 88.99%, F1: 0.8933)
+ 7 files changed, 354 insertions(+), 16 deletions(-)
+ create mode 100644 results/bs_test/bs_64/a3_stats.json
+ create mode 100644 results/bs_test/bs_64/distilbert_sst2_a3_full_metrics.json
+branch 'main' set up to track 'origin/main'.

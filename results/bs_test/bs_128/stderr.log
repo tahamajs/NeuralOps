@@ -1,9 +1,69 @@
-Traceback (most recent call last):
-  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 19, in <module>
-    import torch
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\__init__.py", line 274, in <module>
-    _load_dll_libraries()
-    ~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\__init__.py", line 257, in _load_dll_libraries
-    raise err
-OSError: [WinError 1455] The paging file is too small for this operation to complete. Error loading "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\lib\cufft64_11.dll" or one of its dependencies.
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from 'framework.eval_all_models_datasets' (consider renaming 'D:\\SVD_Project\\Codes\\framework\\eval_all_models_datasets.py' if it has the same name as a library you intended to import)
+2026-09-18 20:50:44,261 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-18 20:50:44,441 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 3460.26it/s]
+2026-09-18 20:50:44,915 [INFO] QwenQualitySweep: model=models/distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-18 20:50:44,916 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-18 20:50:44,916 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:50:44,916 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-18 20:50:44,916 [INFO] QwenQualitySweep:   model:             models/distilbert_sst2
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   family:            bert
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   batch_size:        128
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-18 20:50:44,917 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-18 20:50:44,918 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:50:44,919 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-18 20:50:49,521 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0367
+2026-09-18 20:50:53,614 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0312
+2026-09-18 20:50:56,557 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.0591
+2026-09-18 20:50:59,206 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0854
+2026-09-18 20:51:01,876 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0582
+2026-09-18 20:51:04,523 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.1628
+2026-09-18 20:51:07,159 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0678
+2026-09-18 20:51:09,806 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0441
+2026-09-18 20:51:09,816 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\bs_test\bs_128\finetuned_model.pt
+2026-09-18 20:51:09,880 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-18 20:51:12,062 [INFO] QwenQualitySweep: Prepared 7 eval batches and 50 train batches directly on GPU.
+2026-09-18 20:51:12,848 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.83%
+2026-09-18 20:51:12,896 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:51:12,897 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-18 20:51:12,897 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-18 20:51:12,897 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-18 20:51:12,897 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-18 20:51:12,898 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-18 20:51:12,898 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-18 20:51:12,898 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:51:12,898 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: a3 (recovery_steps=50, batch_size=128, optimizer=adamw)
+2026-09-18 20:51:15,884 [INFO] QwenQualitySweep: module=a3 path=legacy_bert
+2026-09-18 20:51:15,885 [INFO] QwenQualitySweep: module=a3 injection summary: 24 SVDLinear layers active
+2026-09-18 20:51:15,888 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for a3 (lr=2.0e-04)
+2026-09-18 20:51:15,949 [INFO] framework.utils.compat: Recovery fine-tuning selected 8467970 trainable parameters across 50 tensors.
+2026-09-18 20:51:15,950 [INFO] framework.utils.compat: Discovered 50 trainable tensors (8467970 params)
+2026-09-18 20:51:15,954 [INFO] QwenQualitySweep: LoRA fine-tuning: 8467970 trainable parameters across 50 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-18 20:51:16,197 [INFO] QwenQualitySweep: Step 1/50 took 0.24s (loss=0.0600, bs=128, micro=128)
+2026-09-18 20:51:16,870 [INFO] QwenQualitySweep: Step 5/50 took 0.17s (loss=0.0495, bs=128, micro=128)
+2026-09-18 20:51:17,709 [INFO] QwenQualitySweep: Step 10/50 took 0.17s (loss=0.0791, bs=128, micro=128)
+2026-09-18 20:51:18,583 [INFO] QwenQualitySweep: Step 15/50 took 0.17s (loss=0.2018, bs=128, micro=128)
+2026-09-18 20:51:19,448 [INFO] QwenQualitySweep: Step 20/50 took 0.17s (loss=0.1536, bs=128, micro=128)
+2026-09-18 20:51:20,504 [INFO] QwenQualitySweep: Step 25/50 took 0.19s (loss=0.0518, bs=128, micro=128)
+2026-09-18 20:51:21,488 [INFO] QwenQualitySweep: Step 30/50 took 0.19s (loss=0.1121, bs=128, micro=128)
+2026-09-18 20:51:22,439 [INFO] QwenQualitySweep: Step 35/50 took 0.18s (loss=0.0583, bs=128, micro=128)
+2026-09-18 20:51:23,423 [INFO] QwenQualitySweep: Step 40/50 took 0.17s (loss=0.0877, bs=128, micro=128)
+2026-09-18 20:51:24,372 [INFO] QwenQualitySweep: Step 45/50 took 0.17s (loss=0.0702, bs=128, micro=128)
+2026-09-18 20:51:25,211 [INFO] QwenQualitySweep: Step 50/50 took 0.17s (loss=0.0781, bs=128, micro=128)
+2026-09-18 20:51:25,834 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\bs_test\bs_128\distilbert_sst2_a3_full_metrics.json
+2026-09-18 20:51:25,965 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\bs_test\bs_128\checkpoints\a3\weights.pt (module_params=72, lora_params=4)
+2026-09-18 20:51:26,215 [INFO] QwenQualitySweep: [1/1] a3 -> PASS 90.37% (F1: 0.9043, Peak VRAM: 597.66 MB)
+2026-09-18 20:51:26,232 [INFO] HFGitExporter: [Automation] Run distilbert-sst2 / a3 is SUCCESSFUL (acc=90.37% >= 56.00%). Starting automated HF export to tahamajs/svd-linear-attention-distilbert-sst2-a3 and Git recording.
+2026-09-18 20:51:27,414 [INFO] httpx: HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 403 Forbidden"
+2026-09-18 20:51:27,647 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/tahamajs/svd-linear-attention-distilbert-sst2-a3 "HTTP/1.1 404 Not Found"
+2026-09-18 20:51:27,647 [WARNING] HFGitExporter: Hugging Face upload failed for tahamajs/svd-linear-attention-distilbert-sst2-a3: (Request ID: Root=1-6aad7321-12e3826a45ed23f156738735;de85bc5b-7124-483b-ba8a-c95aaf44c66e)
+
+403 Forbidden: You don't have the rights to create a model under the namespace "tahamajs".
+Cannot access content at: https://huggingface.co/api/repos/create.
+Make sure your token has the correct permissions.
+2026-09-18 20:51:27,661 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\a3_compressor.md

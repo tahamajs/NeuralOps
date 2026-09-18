@@ -58,3 +58,23 @@ Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_
 Cannot access content at: https://huggingface.co/api/repos/create.
 Make sure your token has the correct permissions.
 2026-09-18 20:50:22,070 [INFO] HFGitExporter: Updated documentation in D:\SVD_Project\Docs\content\compressions\a3_compressor.md
+From https://github.com/tahamajs/SVD_linear_Attention
+ * branch                main       -> FETCH_HEAD
+fatal: It seems that there is already a rebase-merge directory, and
+I wonder if you are in the middle of another rebase.  If that is the
+case, please try
+	git rebase (--continue | --abort | --skip)
+If that is not the case, please
+	rm -fr ".git/rebase-merge"
+and run me again.  I am stopping in case you still have something
+valuable there.
+
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   1feaa7e90..8186c549b  main -> main
+2026-09-18 20:50:26,449 [INFO] HFGitExporter: Successfully committed and pushed Git changes to main: 8186c549
+2026-09-18 20:50:26,669 [INFO] QwenQualitySweep: ================================================================================
+2026-09-18 20:50:26,669 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-18 20:50:26,676 [INFO] QwenQualitySweep: 
+Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+    a3   PASS   88.99%    -1.84% 0.8933                 24            1.09x  550.5 MB               0.53              0.61
+2026-09-18 20:50:26,676 [INFO] QwenQualitySweep: ================================================================================
