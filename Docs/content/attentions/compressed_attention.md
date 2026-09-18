@@ -220,6 +220,7 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.80%** | +25.80% | 0.7560 | 1.00x | 0 | N/A | 2026-09-18 |
+| **roberta-base** | ag_news | `PASS` | 74.50% | **35.00%** | -39.50% | 0.2947 | 1.00x | 0 | N/A | 2026-09-18 |
 
 
 > [!NOTE]
