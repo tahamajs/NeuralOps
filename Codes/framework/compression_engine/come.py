@@ -92,11 +92,23 @@ class CoMeBridge(nn.Module):
             return hidden_states
 
         # BaseModelOutput or objects with last_hidden_state
+        modified = False
         if hasattr(hidden_states, "last_hidden_state"):
             t = getattr(hidden_states, "last_hidden_state")
             if isinstance(t, torch.Tensor):
                 setattr(hidden_states, "last_hidden_state", self._bridge_tensor(t))
-                return hidden_states
+                modified = True
+                
+        if hasattr(hidden_states, "hidden_states"):
+            hs = getattr(hidden_states, "hidden_states")
+            if isinstance(hs, tuple) and len(hs) > 0 and isinstance(hs[-1], torch.Tensor):
+                new_hs = list(hs)
+                new_hs[-1] = self._bridge_tensor(new_hs[-1])
+                setattr(hidden_states, "hidden_states", tuple(new_hs))
+                modified = True
+                
+        if modified:
+            return hidden_states
 
         # Raw tensor return
         if isinstance(hidden_states, torch.Tensor):

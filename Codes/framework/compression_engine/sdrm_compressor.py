@@ -96,8 +96,8 @@ class SDRMCompressor(BaseCompressor):
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
         cfg = getattr(self.model, 'config', None)
-        num_heads = getattr(cfg, 'num_attention_heads', None)
-        num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
+        num_heads = getattr(cfg, 'num_attention_heads', getattr(module, 'num_attention_heads', None))
+        num_kv_heads = getattr(cfg, 'num_key_value_heads', getattr(module, 'num_key_value_heads', None))
         is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
         
         name_l = name.lower()
