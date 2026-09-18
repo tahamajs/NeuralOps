@@ -271,7 +271,16 @@ export async function bootstrapApp() {
             const s = TOUR_STEPS[tourStep % TOUR_STEPS.length];
             if (tourLabel) {
                 tourLabel.style.display = 'block';
-                tourLabel.innerText = s.label;
+                tourLabel.classList.add('show');
+                tourLabel.innerHTML = `<strong>${s.label}</strong>`;
+            }
+            if (s.target) {
+                const mesh = selectPartIn3D(s.target, interactableMeshes);
+                if (mesh) {
+                    updateInspectorWithNode(mesh.userData, mesh.userData.side === 'baseline', store.get('activeResearchModule'), store.get('currentModel'));
+                }
+            } else if (s.fullFit) {
+                clearSelectionHighlight();
             }
             smoothFlyCamera(camera, controls, s.y, s.dist);
             tourStep++;
