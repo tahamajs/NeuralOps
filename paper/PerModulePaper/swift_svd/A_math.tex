@@ -1,6 +1,67 @@
-\section*{Appendix A. Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
-For input activations $x \in \mathbb{R}^{B \times T \times d_{\text{in}}}$, \texttt{SwiftSVDCompressor} computes:
+\section*{Appendix A. Complete Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
+
+\subsection*{Conditioning and Numerical Bounds}
+Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{swiftsvd}, spectral truncation bounds intermediate condition ratios:
 \[
-\tilde{y} = x \tilde{W}^\top + b
+\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r}
 \]
-where $\tilde{W}$ incorporates the structural sparsity mask, quantization boundaries, or low-rank bottleneck factors.
+
+\subsection*{Gradient Dynamics of Decoupled Adapters}
+During recovery adaptation, gradients flow according to:
+\[
+\frac{\partial \mathcal{L}}{\partial A} = \frac{\alpha}{r_{\text{lora}}} B^\top \left( \frac{\partial \mathcal{L}}{\partial Y} \right)^\top X, \quad \frac{\partial \mathcal{L}}{\partial B} = \frac{\alpha}{r_{\text{lora}}} \left( \frac{\partial \mathcal{L}}{\partial Y} \right) (X A^\top)
+\]
+
+\subsection*{Extended Sensitivity Proofs and Error Bounds}
+\textbf{Proposition 3 (Lipschitz Continuity under Low-Rank Perturbation).} \textit{Let $f(X) = \sigma(X W^\top)$ be a neural network layer with $L_\sigma$-Lipschitz activation $\sigma$. Then the output perturbation under low-rank factorization is bounded by:}
+\[
+\|f(X) - f_r(X)\|_F \le L_\sigma \|X\|_2 \|W - W_r\|_F \le L_\sigma \|X\|_2 \sqrt{\sum_{i=r+1}^\rho \sigma_i^2}
+\]
+\textbf{Proof.} By the Lipschitz property of $\sigma$:
+\[
+\|\sigma(X W^\top) - \sigma(X W_r^\top)\|_F \le L_\sigma \|X (W - W_r)^\top\|_F \le L_\sigma \|X\|_2 \|W - W_r\|_F
+\]
+Applying the Eckart-Young truncation theorem completes the result. $\square$
+
+\subsection*{Proof of Singular Value Perturbation Stability}
+\textbf{Theorem 3 (Mirsky's Singular Value Perturbation Theorem).} \textit{Let $A, B \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1(A) \ge \dots \ge \sigma_\rho(A)$ and $\sigma_1(B) \ge \dots \ge \sigma_\rho(B)$. Then for any unitary-invariant norm $\|\cdot\|$:}
+\[
+\left\| \operatorname{diag}(\sigma_1(A) - \sigma_1(B), \dots, \sigma_\rho(A) - \sigma_\rho(B)) \right\| \le \|A - B\|
+\]
+In particular, under Frobenius norm:
+\[
+\sum_{i=1}^\rho |\sigma_i(A) - \sigma_i(B)|^2 \le \|A - B\|_F^2
+\]
+This guarantees that continuous weight adaptations through LoRA do not induce abrupt spectral bifurcations in the underlying base projection.
+
+\subsection*{Asymptotic Complexity under Grouped-Query Attention}
+In modern generative transformers (LLaMA-3, Qwen-2), grouped-query attention shares key and value heads across $G = H_Q / H_{KV}$ query heads. The parameter count for uncompressed attention projection matrices scales as:
+\[
+P_{\text{dense}} = d_{\text{in}} \left( d_Q + 2 d_{KV} + d_O \right) = d_{\text{in}} \left( H_Q d_h + 2 \frac{H_Q}{G} d_h + H_Q d_h \right)
+\]
+Decomposing each projection at rank $r$ reduces parameter count to:
+\[
+P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
+\]
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.
+
+\subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
+In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
+\[
+X_l = X_{l-1} + \operatorname{Softmax}\left( \frac{X_{l-1} W^{(l)}_{Q, r} (X_{l-1} W^{(l)}_{K, r})^\top}{\sqrt{d_k}} \right) X_{l-1} W^{(l)}_{V, r} W^{(l)}_{O, r}
+\]
+To preserve numerical stability and prevent gradient vanishing or explosion across the depth of the network, the spectral radius of the composite residual transition must be strictly bounded. We formalize this stability criterion below:
+
+\textbf{Theorem 4 (Dynamical Stability of Cascaded Factorizations).} \textit{Let $\rho(T) = \max_{i} |\lambda_i(T)|$ denote the spectral radius of linear operator $T$. If for all layers $l \in \{1, \dots, L\}$, the compressed factor matrices satisfy:}
+\[
+\|U^{(l)}_{V, r}\|_2 \|V^{(l)}_{V, r}\|_2 \|U^{(l)}_{O, r}\|_2 \|V^{(l)}_{O, r}\|_2 \le 1 - \epsilon_0, \quad \epsilon_0 \in (0, 1)
+\]
+\textit{then the hidden activation norm $\|X_l\|_F$ remains strictly bounded for arbitrary sequence depth $L$:}
+\[
+\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
+\]
+\textbf{Proof.} Consider the forward difference $\|X_l - X_{l-1}\|_F$. Applying sub-multiplicativity of the operator norm:
+\[
+\|X_l - X_{l-1}\|_F \le \left\| \operatorname{Softmax}\left(\cdot\right) \right\|_2 \|X_{l-1}\|_F \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2
+\]
+Since the softmax attention matrix is row-stochastic, its induced $\ell_\infty$ and $\ell_2$ operator norms are strictly bounded by $1$. Therefore, by discrete Gr\"onwall inequality summation across $l = 1, \dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\square$

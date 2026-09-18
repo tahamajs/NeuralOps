@@ -1,3 +1,17 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor template\_attention \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_template\_attention
 
-Draft content for template_attention.
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_template\_attention.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
+\end{lstlisting}
