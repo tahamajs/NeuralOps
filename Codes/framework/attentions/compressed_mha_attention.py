@@ -109,13 +109,10 @@ class CompressedDistilBertAttention(BaseAttention):
         self.is_decoder: bool = bool(getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes))
         self.is_nested_encoder: bool = False
 
-        rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
-        if rank is None and "rank_qkv" not in kwargs:
-            rank_val = max(rank_qkv, min(384, self.all_head_size + 2 * self.kv_head_size, self.hidden_size))
+        h_sz = self.hidden_size
+        rank_val = rank or kwargs.get("rank_qkv", rank_qkv if "rank_qkv" in kwargs else h_sz)
         self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
-        out_r = rank or kwargs.get("rank_out", rank_out)
-        if rank is None and "rank_out" not in kwargs:
-            out_r = max(rank_out, min(384, self.all_head_size, self.hidden_size))
+        out_r = rank or kwargs.get("rank_out", rank_out if "rank_out" in kwargs else h_sz)
         self.rank_out = min(out_r, self.all_head_size, self.hidden_size)
         self.lora_rank = getattr(cfg, "lora_rank", lora_rank)
         self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
@@ -216,7 +213,8 @@ class CompressedDistilBertAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+            if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
                 w_o = w_o.t()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -521,13 +519,22 @@ def inject_compressed_mha(
 
     layer = target
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    if old_attn is None and layer is not None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = getattr(cand, "self", cand)
+                    break
+
+    if model_config is None and old_attn is not None:
+        model_config = getattr(old_attn, "config", None)
 
     try:
-        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 384))
-        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 384))
-        dropout = getattr(comp_config, "dropout", 0.1)
+        h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
+        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
+        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
+        dropout = getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1
         new_attn = CompressedDistilBertAttention(
             model_config=model_config,
             rank_qkv=rank_qkv,
@@ -551,6 +558,10 @@ def inject_compressed_mha(
                 layer.attention.self = new_attn
             else:
                 layer.attention = new_attn
+        if old_attn is not None:
+            new_attn.train(old_attn.training)
+        elif layer is not None and hasattr(layer, 'training'):
+            new_attn.train(layer.training)
         return new_attn
     except Exception as e:
         logger.error(f"inject_compressed_mha: failed: {e}")
