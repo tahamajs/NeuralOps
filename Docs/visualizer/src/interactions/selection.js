@@ -154,5 +154,15 @@ export function selectPartIn3D(target, interactableMeshes = [], options = {}) {
         selectionPointLight.position.set(primaryMesh.position.x, primaryMesh.position.y, (primaryMesh.position.z || 0) + 1.2);
     }
 
+    if (selectionHaloRing) {
+        const u = primaryMesh.userData || {};
+        const radius = Math.max(0.75, (u.width || 1.2) * 0.72);
+        selectionHaloRing.scale.set(radius, radius, 1);
+        selectionHaloRing.position.set(primaryMesh.position.x, primaryMesh.position.y, (primaryMesh.position.z || 0) + (u.depth ? u.depth / 2 : 0.4) + 0.08);
+        selectionHaloRing.material.color.setHex(hexColor);
+        selectionHaloRing.material.opacity = 0.85;
+        selectionHaloRing.visible = true;
+    }
+
     return primaryMesh;
 }
