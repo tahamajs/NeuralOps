@@ -6,8 +6,8 @@
     <title>Attention Lab · 3D Neural Architecture Atlas</title>
     <link rel="stylesheet" href="style.css">
     <!-- KaTeX Math Typesetting -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
     <!-- Import map for Vanilla Three.js + Addons -->
     <script type="importmap">
       {
@@ -19,22 +19,29 @@
     </script>
 </head>
 <body class="app">
-    <div id="fps-counter">—</div>
-    <div id="color-legend"></div>
-    <div id="tour-step-label"></div>
+    <!-- WebGL Fallback Notification (Displays only if WebGL fails to initialize) -->
+    <div id="webgl-fallback" class="webgl-fallback-banner" style="display: none;" role="alert">
+        <strong>⚠️ WebGL Accelerated Context Unavailable:</strong> 
+        Your browser or environment could not initialize WebGL. Please ensure hardware acceleration is enabled in Chrome/Firefox/Safari.
+    </div>
+
+    <div id="fps-counter" aria-label="Real-time frames per second" role="status">—</div>
+    <div id="color-legend" role="region" aria-label="Node Color Palette Legend"></div>
+    <div id="tour-step-label" role="status" aria-live="polite"></div>
+
     <!-- Scene Wrap with WebGL Canvas and SVG Leader Guides -->
-    <section id="scene-wrap" class="scene-wrap" aria-label="Spatial architecture comparison">
-        <canvas id="webgl-canvas" aria-label="Interactive 3D architecture" data-engine="three.js"></canvas>
+    <section id="scene-wrap" class="scene-wrap" aria-label="Spatial 3D Architecture Comparison">
+        <canvas id="webgl-canvas" aria-label="Interactive 3D neural architecture graph" role="img" data-engine="three.js"></canvas>
         
         <!-- Screen-space Dynamic Leader Guides & Callout Labels -->
-        <div id="labels" class="labels-container">
+        <div id="labels" class="labels-container" aria-hidden="true">
             <svg id="label-guides" class="label-guides" aria-hidden="true"></svg>
             <div id="callout-badges" class="callout-badges"></div>
         </div>
     </section>
 
-    <!-- Top Navigation Header (Polymetis / Attention Lab Style) -->
-    <header class="topbar">
+    <!-- Top Navigation Header -->
+    <header class="topbar" role="banner">
         <div>
             <div class="eyebrow">NEURAL ARCHITECTURE ATLAS · 241 RESEARCH MODULES</div>
             <h1>Attention Lab <span>/ Transformer Visualizer</span></h1>
@@ -42,36 +49,36 @@
 
         <div class="top-actions">
             <!-- 3D / 2D View Switcher -->
-            <div class="view-toggle" role="tablist" aria-label="View Mode">
-                <button id="btn-view-3d" class="active" role="tab" aria-selected="true" title="3D Spatial Perspective">3D</button>
-                <button id="btn-view-2d" role="tab" aria-selected="false" title="2D Front Orthographic View">2D</button>
+            <div class="view-toggle" role="tablist" aria-label="Perspective View Mode">
+                <button id="btn-view-3d" class="active" role="tab" aria-selected="true" aria-controls="scene-wrap" title="3D Spatial Perspective">3D</button>
+                <button id="btn-view-2d" role="tab" aria-selected="false" aria-controls="scene-wrap" title="2D Front Orthographic View">2D</button>
             </div>
 
             <!-- Engine Status Dot -->
-            <div class="status ready" id="status-pill" title="Engine Status">
+            <div class="status ready" id="status-pill" title="Engine Status" role="status">
                 <i></i>
                 <span id="status-text">Ready</span>
             </div>
 
             <!-- Quick Module Selector -->
             <div class="quick-select-box">
-                <select id="quick-module-select" class="quick-module-select" title="Instantly select any of the 241 research attention & compression modules">
+                <select id="quick-module-select" class="quick-module-select" aria-label="Quick pick research module" title="Instantly select any of the 241 research attention & compression modules">
                     <option value="" disabled selected>⚡ Quick Pick (241 Modules)...</option>
                 </select>
             </div>
 
             <!-- Module Library Modal Trigger -->
-            <button id="btn-open-catalog" class="round-button btn-catalog" title="Browse all 241 research modules">
+            <button id="btn-open-catalog" class="round-button btn-catalog" title="Browse all 241 research modules" aria-haspopup="dialog" aria-controls="module-modal">
                 📚 Library (241)
             </button>
 
             <!-- Deep Inspector Toggle -->
-            <button id="btn-toggle-inspector" class="round-button" title="Toggle Deep Architecture Inspector">
+            <button id="btn-toggle-inspector" class="round-button" title="Toggle Deep Architecture Inspector" aria-expanded="false" aria-controls="inspector">
                 🔬 Inspector
             </button>
 
             <!-- Share/Permalink Button -->
-            <button id="btn-share" class="round-button" title="Copy permalink to current module" onclick="(function(){
+            <button id="btn-share" class="round-button" title="Copy permalink to current module" aria-label="Copy permalink" onclick="(function(){
                 const url = window.location.href;
                 navigator.clipboard.writeText(url).then(()=>{
                     const t = document.createElement('div');
@@ -85,7 +92,7 @@
             </button>
 
             <!-- Keyboard shortcuts hint button -->
-            <button class="round-button" title="Keyboard Shortcuts: Space=Play/Pause, R=Reset Camera, M=Module Library, 1-6=Layer nav, Esc=Close" style="opacity:0.65;font-size:11px;">
+            <button class="round-button" title="Keyboard Shortcuts: Space=Play/Pause, R=Reset Camera, M=Module Library, 1-6=Layer nav, Esc=Close" aria-label="Keyboard shortcuts guide" style="opacity:0.65;font-size:11px;">
                 ⌨ Keys
             </button>
         </div>
@@ -120,7 +127,7 @@
     </nav>
 
     <!-- Floating Left Stage Detail Card -->
-    <div class="detail-card" id="detail-card" aria-label="Selected Stage Details">
+    <div class="detail-card" id="detail-card" role="region" aria-label="Selected Stage Details">
         <div class="detail-kicker" id="detail-kicker">STAGE 01 · INPUT EMBEDDINGS</div>
         <h2 id="detail-title">Input Embeddings</h2>
         <p id="detail-desc">Token sequences enter the network and project into continuous latent representations through the embedding lookup table.</p>
@@ -142,13 +149,13 @@
                 <strong id="fact-delta" style="color: var(--cyan);">93.8 MB</strong>
             </div>
         </div>
-        <button id="btn-detail-inspect" class="detail-inspect-btn" title="Open complete telemetry and mathematical formulation">
+        <button id="btn-detail-inspect" class="detail-inspect-btn" title="Open complete telemetry and mathematical formulation" aria-label="Open complete telemetry and formulas">
             Inspect Full Breakdown &amp; Formulas ↗
         </button>
     </div>
 
     <!-- Floating Right Head-to-Head Comparison Card -->
-    <div class="compare-card" id="compare-card" aria-label="Head-to-head comparison">
+    <div class="compare-card" id="compare-card" role="region" aria-label="Head-to-head comparison">
         <div class="compare-head">HEAD-TO-HEAD COMPARISON</div>
         <div class="compare-row">
             <span>Model:</span>
@@ -178,27 +185,27 @@
 
     <!-- Floating Bottom Control Dock -->
     <div class="control-dock" role="toolbar" aria-label="Playback and timeline controls">
-        <button id="btn-play-pause" class="primary" title="Toggle particle flow (Space)">⏸ Pause</button>
-        <select id="select-speed" class="speed" title="Particle flow speed">
+        <button id="btn-play-pause" class="primary" title="Toggle particle flow (Space)" aria-label="Toggle token flow animation">⏸ Pause</button>
+        <select id="select-speed" class="speed" title="Particle flow speed" aria-label="Particle flow speed multiplier">
             <option value="0.3">0.3x</option>
             <option value="0.5">0.5x</option>
             <option value="1.0" selected>1.0x</option>
             <option value="2.0">2.0x</option>
         </select>
-        <div class="timeline">
+        <div class="timeline" role="group" aria-label="Token lifecycle timeline">
             <span class="timecode" id="timeline-step">01 Input</span>
-            <input type="range" id="timeline-scrubber" min="0" max="6" step="1" value="0" title="Scrub through token lifecycle">
+            <input type="range" id="timeline-scrubber" min="0" max="6" step="1" value="0" title="Scrub through token lifecycle" aria-label="Token lifecycle position scrubber">
             <span class="timecode" id="timeline-label">Input Embeddings</span>
         </div>
-        <!-- Tour / Legend / Pin — in dock so they are never covered by nav overlay -->
-        <button id="btn-auto-tour" class="secondary" title="Auto camera tour through all layers (8 stages × 3.2s)" onclick="window.toggleTour && window.toggleTour()">▶ Tour</button>
-        <button id="btn-legend-toggle" class="secondary" title="Node color legend" onclick="(function(){var l=document.getElementById('color-legend');if(l){l.style.display=l.style.display==='none'||!l.style.display?'block':'none';}})()">🎨</button>
-        <button id="btn-pin-module" class="secondary" title="Pin current module for comparison" onclick="window.pinCurrentModule && window.pinCurrentModule()">📌</button>
-        <button id="btn-reset-cam" class="secondary" title="Auto-Fit Camera to Active Model (R)" onclick="smoothFlyCamera && smoothFlyCamera(maxGraphHeight*0.5, Math.max(18, maxGraphHeight*1.35))">⊡ Fit</button>
+        <!-- Tour / Legend / Pin -->
+        <button id="btn-auto-tour" class="secondary" title="Auto camera tour through all layers (8 stages × 3.2s)" aria-label="Start automated architecture camera tour" onclick="window.toggleTour && window.toggleTour()">▶ Tour</button>
+        <button id="btn-legend-toggle" class="secondary" title="Node color legend" aria-label="Toggle color legend" onclick="(function(){var l=document.getElementById('color-legend');if(l){l.style.display=l.style.display==='none'||!l.style.display?'block':'none';}})()">🎨</button>
+        <button id="btn-pin-module" class="secondary" title="Pin current module for comparison" aria-label="Pin module for comparison" onclick="window.pinCurrentModule && window.pinCurrentModule()">📌</button>
+        <button id="btn-reset-cam" class="secondary" title="Auto-Fit Camera to Active Model (R)" aria-label="Auto-fit camera view" onclick="window.smoothFlyCamera && window.smoothFlyCamera((window.maxGraphHeight || 16)*0.5, Math.max(18, (window.maxGraphHeight || 16)*1.35))">⊡ Fit</button>
     </div>
 
     <!-- Viewport Split-Screen Legends -->
-    <div class="legend">
+    <div class="legend" role="note" aria-label="Architecture color key">
         <span><i style="background: #3c5d73;"></i> Dense Baseline ($O(N^2)$)</span>
         <span><i style="background: #22d5f7;"></i> Compressed ($U \times V$, MoE, MLA)</span>
         <span><i style="background: #10b981;"></i> Residual Skip Highway (+)</span>
@@ -246,13 +253,13 @@
     </div>
 
     <!-- Full Deep Inspector Drawer (slides out on request) -->
-    <aside id="inspector" class="inspector-drawer hidden">
+    <aside id="inspector" class="inspector-drawer hidden" role="dialog" aria-modal="false" aria-label="Deep Architecture Inspector">
         <div class="drawer-header">
             <div>
                 <span id="insp-type-badge" class="badge">DENSE</span>
                 <h3 id="insp-title">Layer Name</h3>
             </div>
-            <button id="btn-close-insp" class="btn-icon-only" aria-label="Close details">✕</button>
+            <button id="btn-close-insp" class="btn-icon-only" aria-label="Close Inspector Drawer">✕</button>
         </div>
         <div class="drawer-body">
             <div class="stat-grid">
@@ -394,8 +401,8 @@
                     <span id="insp-layer-count" style="font-size: 10px; color: var(--text-faint); font-family: var(--font-mono);">0 modules</span>
                 </div>
                 <div class="tree-search-wrapper">
-                    <input type="text" id="tree-search-input" class="tree-search-input" placeholder="Search modules (e.g. q_proj, layer 0)..." autocomplete="off" spellcheck="false">
-                    <button id="btn-tree-clear" class="btn-clear-search" title="Clear filter">✕</button>
+                    <input type="text" id="tree-search-input" class="tree-search-input" placeholder="Search modules (e.g. q_proj, layer 0)..." autocomplete="off" spellcheck="false" aria-label="Search modules in hierarchy">
+                    <button id="btn-tree-clear" class="btn-clear-search" title="Clear filter" aria-label="Clear search">✕</button>
                 </div>
                 <div id="layer-tree-container" class="layer-tree-container" role="tree" aria-label="Layer Architecture Tree"></div>
             </div>
@@ -415,29 +422,29 @@
             </div>
 
             <div class="modal-search-row">
-                <input type="text" id="modal-search-input" class="modal-search-input" placeholder="Search 241 modules by name, algorithm, keyword (e.g. Mamba, CUR, AASVD, EAT, ToMoE)..." autocomplete="off">
+                <input type="text" id="modal-search-input" class="modal-search-input" placeholder="Search 241 modules by name, algorithm, keyword (e.g. Mamba, CUR, AASVD, EAT, ToMoE)..." autocomplete="off" aria-label="Search 241 research modules">
                 <div class="modal-controls-subrow">
-                    <div id="modal-category-pills" class="modal-category-pills">
-                        <button class="cat-pill active" data-cat="all">All (240)</button>
-                        <button class="cat-pill" data-cat="Low-Rank SVD &amp; Factorization">⚡ SVD &amp; Low-Rank</button>
-                        <button class="cat-pill" data-cat="Mixture of Experts &amp; Routing">🔀 Mixture-of-Experts</button>
-                        <button class="cat-pill" data-cat="Linear Attention &amp; State-Space (SSM)">🐍 Linear &amp; SSM</button>
-                        <button class="cat-pill" data-cat="Latent &amp; KV-Cache Compression">🧠 Latent &amp; KV-Cache</button>
-                        <button class="cat-pill" data-cat="Structured Pruning &amp; Channel Slicing">✂️ Pruning &amp; Slicing</button>
-                        <button class="cat-pill" data-cat="Dynamic &amp; Efficient Attention">🌟 Dynamic Attention</button>
-                        <button class="cat-pill" data-cat="Quantization &amp; Mixed Precision">💎 Quantization</button>
+                    <div id="modal-category-pills" class="modal-category-pills" role="tablist" aria-label="Filter modules by paradigm">
+                        <button class="cat-pill active" data-cat="all" role="tab" aria-selected="true">All (240)</button>
+                        <button class="cat-pill" data-cat="Low-Rank SVD &amp; Factorization" role="tab" aria-selected="false">⚡ SVD &amp; Low-Rank</button>
+                        <button class="cat-pill" data-cat="Mixture of Experts &amp; Routing" role="tab" aria-selected="false">🔀 Mixture-of-Experts</button>
+                        <button class="cat-pill" data-cat="Linear Attention &amp; State-Space (SSM)" role="tab" aria-selected="false">🐍 Linear &amp; SSM</button>
+                        <button class="cat-pill" data-cat="Latent &amp; KV-Cache Compression" role="tab" aria-selected="false">🧠 Latent &amp; KV-Cache</button>
+                        <button class="cat-pill" data-cat="Structured Pruning &amp; Channel Slicing" role="tab" aria-selected="false">✂️ Pruning &amp; Slicing</button>
+                        <button class="cat-pill" data-cat="Dynamic &amp; Efficient Attention" role="tab" aria-selected="false">🌟 Dynamic Attention</button>
+                        <button class="cat-pill" data-cat="Quantization &amp; Mixed Precision" role="tab" aria-selected="false">💎 Quantization</button>
                     </div>
                     <div class="modal-sort-container">
                         <span class="sort-label">Sort:</span>
-                        <button class="sort-btn active" data-sort="accuracy" title="Sort by verified GLUE accuracy">🏆 Accuracy</button>
-                        <button class="sort-btn" data-sort="savings" title="Sort by parameter reduction ratio">⚡ Savings</button>
-                        <button class="sort-btn" data-sort="name" title="Sort alphabetically by name">🔤 Name</button>
-                        <button class="sort-btn" data-sort="category" title="Sort grouped by category">📂 Category</button>
+                        <button class="sort-btn active" data-sort="accuracy" title="Sort by verified GLUE accuracy" aria-label="Sort by accuracy">🏆 Accuracy</button>
+                        <button class="sort-btn" data-sort="savings" title="Sort by parameter reduction ratio" aria-label="Sort by savings ratio">⚡ Savings</button>
+                        <button class="sort-btn" data-sort="name" title="Sort alphabetically by name" aria-label="Sort alphabetically">🔤 Name</button>
+                        <button class="sort-btn" data-sort="category" title="Sort grouped by category" aria-label="Sort by category">📂 Category</button>
                     </div>
                 </div>
             </div>
 
-            <div id="modal-module-grid" class="modal-module-grid">
+            <div id="modal-module-grid" class="modal-module-grid" role="region" aria-label="Module Cards Gallery">
                 <!-- Dynamically populated 241 module cards -->
             </div>
         </div>
