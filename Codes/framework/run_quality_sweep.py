@@ -2716,9 +2716,18 @@ def run_single_module_main(args) -> dict:
                 err = "note: recovery_loss_nan"
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
-            # Module claimed compression but did not compress anything
+            # Module claimed compression but did not compress anything.
+            # Also check: was ANY module in the model injected by class-name match?
+            # This catches attention modules that forgot to set is_custom_attention=True.
+            _name_injected = any(
+                name.lower().replace("_", "") in m.__class__.__name__.lower().replace("_", "")
+                for m in model.modules()
+                if m.__class__.__name__ not in ("Module", "Linear", "LayerNorm", "Dropout", "ReLU", "GELU")
+            ) if model is not None else False
             if (
                 name != "full"
+                and not injected
+                and not _name_injected
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("num_injected_attention_layers", 0) == 0
                 and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
