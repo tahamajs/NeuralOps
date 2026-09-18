@@ -240,7 +240,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | **gpt2** | sst2 | `PASS` | N/A | **79.36%** | N/A | 0.7978 | 1.00x | 0 | N/A | 2026-09-15 |
 | **roberta-base** | sst2 | `PASS` | N/A | **78.56%** | N/A | 0.8124 | 1.00x | 0 | N/A | 2026-09-15 |
 | **qwen2.5-0.5b-instruct** | sst2 | `PASS` | N/A | **76.61%** | N/A | 0.7939 | 1.00x | 0 | N/A | 2026-09-14 |
-| **distilbert-sst2** | mnli | `PASS` | N/A | **41.10%** | N/A | 0.3087 | 1.00x | 0 | N/A | 2026-09-16 |
+| **distilbert-sst2** | mnli | `PASS` | N/A | **47.30%** | N/A | 0.3810 | 1.00x | 0 | N/A | 2026-09-18 |
 | **distilbert-sst2** | ag_news | `PASS` | N/A | **49.30%** | N/A | 0.4366 | 1.00x | 0 | N/A | 2026-09-17 |
 | **roberta-base** | ag_news | `PASS` | N/A | **76.90%** | N/A | 0.7442 | 1.00x | 0 | N/A | 2026-09-17 |
 | **gpt2** | ag_news | `PASS` | N/A | **80.50%** | N/A | 0.7968 | 1.00x | 0 | N/A | 2026-09-17 |
