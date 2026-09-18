@@ -2148,7 +2148,7 @@ def run_single_module_main(args) -> dict:
     base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
-        base.config.tokenizer = tokenizer
+        pass  # removed base.config.tokenizer = tokenizer
 
     if os.environ.get("SVD_COMPILE", "0") == "1":
         try:
@@ -2403,6 +2403,11 @@ def run_single_module_main(args) -> dict:
             except Exception as e:
                 LOG.debug("LoRA merge_and_unload failed for %s: %s", module, e)
 
+    for m in base.modules():
+        if hasattr(m, "merge") and callable(m.merge):
+            try: m.merge()
+            except Exception as e: pass
+
     base.to(device)
     base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
     base.to("cpu")
@@ -2523,7 +2528,7 @@ def run_single_module_main(args) -> dict:
         wrap_for_family(model, family)
         model.tokenizer = tokenizer
         if hasattr(model, "config") and model.config is not None:
-            model.config.tokenizer = tokenizer
+            pass  # removed model.config.tokenizer = tokenizer
         typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
         if typ == "attention":
             # For attention replacement modules, merge baseline LoRA adapters into base weights
