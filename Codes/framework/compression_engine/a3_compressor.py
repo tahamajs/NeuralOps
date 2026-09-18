@@ -238,8 +238,8 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = True,
-        max_error: float = 0.40,
-        max_retries: int = 3,
+        max_error: float = 0.50,
+        max_retries: int = 5,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
         tokenizer: Optional[Any] = None,
@@ -500,8 +500,8 @@ class A3Compressor(BaseCompressor):
 
         norm_orig = torch.linalg.norm(W).item()
         
-        # Calculate ceiling BEFORE the retry loop (Option A: max 256, below break-even)
-        r_ceiling = min(int(0.5 * min(in_f, out_f)), 256)
+        # Calculate ceiling BEFORE the retry loop (Option A: max 320, below break-even)
+        r_ceiling = min(int(0.5 * min(in_f, out_f)), 320)
         current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
@@ -535,7 +535,7 @@ class A3Compressor(BaseCompressor):
             # Incrementally increase rank for next retry towards r_ceiling
             if attempt < retries:
                 remaining = max(1, retries - attempt)
-                step = max(8, (r_ceiling - current_r) // remaining)
+                step = max(16, (r_ceiling - current_r) // remaining)
                 current_r = min(current_r + step, r_ceiling)
 
         # After the loop, if error still > max_error at r_ceiling:

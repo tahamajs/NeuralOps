@@ -26,31 +26,39 @@ TASK_CONFIG = {
         "seq_len": 2048,
         "num_labels": 10,
         "batch_size": 8,
-        "lr": 1e-3,
-        "epochs": 40,
+        "lr": 5e-4,
+        "epochs": 100,
         "vocab_size": 20,
     },
     "imdb": {
         "seq_len": 4096,
         "num_labels": 2,
         "batch_size": 4,
-        "lr": 1e-3,
-        "epochs": 40,
+        "lr": 5e-4,
+        "epochs": 100,
         "vocab_size": 256,
     },
 }
 
 
-def build_small_transformer(seq_len, num_labels, vocab_size):
-    """Build a small 4-layer Transformer as used in LRA literature."""
+def build_small_transformer(
+    seq_len: int,
+    num_labels: int,
+    vocab_size: int,
+    hidden_size: int = 256,
+    num_layers: int = 6,
+    num_heads: int = 8,
+    intermediate_size: int = 1024,
+):
+    """Build a standard 6-layer Transformer as used in LRA benchmark literature."""
     config = AutoConfig.from_pretrained("bert-base-uncased")
     config.num_labels = num_labels
     config.vocab_size = vocab_size
-    config.hidden_size = 128
-    config.num_hidden_layers = 4
-    config.num_attention_heads = 4
-    config.intermediate_size = 512
-    config.max_position_embeddings = seq_len
+    config.hidden_size = hidden_size
+    config.num_hidden_layers = num_layers
+    config.num_attention_heads = num_heads
+    config.intermediate_size = intermediate_size
+    config.max_position_embeddings = max(seq_len, 4096)
     model = AutoModelForSequenceClassification.from_config(config)
     return model
 
