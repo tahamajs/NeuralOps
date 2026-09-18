@@ -69,6 +69,15 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
                     parts = line.split("(")
                     if len(parts) > 1:
                         pages = int(parts[1].split()[0])
+            if pages == 0:
+                try:
+                    import Quartz
+                    from CoreFoundation import CFURLCreateFromFileSystemRepresentation, kCFAllocatorDefault
+                    url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault, str(pdf.resolve()).encode("utf-8"), len(str(pdf.resolve())), False)
+                    doc = Quartz.CGPDFDocumentCreateWithURL(url)
+                    pages = Quartz.CGPDFDocumentGetNumberOfPages(doc) if doc else 0
+                except Exception:
+                    pass
             return True, sz, pages
         return False, 0, 0
     except Exception:
@@ -79,7 +88,73 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
                 f.unlink(missing_ok=True)
         return False, 0, 0
 
-def process_stub_module(mod_name: str, out_base: Path) -> dict:
+def process_stub_module(mod_name: str, out_base: Path, enhanced: bool = False) -> dict:
+    mod_dir = out_base / mod_name
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from extract_module_data import extract
+    from enhanced_data_miner import resolve_core_source, mine_real_tables
+    from enhanced_sections import build_enhanced_sections
+
+    data = extract(mod_name)
+    src_file = data.get("source_file")
+    if not src_file:
+        return {"name": mod_name, "success": False, "error": "Source file not found"}
+
+    core_src = resolve_core_source(src_file)
+    core_path = Path(core_src)
+    full_code = core_path.read_text(encoding="utf-8", errors="ignore") if core_path.exists() else ""
+    lines_count = len(full_code.splitlines()) if full_code else data.get("source_lines_count", 0)
+
+    cls_name = data["architecture"].get("class_name")
+    if not cls_name or cls_name == mod_name:
+        classes = re.findall(r"class\s+([A-Za-z0-9_]+)(?:\(([^)]+)\))?:", full_code)
+        for cname, cbase in classes:
+            if any(term in (cbase or "") for term in ["BaseCompressor", "BaseAttention", "nn.Module", "Module"]):
+                cls_name = cname
+                data["architecture"]["base_class"] = cbase.strip()
+                break
+        if not cls_name and classes:
+            cls_name = classes[-1][0]
+
+    base_cls = data["architecture"].get("base_class", "nn.Module")
+    regs = ", ".join(data["architecture"].get("registry_names", [mod_name])) or mod_name
+    mod_title = mod_name.replace("_", " ").title()
+    is_attention = "attentions" in str(core_path)
+
+    if enhanced:
+        t1, t2, t3 = mine_real_tables(mod_name)
+        md_secs, tex_secs = build_enhanced_sections(
+            mod_name=mod_name,
+            mod_title=mod_title,
+            cls_name=cls_name or mod_name,
+            base_cls=base_cls,
+            src_file=str(core_path.relative_to(ROOT)) if core_path.is_relative_to(ROOT) else str(core_path),
+            lines_count=lines_count,
+            regs=regs,
+            is_attention=is_attention,
+            full_code=full_code,
+            init_args=data["architecture"].get("init_args", ""),
+            table1_rows=t1,
+            table2_rows=t2,
+            table3_rows=t3,
+        )
+
+        mod_dir.mkdir(parents=True, exist_ok=True)
+        for fname, content in md_secs.items():
+            (mod_dir / fname).write_text(content.strip() + "\n", encoding="utf-8")
+        for fname, content in tex_secs.items():
+            (mod_dir / fname).write_text(content.strip() + "\n", encoding="utf-8")
+
+        md_parts = [(mod_dir / s).read_text(encoding="utf-8").strip() for s in CANONICAL_MD_ORDER if (mod_dir / s).exists()]
+        (mod_dir / "paper_full.md").write_text("\n\n---\n\n".join(md_parts) + "\n", encoding="utf-8")
+
+        tex_parts = [(mod_dir / s).read_text(encoding="utf-8").strip() for s in CANONICAL_TEX_ORDER if (mod_dir / s).exists()]
+        (mod_dir / "paper_full.tex").write_text("\n\n\n".join(tex_parts) + "\n", encoding="utf-8")
+
+        ok, sz, pages = compile_pdf(mod_dir)
+        return {"name": mod_name, "success": ok, "size": sz, "pages": pages}
+
+def process_stub_module_legacy(mod_name: str, out_base: Path) -> dict:
     mod_dir = out_base / mod_name
     sys.path.insert(0, str(ROOT / "scripts"))
     from extract_module_data import extract
@@ -508,6 +583,8 @@ def main():
     parser.add_argument("--modules", nargs="+", required=True, help="List of modules")
     parser.add_argument("--category", choices=["stub", "template_var"], required=True, help="Category of modules")
     parser.add_argument("--output", default="paper/PerModulePaper", help="Output directory")
+    parser.add_argument("--force", action="store_true", help="Force overwrite existing papers")
+    parser.add_argument("--enhanced", action="store_true", help="Generate enhanced long-form research papers (>= 10 pages)")
 
     args = parser.parse_args()
     out_base = Path(args.output)
@@ -515,7 +592,7 @@ def main():
     results = []
     for mod in args.modules:
         if args.category == "stub":
-            res = process_stub_module(mod, out_base)
+            res = process_stub_module(mod, out_base, enhanced=args.enhanced)
         else:
             res = process_template_var_module(mod, out_base)
         results.append(res)
