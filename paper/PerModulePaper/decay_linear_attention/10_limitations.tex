@@ -12,3 +12,9 @@ The efficacy of \texttt{decay\_linear\_attention} depends on representative cali
 
 \subsection{Numerical Precision Limits}
 Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
+
+\subsection{Long-Context Activation Memory Footprints}
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{decay\_linear\_attention} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
+
+\subsection{Sensitivity to Non-Uniform Calibration Sequences}
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

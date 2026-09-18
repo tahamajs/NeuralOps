@@ -675,13 +675,19 @@ The efficacy of \texttt{decay\_linear\_attention} depends on representative cali
 \subsection{Numerical Precision Limits}
 Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
 
+\subsection{Long-Context Activation Memory Footprints}
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{decay\_linear\_attention} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
+
+\subsection{Sensitivity to Non-Uniform Calibration Sequences}
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.
+
 
 \section{Conclusion}
 This paper formalized the architecture, mathematical formulations, and empirical evaluation of \texttt{decay\_linear\_attention}. By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \texttt{decay\_linear\_attention} effectively alleviates transformer compute and memory overhead.
 
-Empirical evaluations across encoder and decoder backbones confirm that \texttt{decay\_linear\_attention} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery.
+Empirical evaluations across encoder and decoder backbones confirm that \texttt{decay\_linear\_attention} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery across distinct domain datasets and task objectives without inducing catastrophic representation degradation.
 
-The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation and cross-layer weight sharing.
+The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation, non-uniform singular truncation, and cross-layer weight sharing to further diminish memory footprints in next-generation foundation models.
 
 
 \section{Reproducibility Statement}
