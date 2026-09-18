@@ -22,6 +22,8 @@ def main():
     args.module = known.module
     args.output_json = known.output_json
     args.modules = [known.module]
+    # Never let the child read a stale summary.csv — always run fresh
+    args.fresh = True
 
     result = {
         "module": args.module,
@@ -39,15 +41,40 @@ def main():
         # Call the single-module evaluation as a library function
         metrics = run_single_module_main(args)
         result.update({
-            "status": metrics.get("status", "PASS"),
-            "accuracy": metrics.get("accuracy_pct"),
-            "f1": metrics.get("f1_score"),
-            "params_before": metrics.get("total_params_before"),
-            "params_after": metrics.get("total_params_after"),
-            "compression_ratio": metrics.get("compression_rate"),
-            "peak_vram_mb": metrics.get("peak_vram_mb"),
-            "elapsed_s": metrics.get("elapsed_s"),
-            "error": "",
+            # Status and accuracy
+            "status":                       metrics.get("status", "PASS"),
+            "accuracy":                     metrics.get("accuracy_pct", 0.0),
+            "accuracy_pct":                 metrics.get("accuracy_pct", 0.0),
+            # F1 / classification metrics
+            "f1":                           metrics.get("f1_score", 0.0),
+            "f1_score":                     metrics.get("f1_score", 0.0),
+            "f1_macro":                     metrics.get("f1_macro", 0.0),
+            "precision":                    metrics.get("precision", 0.0),
+            "recall":                       metrics.get("recall", 0.0),
+            "val_loss":                     metrics.get("val_loss", 0.0),
+            # Speed / VRAM
+            "peak_vram_mb":                 metrics.get("peak_vram_mb", 0.0),
+            "tokens_per_sec":               metrics.get("tokens_per_sec", 0.0),
+            "elapsed_s":                    metrics.get("elapsed_s", 0.0),
+            # Compression / param counts
+            "params_before":                metrics.get("total_params_before", 0),
+            "params_after":                 metrics.get("total_params_after", 0),
+            "total_params_before":          metrics.get("total_params_before", 0),
+            "total_params_after":           metrics.get("total_params_after", 0),
+            "trainable_recovery_params":    metrics.get("trainable_recovery_params", 0),
+            "compression_ratio":            metrics.get("compression_rate", 1.0),
+            "compression_rate":             metrics.get("compression_rate", 1.0),
+            "compression_ratio_pct":        metrics.get("compression_ratio_pct", 0.0),
+            "flops_reduction_pct":          metrics.get("flops_reduction_pct", 0.0),
+            "num_compressed_layers":        metrics.get("num_compressed_layers", 0),
+            "num_fallback_layers":          metrics.get("num_fallback_layers", 0),
+            "avg_reconstruction_error":     metrics.get("avg_reconstruction_error", ""),
+            "weighted_reconstruction_error":metrics.get("weighted_reconstruction_error", ""),
+            "num_injected_attention_layers":metrics.get("num_injected_attention_layers", 0),
+            "lora_params":                  metrics.get("lora_params", 0),
+            # Path
+            "path":                         metrics.get("path", ""),
+            "error":                        "",
         })
         exit_code = 0
     except Exception as e:
