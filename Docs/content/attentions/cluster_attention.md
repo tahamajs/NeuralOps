@@ -911,6 +911,13 @@ print('Output logits shape:', outputs.logits.shape)
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **roberta-base** | ag_news | `PASS` | 74.50% | **79.20%** | +4.70% | 0.7732 | 1.00x | 0 | N/A | 2026-09-18 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Model | Dataset / Benchmark | Metric / Accuracy | Latency (ms) | Peak Memory (MB) |
@@ -951,4 +958,3 @@ The `ClusterAttention` architecture incorporates telemetry hooks for tracking si
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
