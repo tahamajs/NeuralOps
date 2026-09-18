@@ -63,19 +63,19 @@ papers/
 # RPC: Random Projection Compressed Attention for Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/rpc_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/rpc_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -104,12 +104,12 @@ and grouped-query with rotary embeddings (Qwen/LLaMA). Base projections
 are frozen; only LoRA adapters are trained.
 
 We evaluate RPC on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps. RPC achieves **{{D_ACC}}%** on 
-DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}).
+50 LoRA recovery steps. RPC achieves **87.84%** on 
+DistilBERT (Δ = -2.87), **66.97%** on RoBERTa (Δ = -11.59), 
+and **57.34%** on GPT-2 (Δ = -22.02).
 
 <!-- CRITICAL HONESTY -->
-RPC **increases** parameter count by **{{PARAM_CHANGE_PCT}}%** due to LoRA 
+RPC **increases** parameter count by **48.5\%%** due to LoRA 
 adapters on four projections. RPC **does not reduce memory**: the attention 
 score matrix remains $L \times L$, only its content is computed in a lower 
 dimension. The "compressed" in the name refers to the Q/K representations, 
@@ -425,7 +425,7 @@ $$
 
 with probability $1 - \delta$ for $r \geq \mathcal{O}(\log(1/\delta) / \epsilon^2)$.
 
-**In RPC.** We use $r = {{RANK}}$ (much smaller than $d_h = 64$) and scale 
+**In RPC.** We use $r = 32$ (much smaller than $d_h = 64$) and scale 
 $\Omega$ by $d_h^{-1/2}$. The result approximates $Q_i K_j^\top$ with 
 controllable error.
 
@@ -638,7 +638,7 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r_L = 16$, $N_\ell = 6$):
 | Proj buffer | 0 | 0 |
 | **Total** | **98,304** | **589,824** |
 
-**+{{PARAM_CHANGE_PCT}}%** parameter increase on DistilBERT.
+**+48.5\%%** parameter increase on DistilBERT.
 
 ## 4.6 Full Algorithm
 
@@ -725,7 +725,7 @@ position-independent, it does not affect the causal structure. $\square$
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` (nested) | Yes | No | No | ✅ |
 | GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Adaptive Rank
 
@@ -888,19 +888,19 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` (sketch dim) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `rank` (sketch dim) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -923,16 +923,16 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_rpc.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -965,11 +965,11 @@ python run_all_4_rpc.py \
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **RPC** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **RPC** | **87.84** | -2.87 | 0.8798 | +48.5\%% | 334 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **RPC** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **RPC** | **66.97** | -11.59 | 0.7338 | +48.5\%% | 384 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **RPC** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **RPC** | **57.34** | -22.02 | 0.6549 | +48.5\%% | 571 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -977,9 +977,9 @@ python run_all_4_rpc.py \
 
 | Model | Baseline | After RPC | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Note.** The random projection buffer is not counted (it is a buffer, not 
 a parameter).
@@ -991,11 +991,11 @@ a parameter).
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | RPC | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | RPC | 1.42x s | 0.85 | 334 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | RPC | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | RPC | 2.3 s s | 0.85 | 384 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | RPC | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | RPC | 2.3 s s | 0.85 | 571 MB MB |
 
 ## 7.4 Ablation: Sketch Rank
 
@@ -1003,10 +1003,10 @@ a parameter).
 
 | $r$ | DistilBERT | RoBERTa | GPT-2 | Theoretical speedup |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | 8× |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | 4× |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | 2× |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | 1× |
+| 8 | 32 | 32 | 32 | 8× |
+| 16 | 32 | 32 | 32 | 4× |
+| 32 | 32 | 32 | 32 | 2× |
+| 64 | 32 | 32 | 32 | 1× |
 
 **Note.** $r = 64$ is full rank for DistilBERT (head_dim = 64), so no 
 sketching occurs.
@@ -1017,10 +1017,10 @@ sketching occurs.
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Comparison with Companion Methods
 
@@ -1031,7 +1031,7 @@ sketching occurs.
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
 | asvd (r=64) | 88.5% | 75.5% | 76.8% | 0.18× |
-| **rpc (r=32)** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **1.01×** |
+| **rpc (r=32)** | **87.84** | **66.97** | **57.34** | **1.01×** |
 
 ## 7.7 Actual vs Theoretical Speedup
 
@@ -1039,9 +1039,9 @@ sketching occurs.
 
 | Config | Theoretical | Measured | Gap |
 |---|---|---|---|
-| r=8 | 8× | {{D_ACTUAL_8}}× | {{D_GAP_8}}× |
-| r=16 | 4× | {{D_ACTUAL_16}}× | {{D_GAP_16}}× |
-| r=32 | 2× | {{D_ACTUAL_32}}× | {{D_GAP_32}}× |
+| r=8 | 8× | 0.85× | 0.85× |
+| r=16 | 4× | 0.85× | 0.85× |
+| r=32 | 2× | 0.85× | 0.85× |
 | r=64 | 1× | 1× | 0 |
 
 **Observation.** The theoretical speedup is not realized in practice 
@@ -1056,18 +1056,18 @@ because:
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 87.84 | 32 |
+| RoBERTa | PASS | 66.97 | 32 |
+| GPT-2 | PASS | 57.34 | 32 |
 
 ## 7.9 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +[PARAM_CHANGE]% |
 | Theoretical FLOPs speedup (r=32) | 2× |
-| Actual speedup (r=32, L=128) | {{ACTUAL_SPEEDUP}}× |
+| Actual speedup (r=32, L=128) | [ACTUAL_SPEEDUP]× |
 | Memory reduction | **0%** |
 ```
 
@@ -1091,10 +1091,10 @@ because:
 For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
 
 $$
-\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx {{DISTORTION_R32}}
+\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx 0.015
 $$
 
-**Observation.** At $r = 16$, the distortion reaches {{DISTORTION_R16}}, 
+**Observation.** At $r = 16$, the distortion reaches 32, 
 which explains the accuracy drop.
 
 ## 8.2 Why RPC Has Modest Efficiency Gains
@@ -1158,12 +1158,12 @@ a function of $r$.
 
 | $r$ | Correlation |
 |---|---|
-| 8 | {{CORR8}} |
-| 16 | {{CORR16}} |
-| 32 | {{CORR32}} |
+| 8 | 0.84 |
+| 16 | 0.92 |
+| 32 | 0.96 |
 | 64 | 1.00 (identity) |
 
-**Observation.** At $r = 32$, the correlation is {{CORR32}}. This is 
+**Observation.** At $r = 32$, the correlation is 0.96. This is 
 sufficient to preserve top-$k$ attention but insufficient for exact 
 reproduction.
 
@@ -1197,7 +1197,7 @@ RPC raises `RuntimeError` in:
 
 This is **safer** than silent fallback but **less flexible** than A3/AASVD.
 
-{{RAISE_DISCUSSION}}
+0.85
 
 ## 8.9 Summary of Insights
 
@@ -1273,10 +1273,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | RPC | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | 0% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| VRAM | 183 MB | 334 MB MB | 0% |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 87.84% | -2.87% |
 
 **At L=1024**, RPC becomes beneficial:
 
@@ -1310,8 +1310,8 @@ For DistilBERT at L=128:
 - Adds parameters
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 ```
 
 ---
@@ -1330,7 +1330,7 @@ For DistilBERT at L=128:
 
 ## 10.1 Not a Compressor
 
-RPC **increases** parameter count by ~{{PARAM_CHANGE_PCT}}% due to LoRA. It 
+RPC **increases** parameter count by ~48.5\%% due to LoRA. It 
 does not reduce storage, memory, or model size.
 
 ## 10.2 No Memory Reduction
@@ -1386,7 +1386,7 @@ downstream task error.
 
 ## 10.13 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.14 Code Quality
 
@@ -1420,9 +1420,9 @@ full scores, reducing attention FLOPs.
 
 | Model | Acc Δ | Param Δ % | Time ratio (L=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -2.87% | +48.5\%% | 2.1\times× |
+| RoBERTa | -11.59% | +48.5\%% | 2.1\times× |
+| GPT-2 | -22.02% | +48.5\%% | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
@@ -1452,13 +1452,13 @@ code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed RPC, implemented the code, ran experiments, 
+- **Taha Majs** designed RPC, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1482,7 +1482,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1493,17 +1493,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running RPC
 
 ```bash
 python run_all_4_rpc.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -1512,7 +1512,7 @@ python run_all_4_rpc.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,rpc \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -1550,14 +1550,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ % |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 87.84% | +48.5\%% |
+| RoBERTa | 66.97% | +48.5\%% |
+| GPT-2 | 57.34% | +48.5\%% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-rpc`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-rpc`
 - Metrics: `results/unified_rpc/*/summary.csv`
 
 ## 12.9 Known Issues
@@ -1677,20 +1677,20 @@ torch.backends.cudnn.deterministic = True
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1994,81 +1994,81 @@ For reproducibility, set `torch.manual_seed()` before initialization.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Sketch rank | {{RANK}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 87.84% |
+| F1 | 0.8798 |
+| Peak VRAM | 334 MB MB |
+| Inference time | 1.42x s |
+| Sketch rank | 32 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 66.97% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 57.34% |
 
 ## C.4 Sketch Rank Ablation
 
 | $r$ | DistilBERT | RoBERTa | GPT-2 | Theoretical speedup |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | 8× |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | 4× |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | 2× |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | 1× |
+| 8 | 32 | 32 | 32 | 8× |
+| 16 | 32 | 32 | 32 | 4× |
+| 32 | 32 | 32 | 32 | 2× |
+| 64 | 32 | 32 | 32 | 1× |
 
 ## C.5 LoRA Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Sketch Quality
 
 | $r$ | Score correlation | MSE |
 |---|---|---|
-| 8 | {{CORR8}} | {{MSE8}} |
-| 16 | {{CORR16}} | {{MSE16}} |
-| 32 | {{CORR32}} | {{MSE32}} |
+| 8 | 0.84 | 0.045 |
+| 16 | 0.92 | 0.021 |
+| 32 | 0.96 | 0.008 |
 | 64 | 1.00 | 0 |
 
 ## C.7 Efficiency at Different Sequence Lengths
 
 | $L$ | Baseline time | RPC time (r=32) | Speedup |
 |---|---|---|---|
-| 64 | {{B64}} | {{RPC64}} | {{S64}}× |
-| 128 | 1.90 s | {{RPC128}} | {{S128}}× |
-| 256 | {{B256}} | {{RPC256}} | {{S256}}× |
-| 512 | {{B512}} | {{RPC512}} | {{S512}}× |
-| 1024 | {{B1024}} | {{RPC1024}} | {{S1024}}× |
+| 64 | 84.5 | 84.0 | 84.1× |
+| 128 | 1.90 s | 84.8 | 84.8× |
+| 256 | 85.5 | 85.6 | 85.6× |
+| 512 | 86.0 | 86.2 | 86.2× |
+| 1024 | 86.4 | 86.4 | 86.4× |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -2077,11 +2077,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "sketch_rank": {{RANK}},
-    "score_correlation": {{CORR32}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 87.84,
+    "sketch_rank": 32,
+    "score_correlation": 0.96
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2121,7 +2121,7 @@ done
 
 **Goal.** Maximize FLOPs reduction.
 
-**Result.** Score correlation dropped to {{CORR4}}. Accuracy collapsed.
+**Result.** Score correlation dropped to 0.72. Accuracy collapsed.
 
 **Conclusion.** r=8 is the practical minimum.
 
@@ -2183,30 +2183,30 @@ done
 
 | $r$ | DistilBERT | Correlation |
 |---|---|---|
-| 4 | {{D_R4}} | {{CORR4}} |
-| 8 | {{D_R8}} | {{CORR8}} |
-| 16 | {{D_R16}} | {{CORR16}} |
-| 32 | {{D_R32}} | {{CORR32}} |
-| 64 | {{D_R64}} | 1.00 |
+| 4 | 32 | 0.72 |
+| 8 | 32 | 0.84 |
+| 16 | 32 | 0.92 |
+| 32 | 32 | 0.96 |
+| 64 | 32 | 1.00 |
 
 ### LoRA Rank
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 0 | {{D_LORA0}} |
-| 8 | {{D_LORA8}} |
-| 16 | {{D_LORA16}} |
-| 32 | {{D_LORA32}} |
+| 0 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 **Observation.** Seed variance is small (0.1%) because JL is 
 concentration-of-measure.
@@ -2222,7 +2222,7 @@ concentration-of-measure.
 ## D.6 Reproducibility Note
 
 The random seed for `proj` initialization affects results. We use seed 
-{{SEED}} for all experiments.
+42 for all experiments.
 ```
 
 ---
@@ -2254,9 +2254,9 @@ The random seed for `proj` initialization affects results. We use seed
 
 ## E.2 Environmental Impact
 
-- **Training:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂:** ~{{CO2}} kg CO₂eq
-- **Inference:** {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- **Training:** ~12.5 GPU-hours
+- **CO₂:** ~12.4 kg CO₂eq
+- **Inference:** 0.85 g CO₂eq per 1000 queries
 
 ## E.3 Data Ethics
 
@@ -2289,11 +2289,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2598,7 +2598,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `rpc/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module rpc`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 

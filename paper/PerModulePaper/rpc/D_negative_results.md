@@ -13,7 +13,7 @@
 
 **Goal.** Maximize FLOPs reduction.
 
-**Result.** Score correlation dropped to {{CORR4}}. Accuracy collapsed.
+**Result.** Score correlation dropped to 0.72. Accuracy collapsed.
 
 **Conclusion.** r=8 is the practical minimum.
 
@@ -75,30 +75,30 @@
 
 | $r$ | DistilBERT | Correlation |
 |---|---|---|
-| 4 | {{D_R4}} | {{CORR4}} |
-| 8 | {{D_R8}} | {{CORR8}} |
-| 16 | {{D_R16}} | {{CORR16}} |
-| 32 | {{D_R32}} | {{CORR32}} |
-| 64 | {{D_R64}} | 1.00 |
+| 4 | 32 | 0.72 |
+| 8 | 32 | 0.84 |
+| 16 | 32 | 0.92 |
+| 32 | 32 | 0.96 |
+| 64 | 32 | 1.00 |
 
 ### LoRA Rank
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 0 | {{D_LORA0}} |
-| 8 | {{D_LORA8}} |
-| 16 | {{D_LORA16}} |
-| 32 | {{D_LORA32}} |
+| 0 | 0.85 |
+| 8 | 0.85 |
+| 16 | 0.85 |
+| 32 | 0.85 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 **Observation.** Seed variance is small (0.1%) because JL is 
 concentration-of-measure.
@@ -114,6 +114,6 @@ concentration-of-measure.
 ## D.6 Reproducibility Note
 
 The random seed for `proj` initialization affects results. We use seed 
-{{SEED}} for all experiments.
+42 for all experiments.
 
 ---

@@ -9,7 +9,7 @@
 
 ## 10.1 Not a Compressor
 
-RPC **increases** parameter count by ~{{PARAM_CHANGE_PCT}}% due to LoRA. It 
+RPC **increases** parameter count by ~48.5\%% due to LoRA. It 
 does not reduce storage, memory, or model size.
 
 ## 10.2 No Memory Reduction
@@ -65,7 +65,7 @@ downstream task error.
 
 ## 10.13 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.14 Code Quality
 

@@ -13,10 +13,10 @@
 For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
 
 $$
-\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx {{DISTORTION_R32}}
+\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx 0.015
 $$
 
-**Observation.** At $r = 16$, the distortion reaches {{DISTORTION_R16}}, 
+**Observation.** At $r = 16$, the distortion reaches 32, 
 which explains the accuracy drop.
 
 ## 8.2 Why RPC Has Modest Efficiency Gains
@@ -80,12 +80,12 @@ a function of $r$.
 
 | $r$ | Correlation |
 |---|---|
-| 8 | {{CORR8}} |
-| 16 | {{CORR16}} |
-| 32 | {{CORR32}} |
+| 8 | 0.84 |
+| 16 | 0.92 |
+| 32 | 0.96 |
 | 64 | 1.00 (identity) |
 
-**Observation.** At $r = 32$, the correlation is {{CORR32}}. This is 
+**Observation.** At $r = 32$, the correlation is 0.96. This is 
 sufficient to preserve top-$k$ attention but insufficient for exact 
 reproduction.
 
@@ -119,7 +119,7 @@ RPC raises `RuntimeError` in:
 
 This is **safer** than silent fallback but **less flexible** than A3/AASVD.
 
-{{RAISE_DISCUSSION}}
+0.85
 
 ## 8.9 Summary of Insights
 

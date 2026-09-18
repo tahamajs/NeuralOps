@@ -31,19 +31,19 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` (sketch dim) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `rank` (sketch dim) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -66,16 +66,16 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_rpc.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

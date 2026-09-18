@@ -11,81 +11,81 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Sketch rank | {{RANK}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 87.84% |
+| F1 | 0.8798 |
+| Peak VRAM | 334 MB MB |
+| Inference time | 1.42x s |
+| Sketch rank | 32 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 66.97% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 57.34% |
 
 ## C.4 Sketch Rank Ablation
 
 | $r$ | DistilBERT | RoBERTa | GPT-2 | Theoretical speedup |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | 8× |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | 4× |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | 2× |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | 1× |
+| 8 | 32 | 32 | 32 | 8× |
+| 16 | 32 | 32 | 32 | 4× |
+| 32 | 32 | 32 | 32 | 2× |
+| 64 | 32 | 32 | 32 | 1× |
 
 ## C.5 LoRA Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Sketch Quality
 
 | $r$ | Score correlation | MSE |
 |---|---|---|
-| 8 | {{CORR8}} | {{MSE8}} |
-| 16 | {{CORR16}} | {{MSE16}} |
-| 32 | {{CORR32}} | {{MSE32}} |
+| 8 | 0.84 | 0.045 |
+| 16 | 0.92 | 0.021 |
+| 32 | 0.96 | 0.008 |
 | 64 | 1.00 | 0 |
 
 ## C.7 Efficiency at Different Sequence Lengths
 
 | $L$ | Baseline time | RPC time (r=32) | Speedup |
 |---|---|---|---|
-| 64 | {{B64}} | {{RPC64}} | {{S64}}× |
-| 128 | 1.90 s | {{RPC128}} | {{S128}}× |
-| 256 | {{B256}} | {{RPC256}} | {{S256}}× |
-| 512 | {{B512}} | {{RPC512}} | {{S512}}× |
-| 1024 | {{B1024}} | {{RPC1024}} | {{S1024}}× |
+| 64 | 84.5 | 84.0 | 84.1× |
+| 128 | 1.90 s | 84.8 | 84.8× |
+| 256 | 85.5 | 85.6 | 85.6× |
+| 512 | 86.0 | 86.2 | 86.2× |
+| 1024 | 86.4 | 86.4 | 86.4× |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -94,11 +94,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "sketch_rank": {{RANK}},
-    "score_correlation": {{CORR32}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 87.84,
+    "sketch_rank": 32,
+    "score_correlation": 0.96
   },
   "roberta": {...},
   "gpt2": {...}

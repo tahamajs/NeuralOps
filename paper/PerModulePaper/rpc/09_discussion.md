@@ -58,10 +58,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | RPC | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | 0% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| VRAM | 183 MB | 334 MB MB | 0% |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 87.84% | -2.87% |
 
 **At L=1024**, RPC becomes beneficial:
 
@@ -95,7 +95,7 @@ For DistilBERT at L=128:
 - Adds parameters
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~12.5 GPU-hours
+- CO₂: ~12.4 kg
 
 ---

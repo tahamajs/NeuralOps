@@ -7,19 +7,19 @@
 # RPC: Random Projection Compressed Attention for Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/rpc_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/rpc_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -48,12 +48,12 @@ and grouped-query with rotary embeddings (Qwen/LLaMA). Base projections
 are frozen; only LoRA adapters are trained.
 
 We evaluate RPC on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps. RPC achieves **{{D_ACC}}%** on 
-DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}).
+50 LoRA recovery steps. RPC achieves **87.84%** on 
+DistilBERT (Δ = -2.87), **66.97%** on RoBERTa (Δ = -11.59), 
+and **57.34%** on GPT-2 (Δ = -22.02).
 
 <!-- CRITICAL HONESTY -->
-RPC **increases** parameter count by **{{PARAM_CHANGE_PCT}}%** due to LoRA 
+RPC **increases** parameter count by **48.5\%%** due to LoRA 
 adapters on four projections. RPC **does not reduce memory**: the attention 
 score matrix remains $L \times L$, only its content is computed in a lower 
 dimension. The "compressed" in the name refers to the Q/K representations, 

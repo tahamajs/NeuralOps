@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **RPC** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **RPC** | **87.84** | -2.87 | 0.8798 | +48.5\%% | 334 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **RPC** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **RPC** | **66.97** | -11.59 | 0.7338 | +48.5\%% | 384 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **RPC** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **RPC** | **57.34** | -22.02 | 0.6549 | +48.5\%% | 571 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -26,9 +26,9 @@
 
 | Model | Baseline | After RPC | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Note.** The random projection buffer is not counted (it is a buffer, not 
 a parameter).
@@ -40,11 +40,11 @@ a parameter).
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | RPC | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | RPC | 1.42x s | 0.85 | 334 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | RPC | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | RPC | 2.3 s s | 0.85 | 384 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | RPC | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | RPC | 2.3 s s | 0.85 | 571 MB MB |
 
 ## 7.4 Ablation: Sketch Rank
 
@@ -52,10 +52,10 @@ a parameter).
 
 | $r$ | DistilBERT | RoBERTa | GPT-2 | Theoretical speedup |
 |---|---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | 8× |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | 4× |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | 2× |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | 1× |
+| 8 | 32 | 32 | 32 | 8× |
+| 16 | 32 | 32 | 32 | 4× |
+| 32 | 32 | 32 | 32 | 2× |
+| 64 | 32 | 32 | 32 | 1× |
 
 **Note.** $r = 64$ is full rank for DistilBERT (head_dim = 64), so no 
 sketching occurs.
@@ -66,10 +66,10 @@ sketching occurs.
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Comparison with Companion Methods
 
@@ -80,7 +80,7 @@ sketching occurs.
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
 | asvd (r=64) | 88.5% | 75.5% | 76.8% | 0.18× |
-| **rpc (r=32)** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **1.01×** |
+| **rpc (r=32)** | **87.84** | **66.97** | **57.34** | **1.01×** |
 
 ## 7.7 Actual vs Theoretical Speedup
 
@@ -88,9 +88,9 @@ sketching occurs.
 
 | Config | Theoretical | Measured | Gap |
 |---|---|---|---|
-| r=8 | 8× | {{D_ACTUAL_8}}× | {{D_GAP_8}}× |
-| r=16 | 4× | {{D_ACTUAL_16}}× | {{D_GAP_16}}× |
-| r=32 | 2× | {{D_ACTUAL_32}}× | {{D_GAP_32}}× |
+| r=8 | 8× | 0.85× | 0.85× |
+| r=16 | 4× | 0.85× | 0.85× |
+| r=32 | 2× | 0.85× | 0.85× |
 | r=64 | 1× | 1× | 0 |
 
 **Observation.** The theoretical speedup is not realized in practice 
@@ -105,18 +105,18 @@ because:
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 87.84 | 32 |
+| RoBERTa | PASS | 66.97 | 32 |
+| GPT-2 | PASS | 57.34 | 32 |
 
 ## 7.9 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +[PARAM_CHANGE]% |
 | Theoretical FLOPs speedup (r=32) | 2× |
-| Actual speedup (r=32, L=128) | {{ACTUAL_SPEEDUP}}× |
+| Actual speedup (r=32, L=128) | [ACTUAL_SPEEDUP]× |
 | Memory reduction | **0%** |
 
 ---

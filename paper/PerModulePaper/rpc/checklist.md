@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `rpc/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module rpc`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 

@@ -172,7 +172,7 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r_L = 16$, $N_\ell = 6$):
 | Proj buffer | 0 | 0 |
 | **Total** | **98,304** | **589,824** |
 
-**+{{PARAM_CHANGE_PCT}}%** parameter increase on DistilBERT.
+**+48.5\%%** parameter increase on DistilBERT.
 
 ## 4.6 Full Algorithm
 

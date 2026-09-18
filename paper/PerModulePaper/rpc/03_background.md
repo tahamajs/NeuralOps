@@ -59,7 +59,7 @@ $$
 
 with probability $1 - \delta$ for $r \geq \mathcal{O}(\log(1/\delta) / \epsilon^2)$.
 
-**In RPC.** We use $r = {{RANK}}$ (much smaller than $d_h = 64$) and scale 
+**In RPC.** We use $r = 32$ (much smaller than $d_h = 64$) and scale 
 $\Omega$ by $d_h^{-1/2}$. The result approximates $Q_i K_j^\top$ with 
 controllable error.
 
