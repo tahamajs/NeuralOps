@@ -1,0 +1,8 @@
+{
+  "module": "asvd_attention",
+  "model_path": "models\\gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 98.67608642578125,
+  "seq_len": 1024,
+  "stride": 512
+}
