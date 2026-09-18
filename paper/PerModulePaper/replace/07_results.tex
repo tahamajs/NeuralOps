@@ -1,6 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_replace/roberta/summary.csv} \& replace \& FAIL & 0.0\% & 298.71 MB \\
-\texttt{results/unified\_replace/distilbert/summary.csv} \& replace \& FAIL & 0.0\% & 389.51 MB \\
-\texttt{results/unified\_replace/gpt2/summary.csv} \& replace \& FAIL & 0.0\% & 793.19 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_replace} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & replace & FAIL & 0.0 & 0.9077 \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & replace & FAIL & 0.0 & 0.6354 \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & replace & FAIL & 0.0 & 0.7586 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{replace}.}
+\label{tab:results_acc_replace}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_replace} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & replace & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & replace & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & replace & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{replace}.}
+\label{tab:results_params_replace}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_replace} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & full & 144873.64 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & replace & 144873.64 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & full & 63288.7 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & replace & 63288.7 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & full & 86937.12 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_replace/roberta/summary.csv} & roberta & replace & 86937.12 & 298.71 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{replace}.}
+\label{tab:results_vram_replace}
+\end{table*}

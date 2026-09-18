@@ -1,7 +1,25 @@
 \section{Introduction}
 
-\subsection{Motivation}
-Modern large transformer architectures incur substantial compute and memory overhead during training and deployment. Monolithic projection operations in multi-head attention and feed-forward networks dominate parameter storage. The \texttt{rotational_slicegpt_int4} module addresses these computational bottlenecks through specialized pruning, factorized projection, and quantization mechanisms.
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
-\subsection{Architectural Positioning}
-Integrated into the unified research framework, \texttt{rotational_slicegpt_int4} encapsulates dense projection weights into high-efficiency submodules while preserving representational fidelity and numerical stability across varied backbone families.
+The \texttt{rotationalslicegptint4} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{rotationalslicegptint4} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
+
+\subsection{Arithmetic Intensity and the Memory Wall}
+During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
+\[
+\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
+\]
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{rotationalslicegptint4} curtails byte transfer volume per token step, unlocking wall-clock speedups.
+
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{rotationalslicegptint4} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\item \textbf{Guaranteed Fallback Integrity:} Automated error monitoring that reverts to dense baseline projections if relative parameter deviation breaches safety tolerances.
+\end{itemize}
+
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows: Section 2 reviews foundational compression paradigms. Section 3 formalizes mathematical notation. Section 4 presents core derivations and algorithms. Section 5 describes architectural integration. Section 6 outlines experimental protocols. Section 7 presents empirical results. Section 8 provides detailed analytical breakdowns. Section 9 discusses implications. Section 10 outlines limitations. Section 11 concludes.
