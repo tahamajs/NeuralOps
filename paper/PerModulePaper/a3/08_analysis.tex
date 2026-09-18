@@ -187,6 +187,8 @@ sdrm & 88.24\% & 1.01$\times$ & 76.45\% & 1.00$\times$ & 74.12\% & 1.00$\times$ 
 \end{table}
 % <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 4 -->
 
+\textbf{Threshold Selection Rationale:} As shown in Table \ref{tab:tau_ablation}, relaxing the threshold to $\tau = 0.50$ dramatically reduces the fallback rate from 75.0\% to 25.0\% (compressing 18 of 24 layers instead of 6), but degrades validation accuracy from 90.02\% to 88.54\% ($\Delta -2.17\%$). We select $\tau = 0.40$ as the production default because it establishes the optimal Pareto operating point that rigorously enforces our $<1\%$ accuracy preservation constraint ($\Delta -0.69\%$) while achieving verified non-negative parameter savings.
+
 \subsubsection{Effect of Scale Normalization (\texttt{normalize\_scale})}
 
 \begin{table}[H]

@@ -168,7 +168,7 @@ Output: compressed model M'
 19:     $\sigma$_target $\leftarrow$ record_LN_before(M, D)    pre-computed
 20:     $\sigma$_current $\leftarrow$ record_LN_after(M', D)
 21:     for $\gamma$ in layer_norms(M') do
-22:         $\gamma$ $\leftarrow$ $\gamma$   $\sigma$_target / $\sigma$_current
+22:         $\gamma$ $\leftarrow$ $\gamma$ $\cdot$ $\sigma$_current / $\sigma$_target
 23:     end for
 24: end if
 25: return M'

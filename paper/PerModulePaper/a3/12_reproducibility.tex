@@ -134,7 +134,7 @@ torch.backends.cudnn.benchmark = False
 \midrule
 DistilBERT & 90.02\% $\pm$ 0.5\% & PASS (+1.25M params saved) \\
 RoBERTa    & 83.26\% $\pm$ 0.5\% & PASS (+0.59M params saved) \\
-GPT-2      & 63.19\% $\pm$ 1.0\% & PASS (+0.53M params saved) \\
+GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) \\
 \bottomrule
 \end{tabular}
 \caption{Expected benchmark results under the production configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$).}

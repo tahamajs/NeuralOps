@@ -6,7 +6,7 @@
 \subsubsection{Takeaway 1: Real Compression is Possible}
 
 Unlike attention-replacement methods that preserve parameter count, A3 
-achieves \textbf{1.02$\times$} parameter reduction (+1.25M parameters saved on DistilBERT) with \textbf{<1\%} 
+achieves \textbf{1.02$\times$} parameter reduction (+1.25M parameters saved on DistilBERT) with \textbf{$<$1\%} 
 accuracy drop. This is a genuine reduction in storage and memory.
 
 \subsubsection{Takeaway 2: Weighting Matters}
@@ -82,7 +82,7 @@ Accuracy & 90.71\% & 90.02\% & \textbf{-0.69\%} \\
 \end{tabular}
 \end{table}
 
-\textbf{Verdict:} A3 achieves verified parameter reduction and preserves accuracy within 0.7\%, with trade-offs in factorization overhead.
+\textbf{Verdict:} A3 provides modest compression (1.02$\times$) at the cost of significantly higher inference VRAM (+82\%) and latency (+26.3 s). Its primary benefit is disk storage reduction and parameter count, not runtime efficiency.
 
 \subsection{Comparison to Published Methods}
 

@@ -111,7 +111,7 @@ smaller rank at the same error.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Year} & \textbf{Venue} & \textbf{Model} & \textbf{Ratio} & \textbf{SST-2 Acc} \\
 \midrule
-SVD (Eckart-Young) & Low-rank & 1936 & Psychometrika & DistilBERT & 1.25$\times$ & 86.4\% \\
+SVD (Eckart-Young) & Low-rank & 1936 & Psychometrika & DistilBERT & 1.25$\times^\ddagger$ & 86.4\% \\
 FWSVD & Fisher SVD & 2022 & EMNLP & BERT-base & 2.00$\times$ & 88.2\% \\
 DRONE & Data-aware & 2021 & NeurIPS & BERT-base & 1.92$\times$ & 89.1\% \\
 ASVD & Activation SVD & 2023 & arXiv & LLaMA-7B & 1.25$\times$ & N/R$^\dagger$ \\
@@ -127,6 +127,6 @@ Performer & Linear Attn & 2021 & ICLR & Transformer & 1.00$\times$ & 83.1\% \\
 \textbf{A3 (ours)} & \textbf{Activation SVD} & \textbf{2026} & \textbf{Preprint} & \textbf{DistilBERT} & \textbf{1.02$\times$} & \textbf{90.02\%} \\
 \bottomrule
 \end{tabular}
-\caption{Comprehensive comparison of representative model compression and efficiency methods across paradigms, showing publication metadata, target architectures, compression ratios, and downstream accuracy on SST-2. $^\dagger$N/R indicates not reported on SST-2 classification (evaluated on autoregressive perplexity benchmarks).}
+\caption{Comprehensive comparison of representative model compression and efficiency methods across paradigms, showing publication metadata, target architectures, compression ratios, and downstream accuracy on SST-2. $^\dagger$N/R indicates not reported on SST-2 classification (evaluated on autoregressive perplexity benchmarks). $^\ddagger$Uniform SVD forces unconstrained factorization across all attention layers without safety fallback, achieving higher nominal reduction (1.25$\times$) but suffering a severe 4.3\% accuracy drop. In contrast, A3 employs error-thresholded fallback ($\tau=0.40$) to prioritize accuracy preservation (90.02\%).}
 \label{tab:prior_work_comparison}
 \end{table*}

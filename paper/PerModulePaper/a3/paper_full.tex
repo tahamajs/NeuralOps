@@ -735,7 +735,7 @@ the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\t
 We can compensate by adjusting $\gamma$:
 
 \[
-\gamma \leftarrow \gamma \cdot \frac{\sigma_\text{target}}{\sigma_\text{current}}
+\gamma \leftarrow \gamma \cdot \frac{\sigma_\text{current}}{\sigma_\text{target}}
 \tag{4.13}
 \]
 
@@ -2116,7 +2116,7 @@ greedy and may not be optimal. A learned or Bayesian approach could be better.
 
 \subsection{10.9 LayerNorm Recalibration Heuristic}
 
-Our $\gamma \leftarrow \gamma \cdot \sigma_\text{target} / \sigma_\text{current}$ 
+Our $\gamma \leftarrow \gamma \cdot \sigma_\text{current} / \sigma_\text{target}$ 
 is a heuristic. It does not account for:
 
 \begin{itemize}
@@ -3018,7 +3018,7 @@ def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
     # 3. Rescale
     for name, module in model.named_modules():
         if isinstance(module, nn.LayerNorm) and name in target_stds:
-            ratio = target_stds[name] / (current_stds[name] + 1e-8)
+            ratio = current_stds[name] / (target_stds[name] + 1e-8)
             with torch.no_grad():
                 module.weight.data *= ratio
 \end{lstlisting}

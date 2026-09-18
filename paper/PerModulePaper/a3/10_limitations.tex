@@ -10,7 +10,7 @@ Our rigorous experimental evaluation revealed five fundamental constraints of th
 \item \textbf{Degradation on Autoregressive Decoders (GPT-2):} While encoder architectures (DistilBERT and RoBERTa) demonstrate resilient representations, GPT-2 suffers severe accuracy degradation (-16.17\%, dropping from 79.36\% to 63.19\%). Causal masking, non-symmetric activation dynamics, and transposed Conv1D parameter structures make autoregressive decoders substantially less receptive to activation-weighted low-rank factorization.
 \item \textbf{Lack of Generalization to Multi-Class Tasks (MNLI, AG News):} Multi-class classification benchmarks without pre-converged task-specific heads yield near-random accuracies (25.3\% on 4-class AG News and 36--44\% on 3-class MNLI). A3 does not generalize across downstream tasks unless the underlying base checkpoints have been fully fine-tuned for the target classification head before compression.
 \item \textbf{High Fallback Rates:} To guarantee that compressed layers satisfy the strict reconstruction error threshold ($\tau = 0.40$), 75.0\% of layers in DistilBERT and 91.7\% of layers in RoBERTa and GPT-2 fall back to original dense weights. This conservative threshold preserves accuracy but limits the fraction of factorized layers to 8.3\%--25.0\%.
-\item \textbf{RoBERTa Apparent Improvement:} On RoBERTa, A3 post-recovery accuracy (83.26\%) exceeds the baseline (78.56\%) by +4.70\%. This apparent gain reflects the fact that the underlying base checkpoint was partially converged, allowing the 50-step LoRA recovery phase to perform additional gradient adaptation on SST-2 rather than reflecting an intrinsic feature of low-rank factorization.
+\item \textbf{RoBERTa Empirical Anomaly (+4.70\%):} On RoBERTa, A3 post-recovery accuracy (83.26\%) exceeds the baseline (78.56\%) by +4.70\%. While the 50-step LoRA recovery phase introduces gradient adaptation on the classification head, a low-rank compressed model outperforming its dense uncompressed baseline represents an unexpected empirical anomaly. We report this delta transparently as requiring further investigation into head initialization and recovery dynamics.
 \end{enumerate}
 
 \subsection{Task and Architecture Coverage}
@@ -81,7 +81,7 @@ greedy and may not be optimal. A learned or Bayesian approach could be better.
 
 \subsection{LayerNorm Recalibration Heuristic}
 
-Our $\gamma \leftarrow \gamma \cdot \sigma_\text{target} / \sigma_\text{current}$ 
+Our $\gamma \leftarrow \gamma \cdot \sigma_\text{current} / \sigma_\text{target}$ 
 is a heuristic. It does not account for:
 
 \begin{itemize}

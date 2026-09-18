@@ -213,7 +213,7 @@ def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
     # 3. Rescale
     for name, module in model.named_modules():
         if isinstance(module, nn.LayerNorm) and name in target_stds:
-            ratio = target_stds[name] / (current_stds[name] + 1e-8)
+            ratio = current_stds[name] / (target_stds[name] + 1e-8)
             with torch.no_grad():
                 module.weight.data *= ratio
 \end{lstlisting}
