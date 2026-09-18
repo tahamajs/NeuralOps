@@ -617,5 +617,5 @@ The `AegisAttentionV1` architecture incorporates telemetry hooks for tracking si
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **86.58%** | -4.02% | 0.8719 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v1) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **87.04%** | -4.02% | 0.8757 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-aegis-v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v1) | 2026-09-19 |
 | **roberta-base** | sst2 | `PASS` | 75.46% | **80.62%** | +5.16% | 0.8284 | 0.94x | 48 | [svd-linear-attention-roberta-base-aegis-v1](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-aegis-v1) | 2026-09-14 |
