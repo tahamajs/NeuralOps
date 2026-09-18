@@ -1,0 +1,39 @@
+{
+  "total_lines_in_audit_log": 265,
+  "unique_tested_modules": 254,
+  "difference": 11,
+  "root_cause": "The difference of 11 between 265 lines and 254 modules was caused by 11 duplicate re-test entries in audit/module_test_log.jsonl for 6 modules that were rerun during Category C and D verification sweeps.",
+  "duplicated_modules": {
+    "adaptive_span_attention": {
+      "lines": 4,
+      "excess": 3,
+      "type": "duplicate_retest_in_harness"
+    },
+    "adaptive_svd_attention": {
+      "lines": 4,
+      "excess": 3,
+      "type": "duplicate_retest_in_harness"
+    },
+    "gqa_attention": {
+      "lines": 3,
+      "excess": 2,
+      "type": "duplicate_retest_in_harness"
+    },
+    "SOAFusedAttention": {
+      "lines": 2,
+      "excess": 1,
+      "type": "duplicate_retest_in_harness"
+    },
+    "adaptive_span_inject": {
+      "lines": 2,
+      "excess": 1,
+      "type": "duplicate_retest_in_harness"
+    },
+    "adaptive_sparse_attention": {
+      "lines": 2,
+      "excess": 1,
+      "type": "duplicate_retest_in_harness"
+    }
+  },
+  "status": "RESOLVED_EXACT_DUPLICATE_LINES"
+}

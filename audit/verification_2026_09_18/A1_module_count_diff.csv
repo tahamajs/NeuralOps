@@ -1,0 +1,8 @@
+module,occurrences_in_log,excess_duplicate_lines,type
+adaptive_span_attention,4,3,duplicate_retest_in_harness
+adaptive_svd_attention,4,3,duplicate_retest_in_harness
+gqa_attention,3,2,duplicate_retest_in_harness
+SOAFusedAttention,2,1,duplicate_retest_in_harness
+adaptive_span_inject,2,1,duplicate_retest_in_harness
+adaptive_sparse_attention,2,1,duplicate_retest_in_harness
+TOTAL,265,11,unique_modules_is_254
