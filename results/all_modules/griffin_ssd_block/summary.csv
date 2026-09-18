@@ -1,2 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-griffin_ssd_block,PASS,88.19,0.8874,0.8816,0.8836,0.8813,0.3936,17.1,347.99,48015.34,66955010,71217482,0,1.0,0.0,0.0,6,0,,,6,737280,,legacy_bert,2026-09-18T22:43:15.260716

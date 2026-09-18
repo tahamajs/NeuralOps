@@ -506,3 +506,9 @@ Evaluated on SST-2 sentiment classification (FP16, 20% WIFV structured pruning, 
 | DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 300.68 | `PASS_NO_COMPRESSION` | N/A |
 | ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.18 | `PASS_NO_COMPRESSION` | N/A |
 | GPT2 | 77.87% | 0.7737 | 1.0 | 2 | 626.91 | `PASS` | [`gpt2`](Upload error: [WinError 10054] An existing connection was forcibly closed by the remote host) |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9081 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-flap](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flap) | 2026-09-19 |
