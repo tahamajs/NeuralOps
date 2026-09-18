@@ -204,12 +204,12 @@ export const EXPERT_HEX_COLORS = [
  * Architectural Guided Tour Waypoints (8 Stages).
  */
 export const TOUR_STEPS = [
-    { y: 2,  dist: 20, label: '01 — Input Embeddings',      target: null },
-    { y: 5,  dist: 18, label: '02 — Q · K · V Projections', target: 'q_lin' },
-    { y: 8,  dist: 16, label: '03 — Attention Output',       target: 'out_lin' },
-    { y: 10, dist: 16, label: '04 — Residual Add #1',        target: null },
-    { y: 13, dist: 18, label: '05 — FFN Up Projection',      target: 'lin1' },
-    { y: 16, dist: 18, label: '06 — FFN Down Projection',    target: 'lin2' },
-    { y: 20, dist: 22, label: '07 — Output LM Head',         target: null },
-    { y: 12, dist: 35, label: '08 — Full Architecture View', target: null, fullFit: true },
+    { y: 2,  dist: 20, label: '01 — Input Embeddings & Positional Encoding', desc: 'Converts discrete token IDs into dense hidden vectors combined with learned/rotary positional embeddings.', target: null },
+    { y: 5,  dist: 18, label: '02 — Multi-Head Q · K · V Projections',      desc: 'Projects hidden states into Query, Key, and Value subspaces (or low-rank bottleneck factors in SVD/MLA).', target: 'q_lin' },
+    { y: 8,  dist: 16, label: '03 — Attention Output & Head Merging',       desc: 'Calculates scaled dot-product attention scores and projects concatenated head states back to hidden dimension.', target: 'out_lin' },
+    { y: 10, dist: 16, label: '04 — Residual Skip Connection #1',           desc: 'Adds raw input tokens directly to attention outputs with LayerNorm/RMSNorm to prevent gradient decay.', target: null },
+    { y: 13, dist: 18, label: '05 — FFN Intermediate Expansion',            desc: 'Expands token dimensions by 4× (or routes tokens across top-k experts in MoE architectures).', target: 'lin1' },
+    { y: 16, dist: 18, label: '06 — FFN Down Projection & Contraction',      desc: 'Projects non-linear activations back to original hidden width, consolidating learned token features.', target: 'lin2' },
+    { y: 20, dist: 22, label: '07 — Final Norm & Language Model Head',      desc: 'Normalizes final layer representations and maps logits over the full vocabulary distribution.', target: null },
+    { y: 12, dist: 35, label: '08 — Global Macro Architecture Overview',    desc: 'Full network topology showing parallel baseline vs compressed parameter pathways and residual highways.', target: null, fullFit: true },
 ];
