@@ -217,6 +217,7 @@ compressed_model = a3_compressor_factory(
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | mnli | `PASS` | 35.60% | **40.10%** | +4.50% | 0.2981 | 1.00x | 3 | N/A | 2026-09-18 |
 | **distilbert-mnli** | mnli | `PASS` | 68.30% | **62.30%** | -6.00% | 0.6224 | 1.05x | 21 | N/A | 2026-09-18 |
+| **roberta-agnews** | ag_news | `PASS` | 93.40% | **93.70%** | +0.30% | 0.9345 | 1.04x | 32 | N/A | 2026-09-18 |
 
 
 The hardened A3 compressor implementation was evaluated natively on a dedicated remote GPU server under full hardware acceleration:
