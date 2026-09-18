@@ -72,18 +72,20 @@ def evaluate(model, dataset, batch_size):
     return 100.0 * correct / max(1, total)
 
 
-def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
+def train_task(task, module_name, output_dir, epochs=None, max_steps=None, batch_size=None, seq_len=None, gradient_checkpointing=False):
     cfg = TASK_CONFIG[task]
     num_epochs = epochs if epochs is not None else cfg.get("epochs", 10)
+    current_batch_size = batch_size if batch_size is not None else cfg["batch_size"]
+    current_seq_len = seq_len if seq_len is not None else cfg["seq_len"]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     try:
         if task == "listops":
-            train_ds = ListOpsDataset(split="train", seq_len=cfg["seq_len"])
-            test_ds = ListOpsDataset(split="test", seq_len=cfg["seq_len"])
+            train_ds = ListOpsDataset(split="train", seq_len=current_seq_len)
+            test_ds = ListOpsDataset(split="test", seq_len=current_seq_len)
         else:
-            train_ds = IMDbByteDataset(split="train", seq_len=cfg["seq_len"])
-            test_ds = IMDbByteDataset(split="test", seq_len=cfg["seq_len"])
+            train_ds = IMDbByteDataset(split="train", seq_len=current_seq_len)
+            test_ds = IMDbByteDataset(split="test", seq_len=current_seq_len)
     except Exception as e:
         print(f"Error loading {task} dataset: {e}. Generating synthetic fallback.", flush=True)
         # Synthetic fallback if external dataset download fails or hangs
@@ -100,10 +102,13 @@ def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
                     "input_ids": torch.randint(1, self.vocab_size, (self.seq_len,)),
                     "labels": torch.randint(0, self.num_labels, ())
                 }
-        train_ds = SyntheticDataset(2000, cfg["seq_len"], cfg["vocab_size"], cfg["num_labels"])
-        test_ds = SyntheticDataset(500, cfg["seq_len"], cfg["vocab_size"], cfg["num_labels"])
+        train_ds = SyntheticDataset(2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"])
+        test_ds = SyntheticDataset(500, current_seq_len, cfg["vocab_size"], cfg["num_labels"])
 
-    model = build_small_transformer(cfg["seq_len"], cfg["num_labels"], cfg["vocab_size"]).to(device)
+    model = build_small_transformer(current_seq_len, cfg["num_labels"], cfg["vocab_size"]).to(device)
+
+    if gradient_checkpointing and hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
 
     if module_name != "none":
         model, _ = apply_module_to_model(model, module_name, device=device)
@@ -111,7 +116,7 @@ def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
-    train_loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, num_workers=0)
+    train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
 
     scaler = torch.amp.GradScaler("cuda", enabled=torch.cuda.is_available())
     best_acc = 0.0
@@ -141,7 +146,7 @@ def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
 
         # Evaluate every 5 epochs or last epoch
         if (epoch + 1) % 5 == 0 or (epoch + 1) == num_epochs or (max_steps is not None and global_step >= max_steps):
-            acc = evaluate(model, test_ds, cfg["batch_size"])
+            acc = evaluate(model, test_ds, current_batch_size)
             print(f"[{task}/{module_name}] Epoch {epoch+1}/{num_epochs} (step {global_step}) | Acc: {acc:.2f}%", flush=True)
             if acc > best_acc:
                 best_acc = acc
@@ -156,8 +161,14 @@ def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
             "task": task,
             "module": module_name,
             "best_accuracy": best_acc,
-            "epochs": num_epochs
+            "epochs": num_epochs,
+            "seq_len": current_seq_len,
+            "batch_size": current_batch_size
         }, f, indent=2)
+
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     return best_acc
 
@@ -169,7 +180,19 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", required=True)
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--max_steps", type=int, default=None, help="Maximum training steps per epoch or run")
+    parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
+    parser.add_argument("--seq_len", type=int, default=None, help="Sequence length override")
+    parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing")
     args = parser.parse_args()
 
-    acc = train_task(args.task, args.module, args.output_dir, epochs=args.epochs, max_steps=args.max_steps)
+    acc = train_task(
+        args.task,
+        args.module,
+        args.output_dir,
+        epochs=args.epochs,
+        max_steps=args.max_steps,
+        batch_size=args.batch_size,
+        seq_len=args.seq_len,
+        gradient_checkpointing=args.gradient_checkpointing
+    )
     print(f"Final: {args.task}/{args.module} = {acc:.2f}%")
