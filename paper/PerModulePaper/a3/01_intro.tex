@@ -31,12 +31,12 @@ but this optimality is with respect to uniform treatment of all input
 dimensions. Transformer activations, however, have **highly non-uniform 
 variance** across channels. Some input dimensions carry most of the signal; 
 others are nearly constant. Reconstructing the near-constant dimensions as 
-faithfully as the high-variance ones wastes capacity.
-
-0.85
-
-
-\subsection{Problem Statement}
+Activation-aware compression addresses this fundamental limitation by weighting the reconstruction 
+objective per input dimension according to its empirical importance. The natural weight is the empirical Fisher 
+diagonal, $F_i = \mathbb{E}_{\mathbf{x}} [(\nabla_{W} \mathcal{L})_{i}^2] \approx \mathbb{E}_{\mathbf{x}}[x_i^2]$, 
+which measures the second-order sensitivity and variance attributable to input channel $i$. 
+Reweighting the SVD input space by this diagonal quantity concentrates the low-rank approximation 
+capacity precisely onto the dominant feature directions that govern downstream task representations.
 
 Given a pretrained transformer model $\mathcal{M}$ with $N_l$ layers, each 
 containing linear projections $\{W^{(\ell)}_k\}$, we seek a compressed model 

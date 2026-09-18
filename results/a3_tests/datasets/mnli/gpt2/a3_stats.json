@@ -1,0 +1,36 @@
+{
+  "compressor_name": "a3",
+  "original_parameters": 124442112,
+  "compressed_parameters": 123916800,
+  "saved_parameters": 525312,
+  "compression_ratio": 0.9957786637372403,
+  "reduction_percentage": 0.42213362627596673,
+  "factorized_layers": 2,
+  "skipped_layers": 22,
+  "num_compressed": 2,
+  "num_fallback": 22,
+  "num_compressed_layers": 2,
+  "num_fallback_layers": 22,
+  "compressed_layers": [
+    "transformer.h.0.attn.c_proj",
+    "transformer.h.1.attn.c_proj"
+  ],
+  "rank": 128,
+  "use_fisher": true,
+  "recalibrate_ln": true,
+  "avg_reconstruction_error": 0.34073896895934486,
+  "weighted_reconstruction_error": 0.3407389689593449,
+  "layer_stats": {
+    "transformer.h.0.attn.c_proj": {
+      "rank": 170,
+      "rel_error": 0.34066261240406837,
+      "weighted": true
+    },
+    "transformer.h.1.attn.c_proj": {
+      "rank": 256,
+      "rel_error": 0.34081532551462135,
+      "weighted": true
+    }
+  },
+  "method": "a3_activation_aware_factorized_svd"
+}

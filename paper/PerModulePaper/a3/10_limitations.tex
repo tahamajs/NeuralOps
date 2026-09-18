@@ -100,11 +100,9 @@ This limits the paper's external validity.
 
 \subsection{Failure Modes Not Fully Diagnosed}
 
-0.85
+While Section~\ref{sec:analysis} identifies that value and output projections frequently fall back due to slower singular value decay under full channel mixing, certain edge cases warrant deeper investigation. Specifically, when layers exhibit bimodal activation spectra or extreme outlier tokens (such as delimiter tokens in deeper layers), diagonal Fisher weighting may underestimate the rank necessary to capture cross-channel correlations. In such regimes, full matrix Fisher approximations or block-diagonal factorizations may be required to prevent excessive fallbacks without exceeding the parameter break-even ceiling.
 
 \subsection{Code Quality}
-
-Our implementation is research-grade:
 
 \begin{itemize}
 \item No unit tests for edge cases

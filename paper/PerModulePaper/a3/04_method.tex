@@ -129,15 +129,15 @@ where $\epsilon = 10^{-6}$ prevents division by zero.
 \begin{enumerate}
 \item Compute $W_\text{weighted}$ using (4.5).
 \item Compute the truncated SVD:
-  $$
-  W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+  \[
+  W_\text{weighted} \approx U_r \Sigma_r V_r^\top
   \tag{4.6}
-  $$
+  \]
 \item Unweight the right factor to recover the original space:
-  $$
-  V\_r^\text{unweighted} = V\_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+  \[
+  V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
   \tag{4.7}
-  $$
+  \]
 \item Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
 
 \end{enumerate}

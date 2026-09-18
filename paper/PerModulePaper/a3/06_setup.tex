@@ -10,13 +10,15 @@ We evaluate on three pretrained backbones:
 \small
 \begin{tabular}{lllll}
 \toprule
-\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Params} & \textbf{Attention} \\
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden Dim} & \textbf{Parameters} & \textbf{Attention Structure} \\
 \midrule
-DistilBERT-base & 6 & 768 & 66.9M \& Flat \\
-RoBERTa-base & 12 & 768 & 124.6M \& Nested \\
-GPT-2 & 12 & 768 & 124.4M \& Causal \\
+DistilBERT-base & 6  & 768 & 66.9M  & Flat Linear Projections \\
+RoBERTa-base    & 12 & 768 & 124.6M & Nested BertSelfAttention \\
+GPT-2           & 12 & 768 & 124.4M & Causal Conv1D Projections \\
 \bottomrule
 \end{tabular}
+\caption{Model backbones evaluated across compression and fine-tuning stages.}
+\label{tab:setup_models}
 \end{table}
 
 Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
@@ -37,6 +39,8 @@ Validation & 872 & 444 (50.9\%) & 428 \\
 Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
+\caption{Dataset statistics for the primary benchmark evaluation on SST-2.}
+\label{tab:sst2_split}
 \end{table}
 
 Majority baseline: \textbf{50.92\%}.
@@ -52,7 +56,6 @@ source. This is legitimate because:
 \item The calibration pass is a forward-only pass (no gradient)
 \item It uses unlabeled inputs (labels not required)
 \item It is not a form of test set leakage
-
 \end{itemize}
 We use \textbf{1000 examples} (a subsample of the training set) for 
 calibration to keep memory bounded.
@@ -64,18 +67,21 @@ calibration to keep memory bounded.
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Operational Function} \\
 \midrule
-Rank $r$ & 64 \& Target rank \\
-\texttt{use\_fisher} \& True \& Activation-aware weighting \\
-\texttt{recalibrate\_ln} \& True \& LayerNorm recalibration \\
-\texttt{max\_error} $\tau$ & 0.20 \& Frobenius threshold \\
-\texttt{max\_retries} & 3 \& Adaptive escalation steps \\
-\texttt{fallback\_to\_original} \& True \& Safe fallback \\
-\texttt{normalize\_scale} \& True \& Clamp weights \\
-\texttt{target\_attention\_only} \& False \& Compress all layers \\
+Rank $r$ & 128 & Initial target low-rank dimension \\
+Rank ceiling $r_{\mathrm{ceiling}}$ & $\min(\lfloor 0.5 \min(d_{\mathrm{in}}, d_{\mathrm{out}})\rfloor, 256)$ & Prevents negative parameter reduction \\
+\texttt{use\_fisher} & True & Activation-aware input space weighting \\
+\texttt{recalibrate\_ln} & True & Closed-form LayerNorm affine rescaling \\
+\texttt{max\_error} $\tau$ & 0.40 & Relative Frobenius error quality gate \\
+\texttt{max\_retries} & 3 & Adaptive rank escalation step count \\
+\texttt{fallback\_to\_original} & True & Safe fallback to dense weights if $\mathrm{err} > \tau$ \\
+\texttt{normalize\_scale} & True & Numerical stability clamping of $\sqrt{F}$ \\
+\texttt{target\_attention\_only} & True & Target self-attention projection weights \\
 \bottomrule
 \end{tabular}
+\caption{Production hyperparameters governing A3 factorization and fallback enforcement.}
+\label{tab:a3_hyperparameters}
 \end{table}
 
 \subsection{Recovery Fine-Tuning}
@@ -89,64 +95,19 @@ After A3 compression, we train LoRA adapters:
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer \& AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
+Optimizer & AdamW \\
+Learning rate & $2\times 10^{-4}$ \\
+Weight decay & 0.01 \\
 Recovery steps & 50 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
-Batch size & 8 \\
-Precision \& FP16 \\
+LoRA rank & 8 (RoBERTa, GPT-2) / 16 (DistilBERT) \\
+LoRA alpha & 16 \\
+Batch size & 4 (RoBERTa, GPT-2) / 8 (DistilBERT) \\
+Precision & FP16 \\
 \bottomrule
 \end{tabular}
+\caption{Hyperparameters for parameter-efficient recovery fine-tuning.}
+\label{tab:recovery_params}
 \end{table}
-
-\subsection{Evaluation Metrics}
-
-\subsubsection{Quality Metrics}
-
-\begin{itemize}
-\item \textbf{Accuracy:} $\text{Acc} = \frac{\text{correct}}{\text{total}}$
-\item \textbf{F1:} Binary and macro-averaged
-\item \textbf{Precision, Recall}
-
-\end{itemize}
-\subsubsection{Efficiency Metrics}
-
-\begin{itemize}
-\item \textbf{Total parameters:} \texttt{sum(p.numel() for p in model.parameters())}
-\item \textbf{Trainable parameters}
-\item \textbf{Peak VRAM:} \texttt{torch.cuda.max\_memory\_allocated()}
-\item \textbf{Inference time:} Median of 20 forward passes
-\item \textbf{Throughput:} Tokens/sec
-
-\end{itemize}
-\subsubsection{Compression Metrics}
-
-\begin{itemize}
-\item \textbf{Compression ratio:} Baseline params / compressed params
-\item \textbf{Reconstruction error:} $\|W - UV\|_F / \|W\|_F$
-\item \textbf{Compressed layers:} Count of successfully factorized layers
-\item \textbf{Fallback layers:} Count of layers preserved
-
-\end{itemize}
-\subsection{Quality Gate}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Level} & \textbf{Accuracy threshold} \\
-\midrule
-PASS & $\ge$ 56.0\% \\
-PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-56\% corresponds to majority baseline + 3$\times$SE.
 
 \subsection{Hardware}
 
@@ -157,14 +118,16 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU \& NVIDIA RTX 4070 Laptop \\
-VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
+GPU & NVIDIA GeForce RTX 4070 Laptop GPU \\
+VRAM & 8,188 MB GDDR6 \\
+CUDA & 12.7 (Driver Version 566.07) \\
+PyTorch & 2.4.0 (FP32 CPU SVD factorization) \\
 Transformers & 4.44.0 \\
-OS \& Windows / Linux \\
+OS & Windows 11 / Linux \\
 \bottomrule
 \end{tabular}
+\caption{Hardware and compute environment for experimental profiling.}
+\label{tab:hardware_specs}
 \end{table}
 
 \subsection{Reproduction}

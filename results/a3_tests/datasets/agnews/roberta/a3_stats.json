@@ -1,0 +1,42 @@
+{
+  "compressor_name": "a3",
+  "original_parameters": 124648708,
+  "compressed_parameters": 124058884,
+  "saved_parameters": 589824,
+  "compression_ratio": 0.995268109798619,
+  "reduction_percentage": 0.4731890201380988,
+  "factorized_layers": 3,
+  "skipped_layers": 33,
+  "num_compressed": 3,
+  "num_fallback": 33,
+  "num_compressed_layers": 3,
+  "num_fallback_layers": 33,
+  "compressed_layers": [
+    "roberta.encoder.layer.0.attention.self.key",
+    "roberta.encoder.layer.9.attention.self.query",
+    "roberta.encoder.layer.10.attention.self.key"
+  ],
+  "rank": 128,
+  "use_fisher": true,
+  "recalibrate_ln": true,
+  "avg_reconstruction_error": 0.3967990686860536,
+  "weighted_reconstruction_error": 0.3967990686860536,
+  "layer_stats": {
+    "roberta.encoder.layer.0.attention.self.key": {
+      "rank": 256,
+      "rel_error": 0.3966276489265299,
+      "weighted": true
+    },
+    "roberta.encoder.layer.9.attention.self.query": {
+      "rank": 256,
+      "rel_error": 0.39745348554770144,
+      "weighted": true
+    },
+    "roberta.encoder.layer.10.attention.self.key": {
+      "rank": 256,
+      "rel_error": 0.39631607158392945,
+      "weighted": true
+    }
+  },
+  "method": "a3_activation_aware_factorized_svd"
+}

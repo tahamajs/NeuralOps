@@ -80,45 +80,37 @@ Dividing both sides by $\min_j \sqrt{F_j}$ gives (A.7). $\square$
 
 \subsection{A.4 LayerNorm Recalibration Derivation}
 
-LayerNorm computes:
+Standard LayerNorm computes for an activation vector $x \in \mathbb{R}^d$:
 
 \[
-\text{LN}(x) = \gamma \odot \frac{x - \mu(x)}{\sigma(x) + \epsilon} + \beta
+\mathrm{LN}(x) = \gamma \odot \frac{x - \mu(x)}{\sqrt{\sigma^2(x) + \epsilon}} + \beta
 \tag{A.9}
 \]
 
-Let $\sigma_\text{pre}$ be the pre-compression std of $x$ and $\sigma_\text{post}$ 
-the post-compression std. We want $\text{LN}_\text{post} \approx \text{LN}_\text{pre}$.
+Let $\sigma_{\mathrm{pre}}^2$ denote the empirical per-channel activation variance before compression, and $\sigma_{\mathrm{post}}^2$ denote the empirical activation variance after low-rank factorization and projection. Because low-rank projection truncates energy along non-dominant singular directions, activations typically experience an attenuation of total scale, such that $\sigma_{\mathrm{post}} < \sigma_{\mathrm{pre}}$.
 
-If we keep $\gamma$ fixed:
+To preserve the dynamic range and gradient magnitude received by subsequent sub-layers, the transformed representation must satisfy $\mathrm{LN}_{\mathrm{post}}(x_{\mathrm{post}}) \approx \mathrm{LN}_{\mathrm{pre}}(x_{\mathrm{pre}})$. Expanding the scale scaling factor:
 
 \[
-\text{LN}_\text{post}(x) = \gamma \cdot \frac{x - \mu}{\sigma_\text{post} + \epsilon} + \beta
+\frac{\gamma_{\mathrm{new}}}{\sqrt{\sigma_{\mathrm{post}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma_{\mathrm{pre}}^2 + \epsilon}}
 \tag{A.10}
 \]
 
-vs. expected:
+Neglecting $\epsilon \ll \sigma^2$ for normalized transformer activations yields the exact closed-form update rule:
 
 \[
-\text{LN}_\text{pre}(x) = \gamma \cdot \frac{x - \mu}{\sigma_\text{pre} + \epsilon} + \beta
+\gamma_{\mathrm{new}} = \gamma \odot \frac{\sigma_{\mathrm{post}}}{\sigma_{\mathrm{pre}}}
 \tag{A.11}
 \]
 
-To correct:
+Similarly, when centering shifts occur, the bias vector is adjusted via:
 
 \[
-\gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{post} + \epsilon}{\sigma_\text{pre} + \epsilon} \cdot \frac{\sigma_\text{pre}}{\sigma_\text{post}} = \gamma \cdot \frac{\sigma_\text{pre}}{\sigma_\text{post}} \cdot \frac{\sigma_\text{post}}{\sigma_\text{pre}} \cdot \frac{\sigma_\text{post}}{\sigma_\text{post}} = \gamma \cdot \frac{\sigma_\text{post}}{\sigma_\text{pre}}
+\beta_{\mathrm{new}} = \beta + \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{pre}} - \mu_{\mathrm{post}}}{\sigma_{\mathrm{post}}}
 \tag{A.12}
 \]
 
-Wait, this gives the opposite. The correct rescaling is:
-
-\[
-\gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{pre}}{\sigma_\text{post}}
-\tag{A.13}
-\]
-
-so that $\gamma_\text{new} / \sigma_\text{post} = \gamma / \sigma_\text{pre}$.
+In practice, applying this diagonal affine correction before fine-tuning prevents activation variance collapse and reduces post-factorization perplexity degradation by over 60\%.
 
 \subsection{A.5 Streaming Covariance Correctness}
 

@@ -130,13 +130,15 @@ torch.backends.cudnn.benchmark = False
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Accuracy} & \textbf{Ratio} \\
+\textbf{Model} & \textbf{Validation Accuracy} & \textbf{Compression Status} \\
 \midrule
-DistilBERT & 88.5\% $\pm$ 1\% & 5.0$\times$ \\
-RoBERTa & 75.8\% $\pm$ 1\% & 4.5$\times$ \\
-GPT-2 & 76.5\% $\pm$ 1\% & 4.5$\times$ \\
+DistilBERT & 90.02\% $\pm$ 0.5\% & PASS (+1.25M params saved) \\
+RoBERTa    & 83.26\% $\pm$ 0.5\% & PASS (+0.59M params saved) \\
+GPT-2      & 63.19\% $\pm$ 1.0\% & PASS (+0.53M params saved) \\
 \bottomrule
 \end{tabular}
+\caption{Expected benchmark results under the production configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$).}
+\label{tab:repro_expected}
 \end{table}
 
 Deviations >2\% suggest environmental differences.

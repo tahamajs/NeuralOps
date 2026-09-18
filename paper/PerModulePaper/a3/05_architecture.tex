@@ -10,14 +10,16 @@ A3 supports any transformer with linear or Conv1D layers:
 \small
 \begin{tabular}{lllll}
 \toprule
-\textbf{Architecture} & \textbf{Attention} & \textbf{FFN} & \textbf{Conv1D?} & \textbf{Verified} \\
+\textbf{Architecture} & \textbf{Attention Projections} & \textbf{FFN Projections} & \textbf{Conv1D?} & \textbf{Verified} \\
 \midrule
-DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{lin1, lin2} \& No &  \\
-RoBERTa-base & \texttt{query, key, value, output.dense} & \texttt{intermediate.dense, output.dense} \& No &  \\
-GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & \texttt{c\_fc, c\_proj} \& Yes &  \\
-Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_proj, up\_proj, down\_proj} \& No &  \\
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{lin1, lin2} & No & Yes \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & \texttt{intermediate.dense, output.dense} & No & Yes \\
+GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & \texttt{c\_fc, c\_proj} & Yes & Yes \\
+Qwen2.5 / LLaMA & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_proj, up\_proj, down\_proj} & No & Yes \\
 \bottomrule
 \end{tabular}
+\caption{Architectures validated with A3 factorized compression and their linear projection types.}
+\label{tab:architecture_support}
 \end{table}
 
 \subsection{Layer Targeting}
@@ -31,13 +33,15 @@ A3 compresses all linear layers by default, with the following protections:
 \toprule
 \textbf{Layer type} & \textbf{Compressed?} & \textbf{Reason} \\
 \midrule
-\texttt{classifier}, \texttt{score}, \texttt{lm\_head} \& Never \& Small and critical \\
-\texttt{pooler}, \texttt{embedding} \& Never \& Not linear \\
-Attention projections \& Yes \& Target of interest \\
-FFN layers \& Yes (if \texttt{target\_attention\_only = False}) \& Large parameter share \\
-LayerNorm \& Never \& Not factorizable \\
+\texttt{classifier}, \texttt{score}, \texttt{lm\_head} & Never & Small and task-critical \\
+\texttt{pooler}, \texttt{embedding} & Never & Not factorizable linear maps \\
+Attention projections & Yes & Target of interest \\
+FFN layers & Yes (optional) & Large parameter share \\
+LayerNorm & Never & 1D affine scale/bias vectors \\
 \bottomrule
 \end{tabular}
+\caption{Layer compression rules and preservation criteria enforced by the A3 engine.}
+\label{tab:layer_rules}
 \end{table}
 
 The \texttt{should\_compress\_linear} helper enforces these rules.
@@ -217,16 +221,18 @@ input at position $j > i$ is zero, both before and after injection.
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\textbf{Potential Failure} & \textbf{Detection Mechanism} & \textbf{Defensive Response} \\
 \midrule
-Reconstruction error > $\tau$ \& Frobenius check \& Fallback to original \\
-Weight shape mismatch \& Assertion in \texttt{from\_linear} \& Skip layer \\
-SVD convergence failure \& Try/except \& Retry on CPU \\
-No calibration data & \texttt{F\_map} empty \& Unweighted SVD \\
-CUDA OOM in SVD \& RuntimeError \& Retry on CPU \\
-NaN in reconstruction & \texttt{torch.isnan} \& Skip and log \\
+Reconstruction error $> \tau$ & Frobenius norm check & Fallback to original dense layer \\
+Weight shape mismatch & Assertion in \texttt{from\_linear} & Skip layer and retain dense weights \\
+SVD convergence failure & \texttt{torch.linalg.LinAlgError} & Fallback to unweighted CPU SVD \\
+No calibration data & \texttt{F\_map} empty & Unweighted CPU FP32 SVD \\
+CUDA OOM during SVD & Proactive CPU computation & Execute entirely on CPU in FP32 \\
+NaN in reconstruction & \texttt{torch.isnan} check & Abort factorization and fallback \\
 \bottomrule
 \end{tabular}
+\caption{Defensive exception-handling and fallback behaviors implemented within the A3 engine.}
+\label{tab:failure_responses}
 \end{table}
 
 \subsection{Registry}

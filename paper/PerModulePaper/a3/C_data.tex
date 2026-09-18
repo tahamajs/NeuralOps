@@ -1,7 +1,6 @@
-
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT -- Full Metrics}
+\subsection{C.1 DistilBERT -- Full Metrics (SST-2 Validation)}
 
 \begin{table}[H]
 \centering
@@ -10,26 +9,32 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Model \& DistilBERT-base \\
+Model Architecture & DistilBERT-base \\
+Target Dataset & SST-2 (binary classification) \\
 Params (before) & 66,955,010 \\
-Params (after) & 13500000 \\
-Ratio & 5.0$\times$ \\
-Accuracy & 88.5\% \\
-F1 & 0.884 \\
-Precision & 0.885 \\
-Recall & 0.884 \\
-Loss & 0.35 \\
-Peak VRAM & 110 MB \\
-Inference time & 2.4 s \\
-Compression time & 2.3 s s \\
-Compressed layers & 36 \\
-Fallback layers & 0 \\
-Average error & 0.15 \\
+Params (after) & 65,709,314 \\
+Saved Parameters & +1,245,696 \\
+Compression Ratio & 1.019$\times$ (1.86\% reduction) \\
+Accuracy & 90.02\% (Baseline 90.71\%, $\Delta -0.69\%$) \\
+F1 Score & 0.9043 (Macro F1: 0.9000) \\
+Precision & 0.9014 \\
+Recall & 0.8998 \\
+Cross-Entropy Loss & 0.7113 \\
+Peak VRAM & 333.71 MB \\
+Inference Latency & 2.18 ms/sample (throughput: 29,602 tok/s) \\
+Total Elapsed Time & 28.17 s \\
+Factorized Target Layers & 6 (q\_lin \& k\_lin in Layers 0, 1, 3) \\
+Fallback Layers & 18 (all exceeding $\tau=0.40$ at $r_{\mathrm{ceiling}}=256$) \\
+Average Reconstruction Error & 0.3754 \\
+Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
+\caption{Comprehensive experimental metrics for DistilBERT under A3 factorized compression on SST-2.}
+\label{tab:distilbert_full_metrics}
 \end{table}
+% <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 1 -->
 
-\subsection{C.2 RoBERTa -- Full Metrics}
+\subsection{C.2 RoBERTa -- Full Metrics (SST-2 Validation)}
 
 \begin{table}[H]
 \centering
@@ -38,21 +43,32 @@ Average error & 0.15 \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
+Model Architecture & RoBERTa-base \\
+Target Dataset & SST-2 (binary classification) \\
 Params (before) & 124,647,170 \\
-Params (after) & 27700000 \\
-Ratio & 4.5$\times$ \\
-Accuracy & 75.8\% \\
-F1 & 0.775 \\
-Peak VRAM & 450 MB \\
-Inference time & 5.2 s \\
-Compressed layers & 72 \\
-Fallback layers & 0 \\
-Average error & 0.16 \\
+Params (after) & 124,057,346 \\
+Saved Parameters & +589,824 \\
+Compression Ratio & 1.005$\times$ (0.47\% reduction) \\
+Accuracy & 83.26\% (Baseline 78.56\%, $\Delta +4.70\%$) \\
+F1 Score & 0.8460 (Macro F1: 0.8313) \\
+Precision & 0.8394 \\
+Recall & 0.8312 \\
+Cross-Entropy Loss & 0.3993 \\
+Peak VRAM & 531.41 MB \\
+Inference Latency & 4.93 ms/sample (throughput: 11,207 tok/s) \\
+Total Elapsed Time & 45.35 s \\
+Factorized Target Layers & 3 (key\_0, query\_9, key\_10 at rank 256) \\
+Fallback Layers & 33 (safely preserved dense weights) \\
+Average Reconstruction Error & 0.3967 \\
+Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
+\caption{Comprehensive experimental metrics for RoBERTa-base under A3 factorized compression on SST-2.}
+\label{tab:roberta_full_metrics}
 \end{table}
+% <!-- source: results/unified_a3/roberta/roberta-base_a3_full_metrics.json line 1 -->
 
-\subsection{C.3 GPT-2 -- Full Metrics}
+\subsection{C.3 GPT-2 -- Full Metrics (SST-2 Validation)}
 
 \begin{table}[H]
 \centering
@@ -61,169 +77,112 @@ Average error & 0.16 \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
+Model Architecture & GPT-2 \\
+Target Dataset & SST-2 (binary classification) \\
 Params (before) & 124,441,344 \\
-Params (after) & 27700000 \\
-Ratio & 4.5$\times$ \\
-Accuracy & 76.5\% \\
-F1 & 0.768 \\
-Peak VRAM & 500 MB \\
-Inference time & 5.5 s \\
-Compressed layers & 72 \\
-Fallback layers & 0 \\
-Average error & 0.17 \\
+Params (after) & 123,916,032 \\
+Saved Parameters & +525,312 \\
+Compression Ratio & 1.004$\times$ (0.42\% reduction) \\
+Accuracy & 63.19\% (Baseline 79.36\%, $\Delta -16.17\%$) \\
+F1 Score & 0.7216 (Macro F1: 0.5892) \\
+Precision & 0.7075 \\
+Recall & 0.6262 \\
+Cross-Entropy Loss & 0.6245 \\
+Peak VRAM & 572.13 MB \\
+Inference Latency & 5.16 ms/sample (throughput: 12,412 tok/s) \\
+Total Elapsed Time & 40.66 s \\
+Factorized Target Layers & 2 (c\_proj in Layer 0 at $r=170$, Layer 1 at $r=256$) \\
+Fallback Layers & 22 (safely preserved dense weights) \\
+Average Reconstruction Error & 0.3406 \\
+Quality Gate Status & PASS ($\ge 56.00\%$) \\
 \bottomrule
 \end{tabular}
+\caption{Comprehensive experimental metrics for GPT-2 under A3 factorized compression on SST-2.}
+\label{tab:gpt2_full_metrics}
 \end{table}
+% <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 1 -->
 
-\subsection{C.4 Per-Layer Reconstruction Errors (DistilBERT)}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Layer} & \textbf{Module} & \textbf{Rank} & \textbf{Error} \\
-\midrule
-0 \& q\_lin & 32 & 0.85 \\
-0 \& k\_lin & 32 & 0.85 \\
-0 \& v\_lin & 32 & 0.85 \\
-0 \& out\_lin & 32 & 0.85 \\
-0 \& lin1 & 32 & 0.85 \\
-0 \& lin2 & 32 & 0.85 \\
-... & ... & ... & ... \\
-5 \& lin2 & 32 & 0.85 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{C.5 Per-Layer Reconstruction Errors (RoBERTa)}
-
-(Similar table for RoBERTa's 12 layers)
-
-\subsection{C.6 Per-Layer Reconstruction Errors (GPT-2)}
-
-(Similar table for GPT-2's 12 layers)
-
-\subsection{C.7 Training Loss Curves}
-
-\subsubsection{DistilBERT}
-
-\begin{lstlisting}
-Step  Loss
-1     82.1
-5     83.4
-10    84.6
-...
-50    86.4
-\end{lstlisting}
-
-\subsubsection{RoBERTa}
-
-\begin{lstlisting}
-Step  Loss
-1     74.2
-...
-50    78.2
-\end{lstlisting}
-
-\subsubsection{GPT-2}
-
-\begin{lstlisting}
-Step  Loss
-1     73.5
-...
-50    77.5
-\end{lstlisting}
-
-\subsection{C.8 LoRA Rank Ablation -- Detail}
-
-\subsubsection{DistilBERT}
+\subsection{C.4 Per-Layer Reconstruction Errors and Ranks (DistilBERT)}
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{lllll}
 \toprule
-\textbf{Rank} & \textbf{Acc} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Time} \\
+\textbf{Layer} & \textbf{Module} & \textbf{Final Rank} & \textbf{Reconstruction Error} & \textbf{Action} \\
 \midrule
-8 & 32 & 32 & 32 & 32 \\
-16 & 32 & 32 & 32 & 32 \\
-32 & 32 & 32 & 32 & 32 \\
-64 & 32 & 32 & 32 & 32 \\
+0 & \texttt{attention.q\_lin} & 256 & 0.3829 & Factorized \\
+0 & \texttt{attention.k\_lin} & 256 & 0.3758 & Factorized \\
+0 & \texttt{attention.v\_lin} & 256 & 0.4612 & Fallback ($\mathrm{err} > \tau$) \\
+0 & \texttt{attention.out\_lin} & 256 & 0.5210 & Fallback ($\mathrm{err} > \tau$) \\
+1 & \texttt{attention.q\_lin} & 256 & 0.3622 & Factorized \\
+1 & \texttt{attention.k\_lin} & 213 & 0.3942 & Factorized \\
+1 & \texttt{attention.v\_lin} & 256 & 0.4498 & Fallback ($\mathrm{err} > \tau$) \\
+1 & \texttt{attention.out\_lin} & 256 & 0.5126 & Fallback ($\mathrm{err} > \tau$) \\
+2 & \texttt{attention.q\_lin} & 256 & 0.4178 & Fallback ($\mathrm{err} > \tau$) \\
+2 & \texttt{attention.k\_lin} & 256 & 0.4221 & Fallback ($\mathrm{err} > \tau$) \\
+3 & \texttt{attention.q\_lin} & 256 & 0.3681 & Factorized \\
+3 & \texttt{attention.k\_lin} & 256 & 0.3694 & Factorized \\
+4 & \texttt{attention.q\_lin} & 256 & 0.4098 & Fallback ($\mathrm{err} > \tau$) \\
+5 & \texttt{attention.q\_lin} & 256 & 0.4201 & Fallback ($\mathrm{err} > \tau$) \\
 \bottomrule
 \end{tabular}
+\caption{Detailed layer-by-layer factorization decisions and relative Frobenius reconstruction errors for DistilBERT attention layers.}
+\label{tab:distilbert_layer_detail}
 \end{table}
+% <!-- source: results/a3_tests/fixed_v4/a3_stats.json line 27 -->
 
-(Similar for RoBERTa and GPT-2)
-
-\subsection{C.9 SVD Rank Ablation -- Detail}
+\subsection{C.5 Multi-Task Evaluation Summary}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llll}
+\begin{tabular}{lllllll}
 \toprule
-\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\textbf{Model} & \textbf{Dataset} & \textbf{Task Type} & \textbf{Classes} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Peak VRAM} \\
 \midrule
-16 & 84.5 & 84.5 & 84.5 \\
-32 & 84.5 & 84.5 & 84.5 \\
-64 & 84.5 & 84.5 & 84.5 \\
-128 & 84.5 & 84.5 & 84.5 \\
-256 & 84.5 & 84.5 & 84.5 \\
-384 & 84.5 & 84.5 & 84.5 \\
+DistilBERT & SST-2    & Sentiment & 2 & 90.02\% & 0.9043 & 333.7 MB \\
+DistilBERT & MNLI     & NLI       & 3 & 44.40\% & 0.3516 & 204.7 MB \\
+DistilBERT & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 204.7 MB \\
+RoBERTa    & SST-2    & Sentiment & 2 & 83.26\% & 0.8460 & 531.4 MB \\
+RoBERTa    & MNLI     & NLI       & 3 & 40.10\% & 0.2981 & 534.7 MB \\
+RoBERTa    & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 301.6 MB \\
+GPT-2      & SST-2    & Sentiment & 2 & 63.19\% & 0.7216 & 572.1 MB \\
+GPT-2      & MNLI     & NLI       & 3 & 36.10\% & 0.3035 & 335.7 MB \\
+GPT-2      & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 335.8 MB \\
 \bottomrule
 \end{tabular}
+\caption{Cross-task performance matrix showing accuracy, macro F1, and peak VRAM across all 9 model-dataset combinations.}
+\label{tab:c_multitask_matrix}
 \end{table}
+% <!-- source: results/a3_tests/multidataset_summary.csv line 1 -->
 
-\subsection{C.10 Calibration Size Ablation}
+\subsection{C.6 Reproduction Commands and Execution Scripts}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{N\_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
-\midrule
-100 & 0.85 & 0.85 & 0.85 \\
-500 & 0.85 & 0.85 & 0.85 \\
-1000 & 0.85 & 0.85 & 0.85 \\
-5000 & 0.85 & 0.85 & 0.85 \\
-\bottomrule
-\end{tabular}
-\end{table}
+All experiments are executed via the reproducible unified runner pipeline:
 
-\subsection{C.11 Raw JSON Metrics}
+\begin{lstlisting}[language=bash]
+# 1. DistilBERT Benchmark on SST-2
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 --model_family bert \
+    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --output_dir results/a3_tests/fixed_v4 \
+    --modules a3 --batch_size 8 --recovery_steps 50 \
+    --lora_rank 16 --precision fp16 --fresh
 
-\begin{lstlisting}
-{
-  "distilbert": {
-    "params_before": 66955010,
-    "params_after": 13500000,
-    "accuracy_pct": 88.5,
-    "f1": 0.884,
-    "compression_ratio": 5.0,
-    "peak_vram_mb": 110,
-    "compressed_layers": 36,
-    "fallback_layers": 0,
-    "avg_reconstruction_error": 0.15
-  },
-  "roberta": {...},
-  "gpt2": {...}
-}
-\end{lstlisting}
+# 2. RoBERTa Benchmark on SST-2
+python Codes/framework/run_quality_sweep.py \
+    --model models/roberta-base --model_family roberta \
+    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --output_dir results/unified_a3/roberta \
+    --modules a3 --batch_size 4 --recovery_steps 50 \
+    --lora_rank 8 --precision fp16 --fresh
 
-\subsection{C.12 Reproduction Commands}
-
-\begin{lstlisting}
-# Full benchmark
-python run_all_4_a3.py --models distilbert,roberta,gpt2
-
-# Rank sweep
-for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --rank $rank --output_suffix r$rank
-done
-
-# Ablations
-python run_all_4_a3.py --use_fisher false --output_suffix nofisher
-python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+# 3. GPT-2 Benchmark on SST-2
+python Codes/framework/run_quality_sweep.py \
+    --model models/gpt2 --model_family gpt \
+    --dataset sst2 --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --output_dir results/unified_a3/gpt2 \
+    --modules a3 --batch_size 4 --recovery_steps 50 \
+    --lora_rank 8 --precision fp16 --fresh
 \end{lstlisting}
