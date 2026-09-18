@@ -629,3 +629,4 @@ The `AegisAttentionV3` architecture incorporates telemetry hooks for tracking si
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **50.20%** | -0.80% | 0.4181 | 1.25x | 0 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **36.00%** | -43.70% | 0.2902 | 1.28x | 0 | N/A | 2026-09-18 |
