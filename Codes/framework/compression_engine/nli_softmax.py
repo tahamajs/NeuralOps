@@ -385,7 +385,8 @@ class NLISoftmaxAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("nli_softmax_inject")
 @ATTENTION_REGISTRY.register("inject_nli_softmax")
 def inject_nli_softmax(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -395,6 +396,46 @@ def inject_nli_softmax(
 ) -> Optional[NLISoftmaxAttention]:
     """Safe injection hook for NLISoftmaxAttention, handling nested encoders properly."""
     try:
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get("model", kwargs.get("layer", None))
+        if target is None:
+            return None
+
+        # 1. Whole model traversal
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_nli_softmax(
+                    layer=lyr,
+                    model_config=model_config or getattr(target, "config", None),
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+        layer = target
         src = old_attn
         if src is None:
             for attr in ("attention", "self_attn", "attn", "self"):
