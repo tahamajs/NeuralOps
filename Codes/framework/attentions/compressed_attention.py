@@ -532,8 +532,9 @@ def inject_compressed_attention(
             src_attn = layer.attn
 
     try:
-        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 384))
-        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 384))
+        h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
+        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
+        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
         new_attn = CompressedAttentionLayer(
             config=model_config,
             rank_qkv=rank_qkv,
