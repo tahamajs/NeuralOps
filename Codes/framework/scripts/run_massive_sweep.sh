@@ -43,7 +43,7 @@ dispatch_batch() {
     local attn_types="$3"   # space-separated list
     log "🚀  Dispatching batch '$batch_name'  task=$task"
     log "    Attention types: $attn_types"
-    $PUSH --command "python run_kaggle.py sweep --attn_types $attn_types --task $task --epochs 3 --batch_size 32 --seeds 42"
+    $PUSH --command "python run_kaggle.py sweep --attn_types $attn_types --task $task --epochs 3 --batch_size 256 --seeds 42"
     wait_for_complete "$batch_name"
 }
 
