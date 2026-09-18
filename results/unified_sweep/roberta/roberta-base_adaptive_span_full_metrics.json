@@ -8,7 +8,7 @@
         "recall": 0.548,
         "val_loss": 0.6391,
         "status": "PASS_LOW",
-        "elapsed_s": 16.34
+        "elapsed_s": 19.52
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -41,7 +41,7 @@
     },
     "hardware": {
         "peak_vram_mb": 645.35,
-        "tokens_per_sec": 28707.78
+        "tokens_per_sec": 22831.26
     },
     "architecture": {
         "span_distribution": {
@@ -223,5 +223,5 @@
         "L_512_vram_mb": 629.51,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-19T02:04:25.763852"
+    "timestamp": "2026-09-19T02:54:02.151396"
 }
