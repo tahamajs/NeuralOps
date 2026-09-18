@@ -242,7 +242,7 @@ class MLAAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -257,7 +257,7 @@ class MLAAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -326,7 +326,7 @@ class MLAAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -467,7 +467,7 @@ class MLAAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross and seq_len > 1:
             causal_mask = torch.triu(

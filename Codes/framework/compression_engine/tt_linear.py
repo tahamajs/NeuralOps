@@ -63,6 +63,7 @@ def factorize_dimension_pair(
 
 
 class TTLinearLayer(nn.Module):
+    is_custom_attention: bool = True
     """
     Tensor-Train (TT) Linear Layer.
 
@@ -283,17 +284,17 @@ class TTLinearLayer(nn.Module):
         if hasattr(base_layer, "nx") and hasattr(base_layer, "nf"):
             in_f = int(base_layer.nx)
             out_f = int(base_layer.nf)
-            W = raw_w.t().float().contiguous()
+            W = raw_w.t().contiguous().float().contiguous()
         elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
             in_f = int(base_layer.in_features)
             out_f = int(base_layer.out_features)
             if raw_w.shape == (in_f, out_f):
-                W = raw_w.t().float().contiguous()
+                W = raw_w.t().contiguous().float().contiguous()
             else:
                 W = raw_w.float().contiguous()
         elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float().contiguous()
+            W = raw_w.t().contiguous().float().contiguous()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float().contiguous()

@@ -339,7 +339,7 @@ class NativeHybridAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -354,7 +354,7 @@ class NativeHybridAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -424,8 +424,8 @@ class NativeHybridAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -487,7 +487,7 @@ class NativeHybridAttention(BaseAttention):
             k_block = K[:, :, k_start:k_end]
             v_block = V[:, :, k_start:k_end]
 
-            scores = torch.matmul(q_block.float(), k_block.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(q_block.float(), k_block.float().transpose(-2, -1).contiguous()) * scale
 
             q_idx = torch.arange(i, end, device=Q.device).unsqueeze(1)
             k_idx = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
@@ -561,7 +561,7 @@ class NativeHybridAttention(BaseAttention):
                     v_c = V_f[:, :, start:end]
 
                     causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
-                    intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                    intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * causal_mask
                     intra_num = torch.matmul(intra_attn, v_c)
                     inter_num = torch.matmul(q_c, S)
 
@@ -571,15 +571,15 @@ class NativeHybridAttention(BaseAttention):
                     den = (intra_den + inter_den).clamp(min=1e-6)
                     out_list.append(((intra_num + inter_num) / den).to(Q.dtype))
 
-                    S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                    S = S + torch.matmul(k_c.transpose(-1, -2).contiguous(), v_c)
                     Z = Z + k_c.sum(dim=2)
 
                 out = torch.cat(out_list, dim=2) * pad
             else:
-                KV = torch.matmul(phi_K_f.transpose(-2, -1), V_f)
+                KV = torch.matmul(phi_K_f.transpose(-2, -1).contiguous(), V_f)
                 Z = phi_K_f.sum(dim=-2, keepdim=True)
                 num = torch.matmul(phi_Q_f, KV)
-                den = torch.matmul(phi_Q_f, Z.transpose(-2, -1)).clamp(min=1e-6)
+                den = torch.matmul(phi_Q_f, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
                 out = (num / den).to(Q.dtype) * pad
 
         return out

@@ -130,7 +130,7 @@ class DeltaKVStore:
             return k, v
 
         # Compute cosine-scaled similarity: (B, H, N, D) x (B, H, D, ref_N) -> (B, H, N, ref_N)
-        sim = torch.matmul(k_4d.float(), ref_k_b.float().transpose(-2, -1)) / (D**0.5)
+        sim = torch.matmul(k_4d.float(), ref_k_b.float().transpose(-2, -1).contiguous()) / (D**0.5)
         _, top_idx = torch.topk(sim, tk, dim=-1)  # (B, H, N, tk)
 
         # Gather reference key-value representations
@@ -179,6 +179,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class DeltaKVCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     DeltaKV Compressor: Decomposes projection weights into a low-rank reference component
     plus sparse residuals, modeling weight matrices under residual delta formulation.
@@ -288,7 +289,7 @@ class DeltaKVCompressor(BaseCompressor):
             raw_w = target_mod.weight.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().float()  # [out_features, in_features]
+                W = raw_w.t().contiguous().float()  # [out_features, in_features]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
                 W = raw_w.float()
@@ -326,7 +327,7 @@ class DeltaKVCompressor(BaseCompressor):
 
                 # Put weight back with original orientation
                 if is_conv1d:
-                    target_mod.weight.data.copy_(W_compressed.t().to(dtype=target_mod.weight.dtype))
+                    target_mod.weight.data.copy_(W_compressed.t().contiguous().to(dtype=target_mod.weight.dtype))
                 else:
                     target_mod.weight.data.copy_(W_compressed.to(dtype=target_mod.weight.dtype))
 

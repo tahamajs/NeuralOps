@@ -226,6 +226,7 @@ class A3FactorizedLinear(nn.Module):
 
 
 class A3Compressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     A3 Compressor: Activation-Aware SVD with Fisher / Activation-Energy weighting,
     LayerNorm recalibration, streaming memory-safe accumulation, and strict reconstruction validation.
@@ -436,18 +437,18 @@ class A3Compressor(BaseCompressor):
         if hasattr(target_mod, "nf"):
             out_f = target_mod.nf
             in_f = getattr(target_mod, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
-            W = raw_w.t() if raw_w.shape == (in_f, out_f) else raw_w
+            W = raw_w.t().contiguous() if raw_w.shape == (in_f, out_f) else raw_w
         elif hasattr(module, "nf"):
             out_f = module.nf
             in_f = getattr(module, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
-            W = raw_w.t() if raw_w.shape == (in_f, out_f) else raw_w
+            W = raw_w.t().contiguous() if raw_w.shape == (in_f, out_f) else raw_w
         elif bias is not None and bias.ndim == 1 and bias.shape[0] == raw_w.shape[1] and bias.shape[0] != raw_w.shape[0]:
-            W = raw_w.t()
+            W = raw_w.t().contiguous()
             out_f = bias.shape[0]
             in_f = raw_w.shape[0]
         elif "conv1d" in target_mod.__class__.__name__.lower():
             # HuggingFace Conv1D weights are [in_features, out_features]
-            W = raw_w.t()
+            W = raw_w.t().contiguous()
             in_f = W.shape[1]
             out_f = W.shape[0]
         else:

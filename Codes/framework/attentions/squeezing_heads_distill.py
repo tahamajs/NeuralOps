@@ -336,7 +336,7 @@ class SqueezingHeadsDistiller(BaseAttention):
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
                 if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size):
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
 
                 H = self.hidden_size
                 w_q = c_attn_w[:H, :]
@@ -351,7 +351,7 @@ class SqueezingHeadsDistiller(BaseAttention):
                 out_w = src.c_proj.weight.detach()
                 p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
                 if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size):
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
@@ -500,8 +500,8 @@ class SqueezingHeadsDistiller(BaseAttention):
             elif w_o is not None:
                 if w_o.shape == self.out_proj.weight.shape:
                     self.out_proj.weight.copy_(w_o)
-                elif w_o.t().shape == self.out_proj.weight.shape:
-                    self.out_proj.weight.copy_(w_o.t())
+                elif w_o.t().contiguous().shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.copy_(w_o.t().contiguous())
                 else:
                     self.out_proj.weight.zero_()
                     m_out = min(self.hidden_size, w_o.shape[0])
@@ -582,7 +582,7 @@ class SqueezingHeadsDistiller(BaseAttention):
 
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and seq_len > 1:

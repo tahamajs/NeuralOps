@@ -51,6 +51,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 @COMPRESSOR_REGISTRY.register("saes_svd")
 @COMPRESSOR_REGISTRY.register("saes")
 class SAESSVDCompressorV2(BaseCompressor):
+    is_custom_attention: bool = True
     """
     SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
     Frobenius validation, and safe fallback.
@@ -132,7 +133,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         if is_conv1d:
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
             out_f = W.shape[0]
             in_f = W.shape[1]
         else:
@@ -170,12 +171,12 @@ class SAESSVDCompressorV2(BaseCompressor):
         for _ in range(self.correcting_steps):
             E = W - A @ B
             # Update A towards residual gradient
-            BBt = B @ B.t() + eps_eye
-            A = A + E @ B.t() @ torch.linalg.pinv(BBt)
+            BBt = B @ B.t().contiguous() + eps_eye
+            A = A + E @ B.t().contiguous() @ torch.linalg.pinv(BBt)
 
             # Update B towards residual gradient
-            AtA = A.t() @ A + eps_eye
-            B = B + torch.linalg.pinv(AtA) @ A.t() @ (W - A @ B)
+            AtA = A.t().contiguous() @ A + eps_eye
+            B = B + torch.linalg.pinv(AtA) @ A.t().contiguous() @ (W - A @ B)
 
         # Compute relative Frobenius reconstruction error
         W_rec = A @ B

@@ -334,7 +334,7 @@ class TLinFormerAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -349,7 +349,7 @@ class TLinFormerAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -421,8 +421,8 @@ class TLinFormerAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -504,9 +504,9 @@ class TLinFormerAttention(BaseAttention):
         """
         B, N, _ = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -558,13 +558,13 @@ class TLinFormerAttention(BaseAttention):
         if self.is_decoder:
             scale = 1.0 / math.sqrt(self.head_dim)
             if L <= self.rank:
-                scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
+                scores = torch.matmul(q, K_proj.transpose(-2, -1).contiguous()) * scale
                 causal_mask = torch.tril(torch.ones(L, L, device=scores.device, dtype=torch.bool))
                 scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
                 if attention_mask is not None:
                     scores = apply_attention_mask(scores, attention_mask)
             else:
-                scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+                scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
                 causal_mask = torch.triu(
                     torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
                     diagonal=1,
@@ -594,7 +594,7 @@ class TLinFormerAttention(BaseAttention):
             context = torch.matmul(probs, V_proj)
         else:
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
+            scores = torch.matmul(q, K_proj.transpose(-2, -1).contiguous()) * scale
 
             if attention_mask is not None:
                 if L <= self.rank:

@@ -473,7 +473,7 @@ class SpectronAttention(BaseAttention):
                 c_w, c_b = _unpack_weight_bias(src.c_attn)
                 if c_w is not None:
                     if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
-                        c_w = c_w.t()
+                        c_w = c_w.t().contiguous()
 
                     q_dim = self.q_head_size
                     k_dim = self.hidden_size
@@ -491,7 +491,7 @@ class SpectronAttention(BaseAttention):
                 out_w, out_b = _unpack_weight_bias(src.c_proj)
                 if out_w is not None:
                     if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                        out_w = out_w.t()
+                        out_w = out_w.t().contiguous()
                     w_o = out_w
                     b_o = out_b
 
@@ -695,7 +695,7 @@ class SpectronAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and N > 1:

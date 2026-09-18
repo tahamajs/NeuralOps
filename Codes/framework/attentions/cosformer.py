@@ -341,7 +341,7 @@ class CosformerAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -356,7 +356,7 @@ class CosformerAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -389,7 +389,7 @@ class CosformerAttention(BaseAttention):
                         if hasattr(base_mod, "weight"):
                             w_data = base_mod.weight.data.clone()
                             if (base_mod.__class__.__name__ == "Conv1D") or hasattr(base_mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
-                                w_data = w_data.t()
+                                w_data = w_data.t().contiguous()
                             b_data = getattr(base_mod, "bias", None)
                             extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
                             break
@@ -431,8 +431,8 @@ class CosformerAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -555,8 +555,8 @@ class CosformerAttention(BaseAttention):
             chunk_size = 32
             if N <= chunk_size:
                 causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-                score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
-                score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
+                score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
                 scores = score_c + score_s
                 num = torch.matmul(scores, V)
                 denom = score_c.sum(dim=-1, keepdim=True) + score_s.sum(dim=-1, keepdim=True) + self.eps
@@ -583,8 +583,8 @@ class CosformerAttention(BaseAttention):
 
                 causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
 
-                score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
-                score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
+                score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
                 scores = score_c + score_s
 
                 num_intra = torch.matmul(scores, v_c)
@@ -615,10 +615,10 @@ class CosformerAttention(BaseAttention):
                         kc_curr[:, :, valid:] = 0.0
                         ks_curr[:, :, valid:] = 0.0
 
-                    S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2), v_curr)
-                    S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2), v_curr)
-                    Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
-                    Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                    S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2).contiguous(), v_curr)
+                    S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2).contiguous(), v_curr)
+                    Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+                    Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
                 num = torch.cat(num_list, dim=2)[:, :, :N, :]
                 denom = torch.cat(denom_list, dim=2)[:, :, :N, :]
@@ -626,14 +626,14 @@ class CosformerAttention(BaseAttention):
         else:
             # Global bidirectional associative accumulation
             # KV_cos: [B, H, d, d], KV_sin: [B, H, d, d]
-            KV_cos = torch.matmul(K_cos.transpose(-2, -1), V)
-            KV_sin = torch.matmul(K_sin.transpose(-2, -1), V)
+            KV_cos = torch.matmul(K_cos.transpose(-2, -1).contiguous(), V)
+            KV_sin = torch.matmul(K_sin.transpose(-2, -1).contiguous(), V)
 
             Z_cos = K_cos.sum(dim=2, keepdim=True)  # [B, H, 1, d]
             Z_sin = K_sin.sum(dim=2, keepdim=True)  # [B, H, 1, d]
 
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
-            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
+            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous()) + self.eps
 
             context = (num / denom.clamp(min=self.eps)).to(dtype)
 

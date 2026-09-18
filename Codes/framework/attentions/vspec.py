@@ -200,6 +200,7 @@ class TokenRouter(nn.Module):
 
 
 class DynamicLowRankProjector(nn.Module):
+    is_custom_attention: bool = True
     r"""SVD-initialized low-rank projector with dynamic variational gate scaling and LoRA adapters."""
 
     def __init__(
@@ -270,14 +271,14 @@ class DynamicLowRankProjector(nn.Module):
 
             self.U.data[:min_u, :eff_rank].copy_(U[:min_u, :eff_rank])
             self.S.data[:eff_rank].copy_(S[:eff_rank])
-            self.V.data[:min_v, :eff_rank].copy_(Vh[:eff_rank, :min_v].t())
+            self.V.data[:min_v, :eff_rank].copy_(Vh[:eff_rank, :min_v].t().contiguous())
 
             if bias is not None and self.bias is not None:
                 b_val = bias.data if isinstance(bias, nn.Parameter) else bias
                 min_b = min(self.bias.size(0), b_val.size(0))
                 self.bias.data[:min_b].copy_(b_val[:min_b])
 
-            rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[:, :eff_rank].t()
+            rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[:, :eff_rank].t().contiguous()
             f_norm = float(torch.linalg.norm(rec))
             if f_norm < 1e-4:
                 logger.warning(f"DynamicLowRankProjector: reconstructed norm is near zero ({f_norm}), re-initializing randomly")
@@ -306,7 +307,7 @@ class DynamicLowRankProjector(nn.Module):
     def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
         z = torch.matmul(x, self.V)
         z = z * self.S.unsqueeze(0).unsqueeze(0) * gate.unsqueeze(1)
-        out = torch.matmul(z, self.U.t())
+        out = torch.matmul(z, self.U.t().contiguous())
         if self.bias is not None:
             out = out + self.bias
 
@@ -513,7 +514,7 @@ class VSpecAttention(BaseAttention):
                     or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
                 )
                 if is_conv1d:
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -539,7 +540,7 @@ class VSpecAttention(BaseAttention):
                     or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
                 )
                 if is_conv1d:
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
@@ -595,7 +596,7 @@ class VSpecAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projectors
@@ -609,7 +610,7 @@ class VSpecAttention(BaseAttention):
         if extracted["o"][0] is not None and not self.is_nested_encoder:
             self.Po.set_weight(_orient(extracted["o"][0], self.all_head_size), extracted["o"][1])
         elif self.is_nested_encoder:
-            eye_w = torch.eye(self.hidden_size, self.all_head_size)
+            eye_w = torch.eye(self.all_head_size, self.all_head_size)
             self.Po.set_weight(eye_w, None)
 
         # Preserve source LoRA adapters if present
@@ -716,7 +717,7 @@ class VSpecAttention(BaseAttention):
         hg = self.head_gate(routed, valid_routed).unsqueeze(-1).unsqueeze(-1)
 
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(Q.float(), K.float().transpose(-1, -2)) * scale * hg.float()
+        scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
 
         # Check causal decoder
         if is_decoder and k_len > 1:

@@ -301,7 +301,7 @@ class NystromAttention(BaseAttention):
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 )
                 if is_conv1d:
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -323,7 +323,7 @@ class NystromAttention(BaseAttention):
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv1d:
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -386,8 +386,8 @@ class NystromAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -414,7 +414,7 @@ class NystromAttention(BaseAttention):
             norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
             alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
 
-            V = alpha * A.transpose(-2, -1)
+            V = alpha * A.transpose(-2, -1).contiguous()
             I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
 
             for _ in range(iters):
@@ -454,7 +454,7 @@ class NystromAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
         attn_weights = F.softmax(scores, dim=-1).to(dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -495,7 +495,7 @@ class NystromAttention(BaseAttention):
 
         if self.is_decoder or self.is_causal:
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             causal_mask = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
             scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
@@ -514,13 +514,13 @@ class NystromAttention(BaseAttention):
             Q_flat = Q.reshape(B * H, N, d).transpose(1, 2).contiguous()
             K_flat = K.reshape(B * H, N, d).transpose(1, 2).contiguous()
 
-            Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
-            K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
+            Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
+            K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
 
             scale = 1.0 / math.sqrt(d)
-            scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1)) * scale
-            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)) * scale
-            scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1)) * scale
+            scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
+            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
+            scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
             scores3 = scores3.masked_fill(~mask_expanded, -1e4)

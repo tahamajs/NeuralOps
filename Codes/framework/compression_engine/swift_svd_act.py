@@ -32,6 +32,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
 class SwiftSVDActivationCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Swift-SVD Activation-Aware Compressor.
 
@@ -205,7 +206,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         cls_name = base_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
         out_f, in_f = W.shape
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1) if (in_f * out_f > 16) else max_r
@@ -223,20 +224,20 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
                 if inp_flat.size(-1) == in_f and out_flat.size(-1) == out_f:
                     n_tokens = max(1, inp_flat.size(0))
-                    C = (out_flat.t() @ inp_flat) / n_tokens  # [out_f, in_f]
+                    C = (out_flat.t().contiguous() @ inp_flat) / n_tokens  # [out_f, in_f]
 
                     U_c, _, Vt_c = torch.linalg.svd(C, full_matrices=False)
                     r_act = min(r, U_c.shape[1], Vt_c.shape[0])
                     U_act = U_c[:, :r_act]            # [out_f, r]
-                    V_act = Vt_c[:r_act, :].t()       # [in_f, r]
+                    V_act = Vt_c[:r_act, :].t().contiguous()       # [in_f, r]
 
                     # Project W onto activation subspace: M = U_act^T @ W @ V_act
-                    M = U_act.t() @ W @ V_act         # [r, r]
+                    M = U_act.t().contiguous() @ W @ V_act         # [r, r]
                     U_m, S_m, Vt_m = torch.linalg.svd(M, full_matrices=False)
                     sqrt_S_m = torch.sqrt(torch.clamp(S_m, min=1e-12))
 
                     A = (U_act @ U_m) * sqrt_S_m.unsqueeze(0)       # [out_f, r]
-                    B = sqrt_S_m.unsqueeze(1) * (Vt_m @ V_act.t())     # [r, in_f]
+                    B = sqrt_S_m.unsqueeze(1) * (Vt_m @ V_act.t().contiguous())     # [r, in_f]
                     r = r_act
             except Exception as e:
                 logger.debug("Activation subspace projection failed (%s). Falling back to direct SVD.", e)

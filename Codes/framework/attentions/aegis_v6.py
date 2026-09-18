@@ -128,6 +128,7 @@ class AegisConfigV3:
 
 
 class FactorisedLowRankProjection(nn.Module):
+    is_custom_attention: bool = True
     r"""
     Low-rank SVD projection with LoRA update branch:
     88291y = x (V \Sigma U^T) + x (B^T A^T) + b88291
@@ -201,7 +202,7 @@ class FactorisedLowRankProjection(nn.Module):
             self.S.data.zero_()
             self.U[:, :r].copy_(U[:, :r].to(self.U.dtype))
             self.S.data[:r].copy_(S[:r].to(self.S.dtype))
-            self.V[:, :r].copy_(Vt[:r, :].t().to(self.V.dtype))
+            self.V[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype))
             if bias is not None and self.bias is not None:
                 self.bias.data[:min(len(self.bias), len(bias))].copy_(bias[:min(len(self.bias), len(bias))].to(self.bias.dtype))
             self.freeze_base_weights()
@@ -223,11 +224,11 @@ class FactorisedLowRankProjection(nn.Module):
 
     @property
     def base_weight(self) -> torch.Tensor:
-        return ((self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()).to(self.U.dtype)
+        return ((self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()).to(self.U.dtype)
 
     @property
     def weight(self) -> torch.Tensor:
-        svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()
+        svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
         if self.lora_rank > 0 and self.A is not None and self.B is not None:
             lora_w = self.A.float() @ self.B.float()
             return (svd_w + lora_w).to(self.A.dtype)
@@ -238,10 +239,10 @@ class FactorisedLowRankProjection(nn.Module):
         x_f = x.float()
         xV = torch.matmul(x_f, self.V.float())
         xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
-        out_svd = torch.matmul(xV_S, self.U.float().t())
+        out_svd = torch.matmul(xV_S, self.U.float().t().contiguous())
         if self.lora_rank > 0 and self.A is not None and self.B is not None:
-            xB = torch.matmul(x_f, self.B.float().t())
-            out_lora = torch.matmul(xB, self.A.float().t())
+            xB = torch.matmul(x_f, self.B.float().t().contiguous())
+            out_lora = torch.matmul(xB, self.A.float().t().contiguous())
             out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
         else:
             out = (out_svd + self.bias.float()).to(orig_dtype)
@@ -612,7 +613,7 @@ class AegisAttentionV3(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -654,7 +655,7 @@ class AegisAttentionV3(BaseAttention):
         N_k = K.shape[2]
         W = self.window
         scale = d**-0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
         idx_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
@@ -693,15 +694,15 @@ class AegisAttentionV3(BaseAttention):
             K_feat = K_feat * in_gate
             V = V * in_gate
 
-        K_feat = K_feat * pad.transpose(-2, -1)
-        V = V * pad.transpose(-2, -1)
+        K_feat = K_feat * pad.transpose(-2, -1).contiguous()
+        V = V * pad.transpose(-2, -1).contiguous()
 
-        KV = torch.matmul(K_feat.transpose(-2, -1), V)
+        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-6)
+        den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
         out = num / den
-        out = out * pad.transpose(-2, -1)
+        out = out * pad.transpose(-2, -1).contiguous()
         return torch.nan_to_num(out, nan=0.0)
 
     def forward(

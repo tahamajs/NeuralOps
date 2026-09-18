@@ -343,7 +343,7 @@ class FactorisedMatrixState(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -358,7 +358,7 @@ class FactorisedMatrixState(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -426,8 +426,8 @@ class FactorisedMatrixState(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -488,7 +488,7 @@ class FactorisedMatrixState(BaseAttention):
         log_D = dist.unsqueeze(0).unsqueeze(0) * log_decay
         D = torch.exp(log_D).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-        scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
+        scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * D
         num = torch.matmul(scores, v_f)
         denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
         y = num / denom
@@ -582,7 +582,7 @@ class FactorisedMatrixState(BaseAttention):
             out = y_flat
         else:
             # Low-rank factorized bilinear output projection + residual output projection
-            low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t())
+            low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t().contiguous())
             out = self.W_res(y_flat) + low_rank
 
         return out, None

@@ -266,7 +266,7 @@ class NLISoftmaxAttention(BaseAttention):
             b_out = b.data.clone() if b is not None else None
             cls_name = getattr(m, "__class__", type(m)).__name__
             if ("Conv1D" in cls_name or hasattr(base, "nf")) and w_out is not None and w_out.ndim == 2:
-                w_out = w_out.t()
+                w_out = w_out.t().contiguous()
             return w_out, b_out
 
         # Pattern 1: GPT-2 Conv1D fused c_attn
@@ -354,11 +354,11 @@ class NLISoftmaxAttention(BaseAttention):
             raise NotImplementedError("Cross-attention is not supported in NLISoftmaxAttention")
 
         B, N, D = hidden_states.shape
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(self.head_dim)
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(self.head_dim)
         if self.is_decoder and N > 1:
             causal_mask = torch.triu(
                 torch.full((N, N), -10000.0, device=scores.device, dtype=scores.dtype),

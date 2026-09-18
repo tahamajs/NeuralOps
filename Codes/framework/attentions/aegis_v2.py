@@ -87,6 +87,7 @@ AegisConfigV2 = AegisAttentionConfigV2
 
 
 class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""
     SVD-factorized linear layer with energy-based rank truncation and trainable LoRA adapters.
     Base SVD weights are frozen; LoRA branch provides trainable parameters.
@@ -489,7 +490,7 @@ class AegisAttentionV2(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -568,12 +569,12 @@ class AegisAttentionV2(BaseAttention):
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
-            Q_r, K_r = apply_rotary_pos_emb(Q.transpose(1, 2), K.transpose(1, 2), cos, sin)
-            Q, K = Q_r.transpose(1, 2), K_r.transpose(1, 2).contiguous()
+            Q_r, K_r = apply_rotary_pos_emb(Q.transpose(1, 2).contiguous(), K.transpose(1, 2).contiguous(), cos, sin)
+            Q, K = Q_r.transpose(1, 2).contiguous(), K_r.transpose(1, 2).contiguous()
 
         if self.kv_repeat > 1:
-            K = repeat_kv(K.transpose(1, 2), self.kv_repeat).transpose(1, 2).contiguous()
-            V = repeat_kv(V.transpose(1, 2), self.kv_repeat).transpose(1, 2).contiguous()
+            K = repeat_kv(K.transpose(1, 2).contiguous(), self.kv_repeat).transpose(1, 2).contiguous()
+            V = repeat_kv(V.transpose(1, 2).contiguous(), self.kv_repeat).transpose(1, 2).contiguous()
 
         if mask_2d is not None and not self.is_decoder:
             m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)
@@ -646,10 +647,10 @@ class AegisAttentionV2(BaseAttention):
             Vg_h = Vg.transpose(1, 2).contiguous()
             phi_Q_h = phi_Q.transpose(1, 2).contiguous()
 
-            KV = torch.matmul(phi_K_h.transpose(-2, -1), Vg_h)
+            KV = torch.matmul(phi_K_h.transpose(-2, -1).contiguous(), Vg_h)
             global_out_h = torch.matmul(phi_Q_h, KV)
             Z = phi_K_h.sum(dim=-2, keepdim=True)
-            norm = torch.matmul(phi_Q_h, Z.transpose(-2, -1))
+            norm = torch.matmul(phi_Q_h, Z.transpose(-2, -1).contiguous())
             global_out_h = global_out_h / (norm.clamp(min=1e-6))
             global_out = global_out_h.transpose(1, 2).contiguous()
 
