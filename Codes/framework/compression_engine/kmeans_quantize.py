@@ -105,6 +105,7 @@ def fast_kmeans_1d(
     sorted_vals, _ = torch.sort(flat)
     quantiles = torch.linspace(0, numel - 1, steps=k, device=flat.device).long()
     centroids = sorted_vals[quantiles].clone()
+    idx = torch.zeros(flat.shape, dtype=torch.long, device=flat.device)
 
     for _ in range(max_iters):
         # Midpoints between sorted centroids for fast searchsorted lookup
@@ -205,7 +206,8 @@ class KMeansLinear(nn.Module):
     def weight(self, value: torch.Tensor) -> None:
         if isinstance(value, torch.Tensor):
             centroids, indices = fast_kmeans_1d(value.data, n_clusters=self.n_clusters)
-            self.centroids = nn.Parameter(centroids.to(dtype=value.dtype, device=value.device))
+            prev_requires_grad = getattr(self.centroids, "requires_grad", True)
+            self.centroids = nn.Parameter(centroids.to(dtype=value.dtype, device=value.device), requires_grad=prev_requires_grad)
             self.register_buffer("indices", indices.to(device=value.device))
 
     def get_weight(self) -> torch.Tensor:
@@ -450,7 +452,8 @@ class KMeansCompressor(BaseCompressor):
                 "effective_bits_per_weight": self.bits,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
-                "effective_parameter_ratio": round(effective_ratio, 4),
+                "effective_parameter_ratio_of_target_layers": round(effective_ratio, 4),
+                "overall_model_compression_ratio": round(self._original_params / max(1, self._compressed_params), 4) if hasattr(self, "_original_params") else 1.0,
                 "forward_check_success": forward_check_success,
                 "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
             }
