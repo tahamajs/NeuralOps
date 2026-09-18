@@ -557,4 +557,4 @@ The `AegisAttentionConfigV2` architecture incorporates telemetry hooks for track
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **75.69%** | -15.37% | 0.7211 | 1.00x | 0 | N/A | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **75.69%** | -15.37% | 0.7211 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v2](https://huggingface.co/TahaaaaM/svd-linear-attention-distilbert-sst2-aegis-v2) | 2026-09-18 |
