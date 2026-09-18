@@ -12,7 +12,7 @@ from multiprocessing import Pool
 from datetime import datetime
 
 CKPT_FILE = None
-HF_REPO = "svd-linear-attention-results"
+HF_REPO = "TahaaaaM/svd-linear-attention-results"
 
 # Map model shorthand names to checkpoint directories on disk
 MODEL_PATH_MAP = {
