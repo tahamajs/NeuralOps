@@ -2096,6 +2096,9 @@ def run_single_module_main(args) -> dict:
         torch.backends.cudnn.benchmark = True
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        try:
+            free_mem, _ = torch.cuda.mem_get_info()
+            free_gb = free_mem / (1024 ** 3)
             if free_gb < 4.0:
                 LOG.warning("LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.", free_gb)
         except Exception as mem_err:
