@@ -159,6 +159,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 @ATTENTION_REGISTRY.register("leka_v3", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("leka_v3_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class LEKAV3Attention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -504,9 +505,9 @@ class LEKAV3Attention(BaseAttention):
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
 
-        q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2)
-        k = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

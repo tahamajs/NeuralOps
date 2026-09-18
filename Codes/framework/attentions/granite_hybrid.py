@@ -137,7 +137,7 @@ class Mamba2(nn.Module):
         inner_dim = self.in_proj.out_features // 2
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)
-        x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
+        x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2).contiguous()
         dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
@@ -212,6 +212,7 @@ class MixtureOfExperts(nn.Module):
 class GraniteHybridBlock(BaseAttention):
     r"""Granite Hybrid Attention-SSM Layer with MoE Feed-Forward and LoRA Adaptation."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -418,9 +419,9 @@ class GraniteHybridBlock(BaseAttention):
         H_kv = self.num_kv_heads
         Dh = self.head_dim
 
-        q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2)
-        k = self.k_proj(k_in).view(B, L_k, H_kv, Dh).transpose(1, 2)
-        v = self.v_proj(v_in).view(B, L_k, H_kv, Dh).transpose(1, 2)
+        q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(k_in).view(B, L_k, H_kv, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(v_in).view(B, L_k, H_kv, Dh).transpose(1, 2).contiguous()
 
         # RoPE application
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)

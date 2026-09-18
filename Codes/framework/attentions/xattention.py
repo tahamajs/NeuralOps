@@ -230,6 +230,7 @@ class XAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -543,9 +544,9 @@ class XAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
-        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings", None)

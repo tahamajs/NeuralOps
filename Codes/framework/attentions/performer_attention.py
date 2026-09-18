@@ -165,6 +165,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("performer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("performer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class PerformerAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -491,7 +492,7 @@ class PerformerAttention(BaseAttention):
         scale = d ** -0.25
         Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2) * scale
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # 2. Rotary embeddings application with source_attn.rotary_emb fallback
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:

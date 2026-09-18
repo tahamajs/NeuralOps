@@ -110,6 +110,7 @@ class LoRALinear(nn.Module):
 class Mamba(BaseAttention):
     r"""Gated State Space Model (Mamba) Linear Layer Module."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

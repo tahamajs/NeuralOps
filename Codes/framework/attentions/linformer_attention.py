@@ -150,6 +150,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("linformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("linformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class LinformerAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -441,9 +442,9 @@ class LinformerAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
-        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE — prefer position_embeddings tuple, fallback to self.rotary_emb
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)

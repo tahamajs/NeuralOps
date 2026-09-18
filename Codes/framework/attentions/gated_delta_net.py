@@ -279,6 +279,7 @@ class LoRALinear(nn.Module):
 class GatedDeltaNet(BaseAttention):
     r"""Bidirectional & Causal Gated DeltaNet Recurrent Linear Attention with True O(L) Complexity."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -692,9 +693,9 @@ class GatedDeltaNet(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Projections
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(hidden_states)
 
         # 2. Rotary Position Embeddings (RoPE)
@@ -724,8 +725,8 @@ class GatedDeltaNet(BaseAttention):
         k = F.normalize(k, p=2, dim=-1) / math.sqrt(d)
 
         # 5. Gating parameters: [B, H, L]
-        beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2)
-        alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2)
+        beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2).contiguous()
+        alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2).contiguous()
 
         # 6. Mask processing
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask

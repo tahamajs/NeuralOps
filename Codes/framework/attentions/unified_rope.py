@@ -153,6 +153,7 @@ class UnifiedRoPE(BaseAttention):
 
     supports_gqa: bool = True
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -518,9 +519,9 @@ class UnifiedRoPE(BaseAttention):
         """Forward pass computing RoPE attention, returning (output, attention_weights)."""
         B, L, _ = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE
         pos_emb = kwargs.get("position_embeddings", None)

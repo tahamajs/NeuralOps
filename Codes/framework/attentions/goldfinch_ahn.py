@@ -167,6 +167,7 @@ class GoldFinchAHNBlock(BaseAttention):
     via learned input-dependent dynamic gating.
     """
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -508,9 +509,9 @@ class GoldFinchAHNBlock(BaseAttention):
         B, L, D = x.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.W_k(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.W_k(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
