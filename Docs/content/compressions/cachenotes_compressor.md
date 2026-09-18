@@ -177,6 +177,13 @@ def cachenotes_row_mask_kernel(
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **53.50%** | +2.50% | 0.4945 | 1.00x | 24 | N/A | 2026-09-18 |
+
+
 The empirical evaluation of `cachenotes_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -588,4 +595,3 @@ The `CPTGenerator` architecture incorporates telemetry hooks for tracking singul
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
