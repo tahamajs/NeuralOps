@@ -2340,7 +2340,7 @@ def main():
                         if name in ("a3", "a3_compressor"):
                             a3_err = getattr(args, "a3_max_error", None)
                             if a3_err is None:
-                                a3_err = getattr(args, "max_error", 0.40)
+                                a3_err = getattr(args, "max_error", 0.50)
                             setattr(model.config, "a3_max_error", a3_err)
                             setattr(model.config, "max_error", a3_err)
                             a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
