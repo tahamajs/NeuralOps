@@ -304,7 +304,7 @@ Step 50 (Standard Stop) & \textbf{0.0008} & \textbf{0.0012} & \textbf{0.0030} \\
 Step 100 (Diminishing Return) & 0.0007 & 0.0011 & 0.0028 \\
 \bottomrule
 \end{tabular}
-\caption{Cross-entropy loss convergence across parameter-efficient LoRA adapter recovery steps.}
+\caption{Cross-entropy loss convergence across parameter-efficient LoRA adapter recovery steps (analytical estimate based on representative validation loss trajectories; final step 50 accuracy is verified from GPU evaluation logs).}
 \label{tab:app_loss_trajectory}
 \end{table}
 
@@ -328,6 +328,6 @@ RoBERTa + A3 ($r=128$) & FP16 & 248.1 MB & 1.00$\times$ & 83.26\% & 531.4 MB \\
 RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$\times$} & \textbf{82.95\%} & \textbf{395.0 MB} \\
 \bottomrule
 \end{tabular}
-\caption{Compound compression performance evaluating A3 factorized checkpoints under post-training INT8 quantization.}
+\caption{Compound compression performance evaluating A3 factorized checkpoints under post-training INT8 quantization (analytical estimate: disk footprints and compression ratios are mathematically derived from INT8 bit-width; downstream accuracy is an analytical projection from first-order roundoff perturbation bounds).}
 \label{tab:app_compound_quantization}
 \end{table}
