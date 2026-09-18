@@ -298,7 +298,24 @@ export async function bootstrapApp() {
         runStep();
     };
 
-    // Initial Scene Build
+    // Initial Scene Build & URL Query Parameters Auto-Loader (?module=...&model=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramModule = urlParams.get('module');
+    const paramModel = urlParams.get('model');
+
+    if (paramModel && ['distilbert', 'roberta', 'gpt2', 'qwen'].includes(paramModel)) {
+        store.set({ currentModel: paramModel });
+    }
+
+    if (paramModule && catalogModules.length > 0) {
+        const found = catalogModules.find(m => m.id.toLowerCase() === paramModule.toLowerCase() || (m.name && m.name.toLowerCase().includes(paramModule.toLowerCase())));
+        if (found) {
+            store.set({ activeResearchModule: found, currentCompression: found.paradigm || 'svd' });
+            const insp = document.getElementById('inspector');
+            if (insp) insp.classList.remove('hidden');
+        }
+    }
+
     rebuildSceneForModel(store.get('currentModel'), store.get('currentCompression'));
     smoothFlyCamera(camera, controls, maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35));
 
