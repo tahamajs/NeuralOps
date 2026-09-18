@@ -480,3 +480,8 @@ The `ExpertChoiceMoE` architecture incorporates telemetry hooks for tracking sin
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-expert-choice-moe-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-expert-choice-moe-attention) | 2026-09-18 |
