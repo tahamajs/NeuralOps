@@ -17,6 +17,7 @@ from framework.attentions.rala_attention import (
 @ATTENTION_REGISTRY.register("rala_compressor")
 class RALACompressorAttention(RALALinearAttention):
     r"""Rank-Augmented Linear Attention Compressor."""
+    is_custom_attention: bool = True
     pass
 
 

@@ -104,6 +104,7 @@ def apply_rotary_pos_emb(
 class GriffinSSDBlock(BaseAttention):
     r"""Griffin Hybrid Block combining local window attention with global SSD linear attention."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -417,10 +418,10 @@ class GriffinSSDBlock(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         # 1. Multi-head Projections
-        q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k = self.W_k(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
-        v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
-        q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
+        q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.W_k(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
 
         # Apply RoPE if provided or probe from rotary_emb
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)

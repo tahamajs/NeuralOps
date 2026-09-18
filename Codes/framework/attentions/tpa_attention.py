@@ -176,6 +176,7 @@ class TPAttention(BaseAttention):
 
     supports_gqa: bool = True
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -604,9 +605,9 @@ class TPAttention(BaseAttention):
 
         v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
-        Q = Q.transpose(1, 2)
-        K = K.transpose(1, 2)
-        v = v.transpose(1, 2)
+        Q = Q.transpose(1, 2).contiguous()
+        K = K.transpose(1, 2).contiguous()
+        v = v.transpose(1, 2).contiguous()
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)

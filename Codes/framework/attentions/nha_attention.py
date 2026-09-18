@@ -167,6 +167,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("nha_attention")
 @ATTENTION_REGISTRY.register("nha_compressor")
 class NativeHybridAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

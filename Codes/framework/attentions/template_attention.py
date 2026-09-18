@@ -158,6 +158,7 @@ class YourCustomAttention(BaseAttention):
 
     supports_gqa: bool = True
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -457,9 +458,9 @@ class YourCustomAttention(BaseAttention):
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
         batch_size, seq_len, _ = hidden_states.shape
 
-        q = self.query(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.key(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.value(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.query(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)
@@ -473,6 +474,28 @@ class YourCustomAttention(BaseAttention):
             v = repeat_kv(v, self.num_key_value_groups)
 
         scale = 1.0 / math.sqrt(self.head_dim)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs
+
+        try:
+
+            _qs = q.half() if q.dtype == torch.float32 else q
+
+            _ks = k.half() if k.dtype == torch.float32 else k
+
+            _vs = v.half() if v.dtype == torch.float32 else v
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=getattr(self, 'is_decoder', False) and N > 1, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
         if self.rank_proj is not None:

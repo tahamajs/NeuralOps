@@ -243,6 +243,7 @@ class FactorizedLinear(nn.Module):
 @ATTENTION_REGISTRY.register("SOAFusedAttention")
 @ATTENTION_REGISTRY.register("soa_fused_attention")
 class SOAFusedAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

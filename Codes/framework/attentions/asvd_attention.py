@@ -262,6 +262,7 @@ class ASVDAttention(BaseAttention):
         - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

@@ -2642,6 +2642,7 @@ def main():
             if (
                 name != "full"
                 and comp_metrics.get("num_compressed_layers", 0) == 0
+                and comp_metrics.get("num_injected_attention_layers", 0) == 0
                 and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
             ):
                 status = "PASS_NO_COMPRESSION"

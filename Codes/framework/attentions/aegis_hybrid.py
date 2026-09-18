@@ -183,6 +183,7 @@ class AegisHybridAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
     supports_delta_net: bool = True
 
     def __init__(
@@ -814,9 +815,9 @@ class AegisHybridAttention(BaseAttention):
             fused = local_out
         else:
             # --- GLOBAL LINEAR ATTENTION BRANCH ---
-            Q_g = Q.transpose(1, 2)
-            K_g = K.transpose(1, 2)
-            V_g = V.transpose(1, 2)
+            Q_g = Q.transpose(1, 2).contiguous()
+            K_g = K.transpose(1, 2).contiguous()
+            V_g = V.transpose(1, 2).contiguous()
 
             if self.prune_gate is not None:
                 keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]

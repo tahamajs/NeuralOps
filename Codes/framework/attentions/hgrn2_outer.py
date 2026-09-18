@@ -120,6 +120,7 @@ class HGRN2OuterBlock(BaseAttention):
 
     supports_gqa: bool = True
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -523,9 +524,9 @@ class HGRN2OuterBlock(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)

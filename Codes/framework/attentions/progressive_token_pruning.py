@@ -145,6 +145,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("progressive_token_pruning")
 @ATTENTION_REGISTRY.register("ptp")
 class ProgressiveTokenPruning(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

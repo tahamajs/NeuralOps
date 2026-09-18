@@ -272,6 +272,7 @@ def lsh_attention(
 @ATTENTION_REGISTRY.register("phantom")
 @ATTENTION_REGISTRY.register("phantom_module")
 class PHANTOMAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

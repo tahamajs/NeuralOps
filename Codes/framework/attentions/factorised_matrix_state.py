@@ -173,6 +173,7 @@ class LoRALinear(nn.Module):
 class FactorisedMatrixState(BaseAttention):
     r"""Bidirectional & Causal Factorised Matrix State Recurrent Linear Attention."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -521,9 +522,9 @@ class FactorisedMatrixState(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Projections
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:

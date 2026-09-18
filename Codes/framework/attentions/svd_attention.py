@@ -154,6 +154,7 @@ class SVDLinearAttention(BaseAttention):
     """
 
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -522,9 +523,9 @@ class SVDLinearAttention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Project Q, K, V
-        Q = self.query(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        K = self.key(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        V = self.value(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        Q = self.query(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.key(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. RoPE support
         if position_embeddings is None:

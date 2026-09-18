@@ -242,6 +242,7 @@ class SVDCompressedAttention(BaseAttention):
     """
 
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -667,9 +668,9 @@ class SVDCompressedAttention(BaseAttention):
             return out
 
         # 1. Projections
-        Q = proj_q(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        K = proj_k(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        V = proj_v(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        Q = proj_q(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = proj_k(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = proj_v(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. RoPE support
         if position_embeddings is None:
