@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{tlinformer_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_tlinformer\_attention/roberta/summary.csv} \& tlinformer\_attention \& PASS\_LOW & 53.56\% & 660.78 MB \\
+\texttt{results/unified\_tlinformer\_attention/distilbert/summary.csv} \& tlinformer\_attention \& PASS & 90.25\% & 331.47 MB \\
+\texttt{results/unified\_tlinformer\_attention/gpt2/summary.csv} \& tlinformer\_attention \& PASS\_LOW & 51.03\% & 571.59 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{wgqa}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_wgqa/roberta/summary.csv} \& wgqa \& PASS\_LOW & 52.64\% & 655.06 MB \\
+\texttt{results/unified\_wgqa/distilbert/summary.csv} \& wgqa \& PASS & 90.6\% & 326.42 MB \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} \& wgqa \& PASS & 87.16\% & 343.63 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

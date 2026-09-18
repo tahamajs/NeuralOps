@@ -1,3 +1,7 @@
-\section{02 Related}
+\section{Related Work}
 
-Formal architectural specifications for \texttt{upi_stuffed_mamba}.
+\subsection{Transformer Model Compression}
+Structured pruning, dynamic mixed-precision quantization, and low-rank decomposition represent vital paradigms for scalable model deployment. While unstructured pruning introduces indexing overhead on tensor cores, structured and semi-structured formulations yield tangible runtime speedups.
+
+\subsection{Sensitivity-Aware Saliency}
+Weight magnitude alone often fails to reflect functional channel importance. Modern compression frameworks utilize first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to retain high-energy representational subspaces under aggressive parameter budgets.

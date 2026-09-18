@@ -1,3 +1,9 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{upi_mamba}.
+\subsection{Algorithmic Formulation}
+The \texttt{upi_mamba} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{UPI-Mamba re-export module.
+Provides direct access to UPIMambaBlock and inject\_upi\_mamba.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

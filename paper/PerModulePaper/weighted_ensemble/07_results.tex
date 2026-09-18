@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{weighted_ensemble}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_weighted\_ensemble/roberta/summary.csv} \& weighted\_ensemble \& FAIL & 0.0\% & 298.71 MB \\
+\texttt{results/unified\_weighted\_ensemble/distilbert/summary.csv} \& weighted\_ensemble \& PASS & 86.12\% & 314.47 MB \\
+\texttt{results/unified\_weighted\_ensemble/gpt2/summary.csv} \& weighted\_ensemble \& PASS & 61.01\% & 634.91 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

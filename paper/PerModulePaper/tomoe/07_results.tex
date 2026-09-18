@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{tomoe}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_tomoe/roberta/summary.csv} \& tomoe \& PASS\_LOW & 50.92\% & 571.84 MB \\
+\texttt{results/unified\_tomoe/distilbert/summary.csv} \& tomoe \& PASS & 69.5\% & 427.0 MB \\
+\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} \& tomoe \& SKIP\_QWEN3\_5\_TIMEOUT & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_tomoe/gpt2/summary.csv} \& tomoe \& PASS\_LOW & 54.24\% & 874.64 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

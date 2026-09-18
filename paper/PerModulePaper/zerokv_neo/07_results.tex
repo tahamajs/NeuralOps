@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{zerokv_neo}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} \& zerokv\_neo \& PASS\_LOW & 50.92\% & 531.69 MB \\
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} \& zerokv\_neo \& PASS & 75.92\% & 312.19 MB \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} \& zerokv\_neo \& PASS\_LOW & 51.15\% & 413.5 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 43.31 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 22.97 ms & 571.8 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 22.55 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 24.82 ms & 581.7 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 51.97 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

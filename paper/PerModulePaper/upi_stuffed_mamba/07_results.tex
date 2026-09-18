@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{upi_stuffed_mamba}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_upi\_stuffed\_mamba/roberta/summary.csv} \& upi\_stuffed\_mamba \& PASS\_LOW & 50.92\% & 923.2 MB \\
+\texttt{results/unified\_upi\_stuffed\_mamba/distilbert/summary.csv} \& upi\_stuffed\_mamba \& PASS\_LOW & 50.92\% & 581.4 MB \\
+\texttt{results/unified\_upi\_stuffed\_mamba/gpt2/summary.csv} \& upi\_stuffed\_mamba \& PASS\_LOW & 51.03\% & 816.06 MB \\
+benchmark\_summary\_v2 \& bert-sst2 \& PASS & 4605.93 ms & 3809.6 MB \\
+benchmark\_summary\_v2 \& bert-mrpc \& PASS & 4562.53 ms & 3809.6 MB \\
+benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 4608.66 ms & 3819.5 MB \\
+benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 4600.92 ms & 3819.5 MB \\
+benchmark\_summary\_v2 \& t5-sst2 \& PASS & 4598.26 ms & 3900.7 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

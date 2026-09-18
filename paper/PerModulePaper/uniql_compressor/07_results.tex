@@ -1,3 +1,8 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{uniql_compressor}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_uniql/roberta/summary.csv} \& uniql \& PASS & 82.45\% & 359.04 MB \\
+\texttt{results/unified\_uniql/distilbert/summary.csv} \& uniql \& PASS & 90.14\% & 339.22 MB \\
+\texttt{results/unified\_uniql/gpt2/summary.csv} \& uniql \& PASS & 60.89\% & 635.04 MB \\
+all\_121\_gpu\_matrix \& uniql \& PASS & 1.0x (0.813s) & 128.5 MB \\
+all\_121\_gpu\_matrix \& uniql\_compressor \& PASS & 1.0x (0.81s) & 127.7 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
