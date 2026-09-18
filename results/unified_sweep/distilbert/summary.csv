@@ -12,7 +12,7 @@ admm,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert s
 admm_pruner,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:33.782095
 aegis_hybrid,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:25:10.278102
 aegis_spectron_fp8,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:25:17.278083
-aegis_v1,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:38.970789
+aegis_v1,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:25:35.830879
 aegis_v2,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:54.887092
 aegis_v3,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:05:29.266583
 aegis_v4,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:05:46.941711
