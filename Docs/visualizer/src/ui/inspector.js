@@ -133,11 +133,15 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
                     ${descHtml}
                 </div>
                 <div style="background:rgba(6,13,24,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;margin-top:8px;font-size:11px;">
-                    <div style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">📄 Code Implementation &amp; Paper Classes</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <span style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">📄 Code Implementation &amp; Paper Spec</span>
+                        <button class="round-button btn-doc-read" onclick="window.openModuleDoc && window.openModuleDoc(window._activeResearchModule)" style="font-size:9px;padding:2px 8px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.4);cursor:pointer;border-radius:4px;">📖 Read Full Paper Doc</button>
+                    </div>
                     <div style="margin-bottom:4px;word-break:break-all;"><strong style="color:var(--cyan);">Source:</strong> ${fileRef}</div>
                     <div style="margin-top:4px;"><strong style="color:var(--cyan);">PyTorch Classes:</strong> ${classesRef}</div>
                 </div>
             `;
+            window._activeResearchModule = activeModule;
         }
     }
 }

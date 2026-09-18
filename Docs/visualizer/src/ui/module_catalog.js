@@ -130,13 +130,27 @@ export function renderModuleCards(onSelectModule) {
                 <p class="mc-desc">${escapeHtml(m.description || '')}</p>
                 <div class="mc-footer">
                     <span class="mc-cat">${escapeHtml(m.category || '')}</span>
-                    <button class="round-button btn-apply" data-module-id="${m.id}">Apply to 3D</button>
+                    <div style="display:flex;gap:6px;">
+                        <button class="round-button btn-view-doc" data-module-id="${m.id}" style="padding:4px 8px;font-size:10px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);">📖 Doc</button>
+                        <button class="round-button btn-apply" data-module-id="${m.id}" style="padding:4px 8px;font-size:10px;">Apply</button>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
 
-    // Bind card click triggers
+    // Bind card click triggers & Doc reader triggers
+    grid.querySelectorAll('.btn-view-doc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const modId = btn.dataset.moduleId;
+            const target = catalogModules.find(m => m.id === modId);
+            if (target && window.openModuleDoc) {
+                window.openModuleDoc(target);
+            }
+        });
+    });
+
     grid.querySelectorAll('.modal-card').forEach(card => {
         card.addEventListener('click', (e) => {
             const modId = card.dataset.moduleId;
