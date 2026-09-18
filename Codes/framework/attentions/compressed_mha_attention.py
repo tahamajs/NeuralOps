@@ -200,7 +200,7 @@ class CompressedDistilBertAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -216,7 +216,7 @@ class CompressedDistilBertAttention(BaseAttention):
             w_o = src.c_proj.weight.data
             p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
             if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -294,7 +294,7 @@ class CompressedDistilBertAttention(BaseAttention):
         # Joint SVD on Q, K, V
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -387,8 +387,8 @@ class CompressedDistilBertAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
-        qkv_comp = torch.matmul(proj, self.U_qkv.t())
+        proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
+        qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
 
         # LoRA residual adapter
         if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
@@ -416,7 +416,7 @@ class CompressedDistilBertAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:
@@ -457,8 +457,8 @@ class CompressedDistilBertAttention(BaseAttention):
         if self.is_nested_encoder:
             out = context
         else:
-            out_proj = torch.matmul(context, self.Vh_out.t()) * self.S_out.unsqueeze(0).unsqueeze(0)
-            out = torch.matmul(out_proj, self.U_out.t()) + self.bias_out
+            out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(0).unsqueeze(0)
+            out = torch.matmul(out_proj, self.U_out.t().contiguous()) + self.bias_out
             if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                 lora_out = F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling
                 out = out + lora_out
@@ -583,7 +583,7 @@ def compressed_mha_fn(
     head_dim = query.shape[-1]
     if scale is None:
         scale = 1.0 / math.sqrt(head_dim)
-    scores = torch.matmul(query, key.transpose(-2, -1)) * scale
+    scores = torch.matmul(query, key.transpose(-2, -1).contiguous()) * scale
     if attention_mask is not None:
         if attention_mask.dim() == 4:
             if attention_mask.dtype == torch.bool:

@@ -37,6 +37,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class SVDSingleHead(nn.Module):
+    is_custom_attention: bool = True
     """
     DEPRECATED: Single-head SVD attention approximation with sinusoidal positional encoding.
 
@@ -269,7 +270,7 @@ class HybridSVDCompressor(BaseCompressor):
             raw_w = target_mod.weight.data
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            W = raw_w.t().float() if is_conv1d else raw_w.float()
+            W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             out_f, in_f = W.shape[0], W.shape[1]
             orig_params = in_f * out_f
             total_orig_params += orig_params

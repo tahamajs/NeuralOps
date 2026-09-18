@@ -32,6 +32,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 @COMPRESSOR_REGISTRY.register("uniql_compressor")
 class UniQLCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     UniQL Compressor: Joint Truncated SVD and Uniform Min-Max Quantization.
 
@@ -154,7 +155,7 @@ class UniQLCompressor(BaseCompressor):
             )
 
             if is_conv1d:
-                W = raw_w.t().float().contiguous()
+                W = raw_w.t().contiguous().float().contiguous()
                 in_f = W.shape[1]
                 out_f = W.shape[0]
             else:

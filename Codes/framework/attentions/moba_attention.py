@@ -270,7 +270,7 @@ class MoBAAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -285,7 +285,7 @@ class MoBAAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -353,7 +353,7 @@ class MoBAAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -484,7 +484,7 @@ class MoBAAttention(BaseAttention):
 
                 pass
 
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
                 causal_mask = torch.triu(
                     torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
@@ -536,7 +536,7 @@ class MoBAAttention(BaseAttention):
             # Block-level centroid scores
             Q_mean = Qb.mean(dim=3)
             K_mean = Kb.mean(dim=3)
-            block_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1)) * scale  # (B, H, nb, nb)
+            block_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale  # (B, H, nb, nb)
 
             if is_causal:
                 causal_block_mask = torch.triu(
@@ -565,7 +565,7 @@ class MoBAAttention(BaseAttention):
                 k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).view(B, H, 1, top_k * self.block_size)
 
                 Q_i = Qb[:, :, i]  # (B, H, block_size, d)
-                scores_i = torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1)) * scale
+                scores_i = torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
                 scores_i = scores_i.masked_fill(~k_valid, -10000.0)
 
                 if is_causal:

@@ -37,6 +37,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 @COMPRESSOR_REGISTRY.register("erc")
 @COMPRESSOR_REGISTRY.register("erc_svd")
 class ERCCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Error-Controlled SVD (ERC-SVD) Compressor.
 
@@ -135,7 +136,7 @@ class ERCCompressor(BaseCompressor):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()  # [out_features, in_features]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()      # [out_features, in_features]

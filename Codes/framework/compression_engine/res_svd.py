@@ -37,6 +37,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 class ResSVDLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Spectral Residual LoRA (Res-SVD) Linear Layer.
 
@@ -190,7 +191,7 @@ class ResSVDLinear(nn.Module):
         )
 
         if is_conv1d:
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
             out_f, in_f = W.shape
         else:
             W = raw_w.float()
@@ -448,7 +449,7 @@ class ResSVDCompressor(BaseCompressor):
                 and base_mod.in_features == raw_w.shape[0]
                 and raw_w.shape[0] < raw_w.shape[1]
             )
-            W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
 
             res_layer = ResSVDLinear.from_linear(
                 linear=old_linear,

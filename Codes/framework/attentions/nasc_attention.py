@@ -288,7 +288,7 @@ class NASCAttention(BaseAttention):
                 bias_data = bias.data.clone() if bias is not None else None
                 c_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in c_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -309,7 +309,7 @@ class NASCAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 p_cls = getattr(base_o, "__class__", type(base_o)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
@@ -384,7 +384,7 @@ class NASCAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -461,7 +461,7 @@ class NASCAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         idx = torch.arange(L, device=Q.device)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
@@ -502,7 +502,7 @@ class NASCAttention(BaseAttention):
         Q_mean = Qb.mean(dim=3)
         K_mean = Kb.mean(dim=3)
         scale = 1.0 / math.sqrt(d)
-        blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1)) * scale
+        blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
             causal_blk_mask = torch.triu(
@@ -525,7 +525,7 @@ class NASCAttention(BaseAttention):
             K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
             V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
 
-            scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1)) * scale
+            scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:
                 q_pos = (i * self.block_size + torch.arange(self.block_size, device=Q.device)).view(1, 1, self.block_size, 1)
@@ -567,10 +567,10 @@ class NASCAttention(BaseAttention):
             den = (phi_Q * Z).sum(dim=-1, keepdim=True) + 1e-5
             return (num / den).to(Q.dtype)
         else:
-            KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
+            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1)) + 1e-5
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()) + 1e-5
             return (num / den).to(Q.dtype)
 
     def forward(
@@ -630,7 +630,7 @@ class NASCAttention(BaseAttention):
         if use_dense:
             # Fall back to standard scaled dot product attention for short/cross sequences or encoders
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
                 causal_mask = torch.triu(
                     torch.full((L, L_kv), float("-inf"), device=hidden_states.device, dtype=torch.float32),

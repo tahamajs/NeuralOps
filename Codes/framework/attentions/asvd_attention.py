@@ -76,6 +76,7 @@ def apply_rotary_pos_emb(
 
 
 class ASVDLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""Low-rank factorized linear layer with explicit singular value scaling and trainable LoRA adapters:
     
     $$y = ((x V^\top) \odot \Sigma) U^\top + (x A^\top) B^\top + b$$
@@ -388,7 +389,7 @@ class ASVDAttention(BaseAttention):
             if W.ndim != 2:
                 raise ValueError(f"Expected 2D weight matrix for projection {proj_name}, got shape {W.shape}")
             if W.shape[0] != target_linear.out_features and W.shape[1] == target_linear.out_features:
-                W = W.t()
+                W = W.t().contiguous()
 
             # Perform SVD strictly in FP32
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -473,7 +474,7 @@ class ASVDAttention(BaseAttention):
                 c_b = c_b.data.clone() if c_b is not None else None
                 c_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in c_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted_weights["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
                 extracted_weights["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
@@ -489,7 +490,7 @@ class ASVDAttention(BaseAttention):
                     o_b = o_b.data.clone() if o_b is not None else None
                     p_cls = getattr(base_o, "__class__", type(base_o)).__name__
                     if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     extracted_weights["o"] = (o_w, o_b)
 
         # 3. RoBERTa / BERT Nested Encoder: self.query, self.key, self.value
@@ -627,7 +628,7 @@ class ASVDAttention(BaseAttention):
 
         # 4. Attention Scoring strictly in FP32 to prevent FP16 overflow
         scale: float = 1.0 / math.sqrt(d)
-        scores: torch.Tensor = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores: torch.Tensor = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Causal Masking for Decoder Models
         if getattr(self, "is_decoder", False):

@@ -41,7 +41,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         base_cls_name = getattr(base, "__class__", type(base)).__name__
         if "Conv1D" in cls_name or "Conv1D" in base_cls_name or hasattr(base, "nf"):
             if w.ndim == 2:
-                w = w.t()
+                w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -391,7 +391,7 @@ class HGRN2Layer(BaseAttention):
         input_scale = (1.0 - f) * i
         v = self.v_proj(hidden_states)
         if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
-            v = v + torch.matmul(torch.matmul(hidden_states, self.v_lora_A.t()), self.v_lora_B.t()) * self.lora_scaling
+            v = v + torch.matmul(torch.matmul(hidden_states, self.v_lora_A.t().contiguous()), self.v_lora_B.t().contiguous()) * self.lora_scaling
 
         z = self.g_proj(hidden_states)
         iv = input_scale * v
@@ -417,7 +417,7 @@ class HGRN2Layer(BaseAttention):
         gated = (0.5 * v + 0.5 * h_norm) * F.silu(z)
         out = self.out_proj(gated)
         if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
-            out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
+            out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t().contiguous()), self.out_lora_B.t().contiguous()) * self.lora_scaling
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:

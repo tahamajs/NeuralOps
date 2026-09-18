@@ -41,7 +41,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data.clone()
         if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -261,7 +261,7 @@ class GriffinSSDBlock(BaseAttention):
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
             if c_w is not None:
                 if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
                 extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
@@ -271,7 +271,7 @@ class GriffinSSDBlock(BaseAttention):
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
                     if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
         # 3. RoBERTa / BERT Nested
@@ -315,8 +315,8 @@ class GriffinSSDBlock(BaseAttention):
                 if w is not None:
                     if w.shape == target_mod.weight.shape:
                         target_mod.weight.copy_(w)
-                    elif w.t().shape == target_mod.weight.shape:
-                        target_mod.weight.copy_(w.t())
+                    elif w.t().contiguous().shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w.t().contiguous())
                     elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                         repeats = target_mod.weight.shape[0] // w.shape[0]
                         target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -338,8 +338,8 @@ class GriffinSSDBlock(BaseAttention):
                 w_q = extracted["q"][0]
                 if w_q.shape == self.ssd_proj.weight.shape:
                     self.ssd_proj.weight.copy_(w_q)
-                elif w_q.t().shape == self.ssd_proj.weight.shape:
-                    self.ssd_proj.weight.copy_(w_q.t())
+                elif w_q.t().contiguous().shape == self.ssd_proj.weight.shape:
+                    self.ssd_proj.weight.copy_(w_q.t().contiguous())
 
         if self.freeze_base:
             for mod in [self.W_q, self.W_k, self.W_v, self.ssd_proj, self.out_proj]:
@@ -360,7 +360,7 @@ class GriffinSSDBlock(BaseAttention):
         pos = torch.arange(L, device=q.device, dtype=q.dtype)
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
+        attn_scores = (q @ k.transpose(-1, -2).contiguous())  # [B, H, L, L]
 
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
@@ -458,7 +458,7 @@ class GriffinSSDBlock(BaseAttention):
             v = repeat_kv(v, repeats)
 
         # 2. Local Sliding Window Attention
-        scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(d)  # [B, H, L, L]
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(d)  # [B, H, L, L]
         idx = torch.arange(L, device=hidden_states.device)
         dist = torch.abs(idx.unsqueeze(1) - idx.unsqueeze(0))
         window_mask = dist > self.window_size

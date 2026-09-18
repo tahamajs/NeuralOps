@@ -220,7 +220,7 @@ class CoMeLoRALinear(nn.Module):
         if is_conv1d:
             in_f = raw_w.shape[0]
             out_f = raw_w.shape[1]
-            w = raw_w.t().clone()
+            w = raw_w.t().contiguous().clone()
         else:
             out_f = raw_w.shape[0]
             in_f = raw_w.shape[1]
@@ -253,6 +253,7 @@ class CoMeLoRALinear(nn.Module):
 @COMPRESSOR_REGISTRY.register("come")
 @COMPRESSOR_REGISTRY.register("come_compressor")
 class CoMeCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.
 
@@ -525,12 +526,12 @@ class CoMeCompressor(BaseCompressor):
                         raw_w = target_mod.weight.data
                         cls_name = module.__class__.__name__.lower()
                         is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                         r = max(1, int(len(S) * (1.0 - self.sparsity)))
                         W_comp = (U[:, :r] * S[:r]) @ Vt[:r, :]
                         if is_conv1d:
-                            target_mod.weight.data.copy_(W_comp.t().to(dtype=raw_w.dtype, device=raw_w.device))
+                            target_mod.weight.data.copy_(W_comp.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
                         else:
                             target_mod.weight.data.copy_(W_comp.to(dtype=raw_w.dtype, device=raw_w.device))
                         self.compressed_layers.append(name)

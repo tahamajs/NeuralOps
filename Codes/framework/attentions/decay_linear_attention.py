@@ -351,7 +351,7 @@ class DecayLinearAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -366,7 +366,7 @@ class DecayLinearAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -399,7 +399,7 @@ class DecayLinearAttention(BaseAttention):
                         if hasattr(base_mod, "weight"):
                             w_data = base_mod.weight.data.clone()
                             if (base_mod.__class__.__name__ == "Conv1D") or hasattr(base_mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
-                                w_data = w_data.t()
+                                w_data = w_data.t().contiguous()
                             b_data = getattr(base_mod, "bias", None)
                             extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
                             break
@@ -441,8 +441,8 @@ class DecayLinearAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -503,7 +503,7 @@ class DecayLinearAttention(BaseAttention):
             decay = torch.exp(log_decay.clamp(max=0.0))
             causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
             decay = decay.masked_fill(~causal_mask, 0.0)
-            scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * decay
+            scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * decay
             num = torch.matmul(scores, v_f)
             denom = scores.sum(dim=-1, keepdim=True)
         else:
@@ -534,7 +534,7 @@ class DecayLinearAttention(BaseAttention):
                 valid_in_last = chunk_size - pad_len
                 intra_decay[:, :, -1, :, valid_in_last:] = 0.0
 
-            intra_scores = torch.matmul(qc, kc.transpose(-1, -2)) * intra_decay
+            intra_scores = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * intra_decay
             num_intra = torch.matmul(intra_scores, vc)
             denom_intra = intra_scores.sum(dim=-1, keepdim=True)
 
@@ -575,8 +575,8 @@ class DecayLinearAttention(BaseAttention):
                 else:
                     decay_prev_to_end = torch.exp((cum_end - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
 
-                S = S * decay_prev_to_end + torch.matmul(k_to_end.transpose(-1, -2), v_curr)
-                z = z * decay_prev_to_end + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                S = S * decay_prev_to_end + torch.matmul(k_to_end.transpose(-1, -2).contiguous(), v_curr)
+                z = z * decay_prev_to_end + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
                 prev_cum_end = cum_end
 
             num = torch.cat(num_list, dim=2)[:, :, :L, :]
@@ -643,7 +643,7 @@ class DecayLinearAttention(BaseAttention):
         k = F.elu(k) + 1.0
 
         # Data-dependent decay lambdas in (0, 1) with bounded negative log decay bias
-        decay_logits = self.decay_gate(hidden_states).transpose(1, 2) + self.log_decay.view(1, -1, 1)
+        decay_logits = self.decay_gate(hidden_states).transpose(1, 2).contiguous() + self.log_decay.view(1, -1, 1)
         lambdas = torch.sigmoid(decay_logits).clamp(min=0.85, max=0.999)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask

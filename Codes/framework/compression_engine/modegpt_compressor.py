@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class MoDeGPTLoRALinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Linear layer containing MoDeGPT decomposed base weights (frozen)
     with optional trainable LoRA adapters (lora_A, lora_B).
@@ -247,7 +248,7 @@ class MoDeGPTCompressor(BaseCompressor):
         raw_w = target_layer.weight.data
         cls_name = target_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
-        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
         return W, is_conv1d
 
     def _decompose_joint_pair(

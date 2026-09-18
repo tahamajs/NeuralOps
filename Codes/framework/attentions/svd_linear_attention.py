@@ -51,7 +51,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
         if "Conv1D" in cls_name or "Conv1D" in base_cls_name or hasattr(module, "nf") or hasattr(base, "nf"):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -117,6 +117,7 @@ def compute_exponential_decay(
 
 
 class SVDLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""Low-Rank Factorized Linear Layer with SVD bases and trainable LoRA adapters:
     $$y = (x V^\top) U^\top + b + \frac{\alpha}{r_{\text{lora}}} (x A^\top) B^\top$$
     """
@@ -239,8 +240,8 @@ class SVDLinear(nn.Module):
             self.V.data[:r, :in_d].copy_(V_factor[:r, :in_d].to(device=self.V.device, dtype=self.V.dtype))
 
     def get_orthogonality_loss(self) -> torch.Tensor:
-        U_orth = torch.matmul(self.U.t(), self.U) - torch.eye(self.rank, device=self.U.device, dtype=self.U.dtype)
-        V_orth = torch.matmul(self.V, self.V.t()) - torch.eye(self.rank, device=self.V.device, dtype=self.V.dtype)
+        U_orth = torch.matmul(self.U.t().contiguous(), self.U) - torch.eye(self.rank, device=self.U.device, dtype=self.U.dtype)
+        V_orth = torch.matmul(self.V, self.V.t().contiguous()) - torch.eye(self.rank, device=self.V.device, dtype=self.V.dtype)
         return torch.norm(U_orth, p="fro") + torch.norm(V_orth, p="fro")
 
 
@@ -495,7 +496,7 @@ class SVDLinearAttention(BaseAttention):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
                     if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                        c_attn_w = c_attn_w.t()
+                        c_attn_w = c_attn_w.t().contiguous()
 
                     q_dim = self.q_head_size
                     k_dim = self.kv_head_size if hasattr(self, "kv_head_size") else self.hidden_size
@@ -513,7 +514,7 @@ class SVDLinearAttention(BaseAttention):
                 if hasattr(src, "c_proj"):
                     out_w, out_b = _unpack_weight_bias(src.c_proj)
                     if out_w is not None and out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                        out_w = out_w.t()
+                        out_w = out_w.t().contiguous()
                     w_o, b_o = out_w, out_b
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
@@ -705,7 +706,7 @@ class SVDLinearAttention(BaseAttention):
                 causal_bool = torch.tril(torch.ones(Lc, Lc, dtype=torch.bool, device=qc.device))
                 M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) * causal_bool.unsqueeze(0).unsqueeze(0)
 
-                aff_intra = torch.matmul(qc, kc.transpose(-1, -2)) * M_intra  # [B, H, Lc, Lc]
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * M_intra  # [B, H, Lc, Lc]
                 num_intra = torch.matmul(aff_intra, vc)
                 den_intra = aff_intra.sum(dim=-1, keepdim=True)
 
@@ -723,8 +724,8 @@ class SVDLinearAttention(BaseAttention):
                 w_to_end = torch.exp(torch.clamp(log_w_to_end, max=0.0)).unsqueeze(-1)  # [B, H, Lc, 1]
                 kc_w = kc * w_to_end
 
-                S_chunk = total_chunk_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2), vc)
-                Z_chunk = total_chunk_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                S_chunk = total_chunk_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2).contiguous(), vc)
+                Z_chunk = total_chunk_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
             context = torch.cat(outputs, dim=2).to(q.dtype)
             return context, (S_chunk, Z_chunk)
@@ -745,7 +746,7 @@ class SVDLinearAttention(BaseAttention):
             vt = v_f[:, :, t : t + 1, :]
             lam_t = lambda_decay[:, :, t]
 
-            kt_t = kt.transpose(-1, -2)
+            kt_t = kt.transpose(-1, -2).contiguous()
             kv_t = torch.matmul(kt_t, vt)
             S = lam_t * S + kv_t
             Z = lam_t * Z + kt_t
@@ -806,7 +807,7 @@ class SVDLinearAttention(BaseAttention):
                 Lc = end - start
 
                 # Intra-chunk causal affinity: [B, H, Lc, Lc]
-                aff_intra = torch.matmul(qc, kc.transpose(-1, -2))
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous())
                 causal_intra = torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 aff_intra = aff_intra * causal_intra
                 num_intra = torch.matmul(aff_intra, vc)
@@ -820,16 +821,16 @@ class SVDLinearAttention(BaseAttention):
                 outputs.append(out_c)
 
                 # Update running state
-                S_chunk = S_chunk + torch.matmul(kc.transpose(-1, -2), vc)
-                Z_chunk = Z_chunk + kc.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                S_chunk = S_chunk + torch.matmul(kc.transpose(-1, -2).contiguous(), vc)
+                Z_chunk = Z_chunk + kc.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
             context = torch.cat(outputs, dim=2).to(q.dtype)
         else:
             # Associative accumulation for bidirectional encoders
-            kv_state = torch.matmul(phi_k.transpose(-1, -2), v_f)  # [B, H, D_k, D_v]
+            kv_state = torch.matmul(phi_k.transpose(-1, -2).contiguous(), v_f)  # [B, H, D_k, D_v]
             numerator = torch.matmul(phi_q, kv_state)
             k_sum = phi_k.sum(dim=-2, keepdim=True)
-            denominator = torch.matmul(phi_q, k_sum.transpose(-1, -2)) + self.eps
+            denominator = torch.matmul(phi_q, k_sum.transpose(-1, -2).contiguous()) + self.eps
             context = (numerator / denominator).to(q.dtype)
 
         return context
@@ -843,7 +844,7 @@ class SVDLinearAttention(BaseAttention):
         is_cross: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
 
         if self.is_decoder and not is_cross and q.shape[-2] > 1:
             causal_mask = torch.triu(
@@ -1008,7 +1009,7 @@ class SVDLinearAttention(BaseAttention):
             S_prev = torch.zeros(B, H, D_k, D_v, device=x_t.device, dtype=torch.float32)
             Z_prev = torch.zeros(B, H, D_k, 1, device=x_t.device, dtype=torch.float32)
 
-        kt_t = phi_k.transpose(-1, -2)
+        kt_t = phi_k.transpose(-1, -2).contiguous()
         kv_t = torch.matmul(kt_t, v.float())
 
         S_t = lam_t * S_prev + kv_t

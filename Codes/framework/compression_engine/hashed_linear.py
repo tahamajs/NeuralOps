@@ -69,6 +69,7 @@ def fast_hash_and_sign(
 
 
 class HashedLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Linear layer with weight sharing via a compact parameter hash table and optional LoRA adapters.
     W_{i, j} = xi(i, j) * w[h(i, j)]
