@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_halo\_regla/roberta/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 81.31\% & 672.44 MB \\
-\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 90.37\% & 343.31 MB \\
-\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 79.59\% & 1134.78 MB \\
-\texttt{results/agnews\_unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 76.5\% & 685.93 MB \\
-\texttt{results/mnli\_unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 41.4\% & 390.01 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 61.05 ms & 1250.2 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 61.74 ms & 1250.2 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 64.6 ms & 1260.1 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_haloregla} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & halo\_regla & PASS\_NO\_COMPRESSION & 90.37 & 0.9062 \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & halo\_regla & PASS\_NO\_COMPRESSION & 79.59 & 0.8004 \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & halo\_regla & PASS\_NO\_COMPRESSION & 81.31 & 0.8282 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{haloregla}.}
+\label{tab:results_acc_haloregla}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_haloregla} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & halo\_regla & 66955010 & 67600226 & 645216 & 1.0x \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & halo\_regla & 124441344 & 125731776 & 1290432 & 1.0x \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & halo\_regla & 124647170 & 133024706 & 1290432 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{haloregla}.}
+\label{tab:results_params_haloregla}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_haloregla} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & full & 48055.95 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & distilbert & halo\_regla & 17606.5 & 343.31 MB & 0.0000 \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & full & 23949.67 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & gpt2 & halo\_regla & 8164.33 & 1134.78 MB & 0.0000 \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & full & 26341.29 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & roberta & halo\_regla & 6570.81 & 672.44 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{haloregla}.}
+\label{tab:results_vram_haloregla}
+\end{table*}
