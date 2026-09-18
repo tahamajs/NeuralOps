@@ -80,16 +80,22 @@ Accuracy & 90.71\% & 90.02\% & \textbf{-0.69\%} \\
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llll}
+\begin{tabular}{lllll}
 \toprule
-\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Retraining} \\
 \midrule
-ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
-DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-\textbf{A3 (r=128)} & Low-rank & \textbf{1.02$\times$} & \textbf{90.02\%} \\
+ALBERT          & Param sharing  & 3.5$\times$  & 89.4\%           & Full \\
+DistilBERT      & Distillation   & 1.6$\times$  & 90.7\%           & Full \\
+TinyBERT        & Distillation   & 7.5$\times$  & 87.5\%           & Full \\
+FWSVD           & Fisher SVD     & 2.0$\times$  & 88.2\%           & None \\
+DRONE           & Data-aware SVD & 1.92$\times$ & 89.1\%           & None \\
+\textbf{A3 (r=128)} & Low-rank   & \textbf{1.02$\times$} & \textbf{90.02\%} & \textbf{LoRA only} \\
 \bottomrule
 \end{tabular}
+\caption{Comparison of A3 against published compression methods on SST-2. Ratio is whole-model compression; A3 requires no full retraining, only lightweight LoRA adapter recovery.}
+\label{tab:published_comparison}
 \end{table}
+
 
 A3 preserves 90.02\% validation accuracy on DistilBERT with \textbf{no retraining from scratch}.
 
@@ -110,7 +116,7 @@ A3's main benefit is verified parameter and disk reduction. For DistilBERT (66.9
 \begin{itemize}
 \item Baseline: 134 MB FP16 (66.95M parameters)
 \item A3 ($r=128$): 131.5 MB (65.71M parameters, 1.02$\times$)
-\item A3 + INT8: $\sim$66 MB (2.03$\times$)
+\item A3 + INT8: $\sim$66 MB (2.03$\times$ compared to baseline FP16 134 MB; 1.02$\times$ better than baseline INT8 $\sim$67 MB)
 
 \end{itemize}
 \subsubsection{Latency}

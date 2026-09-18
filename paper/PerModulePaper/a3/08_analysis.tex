@@ -123,7 +123,7 @@ Computing SVD directly in half-precision (FP16 or BF16) frequently encounters no
 \subsubsection{Weighting Magnitude Clamping}
 \label{sec:weighting_magnitude}
 
-Because the empirical Fisher diagonal spans several orders of magnitude, direct multiplication by $\sqrt{F}$ can perturb the matrix condition number. To ensure well-conditioned SVD execution, we clamp the normalized scale vector $\mathbf{s} = \sqrt{F + \epsilon} / \mathrm{RMS}(\sqrt{F + \epsilon})$ to the interval $[10^{-3}, 10^{3}]$.
+Because the empirical Fisher diagonal spans several orders of magnitude, direct multiplication by $\sqrt{F}$ can perturb the matrix condition number. To ensure well-conditioned SVD execution, we clamp the normalized scale vector $\mathbf{s} = (\sqrt{F + \epsilon}) / \mathrm{RMS}(\sqrt{F + \epsilon})$ to the interval $[10^{-3}, 10^{3}]$.
 
 \subsubsection{Residual Analysis}
 \label{sec:residual_analysis}
