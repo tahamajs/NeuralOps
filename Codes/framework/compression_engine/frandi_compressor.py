@@ -32,6 +32,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class FRanDILinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Feature-Regression Aligned Factorized Linear Layer with optional LoRA adapter.
     W ≈ B @ A
@@ -125,7 +126,7 @@ class FRanDILinear(nn.Module):
         if is_conv1d:
             in_f = raw_w.shape[0]
             out_f = raw_w.shape[1]
-            W_float = raw_w.t().float()  # [out_features, in_features]
+            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f = raw_w.shape[0]
             in_f = raw_w.shape[1]
@@ -149,7 +150,7 @@ class FRanDILinear(nn.Module):
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                 B_data = U[:, :r] * sqrt_S.unsqueeze(0)
                 A_tilde = sqrt_S.unsqueeze(1) * Vt[:r, :]
-                A_data = torch.linalg.solve_triangular(L, A_tilde.t(), upper=False).t()
+                A_data = torch.linalg.solve_triangular(L, A_tilde.t().contiguous(), upper=False).t().contiguous()
             except Exception as e:
                 logger.debug("FRanDI covariance whitening failed: %s; falling back to standard SVD", e)
                 U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
@@ -319,7 +320,7 @@ class FRanDICompressor(BaseCompressor):
                     is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
                     in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
                     x_flat = x.reshape(-1, in_f)
-                    cov = torch.matmul(x_flat.t(), x_flat)
+                    cov = torch.matmul(x_flat.t().contiguous(), x_flat)
                     if name not in covariances:
                         covariances[name] = cov
                         counts[name] = x_flat.size(0)
@@ -402,7 +403,7 @@ class FRanDICompressor(BaseCompressor):
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
             raw_w = target_mod.weight.data
-            W_target = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_target = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             out_f, in_f = W_target.shape[0], W_target.shape[1]
             orig_params = in_f * out_f
             total_orig_params += orig_params

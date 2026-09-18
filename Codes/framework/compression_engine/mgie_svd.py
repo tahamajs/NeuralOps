@@ -38,6 +38,7 @@ _ATTN_NAMES = {
 @COMPRESSOR_REGISTRY.register("mgie")
 @COMPRESSOR_REGISTRY.register("mgie_svd")
 class MGIECompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     MGIE-SVD Compressor (Maximum Information Entropy SVD).
     """
@@ -186,7 +187,7 @@ class MGIECompressor(BaseCompressor):
             cls_name = target_layer.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
 
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             max_r = min(d_out, d_in)
             device = raw_w.device

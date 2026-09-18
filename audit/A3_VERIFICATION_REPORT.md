@@ -62,3 +62,10 @@
   * Annotated with a formal footnote:  
     *"`^\dagger$RoBERTa +4.70\% gain is flagged as NEEDS\_VERIFICATION because compression methods typically do not outperform dense baselines without confounding recovery dynamics."*
   * Added diagnostic discussion in Section 10 (*Limitations*).
+
+## Adapter-Only Modules
+| Module | Type | Notes |
+|--------|------|-------|
+| aegis_v2 | ADAPTER_ONLY | No SVD compression, only attention swap |
+| aegis_v4 | ADAPTER_ONLY | Same |
+| aegis_v5 | ADAPTER_ONLY | Same |

@@ -40,6 +40,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 @COMPRESSOR_REGISTRY.register("swift_svd_class")
 class SwiftSVDCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Swift-SVD Compressor: Fast Closed-Form Truncated SVD.
 

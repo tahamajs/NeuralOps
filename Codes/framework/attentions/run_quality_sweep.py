@@ -1345,7 +1345,7 @@ def main():
                                 if a.shape[0] == b.shape[1]:
                                     delta = (b @ a) * scaling
                                 elif a.shape[1] == b.shape[0]:
-                                    delta = (a.t() @ b.t()).t() * scaling
+                                    delta = (a.t().contiguous() @ b.t().contiguous()).t().contiguous() * scaling
                                 else:
                                     delta = None
                                 if delta is not None and delta.shape == val.shape:

@@ -51,6 +51,7 @@ _ATTN_NAMES = {
 @COMPRESSOR_REGISTRY.register("lillama")
 @COMPRESSOR_REGISTRY.register("lillama_compressor")
 class LiLLaMACompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     LiLLaMA Compressor: Local activation cross-covariance SVD distillation.
     """
@@ -207,7 +208,7 @@ class LiLLaMACompressor(BaseCompressor):
             device = raw_w.device
             dtype = target_layer.weight.dtype
 
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             used_cross_cov = False
 
@@ -266,7 +267,7 @@ class LiLLaMACompressor(BaseCompressor):
                         total_comp_params += p.numel()
                     continue
 
-            final_w = W_new.t() if is_conv1d else W_new
+            final_w = W_new.t().contiguous() if is_conv1d else W_new
             target_layer.weight.data = final_w.to(dtype=dtype, device=device)
             # Freeze base weight, preserve LoRA adapter trainability
             target_layer.weight.requires_grad = False

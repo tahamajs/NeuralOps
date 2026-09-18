@@ -29,6 +29,7 @@ def factorize_dim(dim: int) -> Tuple[int, int]:
 
 
 class KroneckerLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Linear layer whose weight matrix is parameterised as the Kronecker product
     of two smaller factor matrices: W = A ⊗ B.
@@ -157,14 +158,14 @@ class KroneckerLinear(nn.Module):
             K = x_flat.size(0)
 
             # Step 1: contract with B over n2 dimension
-            x_b = torch.matmul(x_flat.reshape(K * self.n1, self.n2), self.B.t())  # (K * n1, m2)
+            x_b = torch.matmul(x_flat.reshape(K * self.n1, self.n2), self.B.t().contiguous())  # (K * n1, m2)
 
             # Step 2: transpose to (K, m2, n1) -> (K * m2, n1) @ A^T (n1, m1) -> (K * m2, m1)
-            x_b = x_b.reshape(K, self.n1, self.m2).transpose(1, 2).reshape(K * self.m2, self.n1)
-            x_a = torch.matmul(x_b, self.A.t())  # (K * m2, m1)
+            x_b = x_b.reshape(K, self.n1, self.m2).transpose(1, 2).contiguous().reshape(K * self.m2, self.n1)
+            x_a = torch.matmul(x_b, self.A.t().contiguous())  # (K * m2, m1)
 
             # Step 3: transpose back to (K, m1, m2) -> (K, m1 * m2)
-            out = x_a.reshape(K, self.m2, self.m1).transpose(1, 2).reshape(K, self.out_features)
+            out = x_a.reshape(K, self.m2, self.m1).transpose(1, 2).contiguous().reshape(K, self.out_features)
 
             if self.bias is not None:
                 out = out + self.bias
@@ -264,7 +265,7 @@ class KroneckerLinear(nn.Module):
         if is_conv1d:
             in_features = raw_w.shape[0]
             out_features = raw_w.shape[1]
-            weight = raw_w.t().float()
+            weight = raw_w.t().contiguous().float()
         else:
             out_features = raw_w.shape[0]
             in_features = raw_w.shape[1]

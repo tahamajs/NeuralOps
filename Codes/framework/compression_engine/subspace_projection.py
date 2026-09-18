@@ -25,6 +25,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 class SubspaceLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Subspace Projection Factorized Linear Layer with optional LoRA adapter support.
     W ≈ B @ A where:
@@ -254,7 +255,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
                     and base_mod.in_features == raw_w.shape[0]
                     and raw_w.shape[0] < raw_w.shape[1]
                 )
-                W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+                W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
                 max_rank = min(W_orig.shape[0], W_orig.shape[1])
                 r = min(self.rank, max_rank)
 

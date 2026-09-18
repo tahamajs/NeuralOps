@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class COMPOTLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Factorized Linear Layer constructed via Orthogonal Dictionary Learning (COMPOT):
     W ≈ B @ A
@@ -118,7 +119,7 @@ class COMPOTLinear(nn.Module):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W_float = raw_w.t().float()  # [out_features, in_features]
+            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W_float = raw_w.float()      # [out_features, in_features]
@@ -147,12 +148,12 @@ class COMPOTLinear(nn.Module):
                 try:
                     # QR decomposition of activations: X = Q @ R
                     Q, R = torch.linalg.qr(X, mode="reduced")
-                    D = torch.matmul(W_float, R.t())
+                    D = torch.matmul(W_float, R.t().contiguous())
                     U, S, Vt = torch.linalg.svd(D, full_matrices=False)
 
                     B_cand = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
                     V_r = Vt[:r, :]                         # (r, in_f)
-                    R_inv_T = torch.linalg.pinv(R.t())
+                    R_inv_T = torch.linalg.pinv(R.t().contiguous())
                     A_cand = torch.matmul(V_r, R_inv_T)
 
                     if not (

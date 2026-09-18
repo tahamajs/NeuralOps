@@ -98,6 +98,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 
 
 class FactorisedLinear_CUR(nn.Module):
+    is_custom_attention: bool = True
     r"""Linear projection compressed via leverage-score CUR matrix decomposition with LoRA support."""
 
     def __init__(
@@ -234,7 +235,7 @@ def lsh_attention(
         [2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32
     )
 
-    scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     if token_valid is not None:
         val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
         scores_base = scores_base.masked_fill(~val_mask, -1e4)
@@ -379,7 +380,7 @@ class PHANTOMAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -394,7 +395,7 @@ class PHANTOMAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -463,8 +464,8 @@ class PHANTOMAttention(BaseAttention):
                         return
 
                 if w.shape != (target_mod.out_features, target_mod.in_features):
-                    if w.t().shape == (target_mod.out_features, target_mod.in_features):
-                        w = w.t()
+                    if w.t().contiguous().shape == (target_mod.out_features, target_mod.in_features):
+                        w = w.t().contiguous()
                     elif w.shape[0] < target_mod.out_features and target_mod.out_features % w.shape[0] == 0:
                         repeats = target_mod.out_features // w.shape[0]
                         w = w.repeat(repeats, 1)

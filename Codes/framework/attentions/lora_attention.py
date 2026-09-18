@@ -224,7 +224,7 @@ class LoRAAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -240,7 +240,7 @@ class LoRAAttention(BaseAttention):
             w_o = src.c_proj.weight.data
             p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
             if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -309,7 +309,7 @@ class LoRAAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -378,7 +378,7 @@ class LoRAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:

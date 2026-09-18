@@ -102,7 +102,7 @@ class TaskAwareAttention(nn.Module):
 
         # Attention scores (dot product)
         scale = 1.0 / math.sqrt(self.hidden_dim)
-        scores = torch.matmul(cur_emb, all_embs.t()) * scale  # (1, M)
+        scores = torch.matmul(cur_emb, all_embs.t().contiguous()) * scale  # (1, M)
 
         # Add task similarity bias
         valid_model_tasks_tensor = torch.tensor(valid_model_tasks, device=device)
@@ -525,7 +525,7 @@ class WeightedEnsembleAttention(BaseAttention):
         B, H, N, Dh = Q.shape
         _, _, N_k, _ = K.shape
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N, N_k]
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale  # [B, H, N, N_k]
 
         if self.is_decoder and N > 1:
             idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
@@ -568,10 +568,10 @@ class WeightedEnsembleAttention(BaseAttention):
             K_cumsum = torch.cumsum(phi_K, dim=2)
             den = torch.einsum("bhnd,bhnd->bhn", phi_Q, K_cumsum).unsqueeze(-1)
         else:
-            KV = torch.matmul(phi_K.transpose(-2, -1), V)  # [B, H, Dh, Dh]
+            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V)  # [B, H, Dh, Dh]
             num = torch.matmul(phi_Q, KV)  # [B, H, N, Dh]
             Z = phi_K.sum(dim=-2, keepdim=True)  # [B, H, 1, Dh]
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1))  # [B, H, N, 1]
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous())  # [B, H, N, 1]
 
         den = den.clamp(min=1e-6)
         out = num / den
@@ -718,7 +718,7 @@ class WeightedEnsembleAttention(BaseAttention):
                     if w is not None:
                         w = w.data
                         if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (w.shape[0] < w.shape[1]):
-                            w = w.t()
+                            w = w.t().contiguous()
                     bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
                     b = bias_holder.data if bias_holder is not None else None
                 elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
@@ -749,7 +749,7 @@ class WeightedEnsembleAttention(BaseAttention):
                 if c_w is not None:
                     c_w = c_w.data
                     if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (c_w.shape[0] < c_w.shape[1]):
-                        c_w = c_w.t()
+                        c_w = c_w.t().contiguous()
                     split_size = c_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = c_w[idx * split_size : (idx + 1) * split_size, :]
@@ -783,10 +783,10 @@ class WeightedEnsembleAttention(BaseAttention):
                 with torch.no_grad():
                     if target.weight.shape == w.shape:
                         target.weight.copy_(w)
-                    elif target.weight.shape == w.t().shape:
-                        target.weight.copy_(w.t())
+                    elif target.weight.shape == w.t().contiguous().shape:
+                        target.weight.copy_(w.t().contiguous())
                     else:
-                        w_or = w if w.shape[1] == target.weight.shape[1] else w.t()
+                        w_or = w if w.shape[1] == target.weight.shape[1] else w.t().contiguous()
                         out_d, in_d = target.weight.shape
                         s_out, s_in = w_or.shape
                         target.weight.data[:min(out_d, s_out), :min(in_d, s_in)].copy_(w_or[:min(out_d, s_out), :min(in_d, s_in)])
@@ -801,10 +801,10 @@ class WeightedEnsembleAttention(BaseAttention):
                 with torch.no_grad():
                     if self.out_proj.weight.shape == w_o.shape:
                         self.out_proj.weight.copy_(w_o)
-                    elif self.out_proj.weight.shape == w_o.t().shape:
-                        self.out_proj.weight.copy_(w_o.t())
+                    elif self.out_proj.weight.shape == w_o.t().contiguous().shape:
+                        self.out_proj.weight.copy_(w_o.t().contiguous())
                     else:
-                        w_or = w_o if w_o.shape[1] == self.out_proj.weight.shape[1] else w_o.t()
+                        w_or = w_o if w_o.shape[1] == self.out_proj.weight.shape[1] else w_o.t().contiguous()
                         out_d, in_d = self.out_proj.weight.shape
                         s_out, s_in = w_or.shape
                         self.out_proj.weight.data[:min(out_d, s_out), :min(in_d, s_in)].copy_(w_or[:min(out_d, s_out), :min(in_d, s_in)])

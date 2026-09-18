@@ -121,6 +121,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 @COMPRESSOR_REGISTRY.register('salr')
 class SALRCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.
 

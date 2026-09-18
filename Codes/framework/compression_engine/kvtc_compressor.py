@@ -60,6 +60,7 @@ class SimpleEntropyCoder:
 
 
 class KVTCStore:
+    is_custom_attention: bool = True
     """
     Runtime KV Cache Transform Coding engine.
     Applies PCA decorrelation across head feature dimensions and adaptive quantization,
@@ -87,8 +88,8 @@ class KVTCStore:
         _, _, Vt_k = torch.linalg.svd(k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False)
         _, _, Vt_v = torch.linalg.svd(v_flat - v_flat.mean(dim=0, keepdim=True), full_matrices=False)
 
-        self.pca_basis_k = Vt_k.t().to(device=k.device, dtype=k.dtype)
-        self.pca_basis_v = Vt_v.t().to(device=v.device, dtype=v.dtype)
+        self.pca_basis_k = Vt_k.t().contiguous().to(device=k.device, dtype=k.dtype)
+        self.pca_basis_v = Vt_v.t().contiguous().to(device=v.device, dtype=v.dtype)
 
     @torch.no_grad()
     def compress_kv_cache(
@@ -120,8 +121,8 @@ class KVTCStore:
         h_k = SimpleEntropyCoder.compute_entropy(q_k)
         h_v = SimpleEntropyCoder.compute_entropy(q_v)
 
-        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t()).reshape(orig_shape)
-        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t()).reshape(orig_shape)
+        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(orig_shape)
+        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(orig_shape)
 
         stats = {
             "entropy_k_bits": h_k,
@@ -375,7 +376,7 @@ class KVTCCompressor(BaseCompressor):
             device = raw_w.device
             dtype = raw_w.dtype
 
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             min_dim = min(d_out, d_in)
 

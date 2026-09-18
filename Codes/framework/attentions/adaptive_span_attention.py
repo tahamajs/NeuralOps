@@ -577,7 +577,7 @@ class AdaptiveSpanAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale  # [B, H, N_q, N_k]
 
         # Handle T5 position bias
         position_bias = kwargs.get("position_bias", None)

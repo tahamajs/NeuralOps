@@ -76,6 +76,7 @@ def unstructured_prune(residual: torch.Tensor, sparsity: float) -> torch.Tensor:
 
 @COMPRESSOR_REGISTRY.register("enlighten")
 class ENLightenCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     ENLighten Compressor: Low-Rank SVD + 2:4 Structured Sparsity.
     Decomposes weights into low-rank factors plus 2:4 structured sparse residuals,
@@ -233,7 +234,7 @@ class ENLightenCompressor(BaseCompressor):
             raw_w = target_mod.weight.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().float()  # [out_features, in_features]
+                W = raw_w.t().contiguous().float()  # [out_features, in_features]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
                 W = raw_w.float()      # [out_features, in_features]
@@ -292,7 +293,7 @@ class ENLightenCompressor(BaseCompressor):
 
             # Assign compressed weight back in original orientation and dtype
             if is_conv1d:
-                target_mod.weight.data.copy_(best_w_new.t().to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
+                target_mod.weight.data.copy_(best_w_new.t().contiguous().to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
             else:
                 target_mod.weight.data.copy_(best_w_new.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
 

@@ -136,7 +136,7 @@ class ARMORLinear(nn.Module):
         raw_w = linear.weight.data
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            w_data = raw_w.t()
+            w_data = raw_w.t().contiguous()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             w_data = raw_w
@@ -189,6 +189,7 @@ class ARMORLinear(nn.Module):
 @COMPRESSOR_REGISTRY.register("armor")
 @COMPRESSOR_REGISTRY.register("armor_compressor")
 class ARMORPruner(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Production-Hardened ARMOR Pruner: Combines 2:4 structured sparsity with low-rank SVD error compensation
     and decoupled dual-branch gradient propagation.
@@ -450,7 +451,7 @@ class ARMORPruner(BaseCompressor):
             dtype = raw_w.dtype
 
             # Shape standardization: [out_features, in_features] in FP32
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             out_features, in_features = W.shape
             grad = getattr(target_mod.weight, "grad", None)
             act = act_map.get(name, None)
@@ -548,7 +549,7 @@ class ARMORPruner(BaseCompressor):
                         replace_module(self.model, name, armor_layer)
                 else:
                     if is_conv1d:
-                        target_mod.weight.data.copy_(W_recon.t().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(W_recon.t().contiguous().to(dtype=dtype, device=device))
                     else:
                         target_mod.weight.data.copy_(W_recon.to(dtype=dtype, device=device))
 

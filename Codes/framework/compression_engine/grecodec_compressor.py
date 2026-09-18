@@ -33,6 +33,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class GreCoDeCLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Greedy Coordinate Descent Factorized Linear Layer with optional LoRA adapter.
     W ≈ U @ V
@@ -129,7 +130,7 @@ class GreCoDeCLinear(nn.Module):
         if is_conv1d:
             in_f = raw_w.shape[0]
             out_f = raw_w.shape[1]
-            W_float = raw_w.t().float()  # [out_features, in_features]
+            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f = raw_w.shape[0]
             in_f = raw_w.shape[1]
@@ -151,19 +152,19 @@ class GreCoDeCLinear(nn.Module):
         # Iterative coordinate descent refinement
         for _ in range(max_iter):
             # Update U given V: min_U ||W - U V||_F^2 => U = W V^T (V V^T)^{-1}
-            VVt = torch.matmul(V_mat, V_mat.t())
+            VVt = torch.matmul(V_mat, V_mat.t().contiguous())
             VVt_reg = VVt + 1e-6 * torch.eye(r, device=VVt.device, dtype=VVt.dtype)
             try:
-                WV_t = torch.matmul(W_float, V_mat.t())
-                U_mat = torch.linalg.solve(VVt_reg, WV_t.t()).t()
+                WV_t = torch.matmul(W_float, V_mat.t().contiguous())
+                U_mat = torch.linalg.solve(VVt_reg, WV_t.t().contiguous()).t().contiguous()
             except Exception:
                 break
 
             # Update V given U: min_V ||W - U V||_F^2 => V = (U^T U)^{-1} U^T W
-            UtU = torch.matmul(U_mat.t(), U_mat)
+            UtU = torch.matmul(U_mat.t().contiguous(), U_mat)
             UtU_reg = UtU + 1e-6 * torch.eye(r, device=UtU.device, dtype=UtU.dtype)
             try:
-                UtW = torch.matmul(U_mat.t(), W_float)
+                UtW = torch.matmul(U_mat.t().contiguous(), W_float)
                 V_mat = torch.linalg.solve(UtU_reg, UtW)
             except Exception:
                 break
@@ -337,7 +338,7 @@ class GreCoDeCCompressor(BaseCompressor):
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
             raw_w = target_mod.weight.data
-            W_target = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_target = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             out_f, in_f = W_target.shape[0], W_target.shape[1]
             orig_params = in_f * out_f
             total_orig_params += orig_params

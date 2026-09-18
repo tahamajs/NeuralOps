@@ -83,6 +83,7 @@ class AegisConfig:
 
 
 class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""
     SVD-factorized linear layer with energy-based rank truncation and trainable LoRA adapters.
     Base SVD weights are frozen; LoRA branch provides trainable parameters.
@@ -264,7 +265,7 @@ def local_window_attention(
         causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
         mask = mask & causal
 
-    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     mask_val = -10000.0
     scores = scores.masked_fill(~mask, mask_val)
     if token_valid is not None:
@@ -451,7 +452,7 @@ class AegisAttention(BaseAttention):
             bias = getattr(old_attn.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -466,7 +467,7 @@ class AegisAttention(BaseAttention):
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -537,7 +538,7 @@ class AegisAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -641,7 +642,7 @@ class AegisAttention(BaseAttention):
                 for q_start in range(0, N, CHUNK):
                     q_end = min(q_start + CHUNK, N)
                     q_chunk = Q[:, :, q_start:q_end, :].float()  # B H Cq D
-                    scores_chunk = torch.matmul(q_chunk, K.float().transpose(-2, -1)) * (D**-0.5)
+                    scores_chunk = torch.matmul(q_chunk, K.float().transpose(-2, -1).contiguous()) * (D**-0.5)
                     if is_causal_sdp:
                         causal_col = torch.arange(N_kv, device=Q.device)
                         causal_row = torch.arange(q_start, q_end, device=Q.device).unsqueeze(-1)

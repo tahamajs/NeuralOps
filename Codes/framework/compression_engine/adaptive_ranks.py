@@ -53,6 +53,7 @@ AdaptiveSVDLinear = SVDLinear
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
 @COMPRESSOR_REGISTRY.register("adaptive_svd")
 class AdaptiveRanksCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     r"""
     Adaptive Ranks SVD Compressor.
 
@@ -315,14 +316,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if hasattr(target_mod, "nf"):
             out_f = target_mod.nf
             in_f = getattr(target_mod, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
-            W = raw_w.t().float() if raw_w.shape == (in_f, out_f) else raw_w.float()
+            W = raw_w.t().contiguous().float() if raw_w.shape == (in_f, out_f) else raw_w.float()
         elif hasattr(layer, "nf"):
             out_f = layer.nf
             in_f = getattr(layer, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
-            W = raw_w.t().float() if raw_w.shape == (in_f, out_f) else raw_w.float()
+            W = raw_w.t().contiguous().float() if raw_w.shape == (in_f, out_f) else raw_w.float()
         elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()

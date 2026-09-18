@@ -256,7 +256,7 @@ class HLAAttention(BaseAttention):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -268,7 +268,7 @@ class HLAAttention(BaseAttention):
 
                 out_w = src.c_proj.weight.detach()
                 if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
@@ -404,7 +404,7 @@ class HLAAttention(BaseAttention):
         decay_mat = torch.exp(diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1)) * tri_mask.float().unsqueeze(0).unsqueeze(0)
 
         # Attention weights with exponential decay: scores = (q @ k^T) * decay_mat
-        qk = torch.matmul(q_f, k_f.transpose(-1, -2)) # [B, H, L, L]
+        qk = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) # [B, H, L, L]
         scores = qk * decay_mat
 
         # Numerator: y_num = scores @ v
