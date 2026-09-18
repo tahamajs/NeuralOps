@@ -168,10 +168,16 @@ class UniQLCompressor(BaseCompressor):
 
             # Compute SVD in FP32
             try:
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                if torch.cuda.is_available() and W.is_cuda:
+                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                else:
+                    W_dev = W.to(orig_device) if torch.cuda.is_available() else W
+                    U, S, Vt = torch.linalg.svd(W_dev, full_matrices=False)
             except Exception:
                 try:
-                    U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    U, S, Vt = torch.linalg.svd(W.cpu().float(), full_matrices=False)
                     U, S, Vt = U.to(orig_device), S.to(orig_device), Vt.to(orig_device)
                 except Exception as e2:
                     logger.warning("UniQL SVD failed for %s: %s. Keeping original module.", name, e2)
@@ -179,6 +185,9 @@ class UniQLCompressor(BaseCompressor):
                     for p in module.parameters():
                         p.requires_grad = False
                     continue
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
             cur_r = max(1, min(self.rank, max_r))
             cur_bits = self.bits

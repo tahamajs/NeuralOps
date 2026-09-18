@@ -191,16 +191,25 @@ class SwiftSVDCompressor(BaseCompressor):
         else:
             target_r = max(1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r))
 
-        # Compute full SVD in FP32
+        # Compute full SVD in FP32 on GPU with CPU fallback
         try:
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        except Exception as e:
+            if torch.cuda.is_available() and W.is_cuda:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            else:
+                W_dev = W.to(device) if torch.cuda.is_available() else W
+                U, S, Vt = torch.linalg.svd(W_dev, full_matrices=False)
+        except (RuntimeError, torch.cuda.OutOfMemoryError, Exception) as e:
             try:
-                U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                U, S, Vt = torch.linalg.svd(W.cpu().float(), full_matrices=False)
                 U, S, Vt = U.to(device), S.to(device), Vt.to(device)
             except Exception as e2:
                 logger.warning("SwiftSVD SVD computation failed for %s: %s. Keeping original module.", name, e2)
                 return None, 1.0, 0
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         norm_orig = torch.linalg.norm(W).item() + 1e-8
         cur_r = target_r
