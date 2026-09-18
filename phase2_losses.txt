@@ -1,0 +1,91 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Running Phase 2 for D:/svd_project/models/distilbert_sst2 on cuda
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 4321.58it/s]
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_PROJECT\Codes\framework\eval_all_models_datasets.py)
+2026-09-18 19:10:04,472 [INFO] framework.compression_engine.a3_compressor: No calibration sources provided; skipping activation collection and using unweighted SVD.
+2026-09-18 19:10:05,577 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.0.attention.q_lin failed at r_ceiling=320 (err=0.294 > 0.200). Falling back to original layer.
+2026-09-18 19:10:06,318 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.0.attention.k_lin failed at r_ceiling=320 (err=0.288 > 0.200). Falling back to original layer.
+2026-09-18 19:10:07,015 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.0.attention.v_lin failed at r_ceiling=320 (err=0.315 > 0.200). Falling back to original layer.
+2026-09-18 19:10:07,818 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.0.attention.out_lin failed at r_ceiling=320 (err=0.297 > 0.200). Falling back to original layer.
+2026-09-18 19:10:08,471 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.1.attention.q_lin failed at r_ceiling=320 (err=0.275 > 0.200). Falling back to original layer.
+2026-09-18 19:10:09,275 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.1.attention.k_lin failed at r_ceiling=320 (err=0.254 > 0.200). Falling back to original layer.
+2026-09-18 19:10:10,111 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.1.attention.v_lin failed at r_ceiling=320 (err=0.309 > 0.200). Falling back to original layer.
+2026-09-18 19:10:10,749 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.1.attention.out_lin failed at r_ceiling=320 (err=0.307 > 0.200). Falling back to original layer.
+2026-09-18 19:10:11,556 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.2.attention.q_lin failed at r_ceiling=320 (err=0.308 > 0.200). Falling back to original layer.
+2026-09-18 19:10:12,411 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.2.attention.k_lin failed at r_ceiling=320 (err=0.312 > 0.200). Falling back to original layer.
+2026-09-18 19:10:13,152 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.2.attention.v_lin failed at r_ceiling=320 (err=0.311 > 0.200). Falling back to original layer.
+2026-09-18 19:10:14,021 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.2.attention.out_lin failed at r_ceiling=320 (err=0.324 > 0.200). Falling back to original layer.
+2026-09-18 19:10:14,710 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.3.attention.q_lin failed at r_ceiling=320 (err=0.269 > 0.200). Falling back to original layer.
+2026-09-18 19:10:15,414 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.3.attention.k_lin failed at r_ceiling=320 (err=0.272 > 0.200). Falling back to original layer.
+2026-09-18 19:10:16,124 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.3.attention.v_lin failed at r_ceiling=320 (err=0.356 > 0.200). Falling back to original layer.
+2026-09-18 19:10:16,834 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.3.attention.out_lin failed at r_ceiling=320 (err=0.361 > 0.200). Falling back to original layer.
+2026-09-18 19:10:17,509 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.4.attention.q_lin failed at r_ceiling=320 (err=0.309 > 0.200). Falling back to original layer.
+2026-09-18 19:10:18,226 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.4.attention.k_lin failed at r_ceiling=320 (err=0.307 > 0.200). Falling back to original layer.
+2026-09-18 19:10:18,949 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.4.attention.v_lin failed at r_ceiling=320 (err=0.364 > 0.200). Falling back to original layer.
+2026-09-18 19:10:19,821 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.4.attention.out_lin failed at r_ceiling=320 (err=0.388 > 0.200). Falling back to original layer.
+2026-09-18 19:10:20,718 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.5.attention.q_lin failed at r_ceiling=320 (err=0.316 > 0.200). Falling back to original layer.
+2026-09-18 19:10:21,567 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.5.attention.k_lin failed at r_ceiling=320 (err=0.325 > 0.200). Falling back to original layer.
+2026-09-18 19:10:22,431 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.5.attention.v_lin failed at r_ceiling=320 (err=0.341 > 0.200). Falling back to original layer.
+2026-09-18 19:10:23,342 [WARNING] framework.compression_engine.a3_compressor: A3 compression for distilbert.transformer.layer.5.attention.out_lin failed at r_ceiling=320 (err=0.375 > 0.200). Falling back to original layer.
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_phase2.py", line 65, in <module>
+    main()
+    ~~~~^^
+  File "D:\svd_project\Codes\framework\run_phase2.py", line 60, in main
+    run_for_model("D:/svd_project/models/distilbert_sst2", "sst2", 128)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\svd_project\Codes\framework\run_phase2.py", line 45, in run_for_model
+    out = model(**bx, labels=by)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 588, in forward
+    distilbert_output = self.distilbert(
+        input_ids=input_ids,
+    ...<4 lines>...
+        **kwargs,
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 413, in forward
+    embeddings = self.embeddings(input_ids, inputs_embeds, position_ids)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\deprecation.py", line 171, in wrapped_func
+    return func(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 103, in forward
+    inputs_embeds = self.word_embeddings(input_ids)  # (bs, max_seq_length, dim)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\sparse.py", line 190, in forward
+    return F.embedding(
+           ~~~~~~~~~~~^
+        input,
+        ^^^^^^
+    ...<5 lines>...
+        self.sparse,
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\functional.py", line 2551, in embedding
+    return torch.embedding(weight, input, padding_idx, scale_grad_by_freq, sparse)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument index in method wrapper_CUDA__index_select)
