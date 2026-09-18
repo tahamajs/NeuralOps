@@ -110,26 +110,87 @@ export function renderStructuralTransformation(moduleMeta, modelKey) {
                 💡 <strong>Mathematical Mechanics:</strong> Decomposes dense weight matrix $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ into two low-rank matrices $V \\in \\mathbb{R}^{r \\times d_{\\text{in}}}$ and $U \\in \\mathbb{R}^{d_{\\text{out}} \\times r}$ ($r=${r}$). Token features compress through rank bottleneck $r$ before re-expanding to model dimension.
             `;
         }
-    } else {
-        // Generic fallback for MoE, MLA, SliceGPT, Quant
+    } else if (paradigm === 'moe') {
+        if (diagramEl) {
+            diagramEl.innerHTML = `
+                <div class="tf-step dense" onclick="window.selectPartIn3D && window.selectPartIn3D('dense')" title="Dense FFN">
+                    <span class="tf-step-name">Dense FFN (4×d)</span>
+                    <span class="tf-step-shape">[${d} × ${dFfn}]</span>
+                    <span class="tf-step-param">${formatParamCount(d * dFfn)}</span>
+                </div>
+                <span class="tf-arrow">➔ Gate ➔</span>
+                <div class="tf-step compressed" onclick="window.selectPartIn3D && window.selectPartIn3D('router')" title="Router Gate">
+                    <span class="tf-step-name">Router (Top-1)</span>
+                    <span class="tf-step-shape">[${d} × 4]</span>
+                    <span class="tf-step-param">${formatParamCount(d * 4)}</span>
+                </div>
+                <span class="tf-arrow">➔ Dispatch ➔</span>
+                <div class="tf-step compressed" onclick="window.selectPartIn3D && window.selectPartIn3D('expert')" title="Expert Subnetwork">
+                    <span class="tf-step-name">4x Sparse Experts</span>
+                    <span class="tf-step-shape">4 × [${d} × ${Math.round(dFfn/2)}]</span>
+                    <span class="tf-step-param">Active: 1/4 FLOPs</span>
+                </div>
+            `;
+        }
         if (tableEl) {
             tableEl.innerHTML = `
-                <tr>
-                    <td>Architecture</td>
-                    <td>Dense Baseline</td>
-                    <td>${moduleMeta.name}</td>
-                    <td class="delta-positive">${Number(ratio).toFixed(1)}x Compression</td>
-                </tr>
-                <tr>
-                    <td>Layer Parameters</td>
-                    <td>${formatParamCount(layerBaseP)}</td>
-                    <td>${formatParamCount(layerCompP)}</td>
-                    <td class="delta-positive">-${Math.round((1 - 1/ratio)*100)}% Memory Saved</td>
-                </tr>
+                <tr><td>Mechanism</td><td>Dense Standard FFN</td><td>Top-1 Mixture-of-Experts</td><td class="delta-positive">Sparse Conditional Computation</td></tr>
+                <tr><td>Active FLOPs</td><td>100% Quadratic</td><td>~28% per Token</td><td class="delta-positive">3.5x Throughput Acceleration</td></tr>
+                <tr><td>Param Capacity</td><td>${formatParamCount(layerBaseP)}</td><td>${formatParamCount(layerCompP)}</td><td class="delta-positive">Multiplied Expert Knowledge</td></tr>
             `;
         }
         if (explEl) {
-            explEl.innerHTML = `💡 <strong>Mathematical Mechanics:</strong> ${moduleMeta.description || 'Optimized architectural transformation.'}`;
+            explEl.innerHTML = `💡 <strong>Paper Mechanism (Shazeer et al. / ToMoE):</strong> Tokens are dynamically routed via gating network $G(x) = \\text{Softmax}(\\text{TopK}(x \\cdot W_g))$. Only the most specialized expert is evaluated per token, breaking the trade-off between parameter size and computational cost.`;
+        }
+    } else if (paradigm === 'mla') {
+        if (diagramEl) {
+            diagramEl.innerHTML = `
+                <div class="tf-step dense" onclick="window.selectPartIn3D && window.selectPartIn3D('dense')">
+                    <span class="tf-step-name">Standard MHA KV</span>
+                    <span class="tf-step-shape">[2 × ${d} × ${d}]</span>
+                    <span class="tf-step-param">${formatParamCount(2 * d * d)}</span>
+                </div>
+                <span class="tf-arrow">➔ Compress ➔</span>
+                <div class="tf-step compressed" onclick="window.selectPartIn3D && window.selectPartIn3D('mla')">
+                    <span class="tf-step-name">Latent KV Vector</span>
+                    <span class="tf-step-shape">[${d} × 512]</span>
+                    <span class="tf-step-param">512d Latent Compression</span>
+                </div>
+            `;
+        }
+        if (tableEl) {
+            tableEl.innerHTML = `
+                <tr><td>Mechanism</td><td>Full KV Cache Multi-Head</td><td>Multi-Head Latent Attention (MLA)</td><td class="delta-positive">93% KV Cache Reduction</td></tr>
+                <tr><td>KV Footprint</td><td>${formatByteCount(d * 128 * 2)} per token</td><td>${formatByteCount(512 * 2)} per token</td><td class="delta-positive">Large Batch Context Serving</td></tr>
+            `;
+        }
+        if (explEl) {
+            explEl.innerHTML = `💡 <strong>Paper Mechanism (DeepSeek MLA):</strong> Compresses Key and Value projection matrices into a low-rank latent vector $c^{KV} \\in \\mathbb{R}^{d_c}$. Only the latent vector is cached in GPU VRAM during autoregressive generation!`;
+        }
+    } else {
+        if (diagramEl) {
+            diagramEl.innerHTML = `
+                <div class="tf-step dense" onclick="window.selectPartIn3D && window.selectPartIn3D('dense')">
+                    <span class="tf-step-name">Dense Layer</span>
+                    <span class="tf-step-shape">[${d} × ${d}]</span>
+                    <span class="tf-step-param">${formatParamCount(layerBaseP)}</span>
+                </div>
+                <span class="tf-arrow">➔ Compress ➔</span>
+                <div class="tf-step compressed" onclick="window.selectPartIn3D && window.selectPartIn3D('compressed')">
+                    <span class="tf-step-name">${moduleMeta.name || 'Compressed'}</span>
+                    <span class="tf-step-shape">Optimized</span>
+                    <span class="tf-step-param">${formatParamCount(layerCompP)}</span>
+                </div>
+            `;
+        }
+        if (tableEl) {
+            tableEl.innerHTML = `
+                <tr><td>Architecture</td><td>Dense Baseline</td><td>${moduleMeta.name}</td><td class="delta-positive">${Number(ratio).toFixed(1)}x Compression</td></tr>
+                <tr><td>Layer Parameters</td><td>${formatParamCount(layerBaseP)}</td><td>${formatParamCount(layerCompP)}</td><td class="delta-positive">-${Math.round((1 - 1/ratio)*100)}% Memory Saved</td></tr>
+            `;
+        }
+        if (explEl) {
+            explEl.innerHTML = `💡 <strong>Paper Mechanism & Math:</strong> ${moduleMeta.description || 'Optimized architectural transformation derived directly from research implementation.'}`;
         }
     }
 }
