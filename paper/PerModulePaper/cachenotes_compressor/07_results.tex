@@ -1,11 +1,79 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_cachenotes/roberta/summary.csv} & cachenotes & PASS & 68.12\% & 527.8 MB \\
-\texttt{results/unified\_cachenotes/distilbert/summary.csv} & cachenotes & PASS & 90.6\% & 308.81 MB \\
-\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & cachenotes & PASS & 89.22\% & 1858.27 MB \\
-\texttt{results/unified\_cachenotes/gpt2/summary.csv} & cachenotes & PASS & 74.77\% & 637.41 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 26.32 ms & 571.8 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 24.93 ms & 571.8 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 27.24 ms & 581.7 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 26.66 ms & 581.7 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_cachenotescompressor} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & cachenotes & PASS & 90.6 & 0.9093 \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & cachenotes & PASS & 74.77 & 0.7751 \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.55 & 0.5501 \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & cachenotes & PASS & 89.22 & 0.8956 \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & cachenotes & PASS & 68.12 & 0.7518 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes & PASS & Comp 1.0x & Mem -0.0\% \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes\_compressor & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{cachenotescompressor}.}
+\label{tab:results_acc_cachenotescompressor}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_cachenotescompressor} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & cachenotes & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & cachenotes & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & cachenotes & 763217728 & 763217728 & 7285760 & 1.0x \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & cachenotes & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes\_compressor & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{cachenotescompressor}.}
+\label{tab:results_params_cachenotescompressor}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_cachenotescompressor} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & full & 44865.75 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_cachenotes/distilbert/summary.csv} & distilbert & cachenotes & 44353.14 & 308.81 MB & 0.2403318069239113 \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & full & 23424.3 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_cachenotes/gpt2/summary.csv} & gpt2 & cachenotes & 23604.65 & 637.41 MB & 0.2379362598158943 \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & full & 1214.06 & 1809.78 MB & 0.0000 \\
+\texttt{results/unified\_cachenotes/qwen3\_5/summary.csv} & qwen3\_5 & cachenotes & 1046.74 & 1858.27 MB & 0.0 \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & full & 24050.62 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_cachenotes/roberta/summary.csv} & roberta & cachenotes & 23971.27 & 527.8 MB & 0.2373566765687054 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes & Elapsed 0.846s & 143.6 MB & Verified \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cachenotes\_compressor & Elapsed 0.734s & 143.6 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{cachenotescompressor}.}
+\label{tab:results_vram_cachenotescompressor}
+\end{table*}

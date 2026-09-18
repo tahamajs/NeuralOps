@@ -1,11 +1,76 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_armor/roberta/summary.csv} & armor\_pruner & PASS\_NO\_COMPRESSION & 79.7\% & 520.68 MB \\
-\texttt{results/unified\_armor/distilbert/summary.csv} & armor\_pruner & PASS\_NO\_COMPRESSION & 90.02\% & 183.07 MB \\
-\texttt{results/unified\_armor/gpt2/summary.csv} & armor\_pruner & PASS\_NO\_COMPRESSION & 49.31\% & 627.91 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 48.09 ms & 843.6 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 43.59 ms & 843.6 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 43.81 ms & 853.5 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 51.33 ms & 853.5 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 64.62 ms & 1251.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_armorpruner} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & armor\_pruner & PASS\_NO\_COMPRESSION & 90.02 & 0.9032 \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & armor\_pruner & PASS\_NO\_COMPRESSION & 49.31 & 0.009 \\
+\texttt{results/unified\_armor/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.55 & 0.5501 \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & armor\_pruner & PASS\_NO\_COMPRESSION & 79.7 & 0.8127 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor & PASS & Comp 0.98x & Mem -0.0\% \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor\_pruner & PASS & Comp 0.98x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{armorpruner}.}
+\label{tab:results_acc_armorpruner}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_armorpruner} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & armor\_pruner & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & armor\_pruner & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_armor/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & armor\_pruner & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor & Baseline FP32 & Reduced (0.98x) & 0 & 0.98x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor\_pruner & Baseline FP32 & Reduced (0.98x) & 0 & 0.98x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{armorpruner}.}
+\label{tab:results_params_armorpruner}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_armorpruner} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & full & 50954.53 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_armor/distilbert/summary.csv} & distilbert & armor\_pruner & 38268.35 & 183.07 MB & 0.3922593709495332 \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & full & 23492.58 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_armor/gpt2/summary.csv} & gpt2 & armor\_pruner & 24010.9 & 627.91 MB & 0.3875877490888039 \\
+\texttt{results/unified\_armor/qwen3\_5/summary.csv} & qwen3\_5 & full & 1279.57 & 1810.59 MB & 0.0000 \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & full & 21493.88 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_armor/roberta/summary.csv} & roberta & armor\_pruner & 23855.46 & 520.68 MB & 0.4025514241721895 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor & Elapsed 0.835s & 279.0 MB & Verified \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & armor\_pruner & Elapsed 0.838s & 279.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{armorpruner}.}
+\label{tab:results_vram_armorpruner}
+\end{table*}

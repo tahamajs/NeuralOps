@@ -1,9 +1,73 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-benchmark\_summary\_v2 & bert-sst2 & PASS & 26.06 ms & 571.8 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 25.88 ms & 571.8 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 28.23 ms & 581.7 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 26.83 ms & 581.7 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 52.87 ms & 1107.2 MB \\
-benchmark\_summary\_v2 & t5-mrpc & PASS & 52.73 ms & 1107.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_astpruner} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast & PASS & Comp 1.0x & Mem -0.0\% \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast\_pruner & PASS & Comp 1.0x & Mem -0.0\% \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & ast\_pruner & PASS & 26.06 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & ast\_pruner & PASS & 25.88 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & ast\_pruner & PASS & 28.23 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & ast\_pruner & PASS & 26.83 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & ast\_pruner & PASS & 52.87 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & ast\_pruner & PASS & 52.73 ms/step & Passed \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{astpruner}.}
+\label{tab:results_acc_astpruner}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_astpruner} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast\_pruner & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & ast\_pruner & 4386178 & 4386178 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & ast\_pruner & 4386178 & 4386178 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & ast\_pruner & 6913282 & 6913282 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & ast\_pruner & 6913282 & 6913282 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & ast\_pruner & 4506368 & 4506368 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & ast\_pruner & 4506368 & 4506368 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{astpruner}.}
+\label{tab:results_params_astpruner}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_astpruner} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast & Elapsed 0.235s & 202.4 MB & Verified \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & ast\_pruner & Elapsed 0.194s & 202.4 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & ast\_pruner & Latency 26.06ms & 571.8 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & ast\_pruner & Latency 25.88ms & 571.8 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & ast\_pruner & Latency 28.23ms & 581.7 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & ast\_pruner & Latency 26.83ms & 581.7 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & ast\_pruner & Latency 52.87ms & 1107.2 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & ast\_pruner & Latency 52.73ms & 1107.2 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{astpruner}.}
+\label{tab:results_vram_astpruner}
+\end{table*}
