@@ -1,0 +1,8 @@
+module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate
+asvd_attention,sst2,PASS,91.0,0.9168,91.0,0.9168,0.0,PASS
+svd_llm_v2_attention,sst2,PASS,75.8,0.7888,80.2,0.8129,4.4,PASS
+adaptive_svd_attention,sst2,PASS,79.2,0.8143,81.4,0.8287,2.2,PASS
+squeezing_heads,sst2,PASS,89.8,0.8998,90.6,0.9128,0.8,PASS
+gqa_attention,sst2,PASS,89.8,0.8998,90.8,0.9151,1.0,PASS
+primal_attention,sst2,PASS,87.6,0.8798,86.8,0.8726,-0.8,PASS
+svd_linear_attention,sst2,PASS,75.8,0.7888,80.2,0.8078,4.4,PASS
