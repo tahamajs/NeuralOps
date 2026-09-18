@@ -889,3 +889,8 @@ The `DynamicEntropySVDCompressor` architecture incorporates telemetry hooks for 
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9101 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-dynamic-rank](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-dynamic-rank) | 2026-09-19 |
