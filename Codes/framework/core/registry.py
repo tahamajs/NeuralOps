@@ -38,10 +38,8 @@ class Registry:
         """
 
         def decorator(obj: Callable) -> Callable:
-            nonlocal key
-            if key is None:
-                key = obj.__name__
-            k = key.lower()
+            final_key = key if key is not None else obj.__name__
+            k = final_key.lower()
             # If key already exists and maps to a class, do not let a plain function overwrite it
             if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
                 logger.debug("Registry '%s': Skipping overwrite of class %s by function %s for key '%s'", self.name, self._dict[k].__name__, obj.__name__, k)
@@ -95,6 +93,9 @@ class Registry:
             except ImportError:
                 pass
             except Exception as e:
+                import os
+                if os.environ.get("SVD_DEBUG") == "1":
+                    raise
                 logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
         elif self.name == "attentions":
             try:
@@ -106,6 +107,9 @@ class Registry:
             except ImportError:
                 pass
             except Exception as e:
+                import os
+                if os.environ.get("SVD_DEBUG") == "1":
+                    raise
                 logger.warning("Error during lazy loading of attention '%s': %s", key, e)
 
     def get(self, key: str) -> Optional[Callable]:
@@ -126,15 +130,22 @@ class Registry:
 
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""
+        if self._loaded: return
         if self.name == "compressors":
             try:
                 import framework.compression_engine
             except Exception as e:
+                import os
+                if os.environ.get("SVD_DEBUG") == "1":
+                    raise
                 logger.warning("Error loading compression_engine: %s", e)
         elif self.name == "attentions":
             try:
                 import framework.attentions
             except Exception as e:
+                import os
+                if os.environ.get("SVD_DEBUG") == "1":
+                    raise
                 logger.warning("Error loading attentions: %s", e)
 
     def keys(self) -> List[str]:
@@ -199,6 +210,8 @@ HELPER_SUFFIXES = (
     "_module_inject",
     "_compressor_fn",
     "_factory",
+    "_quantize",
+    "_compressor",
 )
 
 
