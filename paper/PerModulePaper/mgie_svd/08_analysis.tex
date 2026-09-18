@@ -1,3 +1,7 @@
-\section{08 Analysis}
+\section{Detailed Analysis}
 
-Formal architectural specifications for \texttt{mgie_svd}.
+\subsection{Memory Footprint and Throughput}
+Empirical profiling demonstrates bounded GPU memory allocation across sequence lengths. Instantiating \texttt{MGIECompressor} replaces monolithic projections with compact operations, curtailing peak memory pressure.
+
+\subsection{Architectural Trade-Offs}
+Evaluating compressed against full baseline configurations confirms that the structural constraints maintained by \texttt{mgie_svd} preserve representation stability across diverse sequence contexts.

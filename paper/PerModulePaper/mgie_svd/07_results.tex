@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{mgie_svd}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_mgie\_svd/roberta/summary.csv} & mgie\_svd & PASS & 72.02\% & 301.72 MB \\
+\texttt{results/unified\_mgie\_svd/distilbert/summary.csv} & mgie\_svd & PASS & 90.48\% & 311.19 MB \\
+\texttt{results/unified\_mgie\_svd/gpt2/summary.csv} & mgie\_svd & PASS & 60.09\% & 637.29 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

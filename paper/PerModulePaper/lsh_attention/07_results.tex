@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{lsh_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & lsh\_attention & PASS\_LOW & 50.92\% & 666.82 MB \\
+\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & lsh\_attention & PASS & 74.89\% & 211.22 MB \\
+\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & lsh\_attention & PASS & 80.62\% & 569.05 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

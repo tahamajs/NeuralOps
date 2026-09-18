@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{mamba_svd_flash}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 298.71 MB \\
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 182.94 MB \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 793.19 MB \\
+\texttt{results/master\_benchmark\_summary.csv} & mamba\_svd\_flash & c4 & "O(N) FLOPs\% & 72.992 MB \\
+benchmark\_summary\_v2 & bert-sst2 & TIMEOUT & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & bert-mrpc & TIMEOUT & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & TIMEOUT & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & TIMEOUT & 0.0 ms & 0.0 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

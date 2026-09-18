@@ -1,3 +1,20 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{mamba_shedder}.
+\subsection{Algorithmic Formulation}
+The \texttt{mamba_shedder} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compression Engine.
+Registered in COMPRESSOR\_REGISTRY as 'mamba\_shedder' and 'mamba\_shedder\_compressor'.
+
+Mathematical Formulation:
+1. Empirical Fisher Information / Sensitivity Metric:
+   $$\\\\mathcal{I}(X\_j) = \\\\sqrt{\\\\frac{1}{N} \\\\sum\_{n=1}^N X\_{n, j}^2}$$
+2. Layer Residual Sensitivity:
+   $$\\\\Delta\_l = \\\\frac{\\\\|X\_{l+1} - X\_l\\\\|\_F}{\\\\|X\_l\\\\|\_F + \\\\epsilon}$$
+3. Channel & Layer Masking:
+   $$W\_{pruned} = W \\\\odot \\\\mathcal{M}\_{channel}^\\\\top$$
+
+Production Hardening:
+- Fix 1: Reco}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

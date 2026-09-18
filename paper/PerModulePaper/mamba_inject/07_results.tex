@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{mamba_inject}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_mamba\_inject/roberta/summary.csv} & mamba\_inject & SKIP\_ROBERTA\_ARCHITECTURAL & 0.0\% & 712.34 MB \\
+\texttt{results/unified\_mamba\_inject/distilbert/summary.csv} & mamba\_inject & SKIP\_BERT\_ARCHITECTURAL & 0.0\% & 389.51 MB \\
+\texttt{results/unified\_mamba\_inject/gpt2/summary.csv} & mamba\_inject & SKIP\_GPT\_ARCHITECTURAL & 0.0\% & 793.19 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

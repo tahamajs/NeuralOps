@@ -1,3 +1,12 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{mamba_svd_flash}.
+\subsection{Algorithmic Formulation}
+The \texttt{mamba_svd_flash} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Module (Production-Hardened).
+
+Fuses bidirectional selective state-space recurrent dynamics with online Singular Value Decomposition 
+of state transitions, coupled with a Multi-Head / GQA FlashAttention execution path,
+pretrained weight transfer, LoRA adapters, RoPE rotary embeddings, and causal/bidirectional masking.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.
