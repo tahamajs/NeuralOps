@@ -121,7 +121,7 @@ export function createTensorBadgeSprite(node, offsetX, targetGroup, visualObject
     const spriteMat = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        opacity: 0.0,
+        opacity: 0.95,
         depthWrite: false
     });
     const sprite = new THREE.Sprite(spriteMat);
