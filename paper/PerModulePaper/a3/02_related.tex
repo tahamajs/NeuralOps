@@ -80,19 +80,22 @@ for low-rank factorization.
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{lll}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.30\columnwidth}p{0.32\columnwidth}p{0.30\columnwidth}}
 \toprule
-\textbf{Axis} & \textbf{Prior work} & \textbf{A3} \\
+\textbf{Axis} & \textbf{Prior Work} & \textbf{A3 (Ours)} \\
 \midrule
-\textbf{Factorization weighting} & Uniform (unweighted SVD) & Fisher diagonal \\
-\textbf{Rank selection} & Fixed & Adaptive escalation \\
-\textbf{Calibration memory} & Full activation buffer & Streaming O($d^2$) \\
-\textbf{Post-factorization fix} & None & LayerNorm recalibration \\
-\textbf{Error validation} & Silent & Strict Frobenius bound \\
-\textbf{Fallback} & Never & Automatic per-layer \\
+Weighting & Uniform (unweighted) & Fisher diagonal \\
+Rank Selection & Fixed global & Adaptive escalation \\
+Calibration Mem. & Buffer $\mathcal{O}(Nd)$ & Streaming $\mathcal{O}(d^2)$ \\
+Post-Factor Fix & None & LN recalibration \\
+Error Validation & Silent & Strict Frobenius \\
+Safety Fallback & Never & Automatic fallback \\
 \bottomrule
 \end{tabular}
+\caption{Comparison of architectural axes between prior low-rank methods and A3.}
+\label{tab:positioning}
 \end{table}
 
 \textbf{Key distinction.} Prior low-rank compression methods either (a) select 

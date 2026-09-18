@@ -50,43 +50,11 @@ $\mathcal{M}'$ such that:
 
 where $|\theta(\cdot)|$ denotes parameter count.
 
-We impose the following constraints:
+We impose four core constraints on the compression pipeline to ensure production reliability. First, we enforce a strict reconstruction error bound: for each factorized layer, the normalized Frobenius reconstruction error must satisfy $\|W - UV\|_F / \|W\|_F \leq \tau$ with safety threshold $\tau = 0.40$. Second, we forbid retraining of original base weights from scratch, allowing only parameter-efficient LoRA adapter recovery to preserve the compute budget. Third, all activation statistics must be gathered under a memory-bounded streaming protocol operating in $\mathcal{O}(d^2)$ auxiliary memory rather than $\mathcal{O}(Nd^2)$ batch storage. Finally, the system mandates deterministic fallback, ensuring that any projection violating the error threshold seamlessly retains its original uncompressed dense weights without corrupting the representation pipeline.
 
-\begin{enumerate}
-\item \textbf{Strict reconstruction bound.} For each compressed layer,
-  $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.40$.
-\item \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
-\item \textbf{Memory-bounded calibration.} Activation statistics must be collected in
-  $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
-\item \textbf{Deterministic fallback.} If error exceeds $\tau$, the original layer is
-  preserved.
-
-\end{enumerate}
 \subsection{Our Approach}
 
-We propose \textbf{A3} (\textbf{A}ctivation-\textbf{A}ware \textbf{A}daptive factorization), 
-which differs from standard SVD compression in four ways:
-
-\begin{enumerate}
-\item \textbf{Fisher-diagonal weighting.} We estimate the empirical Fisher diagonal
-  $F_i = \mathbb{E}_x[x_i^2]$ from calibration data and use it to reweight
-  the SVD input space: $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$.
-
-\item \textbf{Streaming covariance accumulation.} We collect $F$ and $C_X$ using
-  online streaming, requiring only $\mathcal{O}(d^2)$ memory regardless of
-  calibration set size.
-
-\item \textbf{Adaptive rank escalation.} If the reconstruction error at the initial
-  rank $r$ exceeds $\tau$, we incrementally increase the rank up to
-  $\min(d_\text{in}, d_\text{out})$, retrying the SVD until the constraint
-  is met or the fallback triggers.
-
-\item \textbf{LayerNorm recalibration.} After factorization, we rescale each
-  LayerNorm's affine parameters $\gamma$ by the ratio of current ($\sigma_\text{current}$)
-  to target ($\sigma_\text{target}$) activation standard deviation, absorbing distributional shift introduced
-  by the factorization.
-
-\end{enumerate}
+To satisfy these objectives, we propose \textbf{A3} (\textbf{A}ctivation-\textbf{A}ware \textbf{A}daptive factorization), a framework that departs from conventional truncated SVD across four foundational dimensions. First, A3 utilizes empirical Fisher-diagonal weighting by estimating the sensitivity vector $F_i = \mathbb{E}_x[x_i^2]$ from calibration tokens and reweighting the input space via $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$ to protect high-impact feature coordinates. Second, online streaming covariance accumulation gathers both the diagonal Fisher vector $F$ and the outer-product matrix $C_X$ in constant $\mathcal{O}(d^2)$ working memory regardless of calibration sequence count. Third, adaptive rank escalation dynamically adjusts the allocated low-rank budget: when initial factorization exceeds the error threshold $\tau$, the algorithm progressively increments the candidate rank up to $\min(d_\text{in}, d_\text{out})$, re-evaluating the factorization until convergence or deterministic fallback occurs. Fourth, post-factorization LayerNorm recalibration rescales the affine parameter $\gamma$ according to the ratio of observed to target standard deviations ($\sigma_\text{current} / \sigma_\text{target}$), effectively compensating for activation variance shrinkage induced by truncation.
 \subsection{Contributions}
 
 We make the following contributions:

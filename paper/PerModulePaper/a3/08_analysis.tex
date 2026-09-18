@@ -275,11 +275,7 @@ Scale normalization prevents the Fisher magnitude from artificially inflating or
 \subsubsection{Underlying Causes}
 \label{sec:failure_causes}
 
-Empirical spectral profiling reveals two distinct structural phenomena explaining why these layers resisted low-rank compression within the $\tau = 0.40$ budget:
-\begin{enumerate}
-    \item \textbf{Value and Output Projection Entropy:} Unlike query and key projections which primarily perform subspace alignment for dot-product attention scores, value ($V$) and output ($O$) projections directly transform and mix token feature representations across all 768 dimensions. Consequently, their singular value spectra decay much more slowly (effective rank $\sim 192$--$256$), resulting in higher relative Frobenius error ($0.45$--$0.55$) when bounded by $r_{\mathrm{ceiling}} \le 256$.
-    \item \textbf{Deep Layer Dimensionality:} As sequence representations progress into deeper layers (Layers 4 and 5), contextual interactions introduce higher semantic complexity, broadening activation variance across higher-order singular vectors. The safety fallback mechanism in A3 detects this boundary condition and preserves the original dense weights, maintaining 90.02\% accuracy without degrading task performance.
-\end{enumerate}
+Empirical spectral profiling reveals two distinct structural phenomena explaining why these layers resisted low-rank compression within the $\tau = 0.40$ budget. First, value ($V$) and output ($O$) projections directly transform and mix token feature representations across all 768 dimensions, unlike query and key projections which primarily perform subspace alignment for dot-product attention scores. Consequently, their singular value spectra decay much more slowly (effective rank $\sim 192$--$256$), resulting in higher relative Frobenius error ($0.45$--$0.55$) when bounded by $r_{\mathrm{ceiling}} \le 256$. Second, as sequence representations progress into deeper layers (Layers 4 and 5), contextual interactions introduce higher semantic complexity, broadening activation variance across higher-order singular vectors. The safety fallback mechanism in A3 detects this boundary condition and preserves the original dense weights, maintaining 90.02\% accuracy without degrading task performance.
 
 \subsection{The Fisher Diagonal in Practice}
 \label{sec:fisher_diagonal_practice}
@@ -293,13 +289,7 @@ Figure~\ref{fig:fisher_by_layer} visualizes the empirical Fisher diagonal spectr
 \label{fig:fisher_by_layer}
 \end{figure}
 
-\begin{itemize}
-\item \textbf{Layer 0 (Early):} Highly concentrated energy profile where the top 10\% of feature coordinates account for over 85\% of the total sensitivity norm.
-\item \textbf{Layer 3 (Middle):} Moderate concentration with balanced diagonal variance across intermediate attention channels.
-\item \textbf{Layer 5 (Late):} Diffuse sensitivity distribution reflecting contextualized multi-token feature mixing.
-\end{itemize}
-
-Early layers tend to have \textbf{highly concentrated} energy in a few channels; later layers have \textbf{more uniform} distributions. This explains why query and key projections in early layers compress with substantially lower Frobenius reconstruction error.
+In early layers such as Layer 0, the sensitivity distribution displays an exceptionally sharp profile where the top 10\% of feature coordinates account for over 85\% of the total sensitivity norm. In intermediate stages such as Layer 3, the profile exhibits moderate concentration with balanced diagonal variance across intermediate attention channels. In late stages such as Layer 5, the sensitivity becomes increasingly diffuse, reflecting complex multi-token contextual feature mixing. This architectural progression explains why query and key projections in early transformer layers compress with substantially lower Frobenius reconstruction error than identical operators situated deeper in the network.
 
 \subsection{Recovery Dynamics}
 \label{sec:recovery_dynamics}
@@ -320,10 +310,4 @@ For DistilBERT, cross-entropy loss decreases monotonically from $0.0083$ down to
 \subsection{Summary of Insights}
 \label{sec:analysis_summary}
 
-\begin{enumerate}
-\item \textbf{Fisher weighting is essential:} Without it, reconstruction error increases by 2.5\% and downstream validation accuracy drops by up to 8\%.
-\item \textbf{LN recalibration helps:} Closed-form variance correction closes $\sim$60\% of the post-factorization gap before gradient recovery.
-\item \textbf{Adaptive rank is necessary:} Fixed uniform rank yields severe degradation on deep bottleneck projections.
-\item \textbf{Calibration is cheap:} A modest budget of 500--1000 examples is sufficient for stable second-order energy estimation.
-\item \textbf{FFN is more compressible than attention:} FFN effective rank is $\sim$192 vs attention's $\sim$48, enabling substantial parameter savings on expanded hidden dimensions.
-\end{enumerate}
+In summary, the empirical analysis underscores five definitive findings. Fisher weighting proves essential, as omitting it inflates reconstruction error by 2.5\% and depresses downstream validation accuracy by up to 8\%. LayerNorm recalibration provides substantial zero-cost restoration, absorbing approximately 60\% of the initial post-factorization performance drop prior to any gradient adaptation. Adaptive rank allocation is mandatory to accommodate layer-wise intrinsic dimensionality differences, preventing severe representation collapse in bottleneck projections. Furthermore, calibration is remarkably data-efficient, requiring only 500 to 1000 unlabeled sequences for robust second-order energy estimation. Finally, feed-forward projections exhibit higher absolute compressibility than attention blocks due to their fourfold dimensional expansion, establishing them as high-yield targets for structural factorization.

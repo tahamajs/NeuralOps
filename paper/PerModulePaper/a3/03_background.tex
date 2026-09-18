@@ -78,11 +78,10 @@ F = \frac{1}{N} \sum_{t=1}^N x_t^2
 Naively this requires storing all $x_t$, which costs $\mathcal{O}(Nd)$ memory. 
 The \textbf{streaming} formulation accumulates only the running sums:
 
-\[
-C^{(k)} = C^{(k-1)} + \sum_{t \in \text{batch}_k} x_t x_t^\top, \qquad
-N^{(k)} = N^{(k-1)} + |\text{batch}_k|
-\tag{3.8}
-\]
+\begin{align}
+C^{(k)} &= C^{(k-1)} + \sum_{t \in \text{batch}_k} x_t x_t^\top, \tag{3.8a} \\
+N^{(k)} &= N^{(k-1)} + |\text{batch}_k| \tag{3.8b}
+\end{align}
 
 with $\mathcal{O}(d^2)$ memory. We use this in A3.
 
@@ -94,11 +93,10 @@ out before accumulation.
 LayerNorm (Ba et al., 2016) normalizes activations across the feature 
 dimension:
 
-\[
-\text{LN}(x) = \gamma \odot \frac{x - \mu}{\sqrt{\mathrm{Var}(x) + \epsilon}} + \beta, \qquad
-\text{where } \mathrm{Var}(x) = \mathbb{E}[(x - \mu)^2], \quad \sigma = \sqrt{\mathrm{Var}(x) + \epsilon}
-\tag{3.9}
-\]
+\begin{align}
+\text{LN}(x) &= \gamma \odot \frac{x - \mu}{\sqrt{\mathrm{Var}(x) + \epsilon}} + \beta, \tag{3.9a} \\
+\text{where } \mathrm{Var}(x) &= \mathbb{E}[(x - \mu)^2], \quad \sigma = \sqrt{\mathrm{Var}(x) + \epsilon} \tag{3.9b}
+\end{align}
 
 where $\gamma, \beta \in \mathbb{R}^d$ are learnable parameters.
 
