@@ -216,6 +216,7 @@ class AegisAttentionV2(BaseAttention):
 
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -499,7 +500,11 @@ class AegisAttentionV2(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
+                    # For nested encoders the outer dense handles output projection;
+                    # initialise out_proj to identity so it acts as a pass-through if called.
+                    eye_w = torch.eye(self.all_head_size, self.all_head_size,
+                                      device=self.out_proj.up.weight.device,
+                                      dtype=self.out_proj.up.weight.dtype)
                     target.decompose_from_weight(eye_w, None)
 
         if hasattr(old_attn, "is_decoder"):

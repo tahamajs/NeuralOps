@@ -323,6 +323,7 @@ def kernel_linear_attention(
 class AegisAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -589,9 +590,9 @@ class AegisAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
 
-        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
@@ -613,22 +614,43 @@ class AegisAttention(BaseAttention):
                 token_valid = m_eff.any(dim=1).any(dim=-2).bool()
 
         if N < self.cfg.local_window or self.is_decoder:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
+            # Memory-efficient attention — avoids OOM from full B×H×N×N matrix on GPT-2/long seqs
+            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
+            k_sdp = K.half() if K.dtype == torch.float32 else K
+            v_sdp = V.half() if V.dtype == torch.float32 else V
+            is_causal_sdp = self.is_decoder and not is_cross and N > 1
+            attn_bias_sdp = None
             if eff_mask is not None and eff_mask.dim() == 4:
-                if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(~eff_mask, -10000.0)
-                else:
-                    scores = scores + eff_mask.float()
-            else:
-                if self.is_decoder and not is_cross and N > 1:
-                    causal_mask = torch.triu(torch.full((N, N_kv), -10000.0, device=Q.device, dtype=torch.float32), diagonal=1)
-                    scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-                if eff_mask is not None and eff_mask.dim() == 2:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
-            attn = self.dropout(attn)
+                attn_bias_sdp = eff_mask.to(q_sdp.dtype)
+            elif eff_mask is not None and eff_mask.dim() == 2 and not is_causal_sdp:
+                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdp.dtype)
+            try:
+                out_sdp = torch.nn.functional.scaled_dot_product_attention(
+                    q_sdp, k_sdp, v_sdp,
+                    attn_mask=attn_bias_sdp,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    is_causal=is_causal_sdp,
+                )
+                out = out_sdp.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+            except Exception:
+                CHUNK = 64
+                out_chunks = []
+                for q_start in range(0, N, CHUNK):
+                    q_end = min(q_start + CHUNK, N)
+                    q_chunk = Q[:, :, q_start:q_end, :].float()
+                    scores_chunk = torch.matmul(q_chunk, K.float().transpose(-2, -1)) * (D**-0.5)
+                    if is_causal_sdp:
+                        causal_col = torch.arange(N_kv, device=Q.device)
+                        causal_row = torch.arange(q_start, q_end, device=Q.device).unsqueeze(-1)
+                        scores_chunk = scores_chunk.masked_fill((causal_col > causal_row).unsqueeze(0).unsqueeze(0), -10000.0)
+                    if attn_bias_sdp is not None:
+                        scores_chunk = scores_chunk + attn_bias_sdp[:, :, q_start:q_end, :].float()
+                    scores_chunk = torch.nan_to_num(scores_chunk, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    attn_chunk = torch.softmax(scores_chunk, dim=-1).to(V.dtype)
+                    out_chunks.append(torch.matmul(attn_chunk, V))
+                out = torch.cat(out_chunks, dim=2).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
             if head_mask is not None:
                 if head_mask.dim() == 1:
@@ -637,14 +659,12 @@ class AegisAttention(BaseAttention):
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
-                attn = attn * head_mask
-
-            out = torch.matmul(attn, V).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                out = out.view(B, N, H, D) * head_mask.squeeze(-1).unsqueeze(1)
+                out = out.view(B, N, self.all_head_size)
 
             if self.is_nested_encoder:
-                return out, (attn if output_attentions else None)
-            return self.out_proj(out), (attn if output_attentions else None)
+                return out, None
+            return self.out_proj(out), None
 
         Hl, Hg = self.num_local_heads, self.num_global_heads
         Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
