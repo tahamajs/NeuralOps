@@ -1574,7 +1574,7 @@ def parse_args(argv=None):
         torch.backends.cudnn.benchmark = True
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(allow_abbrev=False)
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
     ap.add_argument("--cached_batches_dir", default=None,
