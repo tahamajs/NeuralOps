@@ -258,6 +258,13 @@ ARMOR utilizes empirical input activations to compute resilient Taylor parameter
 
 ## 7. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9087 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-armor](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-armor) | 2026-09-19 |
+
+
 > [!NOTE]
 > **Pending Re-evaluation After Fixes**:
 > The benchmark metrics below reflect preliminary runs under earlier uncalibrated test configurations. Complete 4-model GPU evaluation (DistilBERT, RoBERTa, GPT-2, Qwen3.5 on SST-2) with multi-batch calibration and 50-step recovery is currently pending re-evaluation.
