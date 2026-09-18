@@ -7,6 +7,11 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+# Ensure Hugging Face runs completely offline from cached checkpoints
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+
 import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
