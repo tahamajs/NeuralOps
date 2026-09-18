@@ -803,44 +803,15 @@ def inject_spectron(
         return target if num_injected > 0 else None
 
     layer = target
-
-    r"""Inject SpectronAttention into all model transformer layers."""
-    cfg = config or getattr(model, "config", None)
-    layers = None
-    for path in ("distilbert.transformer.layer", "roberta.encoder.layer", "bert.encoder.layer", "transformer.h", "model.layers"):
-        parts = path.split(".")
-        curr = model
-        for p in parts:
-            curr = getattr(curr, p, None)
-            if curr is None:
-                break
-        if curr is not None:
-            layers = curr
-            break
-
-    if layers is None:
-        return
-
-    for lid, layer in enumerate(layers):
-        old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
-        if old_attn is None and hasattr(layer, "self"):
-            old_attn = layer
-        ranks = {}
-        if rank_dict:
-            for p, key in [("q", "q"), ("k", "k"), ("v", "v"), ("o", "out")]:
-                name = f"layer{lid}_{key}"
-                if name in rank_dict:
-                    ranks[p] = rank_dict[name]
-        inject_spectron_layer(
-            layer=layer,
-            model_config=cfg,
-            comp_config=args,
-            layer_idx=lid,
-            total_layers=len(layers),
-            old_attn=old_attn,
-            ranks=ranks if ranks else None,
-            **kwargs,
-        )
+    return inject_spectron_layer(
+        layer=layer,
+        model_config=cfg,
+        comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+        layer_idx=layer_idx,
+        total_layers=total_layers,
+        old_attn=old_attn,
+        **kwargs,
+    )
 
 
 @ATTENTION_REGISTRY.register("spectron_inject")
