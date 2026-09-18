@@ -3110,9 +3110,7 @@ def main():
         summary_dict[name] = row
 
         import threading
-        if not hasattr(path, "_csv_lock"):
-            pass
-        with path._csv_lock:
+        with CSV_LOCK:
             existing_rows = {}
             if path.exists():
                 try:
