@@ -601,9 +601,9 @@ class ASVDAttention(BaseAttention):
             position_ids = kwargs.get("position_ids", None)
 
         # 1. Project Q, K, V using low-rank factorized linear layers
-        q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k: torch.Tensor = self.key(hidden_states).view(B, N, kv_H, d).transpose(1, 2)
-        v: torch.Tensor = self.value(hidden_states).view(B, N, kv_H, d).transpose(1, 2)
+        q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k: torch.Tensor = self.key(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
+        v: torch.Tensor = self.value(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
 
         # 2. Apply Rotary Position Embedding (RoPE) before GQA expansion and masking
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
