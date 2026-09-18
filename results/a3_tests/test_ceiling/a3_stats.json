@@ -1,0 +1,22 @@
+{
+  "compressor_name": "a3",
+  "original_parameters": 66955010,
+  "compressed_parameters": 66955010,
+  "saved_parameters": 0,
+  "compression_ratio": 1.0,
+  "reduction_percentage": 0.0,
+  "factorized_layers": 0,
+  "skipped_layers": 24,
+  "num_compressed": 0,
+  "num_fallback": 24,
+  "num_compressed_layers": 0,
+  "num_fallback_layers": 24,
+  "compressed_layers": [],
+  "rank": 128,
+  "use_fisher": true,
+  "recalibrate_ln": true,
+  "avg_reconstruction_error": 0.0,
+  "weighted_reconstruction_error": 0.0,
+  "layer_stats": {},
+  "method": "a3_activation_aware_factorized_svd"
+}
