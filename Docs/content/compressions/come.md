@@ -792,3 +792,4 @@ Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **59.70%** | +8.70% | 0.5455 | 1.24x | 1 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **76.80%** | +2.30% | 0.7589 | 1.26x | 1 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **61.40%** | -18.30% | 0.5908 | 1.26x | 1 | N/A | 2026-09-18 |
