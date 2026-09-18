@@ -305,6 +305,13 @@ def inject_hamming(
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **82.68%** | -7.92% | 0.8350 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-hamming-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hamming-attention) | 2026-09-18 |
+
+
 > [!NOTE]
 > **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 
@@ -408,4 +415,3 @@ print('Output logits shape:', outputs.logits.shape)
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
