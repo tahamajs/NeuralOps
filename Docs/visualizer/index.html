@@ -8,6 +8,8 @@
     <!-- KaTeX Math Typesetting -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <!-- Marked.js Markdown Parser -->
+    <script defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <!-- Import map for Vanilla Three.js + Addons -->
     <script type="importmap">
       {
@@ -446,6 +448,26 @@
 
             <div id="modal-module-grid" class="modal-module-grid" role="region" aria-label="Module Cards Gallery">
                 <!-- Dynamically populated 241 module cards -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Markdown & Research Paper Document Reader Modal -->
+    <div id="doc-reader-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="doc-reader-title">
+        <div class="modal-container doc-reader-container">
+            <div class="modal-header">
+                <div>
+                    <span class="hud-badge" style="background:#10b981; color:#fff;">CANONICAL RESEARCH PAPER &amp; SPECIFICATION</span>
+                    <h2 id="doc-reader-title">Module Documentation</h2>
+                    <p class="modal-subtitle" id="doc-reader-subtitle">Verified mathematical derivations, PyTorch tensor contracts, and benchmark results.</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="btn-apply-from-doc" class="round-button btn-apply" style="padding: 6px 14px;">Apply to 3D Scene</button>
+                    <button id="btn-close-doc-modal" class="btn-icon-only modal-close" aria-label="Close document modal">✕</button>
+                </div>
+            </div>
+            <div id="doc-reader-body" class="doc-reader-body markdown-body">
+                <!-- Dynamically rendered markdown content with KaTeX math -->
             </div>
         </div>
     </div>
