@@ -14,7 +14,7 @@ Usage:
   python prepare_datasets.py --tasks sst2,mrpc,qnli,cola --save_dir ./glue_data
 
   # Prepare all benchmark datasets for GPU server
-  python prepare_datasets.py --all --save_dir ./benchmark_data --batch_size 32
+  python prepare_datasets.py --all --save_dir ./benchmark_data --batch_size 256
 
   # Test dataset loading and print batch schemas
   python prepare_datasets.py --test --tasks sst2,wikitext2
