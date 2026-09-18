@@ -1,7 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & nli\_softmax & PASS & 60.32\% & 640.61 MB \\
-\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & nli\_softmax & PASS & 89.33\% & 315.91 MB \\
-\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & nli\_softmax & PASS\_LOW & 55.28\% & 557.88 MB \\
-all\_121\_gpu\_matrix & nli\_softmax & PASS & 1.0x (0.166s) & 127.0 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_nlisoftmax} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & nli\_softmax & PASS & 89.33 & 0.8905 \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & nli\_softmax & PASS\_LOW & 55.28 & 0.6782 \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & nli\_softmax & PASS & 60.32 & 0.482 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & nli\_softmax & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{nlisoftmax}.}
+\label{tab:results_acc_nlisoftmax}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_nlisoftmax} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & nli\_softmax & 66955010 & 66955016 & 18438 & 1.0x \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & nli\_softmax & 124441344 & 124441356 & 36876 & 1.0x \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & nli\_softmax & 124647170 & 131734286 & 36876 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & nli\_softmax & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{nlisoftmax}.}
+\label{tab:results_params_nlisoftmax}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_nlisoftmax} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & full & 51810.89 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & distilbert & nli\_softmax & 42469.18 & 315.91 MB & 0.0000 \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & full & 26180.39 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & gpt2 & nli\_softmax & 20249.29 & 557.88 MB & 0.0000 \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & full & 26692.46 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & roberta & nli\_softmax & 21556.3 & 640.61 MB & 0.0000 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & nli\_softmax & Elapsed 0.166s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{nlisoftmax}.}
+\label{tab:results_vram_nlisoftmax}
+\end{table*}
