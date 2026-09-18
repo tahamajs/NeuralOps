@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for svd_compressed.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_svdcompressed} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & svd\_compressed & PASS & 87.39 & 0.8825 \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & svd\_compressed & PASS & 76.15 & 0.7965 \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & svd\_compressed & PASS & 58.14 & 0.703 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{svdcompressed}.}
+\label{tab:results_acc_svdcompressed}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_svdcompressed} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & svd\_compressed & 66955010 & 58107650 & 589824 & 1.1523x \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & svd\_compressed & 126800640 & 108221196 & 1474572 & 1.1717x \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & svd\_compressed & 124647170 & 106961666 & 1179648 & 1.1653x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{svdcompressed}.}
+\label{tab:results_params_svdcompressed}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_svdcompressed} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & full & 12606.61 & 388.55 MB & 0.0000 \\
+\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & svd\_compressed & 5973.8 & 283.97 MB & 0.0000 \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & full & 27219.81 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & svd\_compressed & 10244.56 & 300.29 MB & 0.0000 \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & full & 25619.66 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & svd\_compressed & 14075.4 & 553.0 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{svdcompressed}.}
+\label{tab:results_vram_svdcompressed}
+\end{table*}

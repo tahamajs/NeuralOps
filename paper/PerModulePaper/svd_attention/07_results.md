@@ -1,12 +1,40 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 45.48 ms <!-- source: results/benchmark_summary_v2.csv line 26 --> | 1080.4 MB <!-- source: results/benchmark_summary_v2.csv line 26 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 46.08 ms <!-- source: results/benchmark_summary_v2.csv line 27 --> | 1080.4 MB <!-- source: results/benchmark_summary_v2.csv line 27 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 45.51 ms <!-- source: results/benchmark_summary_v2.csv line 28 --> | 1090.3 MB <!-- source: results/benchmark_summary_v2.csv line 28 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 45.37 ms <!-- source: results/benchmark_summary_v2.csv line 29 --> | 1090.3 MB <!-- source: results/benchmark_summary_v2.csv line 29 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 46.81 ms <!-- source: results/benchmark_summary_v2.csv line 30 --> | 1064.6 MB <!-- source: results/benchmark_summary_v2.csv line 30 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 46.66 ms <!-- source: results/benchmark_summary_v2.csv line 31 --> | 1064.6 MB <!-- source: results/benchmark_summary_v2.csv line 31 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_svd/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> |
+| results/unified_svd/distilbert/summary.csv | distilbert | svd | PASS_LOW | 49.31% <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 0.0178 <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | svd | PASS_NO_COMPRESSION | 49.08% <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 0.0 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> |
+| results/unified_svd/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> |
+| results/unified_svd/roberta/summary.csv | roberta | svd | PASS_NO_COMPRESSION | 74.08% <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 0.7675 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_svd/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> |
+| results/unified_svd/distilbert/summary.csv | distilbert | svd | 66955010 <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 67544834 <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 589824 <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | svd | 124441344 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 125620992 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 1179648 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> |
+| results/unified_svd/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_svd/roberta/summary.csv line 2 --> |
+| results/unified_svd/roberta/summary.csv | roberta | svd | 124647170 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 132913922 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 1179648 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_svd/roberta/summary.csv line 3 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_svd/distilbert/summary.csv | distilbert | full | 25596.23 tok/s <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 388.55 MB <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_svd/distilbert/summary.csv line 2 --> |
+| results/unified_svd/distilbert/summary.csv | distilbert | svd | 8596.59 tok/s <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 317.64 MB <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd/distilbert/summary.csv line 3 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | full | 27624.42 tok/s <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 792.54 MB <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_svd/gpt2/summary.csv line 2 --> |
+| results/unified_svd/gpt2/summary.csv | gpt2 | svd | 12404.45 tok/s <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 590.39 MB <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> |
+| results/unified_svd/roberta/summary.csv | roberta | full | 28095.04 tok/s <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 711.69 MB <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> |
+| results/unified_svd/roberta/summary.csv | roberta | svd | 12718.31 tok/s <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 680.69 MB <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> |
