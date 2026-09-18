@@ -328,9 +328,11 @@ def commit_and_push_git(
     branch: Optional[str] = None,
 ) -> Optional[str]:
     """Stage modified documentation, summaries, and CSVs, commit, and push to Git.
-    
-    If branch is specified, commits to that branch and pushes upstream, preserving working tree.
+
+    Handles concurrent pushes from parallel workers with retry + backoff.
+    If branch is specified, commits to that branch and pushes upstream.
     """
+    import time, random
     cwd = find_git_root(cwd)
     try:
         subprocess.run(["git", "add", "Docs/", "results/"], cwd=cwd, check=False)
@@ -347,7 +349,6 @@ def commit_and_push_git(
 
         switched = False
         if target_branch != curr_branch:
-            # Check if target branch exists locally
             check = subprocess.run(["git", "show-ref", "--verify", f"refs/heads/{target_branch}"], cwd=cwd, capture_output=True)
             if check.returncode == 0:
                 subprocess.run(["git", "checkout", target_branch], cwd=cwd, check=True)
@@ -356,11 +357,40 @@ def commit_and_push_git(
             switched = True
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
-        subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", target_branch], cwd=cwd, check=False)
-        subprocess.run(["git", "push", "-u", "origin", target_branch], cwd=cwd, check=True)
-        rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
-        commit_hash = rev.stdout.strip()[:8]
-        LOG.info("Successfully committed and pushed Git changes to %s: %s", target_branch, commit_hash)
+
+        # Retry push up to 5 times — handles concurrent workers racing to push
+        commit_hash = None
+        for attempt in range(5):
+            # Clean up any stale rebase state before pulling
+            for stale in [".git/rebase-merge", ".git/rebase-apply"]:
+                stale_path = (cwd / stale) if cwd else Path(stale)
+                if stale_path.exists():
+                    import shutil
+                    shutil.rmtree(str(stale_path), ignore_errors=True)
+
+            pull = subprocess.run(
+                ["git", "pull", "--rebase", "--autostash", "origin", target_branch],
+                cwd=cwd, capture_output=True, text=True
+            )
+            if pull.returncode != 0:
+                LOG.debug("Pull/rebase attempt %d failed: %s", attempt + 1, pull.stderr.strip())
+
+            push = subprocess.run(
+                ["git", "push", "-u", "origin", target_branch],
+                cwd=cwd, capture_output=True, text=True
+            )
+            if push.returncode == 0:
+                rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
+                commit_hash = rev.stdout.strip()[:8]
+                LOG.info("Successfully committed and pushed Git changes to %s: %s", target_branch, commit_hash)
+                break
+            else:
+                wait = random.uniform(2, 6) * (attempt + 1)
+                LOG.debug("Push attempt %d/%d failed, retrying in %.1fs: %s", attempt + 1, 5, wait, push.stderr.strip()[:200])
+                time.sleep(wait)
+
+        if commit_hash is None:
+            LOG.warning("Git push failed after 5 attempts — commit is local only.")
 
         if switched:
             subprocess.run(["git", "checkout", curr_branch], cwd=cwd, check=False)
@@ -369,6 +399,7 @@ def commit_and_push_git(
     except Exception as e:
         LOG.warning("Git commit/push failed: %s", e)
         return None
+
 
 
 def handle_benchmark_run_export(
