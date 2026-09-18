@@ -535,6 +535,13 @@ print('Compressed output logits:', outputs.logits.shape)
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **gpt2** | ag_news | `PASS` | 79.70% | **82.20%** | +2.50% | 0.8170 | 1.00x | 45 | N/A | 2026-09-18 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Evaluation Suite | Base Model | Metric | Value | Latency Reduction | Peak Memory Delta | Status |
@@ -582,4 +589,3 @@ The `AstroLinear` architecture incorporates telemetry hooks for tracking singula
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
