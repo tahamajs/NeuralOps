@@ -451,11 +451,9 @@ class HLAAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        # ELU + 1 kernelization with zero-mean centering to match pretrained zero-mean Q/K
+        # ELU + 1 kernelization
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
-        q = q - q.mean(dim=-1, keepdim=True)
-        k = k - k.mean(dim=-1, keepdim=True)
 
         decay = torch.sigmoid(self.beta).unsqueeze(0)  # [1, H, 1, 1]
 

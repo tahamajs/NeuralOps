@@ -1,9 +1,10 @@
-"""verify_module_paper.py — Verifies paper completeness against all publication gates.
+"""verify_module_paper.py — Verifies paper completeness and authenticity against publication gates.
 
 Usage:
   python3 scripts/verify_module_paper.py --module <mod_name> [--strict]
 """
 import argparse
+from collections import Counter
 import os
 import re
 import sys
@@ -29,6 +30,55 @@ CANONICAL_TEX_ORDER = [
     "C_data.tex", "D_negative_results.tex", "E_ethics.tex"
 ]
 
+
+def check_no_template_artifacts(mod_dir: Path) -> list:
+    """Fail if template placeholder patterns or synthetic artifacts are detected across any markdown file."""
+    issues = []
+
+    for md_file in mod_dir.glob("*.md"):
+        if md_file.name == "paper_full.md":
+            continue
+        text = md_file.read_text(encoding="utf-8", errors="ignore")
+
+        # 1. Repeated identical numbers in tables / body (e.g. 0.85 placeholder)
+        numbers = re.findall(r"\b\d+\.\d{2,}\b", text)
+        counts = Counter(numbers)
+        for num, cnt in counts.items():
+            if cnt > 10 or (num == "0.85" and cnt > 5):
+                issues.append(f"{md_file.name}: Number '{num}' appears {cnt} times (suspected placeholder)")
+
+        # 2. Double character artifacts and broken escapes
+        for pattern in [r"%%", r"××", r"\bMB MB\b", r"\bxx\b", r"\b--\b"]:
+            matches = re.findall(pattern, text)
+            if matches:
+                issues.append(f"{md_file.name}: Double-character artifact found: '{pattern}' ({len(matches)} times)")
+
+        # 3. Unsubstituted placeholders
+        for placeholder in ["TRAINREDUCTION", "TRAIN_REDUCTION", "MEM_REDUCTION", "PLACEHOLDER", "<TODO>", "FILL_IN"]:
+            if placeholder in text:
+                issues.append(f"{md_file.name}: Unsubstituted placeholder found: '{placeholder}'")
+
+        if re.search(r"\{\{[A-Za-z0-9_]+\}\}", text):
+            issues.append(f"{md_file.name}: Unsubstituted template variable found: '{{...}}'")
+
+        # 4. Nonsense units
+        if re.search(r"\d+x\s+s\b", text):
+            issues.append(f"{md_file.name}: Nonsense unit pattern: '<number>x s'")
+
+    # 5. Method equation source citation check (grounding)
+    method_file = mod_dir / "04_method.md"
+    if method_file.exists():
+        m_text = method_file.read_text(encoding="utf-8", errors="ignore")
+        equations = len(re.findall(r"\$\$", m_text))
+        sources = len(re.findall(r"<!--\s*source:", m_text))
+        if equations > 0:
+            num_eqs = equations // 2
+            if sources < max(1, num_eqs // 2):
+                issues.append(f"04_method.md: Only {sources} source citations for {num_eqs} display equations (unsubstantiated math)")
+
+    return issues
+
+
 def verify_module(mod_name: str, strict: bool = False) -> dict:
     mod_dir = PAPER_BASE / mod_name
     res = {
@@ -42,7 +92,8 @@ def verify_module(mod_name: str, strict: bool = False) -> dict:
         "equations_count": 0,
         "tables_count": 0,
         "has_ascii": False,
-        "has_citations": False
+        "has_citations": False,
+        "template_issues": []
     }
 
     if not mod_dir.exists():
@@ -103,9 +154,6 @@ def verify_module(mod_name: str, strict: bool = False) -> dict:
     method_file = mod_dir / "04_method.md"
     if method_file.exists():
         m_text = method_file.read_text(encoding="utf-8", errors="ignore")
-        # count $$ or \begin{equation} or Equation
-        eqs = len(re.findall(r"\$\$|\\begin\{equation\}|### Equation \(\d+\)", m_text))
-        # Each $$ block has start and end, so count / 2 if $$
         disp_eqs = len(re.findall(r"### Equation \(\d+\)", m_text))
         if disp_eqs == 0:
             disp_eqs = len(re.findall(r"\$\$", m_text)) // 2
@@ -138,7 +186,16 @@ def verify_module(mod_name: str, strict: bool = False) -> dict:
         if tables < 3:
             res["warnings"].append(f"Results table count {tables} < 3")
 
+    # 8. Anti-Template & Artifact Verification (Action 2)
+    template_issues = check_no_template_artifacts(mod_dir)
+    res["template_issues"] = template_issues
+    if template_issues:
+        res["valid"] = False
+        for issue in template_issues:
+            res["errors"].append(f"Template/Artifact Violation: {issue}")
+
     return res
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -158,6 +215,7 @@ if __name__ == "__main__":
     print(f"Tables:        {r['tables_count']}")
     print(f"ASCII Diagram: {r['has_ascii']}")
     print(f"Citations:     {r['has_citations']}")
+    print(f"Template Violations: {len(r['template_issues'])}")
     if r["errors"]:
         print("\nERRORS:")
         for e in r["errors"]:
