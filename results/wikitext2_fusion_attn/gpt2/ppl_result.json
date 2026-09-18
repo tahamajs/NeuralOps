@@ -1,0 +1,8 @@
+{
+  "module": "fusion_attn",
+  "model_path": "models\\gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 1091.7261962890625,
+  "seq_len": 1024,
+  "stride": 512
+}
