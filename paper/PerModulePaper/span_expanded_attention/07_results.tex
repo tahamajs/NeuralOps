@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for span_expanded_attention.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_spanexpandedattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & span\_expanded & PASS\_NO\_COMPRESSION & 90.71 & 0.9099 \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & span\_expanded & PASS\_NO\_COMPRESSION & 79.24 & 0.7964 \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & span\_expanded & PASS\_NO\_COMPRESSION & 81.65 & 0.8268 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{spanexpandedattention}.}
+\label{tab:results_acc_spanexpandedattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_spanexpandedattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & span\_expanded & 66955010 & 67544858 & 589848 & 1.0x \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & span\_expanded & 124441344 & 125621040 & 1179696 & 1.0x \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & span\_expanded & 124647170 & 132913970 & 1179696 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{spanexpandedattention}.}
+\label{tab:results_params_spanexpandedattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_spanexpandedattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & full & 27878.17 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_span\_expanded/distilbert/summary.csv} & distilbert & span\_expanded & 12805.16 & 326.45 MB & 0.0000 \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & full & 14774.8 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_span\_expanded/gpt2/summary.csv} & gpt2 & span\_expanded & 6598.64 & 568.95 MB & 0.0000 \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & full & 14453.13 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_span\_expanded/roberta/summary.csv} & roberta & span\_expanded & 6547.07 & 657.23 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{spanexpandedattention}.}
+\label{tab:results_vram_spanexpandedattention}
+\end{table*}
