@@ -213,7 +213,7 @@ compressed_model = a3_compressor_factory(
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **64.33%** | +13.41% | 0.7340 | 1.04x | 32 | [svd-linear-attention-roberta-base-a3](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-a3) | 2026-09-19 |
 | **gpt2** | sst2 | `PASS` | 79.36% | **63.19%** | -16.17% | 0.7216 | 1.00x | 2 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.02%** | -1.04% | 0.9021 | 1.09x | 24 | N/A | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9105 | 1.05x | 22 | [svd-linear-attention-distilbert-sst2-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-a3) | 2026-09-19 |
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | mnli | `PASS` | 35.60% | **40.10%** | +4.50% | 0.2981 | 1.00x | 3 | N/A | 2026-09-18 |
 | **distilbert-mnli** | mnli | `PASS` | 68.30% | **62.30%** | -6.00% | 0.6224 | 1.05x | 21 | N/A | 2026-09-18 |
