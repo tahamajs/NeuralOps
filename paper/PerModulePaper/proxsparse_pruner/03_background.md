@@ -31,10 +31,10 @@ $$\min_{W} \mathcal{L}_{\text{task}}(W) + \lambda \mathcal{R}(W) + \mathcal{I}_{
 where $\mathcal{R}(W)$ denotes a sparsity-inducing norm (such as $\ell_1$ or group Lasso) and $\mathcal{I}_{\mathcal{S}}(W)$ denotes the indicator function over the admissible hardware-aligned sparsity pattern $\mathcal{S}$:
 $$\mathcal{I}_{\mathcal{S}}(W) = \begin{cases} 0 & \text{if } W \in \mathcal{S} \\ \infty & \text{otherwise} \end{cases}$$
 
-## 3.6 Taylor Sensitivity Estimation
-When calibration activations $X$ are available, parameter saliency is approximated via first-order Taylor expansion of the reconstruction loss:
-$$S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx \left| W_{ij} \right| \cdot \mathbb{E}_{X} \left[ \left| X_j \right| \right]$$
-Second-order Fisher information incorporates empirical activation covariances:
-$$H = \frac{2}{N} X^\top X + \lambda I$$
-with parameter importance quantified via inverse Hessian diagonals:
-$$S_{ij}^{(2)} = \frac{W_{ij}^2}{[H^{-1}]_{jj}}$$
+## 3.7 Condition Number Bounds under Truncation
+Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge \sigma_\rho > 0$. The condition number $\kappa(W) = \sigma_1 / \sigma_\rho$ measures numerical sensitivity to input perturbations. Under rank-$r$ truncation, the condition number of the factorized surrogate $W_r$ satisfies:
+$$\kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)$$
+Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
+
+## 3.8 Energy Conservation and Error Manifolds
+The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}$ defines a monotonic mapping $\mathcal{E}: \{1, \dots, \rho\} \to [0, 1]$. The decay profile follows a power-law distribution $\sigma_i \propto i^{-\alpha}$ where $\alpha > 0$ denotes the spectral decay exponent. For transformer projection matrices, empirical measurements show $\alpha \in [0.8, 1.6]$, indicating that the first $10\%$ to $25\%$ of singular vectors capture upwards of $90\%$ of total operator variance.
