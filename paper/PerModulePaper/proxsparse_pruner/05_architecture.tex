@@ -54,6 +54,24 @@ Table~\ref{tab:submodules_proxsparse\_pruner} details the structural parameter b
 \label{tab:submodules_proxsparse\_pruner}
 \end{table}
 
+\subsection{Cross-Backbone Tensor Interfaces}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{lcccc}
+\toprule
+\textbf{Backbone Family} & \textbf{Weight Tensor Format} & \textbf{Attention Type} & \textbf{Bias Handling} & \textbf{Positional Scheme} \\
+\midrule
+DistilBERT \& Separate $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+RoBERTa \& Nested $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+GPT-2 \& Fused Conv1D $[d, 3d]$ \& Causal Autoregressive \& Transposed \& Learned Absolute \\
+LLaMA / Qwen \& Split GQA $[d, d_{kv}]$ \& Causal Autoregressive \& Optional \& Rotary (RoPE) \\
+\bottomrule
+\end{tabularx}
+\caption{Cross-backbone tensor interface parameters.}
+\label{tab:backbone_interfaces}
+\end{table}
+
 \subsection{Backbone Compatibility Mechanisms}
 \begin{itemize}
 \item \textbf{DistilBERT:} Direct substitution of linear projections \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, and \texttt{out\_lin}.
@@ -61,7 +79,6 @@ Table~\ref{tab:submodules_proxsparse\_pruner} details the structural parameter b
 \item \textbf{GPT-2:} Automatic transpose conversion of fused \texttt{c\_attn} Conv1D matrices.
 \item \textbf{Qwen/LLaMA:} Explicit support for Grouped-Query Attention (GQA) and Rotary Position Embeddings (RoPE).
 \end{itemize}
-
 
 \subsection{Memory Allocation and Tensor Buffer Management}
 In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{ProxSparsePrunedLoRALinear}, forward execution partitions parameter access across two sequential matrix multiplications:

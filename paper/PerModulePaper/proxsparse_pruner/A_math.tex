@@ -12,7 +12,6 @@ During recovery adaptation, gradients flow according to:
 \frac{\partial \mathcal{L}}{\partial A} = \frac{\alpha}{r_{\text{lora}}} B^\top \left( \frac{\partial \mathcal{L}}{\partial Y} \right)^\top X, \quad \frac{\partial \mathcal{L}}{\partial B} = \frac{\alpha}{r_{\text{lora}}} \left( \frac{\partial \mathcal{L}}{\partial Y} \right) (X A^\top)
 \]
 
-
 \subsection*{Extended Sensitivity Proofs and Error Bounds}
 \textbf{Proposition 3 (Lipschitz Continuity under Low-Rank Perturbation).} \textit{Let $f(X) = \sigma(X W^\top)$ be a neural network layer with $L_\sigma$-Lipschitz activation $\sigma$. Then the output perturbation under low-rank factorization is bounded by:}
 \[
@@ -23,3 +22,25 @@ During recovery adaptation, gradients flow according to:
 \|\sigma(X W^\top) - \sigma(X W_r^\top)\|_F \le L_\sigma \|X (W - W_r)^\top\|_F \le L_\sigma \|X\|_2 \|W - W_r\|_F
 \]
 Applying the Eckart-Young truncation theorem completes the result. $\square$
+
+\subsection*{Proof of Singular Value Perturbation Stability}
+\textbf{Theorem 3 (Mirsky's Singular Value Perturbation Theorem).} \textit{Let $A, B \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1(A) \ge \dots \ge \sigma_\rho(A)$ and $\sigma_1(B) \ge \dots \ge \sigma_\rho(B)$. Then for any unitary-invariant norm $\|\cdot\|$:}
+\[
+\left\| \operatorname{diag}(\sigma_1(A) - \sigma_1(B), \dots, \sigma_\rho(A) - \sigma_\rho(B)) \right\| \le \|A - B\|
+\]
+In particular, under Frobenius norm:
+\[
+\sum_{i=1}^\rho |\sigma_i(A) - \sigma_i(B)|^2 \le \|A - B\|_F^2
+\]
+This guarantees that continuous weight adaptations through LoRA do not induce abrupt spectral bifurcations in the underlying base projection.
+
+\subsection*{Asymptotic Complexity under Grouped-Query Attention}
+In modern generative transformers (LLaMA-3, Qwen-2), grouped-query attention shares key and value heads across $G = H_Q / H_{KV}$ query heads. The parameter count for uncompressed attention projection matrices scales as:
+\[
+P_{\text{dense}} = d_{\text{in}} \left( d_Q + 2 d_{KV} + d_O \right) = d_{\text{in}} \left( H_Q d_h + 2 \frac{H_Q}{G} d_h + H_Q d_h \right)
+\]
+Decomposing each projection at rank $r$ reduces parameter count to:
+\[
+P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
+\]
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.

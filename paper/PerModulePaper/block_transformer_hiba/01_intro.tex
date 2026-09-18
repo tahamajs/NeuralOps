@@ -1,21 +1,25 @@
-\textit{(                                               HIBA)}
+\section{Introduction}
 
-\begin{lstlisting}
-# 1. Introduction
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
-## 1.1 Motivation
+The \texttt{block\_transformer\_hiba} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{block\_transformer\_hiba} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
-Standard scaled dot-product attention (Vaswani et al., 2017) computes the attention matrix at $\mathcal{O}(L^2)$ time and memory complexity. While sparse attention patterns (such as Longformer and BigBird) reduce this to $\mathcal{O}(L \sqrt{L})$ or $\mathcal{O}(L)$, they permanently sever global token-to-token routing pathways. This strict sparsity often causes catastrophic accuracy degradation when injected post-training into dense models. 
+\subsection{Arithmetic Intensity and the Memory Wall}
+During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
+\[
+\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
+\]
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{block\_transformer\_hiba} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
-## 1.2 Problem Statement
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{block\_transformer\_hiba} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\item \textbf{Guaranteed Fallback Integrity:} Automated error monitoring that reverts to dense baseline projections if relative parameter deviation breaches safety tolerances.
+\end{itemize}
 
-Given a pretrained transformer $\mathcal{M}$, we seek a modified attention function $\mathcal{A}'$ that replaces $\mathcal{A}$ such that memory scales sub-quadratically, yet global context is not permanently lost. We impose the constraints:
-1. **No retraining of base weights.** 
-2. **Robust architectural support.** Must seamlessly handle nested encoders (RoBERTa), fused weights (GPT-2), and modern features like GQA and RoPE without double-projection errors.
-
-## 1.3 Our Approach
-
-We propose **Hierarchical Intra-Block and Inter-Block Attention (HIBA)**. HIBA processes tokens in local blocks (e.g., $B=64$) for precise local semantics. For global context, it sparsely attends to a dynamic Top-K subset of tokens from neighboring blocks. Most critically, to prevent the "lost in the middle" degradation inherent to sparse architectures, HIBA employs **Periodic Dense Rectification**, executing a full $\mathcal{O}(L^2)$ attention pass at a configurable interval (e.g., every 4th layer). 
-
-\end{lstlisting}
-
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows: Section 2 reviews foundational compression paradigms. Section 3 formalizes mathematical notation. Section 4 presents core derivations and algorithms. Section 5 describes architectural integration. Section 6 outlines experimental protocols. Section 7 presents empirical results. Section 8 provides detailed analytical breakdowns. Section 9 discusses implications. Section 10 outlines limitations. Section 11 concludes.

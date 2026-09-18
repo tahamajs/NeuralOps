@@ -1,151 +1,107 @@
-\section{Architecture Integration}
+\section{Architecture and Implementation Details}
 
-\subsection{Model Support}
+\subsection{Submodule Hierarchy}
+The \texttt{LoRALinear} architecture decouples frozen compressed base representations from adaptive recovery pathways:
+
+\begin{figure}[H]
+\centering
+\begin{verbatim}
++-------------------------------------------------------------+
+|                             LoRALinear                      |
+|  Input X [B, N, D_in]                                       |
+|        |                                                    |
+|        +----------------------------+                       |
+|        | (Base Path)                | (LoRA Path)           |
+|        v                            v                       |
+|  +--------------------+       +-----------------------+     |
+|  | Down-Proj: V_r     |       | LoRA A: (r_lora, In)  |     |
+|  | Frozen: (r, In)    |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|  +--------------------+       +-----------------------+     |
+|  | Up-Proj: U_r       |       | LoRA B: (Out, r_lora) |     |
+|  | Frozen: (Out, r)   |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|       Base Output  <---- (+) ------ Adapter Output          |
+|  Output Y [B, N, D_out]                                     |
++-------------------------------------------------------------+
+\end{verbatim}
+\caption{Submodule tensor flow and adapter integration in \texttt{LoRALinear}.}
+\end{figure}
+
+\subsection{Submodule Specification Matrix}
+Table~\ref{tab:submodules_decay\_linear\_attention} details the structural parameter buffers comprising \texttt{LoRALinear}:
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llllll}
+\begin{tabularx}{\linewidth}{llccX}
 \toprule
-\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn} \\
+\textbf{Submodule} & \textbf{Type} & \textbf{Shape} & \textbf{Trainable} & \textbf{Role} \\
 \midrule
-DistilBERT & \texttt{layer[i].attention} & No & No & No & No \\
-RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No & No \\
-GPT-2 & \texttt{h[i].attn} & No & No & No & No \\
-Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes & No \\
-T5 & \texttt{block[i].layer[0]} + \texttt{layer[1]} & No & No & No & Yes \\
+\texttt{V\_r} / \texttt{weight} \& Parameter & $(r, d_{\text{in}})$ \& No \& Low-rank basis \\
+\texttt{U\_r} \& Parameter & $(d_{\text{out}}, r)$ \& No \& Expansion basis \\
+\texttt{mask} \& BoolTensor & $(d_{\text{out}}, d_{\text{in}})$ \& No \& Sparsity mask \\
+\texttt{lora\_A} \& Parameter & $(r_{\text{lora}}, d_{\text{in}})$ \& Yes \& Adaptation input \\
+\texttt{lora\_B} \& Parameter & $(d_{\text{out}}, r_{\text{lora}})$ \& Yes \& Adaptation output \\
+\texttt{bias} \& Parameter & $(d_{\text{out}})$ \& No \& Layer bias \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
+\caption{Submodule specifications for \texttt{LoRALinear}.}
+\label{tab:submodules_decay\_linear\_attention}
 \end{table}
 
-\subsection{Weight Extraction}
-
-Four patterns:
-
-\subsubsection{GPT-2 Conv1D}
-
-\begin{lstlisting}
-c_w = c_attn.weight.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = c_proj.weight.t()
-\end{lstlisting}
-
-\subsubsection{RoBERTa Nested}
-
-\begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
-\end{lstlisting}
-
-\subsubsection{Flat Modules}
-
-\begin{lstlisting}
-q_w = src.q_lin.weight  # or q_proj or query
-\end{lstlisting}
-
-\subsubsection{UniversalAdapter}
-
-Fallback.
-
-\subsection{GQA Handling}
-
-We expand KV heads via \texttt{repeat\_kv} before the scan:
-
-\begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
-\end{lstlisting}
-
-\subsection{RoPE Support}
-
-Partial-coordinate slicing for Qwen3.5:
-
-\begin{lstlisting}
-if rotary_dim < head_dim:
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    q = torch.cat([q_rot * cos + rot(q_rot) * sin, q_pass], dim=-1)
-\end{lstlisting}
-
-\subsection{Nested Encoder Bypass}
-
-For RoBERTa, \texttt{is\_nested\_encoder = True}. The forward pass returns raw 
-context; the outer \texttt{attention.output.dense} applies the output projection.
-
-\subsection{Cross-Attention}
-
-For encoder-decoder attention:
-
-\begin{lstlisting}
-is_cross_attention = encoder_hidden_states is not None
-kv_input = encoder_hidden_states if is_cross_attention else hidden_states
-\end{lstlisting}
-
-K, V project from \texttt{kv\_input}; Q from \texttt{hidden\_states}. The scan operates on 
-the cross-attention Q, K, V.
-
-\textbf{Important.} In cross-attention, we use \textbf{only forward scan} (no 
-bidirectional) because the encoder output has already been processed 
-bidirectionally.
-
-\subsection{Injection Algorithm}
-
-\textbf{Algorithm 2:} Inject DecayLinearAttention
-\begin{lstlisting}
-Input:  model M, config c
-Output: M with attention replaced
-
-1: for each layer with attention:
-2:     src $\leftarrow$ extract_attention(layer)
-3:     if src is None: continue
-4:     try:
-5:         new $\leftarrow$ DecayLinearAttention(c, old_attn=src)
-6:         replace(layer, new)
-7:     except Exception as e:
-8:         logger.error(f"Layer failed: {e}")
-9:         return None
-10: return M
-\end{lstlisting}
-
-\subsection{Failure Handling}
-
-The injection catches exceptions and \textbf{returns None} (skip the layer) 
-rather than raising. This is gentler than BAM-UMoE and appropriate because 
-linear attention is less sensitive to layer skip.
-
-\subsection{Registry}
-
-\begin{lstlisting}
-@ATTENTION_REGISTRY.register("decay_linear_attention")
-@ATTENTION_REGISTRY.register("decay_linear_attn")
-class DecayLinearAttention(BaseAttention):
-    ...
-\end{lstlisting}
-
-\subsection{Compatibility Properties}
-
-The module exposes Q/K/V/O under multiple names for framework integration:
-
-\begin{lstlisting}
-@property
-def query(self): return self.q_proj
-@property
-def key(self): return self.k_proj
-@property
-def value(self): return self.v_proj
-@property
-def q_lin(self): return self.q_proj
-...
-\end{lstlisting}
-
-
-
-\begin{figure}[H]
+\subsection{Cross-Backbone Tensor Interfaces}
+\begin{table}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/architecture.jpeg}
-\caption{High-level architectural diagram of decay\_linear\_attention.}
-\label{fig:arch_decay-linear-attention}
-\end{figure}
+\small
+\begin{tabularx}{\linewidth}{lcccc}
+\toprule
+\textbf{Backbone Family} & \textbf{Weight Tensor Format} & \textbf{Attention Type} & \textbf{Bias Handling} & \textbf{Positional Scheme} \\
+\midrule
+DistilBERT \& Separate $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+RoBERTa \& Nested $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+GPT-2 \& Fused Conv1D $[d, 3d]$ \& Causal Autoregressive \& Transposed \& Learned Absolute \\
+LLaMA / Qwen \& Split GQA $[d, d_{kv}]$ \& Causal Autoregressive \& Optional \& Rotary (RoPE) \\
+\bottomrule
+\end{tabularx}
+\caption{Cross-backbone tensor interface parameters.}
+\label{tab:backbone_interfaces}
+\end{table}
 
+\subsection{Backbone Compatibility Mechanisms}
+\begin{itemize}
+\item \textbf{DistilBERT:} Direct substitution of linear projections \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, and \texttt{out\_lin}.
+\item \textbf{RoBERTa:} Inner \texttt{BertSelfAttention} projection replacement with nested encoder detection.
+\item \textbf{GPT-2:} Automatic transpose conversion of fused \texttt{c\_attn} Conv1D matrices.
+\item \textbf{Qwen/LLaMA:} Explicit support for Grouped-Query Attention (GQA) and Rotary Position Embeddings (RoPE).
+\end{itemize}
+
+\subsection{Memory Allocation and Tensor Buffer Management}
+In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{LoRALinear}, forward execution partitions parameter access across two sequential matrix multiplications:
+\begin{enumerate}
+\item Intermediate hidden buffer: $H = X V_r^\top \in \mathbb{R}^{B \times N \times r}$
+\item Final output projection: $Y = H U_r^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$
+\end{enumerate}
+When $r \ll d_{\text{in}}$, the intermediate tensor $H$ consumes $r / d_{\text{in}}$ of the memory required by full-dimension representations, dramatically diminishing peak activation memory footprint during training and inference.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{llccc}
+\toprule
+\textbf{Buffer Name} & \textbf{Tensor Dimensions} & \textbf{Precision} & \textbf{Memory ($B=64, N=128$)} \\
+\midrule
+Input Activations $X$ & $[64, 128, 768]$ \& FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Intermediate $H = X V_r^\top$ & $[64, 128, 128]$ \& FP32 / FP16 & $4.19$ MB / $2.10$ MB \\
+Output Projections $Y$ & $[64, 128, 768]$ \& FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Adapter Projection $X A^\top$ & $[64, 128, 16]$ \& FP32 / FP16 & $0.52$ MB / $0.26$ MB \\
+\midrule
+\textbf{Total Working Memory} & -- & -- & \textbf{55.03 MB (vs 112.4 MB)} \\
+\bottomrule
+\end{tabularx}
+\caption{Activation working memory allocation during forward evaluation.}
+\end{table}

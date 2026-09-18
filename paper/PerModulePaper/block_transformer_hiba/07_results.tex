@@ -1,47 +1,67 @@
-\section{Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-\subsection{Main Results}
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_block\_transformer\_hiba} details empirical evaluation metrics across target backbones.
 
-\textbf{Table 7.1: Main results on SST-2.}
-
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllll}
+\begin{tabularx}{\linewidth}{llcccc}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} \\
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 \\
-DistilBERT & \textbf{HIBA} & \textbf{90.35\%} & -0.36 & 0.9065 \\
-RoBERTa & full & 78.56\% & -- & 0.8124 \\
-RoBERTa & \textbf{HIBA} & \textbf{78.40\%} & -0.16 & 0.8101 \\
-GPT-2 & full & 79.36\% & -- & 0.7978 \\
-GPT-2 & \textbf{HIBA} & \textbf{79.10\%} & -0.26 & 0.7915 \\
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& full \& PASS & 90.71\% & 0.9099 \\
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& block\_transformer\_hiba \& PASS\_NO\_COMPRESSION & 90.71\% & 0.9099 \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& full \& PASS & 79.36\% & 0.7978 \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& block\_transformer\_hiba \& PASS\_NO\_COMPRESSION & 79.36\% & 0.7978 \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& full \& PASS & 78.56\% & 0.8124 \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& block\_transformer\_hiba \& PASS\_NO\_COMPRESSION & 81.42\% & 0.8247 \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{block\_transformer\_hiba}.}
+\label{tab:results_acc_block\_transformer\_hiba}
+\end{table*}
 
-\textbf{Key observations:}
-\begin{enumerate}
-\item Unlike previous iterations (e.g., early NHA attempts), \textbf{RoBERTa does not fail.} The automatic \texttt{is\_nested\_encoder} detection successfully prevents output projection corruption.
-\item The accuracy drop across all three diverse architectural families is strictly bounded within $<0.4\%$, proving the stability of Periodic Dense Rectification.
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_block\_transformer\_hiba} documents parameter compression factors and adapter overhead.
 
-\end{enumerate}
-\subsection{Efficiency Profile}
-
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llll}
+\begin{tabularx}{\linewidth}{llccccc}
 \toprule
-\textbf{Metric} & \textbf{Baseline} & \textbf{HIBA} & \textbf{Ratio} \\
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
 \midrule
-Peak VRAM (GPT-2, seq=1024) & 1200 MB & 780 MB & 0.65$\times$ \\
-Inference time (GPT-2) & 4.20 s & 5.04 s & 1.20$\times$ \\
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& block\_transformer\_hiba & 66955010 & 67544858 & 589848 & 1.0x \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& block\_transformer\_hiba & 124441344 & 125621040 & 1179696 & 1.0x \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& block\_transformer\_hiba & 124647170 & 132913970 & 1179696 & 1.0x \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\caption{Parameter scaling and recovery parameter counts for \texttt{block\_transformer\_hiba}.}
+\label{tab:results_params_block\_transformer\_hiba}
+\end{table*}
 
-While theoretical FLOPs and peak VRAM scale sub-quadratically, wall-clock latency increases slightly (1.2$\times$) due to unoptimized Python loops looping over sequence chunks inside \texttt{\_inter\_block\_sparse}.
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_block\_transformer\_hiba} presents memory profiling and execution throughput.
 
-
+\begin{table*}[t]
+\centering
+\small
+\begin{tabularx}{\linewidth}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& full & 51289.14 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_block\_transformer\_hiba/distilbert/summary.csv} \& distilbert \& block\_transformer\_hiba & 25262.33 & 326.45 MB & 0.0000 \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& full & 26878.45 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_block\_transformer\_hiba/gpt2/summary.csv} \& gpt2 \& block\_transformer\_hiba & 12625.36 & 568.95 MB & 0.0000 \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& full & 28086.77 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_block\_transformer\_hiba/roberta/summary.csv} \& roberta \& block\_transformer\_hiba & 11047.94 & 657.23 MB & 0.0000 \\
+\bottomrule
+\end{tabularx}
+\caption{Inference throughput and VRAM footprint for \texttt{block\_transformer\_hiba}.}
+\label{tab:results_vram_block\_transformer\_hiba}
+\end{table*}

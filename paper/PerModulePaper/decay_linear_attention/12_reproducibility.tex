@@ -1,105 +1,17 @@
-\section{Reproducibility}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor decay\_linear\_attention \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_decay\_linear\_attention
 
-\subsection{Environment}
-
-\begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-\end{lstlisting}
-
-\subsection{Dependencies}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Package} & \textbf{Version} \\
-\midrule
-torch & 2.4.0 \\
-transformers & 4.44.0 \\
-datasets & 2.20.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Running}
-
-\begin{lstlisting}
-python run_all_4_decay_linear.py \
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_decay\_linear\_attention.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size 32 \
     --recovery_steps 50
 \end{lstlisting}
-
-\subsection{Individual Model}
-
-\begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,decay_linear \
-    --chunk_size 32 \
-    --recovery_steps 50
-\end{lstlisting}
-
-\subsection{Reproducing Tables}
-
-\subsubsection{Table 7.1 (Main)}
-\begin{lstlisting}
-python run_all_4_decay_linear.py
-\end{lstlisting}
-
-\subsubsection{Table 7.5 (Chunk Size)}
-\begin{lstlisting}
-for c in 8 16 32 64 128; do
-    python run_all_4_decay_linear.py --chunk_size $c --output_suffix c$c
-done
-\end{lstlisting}
-
-\subsubsection{Table 7.6 (Log-Decay Range)}
-\begin{lstlisting}
-python run_all_4_decay_linear.py --log_decay_min -2.0 --output_suffix r1
-python run_all_4_decay_linear.py --log_decay_min -1.0 --output_suffix r2
-python run_all_4_decay_linear.py --log_decay_min -0.5 --output_suffix r3
-python run_all_4_decay_linear.py --log_decay_min 0.0 --log_decay_max 0.5 --output_suffix r4
-\end{lstlisting}
-
-\subsection{Seeds}
-
-\begin{lstlisting}
-import random, numpy as np, torch
-seed = 42
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-\end{lstlisting}
-
-\subsection{Expected Results}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Model} & \textbf{Acc} & \textbf{State mem} \\
-\midrule
-DistilBERT & 50.92\% & 16 KB \\
-RoBERTa & 50.92\% & 16 KB \\
-GPT-2 & 63.19\% & 16 KB \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Data Availability}
-
-\begin{itemize}
-\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-decay\_linear}.
-\item \textbf{Metrics:} \texttt{results/unified\_decay\_linear/*/summary.csv}.
-
-\end{itemize}

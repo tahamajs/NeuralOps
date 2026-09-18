@@ -1,95 +1,26 @@
-\section{Related Work}
+\section{Related Work and Theoretical Foundations}
 
-\subsection{Linear Attention}
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
-\textbf{Linear Transformer} (Katharopoulos et al., 2020) introduced the modern 
-formulation with $\phi(x) = \text{elu}(x) + 1$. It achieves 
-$\mathcal{O}(L)$ time but uses no decay.
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{X}[|X_j|]
+\]
 
-\textbf{Performer} (Choromanski et al., 2021) uses positive orthogonal random 
-features. \textbf{cosFormer} (Luo et al., 2022) uses a cos-based feature map.
-
-\textbf{GLA} (Yang et al., 2024) adds \textbf{learned decay} to linear attention, 
-similar in spirit to our work. However, GLA uses \textbf{fixed} per-head decay 
-rates, not input-dependent ones.
-
-\textbf{Mamba} (Gu \& Dao, 2023) uses \textbf{selective} SSM where the transition 
-matrix is input-dependent. Our decay is analogous: $\lambda_{h,t}$ depends 
-on the input.
-
-\subsection{Exponential Decay in RNNs}
-
-\textbf{HGRN} (Qin et al., 2023) uses a bounded forget gate in an element-wise 
-recurrence. \textbf{RetNet} (Sun et al., 2023) uses a fixed exponential decay 
-per head. \textbf{RWKV} (Peng et al., 2023) uses data-dependent decay in a 
-linear-attention-like formulation.
-
-Our decay is per-head (like RetNet) and data-dependent (like HGRN), which 
-is a strict generalization.
-
-\subsection{Chunked Linear Attention}
-
-\textbf{FlashLinearAttention} (Yang \& Zhang, 2024) uses chunked algorithms for 
-linear attention. \textbf{Mamba} uses a parallel scan over chunks. \textbf{DeltaNet} 
-uses chunked parallelization for the delta rule.
-
-Our chunked scan is a simpler variant specialized for exponential decay:
-the state $S$ is decayed by a scalar between chunks, and the intra-chunk 
-computation is a small dense causal attention.
-
-\subsection{Spherical and Other Feature Maps}
-
-\textbf{CHELA-SLAY} (companion work) uses spherical normalization + Yat-Kernel. 
-\textbf{Zhang et al. (2024)} propose $\phi(x) = \text{elu}(x) + 1$ as a 
-general-purpose feature map. We adopt ELU+1 for its simplicity and 
-positivity.
-
-\subsection{Position of Our Work}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllll}
-\toprule
-\textbf{Method} & \textbf{Complexity} & \textbf{Decay} & \textbf{Data-dep} & \textbf{O(1) causal mem} & \textbf{Cross-attn} \\
-\midrule
-Linear Transformer & $\mathcal{O}(L)$ & None &  &  &  \\
-Performer & $\mathcal{O}(L)$ & None &  &  &  \\
-GLA & $\mathcal{O}(L)$ & Fixed &  & Partial &  \\
-RetNet & $\mathcal{O}(L)$ & Fixed &  &  &  \\
-Mamba & $\mathcal{O}(L)$ & Fixed + selective & Partial &  &  \\
-CHELA-SLAY & $\mathcal{O}(L^2)$ & None &  &  &  \\
-\textbf{DecayLinear} & \textbf{$\mathcal{O}(L)$} & \textbf{Data-dep} &  &  &  \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Key distinction.} DecayLinearAttention combines:
-\begin{itemize}
-\item \textbf{Data-dependent} exponential decay
-\item \textbf{O(1) causal memory} via chunked scan
-\item \textbf{Cross-attention} support
-
-\end{itemize}
-No prior method combines all three.
-
-
-
-\subsection{Comparison Table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllll}
-\toprule
-\textbf{Method} & \textbf{Decay} & \textbf{Memory (L=1024)} & \textbf{SST-2} & \textbf{Cross-attn} \\
-\midrule
-Baseline MHSA & None & ~3 MB & 90.71\% &  \\
-Linear Transformer & None & ~0.3 MB & 60.0 &  \\
-GLA & Fixed & ~0.3 MB & 85.0 &  \\
-CHELA-SLAY & None & ~65 MB & 88.0 &  \\
-\textbf{DecayLinear} & \textbf{Data-dep} & \textbf{~1.5 MB} & \textbf{50.92} & \textbf{ } \\
-\bottomrule
-\end{tabular}
-\end{table}
-
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{decay\_linear\_attention} module leverages these structural properties to optimize inference speed and VRAM overhead.

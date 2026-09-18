@@ -1,7 +1,7 @@
-\section{Reproducibility Guide}
-Evaluations are completely reproducible via the unified framework:
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
 \begin{lstlisting}[language=bash]
-# Run compression evaluation
+# 1. Run unified compression sweep
 python -u Codes/framework/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor proxsparse\_pruner \
@@ -9,4 +9,9 @@ python -u Codes/framework/run_compressor.py \
     --batch_size 64 \
     --recovery_steps 50 \
     --output_dir results/unified_proxsparse\_pruner
+
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_proxsparse\_pruner.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
 \end{lstlisting}

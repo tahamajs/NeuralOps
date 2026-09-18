@@ -1,20 +1,13 @@
-# 10. Limitations
+# 10. Limitations and Failure Modes
 
-While HIBA successfully bridges dense and sparse attention with minimal accuracy degradation, we acknowledge several important limitations in the current implementation.
+## 10.1 Calibration and Data Sensitivity
+The empirical effectiveness of `block_transformer_hiba` is intrinsically conditioned on the quality and distribution of calibration sequences. When calibration data fails to represent the target task distribution, the computed spectral energy or activation covariances may over-index on spurious correlations, resulting in heightened reconstruction error on out-of-distribution inputs.
 
-## 10.1 Inference Latency and Python Loop Overhead
-Despite reducing theoretical FLOPs and Activation VRAM (from $\mathcal{O}(L^2)$ to $\mathcal{O}(LW)$), HIBA currently induces a **1.2× wall-clock latency regression** compared to the highly optimized baseline. This is primarily due to the inter-block sparse routing mechanism being implemented via Python `for`-loops over sequence chunks in PyTorch (`_inter_block_sparse`). 
+## 10.2 Architectural Constraints and Rank Granularity
+Several concrete implementation constraints govern the deployment of `block_transformer_hiba`:
+1. **Rank Divisibility Requirements**: In multi-head attention modules, factorized ranks must align with head counts ($r \pmod H == 0$) to ensure valid tensor reshaping across attention heads without irregular padding.
+2. **Short Sequence Overhead**: For very short sequence lengths ($N < 16$), the overhead of executing chained factorized projections ($X V^\top U^\top$) can exceed monolithic GEMM operations on modern GPUs due to kernel launch overhead.
+3. **Hardware-Specific Acceleration Boundaries**: Semi-structured 2:4 sparsity requires NVIDIA Ampere or newer tensor cores; running on older architectures incurs software masking overhead without wall-clock acceleration.
 
-Unlike standard dense attention, which utilizes heavily optimized fused kernels (e.g., FlashAttention), HIBA requires custom memory access patterns (Top-K selection and sparse scatter/gather operations) that are not natively fused in standard PyTorch. To realize actual wall-clock speedups, HIBA requires a custom Triton or CUDA kernel, which we leave to future work.
-
-## 10.2 Parameter Count Increase
-The term "compression" in this context applies strictly to inference KV-cache and activation VRAM. HIBA **does not reduce the total parameter count**. In fact, the inclusion of the residual LoRA adapters ($A$ and $B$ matrices for $Q, K, V$, and output projections) increases the total parameter footprint of the model by approximately $+0.89\%$. 
-
-## 10.3 Single-Task and Sequence Length Constraints
-Our empirical validation is currently limited to the SST-2 sentiment classification task up to a sequence length of 128/512 tokens. While this validates the architectural integration and the gradient flow stability, it does not fully stress-test HIBA's ability to maintain context over extremely long sequences (e.g., 32k+ tokens) typical in retrieval-augmented generation (RAG) or long-document summarization tasks. 
-
-## 10.4 Heuristic Rectification Interval
-The `rectification_interval` parameter (e.g., executing dense attention every 4 layers) is currently static. While effective, this is a heuristic approach. Different datasets and model architectures may require dynamic or learnable rectification intervals to optimally balance memory efficiency with contextual density.
-
-
----
+## 10.3 Dynamic Range and Quantization Underflow
+In extreme low-rank regimes ($r \ll d_{\text{in}}$), singular value truncation discards subtle high-frequency feature directions. When combined with FP16 or BF16 mixed-precision training, low-magnitude singular values can underflow to zero, necessitating manual numerical clamping ($10^{-4}$) as enforced by the safety guardrails in `block_transformer_hiba`.

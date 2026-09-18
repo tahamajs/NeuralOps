@@ -1,88 +1,23 @@
-# 12. Reproducibility
+# 12. Reproducibility Guide
 
-## 12.1 Environment
-
-```bash
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-## 12.2 Dependencies
-
-| Package | Version |
-|---|---|
-| torch | 2.4.0 |
-| transformers | 4.44.0 |
-| datasets | 2.20.0 |
-
-## 12.3 Running
+To reproduce the empirical benchmark evaluations for `decay_linear_attention`:
 
 ```bash
-python run_all_4_decay_linear.py \
-    --models distilbert,roberta,gpt2 \
-    --chunk_size 32 \
-    --recovery_steps 50
+# 1. Run unified compression / attention sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor decay_linear_attention \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_decay_linear_attention
+
+# 2. Execute GPU matrix verification
+python -u Codes/framework/run_quality_sweep.py \
+    --model roberta-base \
+    --model_family roberta \
+    --dataset sst2 \
+    --rank 16 \
+    --batch_size 64 \
+    --output_dir results/unified_decay_linear_attention/roberta
 ```
-
-## 12.4 Individual Model
-
-```bash
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,decay_linear \
-    --chunk_size 32 \
-    --recovery_steps 50
-```
-
-## 12.5 Reproducing Tables
-
-### Table 7.1 (Main)
-```bash
-python run_all_4_decay_linear.py
-```
-
-### Table 7.5 (Chunk Size)
-```bash
-for c in 8 16 32 64 128; do
-    python run_all_4_decay_linear.py --chunk_size $c --output_suffix c$c
-done
-```
-
-### Table 7.6 (Log-Decay Range)
-```bash
-python run_all_4_decay_linear.py --log_decay_min -2.0 --output_suffix r1
-python run_all_4_decay_linear.py --log_decay_min -1.0 --output_suffix r2
-python run_all_4_decay_linear.py --log_decay_min -0.5 --output_suffix r3
-python run_all_4_decay_linear.py --log_decay_min 0.0 --log_decay_max 0.5 --output_suffix r4
-```
-
-## 12.6 Seeds
-
-```python
-import random, numpy as np, torch
-seed = 42
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-```
-
-## 12.7 Expected Results
-
-| Model | Acc | State mem |
-|---|---|---|
-| DistilBERT | 50.92% | 16 KB |
-| RoBERTa | 50.92% | 16 KB |
-| GPT-2 | 63.19% | 16 KB |
-
-## 12.8 Data Availability
-
-- **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `Hooshaai/svd-linear-attention-*-decay_linear`.
-- **Metrics:** `results/unified_decay_linear/*/summary.csv`.
-
----

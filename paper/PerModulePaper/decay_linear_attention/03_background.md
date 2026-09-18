@@ -1,147 +1,40 @@
-# 3. Background
+# 3. Mathematical Background and Formal Notation
 
-## 3.1 Linear Attention
+## 3.1 Notation and Tensor Spaces
+Let $\mathcal{B}$ denote batch size, $N$ denote sequence length, and $d_{\text{in}}, d_{\text{out}}$ denote layer input and output channel dimensions. For multi-head attention modules, $H$ denotes the number of attention heads, $d$ denotes the head dimension ($d = d_{\text{in}} / H$), and $H_{\text{kv}}$ denotes the number of key/value heads in Grouped-Query Attention (GQA) settings.
 
-Given $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$, linear 
-attention computes:
+The forward mapping of an uncompressed dense linear projection is formalized as:
+$$Y = X W^\top + b$$
+where $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, $b \in \mathbb{R}^{d_{\text{out}}}$, and $Y \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$.
 
-$$
-O_t = \frac{\phi(q_t)^\top S_t}{\phi(q_t)^\top z_t}
-\tag{3.1}
-$$
+## 3.2 Spectral Analysis and Singular Value Decomposition
+For any linear transformation matrix $W \in \mathbb{R}^{m \times n}$ with rank $\rho = \min(m, n)$, its Singular Value Decomposition (SVD) is defined as:
+$$W = U \Sigma V^\top = \sum_{i=1}^{\rho} \sigma_i u_i v_i^\top$$
+where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ form orthonormal bases of left and right singular vectors, and $\Sigma = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_\rho)$ contains singular values ordered monotonically:
+$$\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$$
 
-where:
+## 3.3 Eckart-Young-Mirsky Theorem
+According to the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation ($r < \rho$) under both the Frobenius norm and spectral operator norm is obtained by truncating the summation at index $r$:
+$$W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top$$
+The approximation error is governed strictly by the discarded singular values:
+$$\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2, \quad \|W - W_r\|_2 = \sigma_{r+1}$$
 
-$$
-S_t = \sum_{j \leq t} \phi(k_j) v_j^\top, \quad
-z_t = \sum_{j \leq t} \phi(k_j)
-\tag{3.2}
-$$
+## 3.4 Balanced Symmetric Square-Root Splitting
+In finite-precision deep learning architectures (e.g., IEEE FP16 or BF16), assigning singular values asymmetrically to either $U$ or $V$ causes numerical dynamic range imbalances. `decay_linear_attention` adopts balanced symmetric square-root distribution:
+$$U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top$$
+which guarantees equalized Frobenius norms across both factorized projection matrices:
+$$\|U_r\|_F = \|V_r\|_F = \left( \sum_{i=1}^{r} \sigma_i \right)^{1/2}$$
 
-$S_t \in \mathbb{R}^{F \times d_h}$ and $z_t \in \mathbb{R}^F$ are the 
-running state and normalizer.
+## 3.5 Regularized Optimization and Saliency Pruning
+Under structural sparsity constraints, the optimization objective balances parameter fidelity against regularization penalties:
+$$\min_{W} \mathcal{L}_{\text{task}}(W) + \lambda \mathcal{R}(W) + \mathcal{I}_{\mathcal{S}}(W)$$
+where $\mathcal{R}(W)$ denotes a sparsity-inducing norm (such as $\ell_1$ or group Lasso) and $\mathcal{I}_{\mathcal{S}}(W)$ denotes the indicator function over the admissible hardware-aligned sparsity pattern $\mathcal{S}$:
+$$\mathcal{I}_{\mathcal{S}}(W) = \begin{cases} 0 & \text{if } W \in \mathcal{S} \\ \infty & \text{otherwise} \end{cases}$$
 
-## 3.2 Exponential Decay Recurrence
-
-We add a per-token, per-head decay $\lambda_t \in (0, 1)$:
-
-$$
-S_t = \lambda_t S_{t-1} + \phi(k_t) v_t^\top
-\tag{3.3}
-$$
-
-$$
-z_t = \lambda_t z_{t-1} + \phi(k_t)
-\tag{3.4}
-$$
-
-Unrolled:
-
-$$
-S_t = \sum_{j \leq t} \left( \prod_{i=j+1}^{t} \lambda_i \right) \phi(k_j) v_j^\top
-\tag{3.5}
-$$
-
-The coefficient of contribution from position $j$ to position $t$ is:
-
-$$
-D_{t, j} = \prod_{i=j+1}^{t} \lambda_i = \exp\!\left(\sum_{i=j+1}^{t} \log \lambda_i\right)
-\tag{3.6}
-$$
-
-This is an **exponential decay** with rate controlled by $\lambda$.
-
-## 3.3 Chunked Scan Algorithm
-
-For a chunk of $C$ tokens, we carry state $S_\text{prev}$ from the previous 
-chunk. The output within the chunk is a combination of:
-
-- **Intra-chunk contributions:** dense causal attention within the chunk.
-- **Inter-chunk contributions:** attention to the state $S_\text{prev}$.
-
-The intra-chunk scores are:
-
-$$
-\text{scores}_{ij}^\text{intra} = q_i^\top k_j \cdot 
-\exp\!\left(\sum_{p=j+1}^{i} \log \lambda_p\right), \quad j \leq i
-\tag{3.7}
-$$
-
-The inter-chunk scores:
-
-$$
-\text{scores}_{i}^\text{inter} = q_i^\top S_\text{prev} \cdot 
-\exp\!\left(\sum_{p=1}^{i} \log \lambda_p\right)
-\tag{3.8}
-$$
-
-Then $S_\text{new}$ is computed by decaying $S_\text{prev}$ by the total 
-chunk decay and adding the intra-chunk contributions.
-
-## 3.4 ELU+1 Feature Map
-
-$$
-\phi(x) = \text{elu}(x) + 1 = \begin{cases}
-x + 1 & \text{if } x > 0 \\
-e^x & \text{if } x \leq 0
-\end{cases}
-\tag{3.9}
-$$
-
-**Property.** $\phi(x) > 0$ for all $x$, which ensures $z_t > 0$ and the 
-normalizer is well-behaved.
-
-## 3.5 Data-Dependent Decay
-
-We learn $\lambda_{h,t}$ from the input:
-
-$$
-\lambda_{h,t} = \sigma(W_g x_t + b_g + \ell_h)
-\tag{3.10}
-$$
-
-where:
-
-- $W_g \in \mathbb{R}^{H \times d}$, $b_g \in \mathbb{R}^H$ — learned gate.
-- $\ell_h \in \mathbb{R}$ — per-head bias, initialized to linearly spaced 
-  values.
-
-**Initialization.** $W_g = 0$, $b_g = 0$, $\ell_h = \text{linspace}(-0.5, 0.0, H)$.
-
-**Effect.** At step 0, $\lambda_{h,t} = \sigma(\ell_h)$ — constant per head, 
-giving each head a fixed "default horizon".
-
-## 3.6 Bidirectional Attention
-
-For encoders, we run both forward and backward scans:
-
-$$
-O_t = \frac{1}{2} \left( O_t^\text{fwd} + O_t^\text{bwd} \right)
-\tag{3.11}
-$$
-
-Each $O_t^\text{fwd}$, $O_t^\text{bwd}$ uses the same recurrence but in 
-opposite directions.
-
-## 3.7 Grouped-Query Attention (GQA)
-
-For GQA, we expand KV heads before the scan:
-
-$$
-K, V \in \mathbb{R}^{B \times H_{kv} \times L \times d_h}, \quad
-K_\text{expanded} = \text{repeat\_kv}(K, H / H_{kv})
-\tag{3.12}
-$$
-
-## 3.8 Notation
-
-| Symbol | Meaning |
-|---|---|
-| $\lambda_{h,t}$ | Decay at position $t$, head $h$ |
-| $\ell_h$ | Per-head bias |
-| $W_g, b_g$ | Gate parameters |
-| $S, z$ | Running state |
-| $\phi$ | ELU+1 feature map |
-| $C$ | Chunk size |
-
----
+## 3.6 Taylor Sensitivity Estimation
+When calibration activations $X$ are available, parameter saliency is approximated via first-order Taylor expansion of the reconstruction loss:
+$$S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx \left| W_{ij} \right| \cdot \mathbb{E}_{X} \left[ \left| X_j \right| \right]$$
+Second-order Fisher information incorporates empirical activation covariances:
+$$H = \frac{2}{N} X^\top X + \lambda I$$
+with parameter importance quantified via inverse Hessian diagonals:
+$$S_{ij}^{(2)} = \frac{W_{ij}^2}{[H^{-1}]_{jj}}$$

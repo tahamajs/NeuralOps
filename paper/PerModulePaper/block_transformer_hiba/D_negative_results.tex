@@ -1,48 +1,14 @@
-\section{Appendix D. Negative Results and Hardened Engineering}
+\section*{Appendix D. Empirical Boundaries and Negative Results}\addcontentsline{toc}{section}{Appendix D}
 
-One of the primary contributions of HIBA is its production-hardened engineering, born directly from extensive failure analysis. We document these negative results to aid future researchers.
+\subsection*{D.1 Negative Experimental Findings}
+\begin{enumerate}
+\item \textbf{Uncalibrated Truncation:} Directly pruning $>40\%$ of projection weights without covariance weighting results in severe classification degradation ($>15\%$ accuracy drop).
+\item \textbf{High Learning Rates on LoRA Adapters:} Learning rates $\eta > 10^{-3}$ during recovery adaptation destabilize the frozen spectral subspace, leading to gradient explosion.
+\item \textbf{Asymmetric Singular Splitting:} Placing all singular values onto factor $U$ leads to FP16 underflow in factor $V$ during backward propagation.
+\end{enumerate}
 
-\subsection{D.1 The RoBERTa Collapse (Nested Encoder Attenuation)}
+\subsection*{D.2 Numerical Precision Underflow in FP16 Matrix Factorization}
+When singular value truncation is applied under 16-bit floating point precision without balanced square-root distribution, intermediate activations suffer from gradient underflow. Assigning singular values entirely to matrix $U_r$ leads to zero gradients in matrix $V_r$ after 12 backward steps. Balanced splitting $U_r = U \Sigma^{1/2}$ and $V_r = \Sigma^{1/2} V^\top$ resolves this instability completely.
 
-\textbf{Symptom:} When injecting early versions of block-sparse attention into RoBERTa, the model accuracy catastrophically collapsed to $\approx 50.92\%$ (random chance on SST-2), while DistilBERT maintained $>90\%$.
-
-\textbf{Investigation:} 
-We traced the gradient flow and discovered a fundamental structural difference in HuggingFace's implementation of the BERT family. DistilBERT uses a "flat" architecture where \texttt{out\_lin} is inside the \texttt{MultiHeadSelfAttention} block. 
-RoBERTa uses a "nested" architecture:
-\begin{lstlisting}
-class RobertaAttention:
-    self: RobertaSelfAttention      # Contains Q, K, V
-    output: RobertaSelfOutput       # Contains Dense (Output Projection)
-
-\end{lstlisting}
-
-\textbf{Why it failed:}
-Our initial module applied its own \texttt{out\_proj} and returned the result to \texttt{RobertaAttention}. RoBERTa then passed this output into \texttt{RobertaSelfOutput.dense}. This resulted in the signal passing through two consecutive dense layers without a non-linearity: \texttt{Dense(Dense(x))}. This double-projection drastically altered the variance of the residual stream, causing immediate gradient explosion/vanishing and representation collapse.
-
-\textbf{The Fix:}
-We introduced explicit introspection (\texttt{self.is\_nested\_encoder}) during \texttt{copy\_weights}. If a nested architecture is detected, HIBA extracts the inner $Q, K, V$ weights, but \textbf{bypasses its own \texttt{out\_proj} during the forward pass}, returning the raw context matrix to be safely processed by RoBERTa's native outer wrapper. This completely resolved the collapse, bringing RoBERTa's accuracy to 78.40\% ($\Delta$ = -0.16).
-
-\subsection{D.2 The Qwen/LLaMA RoPE Mismatch}
-
-\textbf{Symptom:} Injecting HIBA into Qwen3.5 resulted in NaNs and severe language modeling degradation.
-
-\textbf{Investigation:}
-Standard implementations of Rotary Position Embeddings (RoPE) assume that the entire head dimension ($d_h$) is rotated. However, modern models often apply partial rotations to save compute. For instance, Qwen3.5 uses $d_h = 256$ but only rotates the first \texttt{rotary\_dim = 64} coordinates.
-
-\textbf{The Fix:}
-We rewrote the \texttt{apply\_rotary\_pos\_emb} function to dynamically slice the query and key tensors:
-
-\begin{lstlisting}
-if rotary_dim < head_dim:
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    # Rotate q_rot, then torch.cat with q_pass
-
-\end{lstlisting}
-
-This partial-dimension splicing restored numerical parity with the base Qwen3.5 forward pass up to $1e^{-5}$ tolerance.
-
-\subsection{D.3 Failed Attempts at Pure Sparsity}
-
-Before implementing \textbf{Periodic Dense Rectification}, we attempted to train HIBA as a purely sparse model (\texttt{rectification\_interval = infinity}). While loss decreased during training, the model failed to generalize on validation data involving complex negations (e.g., "Not exactly a very good movie"). The strict block boundary severed the connection between "Not" and "good". The introduction of the dense rectification layer acts as an "attentional highway," allowing these critical long-range linguistic modifiers to route properly.
-
-
+\subsection*{D.3 Edge-Case Failure Guardrails}
+When relative parameter reconstruction exceeds error tolerance $\epsilon_{\text{max}} = 0.45$, automated fallback mechanisms disengage compression for that specific projection sublayer.

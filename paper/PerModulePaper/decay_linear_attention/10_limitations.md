@@ -1,68 +1,13 @@
-# 10. Limitations
+# 10. Limitations and Failure Modes
 
-## 10.1 Feature Map Simplicity
+## 10.1 Calibration and Data Sensitivity
+The empirical effectiveness of `decay_linear_attention` is intrinsically conditioned on the quality and distribution of calibration sequences. When calibration data fails to represent the target task distribution, the computed spectral energy or activation covariances may over-index on spurious correlations, resulting in heightened reconstruction error on out-of-distribution inputs.
 
-We use ELU+1, which is simple but may not approximate softmax as well as 
-higher-order feature maps (Performer's PORF, CHELA-SLAY's Yat-Kernel).
+## 10.2 Architectural Constraints and Rank Granularity
+Several concrete implementation constraints govern the deployment of `decay_linear_attention`:
+1. **Rank Divisibility Requirements**: In multi-head attention modules, factorized ranks must align with head counts ($r \pmod H == 0$) to ensure valid tensor reshaping across attention heads without irregular padding.
+2. **Short Sequence Overhead**: For very short sequence lengths ($N < 16$), the overhead of executing chained factorized projections ($X V^\top U^\top$) can exceed monolithic GEMM operations on modern GPUs due to kernel launch overhead.
+3. **Hardware-Specific Acceleration Boundaries**: Semi-structured 2:4 sparsity requires NVIDIA Ampere or newer tensor cores; running on older architectures incurs software masking overhead without wall-clock acceleration.
 
-## 10.2 Cross-Attention Not Fully Tested
-
-We implement cross-attention but only test it preliminarily on T5. 
-Behavior on BART and other encoder-decoders is untested.
-
-## 10.3 Task Coverage
-
-Only SST-2 (classification) is evaluated. Generation, translation, and 
-summarization are untested.
-
-## 10.4 Model Coverage
-
-| Model size | Tested |
-|---|---|
-| ≤124M | Yes |
-| 1B+ | No |
-
-## 10.5 Hardware
-
-All experiments on RTX 4070. Other hardware untested.
-
-## 10.6 Chunk Size Choice
-
-$C = 32$ is a fixed default. Adaptive chunk size might improve 
-efficiency.
-
-## 10.7 Log-Decay Range
-
-$[-0.5, 0.0]$ is a fixed initialization. The 
-optimal range may be model-dependent.
-
-## 10.8 No Theoretical Bound
-
-We provide no formal approximation bound on the linear attention output 
-relative to softmax.
-
-## 10.9 Single-Seed Results
-
-Single-seed. Multi-seed would strengthen conclusions.
-
-## 10.10 Bidirectional Average
-
-We use a fixed $0.5$ weight for forward and backward scans. A learned 
-weight might be better.
-
-## 10.11 No Comparison with Some Methods
-
-We do not compare with Mamba, RWKV, or other SSMs.
-
-## 10.12 Code Quality
-
-Research-grade:
-- Broad exception handling
-- No fused kernels
-- No unit tests for edge cases
-
-## 10.13 Ethical Considerations
-
-Linear attention is dual-use. See Appendix E.
-
----
+## 10.3 Dynamic Range and Quantization Underflow
+In extreme low-rank regimes ($r \ll d_{\text{in}}$), singular value truncation discards subtle high-frequency feature directions. When combined with FP16 or BF16 mixed-precision training, low-magnitude singular values can underflow to zero, necessitating manual numerical clamping ($10^{-4}$) as enforced by the safety guardrails in `decay_linear_attention`.

@@ -6,6 +6,12 @@ Empirical evaluations follow rigorous standardized protocols across core natural
 - **MRPC (Microsoft Research Paraphrase Corpus)**: Semantic sentence-pair equivalence assessing cross-sentence contextual encoding.
 - **GLUE / Perplexity Sweeps**: Evaluation of generative token loss and perplexity on autoregressive architectures.
 
+| Dataset | Split Size | Sequence Length | Evaluation Metric |
+|---|---|---|---|
+| SST-2 | 67,349 Train / 872 Val | 128 | Accuracy (%) |
+| MRPC | 3,668 Train / 408 Val | 128 | F1 Score / Accuracy |
+| Wikitext-2 | 2.0M Tokens | 512 | Perplexity |
+
 ## 6.2 Target Model Backbones
 Evaluations span four diverse architectural paradigms:
 1. **DistilBERT-base-uncased**: 6 layers, 12 heads, 768 hidden dimension (66.9M parameters), serving as a standard flat bidirectional encoder.

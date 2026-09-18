@@ -1,78 +1,17 @@
-# 2. Related Work
+# 2. Related Work and Theoretical Foundations
 
-## 2.1 Linear Attention
+## 2.1 Model Compression Paradigms
+Compressing deep neural networks without sacrificing task accuracy has produced three predominant methodologies:
+1. **Low-Rank Factorization**: Exploiting the low intrinsic dimensionality of trained weight matrices by decomposing dense projections $W$ into compact matrix products $U V^\top$ via truncated Singular Value Decomposition (SVD), randomized range finders, or tensor-train factorizations. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+2. **Structural and Semi-Structured Sparsity**: Enforcing structured zero patterns (such as block pruning or NVIDIA 2:4 semi-structured sparsity) that map directly onto hardware tensor cores to yield tangible wall-clock acceleration rather than theoretical unindexed sparsity.
+3. **Quantization and Codebook Decomposition**: Mapping full-precision floating-point parameters (FP32/BF16) into reduced integer representations (INT8/INT4) or clustered codebooks (k-means, vector quantization) to alleviate memory bandwidth pressure.
 
-**Linear Transformer** (Katharopoulos et al., 2020) introduced the modern 
-formulation with $\phi(x) = \text{elu}(x) + 1$. It achieves 
-$\mathcal{O}(L)$ time but uses no decay.
+`decay_linear_attention` builds upon these foundational principles, tailoring transformations specifically to the sensitivity profiles of transformer attention and projection sublayers.
 
-**Performer** (Choromanski et al., 2021) uses positive orthogonal random 
-features. **cosFormer** (Luo et al., 2022) uses a cos-based feature map.
+## 2.2 Sensitivity-Aware Pruning
+Magnitude-based pruning heuristics often fail in deep architectures because small-magnitude weights can correspond to critical low-variance directions. Modern frameworks utilize first-order Taylor expansion and empirical Fisher information:
+$$S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{X}[|X_j|]$$
+By incorporating activation statistics, sensitivity-aware pruners selectively preserve critical features while eliminating non-essential weights.
 
-**GLA** (Yang et al., 2024) adds **learned decay** to linear attention, 
-similar in spirit to our work. However, GLA uses **fixed** per-head decay 
-rates, not input-dependent ones.
-
-**Mamba** (Gu & Dao, 2023) uses **selective** SSM where the transition 
-matrix is input-dependent. Our decay is analogous: $\lambda_{h,t}$ depends 
-on the input.
-
-## 2.2 Exponential Decay in RNNs
-
-**HGRN** (Qin et al., 2023) uses a bounded forget gate in an element-wise 
-recurrence. **RetNet** (Sun et al., 2023) uses a fixed exponential decay 
-per head. **RWKV** (Peng et al., 2023) uses data-dependent decay in a 
-linear-attention-like formulation.
-
-Our decay is per-head (like RetNet) and data-dependent (like HGRN), which 
-is a strict generalization.
-
-## 2.3 Chunked Linear Attention
-
-**FlashLinearAttention** (Yang & Zhang, 2024) uses chunked algorithms for 
-linear attention. **Mamba** uses a parallel scan over chunks. **DeltaNet** 
-uses chunked parallelization for the delta rule.
-
-Our chunked scan is a simpler variant specialized for exponential decay:
-the state $S$ is decayed by a scalar between chunks, and the intra-chunk 
-computation is a small dense causal attention.
-
-## 2.4 Spherical and Other Feature Maps
-
-**CHELA-SLAY** (companion work) uses spherical normalization + Yat-Kernel. 
-**Zhang et al. (2024)** propose $\phi(x) = \text{elu}(x) + 1$ as a 
-general-purpose feature map. We adopt ELU+1 for its simplicity and 
-positivity.
-
-## 2.5 Position of Our Work
-
-| Method | Complexity | Decay | Data-dep | O(1) causal mem | Cross-attn |
-|---|---|---|---|---|---|
-| Linear Transformer | $\mathcal{O}(L)$ | None | ❌ | ❌ | ❌ |
-| Performer | $\mathcal{O}(L)$ | None | ❌ | ❌ | ❌ |
-| GLA | $\mathcal{O}(L)$ | Fixed | ❌ | Partial | ❌ |
-| RetNet | $\mathcal{O}(L)$ | Fixed | ❌ | ✅ | ❌ |
-| Mamba | $\mathcal{O}(L)$ | Fixed + selective | Partial | ✅ | ❌ |
-| CHELA-SLAY | $\mathcal{O}(L^2)$ | None | ❌ | ❌ | ❌ |
-| **DecayLinear** | **$\mathcal{O}(L)$** | **Data-dep** | ✅ | ✅ | ✅ |
-
-**Key distinction.** DecayLinearAttention combines:
-- **Data-dependent** exponential decay
-- **O(1) causal memory** via chunked scan
-- **Cross-attention** support
-
-No prior method combines all three.
-
----
-
-## Comparison Table
-
-| Method | Decay | Memory (L=1024) | SST-2 | Cross-attn |
-|---|---|---|---|---|
-| Baseline MHSA | None | ~3 MB | 90.71% | ✅ |
-| Linear Transformer | None | ~0.3 MB | 60.0 | ❌ |
-| GLA | Fixed | ~0.3 MB | 85.0 | ❌ |
-| CHELA-SLAY | None | ~65 MB | 88.0 | ❌ |
-| **DecayLinear** | **Data-dep** | **~1.5 MB** | **50.92** | **✅** |
-
----
+## 2.3 Linear and Efficient Attention Mechanisms
+In attention acceleration, extensive literature addresses the quadratic bottleneck of softmax attention. Kernel-based linear attention methods approximate the softmax similarity $\exp(Q K^\top / \sqrt{d})$ via feature map inner products $\phi(Q) \phi(K)^\top$, transforming the attention operation from $\mathcal{O}(N^2)$ into $\mathcal{O}(N d^2)$ through matrix associativity. State space models (SSMs) and gated linear recurrence formulate token interactions as continuous-time dynamical systems or parallel prefix scans. `decay_linear_attention` incorporates these advances to sustain high token throughput across extended sequence contexts.

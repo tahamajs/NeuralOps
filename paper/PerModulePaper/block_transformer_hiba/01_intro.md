@@ -1,22 +1,24 @@
-*(همان ساختار تمپلیت را حفظ می‌کنیم، با تمرکز بر HIBA)*
-
-```markdown
 # 1. Introduction
 
-## 1.1 Motivation
+## 1.1 Motivation and Computational Bottlenecks
+Modern natural language processing and multimodal foundation models rely almost exclusively on transformer architectures stacked with alternating multi-head attention (MHA) projections and feed-forward networks (FFN). Despite their empirical success, serving and fine-tuning these architectures at scale encounters severe computational barriers:
 
-Standard scaled dot-product attention (Vaswani et al., 2017) computes the attention matrix at $\mathcal{O}(L^2)$ time and memory complexity. While sparse attention patterns (such as Longformer and BigBird) reduce this to $\mathcal{O}(L \sqrt{L})$ or $\mathcal{O}(L)$, they permanently sever global token-to-token routing pathways. This strict sparsity often causes catastrophic accuracy degradation when injected post-training into dense models. 
+1. **Parameter Redundancy and Storage Costs**: Monolithic projection weight matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ contribute tens to hundreds of millions of parameters per model layer. In resource-constrained environments, edge hardware, and distributed serving clusters, loading uncompressed weights induces massive memory transfer overhead.
+2. **Memory Bandwidth Bottlenecks (GEMV Operations)**: Autoregressive token generation in causal models operates in a memory-bound regime where batch sizes are small and memory bandwidth—rather than floating-point throughput—dictates wall-clock latency.
+3. **Quadratic Scaling in Context Length**: Standard scaled dot-product attention scales as $\mathcal{O}(N^2)$ in both floating-point operations (FLOPs) and transient activation storage, severely impeding long-context document comprehension, code synthesis, and multi-turn dialogue.
 
-## 1.2 Problem Statement
+The `block_transformer_hiba` module was designed to mitigate these computational limits. By reformulating dense tensor operations into mathematically constrained, structured, or factorized primitives, `block_transformer_hiba` strikes an operational balance between aggressive resource conservation and representational expressivity.
 
-Given a pretrained transformer $\mathcal{M}$, we seek a modified attention function $\mathcal{A}'$ that replaces $\mathcal{A}$ such that memory scales sub-quadratically, yet global context is not permanently lost. We impose the constraints:
-1. **No retraining of base weights.** 
-2. **Robust architectural support.** Must seamlessly handle nested encoders (RoBERTa), fused weights (GPT-2), and modern features like GQA and RoPE without double-projection errors.
+## 1.2 Arithmetic Intensity and the Memory Wall
+During transformer evaluation, execution latency is heavily influenced by the arithmetic intensity:
+$$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
+In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
-## 1.3 Our Approach
+## 1.3 Architectural Positioning within the Unified Framework
+Within our production-hardened framework, `block_transformer_hiba` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `block_transformer_hiba` adheres to standardized contracts:
+- **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
+- **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
+- **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
 
-We propose **Hierarchical Intra-Block and Inter-Block Attention (HIBA)**. HIBA processes tokens in local blocks (e.g., $B=64$) for precise local semantics. For global context, it sparsely attends to a dynamic Top-K subset of tokens from neighboring blocks. Most critically, to prevent the "lost in the middle" degradation inherent to sparse architectures, HIBA employs **Periodic Dense Rectification**, executing a full $\mathcal{O}(L^2)$ attention pass at a configurable interval (e.g., every 4th layer). 
-
-```
-
----
+## 1.4 Paper Organization
+The remainder of this paper is structured as follows: Section 2 examines related literature across model compression and attention acceleration. Section 3 formalizes mathematical notation and projection manifolds. Section 4 presents the core methodology, structural algorithms, and proofs. Section 5 outlines architectural implementation. Section 6 details empirical setup. Section 7 presents rigorous benchmark results across 3 model backbones. Section 8 conducts in-depth sensitivity and memory analyses. Section 9 provides discussion on hardware trade-offs. Section 10 documents limitations. Section 11 concludes.

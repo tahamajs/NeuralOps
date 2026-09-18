@@ -17,8 +17,7 @@ $$\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$$
 According to the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation ($r < \rho$) under both the Frobenius norm and spectral operator norm is obtained by truncating the summation at index $r$:
 $$W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top$$
 The approximation error is governed strictly by the discarded singular values:
-$$\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2$$
-$$\|W - W_r\|_2 = \sigma_{r+1}$$
+$$\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2, \quad \|W - W_r\|_2 = \sigma_{r+1}$$
 
 ## 3.4 Balanced Symmetric Square-Root Splitting
 In finite-precision deep learning architectures (e.g., IEEE FP16 or BF16), assigning singular values asymmetrically to either $U$ or $V$ causes numerical dynamic range imbalances. `proxsparse_pruner` adopts balanced symmetric square-root distribution:

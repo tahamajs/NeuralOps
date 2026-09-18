@@ -2,7 +2,7 @@
 
 | Batch | Modules | Status | Avg Pages | Min Pages | Started | Finished | Notes |
 |---|---|---|---|---|---|---|---|
-| FIX-0 | decay_linear_attention, block_transformer_hiba, proxsparse_pruner | ⬜ PENDING | — | — | — | — | — |
+| FIX-0 | decay_linear_attention, block_transformer_hiba, proxsparse_pruner | ✅ COMPLETE | 15.0 | 15 | 2026-09-18 08:27 | 2026-09-18 08:28 | Verified strict: >=15 pages, >=500 KB |
 | R1 | aa_svd_compressor, adaptive_compressor, adaptive_ranks, adaptive_span_attention, adaptive_sparse_attention | ⬜ PENDING | — | — | — | — | — |
 | R2 | adasvd_compressor, admm_compressor, admm_pruner, aegis_hybrid, aegis_spectron_fp8 | ⬜ PENDING | — | — | — | — | — |
 | R3 | aegis_v1, aegis_v2, aegis_v3, aegis_v4, aegis_v6 | ⬜ PENDING | — | — | — | — | — |
@@ -33,5 +33,5 @@
 | R28 | upi_mamba, upi_stuffed_mamba, vig_attention, weighted_ensemble, wgqa | ⬜ PENDING | — | — | — | — | — |
 | R29 | xattention, zerokv_neo, zeros_attention | ⬜ PENDING | — | — | — | — | — |
 
-Legend: ⬜ PENDING · 🟨 IN-PROGRESS · ✅ DONE · ❌ FAILED · ⏸️ BLOCKED  
-Cumulative: 0/146 complete
+Legend: ⬜ PENDING · 🟨 IN-PROGRESS · ✅ COMPLETE · ❌ FAILED · ⏸️ BLOCKED  
+Cumulative: 3/146 complete

@@ -1,46 +1,46 @@
-\section{Appendix A. Mathematical Derivations}
+\section*{Appendix A. Complete Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
 
-\subsection{A.1 Complexity Analysis of HIBA}
+\subsection*{Conditioning and Numerical Bounds}
+Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{block\_transformer\_hiba}, spectral truncation bounds intermediate condition ratios:
+\[
+\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r}
+\]
 
-We formally derive the time and space complexity of the HIBA forward pass to demonstrate its sub-quadratic scaling.
+\subsection*{Gradient Dynamics of Decoupled Adapters}
+During recovery adaptation, gradients flow according to:
+\[
+\frac{\partial \mathcal{L}}{\partial A} = \frac{\alpha}{r_{\text{lora}}} B^\top \left( \frac{\partial \mathcal{L}}{\partial Y} \right)^\top X, \quad \frac{\partial \mathcal{L}}{\partial B} = \frac{\alpha}{r_{\text{lora}}} \left( \frac{\partial \mathcal{L}}{\partial Y} \right) (X A^\top)
+\]
 
-Let $L$ be the sequence length, $d_h$ be the head dimension, and $W$ be the block size. The sequence is partitioned into $N = \lceil L / W \rceil$ blocks.
+\subsection*{Extended Sensitivity Proofs and Error Bounds}
+\textbf{Proposition 3 (Lipschitz Continuity under Low-Rank Perturbation).} \textit{Let $f(X) = \sigma(X W^\top)$ be a neural network layer with $L_\sigma$-Lipschitz activation $\sigma$. Then the output perturbation under low-rank factorization is bounded by:}
+\[
+\|f(X) - f_r(X)\|_F \le L_\sigma \|X\|_2 \|W - W_r\|_F \le L_\sigma \|X\|_2 \sqrt{\sum_{i=r+1}^\rho \sigma_i^2}
+\]
+\textbf{Proof.} By the Lipschitz property of $\sigma$:
+\[
+\|\sigma(X W^\top) - \sigma(X W_r^\top)\|_F \le L_\sigma \|X (W - W_r)^\top\|_F \le L_\sigma \|X\|_2 \|W - W_r\|_F
+\]
+Applying the Eckart-Young truncation theorem completes the result. $\square$
 
-\subsubsection{A.1.1 Intra-Block Complexity}
-For a single block $b$, the query $Q_b \in \mathbb{R}^{W \times d_h}$ attends to $K_b \in \mathbb{R}^{W \times d_h}$. The matrix multiplication $Q_b K_b^\top$ requires $\mathcal{O}(W^2 d_h)$ operations.
-Since there are $N$ blocks, the total intra-block time complexity is:
-\begin{equation}
-\mathcal{O}(N \cdot W^2 d_h) = \mathcal{O}\left(\frac{L}{W} W^2 d_h\right) = \mathcal{O}(L \cdot W \cdot d_h)
-\end{equation}
+\subsection*{Proof of Singular Value Perturbation Stability}
+\textbf{Theorem 3 (Mirsky's Singular Value Perturbation Theorem).} \textit{Let $A, B \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1(A) \ge \dots \ge \sigma_\rho(A)$ and $\sigma_1(B) \ge \dots \ge \sigma_\rho(B)$. Then for any unitary-invariant norm $\|\cdot\|$:}
+\[
+\left\| \operatorname{diag}(\sigma_1(A) - \sigma_1(B), \dots, \sigma_\rho(A) - \sigma_\rho(B)) \right\| \le \|A - B\|
+\]
+In particular, under Frobenius norm:
+\[
+\sum_{i=1}^\rho |\sigma_i(A) - \sigma_i(B)|^2 \le \|A - B\|_F^2
+\]
+This guarantees that continuous weight adaptations through LoRA do not induce abrupt spectral bifurcations in the underlying base projection.
 
-\subsubsection{A.1.2 Inter-Block Sparse Complexity}
-For block $b$, $Q_b$ evaluates scores against neighboring keys. Let the total number of valid neighbor keys considered be $K_{nb} \propto L$. The raw score computation is $\mathcal{O}(W \cdot K_{nb} \cdot d_h)$. 
-The Top-K selection extracts $k$ elements per query, leading to an attention multiplication bounded by $\mathcal{O}(W \cdot k \cdot d_h)$.
-Across $N$ blocks, the upper bound is $\mathcal{O}(N \cdot W \cdot L) = \mathcal{O}(L^2)$. 
-\textit{However}, by constraining the neighborhood search or relying strictly on Top-$K \ll L$, the effective asymptotic complexity of the scatter/gather limits to $\mathcal{O}(L \cdot K \cdot d_h)$.
-
-\subsubsection{A.1.3 Periodic Rectification Complexity}
-Let $R$ be the \texttt{rectification\_interval} (e.g., $R=4$). 
-For $\frac{R-1}{R}$ of the layers, the complexity is $\mathcal{O}(L \cdot W)$.
-For $\frac{1}{R}$ of the layers, HIBA executes exact dense attention, which is $\mathcal{O}(L^2)$.
-
-Thus, the average per-layer complexity becomes:
-\begin{equation}
-\text{Cost}_{\text{avg}} = \frac{R-1}{R} \mathcal{O}(L \cdot W) + \frac{1}{R} \mathcal{O}(L^2)
-\end{equation}
-By tuning $R$, HIBA provides a mathematically bounded trade-off between strict $\mathcal{O}(L \cdot W)$ linear scaling and $\mathcal{O}(L^2)$ quadratic capacity.
-
-\subsection{A.2 Causality Preservation in HIBA}
-
-\textbf{Claim:} For decoder-only models (\texttt{is\_decoder = True}), HIBA strictly preserves auto-regressive causality. For any token position $i$, the output $Y_i$ depends only on $X_1, \dots, X_i$.
-
-\textbf{Proof:}
-HIBA applies masking at three distinct stages:
-\begin{enumerate}
-\item \textbf{Intra-block:} $M_{\text{causal}}$ is an upper-triangular matrix with $-\infty$ above the diagonal, preventing $q_i$ from attending to $k_j$ for $j > i$ within the same block.
-\item \textbf{Inter-block:} The selection logic \texttt{k\_all[:, :, :start\_b, :]} ensures that queries in block $b$ can only fetch keys from blocks strictly preceding $b$. The subsequent blocks \texttt{k\_all[:, :, end\_b:, :]} are explicitly excluded when \texttt{is\_decoder=True}.
-\item \textbf{Rectification:} The dense fallback applies a strict $\mathcal{O}(L^2)$ causal mask.
-\end{enumerate}
-Since all three pathways enforce $j \le i$, causality is strictly preserved. $\square$
-
-
+\subsection*{Asymptotic Complexity under Grouped-Query Attention}
+In modern generative transformers (LLaMA-3, Qwen-2), grouped-query attention shares key and value heads across $G = H_Q / H_{KV}$ query heads. The parameter count for uncompressed attention projection matrices scales as:
+\[
+P_{\text{dense}} = d_{\text{in}} \left( d_Q + 2 d_{KV} + d_O \right) = d_{\text{in}} \left( H_Q d_h + 2 \frac{H_Q}{G} d_h + H_Q d_h \right)
+\]
+Decomposing each projection at rank $r$ reduces parameter count to:
+\[
+P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
+\]
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.

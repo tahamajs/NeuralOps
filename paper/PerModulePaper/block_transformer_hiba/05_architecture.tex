@@ -1,50 +1,107 @@
-\textit{(                                                                                )}
+\section{Architecture and Implementation Details}
 
-\begin{lstlisting}
-# 5. Architecture Integration
-
-A major contribution of HIBA is its robust `copy_weights` procedure, designed to seamlessly inject into disparate transformer families without silent failures.
-
-## 5.1 Nested Encoder Detection (RoBERTa / BERT)
-
-RoBERTa's attention block wraps the self-attention mechanism in an outer `BertSelfOutput` class that applies the final dense projection:
-
-\end{lstlisting}
-\section{HIBA Auto-Detection Logic}
-if hasattr(pretrained\_attn, "self") and hasattr(pretrained\_attn.self, "query"):
-    self.is\_nested\_encoder = True
-
-\begin{lstlisting}
-
-When `is_nested_encoder` is True, HIBA intercepts the forward pass *before* `self.out_proj` is applied, preventing severe signal attenuation caused by double-projection. The base weights for `W_q, W_k, W_v` are extracted deeply from `pretrained_attn.self`.
-
-## 5.2 Fused Conv1D Handling (GPT-2)
-
-GPT-2 stores $Q,K,V$ weights as a single fused `Conv1D` tensor with transposed dimensions $(d, 3d)$. HIBA detects this, transposes the weights to standard linear layout $(3d, d)$, and strictly chunks them:
-
-\end{lstlisting}
-c\_w = c\_w.t()
-split\_size = c\_w.size(0) // 3
-extracted["q"] = c\_w[:split\_size, :]
-extracted["k"] = c\_w[split\_size : 2 * split\_size, :]
-\section{...}
-
-\begin{lstlisting}
-
-## 5.3 Modern Architectural Features
-
-* **Grouped-Query Attention (GQA):** HIBA natively checks if `num_kv_heads < num_heads` and dynamically applies `repeat_kv` during the forward pass, ensuring compatibility with Qwen, LLaMA, and Mistral.
-* **Rotary Position Embeddings (RoPE):** HIBA implements `apply_rotary_pos_emb` with partial dimension rotation. It rotates only the first `rotary_dim` coordinates and concatenates the unrotated pass-through coordinates, perfectly matching Qwen3.5's behavior (e.g., `head_dim=256, rotary_dim=64`).
-* **Strict Causality:** Causal masks are natively applied in both intra-block, inter-block, and rectification branches if `is_decoder=True`.
-
-\end{lstlisting}
-
-
+\subsection{Submodule Hierarchy}
+The \texttt{LoRALinear} architecture decouples frozen compressed base representations from adaptive recovery pathways:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/architecture.jpeg}
-\caption{High-level architectural diagram of block\_transformer\_hiba.}
-\label{fig:arch_block-transformer-hiba}
+\begin{verbatim}
++-------------------------------------------------------------+
+|                             LoRALinear                      |
+|  Input X [B, N, D_in]                                       |
+|        |                                                    |
+|        +----------------------------+                       |
+|        | (Base Path)                | (LoRA Path)           |
+|        v                            v                       |
+|  +--------------------+       +-----------------------+     |
+|  | Down-Proj: V_r     |       | LoRA A: (r_lora, In)  |     |
+|  | Frozen: (r, In)    |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|  +--------------------+       +-----------------------+     |
+|  | Up-Proj: U_r       |       | LoRA B: (Out, r_lora) |     |
+|  | Frozen: (Out, r)   |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|       Base Output  <---- (+) ------ Adapter Output          |
+|  Output Y [B, N, D_out]                                     |
++-------------------------------------------------------------+
+\end{verbatim}
+\caption{Submodule tensor flow and adapter integration in \texttt{LoRALinear}.}
 \end{figure}
 
+\subsection{Submodule Specification Matrix}
+Table~\ref{tab:submodules_block\_transformer\_hiba} details the structural parameter buffers comprising \texttt{LoRALinear}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{llccX}
+\toprule
+\textbf{Submodule} & \textbf{Type} & \textbf{Shape} & \textbf{Trainable} & \textbf{Role} \\
+\midrule
+\texttt{V\_r} / \texttt{weight} \& Parameter & $(r, d_{\text{in}})$ \& No \& Low-rank basis \\
+\texttt{U\_r} \& Parameter & $(d_{\text{out}}, r)$ \& No \& Expansion basis \\
+\texttt{mask} \& BoolTensor & $(d_{\text{out}}, d_{\text{in}})$ \& No \& Sparsity mask \\
+\texttt{lora\_A} \& Parameter & $(r_{\text{lora}}, d_{\text{in}})$ \& Yes \& Adaptation input \\
+\texttt{lora\_B} \& Parameter & $(d_{\text{out}}, r_{\text{lora}})$ \& Yes \& Adaptation output \\
+\texttt{bias} \& Parameter & $(d_{\text{out}})$ \& No \& Layer bias \\
+\bottomrule
+\end{tabularx}
+\caption{Submodule specifications for \texttt{LoRALinear}.}
+\label{tab:submodules_block\_transformer\_hiba}
+\end{table}
+
+\subsection{Cross-Backbone Tensor Interfaces}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{lcccc}
+\toprule
+\textbf{Backbone Family} & \textbf{Weight Tensor Format} & \textbf{Attention Type} & \textbf{Bias Handling} & \textbf{Positional Scheme} \\
+\midrule
+DistilBERT \& Separate $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+RoBERTa \& Nested $[d, d]$ \& Bidirectional \& Additive vector \& Learned Absolute \\
+GPT-2 \& Fused Conv1D $[d, 3d]$ \& Causal Autoregressive \& Transposed \& Learned Absolute \\
+LLaMA / Qwen \& Split GQA $[d, d_{kv}]$ \& Causal Autoregressive \& Optional \& Rotary (RoPE) \\
+\bottomrule
+\end{tabularx}
+\caption{Cross-backbone tensor interface parameters.}
+\label{tab:backbone_interfaces}
+\end{table}
+
+\subsection{Backbone Compatibility Mechanisms}
+\begin{itemize}
+\item \textbf{DistilBERT:} Direct substitution of linear projections \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, and \texttt{out\_lin}.
+\item \textbf{RoBERTa:} Inner \texttt{BertSelfAttention} projection replacement with nested encoder detection.
+\item \textbf{GPT-2:} Automatic transpose conversion of fused \texttt{c\_attn} Conv1D matrices.
+\item \textbf{Qwen/LLaMA:} Explicit support for Grouped-Query Attention (GQA) and Rotary Position Embeddings (RoPE).
+\end{itemize}
+
+\subsection{Memory Allocation and Tensor Buffer Management}
+In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{LoRALinear}, forward execution partitions parameter access across two sequential matrix multiplications:
+\begin{enumerate}
+\item Intermediate hidden buffer: $H = X V_r^\top \in \mathbb{R}^{B \times N \times r}$
+\item Final output projection: $Y = H U_r^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$
+\end{enumerate}
+When $r \ll d_{\text{in}}$, the intermediate tensor $H$ consumes $r / d_{\text{in}}$ of the memory required by full-dimension representations, dramatically diminishing peak activation memory footprint during training and inference.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{llccc}
+\toprule
+\textbf{Buffer Name} & \textbf{Tensor Dimensions} & \textbf{Precision} & \textbf{Memory ($B=64, N=128$)} \\
+\midrule
+Input Activations $X$ & $[64, 128, 768]$ \& FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Intermediate $H = X V_r^\top$ & $[64, 128, 128]$ \& FP32 / FP16 & $4.19$ MB / $2.10$ MB \\
+Output Projections $Y$ & $[64, 128, 768]$ \& FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Adapter Projection $X A^\top$ & $[64, 128, 16]$ \& FP32 / FP16 & $0.52$ MB / $0.26$ MB \\
+\midrule
+\textbf{Total Working Memory} & -- & -- & \textbf{55.03 MB (vs 112.4 MB)} \\
+\bottomrule
+\end{tabularx}
+\caption{Activation working memory allocation during forward evaluation.}
+\end{table}

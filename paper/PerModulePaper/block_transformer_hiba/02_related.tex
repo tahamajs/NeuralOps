@@ -1,25 +1,26 @@
-\section{Related Work}
+\section{Related Work and Theoretical Foundations}
 
-\subsection{Efficient Attention Mechanisms}
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
-The quadratic scaling of standard attention has driven extensive research into efficient alternatives. These approaches generally fall into three categories, each with distinct trade-offs that HIBA seeks to balance.
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{X}[|X_j|]
+\]
 
-\subsubsection{Sparse and Block-Sparse Attention}
-Sparse attention mechanisms limit the receptive field to a subset of tokens. Longformer (Beltagy et al., 2020) and BigBird (Zaheer et al., 2020) combine sliding-window local attention with a small set of fixed global tokens, reducing complexity to $\mathcal{O}(L \sqrt{L})$ or $\mathcal{O}(L)$. While effective for specific tasks, static sparsity patterns struggle to capture dynamic, long-range dependencies that emerge during inference. HIBA builds upon block-sparse paradigms but diverges fundamentally by introducing \textbf{Periodic Dense Rectification}, ensuring that global context is never permanently severed, thus preventing the "information bottleneck" common in purely sparse architectures.
-
-\subsubsection{Low-Rank and Kernel Approximations}
-Methods like Linformer (Wang et al., 2020) project $K$ and $V$ into a fixed-dimensional lower subspace, while Performer (Choromanski et al., 2021) approximates the softmax kernel using random features. While these achieve $\mathcal{O}(L)$ complexity, they suffer from approximation errors when the attention distribution is highly peaked (i.e., when exact token matching is required). HIBA bypasses this by computing \textit{exact} softmax scores within local blocks and for dynamically routed inter-block tokens.
-
-\subsection{KV-Cache Compression and Token Eviction}
-
-Recent works address inference efficiency by modifying the KV-cache directly. H2O (Zhang et al., 2023) and StreamingLLM (Xiao et al., 2024) evict tokens based on accumulated attention scores or spatial heuristics (preserving "attention sinks"). While these methods reduce VRAM, they permanently discard historical tokens. If a discarded token later becomes relevant, the model cannot recover it. HIBA, by contrast, retains all tokens in memory but sparsely routes queries to them, reducing the $\mathcal{O}(L^2)$ computation graph while maintaining the ability to recall any token dynamically via inter-block routing.
-
-\subsection{Parameter-Efficient Fine-Tuning (PEFT)}
-
-To recover task performance after architectural modifications, Parameter-Efficient Fine-Tuning is standard practice. LoRA (Hu et al., 2021) adapts frozen pretrained weights by optimizing low-rank decomposition matrices $A$ and $B$. In our work, we utilize residual LoRA adapters injected directly into the $Q, K, V$, and output projections. Unlike standard finetuning, this preserves the base knowledge of the pretrained model while providing HIBA with the trainable capacity needed to align its block-sparse routing with the downstream task constraints.
-
-\subsection{Position of Our Work}
-
-HIBA bridges the gap between exact local attention and sparse global routing without requiring pretraining from scratch. Unlike Longformer, HIBA dynamically routes inter-block queries. Unlike StreamingLLM, HIBA does not irreversibly evict tokens. Finally, HIBA's robust integration logic (handling GQA, partial-dimension RoPE, and nested encoders natively) makes it uniquely suited as a drop-in replacement for a wide taxonomy of modern transformer architectures.
-
-
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{block\_transformer\_hiba} module leverages these structural properties to optimize inference speed and VRAM overhead.
