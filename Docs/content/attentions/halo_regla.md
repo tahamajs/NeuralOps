@@ -259,7 +259,7 @@ def inject_halo_regla(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.48%** | -0.12% | 0.9085 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-halo-regla-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-halo-regla-attention) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.14%** | -0.92% | 0.9049 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-halo-regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-halo-regla) | 2026-09-19 |
 
 
 > [!NOTE]
