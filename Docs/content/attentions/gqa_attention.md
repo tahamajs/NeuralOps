@@ -230,6 +230,13 @@ An optimized Triton kernel avoids explicit `repeat_interleave` by indexing KV he
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-gqa-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-gqa-attention) | 2026-09-18 |
+
+
 The empirical evaluation of `gqa_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -495,4 +502,3 @@ The `GroupedQueryAttention` architecture incorporates telemetry hooks for tracki
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
