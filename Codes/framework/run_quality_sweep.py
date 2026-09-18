@@ -749,6 +749,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     clf_param_ids = {id(cp) for cn, cp in model.named_parameters() if any(h in cn.lower() for h in ("score", "classifier", "pre_classifier"))}
                     trainable = [p for p in trainable if id(p) not in clf_param_ids]
                 if trainable:
+                    trainable_recovery_params = sum(p.numel() for p in trainable)
                     trainable_ids = {id(p) for p in trainable}
                     for p in model.parameters():
                         p.requires_grad = (id(p) in trainable_ids)
@@ -828,7 +829,8 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
 
                 # Export lean factorized SVD checkpoint artifacts (~20-90 MB) for automated publishing
                 hf_export_dir = weights_dir / "hf_export"
-                hf_export_dir.mkdir(parents=True, exist_ok=True)
+                if eval_acc >= pass_threshold_pct:
+                    hf_export_dir.mkdir(parents=True, exist_ok=True)
                 try:
                     torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
                     if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
@@ -1385,7 +1387,7 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
-def finetune_with_kd(model, teacher_model, train, name, steps, seq_len, batch_size, device, fp16,
+def finetune_with_kd(model, teacher_model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16,
                      lr=5e-5, alpha=0.5, temperature=2.0, precomputed_batches=None):
     """
     LoRA recovery with KL distillation from uncompressed teacher.
@@ -1413,7 +1415,7 @@ def finetune_with_kd(model, teacher_model, train, name, steps, seq_len, batch_si
             cx, cy = precomputed_batches[step % len(precomputed_batches)]
         else:
             i = (step * batch_size) % max(1, len(train) - batch_size)
-            cx, cy = encode(train[i:i+batch_size], name, seq_len, device)
+            cx, cy = encode(tokenizer, train[i:i+batch_size], name, seq_len, device)
 
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
@@ -2128,7 +2130,7 @@ def main():
 
     if os.environ.get("SVD_COMPILE", "0") == "1":
         try:
-            base = torch.compile(base, mode="max-autotune", fullgraph=False)
+            base = torch.compile(base, mode="default", fullgraph=False)
             LOG.info("torch.compile enabled (max-autotune)")
         except Exception as e:
             LOG.warning(f"torch.compile failed: {e}")
@@ -2453,20 +2455,6 @@ def main():
         if name in DEPRECATED_MODULES:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
-            summary_dict[name] = {
-                "module_name": name,
-                "status": "DEPRECATED",
-                "accuracy_pct": 0.0,
-                "elapsed_s": 0.0,
-                "error": dep_reason,
-                "path": "deprecated",
-                "timestamp": datetime.now().isoformat(),
-            }
-            with path.open("w", newline="", encoding="utf8") as f:
-                w = csv.DictWriter(f, fieldnames=FIELDS)
-                w.writeheader()
-                for m_name in summary_dict:
-                    w.writerow(summary_dict[m_name])
             continue
         if name in existing:
             LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (%s, %.2f%%)",
@@ -2633,7 +2621,7 @@ def main():
                 try:
                     torch.cuda.empty_cache()
                     safe_batch = max(8, args.batch_size // 2)
-                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device)
+                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, eval_seq_len, safe_batch, device)
                     acc = perf_metrics["accuracy_pct"]
                     err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
                     exc = None
@@ -2643,7 +2631,7 @@ def main():
                 try:
                     model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches)
+                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device, precomputed_batches=eval_batches)
                     acc = perf_metrics["accuracy_pct"]
                     err = f"fp32 retry: {exc}"
                     exc = None
@@ -2882,7 +2870,6 @@ def main():
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-            torch.cuda.synchronize()
 
     # -------------------------------------------------------------------------
     # Final Compact Summary Table
