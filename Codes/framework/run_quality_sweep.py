@@ -2070,9 +2070,8 @@ def parse_args(argv=None):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
-            par_count = max(1, getattr(args, "parallel", 1))
-            frac = 0.85 / par_count if par_count > 1 else 0.85
-            torch.cuda.set_per_process_memory_fraction(frac)
+            # Dynamic VRAM allocation without artificial fraction clamp to avoid premature CUDA OOM
+            pass
         except:
             pass
         
@@ -2989,6 +2988,8 @@ def run_single_module_main(args) -> dict:
         LOG.debug("Report generation info: %s", rep_err)
 
 
+    if len(names) == 1 and names[0] in summary_dict:
+        return summary_dict[names[0]]
     if len(summary_dict) == 1:
         return list(summary_dict.values())[0]
     return summary_dict

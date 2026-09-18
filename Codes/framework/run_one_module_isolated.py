@@ -45,8 +45,10 @@ def main():
 
         # Call the single-module evaluation as a library function
         metrics = run_single_module_main(args)
+        if isinstance(metrics, dict) and args.module in metrics:
+            metrics = metrics[args.module]
 
-        # metrics is the row dict returned by _execute_single (all fields present)
+        # metrics is the row dict for this module with all fields populated
         result.update({
             # Status and accuracy
             "status":                       metrics.get("status", "PASS"),
