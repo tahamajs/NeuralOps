@@ -791,3 +791,4 @@ Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **59.70%** | +8.70% | 0.5455 | 1.24x | 1 | N/A | 2026-09-18 |
+| **roberta-base** | ag_news | `PASS` | 74.50% | **76.80%** | +2.30% | 0.7589 | 1.26x | 1 | N/A | 2026-09-18 |
