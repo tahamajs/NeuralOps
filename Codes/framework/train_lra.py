@@ -196,7 +196,7 @@ def train_task(
             labels = batch["labels"].to(device)
 
             optimizer.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=amp_dtype, enabled=use_bf16):
+            with torch.autocast("cuda", dtype=amp_dtype, enabled=use_amp):
                 outputs = model(input_ids, labels=labels)
                 loss = outputs.loss
 
