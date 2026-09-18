@@ -1,0 +1,7 @@
+total 0
+drwxr-xr-x@   3 tahamajs  staff    96 Sep 18 09:18 .
+drwxr-xr-x@ 194 tahamajs  staff  6208 Sep 18 23:00 ..
+drwxr-xr-x@   2 tahamajs  staff    64 Sep 18 09:18 base_checkpoints
+total 0
+drwxr-xr-x@ 2 tahamajs  staff  64 Sep 18 09:18 .
+drwxr-xr-x@ 3 tahamajs  staff  96 Sep 18 09:18 ..

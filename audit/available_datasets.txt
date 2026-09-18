@@ -1,0 +1,32 @@
+total 0
+drwxr-xr-x@ 12 tahamajs  staff  384 Sep 16 04:01 .
+drwxr-xr-x@ 23 tahamajs  staff  736 Sep 18 20:55 ..
+drwxr-xr-x@  5 tahamajs  staff  160 Sep 16 04:01 ag_news
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:16 cola
+drwxr-xr-x@  5 tahamajs  staff  160 Sep 16 03:01 mnli
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:10 mrpc
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:10 qnli
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:17 qqp
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:16 rte
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:10 sst2
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:16 stsb
+drwxr-xr-x@  6 tahamajs  staff  192 Aug 20 03:16 wnli
+total 0
+drwxr-xr-x  18 tahamajs  staff  576 Sep 18 18:32 .
+drwxr-xr-x  11 tahamajs  staff  352 Sep  2 05:00 ..
+drwxr-xr-x   4 tahamajs  staff  128 Aug 30 10:14 Anthropic___hh-rlhf
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:16 DataCreatorAI___anti-sycophancy-dpo
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:15 EleutherAI___hendrycks_math
+drwxr-xr-x@  3 tahamajs  staff   96 Sep 18 12:05 Salesforce___wikitext
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:19 ScalerLab___judge_bench
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:19 downloads
+drwxr-xr-x@ 10 tahamajs  staff  320 Aug 20 03:16 glue
+drwxr-xr-x   3 tahamajs  staff   96 Aug 23 12:17 gsm8k
+drwxr-xr-x@  3 tahamajs  staff   96 Sep  2 11:54 imdb
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:17 json
+drwxr-xr-x   3 tahamajs  staff   96 Aug 30 08:43 openai___gsm8k
+drwxr-xr-x   9 tahamajs  staff  288 Aug 20 03:09 parquet
+drwxr-xr-x   3 tahamajs  staff   96 Aug 23 12:18 skg___toxigen-data
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 30 10:13 toxigen___toxigen-data
+drwxr-xr-x   3 tahamajs  staff   96 Aug 30 07:31 tweet_eval
+drwxr-xr-x@  3 tahamajs  staff   96 Aug 25 18:30 wikitext
