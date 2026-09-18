@@ -238,8 +238,8 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = True,
-        max_error: float = 0.20,
-        max_retries: int = 3,
+        max_error: float = 0.50,
+        max_retries: int = 5,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
         tokenizer: Optional[Any] = None,
@@ -489,15 +489,20 @@ class A3Compressor(BaseCompressor):
             logger.debug("No calibration data available for %s; falling back to unweighted SVD.", name)
             W_w = W
 
-        # Pull SVD Out of the Retry Loop
-        try:
-            U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
-        except Exception:
-            U, S, Vt = torch.linalg.svd(W_w.cpu(), full_matrices=False)
-            U, S, Vt = U.to(W.device), S.to(W.device), Vt.to(W.device)
+        # Compute SVD on CPU in FP32 for numerical stability and zero GPU VRAM workspace pressure
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        W_cpu = W_w.detach().cpu().float()
+        U_cpu, S_cpu, Vt_cpu = torch.linalg.svd(W_cpu, full_matrices=False)
+        U = U_cpu.to(device=W.device, dtype=W.dtype)
+        S = S_cpu.to(device=W.device, dtype=W.dtype)
+        Vt = Vt_cpu.to(device=W.device, dtype=W.dtype)
 
         norm_orig = torch.linalg.norm(W).item()
-        current_r = r
+        
+        # Calculate ceiling BEFORE the retry loop (Option A: max 320, below break-even)
+        r_ceiling = min(int(0.5 * min(in_f, out_f)), 320)
+        current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
         best_r = current_r
@@ -505,7 +510,7 @@ class A3Compressor(BaseCompressor):
         # Only retry / increase rank if rank was not explicitly specified
         retries = 0 if rank is not None else self.max_retries
         for attempt in range(retries + 1):
-            clamped_r = min(current_r, S.shape[0])
+            clamped_r = min(current_r, S.shape[0], r_ceiling)
             sqrt_S = torch.sqrt(torch.clamp(S[:clamped_r], min=1e-12))
             U_r = U[:, :clamped_r] * sqrt_S.unsqueeze(0)
             V_r = sqrt_S.unsqueeze(1) * Vt[:clamped_r, :]
@@ -523,27 +528,25 @@ class A3Compressor(BaseCompressor):
                 best_layer_factors = (U_r, V_r)
                 best_r = clamped_r
 
-            # If error is acceptable or rank has reached maximum possible rank, finish
-            if rel_err <= self.max_error or clamped_r >= min(in_f, out_f):
+            # Enforce strict parameter-reduction rank ceiling (never exceed break-even)
+            if rel_err <= self.max_error or clamped_r >= r_ceiling:
                 break
 
-            # Incrementally increase rank for next retry towards min(in_f, out_f)
+            # Incrementally increase rank for next retry towards r_ceiling
             if attempt < retries:
                 remaining = max(1, retries - attempt)
-                step = max(8, (min(in_f, out_f) - current_r) // remaining)
-                current_r = min(current_r + step, min(in_f, out_f))
+                step = max(16, (r_ceiling - current_r) // remaining)
+                current_r = min(current_r + step, r_ceiling)
 
-        # Validation threshold check - Enforce max_error Abort if fallback_to_original is True
+        # After the loop, if error still > max_error at r_ceiling:
         if best_err > self.max_error:
             if self.fallback_to_original:
                 logger.warning(
-                    "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d. Falling back to original layer.",
-                    name,
-                    best_err,
-                    self.max_error,
-                    best_r,
+                    "A3 compression for %s failed at r_ceiling=%d (err=%0.3f > %0.3f). "
+                    "Falling back to original layer.",
+                    name, r_ceiling, best_err, self.max_error
                 )
-                return None, best_err, best_r
+                return None, best_err, r_ceiling
             else:
                 logger.warning(
                     "A3 compression for %s exceeds max_error (%0.3f > %0.3f) at rank %d but fallback_to_original=False. Compressing anyway with error %0.4f.",
@@ -612,6 +615,9 @@ class A3Compressor(BaseCompressor):
             self.recalibrate_ln = False
         else:
             cov_map, fisher_map = self._collect_activations_and_fisher()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         factorized_count = 0
         skipped_count = 0
