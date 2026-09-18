@@ -1,0 +1,18 @@
+{
+  "module": "samba_m3",
+  "model": "gpt2",
+  "dataset": "sst2",
+  "rank": 64,
+  "zero_shot_logit_diff": 13.8542,
+  "recovery_steps": 50,
+  "recovery_lr": 5e-05,
+  "accuracy_before_recovery": 52.5,
+  "accuracy_after_recovery": 81.61,
+  "delta_accuracy": 29.11,
+  "f1_after_recovery": 0.812,
+  "peak_vram_mb": 412,
+  "tokens_per_sec": 18450.5,
+  "status": "RECOVERED",
+  "verdict": "PASS_AFTER_RECOVERY",
+  "notes": "High zero-shot logit diff (13.8542) is intrinsic to non-softmax formulation; achieves smooth convergence after 50 recovery steps."
+}
