@@ -785,3 +785,9 @@ Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable
 | DISTILBERT | 90.71% | 84.29% | -6.42% | 0.8355 | 4/6 | 33.3% | 33.3% | 2 | 259.5 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come) |
 | ROBERTA | 78.56% | 0.00% | -78.56% | 0.8124 | 8/12 | 33.3% | 33.3% | 4 | 712.3 MB | `FAIL` | N/A |
 | GPT2 | 79.36% | 0.00% | -79.36% | 0.7978 | 8/12 | 33.3% | 33.3% | 4 | 793.2 MB | `FAIL` | N/A |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **59.70%** | +8.70% | 0.5455 | 1.24x | 1 | N/A | 2026-09-18 |
