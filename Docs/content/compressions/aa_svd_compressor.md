@@ -58,3 +58,9 @@ from Codes.framework.compression_engine import SVDLinear
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **85.80%** | +34.80% | 0.8538 | 1.13x | 16 | N/A | 2026-09-18 |
