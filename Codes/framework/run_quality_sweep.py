@@ -1565,7 +1565,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     return had_nan
 
 
-def main():
+
+def parse_args(argv=None):
+    import argparse, sys
+
     import os
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
@@ -2075,6 +2078,18 @@ def main():
             free_gb = free_bytes / (1024 ** 3)
             total_gb = total_bytes / (1024 ** 3)
             LOG.info("GPU VRAM: %.2f GB free / %.2f GB total on %s", free_gb, total_gb, torch.cuda.get_device_name())
+
+    return args
+
+
+
+def run_single_module_main(args) -> dict:
+    import os
+    import torch
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
             if free_gb < 4.0:
                 LOG.warning("LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.", free_gb)
         except Exception as mem_err:
@@ -2952,4 +2967,165 @@ def main():
     except Exception as rep_err:
         LOG.debug("Report generation info: %s", rep_err)
 
-if __name__ == "__main__": main()
+
+    if len(summary_dict) == 1:
+        return list(summary_dict.values())[0]
+    return summary_dict
+
+
+
+import subprocess
+import time
+import json
+from pathlib import Path
+import torch
+
+_SLOW_MODULE_TIMEOUT_OVERRIDES = {
+    "hybrid_svd_layer": 1800,
+    "run_quality_sweep": 600,
+    "svd_whitened": 1200,
+}
+
+def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
+    import os, sys
+    tmp_dir = Path("logs/isolated_results")
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    result_json = tmp_dir / f"{module_name}_{int(time.time())}.json"
+
+    cmd = [
+        sys.executable, "-u",
+        "Codes/framework/run_one_module_isolated.py",
+        "--module", module_name,
+        "--model", str(args.model),
+        "--model_family", str(args.model_family),
+        "--dataset", str(args.dataset),
+        "--dataset_dir", str(args.dataset_dir) if args.dataset_dir else "None",
+        "--output_json", str(result_json),
+        "--output_dir", str(args.output_dir) if args.output_dir else "results",
+        "--rank", str(args.rank or 64),
+        "--recovery_steps", str(args.recovery_steps),
+        "--lora_rank", str(args.lora_rank),
+        "--batch_size", str(args.batch_size),
+        "--precision", str(args.precision),
+        "--seed", str(args.seed),
+    ]
+    if args.dataset_dir is None:
+        cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
+        
+    log_path = Path(f"logs/isolated/{module_name}.log")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"[ISOLATED] Launching {module_name} (timeout={timeout_s}s) -> {log_path}")
+    t0 = time.monotonic()
+
+    with open(log_path, "w", encoding="utf-8") as log_file:
+        proc = subprocess.Popen(
+            cmd, stdout=log_file, stderr=subprocess.STDOUT,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+        )
+
+        try:
+            proc.wait(timeout=timeout_s)
+            elapsed = time.monotonic() - t0
+            print(f"[ISOLATED] {module_name} exited with code {proc.returncode} in {elapsed:.1f}s")
+        except subprocess.TimeoutExpired:
+            print(f"[ISOLATED] {module_name} TIMEOUT after {timeout_s}s - killing")
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                               capture_output=True)
+            else:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+            elapsed = time.monotonic() - t0
+
+    if result_json.exists():
+        try:
+            return json.loads(result_json.read_text(encoding="utf-8"))
+        except Exception as e:
+            return {"status": "PARSE_ERROR", "error": str(e), "elapsed_s": elapsed}
+    else:
+        return {
+            "status": "TIMEOUT" if elapsed >= timeout_s - 1 else "CRASH_NO_OUTPUT",
+            "error": f"Child produced no result file after {elapsed:.1f}s",
+            "elapsed_s": elapsed,
+        }
+
+def clear_vram_between_modules():
+    import gc
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    time.sleep(2)
+
+def main():
+    args = parse_args()
+    
+    from framework.utils.registry_loaders import modules
+    if isinstance(args.modules, list):
+        raw_mods = []
+        for item in args.modules:
+            raw_mods.extend([x.strip() for x in item.split(",") if x.strip()])
+        names = modules() if (not raw_mods or raw_mods == ["all"]) else raw_mods
+    elif args.modules == "all":
+        names = modules()
+    else:
+        names = [x.strip() for x in args.modules.split(",") if x.strip()]
+
+    out = Path(args.output_dir) if args.output_dir else Path("results")
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / "summary.csv"
+    
+    summary_dict = {}
+    if path.exists() and not args.fresh:
+        import csv
+        with path.open("r", encoding="utf8") as f:
+            for r in csv.DictReader(f):
+                summary_dict[r["module_name"]] = r
+                
+    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
+    
+    FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
+              "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "total_params_before",
+              "total_params_after", "trainable_recovery_params", "compression_rate", "compression_ratio_pct",
+              "flops_reduction_pct", "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
+              "weighted_reconstruction_error", "num_injected_attention_layers", "lora_params", "error", "path", "timestamp"]
+
+    for name in names:
+        timeout_s = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, getattr(args, "timeout", 600))
+        if name in existing:
+            print(f">>> Skipping {name} (already PASS)")
+            continue
+
+        result = run_module_isolated(name, args, timeout_s)
+        
+        row = {
+            "module_name": name,
+            "status": result.get("status", "UNKNOWN"),
+            "accuracy_pct": result.get("accuracy", result.get("accuracy_pct", 0.0)),
+            "f1_score": result.get("f1", result.get("f1_score", 0.0)),
+            "elapsed_s": result.get("elapsed_s", 0.0),
+            "peak_vram_mb": result.get("peak_vram_mb", 0.0),
+            "total_params_before": result.get("params_before", result.get("total_params_before", 0)),
+            "total_params_after": result.get("params_after", result.get("total_params_after", 0)),
+            "compression_rate": result.get("compression_ratio", result.get("compression_rate", 1.0)),
+            "error": result.get("error", ""),
+            "path": result.get("path", ""),
+            "timestamp": result.get("finished_at", time.time()),
+        }
+        summary_dict[name] = row
+
+        with path.open("w", newline="", encoding="utf-8") as f:
+            import csv
+            w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+            w.writeheader()
+            for k in summary_dict:
+                w.writerow(summary_dict[k])
+
+        clear_vram_between_modules()
+
+if __name__ == '__main__':
+    main()
