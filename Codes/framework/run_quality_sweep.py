@@ -578,6 +578,67 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
+def finetune_with_kd(model, teacher_model, train, name, steps, seq_len, batch_size, device, fp16,
+                     lr=5e-5, alpha=0.5, temperature=2.0, precomputed_batches=None):
+    """
+    LoRA recovery with KL distillation from uncompressed teacher.
+
+    Loss = (1 - alpha) * CE(student, labels)
+         + alpha * T^2 * KL(student/T || teacher/T)
+    """
+    import torch.nn.functional as F
+    model.train()
+    if teacher_model is not None:
+        teacher_model.eval()
+        teacher_model.to(device)
+
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    if not trainable:
+        for p in model.parameters():
+            p.requires_grad = True
+        trainable = [p for p in model.parameters() if p.requires_grad]
+
+    opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
+    scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
+
+    for step in range(steps):
+        if precomputed_batches and len(precomputed_batches) > 0:
+            cx, cy = precomputed_batches[step % len(precomputed_batches)]
+        else:
+            i = (step * batch_size) % max(1, len(train) - batch_size)
+            cx, cy = encode(train[i:i+batch_size], name, seq_len, device)
+
+        opt.zero_grad(set_to_none=True)
+        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+            student_out = model(**cx, labels=cy)
+            student_logits = student_out.logits
+            ce_loss = student_out.loss
+
+            if teacher_model is not None:
+                with torch.no_grad():
+                    teacher_out = teacher_model(**cx)
+                    teacher_logits = teacher_out.logits.detach()
+
+                student_log_probs = F.log_softmax(student_logits / temperature, dim=-1)
+                teacher_probs = F.softmax(teacher_logits / temperature, dim=-1)
+                kl_loss = F.kl_div(
+                    student_log_probs, teacher_probs, reduction="batchmean"
+                ) * (temperature ** 2)
+                loss = (1.0 - alpha) * ce_loss + alpha * kl_loss
+            else:
+                loss = ce_loss
+
+        scaler.scale(loss).backward()
+        scaler.unscale_(opt)
+        torch.nn.utils.clip_grad_norm_(trainable, 1.0)
+        scaler.step(opt)
+        scaler.update()
+
+        if (step + 1) % 10 == 0 or (step + 1) == steps:
+            LOG.info("KD recovery step %d/%d loss=%.4f (ce=%.4f)", step + 1, steps, float(loss), float(ce_loss))
+    model.eval()
+
+
 def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=10):
     batches = []
     end_idx = min(len(ds), max_batches * batch_size)
@@ -711,8 +772,8 @@ def main():
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
-    ap.add_argument("--finetune_mode", choices=("head", "lora"), default="head",
-                    help="Fine-tune mode: head-only or full-backbone LoRA adapters")
+    ap.add_argument("--finetune_mode", choices=("head", "lora", "full"), default="head",
+                    help="Fine-tune mode: head-only, full-backbone LoRA adapters, or full-backbone fine-tuning")
     ap.add_argument("--lora_r", type=int, default=16, help="LoRA rank dimension")
     ap.add_argument("--lora_alpha", type=float, default=32.0, help="LoRA scaling alpha")
     ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
@@ -738,6 +799,10 @@ def main():
                     help="Optional sequence length override for evaluation pass")
     ap.add_argument("--config", type=str, default=None,
                     help="Path to YAML configuration file (e.g. configs/qwen3_5.yaml)")
+    ap.add_argument("--kl_distill", action="store_true",
+                    help="Use KL distillation during recovery")
+    ap.add_argument("--kl_alpha", type=float, default=0.5)
+    ap.add_argument("--kl_temperature", type=float, default=2.0)
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--gradient_checkpointing", action="store_true", default=False,
@@ -2334,13 +2399,21 @@ def main():
                             trainable_ids = {id(p) for p in trainable}
                             for p in model.parameters():
                                 p.requires_grad = (id(p) in trainable_ids)
-                            trainable_recovery_params = sum(p.numel() for p in trainable)
-                            had_nan = finetune_lora(
-                                model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
-                                args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
-                                optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                                weight_decay=args.weight_decay, timeout=effective_timeout,
-                            )
+                            if getattr(args, "kl_distill", False):
+                                LOG.info("Running recovery with KL Distillation (alpha=%.2f, temp=%.1f)", args.kl_alpha, args.kl_temperature)
+                                finetune_with_kd(
+                                    model, base, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+                                    args.precision == "fp16", lr=rec_lr, alpha=args.kl_alpha, temperature=args.kl_temperature,
+                                    precomputed_batches=train_batches
+                                )
+                                had_nan = False
+                            else:
+                                had_nan = finetune_lora(
+                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+                                    args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
+                                    optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
+                                    weight_decay=args.weight_decay, timeout=effective_timeout,
+                                )
 
                 total_params_after = sum(p.numel() for p in model.parameters())
 

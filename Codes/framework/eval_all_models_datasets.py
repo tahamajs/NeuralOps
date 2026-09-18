@@ -438,7 +438,7 @@ def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional
 def apply_module_to_model(
     model: nn.Module,
     module_name: str,
-    module_type: str,
+    module_type: str = "auto",
     rank: int = 16,
     device: torch.device = torch.device("cpu"),
 ) -> Tuple[nn.Module, float]:
