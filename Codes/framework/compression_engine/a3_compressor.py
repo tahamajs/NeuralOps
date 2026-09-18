@@ -245,11 +245,12 @@ class A3Compressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
+        n_calib: int = 500,
         device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
         if cfg is not None:
             rank = _cfg_get(cfg, "a3_rank", _cfg_get(cfg, "rank", rank))
             use_fisher = _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher))
@@ -259,12 +260,14 @@ class A3Compressor(BaseCompressor):
             max_retries = _cfg_get(cfg, "a3_max_retries", _cfg_get(cfg, "max_retries", max_retries))
             fallback_to_original = _cfg_get(cfg, "a3_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
             normalize_scale = _cfg_get(cfg, "a3_normalize_scale", _cfg_get(cfg, "normalize_scale", normalize_scale))
+            n_calib = _cfg_get(cfg, "a3_n_calib", _cfg_get(cfg, "n_calib", n_calib))
 
         self.rank = max(1, int(rank))
         self.use_fisher = bool(use_fisher)  # activation energy / empirical Fisher proxy
         self.recalibrate_ln = bool(recalibrate_ln)
         self.target_attention_only = bool(target_attention_only)
         self.max_error = float(max_error)
+        self.n_calib = int(n_calib)
         self.max_retries = max(0, int(max_retries))
         # fallback_to_original attribute cleanly defined and defaulted to True
         self.fallback_to_original = bool(kwargs.get("fallback_to_original", fallback_to_original))
@@ -350,6 +353,7 @@ class A3Compressor(BaseCompressor):
                 calibration_loader=None,
                 calibration_texts=self.calibration_texts,
                 device=self.target_device,
+                sample_size=self.n_calib,
             )
 
             if calib_inputs is not None:
@@ -357,9 +361,16 @@ class A3Compressor(BaseCompressor):
                 with torch.no_grad():
                     try:
                         if isinstance(calib_inputs, dict):
-                            self.model(**calib_inputs)
+                            total_n = next(iter(calib_inputs.values())).shape[0]
+                            bs = 16
+                            for start_idx in range(0, total_n, bs):
+                                sub_dict = {k: v[start_idx:start_idx+bs] for k, v in calib_inputs.items()}
+                                self.model(**sub_dict)
                         elif isinstance(calib_inputs, torch.Tensor):
-                            self.model(calib_inputs)
+                            total_n = calib_inputs.shape[0]
+                            bs = 16
+                            for start_idx in range(0, total_n, bs):
+                                self.model(calib_inputs[start_idx:start_idx+bs])
                         elif isinstance(calib_inputs, (list, tuple)):
                             self.model(*calib_inputs)
                     except Exception as e:
@@ -713,6 +724,10 @@ class A3Compressor(BaseCompressor):
         stats.update({
             "factorized_layers": factorized_count,
             "skipped_layers": skipped_count,
+            "num_compressed": factorized_count,
+            "num_fallback": skipped_count,
+            "num_compressed_layers": factorized_count,
+            "num_fallback_layers": skipped_count,
             "compressed_layers": self.compressed_layers,
             "rank": self.rank,
             "use_fisher": self.use_fisher,
@@ -723,6 +738,10 @@ class A3Compressor(BaseCompressor):
             "method": "a3_activation_aware_factorized_svd",
         })
         self.stats = stats
+        try:
+            self.model.compression_stats = stats
+        except Exception:
+            pass
         return self.model, stats
 
 
@@ -739,14 +758,18 @@ def a3_compressor_factory(
     """A3 compressor factory function returning (compressed_model, stats) or compressed_model."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     # Robust configuration extraction
+    if comp_config is None:
+        comp_config = getattr(model, "config", None)
+
     if comp_config is not None:
-        r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank", rank))
-        u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", use_fisher))
-        recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", recalibrate_ln))
-        target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+        r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", rank)))
+        u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)))
+        recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", kwargs.get("recalibrate_ln", recalibrate_ln)))
+        target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", False)))
         max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.20)))
         fallback = _cfg_get(comp_config, "a3_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True)))
         norm_scale = _cfg_get(comp_config, "a3_normalize_scale", _cfg_get(comp_config, "normalize_scale", kwargs.get("normalize_scale", True)))
+        n_calib = _cfg_get(comp_config, "a3_n_calib", _cfg_get(comp_config, "n_calib", kwargs.get("n_calib", 500)))
     else:
         r = kwargs.get("rank", rank)
         u_fish = kwargs.get("use_fisher", use_fisher)
@@ -755,10 +778,11 @@ def a3_compressor_factory(
         max_err = kwargs.get("max_error", 0.20)
         fallback = kwargs.get("fallback_to_original", True)
         norm_scale = kwargs.get("normalize_scale", True)
+        n_calib = kwargs.get("n_calib", 500)
 
     # Pop keys that were already extracted to avoid "multiple values for argument" errors
     for _key in ("rank", "use_fisher", "recalibrate_ln", "target_attention_only",
-                 "max_error", "fallback_to_original", "normalize_scale"):
+                 "max_error", "fallback_to_original", "normalize_scale", "n_calib"):
         kwargs.pop(_key, None)
 
     compressor = A3Compressor(
@@ -770,9 +794,14 @@ def a3_compressor_factory(
         max_error=max_err,
         fallback_to_original=fallback,
         normalize_scale=norm_scale,
+        n_calib=n_calib,
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_tuple:
         return compressed_model, stats
     return compressed_model

@@ -60,6 +60,10 @@ def get_calibration_tensors(
     if tokenizer is not None:
         texts = calibration_texts or DEFAULT_CALIB_TEXTS
         try:
+            if len(texts) < sample_size:
+                texts = (texts * ((sample_size // len(texts)) + 1))[:sample_size]
+            elif len(texts) > sample_size:
+                texts = texts[:sample_size]
             encoded = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=seq_len)
             return {k: v.to(device) for k, v in encoded.items()}
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
