@@ -1,11 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_cur\_moe/roberta/summary.csv} & cur\_moe & PASS\_LOW & 50.92\% & 615.57 MB \\
-\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & cur\_moe & PASS & 74.43\% & 253.68 MB \\
-\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & cur\_moe & PASS\_LOW & 50.92\% & 625.48 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 44.11 ms & 594.0 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 44.49 ms & 594.0 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 45.24 ms & 603.9 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 45.39 ms & 603.9 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 52.38 ms & 1091.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_curmoe} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & cur\_moe & PASS & 74.43 & 0.7824 \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & cur\_moe & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & cur\_moe & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cur\_moe & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{curmoe}.}
+\label{tab:results_acc_curmoe}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_curmoe} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & cur\_moe & 66955010 & 48496398 & 514060 & 1.3806x \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & cur\_moe & 124441344 & 88502040 & 1145880 & 1.4061x \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & cur\_moe & 124647170 & 85538586 & 802840 & 1.4572x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cur\_moe & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{curmoe}.}
+\label{tab:results_params_curmoe}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_curmoe} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & full & 51549.23 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & distilbert & cur\_moe & 40708.95 & 253.68 MB & 0.0000 \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & full & 27140.95 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & gpt2 & cur\_moe & 21553.95 & 625.48 MB & 0.0000 \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & full & 26781.23 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & roberta & cur\_moe & 20364.41 & 615.57 MB & 0.0000 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & cur\_moe & Elapsed 0.166s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{curmoe}.}
+\label{tab:results_vram_curmoe}
+\end{table*}
