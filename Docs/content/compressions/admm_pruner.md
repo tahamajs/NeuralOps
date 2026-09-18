@@ -226,6 +226,7 @@ def admm_threshold_kernel(
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **68.30%** | +17.30% | 0.6637 | 1.00x | 36 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **69.40%** | -5.10% | 0.6925 | 1.00x | 72 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **78.90%** | -0.80% | 0.7828 | 1.00x | 48 | N/A | 2026-09-18 |
 
 
 The empirical evaluation of `admm_pruner` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
