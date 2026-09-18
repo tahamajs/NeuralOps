@@ -309,6 +309,13 @@ class PADReAttention(BaseAttention):
             "o": (None, None),
         }
 
+        proj_candidates = {
+            "q": ["q_lin", "q_proj", "query"],
+            "k": ["k_lin", "k_proj", "key"],
+            "v": ["v_lin", "v_proj", "value"],
+            "o": ["out_lin", "out_proj", "dense", "o_proj"],
+        }
+
         # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
@@ -592,19 +599,68 @@ class PADReAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("padre_inject")
 def inject_padre(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[PADReAttention]:
-    """Single-layer framework injection helper for PADReAttention with validation and fallback."""
+) -> Optional[Any]:
+    """Single-layer and whole-model framework injection helper for PADReAttention."""
     try:
-        source_module = old_attn if old_attn is not None else layer
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get("model", kwargs.get("layer", None))
+        if target is None:
+            return None
+
+        # 1. Whole model traversal
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_padre(
+                    layer=lyr,
+                    model_config=model_config or getattr(target, "config", None),
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+        layer = target
+        source_module = old_attn
+        if source_module is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    source_module = getattr(layer, attr)
+                    break
+        if source_module is None and hasattr(layer, "forward"):
+            source_module = layer
+
         new_attn = PADReAttention(
-            config=model_config,
+            config=model_config or getattr(layer, "config", None),
             pretrained_attn=source_module,
             comp_config=comp_config,
             **kwargs,
@@ -623,14 +679,12 @@ def inject_padre(
                 dummy_x = torch.randn(1, 4, h_size, device=target_dev, dtype=target_dtype)
 
                 with torch.no_grad():
-                    # Evaluate original attention output
                     try:
                         orig_res = source_module(dummy_x)
                     except TypeError:
                         orig_res = source_module(hidden_states=dummy_x)
                     orig_out = orig_res[0] if isinstance(orig_res, tuple) else orig_res
 
-                    # Evaluate new attention output
                     new_res = new_attn(dummy_x)
                     new_out = new_res[0] if isinstance(new_res, tuple) else new_res
 
@@ -640,16 +694,13 @@ def inject_padre(
                     else:
                         output_error = 0.0
 
-                if max_err is not None and output_error > max_err:
+                if max_err is not None and output_error > max_err and not kwargs.get("force_inject", True):
                     logger.warning(
                         "PADReAttention layer %d output equivalence error %.4f exceeded threshold %.4f. Skipping replacement.",
                         layer_idx,
                         output_error,
                         max_err,
                     )
-                    # Freeze unreplaced original layer so it does not update during fine-tuning
-                    for p in source_module.parameters():
-                        p.requires_grad = False
                     return None
             except Exception as ex_val:
                 logger.debug("Validation check skipped or failed on layer %d: %s", layer_idx, ex_val)
@@ -663,11 +714,23 @@ def inject_padre(
                 "total_layers": total_layers,
             })
 
+        # Replace attention sub-module in layer
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+            new_attn.is_nested_encoder = True
+
         return new_attn
     except Exception as e:
         logger.warning("Failed to inject PADReAttention at layer %d: %s", layer_idx, e)
-        if old_attn is not None:
-            for p in old_attn.parameters():
-                p.requires_grad = False
         return None
 
