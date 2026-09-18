@@ -121,6 +121,13 @@ python Codes/framework/launch_gpu_server.py \
 
 ## 5. Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.30%** | +25.30% | 0.7317 | 1.14x | 6 | N/A | 2026-09-18 |
+
+
 Evaluated across standard GLUE benchmark suites on NVIDIA GPUs:
 
 | Model Family | Dataset | Status | Forward (ms) | Backward (ms) | Total Step (ms) | Accuracy (%) | Grad Norm | Compression |
@@ -351,4 +358,3 @@ The `FactorizedLinear` architecture incorporates telemetry hooks for tracking si
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
