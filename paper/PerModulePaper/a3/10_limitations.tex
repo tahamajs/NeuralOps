@@ -16,13 +16,21 @@ Our rigorous experimental evaluation revealed five fundamental constraints of th
 \subsection{Task and Architecture Coverage}
 
 A3 has been validated primarily on binary classification (SST-2). It has not been benchmarked on:
+\begin{itemize}
+\item Generation tasks (summarization, translation, code)
+\item Question answering (SQuAD, HotpotQA)
+\item Long-context reasoning (L-Eval, InfiniteBench)
+\item Pre-training from scratch with factorized layers
+\item Instruction following (AlpacaEval, MT-Bench)
+\end{itemize}
+
 \subsection{Model Coverage}
 
 We test on models with $\le$124M parameters. Not tested:
 
 \begin{itemize}
-\item Large models (>1B): SVD time grows quadratically
-\item Very deep models (>24 layers): compounding effect
+\item Large models ($>1$B): SVD time grows quadratically
+\item Very deep models ($>24$ layers): compounding effect
 \item Mixture-of-Experts: not tested
 \item Vision transformers: not tested
 \item Multimodal: not tested
