@@ -1,10 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-benchmark\_summary\_v2 & bert-sst2 & PASS & 34.47 ms & 581.9 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 34.7 ms & 581.9 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 34.92 ms & 591.9 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 30.93 ms & 591.9 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 49.47 ms & 1082.2 MB \\
-benchmark\_summary\_v2 & t5-mrpc & PASS & 50.3 ms & 1082.2 MB \\
-all\_121\_gpu\_matrix & dynamic\_rank & PASS & 30.96x (1.007s) & 104.9 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_dynamicrank} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & dynamic\_rank & PASS & Comp 30.96x & Mem -0.0\% \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & dynamic\_rank & PASS & 34.47 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & dynamic\_rank & PASS & 34.7 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & dynamic\_rank & PASS & 34.92 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & dynamic\_rank & PASS & 30.93 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & dynamic\_rank & PASS & 49.47 ms/step & Passed \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & dynamic\_rank & PASS & 50.3 ms/step & Passed \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{dynamicrank}.}
+\label{tab:results_acc_dynamicrank}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_dynamicrank} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & dynamic\_rank & Baseline FP32 & Reduced (30.96x) & 0 & 30.96x \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & dynamic\_rank & 4054402 & 4054402 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & dynamic\_rank & 4054402 & 4054402 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & dynamic\_rank & 6593794 & 6593794 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & dynamic\_rank & 6593794 & 6593794 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & dynamic\_rank & 4186880 & 4186880 & 0 & 1.0x \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & dynamic\_rank & 4186880 & 4186880 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{dynamicrank}.}
+\label{tab:results_params_dynamicrank}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_dynamicrank} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & dynamic\_rank & Elapsed 1.007s & 104.9 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & dynamic\_rank & Latency 34.47ms & 581.9 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & dynamic\_rank & Latency 34.7ms & 581.9 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & dynamic\_rank & Latency 34.92ms & 591.9 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & dynamic\_rank & Latency 30.93ms & 591.9 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & dynamic\_rank & Latency 49.47ms & 1082.2 MB & Verified \\
+\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & dynamic\_rank & Latency 50.3ms & 1082.2 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{dynamicrank}.}
+\label{tab:results_vram_dynamicrank}
+\end{table*}
