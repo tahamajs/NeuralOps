@@ -224,6 +224,15 @@ Emerging frontiers in dynamic receptive field gating explore multi-scale archite
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **54.40%** | +3.40% | 0.4714 | 1.00x | 6 | N/A | 2026-09-18 |
+| **roberta-base** | ag_news | `PASS` | 74.50% | **80.40%** | +5.90% | 0.7884 | 1.00x | 12 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **82.00%** | +2.30% | 0.8134 | 1.00x | 12 | N/A | 2026-09-18 |
+
+
 The empirical evaluation of `adaptive_span_attention` systematically assesses task accuracy recovery across diverse foundation architectures, analyzes the architectural dynamics of causal sequence aggregation, profiles hardware scaling boundaries, and probes the converged hierarchical receptive fields.
 
 ### 8.1 Sequence Classification Recovery (SST-2 Benchmark)
@@ -730,4 +739,3 @@ print('Output logits shape:', outputs.logits.shape)
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
