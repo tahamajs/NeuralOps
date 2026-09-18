@@ -1,21 +1,73 @@
-\section{Empirical Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-\subsection{SST-2 Performance Summary}
-Empirical findings are summarized in Table~\ref{tab:adaptive_span_results}.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_adaptivespanattention} details empirical evaluation metrics across target backbones.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{llcccc}
 \toprule
-\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params} & \textbf{VRAM (MB)} \\
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
 \midrule
-DistilBERT & PASS\_NO\_COMP & 89.45 & 81.72M & 382.7 \\
-RoBERTa    & PASS\_NO\_COMP & 78.56 & 161.26M & 688.2 \\
-GPT-2      & PASS\_NO\_COMP & 79.36 & 175.23M & 754.8 \\
-Qwen 3.5   & PASS          & 67.89 & 795.58M & 1918.4 \\
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & adaptive\_span & PASS\_NO\_COMPRESSION & 90.48 & 0.9089 \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & adaptive\_span & PASS\_NO\_COMPRESSION & 81.08 & 0.8328 \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 77.52 & 0.761 \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_span & PASS\_LOW & 53.1 & 0.2326 \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & adaptive\_span & PASS\_NO\_COMPRESSION & 85.09 & 0.8584 \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation from \texttt{results/unified\_adaptive\_span/*/summary.csv}.}
-\label{tab:adaptive_span_results}
-\end{table}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{adaptivespanattention}.}
+\label{tab:results_acc_adaptivespanattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_adaptivespanattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & adaptive\_span & 66955010 & 67544906 & 589896 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & adaptive\_span & 124441344 & 125621136 & 1179792 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_span & 763217728 & 750459760 & 4727856 & 1.017x \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & adaptive\_span & 124647170 & 125532050 & 884880 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{adaptivespanattention}.}
+\label{tab:results_params_adaptivespanattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_adaptivespanattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & full & 44867.91 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/distilbert/summary.csv} & distilbert & adaptive\_span & 25789.54 & 323.38 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & full & 26789.41 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/gpt2/summary.csv} & gpt2 & adaptive\_span & 11187.59 & 567.91 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & full & 656.41 & 1653.34 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_span & 586.65 & 1651.46 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & full & 27199.86 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_span/roberta/summary.csv} & roberta & adaptive\_span & 13743.09 & 624.7 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{adaptivespanattention}.}
+\label{tab:results_vram_adaptivespanattention}
+\end{table*}

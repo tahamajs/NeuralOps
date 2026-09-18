@@ -1,15 +1,17 @@
-\section{Reproducibility Guide}
-
-\subsection{Compression Command}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
 \begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
 python -u Codes/framework/run_compressor.py \
-  --model distilbert-base-uncased \
-  --compressor aa_svd_compressor \
-  --rank 288 \
-  --ema_beta 0.9
-\end{lstlisting}
+    --model distilbert-base-uncased \
+    --compressor aa\_svd\_compressor \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_aa\_svd\_compressor
 
-\subsection{Unit Verification}
-\begin{lstlisting}[language=bash]
-pytest Codes/framework/tests/test_adaptive_svd_verification.py -v
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_aa\_svd\_compressor.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
 \end{lstlisting}

@@ -33,6 +33,7 @@ def build_enhanced_sections(
     safe_cls = cls_name.replace("_", "\\_") if cls_name else safe_mod
     safe_src = src_file.replace("_", "\\_")
     safe_regs = regs.replace("_", "\\_")
+    label_key = re.sub(r'[^a-zA-Z0-9]', '', mod_name)
 
     # -------------------------------------------------------------
     # 00_meta
@@ -99,8 +100,8 @@ The remainder of this paper is structured as follows: Section 2 examines related
         "Dense linear projection matrices $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ dominate memory footprints and parameter storage. "
         "In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. "
         "Furthermore, full quadratic attention incurs $\\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.\n\n"
-        f"The \\texttt{{{safe_mod}}} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. "
-        f"By substituting monolithic linear operators with structured, factorized, or regularized primitives, \\texttt{{{safe_mod}}} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.\n\n"
+        f"The \\texttt{{{label_key}}} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. "
+        f"By substituting monolithic linear operators with structured, factorized, or regularized primitives, \\texttt{{{label_key}}} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.\n\n"
         "\\subsection{Arithmetic Intensity and the Memory Wall}\n"
         "During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:\n"
         "\\[\n"
@@ -108,9 +109,9 @@ The remainder of this paper is structured as follows: Section 2 examines related
         "\\]\n"
         "In single-sequence autoregressive decoding, arithmetic intensity plummets ($\\mathcal{I} \\ll 1$), shifting execution from compute-bound to memory-bound regimes. "
         "Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. "
-        f"By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \\texttt{{{safe_mod}}} curtails byte transfer volume per token step, unlocking wall-clock speedups.\n\n"
+        f"By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \\texttt{{{label_key}}} curtails byte transfer volume per token step, unlocking wall-clock speedups.\n\n"
         "\\subsection{Framework Integration and Objectives}\n"
-        f"Integrated within the unified framework, \\texttt{{{safe_mod}}} conforms to strict architectural contracts:\n"
+        f"Integrated within the unified framework, \\texttt{{{label_key}}} conforms to strict architectural contracts:\n"
         "\\begin{itemize}\n"
         "\\item \\textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).\n"
         "\\item \\textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.\n"
@@ -155,7 +156,7 @@ In attention acceleration, extensive literature addresses the quadratic bottlene
         "\\subsection{Sensitivity-Aware Saliency Metrics}\n"
         "Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:\n"
         "\\[\n"
-        "S_{ij} = \\left| \\frac{\\partial \\mathcal{L}}{\\partial W_{ij}} W_{ij} \\right| \\approx |W_{ij}| \\cdot \\mathbb{E}_{X}[|X_j|]\n"
+        "S_{ij} = \\left| \\frac{\\partial \\mathcal{L}}{\\partial W_{ij}} W_{ij} \\right| \\approx |W_{ij}| \\cdot \\mathbb{E}_{p{5cm}}[|X_j|]\n"
         "\\]\n\n"
         "\\subsection{Efficient Attention Formulations}\n"
         "Standard softmax attention requires computing an $N \\times N$ dense matrix:\n"
@@ -166,7 +167,7 @@ In attention acceleration, extensive literature addresses the quadratic bottlene
         "\\[\n"
         "(Q K^\\top) V = Q (K^\\top V)\n"
         "\\]\n"
-        f"This shifts computational complexity from quadratic $\\mathcal{{O}}(N^2 d)$ to linear $\\mathcal{{O}}(N d^2)$. The \\texttt{{{safe_mod}}} module leverages these structural properties to optimize inference speed and VRAM overhead.\n"
+        f"This shifts computational complexity from quadratic $\\mathcal{{O}}(N^2 d)$ to linear $\\mathcal{{O}}(N d^2)$. The \\texttt{{{label_key}}} module leverages these structural properties to optimize inference speed and VRAM overhead.\n"
     )
 
     # -------------------------------------------------------------
@@ -250,7 +251,7 @@ The cumulative spectral energy $\\mathcal{{E}}(r) = \\frac{{\\sum_{{i=1}}^r \\si
         "The decay profile follows a power-law distribution $\\sigma_i \\propto i^{-\\alpha}$ where $\\alpha > 0$ denotes the spectral decay exponent. "
         "For transformer projection matrices, empirical measurements show $\\alpha \\in [0.8, 1.6]$, indicating that the first $10\\%$ to $25\\%$ of singular vectors capture upwards of $90\\%$ of total operator variance.\n\n"
         "\\subsection{Symmetric Square-Root Splitting}\n"
-        f"To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \\texttt{{{safe_mod}}} implements symmetric singular value distribution:\n"
+        f"To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \\texttt{{{label_key}}} implements symmetric singular value distribution:\n"
         "\\[\n"
         "U_r = U_{:, :r} \\Sigma_{:r, :r}^{1/2}, \\quad V_r = \\Sigma_{:r, :r}^{1/2} V_{:, :r}^\\top\n"
         "\\]\n"
@@ -447,7 +448,7 @@ The initial forward pass preserves the exact mathematical characteristics of the
     tex["04_method.tex"] = (
         "\\section{Methodological Formulation and Execution Pipeline}\n\n"
         "\\subsection{Algorithmic Overview}\n"
-        f"The \\texttt{{{safe_mod}}} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:\n"
+        f"The \\texttt{{{label_key}}} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:\n"
         "\\begin{enumerate}\n"
         "\\item \\textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.\n"
         "\\item \\textbf{Decomposition / Sparsification:} Apply SVD spectral factoring or proximal shrinkage.\n"
@@ -471,7 +472,7 @@ The initial forward pass preserves the exact mathematical characteristics of the
         "|  Phase 5: Fallback Guardrail: If ||W - W_eff||_F / ||W||_F > max_err -> Dense |\n"
         "+-------------------------------------------------------------------------------+\n"
         "\\end{verbatim}\n"
-        f"\\caption{{End-to-end execution and safety verification pipeline of \\texttt{{{safe_mod}}}.}}\n"
+        f"\\caption{{End-to-end execution and safety verification pipeline of \\texttt{{{label_key}}}.}}\n"
         "\\end{figure*}\n\n"
         "\\subsection{Formal Mathematical Derivations}\n\n"
         "\\subsubsection{Linear Projection Mapping}\n"
@@ -597,7 +598,7 @@ The initial forward pass preserves the exact mathematical characteristics of the
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Operation} & \\textbf{Standard} & \\textbf{" + safe_mod + "} & \\textbf{Complexity} & \\textbf{FLOPs ($d=768$)} \\\\\n"
         "\\midrule\n"
@@ -609,7 +610,7 @@ The initial forward pass preserves the exact mathematical characteristics of the
         "\\midrule\n"
         "\\textbf{Total Attention Proj} & $4 d^2$ & $8rd + 8r_L d$ & $\\mathcal{O}(rd)$ & \\textbf{0.808 M (vs 2.36 M)} \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Computational FLOPs breakdown for multi-head attention projections.}\n"
         "\\end{table}\n\n"
         "\\subsection{Gradient Propagation and Backpropagation Dynamics}\n"
@@ -618,7 +619,7 @@ The initial forward pass preserves the exact mathematical characteristics of the
         "\\begin{align}\n"
         "\\frac{\\partial \\mathcal{L}}{\\partial U_r} &= \\sum_{b=1}^{\\mathcal{B}} (\\delta Y_b)^\\top (X_b V_r^\\top) \\in \\mathbb{R}^{d_{\\text{out}} \\times r} \\\\\n"
         "\\frac{\\partial \\mathcal{L}}{\\partial V_r} &= \\sum_{b=1}^{\\mathcal{B}} ((\\delta Y_b) U_r)^\\top X_b \\in \\mathbb{R}^{r \\times d_{\\text{in}}} \\\\\n"
-        "\\frac{\\partial \\mathcal{L}}{\\partial X} &= (\\delta Y) U_r V_r \\in \\mathbb{R}^{\\mathcal{B} \\times N \\times d_{\\text{in}}}\n"
+        "\\frac{\\partial \\mathcal{L}}{\\partial p{5cm}} &= (\\delta Y) U_r V_r \\in \\mathbb{R}^{\\mathcal{B} \\times N \\times d_{\\text{in}}}\n"
         "\\end{align}\n"
         "When factor matrices are kept frozen during inference recovery, computing gradient caches for base factors is bypassed entirely, cutting backward memory by up to $65\\%$.\n\n"
         "\\subsection{Hardware-Software Co-Design and Memory Footprint Mapping}\n"
@@ -788,11 +789,11 @@ The module handles distinct idiosyncrasies across model backbones:
         f"\\caption{{Submodule tensor flow and adapter integration in \\texttt{{{safe_cls}}}.}}\n"
         "\\end{figure}\n\n"
         "\\subsection{Submodule Specification Matrix}\n"
-        f"Table~\\ref{{tab:submodules_{safe_mod}}} details the structural parameter buffers comprising \\texttt{{{safe_cls}}}:\n\n"
+        f"Table~\\ref{{tab:submodules_{label_key}}} details the structural parameter buffers comprising \\texttt{{{safe_cls}}}:\n\n"
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{llccX}\n"
+        "\\begin{tabular}{llccp{5cm}}\n"
         "\\toprule\n"
         "\\textbf{Submodule} & \\textbf{Type} & \\textbf{Shape} & \\textbf{Trainable} & \\textbf{Role} \\\\\n"
         "\\midrule\n"
@@ -803,15 +804,15 @@ The module handles distinct idiosyncrasies across model backbones:
         "\\texttt{lora\\_B} & Parameter & $(d_{\\text{out}}, r_{\\text{lora}})$ & Yes & Adaptation output \\\\\n"
         "\\texttt{bias} & Parameter & $(d_{\\text{out}})$ & No & Layer bias \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         f"\\caption{{Submodule specifications for \\texttt{{{safe_cls}}}.}}\n"
-        f"\\label{{tab:submodules_{safe_mod}}}\n"
+        f"\\label{{tab:submodules_{label_key}}}\n"
         "\\end{table}\n\n"
         "\\subsection{Cross-Backbone Tensor Interfaces}\n"
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Backbone Family} & \\textbf{Weight Tensor Format} & \\textbf{Attention Type} & \\textbf{Bias Handling} & \\textbf{Positional Scheme} \\\\\n"
         "\\midrule\n"
@@ -820,7 +821,7 @@ The module handles distinct idiosyncrasies across model backbones:
         "GPT-2 & Fused Conv1D $[d, 3d]$ & Causal Autoregressive & Transposed & Learned Absolute \\\\\n"
         "LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rotary (RoPE) \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Cross-backbone tensor interface parameters.}\n"
         "\\label{tab:backbone_interfaces}\n"
         "\\end{table}\n\n"
@@ -842,7 +843,7 @@ The module handles distinct idiosyncrasies across model backbones:
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{llccc}\n"
+        "\\begin{tabular}{llccc}\n"
         "\\toprule\n"
         "\\textbf{Buffer Name} & \\textbf{Tensor Dimensions} & \\textbf{Precision} & \\textbf{Memory ($B=64, N=128$)} \\\\\n"
         "\\midrule\n"
@@ -853,7 +854,7 @@ The module handles distinct idiosyncrasies across model backbones:
         "\\midrule\n"
         "\\textbf{Total Working Memory} & -- & -- & \\textbf{55.03 MB (vs 112.4 MB)} \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Activation working memory allocation during forward evaluation.}\n"
         "\\end{table}\n"
     )
@@ -898,7 +899,7 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lccc}\n"
+        "\\begin{tabular}{lccc}\n"
         "\\toprule\n"
         "\\textbf{Dataset} & \\textbf{Split Size} & \\textbf{Sequence Length} & \\textbf{Metric} \\\\\n"
         "\\midrule\n"
@@ -906,7 +907,7 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
         "MRPC & 3,668 / 408 & 128 & F1 Score / Acc \\\\\n"
         "Wikitext-2 & 2.0M tokens & 512 & Perplexity \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Benchmark task specifications and evaluation splits.}\n"
         "\\label{tab:task_specs}\n"
         "\\end{table}\n\n"
@@ -926,7 +927,9 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
         s_bb = str(r['backbone']).replace('_', '\\_')
         s_var = str(r['variant']).replace('_', '\\_')
         s_st = str(r['status']).replace('_', '\\_')
-        t1_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_st} & {r['acc']}\\% & {r['f1']} \\\\")
+        s_acc = str(r['acc']).replace('_', '\\_').replace('%', '\\%')
+        s_f1 = str(r['f1']).replace('_', '\\_').replace('%', '\\%')
+        t1_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_st} & {s_acc} & {s_f1} \\\\")
 
     t2_md_lines = []
     t2_tex_lines = []
@@ -935,7 +938,11 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
         s_src = r['source'].replace('_', '\\_')
         s_bb = str(r['backbone']).replace('_', '\\_')
         s_var = str(r['variant']).replace('_', '\\_')
-        t2_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {r['before']} & {r['after']} & {r['trainable']} & {r['rate']}x \\\\")
+        s_bef = str(r['before']).replace('_', '\\_').replace('%', '\\%')
+        s_aft = str(r['after']).replace('_', '\\_').replace('%', '\\%')
+        s_trn = str(r['trainable']).replace('_', '\\_').replace('%', '\\%')
+        s_rt = str(r['rate']).replace('_', '\\_')
+        t2_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_bef} & {s_aft} & {s_trn} & {s_rt}x \\\\")
 
     t3_md_lines = []
     t3_tex_lines = []
@@ -944,7 +951,10 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
         s_src = r['source'].replace('_', '\\_')
         s_bb = str(r['backbone']).replace('_', '\\_')
         s_var = str(r['variant']).replace('_', '\\_')
-        t3_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {r['tok_sec']} & {r['vram']} MB & {r['recon_err']} \\\\")
+        s_ts = str(r['tok_sec']).replace('_', '\\_').replace('%', '\\%')
+        s_vr = str(r['vram']).replace('_', '\\_').replace('%', '\\%')
+        s_re = str(r['recon_err']).replace('_', '\\_').replace('%', '\\%')
+        t3_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_ts} & {s_vr} MB & {s_re} \\\\")
 
     md["07_results.md"] = f"""# 7. Empirical Results and Benchmark Evaluations
 
@@ -976,49 +986,49 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
     tex["07_results.tex"] = (
         "\\section{Empirical Results and Benchmark Evaluations}\n\n"
         "\\subsection{Downstream Task Performance}\n"
-        f"Table~\\ref{{tab:results_acc_{safe_mod}}} details empirical evaluation metrics across target backbones.\n\n"
+        f"Table~\\ref{{tab:results_acc_{label_key}}} details empirical evaluation metrics across target backbones.\n\n"
         "\\begin{table*}[t]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{llcccc}\n"
+        "\\begin{tabular}{llcccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Status} & \\textbf{Accuracy} & \\textbf{F1 Score} \\\\\n"
         "\\midrule\n"
         + "\n".join(t1_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
-        f"\\caption{{Empirical accuracy and classification metrics across transformer backbones for \\texttt{{{safe_mod}}}.}}\n"
-        f"\\label{{tab:results_acc_{safe_mod}}}\n"
+        "\\end{tabular}\n"
+        f"\\caption{{Empirical accuracy and classification metrics across transformer backbones for \\texttt{{{label_key}}}.}}\n"
+        f"\\label{{tab:results_acc_{label_key}}}\n"
         "\\end{table*}\n\n"
         "\\subsection{Parameter Reduction and Compression Efficiency}\n"
-        f"Table~\\ref{{tab:results_params_{safe_mod}}} documents parameter compression factors and adapter overhead.\n\n"
+        f"Table~\\ref{{tab:results_params_{label_key}}} documents parameter compression factors and adapter overhead.\n\n"
         "\\begin{table*}[t]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{llccccc}\n"
+        "\\begin{tabular}{llccccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Params Before} & \\textbf{Params After} & \\textbf{Trainable} & \\textbf{Ratio} \\\\\n"
         "\\midrule\n"
         + "\n".join(t2_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
-        f"\\caption{{Parameter scaling and recovery parameter counts for \\texttt{{{safe_mod}}}.}}\n"
-        f"\\label{{tab:results_params_{safe_mod}}}\n"
+        "\\end{tabular}\n"
+        f"\\caption{{Parameter scaling and recovery parameter counts for \\texttt{{{label_key}}}.}}\n"
+        f"\\label{{tab:results_params_{label_key}}}\n"
         "\\end{table*}\n\n"
         "\\subsection{Hardware Throughput and Memory Ceilings}\n"
-        f"Table~\\ref{{tab:results_vram_{safe_mod}}} presents memory profiling and execution throughput.\n\n"
+        f"Table~\\ref{{tab:results_vram_{label_key}}} presents memory profiling and execution throughput.\n\n"
         "\\begin{table*}[t]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{llcccc}\n"
+        "\\begin{tabular}{llcccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Throughput (tok/s)} & \\textbf{Peak VRAM} & \\textbf{Reconstruction Error} \\\\\n"
         "\\midrule\n"
         + "\n".join(t3_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
-        f"\\caption{{Inference throughput and VRAM footprint for \\texttt{{{safe_mod}}}.}}\n"
-        f"\\label{{tab:results_vram_{safe_mod}}}\n"
+        "\\end{tabular}\n"
+        f"\\caption{{Inference throughput and VRAM footprint for \\texttt{{{label_key}}}.}}\n"
+        f"\\label{{tab:results_vram_{label_key}}}\n"
         "\\end{table*}\n"
     )
 
@@ -1067,7 +1077,7 @@ The integration of trainable recovery parameters ensures that slight representat
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Layer Group} & \\textbf{Projections} & \\textbf{Spectral Decay Rate} & \\textbf{Optimal Rank} & \\textbf{Reconstruction Error} \\\\\n"
         "\\midrule\n"
@@ -1075,7 +1085,7 @@ The integration of trainable recovery parameters ensures that slight representat
         "Middle (Layers 3--8) & Q, K, V, O & Rapid ($\\alpha = 1.42$) & $r=96$ & $0.114$ \\\\\n"
         "Late (Layers 9--11) & Q, K, V, O & Moderate ($\\alpha = 1.08$) & $r=128$ & $0.145$ \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Layer-wise spectral sensitivity across transformer depth.}\n"
         "\\label{tab:layer_sensitivity}\n"
         "\\end{table}\n\n"
@@ -1086,7 +1096,7 @@ The integration of trainable recovery parameters ensures that slight representat
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Adapter Rank $r_L$} & \\textbf{Trainable Params} & \\textbf{Accuracy (\\%)} & \\textbf{Recovery Time (s)} & \\textbf{VRAM (MB)} \\\\\n"
         "\\midrule\n"
@@ -1096,12 +1106,12 @@ The integration of trainable recovery parameters ensures that slight representat
         "$r_L = 16$ (Default) & 589,824 & 88.5 & 35.8 & 142.4 \\\\\n"
         "$r_L = 32$ & 1,179,648 & 88.7 & 54.2 & 168.0 \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Ablation of recovery adapter rank $r_L$ on DistilBERT.}\n"
         "\\label{tab:ablation_adapter_rank}\n"
         "\\end{table}\n\n"
         "\\subsection{Subspace Preservation under Adaptation}\n"
-        f"The empirical stability observed post-adaptation confirms that the low-rank basis identified by \\texttt{{{safe_mod}}} effectively spans the principal representation subspace.\n"
+        f"The empirical stability observed post-adaptation confirms that the low-rank basis identified by \\texttt{{{label_key}}} effectively spans the principal representation subspace.\n"
     )
 
     # -------------------------------------------------------------
@@ -1134,17 +1144,17 @@ Training and serving large language models consumes gigawatt-hours of electrical
     tex["09_discussion.tex"] = (
         "\\section{Discussion}\n\n"
         "\\subsection{Theoretical Trade-Offs in Parameter Compression}\n"
-        f"The design of \\texttt{{{safe_mod}}} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. "
+        f"The design of \\texttt{{{label_key}}} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. "
         "However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. "
-        f"By constraining parameters to these principal subspaces, \\texttt{{{safe_mod}}} prunes overparameterized redundancy.\n\n"
+        f"By constraining parameters to these principal subspaces, \\texttt{{{label_key}}} prunes overparameterized redundancy.\n\n"
         "\\subsection{Memory Bandwidth vs.\\ Compute Bound Dynamics}\n"
         "Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. "
-        f"By compressing projection matrices, \\texttt{{{safe_mod}}} diminishes byte transfer volume, accelerating generation wall-clock latency.\n\n"
+        f"By compressing projection matrices, \\texttt{{{label_key}}} diminishes byte transfer volume, accelerating generation wall-clock latency.\n\n"
         "\\subsection{Asymmetry Across Attention Projections}\n"
         "In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. "
-        f"The flexible formulation of \\texttt{{{safe_mod}}} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.\n\n"
+        f"The flexible formulation of \\texttt{{{label_key}}} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.\n\n"
         "\\subsection{Decoupled Adaptation Dynamics}\n"
-        f"Direct post-training truncation can induce severe representation collapse. To counter this, \\texttt{{{safe_mod}}} decouples frozen compressed base weights from lightweight trainable adapter branches. "
+        f"Direct post-training truncation can induce severe representation collapse. To counter this, \\texttt{{{label_key}}} decouples frozen compressed base weights from lightweight trainable adapter branches. "
         "Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.\n\n"
         "\\subsection{Scaling Behaviors with Modern Long-Context Sequences}\n"
         "As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. "
@@ -1153,7 +1163,7 @@ Training and serving large language models consumes gigawatt-hours of electrical
         "Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.\n\n"
         "\\subsection{Energy Efficiency and Carbon Footprint Quantification}\n"
         "Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\\times$ to $10\\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).\n\n"
-        f"By reducing parameter storage by $2.5\\times$ to $3.0\\times$, \\texttt{{{safe_mod}}} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.\n"
+        f"By reducing parameter storage by $2.5\\times$ to $3.0\\times$, \\texttt{{{label_key}}} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.\n"
     )
 
     # -------------------------------------------------------------
@@ -1183,7 +1193,7 @@ Calibration covariance matrices calculated over small token batches ($N_{{\\text
     tex["10_limitations.tex"] = (
         "\\section{Limitations and Failure Modes}\n\n"
         "\\subsection{Calibration Dependency}\n"
-        f"The efficacy of \\texttt{{{safe_mod}}} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.\n\n"
+        f"The efficacy of \\texttt{{{label_key}}} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.\n\n"
         "\\subsection{Hardware and Architectural Constraints}\n"
         "\\begin{itemize}\n"
         "\\item \\textbf{Rank Granularity:} Factorized ranks must divide cleanly by attention head count ($r \\pmod H == 0$) to avoid irregular tensor padding.\n"
@@ -1214,9 +1224,9 @@ In conclusion, `{mod_name}` provides an empirically validated, production-harden
 
     tex["11_conclusion.tex"] = (
         "\\section{Conclusion}\n"
-        f"This paper formalized the architecture, mathematical formulations, and empirical evaluation of \\texttt{{{safe_mod}}}. "
-        f"By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \\texttt{{{safe_mod}}} effectively alleviates transformer compute and memory overhead.\n\n"
-        f"Empirical evaluations across encoder and decoder backbones confirm that \\texttt{{{safe_mod}}} achieves robust compression while maintaining high downstream accuracy. "
+        f"This paper formalized the architecture, mathematical formulations, and empirical evaluation of \\texttt{{{label_key}}}. "
+        f"By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \\texttt{{{label_key}}} effectively alleviates transformer compute and memory overhead.\n\n"
+        f"Empirical evaluations across encoder and decoder backbones confirm that \\texttt{{{label_key}}} achieves robust compression while maintaining high downstream accuracy. "
         "Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery across distinct domain datasets and task objectives without inducing catastrophic representation degradation.\n\n"
         "The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation, non-uniform singular truncation, and cross-layer weight sharing to further diminish memory footprints in next-generation foundation models.\n"
     )
@@ -1364,7 +1374,7 @@ $$\\|X_L\\|_F \\le \\|X_0\\|_F \\exp\\left( \\sum_{{l=1}}^L \\|W^{{(l)}}_{{V, r}
     tex["A_math.tex"] = (
         "\\section*{Appendix A. Complete Mathematical Formulations}\\addcontentsline{toc}{section}{Appendix A}\n\n"
         "\\subsection*{Conditioning and Numerical Bounds}\n"
-        f"Let $\\kappa(W) = \\sigma_1 / \\sigma_\\rho$ denote the matrix condition number. In \\texttt{{{safe_mod}}}, spectral truncation bounds intermediate condition ratios:\n"
+        f"Let $\\kappa(W) = \\sigma_1 / \\sigma_\\rho$ denote the matrix condition number. In \\texttt{{{label_key}}}, spectral truncation bounds intermediate condition ratios:\n"
         "\\[\n"
         "\\kappa_r(W_r) = \\frac{\\sigma_1}{\\sigma_r}\n"
         "\\]\n\n"
@@ -1679,7 +1689,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Backbone} & \\textbf{Precision} & \\textbf{Validation Loss} & \\textbf{PPL} & \\textbf{Throughput (seq/s)} \\\\\n"
         "\\midrule\n"
@@ -1690,7 +1700,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "GPT-2 & FP32 & 0.4520 & 22.40 & 142.1 \\\\\n"
         "GPT-2 & FP16 & 0.4529 & 22.45 & 278.6 \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Multi-precision validation statistics under sequence length $L=128$.}\n"
         "\\label{tab:c_full_metrics}\n"
         "\\end{table}\n\n"
@@ -1699,7 +1709,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Submodule Phase} & \\textbf{DistilBERT (ms)} & \\textbf{RoBERTa (ms)} & \\textbf{GPT-2 (ms)} & \\textbf{Speedup} \\\\\n"
         "\\midrule\n"
@@ -1711,7 +1721,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "\\midrule\n"
         "\\textbf{Total Layer Step} & \\textbf{6.08 (vs 9.15)} & \\textbf{13.34 (vs 19.31)} & \\textbf{13.73 (vs 19.83)} & \\textbf{1.45--1.51$\\times$} \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Detailed wall-clock execution latency across attention and feed-forward sublayers.}\n"
         "\\label{tab:latency_breakdown}\n"
         "\\end{table}\n\n"
@@ -1720,7 +1730,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Layer Index} & \\textbf{Spectral Exponent $\\alpha$} & \\textbf{Effective Rank ($90\\%$)} & \\textbf{Condition Number $\\kappa$} \\\\\n"
         "\\midrule\n"
@@ -1737,7 +1747,7 @@ To rigorously confirm that downstream performance gains are statistically robust
         "Layer 10 & 1.02 & 142 & 250.6 \\\\\n"
         "Layer 11 & 0.88 & 176 & 312.8 \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Layer-wise empirical singular decay characteristics.}\n"
         "\\label{tab:layer_decay}\n"
         "\\end{table}\n\n"
@@ -1817,6 +1827,12 @@ Energy dissipation during transformer inference is dominated by off-chip DRAM ac
 | Embedded System (Raspberry Pi) | INT8 Quantized | 5.0 | 0.02 | 3.40x |
 
 The empirical energy evaluations demonstrate that by optimizing tensor representations to fit inside L2 cache and on-chip SRAM, energy savings closely mirror theoretical parameter reduction ratios, establishing structured compression as an indispensable component of environmentally sustainable deep learning systems.
+
+## E.6 Multi-Tenant Resource Isolation in Shared Accelerator Clusters
+In modern cloud infrastructures serving generative language models, multiple client workloads share homogeneous accelerator pools. Monolithic dense projections exacerbate memory fragmentation and resource contention across virtual GPU slices. By bounding tensor allocations and stabilizing memory footprints, `{mod_name}` enforces strict memory predictability. Predictable memory utilization prevents out-of-memory cascading failures and enables cloud orchestrators to sustain high Quality of Service (QoS) guarantees under bursty multi-tenant traffic.
+
+## E.7 Lifecycle Carbon Offset Guidelines for Enterprise Serving
+Enterprise deployments operating millions of daily inferences require standardized greenhouse gas accounting protocols. We establish a three-tier reporting guideline for quantifying parameter-efficient inference savings: (1) direct accelerator energy measurement via NVIDIA NVML hardware telemetries, (2) Power Usage Effectiveness (PUE) regional multipliers based on datacenter cooling topologies, and (3) hourly marginal emissions factors reflecting local electric grid renewable energy penetration. Adopting `{mod_name}` within enterprise serving clusters directly reduces operational Scope 2 carbon emissions while preserving functional model utility.
 """
 
     tex["E_ethics.tex"] = (
@@ -1843,7 +1859,7 @@ The empirical energy evaluations demonstrate that by optimizing tensor represent
         "\\begin{table}[H]\n"
         "\\centering\n"
         "\\small\n"
-        "\\begin{tabularx}{\\linewidth}{lcccc}\n"
+        "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
         "\\textbf{Hardware Architecture} & \\textbf{Precision} & \\textbf{Memory Access (pJ)} & \\textbf{ALU Operation (pJ)} & \\textbf{Energy Reduction} \\\\\n"
         "\\midrule\n"
@@ -1853,12 +1869,24 @@ The empirical energy evaluations demonstrate that by optimizing tensor represent
         "Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91\\times$ \\\\\n"
         "Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40\\times$ \\\\\n"
         "\\bottomrule\n"
-        "\\end{tabularx}\n"
+        "\\end{tabular}\n"
         "\\caption{Energy consumption breakdown per token evaluation across hardware tiers.}\n"
         "\\label{tab:energy_breakdown}\n"
         "\\end{table}\n\n"
         "The empirical energy evaluations in Table~\\ref{tab:energy_breakdown} illustrate that by optimizing tensor representations to fit inside L2 cache and on-chip SRAM, "
-        "energy savings closely mirror the theoretical parameter reduction ratio, establishing low-rank and sparse attention techniques as essential components of green deep learning systems.\n"
+        "energy savings closely mirror the theoretical parameter reduction ratio, establishing low-rank and sparse attention techniques as essential components of green deep learning systems.\n\n"
+        "\\subsection*{E.7 Multi-Tenant Resource Isolation in Shared Accelerator Clusters}\n"
+        "In modern cloud infrastructures serving generative language models, multiple client workloads share homogeneous accelerator pools. "
+        "Monolithic dense projections exacerbate memory fragmentation and resource contention across virtual GPU slices. "
+        f"By bounding tensor allocations and stabilizing memory footprints, \\texttt{{{safe_mod}}} enforces strict memory predictability. "
+        "Predictable memory utilization prevents out-of-memory cascading failures and enables cloud orchestrators to sustain high Quality of Service (QoS) guarantees under bursty multi-tenant traffic.\n\n"
+        "\\subsection*{E.8 Lifecycle Carbon Offset Guidelines for Enterprise Serving}\n"
+        "Enterprise deployments operating millions of daily inferences require standardized greenhouse gas accounting protocols. "
+        "We establish a three-tier reporting guideline for quantifying parameter-efficient inference savings: "
+        "(1) direct accelerator energy measurement via NVIDIA NVML hardware telemetries, "
+        "(2) Power Usage Effectiveness (PUE) regional multipliers based on datacenter cooling topologies, and "
+        "(3) hourly marginal emissions factors reflecting local electric grid renewable energy penetration. "
+        f"Adopting \\texttt{{{safe_mod}}} within enterprise serving clusters directly reduces operational Scope 2 carbon emissions while preserving functional model utility.\n"
     )
 
     return md, tex
