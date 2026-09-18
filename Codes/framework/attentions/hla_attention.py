@@ -386,8 +386,8 @@ class HLAAttention(BaseAttention):
     ) -> torch.Tensor:
         """Vectorized parallel linear associative scan via tensor contraction."""
         B, H, L, d = q.shape
-        q_f = q.float()
-        k_f = k.float()
+        q_f = torch.nn.functional.elu(q.float()) + 1.0
+        k_f = torch.nn.functional.elu(k.float()) + 1.0
         v_f = v.float()
 
         if mask is not None:
@@ -403,7 +403,7 @@ class HLAAttention(BaseAttention):
         decay_mat = torch.exp(diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1)) * tri_mask.float().unsqueeze(0).unsqueeze(0)
 
         # Attention weights with exponential decay: scores = (q @ k^T) * decay_mat
-        qk = torch.matmul(q_f, k_f.transpose(-1, -2))  # [B, H, L, L]
+        qk = torch.matmul(q_f, k_f.transpose(-1, -2)) # [B, H, L, L]
         scores = qk * decay_mat
 
         # Numerator: y_num = scores @ v
