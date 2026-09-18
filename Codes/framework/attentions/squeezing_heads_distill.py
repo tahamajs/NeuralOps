@@ -145,6 +145,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("squeezing_heads_distiller", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("squeezing_heads_distill", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("squeezing_heads", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("squeezing_heads_module", supports_causal=True, supports_gqa=True)
 class SqueezingHeadsDistiller(BaseAttention):
     r"""Attention layer wrapper for multi-head distillation and compression studies.
     Hardened for production use across diverse transformer architectures.
