@@ -34,8 +34,8 @@ A single recalibration pass, costing \textbf{2.3 s}, recovers
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Extremely small models:} <10M params; overhead dominates.
-\item \textbf{Extremely large models:} >10B; SVD time dominates.
+\item \textbf{Extremely small models:} $<$10M params; overhead dominates.
+\item \textbf{Extremely large models:} $>$10B; SVD time dominates.
 \item \textbf{Latency-critical applications:} Factorized layers are slower than dense
   layers on GPUs (two matmuls instead of one).
 \item \textbf{Models with non-linear attention:} A3 only compresses linear layers.
@@ -43,24 +43,15 @@ A single recalibration pass, costing \textbf{2.3 s}, recovers
 \end{itemize}
 \subsection{Decision Flowchart}
 
-\begin{lstlisting}
-Start
-  |
-   
-Need to reduce model size on disk? --- Yes --- Use A3
-  |
-  No
-   
-Need to reduce inference VRAM? --- Yes --- Use A3
-  |
-  No
-   
-Need to reduce inference latency? --- Yes --- DON'T use A3
-  |
-  No
-   
-Consider quantization instead
-\end{lstlisting}
+Figure~\ref{fig:decision_flowchart} summarises when A3 is and is not appropriate.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/decision_flowchart.pdf}
+\caption{Decision flowchart for when to apply A3 compression. Use A3 for storage- or VRAM-constrained deployment; avoid for latency-critical or very small/very large models.}
+\label{fig:decision_flowchart}
+\end{figure}
+
 
 \subsection{Cost-Benefit Analysis}
 
@@ -102,7 +93,15 @@ DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
 
 A3 preserves 90.02\% validation accuracy on DistilBERT with \textbf{no retraining from scratch}.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_9_1.pdf}
+\caption{Accuracy vs compression ratio trade-off for A3 versus prior compression methods (ALBERT, DistilBERT, vanilla SVD). A3 prioritizes accuracy preservation over aggressive compression.}
+\label{fig:comparison_methods}
+\end{figure}
+
 \subsection{Deployment Considerations}
+
 
 \subsubsection{Storage}
 

@@ -141,7 +141,7 @@ GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) 
 \label{tab:repro_expected}
 \end{table}
 
-Deviations >2\% suggest environmental differences.
+Deviations $>$2\% suggest environmental differences.
 
 \subsection{Data Availability}
 
@@ -169,6 +169,6 @@ print('CUDA ver:', torch.version.cuda)
 
 \begin{itemize}
 \item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}
-\item CUDA version: >= 11.8 recommended
+\item CUDA version: $\ge$11.8 recommended
 \item Checkpoint paths: some baselines may need to be re-downloaded
 \end{itemize}

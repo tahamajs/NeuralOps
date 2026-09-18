@@ -197,7 +197,15 @@ GPT-2 & A3 & 4.5 s (5.16 ms/samp) & 572 MB & 12,412 \\
 
 \textbf{Observation.} Setting target rank below 64 leads to excessive error escalation and higher fallback frequency, whereas ranks between 192 and 256 provide the optimal balance between representation fidelity and model parameter reduction.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_7_3.pdf}
+\caption{Downstream validation accuracy as a function of rank ceiling $r_{\mathrm{ceiling}}$ across DistilBERT, RoBERTa, and GPT-2. Diminishing accuracy gains above rank 192 justify the production default.}
+\label{fig:rank_accuracy}
+\end{figure}
+
 \subsection{Ablation: Fisher Weighting}
+
 
 \textbf{Table 7.7: Effect of Fisher weighting.}
 
