@@ -1,0 +1,6 @@
+{
+  "task": "listops",
+  "module": "performer_attention",
+  "best_accuracy": 10.2,
+  "epochs": 10
+}

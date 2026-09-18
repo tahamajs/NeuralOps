@@ -438,7 +438,7 @@ def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional
 def apply_module_to_model(
     model: nn.Module,
     module_name: str,
-    module_type: str,
+    module_type: str = "auto",
     rank: int = 16,
     device: torch.device = torch.device("cpu"),
 ) -> Tuple[nn.Module, float]:
@@ -447,6 +447,15 @@ def apply_module_to_model(
     Returns the adapted model and the compression ratio achieved.
     """
     orig_params = sum(p.numel() for p in model.parameters())
+
+    if not module_name or module_name.lower() in ("none", "baseline"):
+        return model, 1.0
+
+    # Module alias mappings
+    if module_name == "hla_inject":
+        module_name = "hla_attention"
+    elif module_name == "jamba":
+        module_name = "jamba"
 
     # Auto-detect module category if misclassified
     if module_name in ATTENTION_REGISTRY:
@@ -504,27 +513,27 @@ def apply_module_to_model(
         if not injected:
             if module_name in ATTENTION_REGISTRY:
                 inject_attention(model, module_name, rank=rank, copy_weights=True)
-        else:
-            try:
-                import importlib
-                mod = importlib.import_module(f"framework.attentions.{module_name}")
-                target_cls = None
-                for attr in dir(mod):
-                    obj = getattr(mod, attr)
-                    if isinstance(obj, type) and issubclass(obj, nn.Module) and "Attention" in attr and attr != "BaseAttention":
-                        target_cls = obj
-                        break
-                if target_cls is not None:
-                    cfg = getattr(model, "config", None)
-                    for name, sub in list(model.named_modules()):
-                        if "attention" in name.lower() and hasattr(sub, "self"):
-                            new_inner = target_cls(cfg)
-                            wrapped = UniversalAttentionWrapper(new_inner)
-                            setattr(sub, "self", wrapped)
-                else:
-                    raise ValueError(f"No valid attention class found in module '{module_name}'")
-            except Exception as e:
-                raise RuntimeError(f"Could not inject attention '{module_name}': {e}")
+            else:
+                try:
+                    import importlib
+                    mod = importlib.import_module(f"framework.attentions.{module_name}")
+                    target_cls = None
+                    for attr in dir(mod):
+                        obj = getattr(mod, attr)
+                        if isinstance(obj, type) and issubclass(obj, nn.Module) and ("Attention" in attr or "Block" in attr) and attr != "BaseAttention":
+                            target_cls = obj
+                            break
+                    if target_cls is not None:
+                        cfg = getattr(model, "config", None)
+                        for name, sub in list(model.named_modules()):
+                            if "attention" in name.lower() and hasattr(sub, "self"):
+                                new_inner = target_cls(cfg)
+                                wrapped = UniversalAttentionWrapper(new_inner)
+                                setattr(sub, "self", wrapped)
+                    else:
+                        raise ValueError(f"No valid attention class found in module '{module_name}'")
+                except Exception as e:
+                    raise RuntimeError(f"Could not inject attention '{module_name}': {e}")
 
     elif module_type == "compressor":
         if module_name not in COMPRESSOR_REGISTRY:
