@@ -834,9 +834,9 @@ def main():
                     help="Fallback to original weights if reconstruction error exceeds threshold")
     ap.add_argument("--defer_export", action="store_true", default=False,
                     help="Defer Hugging Face upload and Git commit to orchestrator script")
-    ap.add_argument("--max_error", type=float, default=0.20,
+    ap.add_argument("--max_error", type=float, default=0.40,
                     help="Default maximum reconstruction error threshold across compression modules")
-    ap.add_argument("--a3_max_error", type=float, default=0.20,
+    ap.add_argument("--a3_max_error", type=float, default=None,
                     help="Maximum reconstruction error threshold for A3 before fallback")
     ap.add_argument("--a3_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict A3 compression to attention layers only")
@@ -2338,7 +2338,9 @@ def main():
                             setattr(model.config, "target_attention_only", args.target_attention_only)
 
                         if name in ("a3", "a3_compressor"):
-                            a3_err = getattr(args, "a3_max_error", getattr(args, "max_error", 0.20))
+                            a3_err = getattr(args, "a3_max_error", None)
+                            if a3_err is None:
+                                a3_err = getattr(args, "max_error", 0.40)
                             setattr(model.config, "a3_max_error", a3_err)
                             setattr(model.config, "max_error", a3_err)
                             a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
