@@ -435,13 +435,10 @@ class A3Compressor(BaseCompressor):
         raw_w = target_mod.weight.data.float()
         bias = getattr(target_mod, "bias", getattr(module, "bias", None))
 
-        if hasattr(target_mod, "nf"):
-            out_f = target_mod.nf
-            in_f = getattr(target_mod, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
-            W = raw_w.t().contiguous() if raw_w.shape == (in_f, out_f) else raw_w
-        elif hasattr(module, "nf"):
-            out_f = module.nf
-            in_f = getattr(module, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
+        mod_with_nf = target_mod if hasattr(target_mod, "nf") else (module if hasattr(module, "nf") else None)
+        if mod_with_nf is not None:
+            out_f = mod_with_nf.nf
+            in_f = getattr(mod_with_nf, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
             W = raw_w.t().contiguous() if raw_w.shape == (in_f, out_f) else raw_w
         elif bias is not None and bias.ndim == 1 and bias.shape[0] == raw_w.shape[1] and bias.shape[0] != raw_w.shape[0]:
             W = raw_w.t().contiguous()
@@ -522,6 +519,7 @@ class A3Compressor(BaseCompressor):
         # Calculate ceiling BEFORE the retry loop (Option A: max 320, below break-even)
         r_break_even = (in_f * out_f) / (in_f + out_f)
         r_ceiling = min(int(0.9 * r_break_even), 320)
+        self._last_r_ceiling = max(getattr(self, "_last_r_ceiling", 0), r_ceiling)
         current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
@@ -757,6 +755,7 @@ class A3Compressor(BaseCompressor):
             "num_fallback": skipped_count,
             "num_compressed_layers": factorized_count,
             "num_fallback_layers": skipped_count,
+            "r_ceiling": getattr(self, "_last_r_ceiling", getattr(self, "rank", 320)),
             "compressed_layers": self.compressed_layers,
             "rank": self.rank,
             "use_fisher": self.use_fisher,
