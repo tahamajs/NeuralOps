@@ -1,2 +1,67 @@
-\section{Empirical Results}
-Evaluation pending sweep run.
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_vigattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & vig & PASS & 88.3 & 0.8854 \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & vig & PASS & 61.35 & 0.7185 \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & vig & PASS & 61.24 & 0.7188 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{vigattention}.}
+\label{tab:results_acc_vigattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_vigattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & vig & 66955010 & 67655594 & 1292714 & 0.9896x \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & vig & 124441344 & 125842512 & 1402704 & 0.9889x \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & vig & 124647170 & 133135442 & 1993298 & 0.9362x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{vigattention}.}
+\label{tab:results_params_vigattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_vigattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & full & 141848.23 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_vig/distilbert/summary.csv} & distilbert & vig & 53277.39 & 348.81 MB & 0.0000 \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & full & 65606.22 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_vig/gpt2/summary.csv} & gpt2 & vig & 23507.9 & 573.93 MB & 0.0000 \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & full & 74815.97 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_vig/roberta/summary.csv} & roberta & vig & 25687.36 & 679.91 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{vigattention}.}
+\label{tab:results_vram_vigattention}
+\end{table*}
