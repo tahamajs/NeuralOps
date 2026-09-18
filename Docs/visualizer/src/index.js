@@ -35,6 +35,7 @@ import { updateComparisonHUD } from './ui/hud.js';
 import { updateInspectorWithNode } from './ui/inspector.js';
 import { buildHierarchicalTree } from './ui/tree_explorer.js';
 import { initModuleCatalog } from './ui/module_catalog.js';
+import { initDocModal } from './educational/doc_modal.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -223,6 +224,14 @@ export async function bootstrapApp() {
 
     // 6. Module Catalog Initialization
     initModuleCatalog(catalogModules, (chosenModule) => {
+        store.set({ activeResearchModule: chosenModule });
+        rebuildSceneForModel(store.get('currentModel'), chosenModule.paradigm || 'svd');
+        const inspector = document.getElementById('inspector');
+        if (inspector) inspector.classList.remove('hidden');
+    });
+
+    // 6b. Research Paper & Markdown Document Reader Modal
+    initDocModal((chosenModule) => {
         store.set({ activeResearchModule: chosenModule });
         rebuildSceneForModel(store.get('currentModel'), chosenModule.paradigm || 'svd');
         const inspector = document.getElementById('inspector');
