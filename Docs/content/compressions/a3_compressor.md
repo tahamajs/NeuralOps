@@ -215,6 +215,7 @@ compressed_model = a3_compressor_factory(
 | **gpt2** | sst2 | `PASS` | 79.36% | **63.19%** | -16.17% | 0.7216 | 1.00x | 2 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.71% | **90.02%** | -0.69% | 0.9043 | 1.02x | 6 | N/A | 2026-09-18 |
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
+| **roberta-base** | mnli | `PASS` | 35.60% | **40.10%** | +4.50% | 0.2981 | 1.00x | 3 | N/A | 2026-09-18 |
 
 
 The hardened A3 compressor implementation was evaluated natively on a dedicated remote GPU server under full hardware acceleration:
