@@ -13,31 +13,15 @@ A3 compresses a pretrained transformer in \textbf{five phases}:
 \item \textbf{LayerNorm recalibration} ( 4.5): absorb distributional shift.
 
 \end{enumerate}
-\textbf{Figure 4.1} shows the pipeline. Phase 1 runs once on the whole model; 
+Figure~\ref{fig:pipeline} shows the pipeline. Phase 1 runs once on the whole model;
 phases 2--4 run per layer; phase 5 runs once at the end.
 
-\begin{lstlisting}
-    +--------------------------------------------------+
-    |  Phase 1: Calibration (streaming)                |
-    |  Input: unlabeled text                           |
-    |  Output: {F^( ), C_X^( )} per layer              |
-    +----------------------+---------------------------+
-                           |
-                            
-    +--------------------------------------------------+
-    |  For each layer  :                               |
-    |    Phase 2: Weighted SVD at rank r               |
-    |    Phase 3: Frobenius validation                 |
-    |    Phase 4: If err > $\tau$: escalate rank, retry     |
-    |    If err > $\tau$ after max retries: fallback        |
-    +----------------------+---------------------------+
-                           |
-                            
-    +--------------------------------------------------+
-    |  Phase 5: LayerNorm recalibration (global)       |
-    |  Rescale $\gamma$ to match target $\sigma$                     |
-    +--------------------------------------------------+
-\end{lstlisting}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_4_1.pdf}
+\caption{A3 five-phase compression pipeline: (1) streaming calibration, (2) Fisher-weighted SVD, (3) Frobenius validation, (4) adaptive rank escalation with fallback, (5) LayerNorm recalibration.}
+\label{fig:pipeline}
+\end{figure}
 
 \subsection{Phase 1: Streaming Calibration}
 

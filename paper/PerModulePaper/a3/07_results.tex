@@ -34,7 +34,16 @@ GPT-2 & \textbf{A3} & \textbf{63.19\%} & -16.17\% & 0.7216 & 2 & \textbf{1.00$\t
 \item \textbf{Accuracy Preservation:} On DistilBERT, A3 preserves 90.02\% accuracy ($\Delta -0.69\%$, F1: 0.9043). On RoBERTa, LoRA recovery reaches 83.26\% (exceeding baseline by +4.70\%, F1: 0.8460). However, on GPT-2, accuracy drops to 63.19\% ($\Delta -16.17\%$, F1: 0.7216), which fails standard quality expectations ($\Delta > 15\%$) and highlights the sensitivity of causal decoder architectures to low-rank factorization.
 \item \textbf{Memory Footprint:} Peak VRAM remains strictly bounded below 575 MB across all architectures, with zero memory spikes during factorization.
 \end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_7_1.pdf}
+\caption{Validation accuracy comparison between full baseline and A3-compressed models across DistilBERT, RoBERTa, and GPT-2 on SST-2.}
+\label{fig:results_accuracy}
+\end{figure}
+
 \subsection{Parameter Analysis}
+
 
 \textbf{Table 7.2: Parameter counts.}
 
@@ -155,7 +164,15 @@ GPT-2 & A3 & 4.5 s (5.16 ms/samp) & 572 MB & 12,412 \\
 % <!-- source: results/unified_a3/roberta/roberta-base_a3_full_metrics.json line 44 -->
 % <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 44 -->
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_7_2.pdf}
+\caption{Peak VRAM consumption comparison between full-precision baseline and A3-compressed variants across DistilBERT, RoBERTa, and GPT-2.}
+\label{fig:vram_profile}
+\end{figure}
+
 \subsection{Ablation: Rank}
+
 
 \textbf{Table 7.6: Accuracy vs compression rank.}
 
