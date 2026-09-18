@@ -43,6 +43,7 @@ def main():
     ap.add_argument("--target_layer", type=str, default="all")
 
     args = ap.parse_args()
+    args.modules = [args.module]
 
     result = {
         "module": args.module,
