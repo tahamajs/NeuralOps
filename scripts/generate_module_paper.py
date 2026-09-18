@@ -50,8 +50,6 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
             fixed = re.sub(r'\\\\(\s*)\[', r'\\\\\1{[}', t)
             fixed = re.sub(r'(?m)^(\s*)\[', r'\1{[}', fixed)
             fixed = re.sub(r'(&\s*)\[', r'\1{[}', fixed)
-            # Escape unescaped & in prose (like "Learning & Efficiency")
-            fixed = re.sub(r'(?<!\\)&\s*(?=[a-zA-Z])', r'\\& ', fixed)
             if fixed != t:
                 tf.write_text(fixed, encoding="utf-8")
         except Exception:
