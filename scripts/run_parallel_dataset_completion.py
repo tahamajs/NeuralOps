@@ -14,8 +14,19 @@ from datetime import datetime
 CKPT_FILE = None
 HF_REPO = "svd-linear-attention-results"
 
+# Map model shorthand names to checkpoint directories on disk
+MODEL_PATH_MAP = {
+    "distilbert": "models/distilbert_sst2",
+    "roberta": "models/roberta-base",
+    "gpt2": "models/gpt2"
+}
+
+def init_worker(ckpt_path):
+    global CKPT_FILE
+    CKPT_FILE = Path(ckpt_path)
+
 def load_completed():
-    if not CKPT_FILE.exists():
+    if not CKPT_FILE or not CKPT_FILE.exists():
         return set()
     done = set()
     with open(CKPT_FILE, "r", encoding="utf-8") as f:
@@ -40,19 +51,30 @@ def mark_completed(module, model, status, extra=None):
         f.write(json.dumps(rec) + "\n")
 
 def run_one(job):
-    module, model, dataset, config = job
+    module, model, dataset, config, ckpt_path = job
+    global CKPT_FILE
+    if CKPT_FILE is None:
+        CKPT_FILE = Path(ckpt_path)
+
     out_dir = Path(f"results/{dataset}_unified_{module}/{model}")
     out_dir.mkdir(parents=True, exist_ok=True)
-    log_path = Path(f"logs/parallel_runs/{dataset}_{module}_{model}.log")
+    log_dir = Path("logs/parallel_runs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{dataset}_{module}_{model}.log"
 
     # Map dataset string to training script parameter
     ds_name = "ag_news" if dataset == "agnews" else "mnli"
+
+    # Resolve model directory path
+    model_arg = MODEL_PATH_MAP.get(model, model)
+    if not os.path.exists(model_arg):
+        model_arg = model
 
     # Execution script call
     cmd = [
         sys.executable, "-u", "Codes/framework/run_quality_sweep.py",
         "--modules", module,
-        "--model", f"models/{model}" if os.path.exists(f"models/{model}") else model,
+        "--model", model_arg,
         "--dataset", ds_name,
         "--batch_size", str(config["batch_size"]),
         "--learning_rate", str(config["learning_rate"]),
@@ -124,12 +146,12 @@ def main():
     for m in modules:
         for model in models:
             if (m, model) not in done:
-                jobs.append((m, model, args.dataset, config))
+                jobs.append((m, model, args.dataset, config, str(CKPT_FILE)))
 
     print(f"[START] {args.dataset}: {len(jobs)} jobs remaining, {len(done)} already done, {args.workers} workers", flush=True)
 
     completed_count = 0
-    with Pool(args.workers) as pool:
+    with Pool(args.workers, initializer=init_worker, initargs=(str(CKPT_FILE),)) as pool:
         for result in pool.imap_unordered(run_one, jobs):
             completed_count += 1
             mod, mdl, status = result
