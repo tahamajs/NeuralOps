@@ -99,6 +99,23 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
     if (descEl) descEl.innerHTML = descHtml;
     if (noteEl) noteEl.innerHTML = noteHtml;
 
+    // Synchronize Floating Detail Card
+    const cardTitle = document.getElementById('detail-title');
+    const cardKicker = document.getElementById('detail-kicker');
+    const cardDesc = document.getElementById('detail-desc');
+    const factShape = document.getElementById('fact-shape');
+    const factParams = document.getElementById('fact-params');
+    const factSubspace = document.getElementById('fact-subspace');
+    const factDelta = document.getElementById('fact-delta');
+
+    if (cardTitle) cardTitle.innerText = node.label || node.id || 'Component';
+    if (cardKicker) cardKicker.innerText = `${isLeft ? 'BASELINE' : 'COMPRESSED'} · ${(node.type || 'LAYER').toUpperCase()}`;
+    if (cardDesc) cardDesc.innerHTML = descHtml;
+    if (factShape) factShape.innerText = `[${dOut} × ${dIn}]`;
+    if (factParams) factParams.innerText = meta.params || (meta.params_raw ? formatParamCount(meta.params_raw) : formatParamCount(dOut * dIn));
+    if (factSubspace) factSubspace.innerText = meta.rank ? `Rank r=${meta.rank}` : (meta.heads ? `${meta.heads} Heads` : `Dim d=${dIn}`);
+    if (factDelta) factDelta.innerText = meta.storage || (meta.compression || (isLeft ? '1.0x Base' : 'Compressed'));
+
     // Sub-renderers
     if (activeModule) {
         renderStructuralTransformation(activeModule, currentModel);

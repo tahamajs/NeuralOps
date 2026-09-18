@@ -245,6 +245,7 @@ export async function bootstrapApp() {
         const mesh = selectPartIn3D(target, interactableMeshes);
         if (mesh) {
             updateInspectorWithNode(mesh.userData, mesh.userData.side === 'baseline', store.get('activeResearchModule'), store.get('currentModel'));
+            smoothFlyCamera(camera, controls, mesh.position.y, 8.5, mesh.position.x);
         }
     };
     window.focusPipelineComponent = (compId) => {

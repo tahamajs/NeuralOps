@@ -3109,8 +3109,7 @@ def main():
         }
         summary_dict[name] = row
 
-        import threading
-        with CSV_LOCK:
+        if True:
             existing_rows = {}
             if path.exists():
                 try:
