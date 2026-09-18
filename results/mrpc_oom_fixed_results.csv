@@ -1,0 +1,4 @@
+module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate,trainable_params,initial_loss,final_loss,loss_change
+fusion_attn,mrpc,FAIL,80.88,0.85,68.38,0.8122,-12.5,FAIL (<75%),72615170,0.004730699583888054,0.28394192457199097,-0.2792
+fused_svd_kernel,mrpc,FAIL,68.38,0.8122,68.38,0.8122,0.0,FAIL (<75%),64652546,0.5599322319030762,1.575168490409851,-1.0152
+flash_attention3,mrpc,FAIL,80.88,0.85,68.38,0.8122,-12.5,FAIL (<75%),72615170,0.0060123298317193985,5.653497695922852,-5.6475
