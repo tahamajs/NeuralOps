@@ -145,6 +145,7 @@ For input sequence batch with $B=8, N=128, D=768, H=12, d=64$, and ASVD rank $r=
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **74.50%** | +23.50% | 0.7399 | 1.00x | 6 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **82.80%** | +3.10% | 0.8216 | 1.00x | 12 | N/A | 2026-09-18 |
 
 
 The hardened `ASVDAttention` module was evaluated in an end-to-end benchmark across four foundational model families on the GLUE SST-2 task ($N=872$ validation samples, majority class baseline $50.92\%$, minimum pass threshold $56.00\%$) with `lora_rank=32`, `recovery_steps=200`, `learning_rate=2e-4`, `batch_size=8`, and `precision=fp16`:
