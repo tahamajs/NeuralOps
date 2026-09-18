@@ -1,6 +1,85 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_hla\_attention/roberta/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 667.32 MB \\
-\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 338.25 MB \\
-\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 567.58 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_hlaattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & hla & PASS\_LOW & 49.08 & 0.0 \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & hla & PASS\_LOW & 49.08 & 0.0 \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & hla & PASS\_LOW & 49.08 & 0.0 \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & hla\_attention & PASS\_LOW & 49.08 & 0.0 \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & hla\_attention & PASS\_LOW & 49.08 & 0.0 \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & hla\_attention & PASS\_LOW & 49.08 & 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{hlaattention}.}
+\label{tab:results_acc_hlaattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_hlaattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & hla & 66955010 & 67531088 & 1182032 & 0.9915x \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & hla & 124441344 & 125593500 & 1181340 & 0.9908x \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & hla & 124647170 & 132886430 & 1771934 & 0.938x \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & hla\_attention & 66955010 & 67531088 & 1182032 & 0.9915x \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & hla\_attention & 124441344 & 125593500 & 1181340 & 0.9908x \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & hla\_attention & 124647170 & 132886430 & 1771934 & 0.938x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{hlaattention}.}
+\label{tab:results_params_hlaattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_hlaattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & full & 165321.55 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_hla/distilbert/summary.csv} & distilbert & hla & 59442.05 & 338.25 MB & 0.0000 \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & full & 72743.1 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_hla/gpt2/summary.csv} & gpt2 & hla & 40343.91 & 567.58 MB & 0.0000 \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & full & 91918.27 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_hla/roberta/summary.csv} & roberta & hla & 35990.09 & 667.32 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & full & 175722.48 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & distilbert & hla\_attention & 75877.59 & 338.25 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & full & 71085.22 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & gpt2 & hla\_attention & 45287.1 & 567.58 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & full & 91292.28 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & roberta & hla\_attention & 40775.02 & 667.32 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{hlaattention}.}
+\label{tab:results_vram_hlaattention}
+\end{table*}
