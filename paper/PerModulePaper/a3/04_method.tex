@@ -36,14 +36,7 @@ values, or 180 MB at FP16. Streaming avoids this.
 We register forward hooks on every linear-like module. For each forward pass 
 with input $x \in \mathbb{R}^{B \times L \times d}$, the hook:
 
-\begin{enumerate}
-\item Reshapes $x$ to $(BL) \times d$.
-\item Filters padding tokens: keeps only rows where $\|x_i\|_1 > 10^{-5}$.
-\item Accumulates $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$.
-\item Adds these to CPU-side running buffers.
-
-\end{enumerate}
-After all calibration passes:
+The streaming hook operates dynamically during forward propagation by reshaping intermediate activations $x$ to shape $(B L) \times d$, filtering out uninformative padding tokens where $\|x_i\|_1 \le 10^{-5}$, accumulating outer-product covariance matrices $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and diagonal squared energies $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$, and streaming these running statistics into pinned host memory buffers. After iterating through all calibration sequences, empirical estimates are finalized according to:
 
 \[
 F^{(\ell)} = \frac{\sum_k f^{(k)}}{\sum_k N^{(k)}}, \qquad
@@ -51,20 +44,11 @@ C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 \tag{4.2}
 \]
 
-\textbf{Memory.} $\mathcal{O}(d^2)$ per layer, or $\mathcal{O}(N_l d^2)$ total. 
-For $d = 768$ and $N_l = 12$, this is $\sim 8.5$M values, or 17 MB at FP32.
+\textbf{Memory Footprint.} Storing streaming buffers requires only $\mathcal{O}(d^2)$ elements per layer, or $\mathcal{O}(N_l d^2)$ globally across $N_l$ layers. For DistilBERT ($d = 768, N_l = 12$), this translates to approximately 8.5 million floating-point values—under 17 MB in FP32 precision—completely avoiding GPU activation caching.
 
-\subsubsection{Calibration Sources}
+\subsubsection{Calibration Data Sources}
 
-We support three sources, in priority order:
-
-\begin{enumerate}
-\item \textbf{Explicit \texttt{calibration\_loader}.} A \texttt{DataLoader} of input batches.
-\item \textbf{\texttt{calibration\_texts}.} A list of strings; tokenized on-the-fly.
-\item \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
-
-\end{enumerate}
-If none are provided, A3 falls back to unweighted SVD (see  4.3.4).
+A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (\S\ref{sec:unweighted_svd_fallback}).
 
 \subsection{Phase 2: Weighted SVD}
 
@@ -97,29 +81,19 @@ W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
 
 where $\epsilon = 10^{-6}$ prevents division by zero.
 
-\subsubsection{The Algorithm}
+\subsubsection{Factorization Procedure}
 
-\begin{enumerate}
-\item Compute $W_\text{weighted}$ using (4.5).
-\item Compute the truncated SVD:
-  \[
-  W_\text{weighted} \approx U_r \Sigma_r V_r^\top
-  \tag{4.6}
-  \]
-\item Unweight the right factor to recover the original space:
-  \[
-  V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
-  \tag{4.7}
-  \]
-\item Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
-
-\end{enumerate}
-The factorized layer computes:
-
-\[
-y = (x V^\top) U^\top + b
-\tag{4.8}
-\]
+The Fisher-weighted decomposition proceeds in four mathematical steps. First, the weight matrix is rescaled by the normalized sensitivity diagonal to form $W_\text{weighted}$ via (4.5). Second, the truncated SVD is evaluated:
+\begin{equation}
+W_\text{weighted} \approx U_r \Sigma_r V_r^\top
+\tag{4.6}
+\end{equation}
+Third, the right factor is unweighted to recover the original activation coordinate space:
+\begin{equation}
+V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+\tag{4.7}
+\end{equation}
+Finally, singular values are symmetrically distributed across factors via $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$, yielding the factorized operator $y = (x V^\top) U^\top + b$.
 
 \subsubsection{Scale Normalization}
 
@@ -130,55 +104,28 @@ F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \tag{4.9}
 \]
 
-and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
-\texttt{normalize\_scale} flag.
+where dividing by the RMS energy prevents artificial condition number inflation.
 
-\subsubsection{Fallback to Unweighted SVD}
+\subsubsection{Safety Fallback}
 
-If no calibration data is available, we set $F = \mathbf{1}$, giving 
-standard SVD. This is a safe default but sacrifices the activation-aware 
-benefit.
+If factorization fails validation at the rank ceiling, the layer safely retains its original dense parameters $W$.
 
 \subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
 
-\subsubsection{Frobenius Error Validation}
+\subsubsection{Frobenius Error Formulation}
 
-After factorization, we compute:
-
-\[
-\text{err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F + 10^{-8}}
+Validation computes the relative reconstruction error:
+\begin{equation}
+\mathrm{Err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F}
 \tag{4.10}
-\]
-
-If $\text{err} \leq \tau$, the layer is replaced. Otherwise:
+\end{equation}
+A factorized layer is accepted if $\mathrm{Err} \le \tau = 0.40$.
 
 \subsubsection{Adaptive Rank Escalation}
 
-We retry with an increased rank:
+If the error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}} = 256$, recomputing the SVD until convergence or fallback.
 
-\[
-r_{k+1} = r_k + \max\!\left(8, \frac{\min(d_\text{in}, d_\text{out}) - r_k}{K - k}\right)
-\tag{4.11}
-\]
-
-where $K$ is the maximum number of retries (default 3). The step size is 
-chosen so the rank reaches $\min(d_\text{in}, d_\text{out})$ in exactly $K$ 
-steps if no improvement is seen.
-
-If even at maximum rank the error exceeds $\tau$, the layer **falls back to 
-the original** (no compression), and we log the failure.
-
-\subsubsection{Why Adaptive?}
-
-Choosing rank upfront is a trade-off:
-
-\begin{itemize}
-\item Too high $\to$ poor compression
-\item Too low $\to$ excessive error
-
-\end{itemize}
-Our approach defers the decision to per-layer validation, which handles the 
-natural variance in layer importance.
+Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
 
 \subsection{Phase 5: LayerNorm Recalibration}
 
@@ -186,36 +133,21 @@ natural variance in layer importance.
 
 After factorizing a layer, its output distribution changes. The LayerNorm 
 that follows now sees a different input distribution, which may have 
-non-unit variance even after normalization.
-
-The LayerNorm computes:
+non-unit variance even after normalization. The LayerNorm computes:
 
 \[
 \text{LN}(x) = \gamma \odot \frac{x - \mu}{\sigma(x) + \epsilon} + \beta
 \tag{4.12}
 \]
 
-If the input variance changed from $\sigma_\text{old}$ to $\sigma_\text{new}$, 
-the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\text{old}$. 
-We can compensate by adjusting $\gamma$:
+If the input variance changed from $\sigma_\text{old}$ to $\sigma_\text{new}$, the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\text{old}$. We compensate by adjusting $\gamma$:
 
 \[
 \gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{current}}{\sigma_\text{target}}
 \tag{4.13}
 \]
 
-where $\sigma_\text{target}$ is the pre-compression standard deviation ($\sigma_\text{pre}$) and 
-$\sigma_\text{current}$ is the post-compression standard deviation ($\sigma_\text{post}$).
-
-\subsubsection{Procedure}
-
-\begin{enumerate}
-\item Before compression, record $\sigma_\text{target}^{(\ell)}$ for every
-  LayerNorm via a calibration pass.
-\item After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
-\item For each LayerNorm, update $\gamma$ via (4.13).
-
-\end{enumerate}
+where $\sigma_\text{target}$ is the pre-compression standard deviation and $\sigma_\text{current}$ is the post-compression standard deviation. The recalibration protocol records $\sigma_\text{target}^{(\ell)}$ across all normalization modules during initial calibration, evaluates $\sigma_\text{current}^{(\ell)}$ immediately post-factorization, and updates affine scales in closed form according to (4.13).
 This is applied only if \texttt{recalibrate\_ln = True} and calibration sources are 
 available.
 

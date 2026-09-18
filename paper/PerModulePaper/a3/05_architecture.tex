@@ -127,18 +127,7 @@ class LoRALinear(nn.Module):
         self.lora_B = nn.Parameter(...)
 \end{lstlisting}
 
-\textbf{Injection procedure:}
-
-\begin{enumerate}
-\item Extract \texttt{target\_mod = getattr(module, "base\_layer", module)}.
-\item Factorize \texttt{target\_mod}.
-\item Replace \texttt{module.base\_layer} with the factorized layer.
-\item \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora\_A}, \texttt{module.lora\_B}).
-
-\end{enumerate}
-If the original module had LoRA, A3 optionally instantiates LoRA inside the 
-factorized layer to maintain trainability. This is controlled by 
-\texttt{lora\_rank > 0}.
+\textbf{Injection Procedure.} The injection procedure isolates the underlying dense representation by extracting \texttt{target\_mod = getattr(module, "base\_layer", module)}, factorizing this core weight tensor, replacing \texttt{module.base\_layer} with the factorized linear module, and strictly preserving the outer parameter tensors (\texttt{module.lora\_A} and \texttt{module.lora\_B}). If the target module was previously unadapted, A3 optionally instantiates internal LoRA parameters within the factorized module whenever \texttt{lora\_rank > 0} to maintain downstream fine-tuning capability.
 
 \subsection{Injection Algorithm}
 
@@ -202,17 +191,35 @@ class A3FactorizedLinear(nn.Module):
 
 \textbf{Parameter count:} \texttt{r \textit{ (d\_in + d\_out)} vs \texttt{d\_in } d\_out} for the original.
 
+\textbf{Injection procedure:}
+The injection procedure safely decouples base weights from adapter representations by extracting \texttt{target\_mod = getattr(module, "base\_layer", module)}, factorizing the underlying dense projection, replacing \texttt{module.base\_layer} with the factorized low-rank module, and strictly preserving the outer LoRA parameter tensors (\texttt{module.lora\_A} and \texttt{module.lora\_B}). If the target module was previously unadapted, A3 optionally instantiates internal LoRA parameters within the factorized module whenever \texttt{lora\_rank > 0} to maintain downstream fine-tuning capability.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject A3 into a model
+\begin{lstlisting}
+Input:  model M, config c, calibration data D
+Output: compressed model M'
+
+1: hooks $\leftarrow$ []
+2: for   in linear_modules(M) do
+3:     hooks.append(register_forward_hook( , accumulate_F_C))
+4: end for
+5: run_calibration(M, D)
+6: for h in hooks: h.remove()
+7:
+8: F_map $\leftarrow$ finalized_statistics()
+9: for   in linear_modules(M) do
+10:     if not should_compress( ): continue
+11:     U, V, err $\leftarrow$ weighted_svd( .weight, F_map[ ], r, $\tau$)
+12:     if err $\le$ $\tau$: replace_module(M,  , U, V)
+13: end for
+14: return M'
+\end{lstlisting}
+
 \subsection{Causality and Streaming}
 
-For decoder models, A3's calibration is causal-compatible:
-
-\begin{itemize}
-\item Forward hooks capture activations as they occur
-\item No future-token leakage because hooks run during the standard causal forward pass
-
-\end{itemize}
-\textbf{Verification.} We checked that gradient of output at position $i$ w.r.t. 
-input at position $j > i$ is zero, both before and after injection.
+For autoregressive decoder models such as GPT-2, A3's calibration protocol operates in strict compliance with causal attention constraints. Forward hooks intercept intermediate activations dynamically as tokens propagate, ensuring zero future-token leakage because activations are collected exclusively during standard lower-triangular causal evaluation. We empirically verified that the directional gradient of output tokens at position $i$ with respect to input tokens at position $j > i$ remains identically zero both before and after low-rank module replacement.
 
 \subsection{Failure Modes and Fallbacks}
 
@@ -235,7 +242,7 @@ NaN in reconstruction & \texttt{torch.isnan} check & Abort factorization and fal
 \label{tab:failure_responses}
 \end{table}
 
-\subsection{Registry}
+\subsection{Registry Integration}
 
 \begin{lstlisting}
 @COMPRESSOR_REGISTRY.register("a3")
@@ -244,15 +251,6 @@ def a3_compressor_factory(model, comp_config, ...):
     ...
 \end{lstlisting}
 
-\subsection{Compatibility with LoRA Recovery Pipeline}
+\subsection{Compatibility with the LoRA Recovery Pipeline}
 
-A3 integrates cleanly with the LoRA recovery pipeline:
-
-\begin{enumerate}
-\item \textbf{A3 compresses} the base model $\to$ factorized layers.
-\item \textbf{LoRA adapters} are attached to the factorized layers.
-\item \textbf{Recovery fine-tuning} trains only the LoRA parameters.
-\item \textbf{Evaluation} uses the fine-tuned model.
-
-\end{enumerate}
-This is the same pipeline used by our framework's other compression methods.
+A3 integrates seamlessly with the framework's post-compression adaptation pipeline. The workflow operates as a four-stage sequential pipeline: first, A3 factorizes the target linear projections of the base model subject to safety fallback gates; second, low-rank LoRA adapter tensors are attached directly to the frozen factorized operators; third, recovery fine-tuning optimizes exclusively the parameter-efficient adapter parameters across a constrained budget of 50 steps; finally, the adapted model undergoes downstream benchmark evaluation. This decoupled design preserves parameter efficiency while matching the standard execution protocol deployed across our benchmark suite.
