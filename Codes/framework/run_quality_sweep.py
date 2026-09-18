@@ -2086,6 +2086,10 @@ def parse_args(argv=None):
 def run_single_module_main(args) -> dict:
     import os
     import torch
+    from framework.core.registry import ATTENTION_REGISTRY
+    name = args.modules[0] if isinstance(args.modules, list) else args.modules
+    typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -2510,11 +2514,6 @@ def run_single_module_main(args) -> dict:
                        "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
                        "path": path_name, "timestamp": datetime.now().isoformat()}
                 summary_dict[name] = row
-                with path.open("w", newline="", encoding="utf8") as f:
-                    w = csv.DictWriter(f, fieldnames=FIELDS)
-                    w.writeheader()
-                    for m_name in summary_dict:
-                        w.writerow(summary_dict[m_name])
                 LOG.info("[%d/%d] %s -> %s (%.2f%%)", n, len(names), name, status, acc)
                 continue
         # Side effect is projection alias installation; the model itself
@@ -2607,23 +2606,7 @@ def run_single_module_main(args) -> dict:
         try:
 
             # Pipeline replaced
-            args_tuple = (model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
-            pipe_res_full, run_status = run_with_timeout(
-                _run_candidate_pipeline, args_tuple, effective_timeout, None
-            )
-            
-            if run_status == "TIMEOUT":
-                status = f"SKIP_{family.upper()}_TIMEOUT"
-                err = f"Module pipeline exceeded hard {effective_timeout}s timeout"
-                acc = 0.0
-                # ensure we skip to next
-                raise TimeoutError(err)
-            elif run_status == "ERROR":
-                raise RuntimeError(pipe_res_full)
-            elif run_status == "NO_RESULT":
-                raise RuntimeError("Subprocess died without result")
-                
-            perf_metrics, comp_metrics, injected, path_name, had_nan = pipe_res_full
+            perf_metrics, comp_metrics, injected, path_name, had_nan = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
         except (TimeoutError, FuturesTimeoutError) as exc:
             status = f"SKIP_{family.upper()}_TIMEOUT"
             err = f"Module pipeline exceeded hard {effective_timeout}s timeout"
@@ -2646,7 +2629,7 @@ def run_single_module_main(args) -> dict:
 
             if exc is not None and name != "full" and is_dtype_error(exc):
                 try:
-                    model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+                    model.float()
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device, precomputed_batches=eval_batches)
                     acc = perf_metrics["accuracy_pct"]
@@ -2756,11 +2739,6 @@ def run_single_module_main(args) -> dict:
             "timestamp": datetime.now().isoformat(),
         }
         summary_dict[name] = row
-        with path.open("w", newline="", encoding="utf8") as f:
-            w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
-            w.writeheader()
-            for m_name in summary_dict:
-                w.writerow(summary_dict[m_name])
 
         f1_disp = row["f1_score"] if row.get("f1_score") not in ("", None) else "N/A"
         vram_disp = row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
@@ -3118,12 +3096,35 @@ def main():
         }
         summary_dict[name] = row
 
-        with path.open("w", newline="", encoding="utf-8") as f:
-            import csv
-            w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
-            w.writeheader()
-            for k in summary_dict:
-                w.writerow(summary_dict[k])
+        import threading
+        if not hasattr(path, "_csv_lock"):
+            path._csv_lock = threading.Lock()
+        with path._csv_lock:
+            existing_rows = {}
+            if path.exists():
+                try:
+                    with path.open("r", encoding="utf8") as f:
+                        import csv
+                        reader = csv.DictReader(f)
+                        for r in reader:
+                            if r.get("module_name"):
+                                existing_rows[r["module_name"]] = r
+                except Exception:
+                    pass
+            existing_rows.update(summary_dict)
+            tmp = path.with_suffix(".tmp")
+            with tmp.open("w", newline="", encoding="utf8") as f:
+                import csv
+                w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+                w.writeheader()
+                for m in existing_rows:
+                    w.writerow(existing_rows[m])
+            import os
+            if tmp.exists():
+                if path.exists():
+                    try: path.unlink()
+                    except: pass
+                tmp.rename(path)
 
         clear_vram_between_modules()
 
