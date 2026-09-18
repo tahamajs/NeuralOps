@@ -846,6 +846,7 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         # Projections via FactorizedLinear (base + LoRA) with FP8 cast applied to projections
         fp8_fmt = getattr(self.config, "fp8_format", "e4m3")
+        X_fp8 = fp8_cast_simulate(hidden_states, format=fp8_fmt)
         Q = fp8_cast_simulate(self.q_proj(hidden_states), format=fp8_fmt).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
         K = fp8_cast_simulate(self.k_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
         V = fp8_cast_simulate(self.v_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)

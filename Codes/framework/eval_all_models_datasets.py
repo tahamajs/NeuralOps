@@ -1034,7 +1034,14 @@ def evaluate_single_combination_opt(
                 dataset_cache_key = (dataset.lower(), tok_name, seq_len)
                 if dataset_cache_key in _PREPARED_DATASET_CACHE:
                     val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
-                    loader = torch.utils.data.DataLoader(val_tokenized, batch_size=current_batch_size, shuffle=False, pin_memory=is_cuda)
+                    loader = torch.utils.data.DataLoader(
+                        val_tokenized,
+                        batch_size=current_batch_size,
+                        shuffle=False,
+                        pin_memory=True,
+                        num_workers=4,
+                        prefetch_factor=2,
+                    )
                     
                     with torch.no_grad():
                         for val_batch in loader:
