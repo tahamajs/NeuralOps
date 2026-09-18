@@ -294,6 +294,7 @@ Given: Batch Size B=8, Sequence Length L=128, Hidden Dim D=768, Heads H=12, Head
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **61.60%** | +10.60% | 0.5225 | 1.18x | 0 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **32.40%** | -42.10% | 0.2392 | 1.12x | 0 | N/A | 2026-09-18 |
+| **gpt2** | ag_news | `PASS` | 79.70% | **60.70%** | -19.00% | 0.5713 | 1.20x | 0 | N/A | 2026-09-18 |
 
 
 All evaluations were executed on an NVIDIA RTX GPU (FP16 mixed precision, AdamW optimizer, batch size 8, 200 recovery fine-tuning steps, SST-2 sentiment classification benchmark).
