@@ -34,6 +34,28 @@ export function initSelectionLighting(scene) {
 }
 
 /**
+ * Animates the selection halo ring and light with a breathing pulse each frame.
+ * @param {number} timestamp - Performance timestamp
+ */
+export function animateSelectionPulse(timestamp = performance.now()) {
+    if (selectionHaloRing && selectionHaloRing.visible) {
+        const pulse = 0.5 + 0.5 * Math.sin(timestamp * 0.005);
+        const floatOffset = Math.sin(timestamp * 0.003) * 0.06;
+        selectionHaloRing.material.opacity = 0.55 + 0.4 * pulse;
+        selectionHaloRing.rotation.z += 0.015;
+        if (selectionHaloRing.userData.baseY !== undefined) {
+            selectionHaloRing.position.y = selectionHaloRing.userData.baseY + floatOffset;
+        }
+        if (selectionPointLight) {
+            selectionPointLight.intensity = 4.5 + 2.5 * pulse;
+            if (selectionPointLight.userData.baseY !== undefined) {
+                selectionPointLight.position.y = selectionPointLight.userData.baseY + floatOffset;
+            }
+        }
+    }
+}
+
+/**
  * Clears current selection glow and restores original materials.
  */
 export function clearSelectionHighlight() {
@@ -152,6 +174,7 @@ export function selectPartIn3D(target, interactableMeshes = [], options = {}) {
         selectionPointLight.color.setHex(hexColor);
         selectionPointLight.intensity = 6.0;
         selectionPointLight.position.set(primaryMesh.position.x, primaryMesh.position.y, (primaryMesh.position.z || 0) + 1.2);
+        selectionPointLight.userData.baseY = primaryMesh.position.y;
     }
 
     if (selectionHaloRing) {
@@ -159,6 +182,7 @@ export function selectPartIn3D(target, interactableMeshes = [], options = {}) {
         const radius = Math.max(0.75, (u.width || 1.2) * 0.72);
         selectionHaloRing.scale.set(radius, radius, 1);
         selectionHaloRing.position.set(primaryMesh.position.x, primaryMesh.position.y, (primaryMesh.position.z || 0) + (u.depth ? u.depth / 2 : 0.4) + 0.08);
+        selectionHaloRing.userData.baseY = primaryMesh.position.y;
         selectionHaloRing.material.color.setHex(hexColor);
         selectionHaloRing.material.opacity = 0.85;
         selectionHaloRing.visible = true;

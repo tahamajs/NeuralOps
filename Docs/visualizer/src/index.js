@@ -27,7 +27,7 @@ import { buildMeshNodes } from './builders/granular_builder.js';
 import { buildMacroBlocks } from './builders/macro_builder.js';
 import { createTokenMesh } from './builders/token_builder.js';
 import { smoothFlyCamera, updateCameraFlight } from './interactions/camera_fly.js';
-import { initSelectionLighting, selectPartIn3D, clearSelectionHighlight } from './interactions/selection.js';
+import { initSelectionLighting, selectPartIn3D, clearSelectionHighlight, animateSelectionPulse } from './interactions/selection.js';
 import { setupRaycasting } from './interactions/raycasting.js';
 import { updateTokens } from './physics/token_animation.js';
 import { updateNodePulses } from './physics/node_pulses.js';
@@ -272,7 +272,7 @@ export async function bootstrapApp() {
             if (tourLabel) {
                 tourLabel.style.display = 'block';
                 tourLabel.classList.add('show');
-                tourLabel.innerHTML = `<strong>${s.label}</strong>`;
+                tourLabel.innerHTML = `<strong>${s.label}</strong><div class="tour-desc">${s.desc || ''}</div>`;
             }
             if (s.target) {
                 const mesh = selectPartIn3D(s.target, interactableMeshes);
@@ -300,6 +300,7 @@ export async function bootstrapApp() {
         perfMonitor.tick(timestamp);
         controls.update();
         updateCameraFlight(camera, controls);
+        animateSelectionPulse(timestamp);
 
         // Continuous Semantic LOD based on camera distance
         const camDist = camera.position.distanceTo(controls.target);
