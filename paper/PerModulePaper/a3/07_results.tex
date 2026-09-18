@@ -35,6 +35,8 @@ GPT-2 & \textbf{A3} & \textbf{63.19\%} & -16.17\% & 0.7216 & 2 & \textbf{1.00$\t
 \item \textbf{Memory Footprint:} Peak VRAM remains strictly bounded below 575 MB across all architectures, with zero memory spikes during factorization.
 \end{enumerate}
 
+Figure~\ref{fig:results_accuracy} summarises validation accuracy across all three model families.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_7_1.pdf}
@@ -166,6 +168,8 @@ GPT-2 & A3 & 4.5 s (5.16 ms/samp) & 572 MB & 12,412 \\
 % <!-- source: results/unified_a3/roberta/roberta-base_a3_full_metrics.json line 44 -->
 % <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 44 -->
 
+Figure~\ref{fig:vram_profile} visualises peak VRAM across configurations.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_7_2.pdf}
@@ -197,7 +201,7 @@ GPT-2 & A3 & 4.5 s (5.16 ms/samp) & 572 MB & 12,412 \\
 \end{table}
 % <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 4 -->
 
-\textbf{Observation.} Setting target rank below 64 leads to excessive error escalation and higher fallback frequency, whereas ranks between 192 and 256 provide the optimal balance between representation fidelity and model parameter reduction.
+\textbf{Observation.} Setting target rank below 64 leads to excessive error escalation and higher fallback frequency, whereas ranks between 192 and 256 provide the optimal balance between representation fidelity and model parameter reduction. Figure~\ref{fig:rank_accuracy} plots this accuracy--rank trade-off curve across all three architectures.
 
 \begin{figure}[H]
 \centering
