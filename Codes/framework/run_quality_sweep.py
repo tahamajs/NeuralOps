@@ -1583,6 +1583,7 @@ def parse_args(argv=None):
                          "loading and tokenization entirely for this run.")
     ap.add_argument("--num_labels", type=int, default=None, help="Number of classification labels (auto-detected if None)")
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
+    ap.add_argument("--parallel", type=int, default=1, help="Number of modules to evaluate concurrently across isolated processes")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
     ap.add_argument("--finetune_mode", choices=("head", "lora", "full"), default="head",
@@ -2069,7 +2070,9 @@ def parse_args(argv=None):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
-            torch.cuda.set_per_process_memory_fraction(0.85)
+            par_count = max(1, getattr(args, "parallel", 1))
+            frac = 0.85 / par_count if par_count > 1 else 0.85
+            torch.cuda.set_per_process_memory_fraction(frac)
         except:
             pass
         
@@ -3112,14 +3115,12 @@ def main():
               "flops_reduction_pct", "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
               "weighted_reconstruction_error", "num_injected_attention_layers", "lora_params", "error", "path", "timestamp"]
 
-    for name in names:
-        timeout_s = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, getattr(args, "timeout", 600))
-        if name in existing:
-            print(f">>> Skipping {name} (already PASS)")
-            continue
+    import threading
+    csv_write_lock = threading.Lock()
 
+    def _execute_single(name):
+        timeout_s = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, getattr(args, "timeout", 600))
         result = run_module_isolated(name, args, timeout_s)
-        
         row = {
             "module_name": name,
             "status": result.get("status", "UNKNOWN"),
@@ -3134,9 +3135,8 @@ def main():
             "path": result.get("path", ""),
             "timestamp": result.get("finished_at", time.time()),
         }
-        summary_dict[name] = row
-
-        if True:
+        with csv_write_lock:
+            summary_dict[name] = row
             existing_rows = {}
             if path.exists():
                 try:
@@ -3156,14 +3156,34 @@ def main():
                 w.writeheader()
                 for m in existing_rows:
                     w.writerow(existing_rows[m])
-            import os
             if tmp.exists():
                 if path.exists():
                     try: path.unlink()
                     except Exception as e: LOG.debug("Failed to unlink %s: %s", path, e)
                 tmp.rename(path)
-
         clear_vram_between_modules()
+        return row
+
+    pending_names = [n for n in names if n not in existing]
+    for n in names:
+        if n in existing:
+            print(f">>> Skipping {n} (already PASS)")
+
+    workers = max(1, getattr(args, "parallel", 1))
+    if workers > 1:
+        LOG.info("Running %d modules with %d parallel workers on GPU", len(pending_names), workers)
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {executor.submit(_execute_single, name): name for name in pending_names}
+            for fut in as_completed(futures):
+                m_name = futures[fut]
+                try:
+                    fut.result()
+                except Exception as ex:
+                    LOG.error("Module %s worker error: %s", m_name, ex)
+    else:
+        for name in pending_names:
+            _execute_single(name)
 
 if __name__ == '__main__':
     main()
