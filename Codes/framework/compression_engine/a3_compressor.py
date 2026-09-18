@@ -497,7 +497,10 @@ class A3Compressor(BaseCompressor):
             U, S, Vt = U.to(W.device), S.to(W.device), Vt.to(W.device)
 
         norm_orig = torch.linalg.norm(W).item()
-        current_r = r
+        
+        # Calculate ceiling BEFORE the retry loop
+        r_ceiling = min(int(0.5 * min(in_f, out_f)), 192)
+        current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
         best_r = current_r
@@ -505,7 +508,7 @@ class A3Compressor(BaseCompressor):
         # Only retry / increase rank if rank was not explicitly specified
         retries = 0 if rank is not None else self.max_retries
         for attempt in range(retries + 1):
-            clamped_r = min(current_r, S.shape[0])
+            clamped_r = min(current_r, S.shape[0], r_ceiling)
             sqrt_S = torch.sqrt(torch.clamp(S[:clamped_r], min=1e-12))
             U_r = U[:, :clamped_r] * sqrt_S.unsqueeze(0)
             V_r = sqrt_S.unsqueeze(1) * Vt[:clamped_r, :]
@@ -523,27 +526,25 @@ class A3Compressor(BaseCompressor):
                 best_layer_factors = (U_r, V_r)
                 best_r = clamped_r
 
-            # If error is acceptable or rank has reached maximum possible rank, finish
-            if rel_err <= self.max_error or clamped_r >= min(in_f, out_f):
+            # Enforce strict parameter-reduction rank ceiling (never exceed break-even)
+            if rel_err <= self.max_error or clamped_r >= r_ceiling:
                 break
 
-            # Incrementally increase rank for next retry towards min(in_f, out_f)
+            # Incrementally increase rank for next retry towards r_ceiling
             if attempt < retries:
                 remaining = max(1, retries - attempt)
-                step = max(8, (min(in_f, out_f) - current_r) // remaining)
-                current_r = min(current_r + step, min(in_f, out_f))
+                step = max(8, (r_ceiling - current_r) // remaining)
+                current_r = min(current_r + step, r_ceiling)
 
-        # Validation threshold check - Enforce max_error Abort if fallback_to_original is True
+        # After the loop, if error still > max_error at r_ceiling:
         if best_err > self.max_error:
             if self.fallback_to_original:
                 logger.warning(
-                    "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d. Falling back to original layer.",
-                    name,
-                    best_err,
-                    self.max_error,
-                    best_r,
+                    "A3 compression for %s failed at r_ceiling=%d (err=%0.3f > %0.3f). "
+                    "Falling back to original layer.",
+                    name, r_ceiling, best_err, self.max_error
                 )
-                return None, best_err, best_r
+                return None, best_err, r_ceiling
             else:
                 logger.warning(
                     "A3 compression for %s exceeds max_error (%0.3f > %0.3f) at rank %d but fallback_to_original=False. Compressing anyway with error %0.4f.",
