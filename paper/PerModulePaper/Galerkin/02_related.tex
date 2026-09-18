@@ -46,11 +46,11 @@ matrices. Random Synthesizer is data-independent like ours.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{Galerkin} \\
 \midrule
-\textbf{Basis type} & Learned (Linformer) or landmarks (Nystr m) & Fixed DCT \\
-\textbf{Attention replacement} & Full or partial & Projection only \\
-\textbf{Parameter cost} & Zero or reduced & \textbf{Added LoRA} \\
-\textbf{Encoder support} & Yes & Yes (but fails) \\
-\textbf{Decoder support} & Yes & Falls back \\
+\textbf{Basis type} \& Learned (Linformer) or landmarks (Nystr m) \& Fixed DCT \\
+\textbf{Attention replacement} \& Full or partial \& Projection only \\
+\textbf{Parameter cost} \& Zero or reduced & \textbf{Added LoRA} \\
+\textbf{Encoder support} \& Yes \& Yes (but fails) \\
+\textbf{Decoder support} \& Yes \& Falls back \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,9 +72,9 @@ suggest this trade-off is not worth it for attention.
 \textbf{Method} & \textbf{Basis} & \textbf{Learned?} & \textbf{Params} & \textbf{SST-2 (DistilBERT)} \\
 \midrule
 Standard MHSA & -- & -- & 66.9M & 90.71\% \\
-Linformer & Linear & Yes & Similar & ~88\% \\
-FNet & Fourier & No & 66.9M & ~85\% \\
-Random Synthesizer & Random & No & 66.9M & ~85\% \\
+Linformer \& Linear \& Yes \& Similar & ~88\% \\
+FNet \& Fourier \& No & 66.9M & ~85\% \\
+Random Synthesizer \& Random \& No & 66.9M & ~85\% \\
 \textbf{Galerkin} & \textbf{DCT} & \textbf{No} & \textbf{+0.9\%} & \textbf{50.92\%} \\
 \bottomrule
 \end{tabular}

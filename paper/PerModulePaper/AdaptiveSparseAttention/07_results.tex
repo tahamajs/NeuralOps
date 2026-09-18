@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Sparsity} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0\% & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0\% & 183 MB & 1.9 s \\
 DistilBERT & \textbf{ASA} & \textbf{88.5} & -2.2 & 0.885 & 0.42 & 120 MB & 2.1 s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0\% & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0\% & 712 MB & 4.1 s \\
 RoBERTa & \textbf{ASA} & \textbf{76.0} & -2.6 & 0.760 & 0.45 & 500 MB & 4.5 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0\% & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0\% & 793 MB & 4.2 s \\
 GPT-2 & \textbf{ASA} & \textbf{76.5} & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
@@ -54,10 +54,10 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
-DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & ASA & 120 MB & 2.1 s \\
-GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & ASA & 550 MB & 4.6 s \\
+DistilBERT \& full & 183 MB & 1.90 s \\
+DistilBERT \& ASA & 120 MB & 2.1 s \\
+GPT-2 \& full & 793 MB & 4.20 s \\
+GPT-2 \& ASA & 550 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -172,10 +172,10 @@ larger is too soft.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
-\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} & Sparse & 1.00$\times$ & \textbf{2$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
+\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \& Sparse & 1.00$\times$ & \textbf{2$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

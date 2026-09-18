@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn mem} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
-DistilBERT & \textbf{Primal} & \textbf{90.14} & -0.57 & 0.9034 & \textbf{12 KB} & 2.5 s & 668 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
-RoBERTa & \textbf{Primal} & \textbf{68.00} & -10.56 & 0.6767 & \textbf{12 KB} & 5.3 s & 1442 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
-GPT-2 & \textbf{Primal} & \textbf{63.07} & -16.29 & 0.6349 & \textbf{12 KB} & 5.5 s & 1685 MB MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
+DistilBERT & \textbf{Primal} & \textbf{90.14} & -0.57 & 0.9034 & \textbf{12 KB} & 2.5 s & 668 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
+RoBERTa & \textbf{Primal} & \textbf{68.00} & -10.56 & 0.6767 & \textbf{12 KB} & 5.3 s & 1442 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
+GPT-2 & \textbf{Primal} & \textbf{63.07} & -16.29 & 0.6349 & \textbf{12 KB} & 5.5 s & 1685 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -174,10 +174,10 @@ GPT-2 & \textbf{Primal} & \textbf{63.07} & -16.29 & 0.6349 & \textbf{12 KB} & 5.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Param $\Delta$} & \textbf{KV cache} & \textbf{Attn mem} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
-NHA & 90.25\% & FAIL & 78.78\% & Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
-\textbf{Primal} & \textbf{90.14} & \textbf{68.00} & \textbf{63.07} & Low-rank & 1.00$\times$ & 1.00$\times$ & \textbf{4$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% \& MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
+NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
+\textbf{Primal} & \textbf{90.14} & \textbf{68.00} & \textbf{63.07} \& Low-rank & 1.00$\times$ & 1.00$\times$ & \textbf{4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

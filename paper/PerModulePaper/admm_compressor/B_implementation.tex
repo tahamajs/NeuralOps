@@ -1,1 +1,71 @@
-\section*{Appendix B. Implementation}\addcontentsline{toc}{section}{Appendix B}Implemented in \texttt{Codes/framework/compression\_engine/admm\_compressor.py}.
+\section{B Implementation}
+
+ Appendix B. Implementation
+Implemented in `Codes/framework/compression\_engine/admm\_compressor.py`.
+
+
+
+\subsection{3. Step-by-Step Calibration \& Execution Trace}
+\subsubsection{3.1 Dataflow \& Transformation Trace}
+
+1. \textbf{Tensor Preparation}:
+Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 precision.
+
+2. \textbf{Flat Top-K Thresholding}:
+Reshape $|W|$ into a 1D tensor of size $N \cdot M$. Furthermore, Retrieve top $k = \lfloor (1 - S) \cdot N \cdot M \rfloor$ values. Concurrently, Construct binary mask matrix $M = (|W| \ge \tau)$.
+
+3. \textbf{Quantization Grid Mapping}:
+Scale factor $S_q = 2^{b-1} - 1$. Furthermore, Multiply $W_{\text{pruned}}$ by $S_q$ and clamp within $[-S_q, S_q]$. Concurrently, Apply element-wise rounding $\lfloor \cdot \rceil$ and divide by $S_q$.
+
+4. \textbf{Precision Conversion}:
+Cast resulting matrix back to original module dtype (FP16/BF16) and device.
+
+
+
+\begin{lstlisting}
+Input Weight W [N, M] --> $|W|$ [N*M] --> Top-K Selection --> Mask M [N, M]
+                                                                  |
+                                                                  v
+Output Weight W_q [N, M] <-- Round \& De-scale <-- Scale \& Clamp <- W * M
+\end{lstlisting}
+
+
+---
+
+\subsection{6. Production CUDA / Triton Execution Blueprint}
+
+\begin{lstlisting}
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def admm_joint_prune_quant_kernel(
+    W_ptr, Out_ptr,
+    Threshold, Scale,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr
+):
+    pid = tl.program_id(axis=0)
+    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load dense weight
+    w = tl.load(W_ptr + offsets, mask=mask, other=0.0)
+    abs_w = tl.abs(w)
+
+    # Prune
+    is_kept = abs_w >= Threshold
+    w_pruned = tl.where(is_kept, w, 0.0)
+
+    # Quantize: Clamp, Round, Scale
+    scaled = w_pruned * Scale
+    clamped = tl.clamp(scaled, -Scale, Scale)
+    rounded = tl.extra.cuda.libdevice.rint(clamped)
+    quantized = rounded / Scale
+
+    tl.store(Out_ptr + offsets, quantized, mask=mask)
+\end{lstlisting}
+
+
+---

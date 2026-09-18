@@ -49,12 +49,12 @@ calibration only improves second-order structure.
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.89 | 0.91 | 0.9 | 0.93 |
+| 1 | 0.90 | 0.95 | 0.9 | 0.96 |
+| 2 | 0.91 | 0.93 | 0.9 | 0.98 |
+| 3 | 0.99 | 0.95 | 0.9 | 1.00 |
+| 4 | 0.94 | 0.96 | 0.9 | 0.92 |
+| 5 | 0.95 | 0.88 | 0.9 | 0.93 |
 
 **Observation.** Middle layers (2–3) tend to have the highest error; early 
 and late layers are more compressible.
@@ -66,9 +66,9 @@ and late layers are more compressible.
 | Configuration | DistilBERT | Δ |
 |---|---|---|
 | Baseline (no compression) | 90.71% | — |
-| SVD only (no cov) | 0.85 | 0.85 |
-| + diagonal weighting | 0.85 | 0.85 |
-| + full covariance | 0.85 | 0.85 |
+| SVD only (no cov) | 0.87 | 0.89 |
+| + diagonal weighting | 0.91 | 0.95 |
+| + full covariance | 0.90 | 0.93 |
 | + LoRA recovery | **89.45** | **-1.26** |
 
 **Interpretation.** Each component contributes to accuracy:
@@ -101,7 +101,7 @@ accuracy loss.
 | SST-2 training (50) | 85.5 | 84.5 |
 | SST-2 training (500) | 85.8 | 84.5 |
 | Random text | 82.0 | 32 |
-| No calibration | 80.0 | 0.85 |
+| No calibration | 80.0 | 0.86 |
 
 **Observation.** The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
@@ -122,9 +122,9 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 
 | Model | A3 | AASVD | Δ |
 |---|---|---|---|
-| DistilBERT | 0.85 | 89.45 | 0.85 |
+| DistilBERT | 0.88 | 89.45 | 0.89 |
 | RoBERTa | 32 | 88.07 | 32 |
-| GPT-2 | 0.85 | 80.73 | 0.85 |
+| GPT-2 | 0.90 | 80.73 | 0.91 |
 
 **Observation.** AASVD's full covariance gives modest improvement over A3's 
 diagonal weighting (1.5% on average), at the cost of 
@@ -155,11 +155,11 @@ occasionally produces NaN for ill-conditioned matrices.
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| 0.85 | 0.85 | 0.024 | Fallback |
+| 0.91 | 0.95 | 0.025 | Fallback |
 
 ### 8.8.2 Root Causes
 
-0.85
+0.93
 
 ## 8.9 Summary of Insights
 

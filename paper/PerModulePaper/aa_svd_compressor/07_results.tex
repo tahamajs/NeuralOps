@@ -1,24 +1,26 @@
-\section{Empirical Results}
+\section{07 Results}
 
-\subsection{Matrix Evaluation Across Architectures}
-We report latency and peak VRAM metrics measured on identical evaluation hardware in Table~\ref{tab:aa_svd_results}.
+ 7. Empirical Results
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Model} & \textbf{Status} & \textbf{Valid} & \textbf{Latency (ms)} & \textbf{Peak VRAM (MB)} \\
-\midrule
-DistilBERT & PASS & True & 2.132 & 638.7 \\
-RoBERTa    & PASS & True & 4.181 & 1328.0 \\
-GPT-2      & PASS & True & 0.216 & 1634.6 \\
-Qwen 3.5   & PASS & True & 114.688 & 4777.1 \\
-\bottomrule
-\end{tabular}
-\caption{Cross-architecture evaluation from \texttt{matrix\_test\_summary.csv}.}
-\label{tab:aa_svd_results}
-\end{table}
+ 7.1 Cross-Model Matrix Evaluation
+Evaluated under the standardized matrix test suite (`results/matrix\_test\_summary.csv`):
 
-\subsection{GPU Screening Performance}
-Under the standardized 121-compressor GPU benchmark (\texttt{all\_121\_compressors\_gpu\_matrix.csv}), \texttt{aa\_svd\_compressor} achieves verified PASS status with 30.96 ms latency and 106.1 MB baseline memory consumption.
+
+| Backbone Model | Architecture Type | Module Status | Accuracy / Forward Valid | Latency (ms) | Peak VRAM (MB) |
+|---|---|---|---|---|---|
+| DistilBERT | compressor | PASS | True | 2.132  | 638.7  |
+| RoBERTa | compressor | PASS | True | 4.181  | 1328.0  |
+| GPT-2 | compressor | PASS | True | 0.216  | 1634.6  |
+| Qwen 3.5 | compressor | PASS | True | 114.688  | 4777.1  |
+
+ 7.2 GPU Matrix Screening Benchmark
+Evaluated under the unified compressor benchmark suite (`results/all\_121\_compressors\_gpu\_matrix.csv`):
+
+
+| Metric | Measured Value | Source Citation |
+|---|---|---|
+| Status | PASS | `results/all\_121\_compressors\_gpu\_matrix.csv` line 10  |
+| Device | CUDA | `results/all\_121\_compressors\_gpu\_matrix.csv` line 10  |
+| Forward Latency | 30.96 ms | `results/all\_121\_compressors\_gpu\_matrix.csv` line 10  |
+| Peak VRAM | 106.1 MB | `results/all\_121\_compressors\_gpu\_matrix.csv` line 10  |
+| Speedup Factor | 0.809x | `results/all\_121\_compressors\_gpu\_matrix.csv` line 10  |

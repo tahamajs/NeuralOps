@@ -1,3 +1,5 @@
-\section*{Appendix D. Negative Results and Edge Cases}
-\addcontentsline{toc}{section}{Appendix D}
-When singular value spectrum decay is shallow, low-rank factorization cannot preserve fidelity without significant rank enlargement. In such layers, the fallback mechanism retains original parameters to preserve model accuracy.
+\section{D Negative Results}
+
+ Appendix D. Negative Results and Edge Cases
+When target rank $r$ exceeds $
+rac{d\_{	ext{in}} d\_{	ext{out}}}{d\_{	ext{in}} + d\_{	ext{out}}}$, parameter counts increase. Similarly, on ill-conditioned covariance matrices where condition numbers exceed $10^8$, eigenvalue clamping prevents divergence but limits representation fidelity.

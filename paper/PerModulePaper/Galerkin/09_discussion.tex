@@ -64,10 +64,10 @@ Consider alternatives
 \toprule
 \textbf{Alternative} & \textbf{Compresses?} & \textbf{Encoder OK?} & \textbf{Decoder OK?} & \textbf{Recommended?} \\
 \midrule
-Standard MHSA & No & Yes & Yes & Yes \\
-FlashAttention-2 & No (memory) & Yes & Yes & Yes \\
-Linformer & Yes & Yes & Yes & Yes \\
-FNet & No & Marginal & Yes & Marginal \\
+Standard MHSA \& No \& Yes \& Yes \& Yes \\
+FlashAttention-2 \& No (memory) \& Yes \& Yes \& Yes \\
+Linformer \& Yes \& Yes \& Yes \& Yes \\
+FNet \& No \& Marginal \& Yes \& Marginal \\
 \textbf{Galerkin} & \textbf{No} & \textbf{No} & \textbf{No} & \textbf{No} \\
 \bottomrule
 \end{tabular}
@@ -86,7 +86,7 @@ For DistilBERT on RTX 4070:
 \midrule
 Accuracy & 90.71\% & 50.92\% & \textbf{-24.77\%} \\
 Params & 66.95M & 67544834 & +0.88\% \\
-Inference VRAM & 183 MB & 341 MB MB & +380 MB\% \\
+Inference VRAM & 183 MB & 341 MB & +380 MB\% \\
 Inference time & 1.9 s & 7.0 s & 3.7$\times$ \\
 \bottomrule
 \end{tabular}

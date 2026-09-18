@@ -151,10 +151,10 @@ pretrained behavior.
 \toprule
 \textbf{$b_h$} & \textbf{$\sigma(b_h)$} & \textbf{Interpretation} \\
 \midrule
-$-2$ & 0.12 & Mostly linear \\
-$0$ & 0.50 & Balanced \\
+$-2$ & 0.12 \& Mostly linear \\
+$0$ & 0.50 \& Balanced \\
 $1.8$ & 0.86 & \textbf{Mostly dense (default)} \\
-$3$ & 0.95 & Almost purely dense \\
+$3$ & 0.95 \& Almost purely dense \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -223,7 +223,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 \midrule
 Time & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L d_h^2)$ & $\mathcal{O}(L^2 d_h + L d_h^2)$ \\
 Memory & $\mathcal{O}(L^2)$ & $\mathcal{O}(d_h^2)$ & $\mathcal{O}(L^2)$ \\
-Causal cumsum & -- & $\mathcal{O}(L d_h^2)$ & Same \\
+Causal cumsum & -- & $\mathcal{O}(L d_h^2)$ \& Same \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -249,10 +249,10 @@ To realize speedup, one would:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{HALO-ReGLA} \\
 \midrule
-$W_Q$ & $d H d_h$ & Same \\
-$W_K$ & $d H_{kv} d_h$ & Same \\
-$W_V$ & $d H_{kv} d_h$ & Same \\
-$W_O$ & $H d_h d$ & Same \\
+$W_Q$ & $d H d_h$ \& Same \\
+$W_K$ & $d H_{kv} d_h$ \& Same \\
+$W_V$ & $d H_{kv} d_h$ \& Same \\
+$W_O$ & $H d_h d$ \& Same \\
 \textbf{Gate} & 0 & $d H + H$ \\
 LoRA & 0 & $2 r (d H d_h + \cdots)$ \\
 \bottomrule

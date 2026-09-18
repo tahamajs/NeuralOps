@@ -15,6 +15,10 @@ low-rank factorization through $m$ landmarks:
 $$
 A \approx F_1 F_2^{-1} F_3
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $F_1 \in \mathbb{R}^{L \times m}$, $F_2 \in \mathbb{R}^{m \times m}$, 
@@ -60,6 +64,10 @@ sequence into $m$ equal segments of size $s = L / m$ and average each:
 $$
 Q_\text{land}[i] = \frac{1}{s} \sum_{j = i s}^{(i+1) s - 1} Q[j], \qquad i = 0, \ldots, m - 1
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 Similarly for $K_\text{land}$. If $L$ is not divisible by $m$, we use 
@@ -68,6 +76,10 @@ uniform strided sampling:
 $$
 Q_\text{land}[i] = Q[\lfloor i L / m \rfloor], \qquad i = 0, \ldots, m - 1
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 **Why segment pooling?** It provides **uniform coverage** regardless of 
@@ -86,16 +98,28 @@ we compute:
 $$
 F_1 = \frac{Q K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times m}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 $$
 F_2 = \frac{Q_\text{land} K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times m}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 $$
 F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
@@ -107,6 +131,10 @@ The approximate attention matrix is:
 $$
 \tilde{A} = F_1 F_2^{-1} F_3 \in \mathbb{R}^{L \times L}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 **Why this works.** If the true attention matrix $A$ has rank $\le m$, then 
@@ -129,6 +157,10 @@ The correct approach:
 $$
 \tilde{A} V = (F_1 F_2^{-1} F_3) V = F_1 (F_2^{-1} (F_3 V))
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where the associativity allows computing left-to-right:
@@ -153,6 +185,10 @@ For $K$ iterations (default $K = 4$):
 $$
 X_{t+1} = X_t (2I - F_2 X_t)
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $I \in \mathbb{R}^{m \times m}$ is the identity.
@@ -162,6 +198,10 @@ where $I \in \mathbb{R}^{m \times m}$ is the identity.
 $$
 E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
@@ -185,6 +225,10 @@ For decoder models, the attention matrix must be lower-triangular (causal):
 $$
 A_{ij} = 0 \quad \text{for } j > i
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 We enforce this by adding a causal mask to $\tilde{A}$:
@@ -193,6 +237,10 @@ $$
 \tilde{A}_\text{causal} = \tilde{A} + M, \qquad
 M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 Then softmax. This is not a true causal approximation (the landmarks see 
@@ -267,6 +315,10 @@ key, value, and output projections are unchanged:
 $$
 |\theta_\text{Primal}| = |\theta_\text{MHA}|
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 It reduces **memory during forward** (no $L \times L$ attention matrix) and 
@@ -281,6 +333,10 @@ For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \
 $$
 \|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
 \tag{4.14}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
@@ -297,6 +353,10 @@ If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 $$
 \|E_K\| \le \rho^{2^K}
 \tag{4.15}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.

@@ -58,29 +58,29 @@ python Codes/framework/run_quality_sweep.py \
 ### Table 7.1 (Main)
 
 ```bash
-python run_all_4_aasvd.py --models distilbert,roberta,gpt2
+python run_all_4_aasvd.py - models distilbert,roberta,gpt2
 ```
 
 ### Table 7.6 (Rank Ablation)
 
 ```bash
 for rank in 32 64 128 256; do
-    python run_all_4_aasvd.py --rank $rank --output_suffix r$rank
+    python run_all_4_aasvd.py - rank $rank - output_suffix r$rank
 done
 ```
 
 ### Table 7.7 (Covariance Ablation)
 
 ```bash
-python run_all_4_aasvd.py --use_covariance true --output_suffix fullcov
-python run_all_4_aasvd.py --use_covariance false --output_suffix noweight
+python run_all_4_aasvd.py - use_covariance true - output_suffix fullcov
+python run_all_4_aasvd.py - use_covariance false - output_suffix noweight
 ```
 
 ### Table 7.8 (EMA β Ablation)
 
 ```bash
 for beta in 0.5 0.7 0.9 0.95 0.99; do
-    python run_all_4_aasvd.py --ema_beta $beta --output_suffix b$beta
+    python run_all_4_aasvd.py - ema_beta $beta - output_suffix b$beta
 done
 ```
 

@@ -16,7 +16,7 @@
 | F1 | 0.9034 |
 | Attention memory | 12 KB |
 | Inference time | 2.5 s |
-| Peak VRAM | 668 MB MB |
+| Peak VRAM | 668 MB |
 
 ## C.2 RoBERTa
 
@@ -26,7 +26,7 @@
 | F1 | 0.6767 |
 | Attention memory | 12 KB |
 | Inference time | 5.3 s |
-| Peak VRAM | 1442 MB MB |
+| Peak VRAM | 1442 MB |
 
 ## C.3 GPT-2
 
@@ -36,7 +36,7 @@
 | F1 | 0.6349 |
 | Attention memory | 12 KB |
 | Inference time | 5.5 s |
-| Peak VRAM | 1685 MB MB |
+| Peak VRAM | 1685 MB |
 
 ## C.4 Landmark Ablation
 

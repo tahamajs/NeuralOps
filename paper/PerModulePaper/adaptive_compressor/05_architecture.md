@@ -1,4 +1,26 @@
 # 5. Architecture and Implementation
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 `adaptive_compressor` subclasses `AdaptiveRanksCompressor` directly:
 - Energy threshold $\tau = 0.92$ (configurable via `energy_threshold`) <!-- source: Codes/framework/compression_engine/adaptive_compressor.py line 29 -->
 - Minimum rank floor $r_{\min} = 16$ <!-- source: Codes/framework/compression_engine/adaptive_compressor.py line 30 -->

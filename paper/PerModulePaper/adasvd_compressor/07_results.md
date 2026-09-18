@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 From `results/unified_adasvd/*/summary.csv`:
 
+<!-- source: results/unified_adasvd/distilbert/summary.csv line 2 -->
 | Model | Status | Accuracy (%) | F1 Score | Params Before | Params After | Compression Rate | Peak VRAM (MB) |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 90.48% <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> | 0.9077 <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> | 1.0000x <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> | 182.94 <!-- source: results/unified_adasvd/distilbert/summary.csv line 3 --> |

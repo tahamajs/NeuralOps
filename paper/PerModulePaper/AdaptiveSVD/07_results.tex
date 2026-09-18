@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
 DistilBERT & \textbf{Adaptive SVD} & \textbf{88.0} & -2.7 & 0.880 & 24 & \textbf{3.0$\times$} & 130 MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
 RoBERTa & \textbf{Adaptive SVD} & \textbf{74.0} & -4.6 & 0.740 & 48 & \textbf{2.5$\times$} & 550 MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
 GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$\times$} & 600 MB \\
 \bottomrule
 \end{tabular}
@@ -103,10 +103,10 @@ projections tend to have lower rank than query and key projections.
 \toprule
 \textbf{Model} & \textbf{Projection} & \textbf{Error} & \textbf{Theoretical bound} \\
 \midrule
-DistilBERT & Q & 0.27 & 0.283 \\
-DistilBERT & K & 0.26 & 0.283 \\
-DistilBERT & V & 0.28 & 0.283 \\
-DistilBERT & O & 0.28 & 0.283 \\
+DistilBERT \& Q & 0.27 & 0.283 \\
+DistilBERT \& K & 0.26 & 0.283 \\
+DistilBERT \& V & 0.28 & 0.283 \\
+DistilBERT \& O & 0.28 & 0.283 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,12 +124,12 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM (MB)} \\
 \midrule
-DistilBERT & full & 1.90 & 59000 & 183 \\
-DistilBERT & Adaptive SVD & 2.3 & 48000 & 130 \\
-RoBERTa & full & 4.10 & 27400 & 712 \\
-RoBERTa & Adaptive SVD & 5.0 & 22000 & 550 \\
-GPT-2 & full & 4.20 & 26700 & 793 \\
-GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
+DistilBERT \& full & 1.90 & 59000 & 183 \\
+DistilBERT \& Adaptive SVD & 2.3 & 48000 & 130 \\
+RoBERTa \& full & 4.10 & 27400 & 712 \\
+RoBERTa \& Adaptive SVD & 5.0 & 22000 & 550 \\
+GPT-2 \& full & 4.20 & 26700 & 793 \\
+GPT-2 \& Adaptive SVD & 5.3 & 21000 & 600 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -212,10 +212,10 @@ collapses accuracy.
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{\% Hit cap} & \textbf{Note} \\
 \midrule
-64 & 85 & 20\% & Under-cap \\
-128 & 88 & 5\% & Some hit \\
-256 & 88 & 0\% & Rarely hit \\
-384 & 88 & 0\% & Never hit \\
+64 & 85 & 20\% \& Under-cap \\
+128 & 88 & 5\% \& Some hit \\
+256 & 88 & 0\% \& Rarely hit \\
+384 & 88 & 0\% \& Never hit \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,50 +1,68 @@
+
 \section{Related Work}
 
 \subsection{Low-Rank Matrix Factorization}
 
-\textbf{Eckart--Young theorem} (Eckart \& Young, 1936) establishes that truncated 
-SVD is optimal in Frobenius norm at fixed rank. Our method uses this as a 
-building block but \textbf{selects rank adaptively} via energy thresholding.
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
+that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
+SVD $W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top$. Adaptive SVD builds 
+on this but selects $r$ via an energy threshold rather than a validation 
+loop or fixed value.
 
-\textbf{Randomized SVD} (Halko et al., 2011) accelerates the decomposition. We 
-use exact SVD because our matrices are modest size ($768 \times 768$).
+\textbf{Rank selection heuristics.} Classical rank selection includes AIC 
+(Akaike, 1974), BIC (Schwarz, 1978), and cross-validation. For SVD-based 
+compression specifically, prior work uses reconstruction error thresholds 
+(A3), fixed budget ratios (SDRM), or optimal hard thresholding on 
+singular values under noise (Gavish \& Donoho, 2014). Our criterion is a 
+\textbf{cumulative energy threshold}, distinct from per-singular-value thresholds.
 
-\textbf{Energy-based rank selection} is used in PCA (Jolliffe, 2002) and latent 
-semantic analysis (Deerwester et al., 1990). We apply it to attention 
-projections for the first time.
+\textbf{Randomized SVD.} Halko et al. (2011) provide a randomized algorithm with 
+$\mathcal{O}(d r \log k)$ complexity. For our layer sizes ($\le$3072$\times$768), exact 
+SVD is faster and simpler.
 
-\subsection{Attention Compression}
+\subsection{Activation-Aware Compression}
 
-\textbf{SOA Fused Attention} (companion work) uses a \textbf{fixed} rank $k$ for 
-Q/K/V. We differ in two ways: (a) dynamic rank per projection, (b) all four 
-projections.
+\textbf{AWQ.} Lin et al. (2023) observe that activation magnitude correlates with 
+weight importance and use it to scale quantization. Applied to low-rank 
+factorization, this becomes the A3 method (Fisher diagonal weighting).
 
-\textbf{A3} and \textbf{AASVD} (companion works) use activation-weighted SVD requiring 
-calibration data. We are \textbf{zero-shot}.
+\textbf{SmoothQuant.} Xiao et al. (2023) migrate activation scale to weights for 
+quantization. Analogous to AASVD's covariance weighting for low-rank.
 
-\textbf{Linformer} (Wang et al., 2020) projects K, V to a fixed rank at the 
-sequence level. Our projection is at the feature level.
+\textbf{A3.} Uses Fisher diagonal $F_i = \mathbb{E}[x_i^2]$ to weight the SVD input 
+space. Requires calibration. Adaptive SVD is calibration-free.
+
+\textbf{AASVD.} Uses full covariance $C_X = \mathbb{E}[x x^\top]$. Requires 
+streaming EMA accumulation. Adaptive SVD is calibration-free.
+
+\textbf{Key distinction.} Adaptive SVD does \textbf{not} use activation statistics. Its 
+rank criterion is intrinsic to the weight matrix.
 
 \subsection{Parameter-Efficient Fine-Tuning}
 
-\textbf{LoRA} (Hu et al., 2021) adds trainable low-rank deltas to frozen weights. 
-Our method adds LoRA on top of factorized SVD -- a two-level low-rank 
-structure.
+\textbf{LoRA.} Hu et al. (2021) add trainable rank-$r_L$ updates $B A$ with $B = 0$. 
+Adaptive SVD uses the same residual structure, integrated with a frozen SVD base.
 
-\textbf{AdaLoRA} (Zhang et al., 2023) also allocates rank adaptively, but for the 
-adapter, not for the base factorization.
+\textbf{AdaLoRA.} Zhang et al. (2023) adaptively allocate LoRA rank per layer based 
+on singular value importance. Our adaptation is on the \textbf{base factorization}, 
+not the adapter.
 
-\subsection{T5 Relative Attention}
+\textbf{PiSSA.} Meng et al. (2024) initialize LoRA adapters with principal singular 
+components. Adaptive SVD uses the top-$r$ components as the \textbf{frozen base} 
+and zero-initialized LoRA as the residual. These are complementary strategies.
 
-\textbf{T5} (Raffel et al., 2020) uses a learned relative position bias added to 
-attention scores. This mechanism is orthogonal to our factorization but 
-requires special handling in the weight transfer.
+\textbf{OFT.} Qiu et al. (2023) use orthogonal fine-tuning. Different primitive.
 
-\subsection{Cross-Attention}
+\subsection{Attention-Specific Compression}
 
-Encoder-decoder models (T5, BART) have cross-attention with separate K, V 
-projections from the encoder. Our method supports cross-attention because 
-all projections are factorized.
+\textbf{Head pruning.} Voita et al. (2019) prune entire heads. Adaptive SVD preserves 
+head count and compresses per-head projections via low-rank factorization.
+
+\textbf{GQA.} Ainslie et al. (2023) reduce KV head count during pretraining. Adaptive 
+SVD preserves head count but compresses per-head projection matrices.
+
+\textbf{KV cache compression.} H2O (Zhang et al., 2023), StreamingLLM (Xiao et al., 
+2024) reduce cache size at inference. Different target.
 
 \subsection{Position of Our Work}
 
@@ -53,40 +71,22 @@ all projections are factorized.
 \small
 \begin{tabular}{llllll}
 \toprule
-\textbf{Method} & \textbf{Rank} & \textbf{Calibration} & \textbf{Projections} & \textbf{T5} & \textbf{Cross-attn} \\
+\textbf{Method} & \textbf{Calib} & \textbf{Weighted} & \textbf{Rank} & \textbf{Per-layer rank} & \textbf{T5 bias} \\
 \midrule
-SOA Fused & Fixed & No & Q/K/V & No & No \\
-A3 & Fixed & Yes & Q/K/V/O & No & No \\
-AASVD & Fixed & Yes & Q/K/V/O & No & No \\
-\textbf{Adaptive SVD} & \textbf{Dynamic} & \textbf{No} & \textbf{Q/K/V/O} & \textbf{Yes} & \textbf{Yes} \\
+SVD fixed rank \& No \& No \& Fixed \& No \& No \\
+SDRM \& No \& No \& Budget \& No \& No \\
+A3 \& Yes \& Fisher diag \& Escalation \& Partial \& No \\
+AASVD \& Yes \& Full cov \& Fixed \& No \& No \\
+\textbf{Adaptive SVD} & \textbf{No} & \textbf{No} & \textbf{Energy} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Key distinction.} Adaptive SVD Attention is the only method that:
-\begin{itemize}
-\item Uses \textbf{dynamic rank per projection}
-\item Is \textbf{zero-shot} (no calibration)
-\item Supports \textbf{T5 relative attention}
-\item Handles \textbf{encoder-decoder cross-attention}
+\textbf{Key distinction.} Adaptive SVD is the only method that:
+\begin{enumerate}
+\item Requires no calibration data.
+\item Selects rank per-projection via an energy criterion.
+\item Preserves T5 relative attention bias.
 
-\end{itemize}
-
-
+\end{enumerate}
 \subsection{Comparison Table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllll}
-\toprule
-\textbf{Method} & \textbf{Rank} & \textbf{Energy $\tau$} & \textbf{Reduction} & \textbf{Retrain?} & \textbf{SST-2 acc} \\
-\midrule
-Baseline & -- & -- & 1$\times$ & -- & 90.71\% \\
-SOA Fused (k=128) & Fixed & -- & 2$\times$ & LoRA & 88.5 \\
-A3 & Fixed & -- & 3$\times$ & LoRA & 87.5 \\
-\textbf{Adaptive SVD} & \textbf{Dynamic} & \textbf{0.92} & \textbf{2.4$\times$} & \textbf{LoRA} & \textbf{87.96} \\
-\bottomrule
-\end{tabular}
-\end{table}
-

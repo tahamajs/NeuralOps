@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 183 MB \\
-DistilBERT & \textbf{AEGIS-V5} & \textbf{83.72} & -6.99 & 0.8515 & 68.2M & 212 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & \textbf{AEGIS-V5} & \textbf{86.47} & +7.91 & 0.8706 & 127.0M & 404 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & \textbf{AEGIS-V5} & \textbf{69.50} & -9.86 & 0.7555 & 127.0M & 349 MB MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 66.95M & 183 MB \\
+DistilBERT & \textbf{AEGIS-V5} & \textbf{83.72} & -6.99 & 0.8515 & 68.2M & 212 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
+RoBERTa & \textbf{AEGIS-V5} & \textbf{86.47} & +7.91 & 0.8706 & 127.0M & 404 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
+GPT-2 & \textbf{AEGIS-V5} & \textbf{69.50} & -9.86 & 0.7555 & 127.0M & 349 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,9 +40,9 @@ GPT-2 & \textbf{AEGIS-V5} & \textbf{69.50} & -9.86 & 0.7555 & 127.0M & 349 MB MB
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 68200000 & 1.8\% & LoRA + RFF dominate \\
-RoBERTa & 124,647,170 & 127000000 & 1.9\% & Same as DistilBERT \\
-GPT-2 & 124,441,344 & 127000000 & 2.0\% & Decoder fallback used \\
+DistilBERT & 66,955,010 & 68200000 & 1.8\% \& LoRA + RFF dominate \\
+RoBERTa & 124,647,170 & 127000000 & 1.9\% \& Same as DistilBERT \\
+GPT-2 & 124,441,344 & 127000000 & 2.0\% \& Decoder fallback used \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,10 +79,10 @@ DistilBERT & 3 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
 \midrule
-DistilBERT & full & 1.9 s & 59000 & 183 MB \\
-DistilBERT & AEGIS-V5 & 2.2 s & 53000 & 212 MB MB \\
-GPT-2 & full & 4.2 s & 26700 & 793 MB \\
-GPT-2 & AEGIS-V5 & 4.7 s & 26000 & 349 MB MB \\
+DistilBERT \& full & 1.9 s & 59000 & 183 MB \\
+DistilBERT \& AEGIS-V5 & 2.2 s & 53000 & 212 MB \\
+GPT-2 \& full & 4.2 s & 26700 & 793 MB \\
+GPT-2 \& AEGIS-V5 & 4.7 s & 26000 & 349 MB \\
 \bottomrule
 \end{tabular}
 \end{table}

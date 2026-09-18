@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
 DistilBERT & \textbf{A3} & \textbf{88.5} & -2.2 & 0.884 & 36 & \textbf{5.0$\times$} & 110 & 2.4 \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
 RoBERTa & \textbf{A3} & \textbf{75.8} & -2.8 & 0.775 & 72 & \textbf{4.5$\times$} & 450 & 5.2 \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
 GPT-2 & \textbf{A3} & \textbf{76.5} & -2.9 & 0.768 & 72 & \textbf{4.5$\times$} & 500 & 5.5 \\
 \bottomrule
 \end{tabular}
@@ -120,12 +120,12 @@ GPT-2 & 72 & 0 & 48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{VRAM} & \textbf{Tokens/s} \\
 \midrule
-DistilBERT & full & 1.9 s & 183 MB & 59000 \\
-DistilBERT & A3 & 2.4 s & 110 MB & 48000 \\
-RoBERTa & full & 4.1 s & 712 MB & 27400 \\
-RoBERTa & A3 & 5.2 s & 450 MB & 22000 \\
-GPT-2 & full & 4.2 s & 793 MB & 26700 \\
-GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
+DistilBERT \& full & 1.9 s & 183 MB & 59000 \\
+DistilBERT \& A3 & 2.4 s & 110 MB & 48000 \\
+RoBERTa \& full & 4.1 s & 712 MB & 27400 \\
+RoBERTa \& A3 & 5.2 s & 450 MB & 22000 \\
+GPT-2 \& full & 4.2 s & 793 MB & 26700 \\
+GPT-2 \& A3 & 5.5 s & 500 MB & 21000 \\
 \bottomrule
 \end{tabular}
 \end{table}

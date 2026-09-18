@@ -1,145 +1,228 @@
 # 5. Architecture Integration
 
-## 5.1 Model Support
 
-| Model | Attention path | Nested? | RoPE? | GQA? | Relative? | Cross? |
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
+
+## 5.1 Model Support Matrix
+
+Adaptive SVD supports the following attention variants:
+
+| Architecture | Class | Nested? | RoPE? | GQA? | T5 bias? | Verified |
 |---|---|---|---|---|---|---|
-| DistilBERT | `layer[i].attention` | No | No | No | No | No |
-| RoBERTa | `layer[i].attention.self` | Yes | No | No | No | No |
-| GPT-2 | `h[i].attn` | No | No | No | No | No |
-| Qwen3.5 | `layers[i].self_attn` | No | Yes | Yes | No | No |
-| T5 | `block[i].layer[0].SelfAttention` | No | No | No | Yes | Yes (layer[1]) |
+| DistilBERT | `MultiHeadSelfAttention` | No | No | No | No | ✅ |
+| RoBERTa | `BertSelfAttention` | Yes | No | No | No | ✅ |
+| GPT-2 | `GPT2Attention` | No | No | No | No | ✅ |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | No | partial |
+| T5 | `T5Attention` | No | No | No | **Yes** | not tested |
 
 ## 5.2 Weight Extraction
 
-Our `copy_weights` handles five patterns:
+### 5.2.1 DistilBERT (Flat)
 
-### 5.2.1 UniversalAdapter First
-
-```python
-from framework.core.adapters import UniversalAdapter
-w, b = UniversalAdapter.get_weight_bias(src, proj)  # proj ∈ {"q", "k", "v", "o"}
-```
-
-Handles most standard architectures.
-
-### 5.2.2 GPT-2 Conv1D
+Direct extraction:
 
 ```python
-fused_w = src.c_attn.weight.T
-fused_b = src.c_attn.bias
-q_w, k_w, v_w = fused_w.chunk(3, dim=0)
+W_Q = src.q_lin.weight  # Linear(768, 768)
+W_K = src.k_lin.weight
+W_V = src.v_lin.weight
+W_O = src.out_lin.weight
 ```
 
-### 5.2.3 RoBERTa Nested
+All four projections are inside `MultiHeadSelfAttention`. `is_nested_encoder = False`.
+
+### 5.2.2 RoBERTa (Nested)
+
+Extract from inner `BertSelfAttention`:
 
 ```python
-s = src.self
-q_w = s.query.weight
-k_w = s.key.weight
-v_w = s.value.weight
-o_w = src.output.dense.weight
+W_Q = src.self.query.weight
+W_K = src.self.key.weight
+W_V = src.self.value.weight
+# W_O is not extracted — outer BertSelfOutput.dense applies it
 ```
 
-### 5.2.4 DistilBERT Flat
+`is_nested_encoder = True`. During forward, the compressed `context` is 
+returned without applying `out_proj`; the outer `BertSelfOutput.dense` 
+applies its own (unchanged) projection.
+
+**Consequence.** In RoBERTa, the output projection $W_O$ is **not compressed**, 
+only $W_Q, W_K, W_V$.
+
+### 5.2.3 GPT-2 (Fused Conv1D)
+
+GPT-2 fuses Q, K, V into a single `c_attn` Conv1D:
 
 ```python
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+fused = src.c_attn.weight.T  # (3*768, 768) after transpose
+W_Q, W_K, W_V = fused.chunk(3, dim=0)
+W_O = src.c_proj.weight.T
 ```
 
-### 5.2.5 Fallback `<proj>_proj`
+The transpose handles the HuggingFace Conv1D layout: it stores weights as 
+`(in_features, out_features)` instead of the standard `(out_features, in_features)`.
+
+### 5.2.4 T5 (Relative Attention Bias)
+
+T5 uses `relative_attention_bias` (an `nn.Embedding`) instead of learned 
+position embeddings:
 
 ```python
-mod = getattr(src, f"{proj}_proj")
-w = mod.weight
+self.relative_attention_bias = src.relative_attention_bias
+self.has_relative_attention_bias = True
 ```
 
-## 5.3 Handling `W_O` Factor
+The bias is preserved as a separate module and added to attention scores 
+in forward. The bucket function handles bidirectional (encoder) and causal 
+(decoder) modes.
 
-Unlike SOA Fused Attention, we **do not skip $W_O$**. We apply the same 
-factorization procedure, with the residual adapter absorbing approximation 
-error.
+### 5.2.5 Qwen3.5 (GQA + RoPE)
 
-For nested encoders, the outer `attention.output.dense` is **replaced** with 
-our factorized `out_proj`. The `is_nested_encoder` flag remains for the 
-forward pass, but the output projection is applied inside our module.
-
-## 5.4 T5 Relative Bias Transfer
+Qwen3.5 uses GQA with $H_{kv} < H$:
 
 ```python
-if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
-    self.relative_attention_bias = src.relative_attention_bias
-    self.has_relative_attention_bias = True
+W_Q = src.q_proj.weight  # (H * d_h, d) = (2048, 1024)
+W_K = src.k_proj.weight  # (H_kv * d_h, d) = (512, 1024)
+W_V = src.v_proj.weight  # (512, 1024)
+W_O = src.o_proj.weight  # (1024, 2048)
 ```
 
-In `compute_bias`, we generate the position bias for any (query, key) pair.
-
-## 5.5 Cross-Attention
-
-The forward pass handles cross-attention by inspecting `key_value_states`:
+RoPE is applied after projection:
 
 ```python
-key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
-is_cross_attention = key_value_states is not None
-kv_input = key_value_states if is_cross_attention else hidden_states
+Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 ```
 
-K, V are computed from `kv_input`; Q from `hidden_states`. The factorized 
-projections apply identically.
-
-## 5.6 Causal Detection
-
-Robust prefix matching:
+## 5.3 The `AdaptiveSVDLinear` Module
 
 ```python
-_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                     "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-is_dec = any(model_type.startswith(p) for p in _decoder_prefixes)
+class AdaptiveSVDLinear(nn.Module):
+    def __init__(self, in_features, out_features, svd_rank, residual_rank=16, ...):
+        super().__init__()
+        self.svd_rank = min(svd_rank, in_features, out_features)
+        self.residual_rank = min(residual_rank, in_features, out_features)
+        
+        # Frozen SVD base
+        self.U = nn.Parameter(
+            torch.empty(out_features, self.svd_rank),
+            requires_grad=False
+        )
+        self.V = nn.Parameter(
+            torch.empty(self.svd_rank, in_features),
+            requires_grad=False
+        )
+        
+        # Trainable residual
+        if self.residual_rank > 0:
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.residual_rank)
+            )
+            self.lora_A = nn.Parameter(
+                torch.empty(self.residual_rank, in_features)
+            )
+        
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        
+        self.reset_parameters()
+    
+    def forward(self, x):
+        Vx = F.linear(x, self.V)
+        out = F.linear(Vx, self.U)
+        if self.lora_A is not None:
+            Ax = F.linear(x, self.lora_A)
+            out = out + F.linear(Ax, self.lora_B)
+        if self.bias is not None:
+            out = out + self.bias
+        return out
 ```
 
-Also checks `config.is_decoder`, `config.is_causal`, `config.causal`, and 
-the source attention's attributes.
+**Parameter count:** $r_P(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out}) + d_\text{out}$.
 
-## 5.7 Injection Algorithm
+## 5.4 Injection Algorithm
 
-**Algorithm 2:** Inject Adaptive SVD Attention into a model
+**Algorithm 2:** Inject Adaptive SVD into a full model
 ```
-Input:  model M, config c, svd_rank, residual_rank, energy_threshold
+Input:  model M, config c, hyperparameters τ, r_L
 Output: M with attention replaced
 
-1: for each layer with attention:
-2:     src ← extract_attention(layer)
-3:     if src is None or is_already_injected: continue
-4:     try:
-5:         new ← AdaptiveSVDAttention(c, ..., pretrained_attn=src)
-6:         replace(layer, new)
-7:     except Exception as e:
-8:         log_error(f"Layer failed: {e}")
-9:         continue
-10: return M
+1:  for ℓ in transformer_layers(M) do
+2:      src ← find_attention(ℓ)                   ▷ Old attention
+3:      if src is None: continue
+4:      new ← AdaptiveSVDAttention(c, τ, r_L, pretrained_attn=src)
+5:      new.copy_weights(src)                      ▷ SVD + adapter
+6:      replace_attention(ℓ, new)
+7: end for
+8: return M
 ```
 
-## 5.8 Failure Handling
+**Layer paths:**
 
-Two-stage error handling:
+| Model | Layer path | Attention path |
+|---|---|---|
+| DistilBERT | `distilbert.transformer.layer[i]` | `.attention` |
+| RoBERTa | `roberta.encoder.layer[i]` | `.attention.self` |
+| GPT-2 | `transformer.h[i]` | `.attn` |
+| T5 | `encoder.block[i].layer[0]` | `.SelfAttention` |
 
-**Stage 1 — Pre-flight test:** Construct the module inside a try/except. If 
-construction fails (weight extraction issue), return `None` and skip.
+## 5.5 Handling Special Cases
 
-**Stage 2 — Frobenius validation:** If construction succeeds but a 
-projection has near-zero norm, raise `RuntimeError`.
+### 5.5.1 T5 Relative Attention Bias
+
+Forward:
 
 ```python
-try:
-    test_module = AdaptiveSVDAttention(..., pretrained_attn=old_attn)
-except Exception:
-    return None
+position_bias = kwargs.get("position_bias", None)
+if position_bias is None and self.has_relative_attention_bias:
+    position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
 ```
 
-## 5.9 Registry
+The `compute_bias` function uses `_relative_position_bucket` to map relative 
+positions to buckets, then looks up the bias embedding.
+
+### 5.5.2 GQA Expansion
+
+```python
+if self.kv_repeat > 1:
+    K = repeat_kv(K, self.kv_repeat)
+    V = repeat_kv(V, self.kv_repeat)
+```
+
+### 5.5.3 RoPE
+
+```python
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+```
+
+### 5.5.4 Causal Masking
+
+```python
+if is_causal:
+    causal_tril = torch.tril(torch.ones((N_q, N_k), device=...))
+    scores = scores.masked_fill(~causal_tril.unsqueeze(0).unsqueeze(0), -10000.0)
+```
+
+## 5.6 Registry
 
 ```python
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
@@ -149,11 +232,37 @@ class AdaptiveSVDAttention(BaseAttention):
     ...
 ```
 
-## 5.10 Double-Injection Guard
+## 5.7 Failure Modes and Fallbacks
+
+| Failure | Detection | Response |
+|---|---|---|
+| Missing weights | `copy_weights` raises | Return None |
+| Shape mismatch | Assertion | Skip layer |
+| Near-zero Frobenius | Check < 1e-4 | Skip layer |
+| NaN in SVD | `torch.isnan` | Fallback |
+| T5 bias mismatch | Embedding shape | Skip |
+
+## 5.8 Numerical Precision
+
+| Component | Precision |
+|---|---|
+| SVD | FP32 |
+| Factor storage | Model dtype |
+| Forward | Model dtype |
+| Adapter init | FP32 then cast |
+
+## 5.9 Compatibility
+
+### 5.9.1 LoRA Wrappers
+
+If the source module is a `LoRALinear` wrapper, Adaptive SVD extracts the 
+inner `base_layer` for SVD and preserves the outer LoRA parameters:
 
 ```python
-if isinstance(src_attn, AdaptiveSVDAttention): return None
-if "AdaptiveSVD" in src_attn.__class__.__name__: return None
+target_mod = getattr(module, "base_layer", module)
 ```
 
----
+### 5.9.2 Encoder-Decoder
+
+For T5, the same `AdaptiveSVDAttention` is used in both encoder and decoder 
+blocks. The decoder side has `is_decoder = True`, which enables causal masking.

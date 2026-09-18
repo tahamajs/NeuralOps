@@ -32,9 +32,9 @@ approximation with the same landmarks for $Q$ and $K$. Primal Attention
 \toprule
 \textbf{Method} & \textbf{Approximation} & \textbf{Symmetric?} & \textbf{Trainable?} \\
 \midrule
-Performer & Random Fourier features & Yes & Yes \\
-Nystr mformer & Symmetric landmarks & Yes & Yes \\
-\textbf{Primal Attention} & Asymmetric landmarks & \textbf{No} & \textbf{Yes} \\
+Performer \& Random Fourier features \& Yes \& Yes \\
+Nystr mformer \& Symmetric landmarks \& Yes \& Yes \\
+\textbf{Primal Attention} \& Asymmetric landmarks & \textbf{No} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,12 +87,12 @@ in optimizers. We use it for attention pseudoinverse.
 \toprule
 \textbf{Axis} & \textbf{Nystr mformer} & \textbf{Primal Attention} \\
 \midrule
-Landmark selection & Mean pooling (shared) & Segment pooling (asymmetric) \\
-Kernel symmetry & Symmetric & \textbf{Asymmetric} \\
-Pseudoinverse & SVD-based & \textbf{Schulz iteration} \\
-Differentiable & Yes & Yes \\
-GQA support & No & Yes \\
-RoPE support & Partial & Full \\
+Landmark selection \& Mean pooling (shared) \& Segment pooling (asymmetric) \\
+Kernel symmetry \& Symmetric & \textbf{Asymmetric} \\
+Pseudoinverse \& SVD-based & \textbf{Schulz iteration} \\
+Differentiable \& Yes \& Yes \\
+GQA support \& No \& Yes \\
+RoPE support \& Partial \& Full \\
 \bottomrule
 \end{tabular}
 \end{table}

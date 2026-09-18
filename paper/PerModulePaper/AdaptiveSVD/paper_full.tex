@@ -362,10 +362,10 @@ SVD preserves head count but compresses per-head projection matrices.
 \toprule
 \textbf{Method} & \textbf{Calib} & \textbf{Weighted} & \textbf{Rank} & \textbf{Per-layer rank} & \textbf{T5 bias} \\
 \midrule
-SVD fixed rank & No & No & Fixed & No & No \\
-SDRM & No & No & Budget & No & No \\
-A3 & Yes & Fisher diag & Escalation & Partial & No \\
-AASVD & Yes & Full cov & Fixed & No & No \\
+SVD fixed rank \& No \& No \& Fixed \& No \& No \\
+SDRM \& No \& No \& Budget \& No \& No \\
+A3 \& Yes \& Fisher diag \& Escalation \& Partial \& No \\
+AASVD \& Yes \& Full cov \& Fixed \& No \& No \\
 **Adaptive SVD** & **No** & **No** & **Energy** & **Yes** & **Yes** \\
 \bottomrule
 \end{tabular}
@@ -970,11 +970,11 @@ Adaptive SVD supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No & No & ✅ \\
-RoBERTa & `BertSelfAttention` & Yes & No & No & No & ✅ \\
-GPT-2 & `GPT2Attention` & No & No & No & No & ✅ \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
-T5 & `T5Attention` & No & No & No & **Yes** & not tested \\
+DistilBERT & `MultiHeadSelfAttention` \& No \& No \& No \& No & ✅ \\
+RoBERTa & `BertSelfAttention` \& Yes \& No \& No \& No & ✅ \\
+GPT-2 & `GPT2Attention` \& No \& No \& No \& No & ✅ \\
+Qwen3.5 & `Qwen3Attention` \& No \& Yes \& Yes \& No \& partial \\
+T5 & `T5Attention` \& No \& No \& No & **Yes** \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1192,11 +1192,11 @@ class AdaptiveSVDAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
-Shape mismatch & Assertion & Skip layer \\
-Near-zero Frobenius & Check < 1e-4 & Skip layer \\
-NaN in SVD & `torch.isnan` & Fallback \\
-T5 bias mismatch & Embedding shape & Skip \\
+Missing weights & `copy\_weights` raises \& Return None \\
+Shape mismatch \& Assertion \& Skip layer \\
+Near-zero Frobenius \& Check < 1e-4 \& Skip layer \\
+NaN in SVD & `torch.isnan` \& Fallback \\
+T5 bias mismatch \& Embedding shape \& Skip \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1209,10 +1209,10 @@ T5 bias mismatch & Embedding shape & Skip \\
 \toprule
 \textbf{Component} & \textbf{Precision} \\
 \midrule
-SVD & FP32 \\
-Factor storage & Model dtype \\
-Forward & Model dtype \\
-Adapter init & FP32 then cast \\
+SVD \& FP32 \\
+Factor storage \& Model dtype \\
+Forward \& Model dtype \\
+Adapter init \& FP32 then cast \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1246,9 +1246,9 @@ blocks. The decoder side has \texttt{is\\_decoder = True}, which enables causal 
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1282,12 +1282,12 @@ Test & 1,821 & --- & --- \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-`energy\_threshold` $\tau$ & 0.92 & Cumulative energy cutoff \\
-`svd\_rank` (cap) & 288 & Maximum rank (rarely hit) \\
-`residual\_rank` $r_L$ & 16 & LoRA adapter rank \\
-`min\_rank` & 16 & Minimum rank floor \\
-`trainable\_svd` & False & Base frozen \\
-`target\_attention\_only` & True & Only attention projections \\
+`energy\_threshold` $\tau$ & 0.92 \& Cumulative energy cutoff \\
+`svd\_rank` (cap) & 288 \& Maximum rank (rarely hit) \\
+`residual\_rank` $r_L$ & 16 \& LoRA adapter rank \\
+`min\_rank` & 16 \& Minimum rank floor \\
+`trainable\_svd` \& False \& Base frozen \\
+`target\_attention\_only` \& True \& Only attention projections \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1307,15 +1307,15 @@ After compression, adapters are trained:
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
-LR schedule & Constant \\
+LR schedule \& Constant \\
 Warmup & 0 steps \\
 Recovery steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
-Trainable params & Only $A_P, B_P$ \\
+Precision \& FP16 \\
+Trainable params \& Only $A_P, B_P$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1395,12 +1395,12 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
 Transformers & 4.44.0 \\
-OS & Windows / Linux \\
+OS \& Windows / Linux \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1439,11 +1439,11 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
 DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$\times$** & 130 MB \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
 RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$\times$** & 550 MB \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
 GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 MB \\
 \bottomrule
 \end{tabular}
@@ -1524,10 +1524,10 @@ projections tend to have lower rank than query and key projections.
 \toprule
 \textbf{Model} & \textbf{Projection} & \textbf{Error} & \textbf{Theoretical bound} \\
 \midrule
-DistilBERT & Q & 0.27 & 0.283 \\
-DistilBERT & K & 0.26 & 0.283 \\
-DistilBERT & V & 0.28 & 0.283 \\
-DistilBERT & O & 0.28 & 0.283 \\
+DistilBERT \& Q & 0.27 & 0.283 \\
+DistilBERT \& K & 0.26 & 0.283 \\
+DistilBERT \& V & 0.28 & 0.283 \\
+DistilBERT \& O & 0.28 & 0.283 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1544,12 +1544,12 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM (MB)} \\
 \midrule
-DistilBERT & full & 1.90 & 59000 & 183 \\
-DistilBERT & Adaptive SVD & 2.3 & 48000 & 130 \\
-RoBERTa & full & 4.10 & 27400 & 712 \\
-RoBERTa & Adaptive SVD & 5.0 & 22000 & 550 \\
-GPT-2 & full & 4.20 & 26700 & 793 \\
-GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
+DistilBERT \& full & 1.90 & 59000 & 183 \\
+DistilBERT \& Adaptive SVD & 2.3 & 48000 & 130 \\
+RoBERTa \& full & 4.10 & 27400 & 712 \\
+RoBERTa \& Adaptive SVD & 5.0 & 22000 & 550 \\
+GPT-2 \& full & 4.20 & 26700 & 793 \\
+GPT-2 \& Adaptive SVD & 5.3 & 21000 & 600 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1628,10 +1628,10 @@ collapses accuracy.
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{\% Hit cap} & \textbf{Note} \\
 \midrule
-64 & 85 & 20\% & Under-cap \\
-128 & 88 & 5\% & Some hit \\
-256 & 88 & 0\% & Rarely hit \\
-384 & 88 & 0\% & Never hit \\
+64 & 85 & 20\% \& Under-cap \\
+128 & 88 & 5\% \& Some hit \\
+256 & 88 & 0\% \& Rarely hit \\
+384 & 88 & 0\% \& Never hit \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1738,10 +1738,10 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 \toprule
 \textbf{Rank bucket} & \textbf{Count} & \textbf{Notable layers} \\
 \midrule
-< 32 & 8 & V (all layers) \\
-32--64 & 6 & O, V (later) \\
-64--128 & 8 & Q, K \\
-> 128 & 2 & Q, K (middle) \\
+< 32 & 8 \& V (all layers) \\
+32--64 & 6 \& O, V (later) \\
+64--128 & 8 \& Q, K \\
+> 128 & 2 \& Q, K (middle) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1761,9 +1761,9 @@ be more compressed without losing critical information.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-Fixed rank 64 & 86 & 5.0$\times$ & Over-compress slow-decaying layers \\
-Fixed rank 128 & 87.5 & 3.5$\times$ & Moderate \\
-Fixed rank 192 & 88.5 & 1.7$\times$ & Under-compress fast-decaying \\
+Fixed rank 64 & 86 & 5.0$\times$ \& Over-compress slow-decaying layers \\
+Fixed rank 128 & 87.5 & 3.5$\times$ \& Moderate \\
+Fixed rank 192 & 88.5 & 1.7$\times$ \& Under-compress fast-decaying \\
 **Adaptive ($\tau$=0.92)** & **88.0** & **3.0$\times$** & **Best** \\
 \bottomrule
 \end{tabular}
@@ -1802,11 +1802,11 @@ drops by \textbf{8\%}.
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-0.85 & 85 & 5.0$\times$ & Aggressive, loses accuracy \\
-0.90 & 87 & 3.5$\times$ & Good balance \\
-0.92 & 88 & 3.0$\times$ & Default \\
-0.95 & 89 & 2.0$\times$ & Conservative \\
-0.99 & 90 & 1.2$\times$ & Near-lossless \\
+0.85 & 85 & 5.0$\times$ \& Aggressive, loses accuracy \\
+0.90 & 87 & 3.5$\times$ \& Good balance \\
+0.92 & 88 & 3.0$\times$ \& Default \\
+0.95 & 89 & 2.0$\times$ \& Conservative \\
+0.99 & 90 & 1.2$\times$ \& Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1824,10 +1824,10 @@ and 0.95. Below 0.88, accuracy drops sharply.
 \toprule
 \textbf{Feature} & \textbf{A3} & \textbf{AASVD} & \textbf{**Adaptive SVD**} \\
 \midrule
-Calibration & Required & Required & **None** \\
-Weighting & Fisher diag & Full cov & None \\
-Rank selection & Error-driven & Fixed & **Energy** \\
-Per-layer rank & Adaptive & Uniform & **Automatic** \\
+Calibration \& Required \& Required & **None** \\
+Weighting \& Fisher diag \& Full cov \& None \\
+Rank selection \& Error-driven \& Fixed & **Energy** \\
+Per-layer rank \& Adaptive \& Uniform & **Automatic** \\
 Compression time & 60 s & 75 s & **15 s** \\
 DistilBERT acc & 85.5 & 85.0 & **88.0** \\
 RoBERTa acc & 72 & 72 & **74.0** \\
@@ -1865,8 +1865,8 @@ exploding gradients.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Structured?} \\
 \midrule
-Head pruning (50\%) & 86.4 & 84\% & Hard (removes heads) \\
-**Adaptive SVD** & **88.0** & 3.0$\times$ & Soft (per-head low-rank) \\
+Head pruning (50\%) & 86.4 & 84\% \& Hard (removes heads) \\
+**Adaptive SVD** & **88.0** & 3.0$\times$ \& Soft (per-head low-rank) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1884,7 +1884,7 @@ reduced rank. Head pruning is a \textbf{hard} compression: some heads removed.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Reason} & \textbf{Action} \\
 \midrule
-none & N/A & N/A & N/A \\
+none \& N/A \& N/A \& N/A \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2000,7 +2000,7 @@ Params & 66.95M & 22000000M & **3.0$\times$** \\
 VRAM & 183 MB & 130 MB & **2.1\times$\times$** \\
 Inference time & 1.90 s & 2.3 s & 1.2$\times$ \\
 Accuracy & 90.71\% & 88.0\% & -2.7\% \\
-Compression time & --- & 15 s & Fast \\
+Compression time & --- & 15 s \& Fast \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2016,11 +2016,11 @@ compression speed.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Calibration} \\
 \midrule
-ALBERT & Sharing & 3.5$\times$ & 89.4\% & Retrain \\
-DistilBERT & Distill & 1.6$\times$ & 90.7\% & Retrain \\
-A3 & Low-rank & 2.1\times$\times$ & 85.5 & Data \\
-AASVD & Low-rank & 2.1\times$\times$ & 85.0 & Data \\
-**Adaptive SVD** & Low-rank & **3.0$\times$** & **88.0** & **None** \\
+ALBERT \& Sharing & 3.5$\times$ & 89.4\% \& Retrain \\
+DistilBERT \& Distill & 1.6$\times$ & 90.7\% \& Retrain \\
+A3 \& Low-rank & 2.1\times$\times$ & 85.5 \& Data \\
+AASVD \& Low-rank & 2.1\times$\times$ & 85.0 \& Data \\
+**Adaptive SVD** \& Low-rank & **3.0$\times$** & **88.0** & **None** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3216,7 +3216,7 @@ Key entry points:
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Model & DistilBERT-base \\
+Model \& DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 22000000 \\
 Compression ratio & 3.0$\times$ \\
@@ -3534,11 +3534,11 @@ but worse compression. Trade-off.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 87.5 & Stable \\
-1e-4 & 88 & Stable \\
-2e-4 & 88 & Stable \\
-5e-4 & 87 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 87.5 \& Stable \\
+1e-4 & 88 \& Stable \\
+2e-4 & 88 \& Stable \\
+5e-4 & 87 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3554,7 +3554,7 @@ but worse compression. Trade-off.
 2 & 85 & 71 & 72 \\
 4 & 87 & 73 & 74 \\
 8 & 88 & 74 & 75.5 \\
-16 & 88.1 & OOM & OOM \\
+16 & 88.1 \& OOM \& OOM \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3567,13 +3567,13 @@ but worse compression. Trade-off.
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-1 & 80 & Underfit \\
-2 & 83 & Underfit \\
-4 & 85 & Acceptable \\
-8 & 87 & Good \\
-16 & 88 & Best \\
-32 & 88.2 & Diminishing returns \\
-64 & 88.3 & Overkill \\
+1 & 80 \& Underfit \\
+2 & 83 \& Underfit \\
+4 & 85 \& Acceptable \\
+8 & 87 \& Good \\
+16 & 88 \& Best \\
+32 & 88.2 \& Diminishing returns \\
+64 & 88.3 \& Overkill \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3586,11 +3586,11 @@ but worse compression. Trade-off.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Orthogonal adapter init & Slow convergence & No change \\
-Gradient clipping & Stability & No change \\
-Adaptive $\tau$ per layer & Rank quality & No improvement \\
-Post-hoc base fine-tune & Accuracy & Drifted from compression \\
-Adding dropout to adapters & Overfitting & No improvement \\
+Orthogonal adapter init \& Slow convergence \& No change \\
+Gradient clipping \& Stability \& No change \\
+Adaptive $\tau$ per layer \& Rank quality \& No improvement \\
+Post-hoc base fine-tune \& Accuracy \& Drifted from compression \\
+Adding dropout to adapters \& Overfitting \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3772,7 +3772,7 @@ The authors declare no competing interests.
 
 \subsection{E.6 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.7 Acknowledgements}
 

@@ -12,10 +12,10 @@ A3 supports any transformer with linear or Conv1D layers:
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{FFN} & \textbf{Conv1D?} & \textbf{Verified} \\
 \midrule
-DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{lin1, lin2} & No &  \\
-RoBERTa-base & \texttt{query, key, value, output.dense} & \texttt{intermediate.dense, output.dense} & No &  \\
-GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & \texttt{c\_fc, c\_proj} & Yes &  \\
-Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_proj, up\_proj, down\_proj} & No &  \\
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{lin1, lin2} \& No &  \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & \texttt{intermediate.dense, output.dense} \& No &  \\
+GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & \texttt{c\_fc, c\_proj} \& Yes &  \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_proj, up\_proj, down\_proj} \& No &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,11 +31,11 @@ A3 compresses all linear layers by default, with the following protections:
 \toprule
 \textbf{Layer type} & \textbf{Compressed?} & \textbf{Reason} \\
 \midrule
-\texttt{classifier}, \texttt{score}, \texttt{lm\_head} & Never & Small and critical \\
-\texttt{pooler}, \texttt{embedding} & Never & Not linear \\
-Attention projections & Yes & Target of interest \\
-FFN layers & Yes (if \texttt{target\_attention\_only = False}) & Large parameter share \\
-LayerNorm & Never & Not factorizable \\
+\texttt{classifier}, \texttt{score}, \texttt{lm\_head} \& Never \& Small and critical \\
+\texttt{pooler}, \texttt{embedding} \& Never \& Not linear \\
+Attention projections \& Yes \& Target of interest \\
+FFN layers \& Yes (if \texttt{target\_attention\_only = False}) \& Large parameter share \\
+LayerNorm \& Never \& Not factorizable \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -219,12 +219,12 @@ input at position $j > i$ is zero, both before and after injection.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Reconstruction error > $\tau$ & Frobenius check & Fallback to original \\
-Weight shape mismatch & Assertion in \texttt{from\_linear} & Skip layer \\
-SVD convergence failure & Try/except & Retry on CPU \\
-No calibration data & \texttt{F\_map} empty & Unweighted SVD \\
-CUDA OOM in SVD & RuntimeError & Retry on CPU \\
-NaN in reconstruction & \texttt{torch.isnan} & Skip and log \\
+Reconstruction error > $\tau$ \& Frobenius check \& Fallback to original \\
+Weight shape mismatch \& Assertion in \texttt{from\_linear} \& Skip layer \\
+SVD convergence failure \& Try/except \& Retry on CPU \\
+No calibration data & \texttt{F\_map} empty \& Unweighted SVD \\
+CUDA OOM in SVD \& RuntimeError \& Retry on CPU \\
+NaN in reconstruction & \texttt{torch.isnan} \& Skip and log \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Mean gate} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
 DistilBERT & \textbf{HALO} & \textbf{89.5} & -1.2 & 0.895 & \textbf{0.72} & 210 MB & 2.8 s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
 RoBERTa & \textbf{HALO} & \textbf{76.5} & -2.1 & 0.765 & \textbf{0.68} & 760 MB & 5.2 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
 GPT-2 & \textbf{HALO} & \textbf{77.5} & -1.9 & 0.775 & \textbf{0.65} & 820 MB & 5.5 s \\
 \bottomrule
 \end{tabular}
@@ -78,10 +78,10 @@ layers have lower gates (linear).
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
-DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & HALO & 210 MB & 2.8 s \\
-GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & HALO & 820 MB & 5.5 s \\
+DistilBERT \& full & 183 MB & 1.90 s \\
+DistilBERT \& HALO & 210 MB & 2.8 s \\
+GPT-2 \& full & 793 MB & 4.20 s \\
+GPT-2 \& HALO & 820 MB & 5.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -178,12 +178,12 @@ Identity (linear) & 78.0 & 65.0 & 67.0 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Dense \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank \\
-ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse \\
-NHA & 90.25\% & FAIL & 78.78\% & Hybrid \\
-\textbf{HALO} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} & Hybrid \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse \\
+NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid \\
+\textbf{HALO} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \& Hybrid \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,1 +1,19 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT & PASS & 84.98 & 66.95M & 59.65M & 1.122$\times$ & 319.2 \\ RoBERTa & PASS\_LOW & 51.26 & 124.65M & 108.87M & 1.145$\times$ & 596.3 \\ GPT-2 & PASS & 59.52 & 124.44M & 101.58M & 1.225$\times$ & 476.0 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_hybrid/*/summary.csv}.}\label{tab:aegis_hybrid_results}\end{table}
+\section{07 Results}
+
+ 7. Empirical Results
+
+ 7.1 Unified Benchmark Results
+From `results/unified\_aegis\_hybrid/*/summary.csv`:
+
+| Model | Status | Accuracy (%) | Params Before | Params After | Compression Rate | Peak VRAM (MB) | Tokens/sec |
+|---|---|---|---|---|---|---|---|
+| DistilBERT | PASS | 84.98%  | 66,955,010  | 59,652,626  | 1.1224x  | 319.22  | 3,803.0  |
+| RoBERTa | PASS\_LOW | 51.26%  | 124,647,170  | 108,872,018  | 1.1449x  | 596.29  | 7,060.8  |
+| GPT-2 | PASS | 59.52%  | 124,441,344  | 101,579,088  | 1.2251x  | 476.00  | 8,474.5  |
+
+ 7.2 Matrix Benchmark Latency
+From `results/matrix\_test\_summary.csv`:
+- DistilBERT: Latency 3.532 ms, Peak VRAM 809.0 MB 
+- RoBERTa: Latency 4.520 ms, Peak VRAM 1587.8 MB 
+- GPT-2: Latency 5.286 ms, Peak VRAM 1442.0 MB 
+- Qwen 3.5: Latency 14.619 ms, Peak VRAM 4255.0 MB 

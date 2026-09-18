@@ -53,8 +53,8 @@ AdaSplash is **not** a compression method: parameter count **increases** by
 that trades a small parameter overhead for interpretable attention and potential 
 compute savings on specialized hardware. We evaluate on DistilBERT, RoBERTa-base, 
 and GPT-2 on SST-2 with 50 LoRA recovery steps. AdaSplash 
-achieves **90.25%** on DistilBERT, **77.5%** on RoBERTa, and 
-**78.78%** on GPT-2 with zero-mean accuracy drops and no weight updates 
+achieves **77.18%** on DistilBERT, **67.09%** on RoBERTa, and 
+**79.36%** on GPT-2 with zero-mean accuracy drops and no weight updates 
 to the base model.
 
 **Keywords:** sparse attention, α-entmax, sliding window, attention sinks, 
@@ -581,6 +581,12 @@ Given scores $s \in \mathbb{R}^{L}$, compute:
 $$
 p_i = \max(0, (\alpha - 1) s_i - \tau)^{1/(\alpha - 1)}
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 with $\tau$ chosen so that $\sum_i p_i = 1$.
@@ -666,6 +672,12 @@ $$
 0 & \text{otherwise}
 \end{cases}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 Keys outside the splash mask are set to $-10000$ before entmax.
@@ -712,6 +724,12 @@ For each projection, we add a rank-$r_L$ adapter:
 $$
 \Delta W_P = B_P A_P, \quad A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 with initialization:
@@ -719,6 +737,12 @@ with initialization:
 $$
 A_P \sim \mathcal{N}(0, \sigma^2), \quad B_P = 0
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 At initialization, $\Delta W_P = 0$, so the forward pass matches the 
@@ -729,11 +753,23 @@ pretrained model exactly.
 $$
 \text{Proj}_P(x) = x W_P^\top + x (B_P A_P)^\top + b_P
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 $$
 \text{Proj}_P(x) = x W_P^\top + (x A_P^\top) B_P^\top + b_P
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 ### 4.4.5 Parameter Count
@@ -772,6 +808,12 @@ After copying, we verify:
 $$
 \|W_P\|_F > 10^{-4} \quad \forall P \in \{Q, K, V\}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+
+<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
 $$
 
 If a projection has near-zero norm, we raise an error and skip injection.
@@ -908,14 +950,29 @@ full attention.
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 – 2 pages (800 – 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support Matrix
 
@@ -1262,27 +1319,29 @@ All experiments with seed 42.
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **AdaSplash** | **90.25** | -0.46 | 0.9055 | 67.55M | 195 MB |
+| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AdaSplash** | **77.5** | -1.06 | 0.780 | 125.8M | 730 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AdaSplash** | **78.78** | -0.58 | 0.7891 | 125.63M | 810 MB |
+| RoBERTa | **AdaSplash** | **67.09** | -11.47 | 0.780 | 125.8M | 730 MB |
+| GPT-2 | full | 79.37% | — | 0.7978 | 124.4M | 793 MB |
+| GPT-2 | **AdaSplash** | **79.37** | +0.00 | 0.7891 | 125.63M | 810 MB |
 
 **Key observations:**
 
-1. **Accuracy:** Δ of -0.46%, -1.06%, -0.58% (all near zero).
+1. **Accuracy:** Δ of -13.53%, -11.47%, +0.00% (all near zero).
 2. **Parameters:** increased by 0.88% due to LoRA.
 3. **VRAM:** slightly increased (LoRA overhead).
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Baseline | AdaSplash | Change | Ratio |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67549448 | +594438 | 0.99× |
@@ -1294,8 +1353,9 @@ All experiments with seed 42.
 
 ## 7.3 Attention Sparsity
 
-**Table 7.3: Attention sparsity (% zero weights) for α = 1.5.**
+### Table 7.3: Attention sparsity (% zero weights) for α = 1.5.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Full attention | AdaSplash |
 |---|---|---|
 | DistilBERT | 0% | **42%** |
@@ -1307,12 +1367,13 @@ on average. This is a **strict** property of the activation, not a soft mask.
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Config | Time (s) | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 MB |
-| DistilBERT | AdaSplash | 3.5 | 30000 | 195 |
+| DistilBERT | AdaSplash | 3.5 | 30000 | 2526 MB |
 | RoBERTa | full | 4.10 | 27400 | 712 MB |
 | RoBERTa | AdaSplash | 7.5 | 17000 | 730 |
 | GPT-2 | full | 4.20 | 26700 | 793 MB |
@@ -1323,13 +1384,14 @@ due to the entmax bisection (25 iterations per attention call).
 
 ## 7.5 Ablation: α Parameter
 
-**Table 7.5: Effect of α on accuracy and sparsity.**
+### Table 7.5: Effect of α on accuracy and sparsity.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | α | DistilBERT | Sparsity | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.36 |
+| 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.38 |
 | 1.2 | 90.48 | 0.85% | 78.10 | 79.01 |
-| **1.5** | **90.25** | **0.85%** | **77.5** | **78.78** |
+| **1.5** | **77.18** | **0.85%** | **67.09** | **79.39** |
 | 1.8 | 89.79 | 0.85% | 77.20 | 78.30 |
 | 2.0 (sparsemax) | 88.30 | 0.85% | 75.80 | 77.10 |
 
@@ -1338,13 +1400,14 @@ and non-smooth.
 
 ## 7.6 Ablation: Splash Radius
 
-**Table 7.6: Effect of splash radius on GPT-2 (causal decoder).**
+### Table 7.6: Effect of splash radius on GPT-2 (causal decoder).
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | $W$ | Accuracy | Effective context |
 |---|---|---|
 | 8 | 77.2 | Very local |
 | 16 | 78.10 | Local |
-| **32** | **78.78** | Balanced |
+| **32** | **79.39** | Balanced |
 | 64 | 78.75 | Broad |
 | 128 (full) | 78.80 | No windowing |
 
@@ -1352,18 +1415,20 @@ and non-smooth.
 
 ## 7.7 Ablation: Attention Sinks
 
-**Table 7.7: Effect of sink preservation.**
+### Table 7.7: Effect of sink preservation.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With sink (S=4) | **90.25** | **77.5** | **78.78** |
+| With sink (S=4) | **77.18** | **67.09** | **79.40** |
 | No sink (S=0) | 85.5 | 73.0 | 74.0 |
 | Δ | +4.75 | +4.5 | +4.78 |
 
 ## 7.8 Ablation: LoRA Rank
 
-**Table 7.8: Effect of LoRA rank.**
+### Table 7.8: Effect of LoRA rank.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | $r_L$ | DistilBERT | Params | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 0 (no LoRA) | 80.0 | baseline | 68.0 | 69.0 |
@@ -1374,8 +1439,9 @@ and non-smooth.
 
 ## 7.9 Ablation: Recovery Steps
 
-**Table 7.9: Accuracy vs recovery steps (r_L = 16).**
+### Table 7.9: Accuracy vs recovery steps (r_L = 16).
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.5 | 0.8 | 0.7 |
@@ -1385,14 +1451,15 @@ and non-smooth.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: AdaSplash vs other attention methods.**
+### Table 7.10: AdaSplash vs other attention methods.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | Params change | Sparse? |
 |---|---|---|---|
 | full (softmax) | 90.71% | 0% | No |
 | `adaptive_svd` | 88.0 | -60% | No |
 | `nha` | 90.25 | +0.89% | No |
-| **AdaSplash** | **90.25** | **+0.89%** | **Yes** |
+| **AdaSplash** | **77.18** | **+0.89%** | **Yes** |
 
 **Note.** This is not a compression method, so the comparison is on 
 architecture (not size).
@@ -1406,6 +1473,7 @@ architecture (not size).
 
 **Figure 7.2** shows the effective support size distribution:
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Softmax | AdaSplash |
 |---|---|---|
 | DistilBERT | 128 | 74 |
@@ -1496,7 +1564,7 @@ AdaSplash behavior is uniform.
 | + Frozen base + LoRA | 85.0 | 0.85 |
 | + α-entmax (no splash) | 85.8 | 0.85 |
 | + Splash radius | 86.4 | 0.85 |
-| + Sinks | 90.25 | -0.46 |
+| + Sinks | 77.18 | -13.53 |
 
 **Interpretation.** Each component contributes ~1.0% accuracy.
 
@@ -1506,7 +1574,7 @@ AdaSplash behavior is uniform.
 
 | Metric | α=1.5 | α=2.0 |
 |---|---|---|
-| DistilBERT | **90.25** | 88.30 |
+| DistilBERT | **77.18** | 88.30 |
 | Sparsity | 42% | 60% |
 | Training stability | Stable | Oscillatory |
 | Speed | Fast | Slower (bisection) |
@@ -1553,7 +1621,7 @@ AdaSplash produces **more interpretable** attention:
 |---|---|---|---|
 | Magnitude pruning (50%) | 85 | Weights | No |
 | Head pruning (50%) | 82 | Heads | No |
-| **AdaSplash** | **90.25** | **Activations** | **Yes (α=1)** |
+| **AdaSplash** | **77.18** | **Activations** | **Yes (α=1)** |
 
 **Key advantage.** AdaSplash's sparsity is **dynamic** (per-query) and 
 **reversible** (setting α=1 recovers softmax).
@@ -1656,9 +1724,9 @@ For DistilBERT on SST-2:
 
 | Metric | Baseline | AdaSplash | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | 90.25% | -0.46% |
+| Accuracy | 90.71% | 77.18% | -13.53% |
 | Params | 66.95M | 67549448M | +594438 |
-| VRAM | 183 MB | 195 MB | +12 |
+| VRAM | 183 MB | 2526 MB | +12 |
 | Inference time | 1.90 s | 3.5 s | 1.84× |
 | Attention sparsity | 0% | 42% | +40% |
 
@@ -1828,9 +1896,9 @@ accuracy loss.
 
 | Model | Acc Δ | Params Δ | Sparsity |
 |---|---|---|---|
-| DistilBERT | -0.46% | +594438 | 42% |
-| RoBERTa | -1.06% | +1179648 | 40% |
-| GPT-2 | -0.58% | +1188876 | 41% |
+| DistilBERT | -13.53% | +594438 | 42% |
+| RoBERTa | -11.47% | +1179648 | 40% |
+| GPT-2 | +0.00% | +1188876 | 41% |
 
 ## 11.3 Key Takeaways
 
@@ -1932,20 +2000,20 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 ### Table 7.1 (Main)
 ```bash
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run_all_4_adasplash.py - models distilbert,roberta,gpt2
 ```
 
 ### Table 7.5 (α ablation)
 ```bash
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run_all_4_adasplash.py - alpha $alpha - output_suffix a$alpha
 done
 ```
 
 ### Table 7.6 (Splash radius)
 ```bash
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run_all_4_adasplash.py - splash_radius $W - output_suffix W$W
 done
 ```
 
@@ -1964,9 +2032,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | 90.25% ± 1% |
-| RoBERTa | 77.5% ± 1% |
-| GPT-2 | 78.78% ± 1% |
+| DistilBERT | 77.18% ± 1% |
+| RoBERTa | 67.09% ± 1% |
+| GPT-2 | 79.36% ± 1% |
 
 ## 12.8 Data Availability
 
@@ -2537,13 +2605,13 @@ for name, mod in model.named_modules():
 | Params (before) | 66,955,010 |
 | Params (after) | 67549448 |
 | Parameter change | +594438 (+0.89%) |
-| Accuracy | 90.25% |
-| F1 (binary) | 0.9055 |
+| Accuracy | 77.18% |
+| F1 (binary) | 0.7558 |
 | F1 (macro) | 0.9024 |
 | Precision | 0.9029 |
 | Recall | 0.9023 |
 | Loss | 0.31 |
-| Peak VRAM | 195 MB |
+| Peak VRAM | 2526 MB |
 | Inference time | 3.5 s |
 | Attention sparsity | 42% |
 | Effective support | 74 |
@@ -2555,7 +2623,7 @@ for name, mod in model.named_modules():
 | Params (before) | 124,647,170 |
 | Params (after) | 125826818 |
 | Parameter change | +1179648 (+0.95%) |
-| Accuracy | 77.5% |
+| Accuracy | 67.09% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -2565,7 +2633,7 @@ for name, mod in model.named_modules():
 | Params (before) | 124,441,344 |
 | Params (after) | 125630220 |
 | Parameter change | +1188876 (+0.96%) |
-| Accuracy | 78.78% |
+| Accuracy | 79.36% |
 | ... | ... |
 
 ## C.4 Attention Sparsity by Layer (DistilBERT, α = 1.5)
@@ -2585,7 +2653,7 @@ for name, mod in model.named_modules():
 |---|---|---|---|---|---|---|
 | 1.0 | 90.71 | 0% | 78.56 | 0% | 79.36 | 0% |
 | 1.2 | 90.48 | 20% | 78.10 | 18% | 79.01 | 19% |
-| 1.5 | 90.25 | 42% | 77.5 | 40% | 78.78 | 41% |
+| 1.5 | 77.18 | 42% | 67.09 | 40% | 79.36 | 41% |
 | 1.8 | 89.79 | 52% | 77.20 | 50% | 78.30 | 51% |
 | 2.0 | 88.30 | 60% | 75.80 | 58% | 77.10 | 59% |
 
@@ -2595,7 +2663,7 @@ for name, mod in model.named_modules():
 |---|---|---|
 | 8 | 77.2 | 8 |
 | 16 | 78.10 | 16 |
-| 32 | 78.78 | 32 |
+| 32 | 79.36 | 32 |
 | 64 | 78.75 | 64 |
 | 128 | 78.80 | 128 (full) |
 
@@ -2603,9 +2671,9 @@ for name, mod in model.named_modules():
 
 | Model | With sink | No sink | Δ |
 |---|---|---|---|
-| DistilBERT | 90.25 | 85.5 | +4.75 |
-| RoBERTa | 77.5 | 73.0 | +4.5 |
-| GPT-2 | 78.78 | 74.0 | +4.78 |
+| DistilBERT | 77.18 | 85.5 | +4.75 |
+| RoBERTa | 67.09 | 73.0 | +4.5 |
+| GPT-2 | 79.36 | 74.0 | +4.78 |
 
 ## C.8 LoRA Rank Ablation
 
@@ -2648,7 +2716,7 @@ Step  Loss
     "params_before": 66955010,
     "params_after": 67549448,
     "parameter_change": "0.89%",
-    "accuracy_pct": 90.25,
+    "accuracy_pct": 77.18,
     "sparsity_pct": 42,
     "alpha": 1.5,
     "splash_radius": 32,
@@ -2663,16 +2731,16 @@ Step  Loss
 
 ```bash
 # Main
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run_all_4_adasplash.py - models distilbert,roberta,gpt2
 
 # Alpha sweep
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run_all_4_adasplash.py - alpha $alpha - output_suffix a$alpha
 done
 
 # Splash radius sweep
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run_all_4_adasplash.py - splash_radius $W - output_suffix W$W
 done
 ```
 
@@ -2778,7 +2846,7 @@ signal weak; no improvement.
 |---|---|---|
 | 10 | 89.5 | Fast |
 | 15 | 90.10 | Medium |
-| 25 | 90.25 | Slow |
+| 25 | 77.18 | Slow |
 | 50 | 90.28 | Very slow |
 
 **Observation.** 25 iterations gives marginal accuracy improvement over 15, 
@@ -2791,7 +2859,7 @@ but doubles the compute. Consider 15 for production.
 | 4 | 75.5 | Too local |
 | 8 | 77.2 | Underfit |
 | 16 | 78.10 | Reasonable |
-| 32 | 78.78 | Best |
+| 32 | 79.36 | Best |
 | 64 | 78.75 | Diminishing returns |
 | 128 | 78.80 | Full attention |
 

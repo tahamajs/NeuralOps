@@ -202,10 +202,10 @@ for pruned keys -- this is a possible future extension.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA} \\
 \midrule
-$W_Q$ & $d H d_h$ & Same \\
-$W_K$ & $d H_{kv} d_h$ & Same \\
-$W_V$ & $d H_{kv} d_h$ & Same \\
-$W_O$ & $H d_h d$ & Same \\
+$W_Q$ & $d H d_h$ \& Same \\
+$W_K$ & $d H_{kv} d_h$ \& Same \\
+$W_V$ & $d H_{kv} d_h$ \& Same \\
+$W_O$ & $H d_h d$ \& Same \\
 \textbf{Sparsity logits} & 0 & \textbf{$H$} \\
 \textbf{LoRA} & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
 \bottomrule

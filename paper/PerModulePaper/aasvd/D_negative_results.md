@@ -79,10 +79,10 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | τ | DistilBERT | Fallback % |
 |---|---|---|
-| 0.10 | 0.85 | 0.85 |
-| 0.20 | 0.85 | 0.85 |
-| 0.30 | 0.85 | 0.85 |
-| 0.50 | 0.85 | 0.85 |
+| 0.10 | 0.87 | 0.88 |
+| 0.20 | 0.87 | 0.88 |
+| 0.30 | 0.87 | 0.88 |
+| 0.50 | 0.87 | 0.88 |
 
 ## D.4 Fixes That Didn't Help
 

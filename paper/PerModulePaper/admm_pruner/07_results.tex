@@ -1,1 +1,13 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Pruned Layers} & \textbf{Sparsity} & \textbf{Recon Error} \\\midrule DistilBERT & PASS & 84.29 & 36 & 50\% & 0.3571 \\ RoBERTa & PASS & 80.62 & 72 & 50\% & 0.3513 \\ GPT-2 & PASS\_LOW & 51.49 & 48 & 50\% & 0.3565 \\ Qwen 3.5 & PASS & 78.21 & 48 & 50\% & 0.3569 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_admm\_pruner/*/summary.csv}.}\label{tab:admm_pruner_results}\end{table}
+\section{07 Results}
+
+ 7. Empirical Results
+
+ 7.1 Unified Benchmark Results
+From `results/unified\_admm\_pruner/*/summary.csv`:
+
+| Model | Status | Accuracy (%) | F1 Score | Pruned Layers | Sparsity | Avg Recon Error | Peak VRAM (MB) |
+|---|---|---|---|---|---|---|---|
+| DistilBERT | PASS | 84.29%  | 0.8603  | 36  | 50%  | 0.3571  | 551.24  |
+| RoBERTa | PASS | 80.62%  | 0.7966  | 72  | 50%  | 0.3513  | 336.39  |
+| GPT-2 | PASS\_LOW | 51.49%  | 0.1278  | 48  | 50%  | 0.3565  | 628.41  |
+| Qwen 3.5 | PASS | 78.21%  | 0.8201  | 48  | 50% | 0.3569  | 1879.76  |

@@ -94,11 +94,11 @@ but worse compression. Trade-off.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 87.5 & Stable \\
-1e-4 & 88 & Stable \\
-2e-4 & 88 & Stable \\
-5e-4 & 87 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 87.5 \& Stable \\
+1e-4 & 88 \& Stable \\
+2e-4 & 88 \& Stable \\
+5e-4 & 87 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,7 +115,7 @@ but worse compression. Trade-off.
 2 & 85 & 71 & 72 \\
 4 & 87 & 73 & 74 \\
 8 & 88 & 74 & 75.5 \\
-16 & 88.1 & OOM & OOM \\
+16 & 88.1 \& OOM \& OOM \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,13 +129,13 @@ but worse compression. Trade-off.
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-1 & 80 & Underfit \\
-2 & 83 & Underfit \\
-4 & 85 & Acceptable \\
-8 & 87 & Good \\
-16 & 88 & Best \\
-32 & 88.2 & Diminishing returns \\
-64 & 88.3 & Overkill \\
+1 & 80 \& Underfit \\
+2 & 83 \& Underfit \\
+4 & 85 \& Acceptable \\
+8 & 87 \& Good \\
+16 & 88 \& Best \\
+32 & 88.2 \& Diminishing returns \\
+64 & 88.3 \& Overkill \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -149,11 +149,11 @@ but worse compression. Trade-off.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Orthogonal adapter init & Slow convergence & No change \\
-Gradient clipping & Stability & No change \\
-Adaptive $\tau$ per layer & Rank quality & No improvement \\
-Post-hoc base fine-tune & Accuracy & Drifted from compression \\
-Adding dropout to adapters & Overfitting & No improvement \\
+Orthogonal adapter init \& Slow convergence \& No change \\
+Gradient clipping \& Stability \& No change \\
+Adaptive $\tau$ per layer \& Rank quality \& No improvement \\
+Post-hoc base fine-tune \& Accuracy \& Drifted from compression \\
+Adding dropout to adapters \& Overfitting \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

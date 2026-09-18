@@ -9,8 +9,9 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with default sparsity.**
+### Table 7.1: SST-2 results with default sparsity.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Sparsity | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0% | 183 MB | 1.9 s |
@@ -22,8 +23,9 @@
 
 ## 7.2 Head Budget Analysis
 
-**Table 7.2: Distribution of learned sparsity ratios.**
+### Table 7.2: Distribution of learned sparsity ratios.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Min $\rho_h$ | Max $\rho_h$ | Mean | Std |
 |---|---|---|---|---|
 | DistilBERT | 0.05 | 0.85 | 0.42 | 0.28 |
@@ -35,8 +37,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.3 Efficiency
 
-**Table 7.3: Memory and time.**
+### Table 7.3: Memory and time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -46,8 +49,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.4 Ablation: Sparsity Ratio
 
-**Table 7.4: Accuracy vs target sparsity.**
+### Table 7.4: Accuracy vs target sparsity.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 | Eff. sparsity |
 |---|---|---|---|---|
 | 0.1 | 89.5 | 77.5 | 78.0 | 0.12 |
@@ -58,8 +62,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.5 Ablation: Temperature
 
-**Table 7.5: Accuracy vs soft-mask temperature.**
+### Table 7.5: Accuracy vs soft-mask temperature.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $T$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0.01 | 85.0 | 72.0 | 73.0 |
@@ -72,8 +77,9 @@ larger is too soft.
 
 ## 7.6 Ablation: Chunk Size
 
-**Table 7.6: Peak VRAM vs chunk size.**
+### Table 7.6: Peak VRAM vs chunk size.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $C$ | DistilBERT VRAM | Time | RoBERTa VRAM |
 |---|---|---|---|
 | 32 | 115 | 2.1 | 480 |
@@ -83,8 +89,9 @@ larger is too soft.
 
 ## 7.7 Ablation: LoRA Rank
 
-**Table 7.7: Accuracy vs LoRA rank.**
+### Table 7.7: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 85.0 | 72.0 | 72.0 |
@@ -94,8 +101,9 @@ larger is too soft.
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps.**
+### Table 7.8: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 85.0 | 72.0 | 73.0 |
@@ -105,8 +113,9 @@ larger is too soft.
 
 ## 7.9 Comparison with Companion Methods
 
-**Table 7.9: Comparison with other methods.**
+### Table 7.9: Comparison with other methods.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn FLOPs |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |
@@ -116,8 +125,9 @@ larger is too soft.
 
 ## 7.10 Attention Mass Retention
 
-**Table 7.10: Attention mass retained at various sparsity levels.**
+### Table 7.10: Attention mass retained at various sparsity levels.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Sparsity | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0.1 | 85% | 84% | 86% |

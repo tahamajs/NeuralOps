@@ -300,9 +300,9 @@ approximation with the same landmarks for $Q$ and $K$. Primal Attention
 \toprule
 \textbf{Method} & \textbf{Approximation} & \textbf{Symmetric?} & \textbf{Trainable?} \\
 \midrule
-Performer & Random Fourier features & Yes & Yes \\
-Nyströmformer & Symmetric landmarks & Yes & Yes \\
-**Primal Attention** & Asymmetric landmarks & **No** & **Yes** \\
+Performer \& Random Fourier features \& Yes \& Yes \\
+Nyströmformer \& Symmetric landmarks \& Yes \& Yes \\
+**Primal Attention** \& Asymmetric landmarks & **No** & **Yes** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -354,12 +354,12 @@ in optimizers. We use it for attention pseudoinverse.
 \toprule
 \textbf{Axis} & \textbf{Nyströmformer} & \textbf{Primal Attention} \\
 \midrule
-Landmark selection & Mean pooling (shared) & Segment pooling (asymmetric) \\
-Kernel symmetry & Symmetric & **Asymmetric** \\
-Pseudoinverse & SVD-based & **Schulz iteration** \\
-Differentiable & Yes & Yes \\
-GQA support & No & Yes \\
-RoPE support & Partial & Full \\
+Landmark selection \& Mean pooling (shared) \& Segment pooling (asymmetric) \\
+Kernel symmetry \& Symmetric & **Asymmetric** \\
+Pseudoinverse \& SVD-based & **Schulz iteration** \\
+Differentiable \& Yes \& Yes \\
+GQA support \& No \& Yes \\
+RoPE support \& Partial \& Full \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -680,7 +680,7 @@ We enforce this by adding a causal mask to $\tilde{A}$:
 
 \begin{equation}
 \tilde{A}_\text{causal} = \tilde{A} + M, \qquad
-M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
+M_{ij} = \begin{cases} 0 \& j \le i \\ -10^4 \& j > i \end{cases}
 \end{equation}
 
 Then softmax. This is not a true causal approximation (the landmarks see 
@@ -806,10 +806,10 @@ For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & ✅ \\
-RoBERTa & `BertSelfAttention` & No & No & ✅ \\
-GPT-2 & `GPT2Attention` & No & No & ✅ \\
-Qwen3.5 & `Qwen3Attention` & Yes & Yes & not tested \\
+DistilBERT & `MultiHeadSelfAttention` \& No \& No & ✅ \\
+RoBERTa & `BertSelfAttention` \& No \& No & ✅ \\
+GPT-2 & `GPT2Attention` \& No \& No & ✅ \\
+Qwen3.5 & `Qwen3Attention` \& Yes \& Yes \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -967,9 +967,9 @@ class PrimalAttention(BaseAttention): ...
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1020,12 +1020,12 @@ Dropout & 0.1 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
 Steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1076,7 +1076,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -1112,11 +1112,11 @@ python run_all_4_primal.py \
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn mem} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
 DistilBERT & **Primal** & **86.5** & -4.2 & 0.865 & **12 KB** & 2.5 s & 160 MB \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
 RoBERTa & **Primal** & **74.0** & -4.6 & 0.740 & **12 KB** & 5.3 s & 640 MB \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
 GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \bottomrule
 \end{tabular}
@@ -1266,10 +1266,10 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Param $\Delta$} & \textbf{KV cache} & \textbf{Attn mem} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
-NHA & 90.25\% & FAIL & 78.78\% & Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
-**Primal** & **86.5** & **74.0** & **75.0** & Low-rank & 1.00$\times$ & 1.00$\times$ & **4$\times$** \\
+full & 90.71\% & 78.56\% & 79.36\% \& MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
+NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
+**Primal** & **86.5** & **74.0** & **75.0** \& Low-rank & 1.00$\times$ & 1.00$\times$ & **4$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1313,7 +1313,7 @@ Primal Attention provides three benefits:
 \midrule
 **Attention memory reduction** & $L \times L \to L \times m$ attention matrix \\
 **Inference speedup at long $L$** & $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$ \\
-**VRAM reduction** & Fewer intermediate activations \\
+**VRAM reduction** \& Fewer intermediate activations \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1448,7 +1448,7 @@ allows asymmetric. Comparison:
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Note} \\
 \midrule
-Nyströmformer (sym) & 86.0 & Baseline \\
+Nyströmformer (sym) & 86.0 \& Baseline \\
 **Primal (asym)** & **86.5** & +0.5\% \\
 \bottomrule
 \end{tabular}
@@ -2501,10 +2501,10 @@ No improvement beyond $K = 4$.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-FP16 pinv & Speed & NaN \\
-Approx pinv & Speed & Accuracy loss \\
-Fewer F factors & Speed & Accuracy loss \\
-No RoPE before pooling & Speed & Accuracy loss \\
+FP16 pinv \& Speed \& NaN \\
+Approx pinv \& Speed \& Accuracy loss \\
+Fewer F factors \& Speed \& Accuracy loss \\
+No RoPE before pooling \& Speed \& Accuracy loss \\
 \bottomrule
 \end{tabular}
 \end{table}

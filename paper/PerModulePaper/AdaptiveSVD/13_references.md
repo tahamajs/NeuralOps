@@ -1,8 +1,8 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
+<!- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
      DEPENDENCIES: All sections
-     ═══════════════════════════════════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════════════════════════════════════ ->
 
 # 13. References
 
@@ -13,7 +13,7 @@
   journal={Psychometrika},
   volume={1},
   number={3},
-  pages={211--218},
+  pages={211-218},
   year={1936}
 }
 
@@ -23,7 +23,7 @@
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217-288},
   year={2011}
 }
 
@@ -33,7 +33,7 @@
   journal={IEEE Transactions on Information Theory},
   volume={60},
   number={8},
-  pages={5040--5053},
+  pages={5040-5053},
   year={2014}
 }
 
@@ -43,7 +43,7 @@
   journal={IEEE Transactions on Automatic Control},
   volume={19},
   number={6},
-  pages={716--723},
+  pages={716-723},
   year={1974}
 }
 
@@ -51,7 +51,7 @@
   title={Estimating the dimension of a model},
   author={Schwarz, Gideon},
   journal={The Annals of Statistics},
-  pages={461--464},
+  pages={461-464},
   year={1978}
 }
 
@@ -124,7 +124,7 @@
   journal={JMLR},
   volume={21},
   number={140},
-  pages={1--67},
+  pages={1-67},
   year={2020}
 }
 

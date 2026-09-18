@@ -10,10 +10,10 @@
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Galerkin path?} \\
 \midrule
-DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & (encoder) \\
-RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & (encoder) \\
-GPT-2 & \texttt{GPT2Attention} & No & No & No & (decoder fallback) \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & (decoder fallback) \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No & (encoder) \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No & (encoder) \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No & (decoder fallback) \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes & (decoder fallback) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -128,10 +128,10 @@ if rotary_dim < head_dim:
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Weight copy failure & Frobenius < 1e-4 & Log warning \\
-Missing projection & \texttt{missing\_after} non-empty & Log warning \\
-Basis QR failure & try/except & Fallback \\
-Cross-attention & \texttt{encoder\_hidden\_states != None} & Not supported \\
+Weight copy failure \& Frobenius < 1e-4 \& Log warning \\
+Missing projection & \texttt{missing\_after} non-empty \& Log warning \\
+Basis QR failure \& try/except \& Fallback \\
+Cross-attention & \texttt{encoder\_hidden\_states != None} \& Not supported \\
 \bottomrule
 \end{tabular}
 \end{table}

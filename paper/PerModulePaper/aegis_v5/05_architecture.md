@@ -1,5 +1,27 @@
 # 5. Architecture Integration
 
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
+
 ## 5.1 Model Support
 
 | Model | Attention | Nested? | RoPE? | GQA? | Conv1D? |

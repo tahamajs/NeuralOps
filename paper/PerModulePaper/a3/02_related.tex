@@ -85,12 +85,12 @@ for low-rank factorization.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{A3} \\
 \midrule
-\textbf{Factorization weighting} & Uniform (unweighted SVD) & Fisher diagonal \\
-\textbf{Rank selection} & Fixed & Adaptive escalation \\
-\textbf{Calibration memory} & Full activation buffer & Streaming O($d^2$) \\
-\textbf{Post-factorization fix} & None & LayerNorm recalibration \\
-\textbf{Error validation} & Silent & Strict Frobenius bound \\
-\textbf{Fallback} & Never & Automatic per-layer \\
+\textbf{Factorization weighting} \& Uniform (unweighted SVD) \& Fisher diagonal \\
+\textbf{Rank selection} \& Fixed \& Adaptive escalation \\
+\textbf{Calibration memory} \& Full activation buffer \& Streaming O($d^2$) \\
+\textbf{Post-factorization fix} \& None \& LayerNorm recalibration \\
+\textbf{Error validation} \& Silent \& Strict Frobenius bound \\
+\textbf{Fallback} \& Never \& Automatic per-layer \\
 \bottomrule
 \end{tabular}
 \end{table}

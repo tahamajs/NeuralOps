@@ -115,10 +115,10 @@ OHA uses a \textbf{data-dependent compressed summary}.
 \toprule
 \textbf{Aspect} & \textbf{Infini} & \textbf{OHA} \\
 \midrule
-Memory & Learned, fixed & Computed, adaptive \\
+Memory \& Learned, fixed \& Computed, adaptive \\
 Params & $H d_c d_h$ & $2 d d_c + d H$ \\
-Adaptation & None & Input-dependent \\
-Causality & Trivial & Requires masking \\
+Adaptation \& None \& Input-dependent \\
+Causality \& Trivial \& Requires masking \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,10 +189,10 @@ LoRA & 42\% \\
 \toprule
 \textbf{Failure} & \textbf{Symptom} & \textbf{Root cause} \\
 \midrule
-Crash during injection & \texttt{RuntimeError} & Missing projection \\
-Collapse & Acc $\approx$ 50.92\% & Weight copy failed \\
-Overfitting & Train >> val & Gate/compress too large \\
-Slow & >3$\times$ latency & Extra matmuls \\
+Crash during injection & \texttt{RuntimeError} \& Missing projection \\
+Collapse \& Acc $\approx$ 50.92\% \& Weight copy failed \\
+Overfitting \& Train >> val \& Gate/compress too large \\
+Slow & >3$\times$ latency \& Extra matmuls \\
 \bottomrule
 \end{tabular}
 \end{table}

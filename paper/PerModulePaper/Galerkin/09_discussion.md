@@ -77,7 +77,7 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | Accuracy | 90.71% | 50.92% | **-24.77%** |
 | Params | 66.95M | 67544834 | +0.88% |
-| Inference VRAM | 183 MB | 341 MB MB | +380 MB% |
+| Inference VRAM | 183 MB | 341 MB | +380 MB% |
 | Inference time | 1.9 s | 7.0 s | 3.7× |
 
 **Verdict.** Strictly worse than baseline.

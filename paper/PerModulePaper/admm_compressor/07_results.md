@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 From `results/unified_admm/*/summary.csv`:
 
+<!-- source: results/unified_admm/distilbert/summary.csv line 2 -->
 | Model | Status | Accuracy (%) | F1 Score | Params | Peak VRAM (MB) | Tokens/sec |
 |---|---|---|---|---|---|---|
 | DistilBERT | PASS | 90.37% <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 0.9050 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 183.07 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 50,559.5 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> |

@@ -66,7 +66,7 @@ For DistilBERT on SST-2:
 |---|---|---|---|
 | Accuracy | 90.71% | 77.18% | -13.53% |
 | Params | 66.95M | 67549448M | +594438 |
-| VRAM | 183 MB | 2526 MB MB | +12 |
+| VRAM | 183 MB | 2526 MB | +12 |
 | Inference time | 1.90 s | 3.5 s | 1.84× |
 | Attention sparsity | 0% | 42% | +40% |
 

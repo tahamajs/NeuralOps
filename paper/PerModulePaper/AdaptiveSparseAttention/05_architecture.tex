@@ -10,11 +10,11 @@
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & Flat & No & No & No &  \\
-RoBERTa & Nested & No & No & No &  \\
-GPT-2 & Causal & No & No & No &  \\
-T5 & Causal + bias & No & No & Yes & not tested \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
+DistilBERT \& Flat \& No \& No \& No &  \\
+RoBERTa \& Nested \& No \& No \& No &  \\
+GPT-2 \& Causal \& No \& No \& No &  \\
+T5 \& Causal + bias \& No \& No \& Yes \& not tested \\
+Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& No \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,10 +136,10 @@ The caller can then skip the layer.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & \texttt{copy\_weights} raises & Injection aborts \\
-RoPE embedding missing & Exception & Fallback to no RoPE \\
-LoRA rank mismatch & Shape check & Zero-init LoRA \\
-CUDA OOM in chunk & RuntimeError & Reduce chunk size \\
+Missing weights & \texttt{copy\_weights} raises \& Injection aborts \\
+RoPE embedding missing \& Exception \& Fallback to no RoPE \\
+LoRA rank mismatch \& Shape check \& Zero-init LoRA \\
+CUDA OOM in chunk \& RuntimeError \& Reduce chunk size \\
 \bottomrule
 \end{tabular}
 \end{table}

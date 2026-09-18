@@ -11,11 +11,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
 DistilBERT & \textbf{SOA Fused} & \textbf{81.31} & -9.40 & 0.8191 & 1228800 & \textbf{1.92$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
 RoBERTa & \textbf{SOA Fused} & \textbf{50.92} & -27.64 & 0.6748 & 1228800 & \textbf{1.92$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
 GPT-2 & \textbf{SOA Fused} & \textbf{50.92} & -28.44 & 0.6748 & 1228800 & \textbf{1.92$\times$} \\
 \bottomrule
 \end{tabular}
@@ -94,9 +94,9 @@ GPT-2 & 0.18 & 0.20 & 0.21 \\
 \toprule
 \textbf{Model} & \textbf{Baseline Time} & \textbf{Ours} & \textbf{VRAM} \\
 \midrule
-DistilBERT & 1.90 s & 2.1 s & 283 MB MB \\
-RoBERTa & 4.10 s & 4.5 s & 324 MB MB \\
-GPT-2 & 4.20 s & 4.6 s & 486 MB MB \\
+DistilBERT & 1.90 s & 2.1 s & 283 MB \\
+RoBERTa & 4.10 s & 4.5 s & 324 MB \\
+GPT-2 & 4.20 s & 4.6 s & 486 MB \\
 \bottomrule
 \end{tabular}
 \end{table}

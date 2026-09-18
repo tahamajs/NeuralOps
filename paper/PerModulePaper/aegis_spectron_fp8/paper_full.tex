@@ -16,7 +16,7 @@
 \section{Experimental Setup}Standardized SST-2 benchmark evaluation across three model families.
 
 
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT & PASS & 79.59 & 66.95M & 54.75M & 1.223$\times$ & 290.3 \\ RoBERTa & PASS\_LOW & 49.43 & 124.65M & 107.33M & 1.161$\times$ & 572.7 \\ GPT-2 & PASS & 58.83 & 124.44M & 100.04M & 1.244$\times$ & 643.5 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_spectron\_fp8/*/summary.csv}.}\label{tab:aegis_fp8_results}\end{table}
+\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT \& PASS & 79.59 & 66.95M & 54.75M & 1.223$\times$ & 290.3 \\ RoBERTa \& PASS\_LOW & 49.43 & 124.65M & 107.33M & 1.161$\times$ & 572.7 \\ GPT-2 \& PASS & 58.83 & 124.44M & 100.04M & 1.244$\times$ & 643.5 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_spectron\_fp8/*/summary.csv}.}\label{tab:aegis_fp8_results}\end{table}
 
 
 \section{Detailed Analysis}The module sheds 12.2M parameters from DistilBERT and 24.4M parameters from GPT-2 while reducing peak memory below 300 MB.

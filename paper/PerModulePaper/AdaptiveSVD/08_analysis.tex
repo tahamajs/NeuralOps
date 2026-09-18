@@ -36,10 +36,10 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 \toprule
 \textbf{Rank bucket} & \textbf{Count} & \textbf{Notable layers} \\
 \midrule
-< 32 & 8 & V (all layers) \\
-32--64 & 6 & O, V (later) \\
-64--128 & 8 & Q, K \\
-> 128 & 2 & Q, K (middle) \\
+< 32 & 8 \& V (all layers) \\
+32--64 & 6 \& O, V (later) \\
+64--128 & 8 \& Q, K \\
+> 128 & 2 \& Q, K (middle) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -60,9 +60,9 @@ be more compressed without losing critical information.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-Fixed rank 64 & 86 & 5.0$\times$ & Over-compress slow-decaying layers \\
-Fixed rank 128 & 87.5 & 3.5$\times$ & Moderate \\
-Fixed rank 192 & 88.5 & 1.7$\times$ & Under-compress fast-decaying \\
+Fixed rank 64 & 86 & 5.0$\times$ \& Over-compress slow-decaying layers \\
+Fixed rank 128 & 87.5 & 3.5$\times$ \& Moderate \\
+Fixed rank 192 & 88.5 & 1.7$\times$ \& Under-compress fast-decaying \\
 \textbf{Adaptive ($\tau$=0.92)} & \textbf{88.0} & \textbf{3.0$\times$} & \textbf{Best} \\
 \bottomrule
 \end{tabular}
@@ -103,11 +103,11 @@ drops by \textbf{8\%}.
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-0.85 & 85 & 5.0$\times$ & Aggressive, loses accuracy \\
-0.90 & 87 & 3.5$\times$ & Good balance \\
-0.92 & 88 & 3.0$\times$ & Default \\
-0.95 & 89 & 2.0$\times$ & Conservative \\
-0.99 & 90 & 1.2$\times$ & Near-lossless \\
+0.85 & 85 & 5.0$\times$ \& Aggressive, loses accuracy \\
+0.90 & 87 & 3.5$\times$ \& Good balance \\
+0.92 & 88 & 3.0$\times$ \& Default \\
+0.95 & 89 & 2.0$\times$ \& Conservative \\
+0.99 & 90 & 1.2$\times$ \& Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,10 +126,10 @@ and 0.95. Below 0.88, accuracy drops sharply.
 \toprule
 \textbf{Feature} & \textbf{A3} & \textbf{AASVD} & \textbf{\textbf{Adaptive SVD}} \\
 \midrule
-Calibration & Required & Required & \textbf{None} \\
-Weighting & Fisher diag & Full cov & None \\
-Rank selection & Error-driven & Fixed & \textbf{Energy} \\
-Per-layer rank & Adaptive & Uniform & \textbf{Automatic} \\
+Calibration \& Required \& Required & \textbf{None} \\
+Weighting \& Fisher diag \& Full cov \& None \\
+Rank selection \& Error-driven \& Fixed & \textbf{Energy} \\
+Per-layer rank \& Adaptive \& Uniform & \textbf{Automatic} \\
 Compression time & 60 s & 75 s & \textbf{15 s} \\
 DistilBERT acc & 85.5 & 85.0 & \textbf{88.0} \\
 RoBERTa acc & 72 & 72 & \textbf{74.0} \\
@@ -168,8 +168,8 @@ exploding gradients.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Structured?} \\
 \midrule
-Head pruning (50\%) & 86.4 & 84\% & Hard (removes heads) \\
-\textbf{Adaptive SVD} & \textbf{88.0} & 3.0$\times$ & Soft (per-head low-rank) \\
+Head pruning (50\%) & 86.4 & 84\% \& Hard (removes heads) \\
+\textbf{Adaptive SVD} & \textbf{88.0} & 3.0$\times$ \& Soft (per-head low-rank) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -188,7 +188,7 @@ reduced rank. Head pruning is a \textbf{hard} compression: some heads removed.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Reason} & \textbf{Action} \\
 \midrule
-none & N/A & N/A & N/A \\
+none \& N/A \& N/A \& N/A \\
 \bottomrule
 \end{tabular}
 \end{table}

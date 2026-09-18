@@ -67,7 +67,7 @@ be more compressed without losing critical information.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No adapter (pure truncation) | 0.85 | 0.85 | 0.85 |
+| No adapter (pure truncation) | 0.87 | 0.88 | 0.9 |
 | With adapter | **88.0** | **74.0** | **75.5** |
 | **Gain** | +5.5% | +4.8% | +4.9% |
 

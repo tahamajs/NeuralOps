@@ -61,7 +61,7 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
                     (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size)
     else:
         band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-    local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+    local_mask = band_mask.unsqueeze(0).unsqueeze(0) \& key_valid_4d
     
     local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     local_scores = local_scores.masked_fill(~local_mask, -1e4)

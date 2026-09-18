@@ -1,2 +1,52 @@
 \section{Architecture and Implementation}
 The module dynamically instantiates \texttt{SVDLinear} layers with layer-dependent ranks $r_l$. It implements full support for \texttt{Conv1D} transposition, critical layer protection, and safe fallback.
+
+
+
+\subsection{3. Step-by-Step Calibration \& Execution Trace}
+\subsubsection{3.1 Dataflow \& Adaptive Attention Compression Pipeline}
+
+
+\begin{lstlisting}
+              Transformer Model Hierarchy
+                          |
+                          v
+  +----------------------------------------------+
+  | MultiheadAttention Identification            |
+  |   Locate instances of nn.MultiheadAttention  |
+  +----------------------+-----------------------+
+                         |  [Target Module]
+                         v
+  +----------------------------------------------+
+  | Projection Matrix Extraction \& SVD           |
+  |   For W in {W_Q, W_K, W_V, W_O}:             |
+  |     [U, S, Vt] = svd(W)                      |
+  |     energy = cumsum(S^2) / sum(S^2)          |
+  |     r* = max(min_rank, where(energy >= eta)) |
+  +----------------------+-----------------------+
+                         |  [Adaptive Ranks r_Q, r_K, r_V, r_O]
+                         v
+  +----------------------------------------------+
+  | Instantiate CompressedAttentionLayer         |
+  |   Factorize: U_r, S_r, Vt_r for Q, K, V, O   |
+  +----------------------+-----------------------+
+                         |  [Compressed Module]
+                         v
+  +----------------------------------------------+
+  | In-Place Submodule Replacement               |
+  |   setattr(parent, child_name, compressed)    |
+  +----------------------+-----------------------+
+                         |
+                         v
+              Compressed Transformer Model
+\end{lstlisting}
+
+
+\subsubsection{3.2 Detailed Trace Execution Steps}
+1. \textbf{Module Scanning}: Traverse PyTorch model hierarchy to identify all instances of \texttt{nn.MultiheadAttention}.
+2. \textbf{Spectral Profiling}: Extract projection parameters $W_Q, W_K, W_V, W_O$. Run single-precision SVD to compute singular values $\sigma_i$.
+3. \textbf{Adaptive Rank Search}: Calculate cumulative energy vectors $E_k$. Determine optimal rank $r^* = \max(r_{\min}, \text{search}(E_k \ge \eta))$.
+4. \textbf{Submodule Instantiation}: Instantiate \texttt{CompressedAttentionLayer}, assign truncated SVD parameters ($U_r, S_r, V_r^T$), and compute layer compression statistics.
+5. \textbf{In-Place Swap}: Replace original \texttt{nn.MultiheadAttention} module in parent architecture using \texttt{setattr(parent, child_name, compressed)}.
+
+---

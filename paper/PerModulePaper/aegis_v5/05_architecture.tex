@@ -9,10 +9,10 @@
 \toprule
 \textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
 \midrule
-DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
-RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
-GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -169,11 +169,11 @@ Output: M with attention replaced or unchanged on failure
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-UniversalAdapter throws & try/except & Continue to next pattern \\
-Missing Q/K/V & \texttt{missing} non-empty & Log warning, random init \\
-Near-zero norm & Frobenius check & Log warning, continue \\
-copy\_weights fails & try/except & Skip layer, return None \\
-NaN in scores & \texttt{nan\_to\_num} & Set to 0 \\
+UniversalAdapter throws \& try/except \& Continue to next pattern \\
+Missing Q/K/V & \texttt{missing} non-empty \& Log warning, random init \\
+Near-zero norm \& Frobenius check \& Log warning, continue \\
+copy\_weights fails \& try/except \& Skip layer, return None \\
+NaN in scores & \texttt{nan\_to\_num} \& Set to 0 \\
 \bottomrule
 \end{tabular}
 \end{table}

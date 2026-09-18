@@ -1,2 +1,51 @@
 \section{Architecture and Implementation}
 Dense projections are physically replaced with \texttt{SVDLinear} layers carrying custom ranks $r_l$, ensuring concrete parameter reduction on hardware.
+
+
+
+\subsection{3. Step-by-Step Calibration \& Execution Trace}
+\subsubsection{3.1 Dataflow \& Dynamic Rank Profiling Trace}
+
+
+\begin{lstlisting}
+                Model Architecture Modules
+                            |
+                            v
+  +-------------------------------------------------+
+  | Search Module Graph for MultiheadAttention      |
+  +-------------------------+-----------------------+
+                            |  [Target Module]
+                            v
+  +-------------------------------------------------+
+  | For Matrix in {W_Q, W_K, W_V, W_O}:             |
+  |   1. SVD: [U, S, Vt] = svd(W)                   |
+  |   2. Energy Curve: E_k = cumsum(S^2)/sum(S^2)   |
+  |   3. Rank Selection: r* = max(min_rank, idx)    |
+  +-------------------------+-----------------------+
+                            |  [Allocated Ranks r_Q, r_K, r_V, r_O]
+                            v
+  +-------------------------------------------------+
+  | Instantiate CompressedAttentionLayer            |
+  |   Factorize parameters (U_r, S_r, Vt_r)         |
+  +-------------------------+-----------------------+
+                            |  [Compressed Module]
+                            v
+  +-------------------------------------------------+
+  | Module Replacement \& Stats Collection           |
+  |   setattr(parent, child_name, compressed)       |
+  |   ratio = new_params / orig_params              |
+  +-------------------------+-----------------------+
+                            |
+                            v
+               Compressed PyTorch Model
+\end{lstlisting}
+
+
+\subsubsection{3.2 Detailed Trace Execution Steps}
+1. \textbf{Module Scanning}: Traverse named modules to find all instances of \texttt{nn.MultiheadAttention}.
+2. \textbf{Singular Spectrum Analysis}: Perform SVD on projection weight tensors ($W_Q, W_K, W_V, W_O$). Calculate normalized cumulative energy vectors $E_k$.
+3. \textbf{Adaptive Rank Assignment}: Determine optimal integer rank $r^* = \max(r_{\min}, \text{where}(E_k \ge \eta)[0] + 1)$.
+4. \textbf{Layer Factorization}: Construct \texttt{CompressedAttentionLayer}, slice truncated SVD factors, and replace standard attention layers in-place.
+5. \textbf{Stats Logging}: Log original vs compressed parameter counts and compression ratios $\mathcal{C}_R$.
+
+---

@@ -1,1 +1,12 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} \\\midrule DistilBERT & PASS & 90.48 & 66.95M & 66.95M & 1.000$\times$ \\ RoBERTa & PASS & 73.39 & 124.65M & 109.74M & 1.136$\times$ \\ GPT-2 & PASS\_NO\_COMP & 79.36 & 124.44M & 124.44M & 1.000$\times$ \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_adasvd/*/summary.csv}.}\label{tab:adasvd_results}\end{table}
+\section{07 Results}
+
+ 7. Empirical Results
+
+ 7.1 Unified Benchmark Results
+From `results/unified\_adasvd/*/summary.csv`:
+
+| Model | Status | Accuracy (%) | F1 Score | Params Before | Params After | Compression Rate | Peak VRAM (MB) |
+|---|---|---|---|---|---|---|---|
+| DistilBERT | PASS | 90.48%  | 0.9077  | 66,955,010  | 66,955,010  | 1.0000x  | 182.94  |
+| RoBERTa | PASS | 73.39%  | 0.7778  | 124,647,170  | 109,737,258  | 1.1359x  | 610.89  |
+| GPT-2 | PASS\_NO\_COMPRESSION | 79.36%  | 0.7978  | 124,441,344  | 124,441,344  | 1.0000x  | 628.41  |

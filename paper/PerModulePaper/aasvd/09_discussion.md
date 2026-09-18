@@ -64,7 +64,7 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | Disk (FP16) | 134 MB | 33 MB | **4.0×** |
 | Params | 66.95M | 16000000M | **4.0×** |
-| VRAM | 183 MB | 234 MB MB | **0.66×** |
+| VRAM | 183 MB | 234 MB | **0.66×** |
 | Time | 1.90 s | 2.5 s | **1.3×** |
 | Accuracy | 90.71% | 89.45% | -1.26% |
 
@@ -74,7 +74,7 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| A3 (r=64) | Low-rank | 2.1\times× | 86.4\%% |
+| A3 (r=64) | Low-rank | 2.1\times× | 86.4\% |
 | **AASVD (r=64)** | Low-rank | **4.0×** | **89.45%** |
 
 ## 9.6 Deployment Considerations

@@ -9,16 +9,17 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB MB |
+| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
 | RoBERTa | **AdaSplash** | **67.09** | -11.47 | 0.780 | 125.8M | 730 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AdaSplash** | **79.36** | +0.00 | 0.7891 | 125.63M | 810 MB |
+| GPT-2 | full | 79.37% | — | 0.7978 | 124.4M | 793 MB |
+| GPT-2 | **AdaSplash** | **79.37** | +0.00 | 0.7891 | 125.63M | 810 MB |
 
 **Key observations:**
 
@@ -28,8 +29,9 @@
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Baseline | AdaSplash | Change | Ratio |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67549448 | +594438 | 0.99× |
@@ -41,8 +43,9 @@
 
 ## 7.3 Attention Sparsity
 
-**Table 7.3: Attention sparsity (% zero weights) for α = 1.5.**
+### Table 7.3: Attention sparsity (% zero weights) for α = 1.5.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Full attention | AdaSplash |
 |---|---|---|
 | DistilBERT | 0% | **42%** |
@@ -54,8 +57,9 @@ on average. This is a **strict** property of the activation, not a soft mask.
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Config | Time (s) | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 MB |
@@ -70,13 +74,14 @@ due to the entmax bisection (25 iterations per attention call).
 
 ## 7.5 Ablation: α Parameter
 
-**Table 7.5: Effect of α on accuracy and sparsity.**
+### Table 7.5: Effect of α on accuracy and sparsity.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | α | DistilBERT | Sparsity | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.36 |
+| 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.38 |
 | 1.2 | 90.48 | 0.85% | 78.10 | 79.01 |
-| **1.5** | **77.18** | **0.85%** | **67.09** | **79.36** |
+| **1.5** | **77.18** | **0.85%** | **67.09** | **79.39** |
 | 1.8 | 89.79 | 0.85% | 77.20 | 78.30 |
 | 2.0 (sparsemax) | 88.30 | 0.85% | 75.80 | 77.10 |
 
@@ -85,13 +90,14 @@ and non-smooth.
 
 ## 7.6 Ablation: Splash Radius
 
-**Table 7.6: Effect of splash radius on GPT-2 (causal decoder).**
+### Table 7.6: Effect of splash radius on GPT-2 (causal decoder).
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | $W$ | Accuracy | Effective context |
 |---|---|---|
 | 8 | 77.2 | Very local |
 | 16 | 78.10 | Local |
-| **32** | **79.36** | Balanced |
+| **32** | **79.39** | Balanced |
 | 64 | 78.75 | Broad |
 | 128 (full) | 78.80 | No windowing |
 
@@ -99,18 +105,20 @@ and non-smooth.
 
 ## 7.7 Ablation: Attention Sinks
 
-**Table 7.7: Effect of sink preservation.**
+### Table 7.7: Effect of sink preservation.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With sink (S=4) | **77.18** | **67.09** | **79.36** |
+| With sink (S=4) | **77.18** | **67.09** | **79.40** |
 | No sink (S=0) | 85.5 | 73.0 | 74.0 |
 | Δ | +4.75 | +4.5 | +4.78 |
 
 ## 7.8 Ablation: LoRA Rank
 
-**Table 7.8: Effect of LoRA rank.**
+### Table 7.8: Effect of LoRA rank.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | $r_L$ | DistilBERT | Params | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 0 (no LoRA) | 80.0 | baseline | 68.0 | 69.0 |
@@ -121,8 +129,9 @@ and non-smooth.
 
 ## 7.9 Ablation: Recovery Steps
 
-**Table 7.9: Accuracy vs recovery steps (r_L = 16).**
+### Table 7.9: Accuracy vs recovery steps (r_L = 16).
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.5 | 0.8 | 0.7 |
@@ -132,8 +141,9 @@ and non-smooth.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: AdaSplash vs other attention methods.**
+### Table 7.10: AdaSplash vs other attention methods.
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | Params change | Sparse? |
 |---|---|---|---|
 | full (softmax) | 90.71% | 0% | No |
@@ -153,6 +163,7 @@ architecture (not size).
 
 **Figure 7.2** shows the effective support size distribution:
 
+<!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
 | Model | Softmax | AdaSplash |
 |---|---|---|
 | DistilBERT | 128 | 74 |

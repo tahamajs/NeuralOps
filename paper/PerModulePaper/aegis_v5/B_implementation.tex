@@ -59,7 +59,7 @@ def local_window_attention(Q, K, V, window, softpick_temperature=1.0,
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
     if is_decoder and N > 1:
         causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
-        mask = mask & causal
+        mask = mask \& causal
     
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
     scores = scores.masked_fill(~mask, -10000.0)

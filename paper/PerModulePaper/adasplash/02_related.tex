@@ -65,12 +65,12 @@ components. Compatible with AdaSplash.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Sparse?} & \textbf{Sinks?} \\
 \midrule
-Softmax attention & Dense & $\mathcal{O}(L^2)$ & No & No \\
-Longformer & Local & $\mathcal{O}(L W)$ & No & No \\
-BigBird & Local + random & $\mathcal{O}(L W)$ & No & No \\
-Sparsemax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
-Entmax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
-StreamingLLM & Sink + window & $\mathcal{O}(L W)$ & No & Yes \\
+Softmax attention \& Dense & $\mathcal{O}(L^2)$ \& No \& No \\
+Longformer \& Local & $\mathcal{O}(L W)$ \& No \& No \\
+BigBird \& Local + random & $\mathcal{O}(L W)$ \& No \& No \\
+Sparsemax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+Entmax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+StreamingLLM \& Sink + window & $\mathcal{O}(L W)$ \& No \& Yes \\
 \textbf{AdaSplash} & \textbf{Sink + window + entmax} & \textbf{$\mathcal{O}(L W)$} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}

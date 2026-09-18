@@ -55,20 +55,20 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 ### Table 7.1 (Main)
 ```bash
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run_all_4_adasplash.py - models distilbert,roberta,gpt2
 ```
 
 ### Table 7.5 (α ablation)
 ```bash
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run_all_4_adasplash.py - alpha $alpha - output_suffix a$alpha
 done
 ```
 
 ### Table 7.6 (Splash radius)
 ```bash
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run_all_4_adasplash.py - splash_radius $W - output_suffix W$W
 done
 ```
 

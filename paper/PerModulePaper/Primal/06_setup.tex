@@ -10,9 +10,9 @@
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,12 +66,12 @@ Dropout & 0.1 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
 Steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,7 +120,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\

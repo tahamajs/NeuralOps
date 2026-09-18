@@ -12,9 +12,9 @@ We evaluate on three pretrained backbones:
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,14 +66,14 @@ calibration to keep memory bounded.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-Rank $r$ & 64 & Target rank \\
-\texttt{use\_fisher} & True & Activation-aware weighting \\
-\texttt{recalibrate\_ln} & True & LayerNorm recalibration \\
-\texttt{max\_error} $\tau$ & 0.20 & Frobenius threshold \\
-\texttt{max\_retries} & 3 & Adaptive escalation steps \\
-\texttt{fallback\_to\_original} & True & Safe fallback \\
-\texttt{normalize\_scale} & True & Clamp weights \\
-\texttt{target\_attention\_only} & False & Compress all layers \\
+Rank $r$ & 64 \& Target rank \\
+\texttt{use\_fisher} \& True \& Activation-aware weighting \\
+\texttt{recalibrate\_ln} \& True \& LayerNorm recalibration \\
+\texttt{max\_error} $\tau$ & 0.20 \& Frobenius threshold \\
+\texttt{max\_retries} & 3 \& Adaptive escalation steps \\
+\texttt{fallback\_to\_original} \& True \& Safe fallback \\
+\texttt{normalize\_scale} \& True \& Clamp weights \\
+\texttt{target\_attention\_only} \& False \& Compress all layers \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,14 +89,14 @@ After A3 compression, we train LoRA adapters:
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
 Recovery steps & 50 \\
 LoRA rank & 16 \\
 LoRA alpha & 32 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,12 +157,12 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
 Transformers & 4.44.0 \\
-OS & Windows / Linux \\
+OS \& Windows / Linux \\
 \bottomrule
 \end{tabular}
 \end{table}

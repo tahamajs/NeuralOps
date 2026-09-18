@@ -1,0 +1,329 @@
+{
+  "Batch_01": [
+    "AdaptiveSVD",
+    "AdaptiveSpanAttention",
+    "AdaptiveSparseAttention",
+    "Galerkin"
+  ],
+  "Batch_02": [
+    "HALO",
+    "OH",
+    "Primal",
+    "SOAFusedAttention"
+  ],
+  "Batch_03": [
+    "SqueezingHeadsAttentionDistillationLayer",
+    "a3",
+    "aa_svd_compressor",
+    "aasvd"
+  ],
+  "Batch_04": [
+    "adaptive_compressor",
+    "adaptive_ranks",
+    "adaptive_span_attention",
+    "adaptive_sparse_attention"
+  ],
+  "Batch_05": [
+    "adaptive_svd_attention",
+    "adasplash",
+    "adasvd_compressor",
+    "admm_compressor"
+  ],
+  "Batch_06": [
+    "admm_pruner",
+    "aegis_hybrid",
+    "aegis_spectron_fp8",
+    "aegis_v1"
+  ],
+  "Batch_07": [
+    "aegis_v2",
+    "aegis_v3",
+    "aegis_v4",
+    "aegis_v5"
+  ],
+  "Batch_08": [
+    "aegis_v6",
+    "armor_pruner",
+    "ast_pruner",
+    "astro_quantizer"
+  ],
+  "Batch_09": [
+    "asvd",
+    "bam_umoe",
+    "block_transformer_hiba",
+    "bonsai_pruner"
+  ],
+  "Batch_10": [
+    "cachenotes_compressor",
+    "chela_slay",
+    "cluster",
+    "come"
+  ],
+  "Batch_11": [
+    "compot_compressor",
+    "compressed_attention",
+    "compressed_mha",
+    "coopq_quantizer"
+  ],
+  "Batch_12": [
+    "cosformer",
+    "cr_compressor",
+    "cur_compressor",
+    "cur_linear"
+  ],
+  "Batch_13": [
+    "cur_moe",
+    "cure",
+    "decay_linear_attention",
+    "delta_kv"
+  ],
+  "Batch_14": [
+    "direct_svd",
+    "dobi",
+    "dobi_svd",
+    "dynamic_entropy"
+  ],
+  "Batch_15": [
+    "dynamic_rank",
+    "eat",
+    "enlighten_compressor",
+    "entropy_budget_allocation"
+  ],
+  "Batch_16": [
+    "erc_svd",
+    "expert_choice_moe",
+    "factorised_matrix_state",
+    "faq_quantizer"
+  ],
+  "Batch_17": [
+    "flap",
+    "flash3",
+    "flash_attention3",
+    "flash_attention3_fp8"
+  ],
+  "Batch_18": [
+    "flat_llm",
+    "frandi",
+    "full_attention",
+    "fused_svd_kernel"
+  ],
+  "Batch_19": [
+    "fusion",
+    "fusion_attn",
+    "galerkin_attention",
+    "gated_delta_net"
+  ],
+  "Batch_20": [
+    "gated_deltanet_block",
+    "gated_linear_attention",
+    "gfws_d_compressor",
+    "goldfinch_ahn"
+  ],
+  "Batch_21": [
+    "gqa",
+    "granite_hybrid",
+    "grecodec",
+    "griffin_ssd"
+  ],
+  "Batch_22": [
+    "halo_regla",
+    "hamming_attention",
+    "hashed_linear",
+    "hashed_net_compressor"
+  ],
+  "Batch_23": [
+    "hgrn2_gated_deltanet",
+    "hgrn2_layer",
+    "hgrn2_outer",
+    "hla_attention"
+  ],
+  "Batch_24": [
+    "huffman_coder",
+    "hybrid_svd_layer",
+    "hybridkv",
+    "hymba_transx"
+  ],
+  "Batch_25": [
+    "infini",
+    "jamba",
+    "jamba_info",
+    "kda_attention"
+  ],
+  "Batch_26": [
+    "kmeans_quantize",
+    "kronecker_compressor",
+    "kronecker_linear",
+    "kronecker_tt_lora"
+  ],
+  "Batch_27": [
+    "kvtc",
+    "leka_v1",
+    "leka_v2",
+    "leka_v3"
+  ],
+  "Batch_28": [
+    "liftr",
+    "lillama_compressor",
+    "linformer_attention",
+    "lola_attention"
+  ],
+  "Batch_29": [
+    "lora_attention",
+    "lsc_compressor",
+    "lsh_attention",
+    "mamba"
+  ],
+  "Batch_30": [
+    "mamba_inject",
+    "mamba_shedder",
+    "mamba_svd_flash",
+    "mgie_svd"
+  ],
+  "Batch_31": [
+    "minimal_aurora",
+    "minimal_nova",
+    "minimal_prism",
+    "minimal_svd"
+  ],
+  "Batch_32": [
+    "minimal_svd_v2",
+    "mixattention_moska",
+    "mla_attention",
+    "mlorq_compressor"
+  ],
+  "Batch_33": [
+    "moba",
+    "modegpt",
+    "moe_deltakv_paged",
+    "nasc_attention"
+  ],
+  "Batch_34": [
+    "nexus",
+    "nha",
+    "nli_softmax",
+    "nmf_compressor"
+  ],
+  "Batch_35": [
+    "nsa",
+    "nystrom_attention",
+    "oats",
+    "optimal_subspace_projection"
+  ],
+  "Batch_36": [
+    "optimized_hybrid_attention",
+    "orion",
+    "padre_attention",
+    "performer_attention"
+  ],
+  "Batch_37": [
+    "phantom",
+    "progressive_token_pruning",
+    "projection_factorized_attn",
+    "proxsparse"
+  ],
+  "Batch_38": [
+    "proxsparse_pruner",
+    "pruning_utils",
+    "ptp",
+    "qcqa_attention"
+  ],
+  "Batch_39": [
+    "rala_attention",
+    "reap_moe",
+    "regla_attention",
+    "replace"
+  ],
+  "Batch_40": [
+    "replaceme_compressor",
+    "res_svd",
+    "roast_hashed_linear",
+    "rotational_slicegpt_int4"
+  ],
+  "Batch_41": [
+    "routing_attention",
+    "rpc",
+    "rpca",
+    "saes_svd"
+  ],
+  "Batch_42": [
+    "saes_svd_v2",
+    "salr",
+    "salt",
+    "samba_m3"
+  ],
+  "Batch_43": [
+    "samba_moe",
+    "sdrm",
+    "simple_ssm",
+    "slicegpt"
+  ],
+  "Batch_44": [
+    "slicegpt_pca",
+    "slim_compressor",
+    "smart_weighted_ensemble",
+    "soa_attn"
+  ],
+  "Batch_45": [
+    "soa_fused_module",
+    "soa_module",
+    "soka",
+    "span_expanded_attention"
+  ],
+  "Batch_46": [
+    "sparsegpt",
+    "spectra_v2",
+    "spectraformer_attention",
+    "spectral_mamba"
+  ],
+  "Batch_47": [
+    "spectron",
+    "squeezing_heads",
+    "squeezing_heads_distill",
+    "squeezing_heads_distiller"
+  ],
+  "Batch_48": [
+    "subspace_projection",
+    "svd_attention",
+    "svd_compressed",
+    "svd_linear_attention"
+  ],
+  "Batch_49": [
+    "svd_linear_decay",
+    "svd_llm_v2_attention",
+    "svd_mamba",
+    "svd_proj_attn"
+  ],
+  "Batch_50": [
+    "svd_projection_attention",
+    "svd_sequence_attention",
+    "swift_svd",
+    "swift_svd_act"
+  ],
+  "Batch_51": [
+    "template_attention",
+    "tlinformer_attention",
+    "token_compressed_attention",
+    "tomoe"
+  ],
+  "Batch_52": [
+    "tpa_attention",
+    "tt",
+    "unified_rope",
+    "uniql_compressor"
+  ],
+  "Batch_53": [
+    "upi_mamba",
+    "upi_stuffed_mamba",
+    "vig_attention",
+    "vspec"
+  ],
+  "Batch_54": [
+    "weighted_ensemble",
+    "wgqa",
+    "xattention",
+    "zerokv_neo"
+  ],
+  "Batch_55": [
+    "zeros_attention"
+  ]
+}

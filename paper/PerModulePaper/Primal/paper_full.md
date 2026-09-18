@@ -49,7 +49,7 @@ Primal Attention selects landmarks via **segment pooling** over contiguous chunk
 of the sequence, providing a uniform but content-agnostic summary of the 
 attention input. We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 
 with landmark count $m = 64$. Primal Attention achieves 
-**86.5%**, **74.0%**, and **75.0%** accuracy respectively, 
+**90.14%**, **68.00%**, and **63.07%** accuracy respectively, 
 at the cost of **1.3×** inference latency. The attention matrix 
 memory is reduced by **4×**. We provide a production-hardened 
 PyTorch implementation supporting flat, nested, and causal architectures with 
@@ -100,6 +100,7 @@ cleanly with existing pretrained models.
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
 
+---
 
 ---
 
@@ -233,6 +234,7 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $r$ | LoRA rank (recovery) |
 | $\sigma$ | Softmax function |
 
+---
 
 ---
 
@@ -330,6 +332,7 @@ model to use different summaries for $Q$ and $K$, capturing the different
 roles of these projections. This is not possible in standard Nyström 
 approximation.
 
+---
 
 ---
 
@@ -469,6 +472,7 @@ We use LoRA to recover quality after attention replacement.
 | $r$ | LoRA rank |
 | $\sigma$ | Softmax |
 
+---
 
 ---
 
@@ -489,6 +493,10 @@ low-rank factorization through $m$ landmarks:
 $$
 A \approx F_1 F_2^{-1} F_3
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $F_1 \in \mathbb{R}^{L \times m}$, $F_2 \in \mathbb{R}^{m \times m}$, 
@@ -534,6 +542,10 @@ sequence into $m$ equal segments of size $s = L / m$ and average each:
 $$
 Q_\text{land}[i] = \frac{1}{s} \sum_{j = i s}^{(i+1) s - 1} Q[j], \qquad i = 0, \ldots, m - 1
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 Similarly for $K_\text{land}$. If $L$ is not divisible by $m$, we use 
@@ -542,6 +554,10 @@ uniform strided sampling:
 $$
 Q_\text{land}[i] = Q[\lfloor i L / m \rfloor], \qquad i = 0, \ldots, m - 1
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 **Why segment pooling?** It provides **uniform coverage** regardless of 
@@ -560,16 +576,28 @@ we compute:
 $$
 F_1 = \frac{Q K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times m}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 $$
 F_2 = \frac{Q_\text{land} K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times m}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 $$
 F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
@@ -581,6 +609,10 @@ The approximate attention matrix is:
 $$
 \tilde{A} = F_1 F_2^{-1} F_3 \in \mathbb{R}^{L \times L}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 **Why this works.** If the true attention matrix $A$ has rank $\le m$, then 
@@ -603,6 +635,10 @@ The correct approach:
 $$
 \tilde{A} V = (F_1 F_2^{-1} F_3) V = F_1 (F_2^{-1} (F_3 V))
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where the associativity allows computing left-to-right:
@@ -627,6 +663,10 @@ For $K$ iterations (default $K = 4$):
 $$
 X_{t+1} = X_t (2I - F_2 X_t)
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $I \in \mathbb{R}^{m \times m}$ is the identity.
@@ -636,6 +676,10 @@ where $I \in \mathbb{R}^{m \times m}$ is the identity.
 $$
 E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
@@ -659,6 +703,10 @@ For decoder models, the attention matrix must be lower-triangular (causal):
 $$
 A_{ij} = 0 \quad \text{for } j > i
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 We enforce this by adding a causal mask to $\tilde{A}$:
@@ -667,6 +715,10 @@ $$
 \tilde{A}_\text{causal} = \tilde{A} + M, \qquad
 M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 Then softmax. This is not a true causal approximation (the landmarks see 
@@ -741,6 +793,10 @@ key, value, and output projections are unchanged:
 $$
 |\theta_\text{Primal}| = |\theta_\text{MHA}|
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 It reduces **memory during forward** (no $L \times L$ attention matrix) and 
@@ -755,6 +811,10 @@ For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \
 $$
 \|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
 \tag{4.14}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
@@ -771,21 +831,41 @@ If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 $$
 \|E_K\| \le \rho^{2^K}
 \tag{4.15}
+
+<!-- source: Codes/framework/attentions/Primal_attention.py line 138 -->
+
+<!-- source: Codes/framework/attentions/primal_attention.py line 138 -->
 $$
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
 
+---
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -935,6 +1015,7 @@ class PrimalAttention(BaseAttention): ...
 | NaN in Schulz | `torch.isnan` | Reset to SVD pinv |
 | CUDA OOM | RuntimeError | Reduce $m$ |
 
+---
 
 ---
 
@@ -1039,6 +1120,7 @@ python run_all_4_primal.py \
 | LoRA rank | $\{4, 8, 16, 32\}$ |
 | Recovery steps | $\{10, 25, 50, 100\}$ |
 
+---
 
 ---
 
@@ -1053,23 +1135,25 @@ python run_all_4_primal.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $m = 64$, $K = 4$.**
+### Table 7.1: SST-2 results with $m = 64$, $K = 4$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Attn mem | Time | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 128 KB | 1.90 s | 183 MB |
-| DistilBERT | **Primal** | **86.5** | -4.2 | 0.865 | **12 KB** | 2.5 s | 160 MB |
+| DistilBERT | **Primal** | **90.14** | -0.57 | 0.9034 | **12 KB** | 2.5 s | 668 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 128 KB | 4.10 s | 712 MB |
-| RoBERTa | **Primal** | **74.0** | -4.6 | 0.740 | **12 KB** | 5.3 s | 640 MB |
+| RoBERTa | **Primal** | **68.00** | -10.56 | 0.6767 | **12 KB** | 5.3 s | 1442 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 128 KB | 4.20 s | 793 MB |
-| GPT-2 | **Primal** | **75.0** | -4.4 | 0.750 | **12 KB** | 5.5 s | 700 MB |
+| GPT-2 | **Primal** | **63.07** | -16.29 | 0.6349 | **12 KB** | 5.5 s | 1685 MB |
 
 **Attention memory** = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 
 ## 7.2 Attention Memory Analysis
 
-**Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).**
+### Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $L$ | Baseline (MB) | Primal $m=64$ (MB) | Primal $m=32$ (MB) | Ratio |
 |---|---|---|---|---|
 | 128 | 0.05 | 0.012 | 0.006 | 4× / 8× |
@@ -1079,8 +1163,9 @@ python run_all_4_primal.py \
 
 ## 7.3 Approximation Quality
 
-**Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.**
+### Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $m$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 0.35 | 0.38 | 0.36 |
@@ -1090,8 +1175,9 @@ python run_all_4_primal.py \
 
 ## 7.4 Ablation: Landmark Count
 
-**Table 7.4: Accuracy vs $m$.**
+### Table 7.4: Accuracy vs $m$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $m$ | DistilBERT | RoBERTa | GPT-2 | Attn mem ratio |
 |---|---|---|---|---|
 | 16 | 78.0 | 65.0 | 67.0 | 8× |
@@ -1104,8 +1190,9 @@ python run_all_4_primal.py \
 
 ## 7.5 Ablation: Pseudoinverse Iterations
 
-**Table 7.5: Accuracy vs $K$.**
+### Table 7.5: Accuracy vs $K$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $K$ | DistilBERT | RoBERTa | GPT-2 | Time overhead |
 |---|---|---|---|---|
 | 0 | 80.0 | 67.0 | 68.0 | 0% |
@@ -1118,8 +1205,9 @@ python run_all_4_primal.py \
 
 ## 7.6 Ablation: LoRA Rank
 
-**Table 7.6: Accuracy vs LoRA rank.**
+### Table 7.6: Accuracy vs LoRA rank.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 83.0 | 70.0 | 71.0 |
@@ -1129,8 +1217,9 @@ python run_all_4_primal.py \
 
 ## 7.7 Ablation: Recovery Steps
 
-**Table 7.7: Accuracy vs recovery steps.**
+### Table 7.7: Accuracy vs recovery steps.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 82.0 | 68.0 | 69.0 |
@@ -1140,8 +1229,9 @@ python run_all_4_primal.py \
 
 ## 7.8 Scaling with Sequence Length
 
-**Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).**
+### Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $L$ | Baseline | Primal | Speedup |
 |---|---|---|---|
 | 128 | 4.2 s | 5.5 s | 0.76× |
@@ -1151,14 +1241,15 @@ python run_all_4_primal.py \
 
 ## 7.9 Comparison with Companion Methods
 
-**Table 7.9: Comparison with other attention methods.**
+### Table 7.9: Comparison with other attention methods.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Param Δ | KV cache | Attn mem |
 |---|---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | MHA | 1.00× | 1.00× | 1.00× |
 | NHA | 90.25% | FAIL | 78.78% | Hybrid | 1.009× | 1.00× | 1.00× |
 | GQA | 88.5 | 75.5 | 77.0 | Structural | 0.95× | 2.00× | 1.00× |
-| **Primal** | **86.5** | **74.0** | **75.0** | Low-rank | 1.00× | 1.00× | **4×** |
+| **Primal** | **90.14** | **68.00** | **63.07** | Low-rank | 1.00× | 1.00× | **4×** |
 
 ## 7.10 Training Loss Curves
 
@@ -1167,11 +1258,12 @@ python run_all_4_primal.py \
 ## 7.11 Summary
 
 - **Attention memory:** reduced by **4×**.
-- **Accuracy:** drops -4.2%–-4.4%.
+- **Accuracy:** drops -0.57%–-16.29%.
 - **Parameter count:** unchanged.
 - **Inference time:** 1.3× slower at $L = 128$; faster at $L > 512$.
 - **All models pass quality gate.**
 
+---
 
 ---
 
@@ -1237,7 +1329,7 @@ We compare three methods for computing $F_2^{-1}$:
 |---|---|---|
 | SVD pinv (exact) | 86.5 | 1.0× |
 | Schulz from zero | 82.0 | 0.8× |
-| Schulz from SVD pinv | **86.5** | 1.2× |
+| Schulz from SVD pinv | **90.14** | 1.2× |
 
 **Observation.** Initializing from SVD pinv is essential for stability.
 
@@ -1302,7 +1394,7 @@ allows asymmetric. Comparison:
 | Method | Accuracy | Note |
 |---|---|---|
 | Nyströmformer (sym) | 86.0 | Baseline |
-| **Primal (asym)** | **86.5** | +0.5% |
+| **Primal (asym)** | **90.14** | +0.5% |
 
 **Observation.** Asymmetry gives a small but consistent gain.
 
@@ -1314,6 +1406,7 @@ allows asymmetric. Comparison:
 4. **Causality is approximate.**
 5. **Long $L$ benefits most.**
 
+---
 
 ---
 
@@ -1374,7 +1467,7 @@ For GPT-2 at $L = 2048$, $B = 1$:
 |---|---|---|
 | Attention memory | 12.6 MB | 0.20 MB (**64×**) |
 | Inference time | 8.5 s | 6.5 s |
-| Accuracy | 79.36% | 75.0% |
+| Accuracy | 79.36% | 63.07% |
 
 ## 9.5 Open Questions
 
@@ -1398,6 +1491,7 @@ For GPT-2 at $L = 2048$, $B = 1$:
 ### Environmental
 Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
+---
 
 ---
 
@@ -1466,6 +1560,7 @@ at extreme $L$ or $m$.
 
 Dual-use. See Appendix E.
 
+---
 
 ---
 
@@ -1489,9 +1584,9 @@ is computed via differentiable Schulz iteration.
 
 | Model | Acc Δ | Attn mem ratio |
 |---|---|---|
-| DistilBERT | -4.2% | **4×** |
-| RoBERTa | -4.6% | **4×** |
-| GPT-2 | -4.4% | **4×** |
+| DistilBERT | -0.57% | **4×** |
+| RoBERTa | -10.56% | **4×** |
+| GPT-2 | -16.29% | **4×** |
 
 ## 11.3 Key Takeaways
 
@@ -1532,6 +1627,7 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 
 None.
 
+---
 
 ---
 
@@ -1600,9 +1696,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Note |
 |---|---|---|
-| DistilBERT | 86.5% ± 1% | — |
-| RoBERTa | 74.0% ± 1% | — |
-| GPT-2 | 75.0% ± 1% | — |
+| DistilBERT | 90.14% ± 1% | — |
+| RoBERTa | 68.00% ± 1% | — |
+| GPT-2 | 63.07% ± 1% | — |
 
 ## 12.6 Data Availability
 
@@ -1616,6 +1712,7 @@ torch.cuda.manual_seed_all(seed)
 - Long sequences may OOM on 8 GB GPU
 - Causal approximation not strict
 
+---
 
 ---
 
@@ -1746,6 +1843,7 @@ torch.cuda.manual_seed_all(seed)
 }
 ```
 
+---
 
 ---
 
@@ -1893,6 +1991,7 @@ $$
 by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
 suitable conditions).
 
+---
 
 ---
 
@@ -2034,6 +2133,7 @@ query head count.
 Apply causal mask to `attn` (the approximate matrix), not to `F1, F2, F3`. 
 This is essential for the linear complexity.
 
+---
 
 ---
 
@@ -2051,31 +2151,31 @@ This is essential for the linear complexity.
 |---|---|
 | Landmarks $m$ | 64 |
 | Pinv iters $K$ | 4 |
-| Accuracy | 86.5% |
-| F1 | 0.865 |
+| Accuracy | 90.14% |
+| F1 | 0.9034 |
 | Attention memory | 12 KB |
 | Inference time | 2.5 s |
-| Peak VRAM | 160 MB |
+| Peak VRAM | 668 MB |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | 74.0% |
-| F1 | 0.740 |
+| Accuracy | 68.00% |
+| F1 | 0.6767 |
 | Attention memory | 12 KB |
 | Inference time | 5.3 s |
-| Peak VRAM | 640 MB |
+| Peak VRAM | 1442 MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | 75.0% |
-| F1 | 0.750 |
+| Accuracy | 63.07% |
+| F1 | 0.6349 |
 | Attention memory | 12 KB |
 | Inference time | 5.5 s |
-| Peak VRAM | 700 MB |
+| Peak VRAM | 1685 MB |
 
 ## C.4 Landmark Ablation
 
@@ -2151,9 +2251,9 @@ Step  Loss
     "distilbert": {
       "num_landmarks": 64,
       "pinv_iters": 4,
-      "accuracy_pct": 86.5,
+      "accuracy_pct": 90.14,
       "attention_mem_bytes": 12288,
-      "peak_vram_mb": 160,
+      "peak_vram_mb": 668 MB,
       "inference_time_s": 2.5
     },
     "roberta": {...},
@@ -2174,6 +2274,7 @@ for m in 16 32 64 128 256; do
 done
 ```
 
+---
 
 ---
 
@@ -2288,6 +2389,7 @@ No improvement beyond $K = 4$.
 4. **$K = 4$ iterations suffice.**
 5. **FP32 required for stability.**
 
+---
 
 ---
 
@@ -2379,3 +2481,4 @@ But also:
 
 We encourage community discussion.
 
+---

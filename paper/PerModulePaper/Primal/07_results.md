@@ -9,23 +9,25 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $m = 64$, $K = 4$.**
+### Table 7.1: SST-2 results with $m = 64$, $K = 4$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Attn mem | Time | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 128 KB | 1.90 s | 183 MB |
-| DistilBERT | **Primal** | **90.14** | -0.57 | 0.9034 | **12 KB** | 2.5 s | 668 MB MB |
+| DistilBERT | **Primal** | **90.14** | -0.57 | 0.9034 | **12 KB** | 2.5 s | 668 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 128 KB | 4.10 s | 712 MB |
-| RoBERTa | **Primal** | **68.00** | -10.56 | 0.6767 | **12 KB** | 5.3 s | 1442 MB MB |
+| RoBERTa | **Primal** | **68.00** | -10.56 | 0.6767 | **12 KB** | 5.3 s | 1442 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 128 KB | 4.20 s | 793 MB |
-| GPT-2 | **Primal** | **63.07** | -16.29 | 0.6349 | **12 KB** | 5.5 s | 1685 MB MB |
+| GPT-2 | **Primal** | **63.07** | -16.29 | 0.6349 | **12 KB** | 5.5 s | 1685 MB |
 
 **Attention memory** = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 
 ## 7.2 Attention Memory Analysis
 
-**Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).**
+### Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $L$ | Baseline (MB) | Primal $m=64$ (MB) | Primal $m=32$ (MB) | Ratio |
 |---|---|---|---|---|
 | 128 | 0.05 | 0.012 | 0.006 | 4× / 8× |
@@ -35,8 +37,9 @@
 
 ## 7.3 Approximation Quality
 
-**Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.**
+### Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $m$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 0.35 | 0.38 | 0.36 |
@@ -46,8 +49,9 @@
 
 ## 7.4 Ablation: Landmark Count
 
-**Table 7.4: Accuracy vs $m$.**
+### Table 7.4: Accuracy vs $m$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $m$ | DistilBERT | RoBERTa | GPT-2 | Attn mem ratio |
 |---|---|---|---|---|
 | 16 | 78.0 | 65.0 | 67.0 | 8× |
@@ -60,8 +64,9 @@
 
 ## 7.5 Ablation: Pseudoinverse Iterations
 
-**Table 7.5: Accuracy vs $K$.**
+### Table 7.5: Accuracy vs $K$.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $K$ | DistilBERT | RoBERTa | GPT-2 | Time overhead |
 |---|---|---|---|---|
 | 0 | 80.0 | 67.0 | 68.0 | 0% |
@@ -74,8 +79,9 @@
 
 ## 7.6 Ablation: LoRA Rank
 
-**Table 7.6: Accuracy vs LoRA rank.**
+### Table 7.6: Accuracy vs LoRA rank.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 83.0 | 70.0 | 71.0 |
@@ -85,8 +91,9 @@
 
 ## 7.7 Ablation: Recovery Steps
 
-**Table 7.7: Accuracy vs recovery steps.**
+### Table 7.7: Accuracy vs recovery steps.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 82.0 | 68.0 | 69.0 |
@@ -96,8 +103,9 @@
 
 ## 7.8 Scaling with Sequence Length
 
-**Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).**
+### Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | $L$ | Baseline | Primal | Speedup |
 |---|---|---|---|
 | 128 | 4.2 s | 5.5 s | 0.76× |
@@ -107,8 +115,9 @@
 
 ## 7.9 Comparison with Companion Methods
 
-**Table 7.9: Comparison with other attention methods.**
+### Table 7.9: Comparison with other attention methods.
 
+<!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Param Δ | KV cache | Attn mem |
 |---|---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | MHA | 1.00× | 1.00× | 1.00× |

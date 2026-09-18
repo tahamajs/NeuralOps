@@ -1,0 +1,8 @@
+{
+  "module": "hla_inject",
+  "model_path": "gpt2",
+  "dataset": "wikitext2",
+  "perplexity": NaN,
+  "seq_len": 1024,
+  "stride": 512
+}

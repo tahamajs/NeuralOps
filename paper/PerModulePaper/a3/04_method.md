@@ -53,6 +53,14 @@ $$
 F^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} \left(x_t^{(\ell)}\right)^2, \qquad
 C_X^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} x_t^{(\ell)} \left(x_t^{(\ell)}\right)^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $x_t^{(\ell)} \in \mathbb{R}^{d_\text{in}^{(\ell)}}$ is the input to 
@@ -78,6 +86,14 @@ $$
 F^{(\ell)} = \frac{\sum_k f^{(k)}}{\sum_k N^{(k)}}, \qquad
 C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 \tag{4.2}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 **Memory.** $\mathcal{O}(d^2)$ per layer, or $\mathcal{O}(N_l d^2)$ total. 
@@ -104,6 +120,14 @@ error:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_x\!\left[\|W x - W_r x\|_2^2\right]
 \tag{4.3}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If we assume $x$ has approximately diagonal covariance 
@@ -112,6 +136,14 @@ $\mathrm{diag}(F_1, \dots, F_{d_\text{in}})$, then:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \sum_{i=1}^{d_\text{in}} F_i \|(W - W_r)_{:, i}\|_2^2 = \|(W - W_r) \cdot \mathrm{diag}(\sqrt{F})\|_F^2
 \tag{4.4}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 So the activation-weighted problem is equivalent to an **unweighted** problem 
@@ -120,6 +152,14 @@ on the transformed matrix:
 $$
 W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
 \tag{4.5}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $\epsilon = 10^{-6}$ prevents division by zero.
@@ -131,12 +171,28 @@ where $\epsilon = 10^{-6}$ prevents division by zero.
    $$
    W_\text{weighted} \approx U_r \Sigma_r V_r^\top
    \tag{4.6}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+$$
 3. Unweight the right factor to recover the original space:
    $$
    V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
    \tag{4.7}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+$$
 4. Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
 
 The factorized layer computes:
@@ -144,6 +200,14 @@ The factorized layer computes:
 $$
 y = (x V^\top) U^\top + b
 \tag{4.8}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 ### 4.3.3 Scale Normalization
@@ -153,6 +217,14 @@ To prevent extreme weighting values, we optionally normalize $F$:
 $$
 F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \tag{4.9}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
@@ -173,6 +245,14 @@ After factorization, we compute:
 $$
 \text{err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F + 10^{-8}}
 \tag{4.10}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If $\text{err} \leq \tau$, the layer is replaced. Otherwise:
@@ -184,6 +264,14 @@ We retry with an increased rank:
 $$
 r_{k+1} = r_k + \max\!\left(8, \frac{\min(d_\text{in}, d_\text{out}) - r_k}{K - k}\right)
 \tag{4.11}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $K$ is the maximum number of retries (default 3). The step size is 
@@ -216,6 +304,14 @@ The LayerNorm computes:
 $$
 \text{LN}(x) = \gamma \odot \frac{x - \mu}{\sigma(x) + \epsilon} + \beta
 \tag{4.12}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If the input variance changed from $\sigma_\text{old}$ to $\sigma_\text{new}$, 
@@ -225,6 +321,14 @@ We can compensate by adjusting $\gamma$:
 $$
 \gamma \leftarrow \gamma \cdot \frac{\sigma_\text{target}}{\sigma_\text{current}}
 \tag{4.13}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $\sigma_\text{target}$ is the pre-compression standard deviation and 
@@ -330,6 +434,14 @@ For any $W$, $U_r$, $V_r$ from weighted SVD:
 $$
 \|W - U_r V_r\|_F \leq \left\|W - W^*_r\right\|_F + \|W^*_r - U_r V_r\|_F
 \tag{4.14}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $W^*_r$ is the unweighted optimal rank-$r$ approximation. In practice, 

@@ -283,7 +283,7 @@ Output: output Y $\in$ R^{B$\times$L$\times$d}
 11: if is_decoder:
 12:     causal_mask $\leftarrow$ tril(ones(L, L))
 13:     splash_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j < S)
-14:     S $\leftarrow$ S.masked_fill(~(causal & splash), -10000)
+14:     S $\leftarrow$ S.masked_fill(~(causal \& splash), -10000)
 15:
 16: A $\leftarrow$ $\alpha$_entmax(S, $\alpha$)
 17: A $\leftarrow$ dropout(A)
@@ -389,10 +389,10 @@ determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
 \midrule
-$\alpha$ & 1.5 & Higher = sparser (up to 2.0 = sparsemax) \\
-$W$ (splash radius) & 32 & Higher = more context, less sparsity \\
-$S$ (sink count) & 4 & Higher = more global context \\
-$r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
+$\alpha$ & 1.5 \& Higher = sparser (up to 2.0 = sparsemax) \\
+$W$ (splash radius) & 32 \& Higher = more context, less sparsity \\
+$S$ (sink count) & 4 \& Higher = more global context \\
+$r_L$ (LoRA rank) & 16 \& Higher = more recovery capacity \\
 \bottomrule
 \end{tabular}
 \end{table}

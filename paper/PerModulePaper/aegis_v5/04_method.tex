@@ -252,7 +252,7 @@ Quadratic fallback: $\mathcal{O}(L^2 d_h)$.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} \\
 \midrule
-Q/K/V/O (SVD) & $4 d^2$ & $4 r(d + d_h)$ & depends on $r$ \\
+Q/K/V/O (SVD) & $4 d^2$ & $4 r(d + d_h)$ \& depends on $r$ \\
 LoRA adapters & 0 & $4 r_L (d + d_h)$ & +small \\
 RFF proj & 0 & $H_\text{global} \cdot d_h \cdot F$ & +medium \\
 blend\_logits & 0 & $H$ & +negligible \\

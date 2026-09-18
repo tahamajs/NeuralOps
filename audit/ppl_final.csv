@@ -1,0 +1,9 @@
+module,category,zero_shot_ppl,post_recovery_ppl,delta,verdict
+lora_attention,Attention,27.3236,27.3236,0.0,Identity
+lsh_attention,Attention,27.3236,27.3236,0.0,Identity
+compressed_mha,Compression,27.3236,27.3236,0.0,Identity
+galerkin,Attention,27.3236,27.3236,0.0,Identity
+svd_linear_attention,Attention,27.3236,27.3236,0.0,Identity
+full_attention,Attention,27.3236,27.3236,0.0,Identity
+aasvd,Compression,27.3236,27.3236,0.0,Identity
+saes_svd,Compression,27.3236,27.3236,0.0,Identity

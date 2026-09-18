@@ -50,7 +50,7 @@ We construct the DCT-II basis $\Phi \in \mathbb{R}^{N \times r}$:
 
 \begin{equation}
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
-c_k, \quad c_k = \begin{cases} 1/\sqrt{N} & k = 0 \\ \sqrt{2/N} & k \geq 1 \end{cases}
+c_k, \quad c_k = \begin{cases} 1/\sqrt{N} \& k = 0 \\ \sqrt{2/N} \& k \geq 1 \end{cases}
 \end{equation}
 
 We then orthonormalize via QR to correct for numerical error:
@@ -108,8 +108,8 @@ For causal models, we use standard attention with explicit causal masking:
 
 \begin{equation}
 \text{scores}_{ij} = \begin{cases}
-Q_i K_j^\top / \sqrt{d} & j \leq i \\
--\infty & j > i
+Q_i K_j^\top / \sqrt{d} \& j \leq i \\
+-\infty \& j > i
 \end{cases}
 \end{equation}
 
@@ -129,9 +129,9 @@ Galerkin Attention \textbf{adds parameters} via LoRA:
 \midrule
 Original attention & $d_\text{in} d_\text{out}$ \\
 Q projection + LoRA & $d_\text{in} d_\text{out} + r_L(d_\text{in} + d_\text{out})$ \\
-K projection + LoRA & same \\
-V projection + LoRA & same \\
-O projection + LoRA & same \\
+K projection + LoRA \& same \\
+V projection + LoRA \& same \\
+O projection + LoRA \& same \\
 \textbf{Total per layer} & $4 d_\text{in} d_\text{out} + 4 r_L(d_\text{in} + d_\text{out})$ \\
 \bottomrule
 \end{tabular}

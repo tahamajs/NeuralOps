@@ -9,8 +9,9 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
@@ -30,8 +31,9 @@
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Total parameter counts.**
+### Table 7.2: Total parameter counts.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline | Adaptive SVD | Ratio |
 |---|---|---|---|
 | DistilBERT | 66,955,010 | 22000000 | **3.0×** |
@@ -40,6 +42,7 @@
 
 **Per-projection (DistilBERT):**
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Projection | Original | Compressed | Rank $r_P$ | Reduction |
 |---|---|---|---|---|
 | $W_Q$ | 589,824 | 196608 | 128 | 3.0× |
@@ -49,8 +52,9 @@
 
 ## 7.3 Per-Layer Rank Distribution
 
-**Table 7.3: Energy-thresholded ranks for DistilBERT.**
+### Table 7.3: Energy-thresholded ranks for DistilBERT.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Layer | Q rank | K rank | V rank | O rank | Avg |
 |---|---|---|---|---|---|
 | 0 | 128 | 128 | 64 | 64 | 96 |
@@ -66,8 +70,9 @@ projections tend to have lower rank than query and key projections.
 
 ## 7.4 Reconstruction Error
 
-**Table 7.4: Relative Frobenius error at energy threshold τ.**
+### Table 7.4: Relative Frobenius error at energy threshold τ.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Projection | Error | Theoretical bound |
 |---|---|---|---|
 | DistilBERT | Q | 0.27 | 0.283 |
@@ -79,8 +84,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.5 Efficiency Profile
 
-**Table 7.5: Inference efficiency.**
+### Table 7.5: Inference efficiency.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Time (s) | Tokens/s | VRAM (MB) |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 |
@@ -92,8 +98,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.6 Ablation: Energy Threshold
 
-**Table 7.6: Effect of energy threshold τ.**
+### Table 7.6: Effect of energy threshold τ.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | τ | Avg rank | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|---|
 | 0.85 | 64 | 85 | 5.0× | 70 | 71 |
@@ -107,8 +114,9 @@ minimal compression.
 
 ## 7.7 Ablation: Residual Rank
 
-**Table 7.7: Effect of residual adapter rank $r_L$.**
+### Table 7.7: Effect of residual adapter rank $r_L$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 (no adapter) | 80 | 65 | 66 |
@@ -123,8 +131,9 @@ collapses accuracy.
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps (r_L = 16).**
+### Table 7.8: Accuracy vs recovery steps (r_L = 16).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.4 | 0.8 | 0.7 |
@@ -135,8 +144,9 @@ collapses accuracy.
 
 ## 7.9 Ablation: SVD Rank Cap
 
-**Table 7.9: Effect of maximum rank cap (τ=0.92).**
+### Table 7.9: Effect of maximum rank cap (τ=0.92).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Cap | DistilBERT | % Hit cap | Note |
 |---|---|---|---|
 | 64 | 85 | 20% | Under-cap |
@@ -149,8 +159,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: Adaptive SVD vs prior compression methods.**
+### Table 7.10: Adaptive SVD vs prior compression methods.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 79.36% |
@@ -161,8 +172,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.11 Compression Time
 
-**Table 7.11: Wall-clock compression time.**
+### Table 7.11: Wall-clock compression time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | SVD | Rank selection | Adapter init | Total |
 |---|---|---|---|---|
 | DistilBERT | 10 s | 2 s | 3 s | **15 s** |

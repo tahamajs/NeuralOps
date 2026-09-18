@@ -67,11 +67,11 @@ Multiple disjoint windows per head. No improvement.
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.5 & 82.0 & Near hard \\
-1 & 87.0 & Sharp \\
-8 & 88.5 & OK \\
-32 & 89.5 & Best \\
-64 & 88.5 & Too smooth \\
+0.5 & 82.0 \& Near hard \\
+1 & 87.0 \& Sharp \\
+8 & 88.5 \& OK \\
+32 & 89.5 \& Best \\
+64 & 88.5 \& Too smooth \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ Aggressive L1 collapses spans; accuracy drops.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Hard truncation during training & Speed & Accuracy loss \\
-Gradient clipping on span & Stability & No improvement \\
-Warmup on span & Convergence & No improvement \\
-Per-layer $\lambda$ & Quality & No improvement \\
+Hard truncation during training \& Speed \& Accuracy loss \\
+Gradient clipping on span \& Stability \& No improvement \\
+Warmup on span \& Convergence \& No improvement \\
+Per-layer $\lambda$ \& Quality \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

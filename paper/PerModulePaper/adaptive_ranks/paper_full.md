@@ -33,17 +33,45 @@ For weight matrix $W$ with singular values $\sigma_1 \ge \dots \ge \sigma_d \ge 
 
 # 4. Method Formulation
 1. **Activation Covariance Whitening**:
-   $$M = W \cdot \operatorname{Cov}(X)^{1/2}$$ <!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 9 -->
-2. **Dynamic Energy Thresholding**:
+   $$M = W \cdot \operatorname{Cov}(X)^{1/2}
+<!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 501 -->
+
+<!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 501 -->
+$$2. **Dynamic Energy Thresholding**:
    Solve for minimal $r$ satisfying $rac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge 	au$ with floor $r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{	ext{in}}, d_{	ext{out}}) 
 floor)$. <!-- source: Codes/framework/compression_engine/adaptive_ranks.py lines 5, 7 -->
 3. **Symmetric Singular Value Distribution**:
-   $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V_{:r, :}^	op) \cdot \operatorname{Cov}(X)^{-1/2}$$ <!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 11 -->
-4. **Reconstruction Verification**: Verify $\|W - U_r V_r\|_F / \|W\|_F \le \delta_{\max}$ (default 0.20). <!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 81 -->
+   $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V_{:r, :}^	op) \cdot \operatorname{Cov}(X)^{-1/2}
+<!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 501 -->
+
+<!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 501 -->
+$$4. **Reconstruction Verification**: Verify $\|W - U_r V_r\|_F / \|W\|_F \le \delta_{\max}$ (default 0.20). <!-- source: Codes/framework/compression_engine/adaptive_ranks.py line 81 -->
 
 ---
 
 # 5. Architecture and Implementation
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 The module integrates directly into standard transformer attention and feed-forward sublayers via `replace_module`. Projections are converted to `SVDLinear` instances with frozen base parameters and optional LoRA adapters.
 
 ---
@@ -58,6 +86,7 @@ Evaluated across DistilBERT, RoBERTa-base, GPT-2, and Qwen 3.5 on SST-2 classifi
 ## 7.1 Unified Benchmark Results
 Evaluated under `results/unified_adaptive_ranks/`:
 
+<!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 2 -->
 | Backbone Model | Status | Accuracy (%) | F1 Score | Params Before | Params After | Compression Rate | Peak VRAM (MB) |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 88.07% <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> | 0.8807 <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> | 58,107,650 <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> | 1.1523x <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> | 382.72 <!-- source: results/unified_adaptive_ranks/distilbert/summary.csv line 3 --> |
@@ -96,7 +125,7 @@ Requires forward pass calibration to compute empirical activation covariances pr
 
 # 12. Reproducibility Guide
 ```bash
-python -u Codes/framework/run_compressor.py --model distilbert-base-uncased --compressor adaptive_ranks --energy_threshold 0.92
+python -u Codes/framework/run_compressor.py - model distilbert-base-uncased - compressor adaptive_ranks - energy_threshold 0.92
 ```
 
 ---
