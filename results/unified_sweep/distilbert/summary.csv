@@ -9,7 +9,7 @@ adaptive_svd,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:40.704299
 adasplash,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:51.883374
 adasvd,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:06.529174
 admm,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:01.818659
-admm_pruner,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:02:55.517497
+admm_pruner,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:33.782095
 aegis_hybrid,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:03:46.156310
 aegis_spectron_fp8,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:01.552920
 aegis_v1,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:38.970789
