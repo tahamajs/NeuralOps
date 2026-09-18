@@ -58,8 +58,7 @@ def main():
             continue
         results.setdefault(cls, []).append(d.name)
     
-    # Clean up empty categories
-    summary = {k: len(v) for k, v in results.items() if len(v) > 0}
+    summary = {k: len(v) for k, v in results.items()}
     print(json.dumps(summary, indent=2))
     with open("audit/paper_audit.json", "w") as f:
         json.dump(results, f, indent=2)
