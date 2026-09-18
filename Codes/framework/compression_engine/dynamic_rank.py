@@ -263,6 +263,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class DynamicSVDLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     True Low-Rank Factorized Linear Layer executing as:
     y = (x @ V.T) @ U.T + bias
@@ -348,7 +349,7 @@ class DynamicSVDLinear(nn.Module):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()  # [out_features, in_features]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()      # [out_features, in_features]
@@ -371,9 +372,9 @@ class DynamicSVDLinear(nn.Module):
                 # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
                 eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
                 eigvals_clamped = torch.clamp(eigvals, min=1e-4)
-                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t()
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
                 cov_inv_sqrt = (
-                    eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t()
+                    eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
                 )
 
                 W_scaled = W @ cov_sqrt
@@ -544,7 +545,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 if x.ndim >= 2:
                     x_flat = x.reshape(-1, x.shape[-1]).float()
                     # Double-precision covariance accumulation for stability
-                    cov = x_flat.t() @ x_flat
+                    cov = x_flat.t().contiguous() @ x_flat
                     n = x_flat.shape[0]
                     if name not in covariances:
                         covariances[name] = cov
@@ -635,7 +636,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 raw_w = target_mod.weight.data
                 cls_name = target_mod.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                w_mat = raw_w.t().float() if is_conv1d else raw_w.float()
+                w_mat = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
 
                 if name in covariances:
                     ent = compute_singular_entropy(covariances[name])
@@ -739,7 +740,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             raw_w = target_mod.weight.data
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            W = raw_w.t().float() if is_conv1d else raw_w.float()
+            W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             W_recon = factorized_layer.U.float() @ factorized_layer.V.float()
             norm_w = torch.norm(W, p="fro").item()
             err = float(torch.norm(W - W_recon, p="fro").item() / max(norm_w, 1e-12))

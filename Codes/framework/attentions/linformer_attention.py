@@ -315,7 +315,7 @@ class LinformerAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -330,7 +330,7 @@ class LinformerAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -399,8 +399,8 @@ class LinformerAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -498,14 +498,14 @@ class LinformerAttention(BaseAttention):
         V_proj = torch.matmul(F_act, v)
 
         scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).float()) * scale  # [B, H, L, k_eff]
+        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale  # [B, H, L, k_eff]
 
         if self.is_decoder:
             if L <= self.k_proj_dim:
                 causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
                 scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
             else:
-                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
                 causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
                 scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
                 V_proj = v

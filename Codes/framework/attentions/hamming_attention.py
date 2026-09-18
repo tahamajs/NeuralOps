@@ -47,7 +47,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         cls_n = getattr(module, "__class__", type(module)).__name__
         base_n = getattr(base, "__class__", type(base)).__name__
         if ("Conv1D" in cls_n) or ("Conv1D" in base_n) or hasattr(module, "nf") or hasattr(base, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -289,7 +289,7 @@ class HammingAttention(BaseAttention):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
                 if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -305,7 +305,7 @@ class HammingAttention(BaseAttention):
             w_o, b_o = _unpack_weight_bias(src.c_proj)
             if w_o is not None:
                 if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o)
 
         # 3. RoBERTa / BERT Nested Encoder handling
@@ -368,7 +368,7 @@ class HammingAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -442,7 +442,7 @@ class HammingAttention(BaseAttention):
         k_b = torch.tanh(5.0 * K * self.k_scale.view(1, H, 1, 1))
 
         # Scaled continuous inner product
-        scores = self.temp * (torch.matmul(q_b, k_b.transpose(-2, -1)) - Dh) / (2.0 * math.sqrt(Dh))
+        scores = self.temp * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh) / (2.0 * math.sqrt(Dh))
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:

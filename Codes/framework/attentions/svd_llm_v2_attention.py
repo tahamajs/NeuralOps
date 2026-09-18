@@ -45,7 +45,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         p_cls = getattr(module, "__class__", type(module)).__name__
         base_cls = getattr(base, "__class__", type(base)).__name__
         if ("Conv1D" in p_cls) or ("Conv1D" in base_cls) or hasattr(module, "nf") or hasattr(base, "nf"):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -463,7 +463,7 @@ class SVDLLMV2Attention(BaseAttention):
         lora_B: Optional[nn.Parameter],
     ) -> torch.Tensor:
         """Factorized SVD projection with LoRA residual addition."""
-        base_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
+        base_out = ((x @ vh.t().contiguous()) * s.to(dtype=x.dtype)) @ u.t().contiguous() + b
         if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
             lora_out = F.linear(F.linear(x, lora_A), lora_B) * self.scaling
             base_out = base_out + lora_out
@@ -543,7 +543,7 @@ class SVDLLMV2Attention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and seq_len > 1:

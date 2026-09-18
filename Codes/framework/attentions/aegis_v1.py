@@ -86,6 +86,7 @@ class AegisConfigV1:
 
 
 class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""
     SVD-factorized linear layer with energy-based rank truncation and trainable LoRA adapters.
     Base SVD weights are frozen; LoRA branch provides trainable parameters.
@@ -293,7 +294,7 @@ def local_window_attention(
         pass
 
 
-    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     mask_val = -10000.0
     scores = scores.masked_fill(~mask, mask_val)
     if token_valid is not None:
@@ -584,7 +585,7 @@ class AegisAttentionV1(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -665,7 +666,7 @@ class AegisAttentionV1(BaseAttention):
                 token_valid = (eff_mask > -5000.0).any(dim=1).any(dim=-2)
 
         if N < self.cfg.local_window or self.is_decoder:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * (D**-0.5)
             if self.is_decoder and not is_cross and N > 1:
                 causal_mask = torch.triu(torch.full((N, N_kv), -10000.0, device=Q.device, dtype=torch.float32), diagonal=1)
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)

@@ -42,7 +42,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data
         if hasattr(module, "nf") or module.__class__.__name__ == "Conv1D":
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data
     return w, b
@@ -348,9 +348,9 @@ class GroupedQueryAttention(BaseAttention):
             if w.shape == target_shape:
                 return w
             if w.shape == (target_shape[1], target_shape[0]):
-                return w.t()
+                return w.t().contiguous()
             if w.shape[1] != target_shape[1] and w.shape[0] == target_shape[1]:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -424,7 +424,7 @@ class GroupedQueryAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale  # [B, H, N_q, N_k]
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:

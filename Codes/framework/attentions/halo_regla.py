@@ -49,7 +49,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data.clone()
         if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -291,7 +291,7 @@ class HALOReGLAAttention(BaseAttention):
             c_w, c_b = _unpack_weight_bias(src.c_attn)
             if c_w is not None:
                 if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
                 extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
@@ -301,7 +301,7 @@ class HALOReGLAAttention(BaseAttention):
                 o_w, o_b = _unpack_weight_bias(src.c_proj)
                 if o_w is not None:
                     if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
         # 2. RoBERTa nested
@@ -365,8 +365,8 @@ class HALOReGLAAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -446,7 +446,7 @@ class HALOReGLAAttention(BaseAttention):
 
         # 1. Standard dense softmax stream
         scale = 1.0 / math.sqrt(self.head_dim)
-        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
         if is_causal:
@@ -476,10 +476,10 @@ class HALOReGLAAttention(BaseAttention):
             den = (q_lin * cum_k).sum(dim=-1, keepdim=True).clamp(min=1e-5)
             linear_out = (num / den) * mask_4d
         else:
-            kv = torch.matmul(k_lin.transpose(-2, -1), v_masked)
+            kv = torch.matmul(k_lin.transpose(-2, -1).contiguous(), v_masked)
             z = k_lin.sum(dim=2, keepdim=True)
             num = torch.matmul(q_lin, kv)
-            den = torch.matmul(q_lin, z.transpose(-2, -1)).clamp(min=1e-5)
+            den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-5)
             linear_out = (num / den) * mask_4d
 
         # 3. Adaptive fusion

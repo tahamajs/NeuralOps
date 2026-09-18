@@ -265,7 +265,7 @@ class ZeroSAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -280,7 +280,7 @@ class ZeroSAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -324,7 +324,7 @@ class ZeroSAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy base weights into projection modules
@@ -476,7 +476,7 @@ class ZeroSAttention(BaseAttention):
                 num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum_slice)  # [B, H, L, d]
                 den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
             else:
-                sim = torch.matmul(q_hat, k_hat.transpose(-1, -2))  # [B, H, L, N_k]
+                sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
                 causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
                 sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
                 num = torch.matmul(sim, V)  # [B, H, L, d]
@@ -504,14 +504,14 @@ class ZeroSAttention(BaseAttention):
             q_hat = F.relu(Q) + eps
             k_hat = F.relu(k_centered) + eps
 
-            S_kv = torch.matmul(k_hat.transpose(-2, -1), V)  # [B, H, d, d]
+            S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V)  # [B, H, d, d]
             num = torch.matmul(q_hat, S_kv)                  # [B, H, L, d]
-            den = torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1)) + eps
+            den = torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()) + eps
             context = num / den.clamp(min=eps)
             context = self.dropout(context)
 
             if output_attentions:
-                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2)) / den.clamp(min=eps)
+                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous()) / den.clamp(min=eps)
 
         # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:

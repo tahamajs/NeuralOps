@@ -343,7 +343,7 @@ class SAMBAM3Block(nn.Module):
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
                 if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model):
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
                 v_dim = self.kv_head_size
@@ -358,7 +358,7 @@ class SAMBAM3Block(nn.Module):
                 out_w = src.c_proj.weight.detach()
                 p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
                 if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (out_w.shape[0] == self.d_model and out_w.shape[1] != self.d_model):
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
@@ -457,7 +457,7 @@ class SAMBAM3Block(nn.Module):
             k_c = k[:, :, k_start:k_end]  # [B, H, C_k, d]
             v_c = v[:, :, k_start:k_end]  # [B, H, C_k, d]
 
-            scores = torch.matmul(q_c.float(), k_c.transpose(-2, -1).float()) * scale
+            scores = torch.matmul(q_c.float(), k_c.transpose(-2, -1).contiguous().float()) * scale
 
             q_idx = torch.arange(start, end, device=q.device).view(1, 1, C_q, 1)
             k_idx = torch.arange(k_start, k_end, device=q.device).view(1, 1, 1, -1)

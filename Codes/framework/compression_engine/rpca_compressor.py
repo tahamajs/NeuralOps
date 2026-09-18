@@ -31,6 +31,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 @COMPRESSOR_REGISTRY.register('rpca')
 class RPCACompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Robust Principal Component Analysis (RPCA) Low-Rank Compressor.
 

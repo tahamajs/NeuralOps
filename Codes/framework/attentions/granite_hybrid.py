@@ -40,7 +40,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data.clone()
         if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -137,7 +137,7 @@ class Mamba2(nn.Module):
         inner_dim = self.in_proj.out_features // 2
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)
-        x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2).contiguous()
+        x_ssm = self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
         dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
@@ -339,7 +339,7 @@ class GraniteHybridBlock(BaseAttention):
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
             if c_w is not None:
                 if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted["q"] = (c_w[:split_size], c_b[:split_size] if c_b is not None else None)
                 extracted["k"] = (c_w[split_size : 2 * split_size], c_b[split_size : 2 * split_size] if c_b is not None else None)
@@ -349,7 +349,7 @@ class GraniteHybridBlock(BaseAttention):
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
                     if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
         elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
@@ -382,8 +382,8 @@ class GraniteHybridBlock(BaseAttention):
                 if w is not None:
                     if w.shape == target_mod.weight.shape:
                         target_mod.weight.copy_(w)
-                    elif w.t().shape == target_mod.weight.shape:
-                        target_mod.weight.copy_(w.t())
+                    elif w.t().contiguous().shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w.t().contiguous())
                     elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                         repeats = target_mod.weight.shape[0] // w.shape[0]
                         target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -452,7 +452,7 @@ class GraniteHybridBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and L_q == L_k:
             causal_mask = torch.triu(torch.full((L_q, L_k), -1e4, device=q_in.device), diagonal=1)

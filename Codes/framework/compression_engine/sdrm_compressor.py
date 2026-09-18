@@ -34,6 +34,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 @COMPRESSOR_REGISTRY.register('sdrm_class')
 @COMPRESSOR_REGISTRY.register('sdrm_compressor_class')
 class SDRMCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     SDRM: Scaled Dimension Rank Modulation.
     Assigns layer rank proportional to parameter budget for edge inference and factorizes

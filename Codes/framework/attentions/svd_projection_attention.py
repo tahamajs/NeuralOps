@@ -44,7 +44,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data.clone()
         if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -92,6 +92,7 @@ def apply_rotary_pos_emb(
 
 
 class SVDProjectionLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""Low-Rank SVD Linear Layer with Trainable LoRA Residual Adapters.
 
     Forward computes:
@@ -583,7 +584,7 @@ class SVDProjectionAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and N > 1:

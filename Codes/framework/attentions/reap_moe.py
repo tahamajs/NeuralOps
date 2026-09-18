@@ -140,6 +140,7 @@ class LoRALinear(nn.Module):
 
 
 class SVDLinear(nn.Module):
+    is_custom_attention: bool = True
     def __init__(
         self,
         in_features: int,
@@ -160,10 +161,10 @@ class SVDLinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        return (self.U * self.S.unsqueeze(0)) @ self.V.t()
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return (x @ self.V) * self.S @ self.U.t() + self.bias
+        return (x @ self.V) * self.S @ self.U.t().contiguous() + self.bias
 
 
 class REAPMoE(nn.Module):
@@ -372,7 +373,7 @@ class REAPMoEAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -387,7 +388,7 @@ class REAPMoEAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -459,8 +460,8 @@ class REAPMoEAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -548,7 +549,7 @@ class REAPMoEAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal masking
         is_causal = self.is_decoder or kwargs.get("is_causal", False)

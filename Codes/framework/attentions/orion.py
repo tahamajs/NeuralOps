@@ -114,6 +114,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 
 
 class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
     """Low-rank factorized linear layer with SVD decomposition and LoRA adapters."""
 
     def __init__(
@@ -390,7 +391,7 @@ class ORIONAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -405,7 +406,7 @@ class ORIONAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -471,8 +472,8 @@ class ORIONAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != (target_mod.out_features, target_mod.in_features) and (target_mod.out_features, target_mod.in_features) == w.t().shape:
-                    w = w.t()
+                if w.shape != (target_mod.out_features, target_mod.in_features) and (target_mod.out_features, target_mod.in_features) == w.t().contiguous().shape:
+                    w = w.t().contiguous()
 
                 target_mod.decompose_from_weight(w[:target_mod.out_features, :target_mod.in_features], b[:target_mod.out_features] if b is not None else None)
 
@@ -515,7 +516,7 @@ class ORIONAttention(BaseAttention):
                 v_c = V[:, :, start:end]
 
                 causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
-                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * causal_mask
                 intra_out = torch.matmul(intra_attn, v_c)
                 inter_out = torch.matmul(q_c, S)
 
@@ -525,7 +526,7 @@ class ORIONAttention(BaseAttention):
                 den = (intra_den + inter_den).clamp(min=1e-4)
                 ctx_list.append((intra_out + inter_out) / den)
 
-                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                S = S + torch.matmul(k_c.transpose(-1, -2).contiguous(), v_c)
                 Z = Z + k_c.sum(dim=2)
 
             ctx = torch.cat(ctx_list, dim=2)
@@ -571,7 +572,7 @@ class ORIONAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             causal_mask = torch.tril(torch.ones(N, N, device=Q.device, dtype=torch.bool))

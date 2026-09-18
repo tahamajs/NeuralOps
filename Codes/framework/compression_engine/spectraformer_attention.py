@@ -310,7 +310,7 @@ class SpectraformerAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -325,7 +325,7 @@ class SpectraformerAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -397,8 +397,8 @@ class SpectraformerAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -477,9 +477,9 @@ class SpectraformerAttention(BaseAttention):
         """
         B, N, _ = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -516,7 +516,7 @@ class SpectraformerAttention(BaseAttention):
         if self.is_decoder:
             # Recurrent linear causal attention: exact vectorized computation
             causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
-            aff = torch.matmul(Q_proj.float(), K_proj.float().transpose(-2, -1))  # (B, H, N, N)
+            aff = torch.matmul(Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous())  # (B, H, N, N)
             aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
             num = torch.matmul(aff, v.float())  # (B, H, N, d)
@@ -524,8 +524,8 @@ class SpectraformerAttention(BaseAttention):
             context = (num / den).to(hidden_states.dtype)
         else:
             # Bidirectional linear attention: exact O(N·r·d) computation
-            KV = torch.matmul(K_proj.transpose(-2, -1).float(), v.float())  # (B, H, r, d)
-            Z = K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1)   # (B, H, r, 1)
+            KV = torch.matmul(K_proj.transpose(-2, -1).contiguous().float(), v.float())  # (B, H, r, d)
+            Z = K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()   # (B, H, r, 1)
 
             num = torch.matmul(Q_proj.float(), KV)                          # (B, H, N, d)
             den = torch.matmul(Q_proj.float(), Z) + 1e-8                    # (B, H, N, 1)

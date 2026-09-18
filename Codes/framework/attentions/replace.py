@@ -321,7 +321,7 @@ class ReplaceAttention(BaseAttention):
             # Conv1D weights are oriented (in_features, 3 * out_features)
             if w_all.shape[0] == self.hidden_size and w_all.shape[1] == 3 * self.all_head_size:
                 chunks = w_all.chunk(3, dim=1)
-                w_q, w_k, w_v = chunks[0].t(), chunks[1].t(), chunks[2].t()
+                w_q, w_k, w_v = chunks[0].t().contiguous(), chunks[1].t().contiguous(), chunks[2].t().contiguous()
             elif w_all.shape[1] == self.hidden_size and w_all.shape[0] == 3 * self.all_head_size:
                 chunks = w_all.chunk(3, dim=0)
                 w_q, w_k, w_v = chunks[0], chunks[1], chunks[2]
@@ -331,7 +331,7 @@ class ReplaceAttention(BaseAttention):
                 b_q, b_k, b_v = b_chunks[0], b_chunks[1], b_chunks[2]
 
             w_proj = c_proj.weight.data
-            w_o = w_proj.t() if w_proj.shape[0] == self.all_head_size else w_proj
+            w_o = w_proj.t().contiguous() if w_proj.shape[0] == self.all_head_size else w_proj
             b_o = c_proj.bias.data if c_proj.bias is not None else None
 
         # Pattern 2: RoBERTa / BERT nested encoder (self.query, self.key, self.value)
@@ -470,7 +470,7 @@ class ReplaceAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and seq_len > 1:
             causal_mask = torch.triu(

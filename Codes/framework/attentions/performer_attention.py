@@ -308,7 +308,7 @@ class PerformerAttention(BaseAttention):
         return W.t().contiguous()
 
     def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t())
+        proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t().contiguous())
         if self.kernel_type in ["favor_plus", "exp", "favor"]:
             diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
             max_proj = proj.amax(dim=-1, keepdim=True).detach()
@@ -357,7 +357,7 @@ class PerformerAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -372,7 +372,7 @@ class PerformerAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -442,8 +442,8 @@ class PerformerAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -490,8 +490,8 @@ class PerformerAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         scale = d ** -0.25
-        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2) * scale
+        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous() * scale
+        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous() * scale
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # 2. Rotary embeddings application with source_attn.rotary_emb fallback
@@ -540,7 +540,7 @@ class PerformerAttention(BaseAttention):
                 v_c = V[:, :, start:end].float()
 
                 causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.float32))
-                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * causal_mask
                 intra_num = torch.matmul(intra_attn, v_c)
                 inter_num = torch.matmul(q_c, S)
                 num_list.append(intra_num + inter_num)
@@ -549,7 +549,7 @@ class PerformerAttention(BaseAttention):
                 inter_den = torch.matmul(q_c, z.unsqueeze(-1))
                 den_list.append(intra_den + inter_den)
 
-                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                S = S + torch.matmul(k_c.transpose(-1, -2).contiguous(), v_c)
                 z = z + k_c.sum(dim=2)
 
             num = torch.cat(num_list, dim=2)
@@ -558,10 +558,10 @@ class PerformerAttention(BaseAttention):
         else:
             # 3. Mask Q_feat in bidirectional branch to prevent padding query tokens from influencing output
             Q_feat = Q_feat * mask_expanded
-            KV = torch.matmul(K_feat.float().transpose(-2, -1), V.float())
+            KV = torch.matmul(K_feat.float().transpose(-2, -1).contiguous(), V.float())
             K_sum = K_feat.float().sum(dim=-2, keepdim=True)
             num = torch.matmul(Q_feat.float(), KV)
-            den = torch.matmul(Q_feat.float(), K_sum.transpose(-2, -1)) + self.eps
+            den = torch.matmul(Q_feat.float(), K_sum.transpose(-2, -1).contiguous()) + self.eps
             context = (num / den).to(dtype)
 
         context = torch.nan_to_num(context, nan=0.0)

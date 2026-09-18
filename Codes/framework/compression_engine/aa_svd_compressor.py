@@ -42,7 +42,7 @@ DEFAULT_CALIBRATION_CORPUS: List[str] = [
     ),
     (
         "def compute_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, scale: float) -> torch.Tensor:\n"
-        "    scores = torch.matmul(q, k.transpose(-1, -2)) * scale\n"
+        "    scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) * scale\n"
         "    probs = torch.softmax(scores, dim=-1)\n"
         "    return torch.matmul(probs, v)\n"
     ),
@@ -69,6 +69,7 @@ def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
 
 
 class SVDLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     True Low-Rank Factorized Linear Layer executing as:
     y = (x @ V.T) @ U.T + ((x @ lora_A.T) @ lora_B.T) * lora_scaling + b
@@ -362,7 +363,7 @@ class AASVDCompressor(BaseCompressor):
 
             if is_conv1d:
                 in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().float()
+                W = raw_w.t().contiguous().float()
             else:
                 out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
                 W = raw_w.float()

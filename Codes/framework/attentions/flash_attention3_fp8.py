@@ -372,7 +372,7 @@ class FlashAttention3FP8(BaseAttention):
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
                 if (cls_c == "Conv1D") or (base_cls_c == "Conv1D") or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -389,7 +389,7 @@ class FlashAttention3FP8(BaseAttention):
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
                     if (cls_o == "Conv1D") or (base_cls_o == "Conv1D") or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -460,8 +460,8 @@ class FlashAttention3FP8(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 

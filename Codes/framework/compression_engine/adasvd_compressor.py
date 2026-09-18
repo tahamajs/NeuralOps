@@ -40,6 +40,7 @@ def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
 
 @COMPRESSOR_REGISTRY.register("adasvd")
 class AdaSVDCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Adaptive SVD Compressor (AdaSVD).
 
@@ -194,7 +195,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()  # [out_features, in_features]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()  # [out_features, in_features]
@@ -243,11 +244,11 @@ class AdaSVDCompressor(BaseCompressor):
         # Alternating Least Squares (ALS) refinement
         eps_eye = 1e-6 * torch.eye(r, device=device, dtype=torch.float32)
         for it in range(self.num_iters):
-            BBt = B @ B.t() + eps_eye
+            BBt = B @ B.t().contiguous() + eps_eye
             try:
-                A_next = W @ B.t() @ torch.linalg.inv(BBt)
-                AtA = A_next.t() @ A_next + eps_eye
-                B_next = torch.linalg.inv(AtA) @ A_next.t() @ W
+                A_next = W @ B.t().contiguous() @ torch.linalg.inv(BBt)
+                AtA = A_next.t().contiguous() @ A_next + eps_eye
+                B_next = torch.linalg.inv(AtA) @ A_next.t().contiguous() @ W
             except Exception as e:
                 logger.debug("AdaSVD ALS inversion failed at iter %d on %s: %s", it, name, e)
                 break
@@ -345,7 +346,7 @@ class AdaSVDCompressor(BaseCompressor):
                 or hasattr(target_mod, "nf")
             )
             raw_w = weight_tensor.data
-            W_2d = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_2d = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             imp = self._compute_nuclear_norm(W_2d)
             layer_importances[name] = max(imp, 1e-8)
             total_importance += layer_importances[name]

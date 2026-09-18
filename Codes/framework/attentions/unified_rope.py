@@ -334,7 +334,7 @@ class UnifiedRoPE(BaseAttention):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -351,7 +351,7 @@ class UnifiedRoPE(BaseAttention):
 
                 out_w = src.c_proj.weight.detach()
                 if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
@@ -453,8 +453,8 @@ class UnifiedRoPE(BaseAttention):
                 if w is not None:
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-                    elif w.t().shape == target_layer.weight.shape:
-                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                    elif w.t().contiguous().shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.t().contiguous().to(target_layer.weight.dtype))
                     else:
                         min_0 = min(target_layer.weight.shape[0], w.shape[0])
                         min_1 = min(target_layer.weight.shape[1], w.shape[1])
@@ -538,7 +538,7 @@ class UnifiedRoPE(BaseAttention):
             v = repeat_kv(v, self.num_key_value_groups)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
 
         # Causal mask for decoders
         if self.is_decoder and L > 1:

@@ -365,7 +365,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
                 )
                 if is_conv1d:
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -391,7 +391,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
                 )
                 if is_conv1d:
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
@@ -446,7 +446,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -675,7 +675,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
             pass
 
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask
         if is_decoder:

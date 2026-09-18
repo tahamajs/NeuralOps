@@ -143,6 +143,7 @@ _ATTN_NAMES = {
 @COMPRESSOR_REGISTRY.register("mlorq")
 @COMPRESSOR_REGISTRY.register("mlorq_compressor")
 class MLoRQCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     MLoRQ Compressor: Multi-Layer Optimal Rank and Quantization under Memory Budget.
 
@@ -291,7 +292,7 @@ class MLoRQCompressor(BaseCompressor):
                 raw_w = target_layer.weight.data
                 cls_name = target_layer.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
-                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                 out_f, in_f = W.shape
 
                 layers.append({
@@ -370,7 +371,7 @@ class MLoRQCompressor(BaseCompressor):
                 if target_layer.bias is not None:
                     bias = self._quantize(target_layer.bias.data.float(), b).to(dtype=info["dtype"], device=info["device"])
 
-                final_w = W_new.t() if info["is_conv1d"] else W_new
+                final_w = W_new.t().contiguous() if info["is_conv1d"] else W_new
                 new_layer = MLoRQLoRALinear.from_linear(
                     module,
                     weight=final_w.to(dtype=info["dtype"], device=info["device"]),

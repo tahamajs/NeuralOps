@@ -404,7 +404,7 @@ class AdaptiveSparseAttention(BaseAttention):
             if weight is not None:
                 weight = weight.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (weight.ndim == 2 and weight.shape[0] < weight.shape[1]):
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bias_data = bias_mod.data.clone() if bias_mod is not None else None
@@ -419,7 +419,7 @@ class AdaptiveSparseAttention(BaseAttention):
             if w_o is not None:
                 w_o = w_o.data.clone()
                 if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, bias_o.data.clone() if bias_o is not None else None)
 
@@ -629,7 +629,7 @@ class AdaptiveSparseAttention(BaseAttention):
             q_chunk = Q[:, :, q_start:q_end, :]  # [B, H, C_q, d]
             C_q = q_end - q_start
 
-            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1)) * scale  # [B, H, C_q, N_k]
+            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale  # [B, H, C_q, N_k]
 
             if position_bias is not None:
                 pb_chunk = position_bias[:, :, q_start:q_end, :]
