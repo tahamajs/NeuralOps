@@ -238,7 +238,7 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = False,
-        max_error: float = 0.40,
+        max_error: float = 0.85,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
@@ -565,13 +565,9 @@ class A3Compressor(BaseCompressor):
         U_final, V_final = best_layer_factors
         
         # If the target module was already wrapped by PEFT (lora_A exists but is dropped by base_layer unwrapping),
-        # or if lora_r > 0 is requested, we MUST instantiate lora_A/B in the factorized layer to keep it trainable!
-        effective_lora_rank = lora_r
-        if effective_lora_rank == 0 and has_lora:
-            # Fallback to the active LoRA rank from the original wrapper if possible
-            effective_lora_rank = getattr(module, "lora_rank", 16)
-            if effective_lora_rank == 0:
-                effective_lora_rank = 16
+        # we instantiate lora_A/B in the factorized layer to keep it trainable.
+        # Plain linear layers without existing LoRA do not instantiate extra LoRA parameters.
+        effective_lora_rank = lora_r if has_lora else 0
 
         factorized_layer = A3FactorizedLinear(
             in_features=in_f,
@@ -663,7 +659,7 @@ class A3Compressor(BaseCompressor):
             fisher = fisher_map.get(name, None)
 
             factorized_layer, rel_err, chosen_rank = self.compress_linear(
-                module, name=name, cov=cov, fisher=fisher
+                module, name=name, cov=cov, fisher=fisher, rank=self.rank
             )
 
             if factorized_layer is not None:
@@ -766,7 +762,7 @@ def a3_compressor_factory(
         u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)))
         recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", kwargs.get("recalibrate_ln", recalibrate_ln)))
         target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", False)))
-        max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.20)))
+        max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.85)))
         fallback = _cfg_get(comp_config, "a3_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True)))
         norm_scale = _cfg_get(comp_config, "a3_normalize_scale", _cfg_get(comp_config, "normalize_scale", kwargs.get("normalize_scale", True)))
         n_calib = _cfg_get(comp_config, "a3_n_calib", _cfg_get(comp_config, "n_calib", kwargs.get("n_calib", 500)))
@@ -775,7 +771,7 @@ def a3_compressor_factory(
         u_fish = kwargs.get("use_fisher", use_fisher)
         recal_ln = kwargs.get("recalibrate_ln", recalibrate_ln)
         target_attn = kwargs.get("target_attention_only", False)
-        max_err = kwargs.get("max_error", 0.20)
+        max_err = kwargs.get("max_error", 0.85)
         fallback = kwargs.get("fallback_to_original", True)
         norm_scale = kwargs.get("normalize_scale", True)
         n_calib = kwargs.get("n_calib", 500)
