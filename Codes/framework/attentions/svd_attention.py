@@ -710,33 +710,6 @@ def inject_svd_linear_attention(
 
     layer = target
 
-    """Safely constructs and injects SVDLinearAttention into a transformer layer or model."""
-    # Dual injector: whole model traversal
-    if layer is not None and (hasattr(layer, "transformer") or hasattr(layer, "distilbert") or hasattr(layer, "roberta") or (hasattr(layer, "model") and not hasattr(layer, "forward"))):
-        cfg = config or getattr(layer, "config", None)
-        layers = None
-        for path in ("distilbert.transformer.layer", "roberta.encoder.layer", "bert.encoder.layer", "transformer.h", "model.layers"):
-            parts = path.split(".")
-            curr = layer
-            for p in parts:
-                curr = getattr(curr, p, None)
-                if curr is None:
-                    break
-            if curr is not None:
-                layers = curr
-                break
-        if layers is not None:
-            for lid, l in enumerate(layers):
-                inject_svd_linear_attention(
-                    layer=l,
-                    config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=lid,
-                    total_layers=len(layers),
-                    **kwargs,
-                )
-        return layer
-
     if old_attn is None and layer is not None:
         old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
         if old_attn is None and hasattr(layer, "self"):
@@ -744,11 +717,14 @@ def inject_svd_linear_attention(
     if old_attn is None:
         return None
 
+    config = cfg
     if config is None and hasattr(layer, "config"):
         config = layer.config
     if config is None and hasattr(old_attn, "config"):
         config = old_attn.config
 
+    rank = kwargs.pop("rank", None)
+    lora_rank = kwargs.pop("lora_rank", None)
     r = rank if rank is not None else _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", 64))
     lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
     dropout = _cfg_get(comp_config, "dropout", 0.1)
