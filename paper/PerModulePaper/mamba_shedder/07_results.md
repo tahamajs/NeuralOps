@@ -1,16 +1,43 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_mamba_shedder/roberta/summary.csv | mamba_shedder | PASS | 85.44% <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 361.54 MB <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> |
-| results/unified_mamba_shedder/distilbert/summary.csv | mamba_shedder | PASS | 87.5% <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> |
-| results/unified_mamba_shedder/gpt2/summary.csv | mamba_shedder | PASS | 56.88% <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 634.91 MB <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 25.97 ms <!-- source: results/benchmark_summary_v2.csv line 680 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 680 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 26.73 ms <!-- source: results/benchmark_summary_v2.csv line 681 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 681 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 28.22 ms <!-- source: results/benchmark_summary_v2.csv line 682 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 682 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 27.66 ms <!-- source: results/benchmark_summary_v2.csv line 683 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 683 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 52.61 ms <!-- source: results/benchmark_summary_v2.csv line 684 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 684 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 52.19 ms <!-- source: results/benchmark_summary_v2.csv line 685 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 685 --> |
-| results/all_121_compressors_gpu_matrix.csv | mamba_shedder | PASS | Comp Ratio: 1.0x, Time: 0.173s <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> |
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | mamba_shedder | PASS | 87.5% <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 0.8868 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | mamba_shedder | PASS | 56.88% <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 0.6835 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | full | PASS | 75.11% <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 0.7586 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | mamba_shedder | PASS | 85.44% <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 0.8542 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | mamba_shedder | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> |
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | mamba_shedder | 66955010 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 66955010 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 4135682 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | mamba_shedder | 124441344 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 124441344 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 1536 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | mamba_shedder | 124647170 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 124647170 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 7679234 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | mamba_shedder | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | full | 171781.88 tok/s <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 2 --> |
+| results/unified_mamba_shedder/distilbert/summary.csv | distilbert | mamba_shedder | 180820.54 tok/s <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> | 0.4835192859172821 <!-- source: results/unified_mamba_shedder/distilbert/summary.csv line 3 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | full | 66076.08 tok/s <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 2 --> |
+| results/unified_mamba_shedder/gpt2/summary.csv | gpt2 | mamba_shedder | 67770.43 tok/s <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 634.91 MB <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> | 0.4548677504062652 <!-- source: results/unified_mamba_shedder/gpt2/summary.csv line 3 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | full | 106083.85 tok/s <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 2 --> |
+| results/unified_mamba_shedder/roberta/summary.csv | roberta | mamba_shedder | 120068.28 tok/s <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 361.54 MB <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> | 0.4909336864948272 <!-- source: results/unified_mamba_shedder/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | mamba_shedder | Elapsed 0.173s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 75 --> |
