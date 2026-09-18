@@ -1,6 +1,6 @@
 # Replaceme Compressor Module (`replaceme_compressor`)
 
-**Registry Keys**: `replaceme_factory, replaceme_compressor_factory, replaceme, replaceme_compressor`  
+**Registry Keys**: `replaceme_compressor_factory, replaceme, replaceme_factory, replaceme_compressor`  
 **Source Path**: `Codes/framework/compression_engine/replaceme_compressor.py` (Lines: 305)  
 **Class Name**: `ReplacementBlock`  
 **Base Class**: `nn.Module`  

@@ -1,6 +1,6 @@
 # Qcqa Attention Module (`qcqa_attention`)
 
-**Registry Keys**: `qcqa_attention, qcqa`  
+**Registry Keys**: `qcqa, qcqa_attention`  
 **Source Path**: `Codes/framework/attentions/qcqa_attention.py` (Lines: 571)  
 **Class Name**: `LoRALinear`  
 **Base Class**: `nn.Module`  

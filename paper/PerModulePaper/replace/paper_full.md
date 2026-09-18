@@ -1,6 +1,6 @@
 # Replace Module (`replace`)
 
-**Registry Keys**: `replace, replace_inject, replace_attention_inject, inject_replace, replace_attention, inject_replace_attention`  
+**Registry Keys**: `replace_attention_inject, inject_replace_attention, replace, replace_inject, inject_replace, replace_attention`  
 **Source Path**: `Codes/framework/attentions/replace.py` (Lines: 577)  
 **Class Name**: `ReplaceAttention`  
 **Base Class**: `BaseAttention`  
