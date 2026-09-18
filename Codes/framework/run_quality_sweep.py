@@ -954,7 +954,7 @@ def modules() -> list[str]:
         for p in (HERE / folder).glob("*.py"):
             if not p.stem.startswith("_"):
                 try: importlib.import_module(f"{package}.{p.stem}")
-                except Exception: pass
+                except Exception as e: LOG.debug("Failed to import %s: %s", p.stem, e)
     by_factory = {}
     for name, factory in list(ATTENTION_REGISTRY.items()) + list(COMPRESSOR_REGISTRY.items()):
         if name != "full" and not is_helper_module(name): by_factory.setdefault(factory, []).append(name)
@@ -2277,7 +2277,11 @@ def run_single_module_main(args) -> dict:
                     filtered_st[k] = st[plain_key]
                     LOG.info("Mapped plain checkpoint layer '%s' into LoRA base_layer '%s'", plain_key, k)
 
-        target_model.load_state_dict(filtered_st, strict=False)
+        missing, unexpected = target_model.load_state_dict(filtered_st, strict=False)
+        if missing:
+            LOG.warning("Missing keys during load: %s", missing[:10])
+        if unexpected:
+            LOG.warning("Unexpected keys during load: %s", unexpected[:10])
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
     is_lora_mode = (args.finetune_mode == "lora" or family in ("qwen3_5", "qwen"))
@@ -3130,7 +3134,7 @@ def main():
             if tmp.exists():
                 if path.exists():
                     try: path.unlink()
-                    except: pass
+                    except Exception as e: LOG.debug("Failed to unlink %s: %s", path, e)
                 tmp.rename(path)
 
         clear_vram_between_modules()
