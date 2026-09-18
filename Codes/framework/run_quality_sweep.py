@@ -3056,7 +3056,6 @@ def clear_vram_between_modules():
 def main():
     args = parse_args()
     
-    from framework.utils.registry_loaders import modules
     if isinstance(args.modules, list):
         raw_mods = []
         for item in args.modules:
