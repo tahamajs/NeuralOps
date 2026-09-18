@@ -419,7 +419,7 @@ class CoMeCompressor(BaseCompressor):
                 ns = m.normalized_shape
                 return ns[0] if isinstance(ns, (tuple, list)) else int(ns)
 
-        return 768
+        raise ValueError(f"Cannot determine hidden_size for {type(layer).__name__}")
 
     def _find_layer_container(self) -> Tuple[Optional[nn.Module], Optional[str], Optional[nn.ModuleList]]:
         """Finds the ModuleList containing transformer layers across diverse architectures."""
@@ -438,11 +438,15 @@ class CoMeCompressor(BaseCompressor):
             ("layers", lambda m: getattr(m, "layers", None)),
             ("h", lambda m: getattr(m, "h", None)),
             ("blocks", lambda m: getattr(m, "blocks", None)),
+            ("model.encoder.block", lambda m: getattr(getattr(getattr(m, "model", None), "encoder", None), "block", None)),
+            ("model.decoder.block", lambda m: getattr(getattr(getattr(m, "model", None), "decoder", None), "block", None)),
+            ("encoder.block", lambda m: getattr(getattr(m, "encoder", None), "block", None)),
+            ("decoder.block", lambda m: getattr(getattr(m, "decoder", None), "block", None)),
         ]
 
         for name, getter in candidates:
             res = getter(self.model)
-            if isinstance(res, (nn.ModuleList, list)) and len(res) > 0:
+            if isinstance(res, (nn.ModuleList, nn.Sequential, list)) and len(res) > 0:
                 parts = name.split(".")
                 parent = self.model
                 for p in parts[:-1]:
@@ -453,7 +457,7 @@ class CoMeCompressor(BaseCompressor):
         best_match = None
         max_score = -1
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.ModuleList) and len(module) >= 2:
+            if isinstance(module, (nn.ModuleList, nn.Sequential)) and len(module) >= 2:
                 parts = name.split(".")
                 last = parts[-1].lower()
                 is_layer_name = any(k in last for k in ["layer", "h", "block"])
@@ -529,11 +533,23 @@ class CoMeCompressor(BaseCompressor):
                         W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                         r = max(1, int(len(S) * (1.0 - self.sparsity)))
-                        W_comp = (U[:, :r] * S[:r]) @ Vt[:r, :]
-                        if is_conv1d:
-                            target_mod.weight.data.copy_(W_comp.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
-                        else:
-                            target_mod.weight.data.copy_(W_comp.to(dtype=raw_w.dtype, device=raw_w.device))
+                        from framework.compression_engine.aa_svd_compressor import SVDLinear
+                        from framework.core.registry import replace_module
+                        
+                        in_features = W.shape[1]
+                        out_features = W.shape[0]
+                        svd_layer = SVDLinear(
+                            in_features=in_features, 
+                            out_features=out_features, 
+                            rank=r, 
+                            bias=getattr(target_mod, "bias", None) is not None
+                        )
+                        # SVDLinear expects U (out x r) and Vt (r x in)
+                        svd_layer.set_low_rank_factors(U[:, :r] * S[:r], Vt[:r, :])
+                        if getattr(target_mod, "bias", None) is not None:
+                            svd_layer.bias.data.copy_(target_mod.bias.data)
+                        
+                        replace_module(self.model, name, svd_layer)
                         self.compressed_layers.append(name)
                     except Exception as e:
                         logger.warning("CoMe fallback SVD failed on %s: %s", name, e)

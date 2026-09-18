@@ -520,7 +520,8 @@ class A3Compressor(BaseCompressor):
         norm_orig = torch.linalg.norm(W).item()
         
         # Calculate ceiling BEFORE the retry loop (Option A: max 320, below break-even)
-        r_ceiling = min(int(0.5 * min(in_f, out_f)), 320)
+        r_break_even = (in_f * out_f) / (in_f + out_f)
+        r_ceiling = min(int(0.9 * r_break_even), 320)
         current_r = min(r, r_ceiling)
         best_layer_factors = None
         best_err = float("inf")
@@ -667,7 +668,14 @@ class A3Compressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 continue
             if self.target_attention_only:
-                is_ffn = any(k in name_lower for k in ["mlp", "ffn", "feed_forward", "gate_proj", "up_proj", "down_proj", "dense_4h_to_h", "dense_h_to_4h", "intermediate", "output.dense", "lin1", "lin2"])
+                FFN_PATTERNS = {
+                    "bert": ["intermediate", "output.dense"],
+                    "roberta": ["intermediate", "output.dense"],
+                    "gpt2": ["mlp.c_fc", "mlp.c_proj"],
+                    "qwen": ["mlp.gate_proj", "mlp.up_proj", "mlp.down_proj"],
+                    "t5": ["DenseReluDense", "wi_0", "wi_1", "wo"],
+                }
+                is_ffn = any(k in name_lower for p in FFN_PATTERNS.values() for k in p) or any(k in name_lower for k in ["mlp", "ffn", "feed_forward", "dense_4h_to_h", "dense_h_to_4h", "lin1", "lin2"])
                 if is_ffn:
                     continue
                 is_attn = any(
@@ -728,7 +736,7 @@ class A3Compressor(BaseCompressor):
                         device=self.target_device,
                     )
                 except Exception as e:
-                    logger.warning("LayerNorm recalibration notice: %s", e)
+                    logger.exception("LayerNorm recalibration notice: %s", e)
             else:
                 logger.info("LayerNorm recalibration skipped: no calibration inputs provided.")
 
