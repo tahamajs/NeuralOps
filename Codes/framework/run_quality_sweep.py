@@ -2900,6 +2900,13 @@ def run_single_module_main(args) -> dict:
                         allow_pass_low=False,
                         export_dir=hf_export_dir,
                     )
+                    # Prune heavy weights from disk after successful HF upload to prevent disk exhaustion
+                    try:
+                        if weights_dir.exists():
+                            for big_file in list(weights_dir.glob("**/*.pt")) + list(weights_dir.glob("**/*.bin")):
+                                big_file.unlink(missing_ok=True)
+                    except Exception:
+                        pass
                 except Exception as export_exc:
                     LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
