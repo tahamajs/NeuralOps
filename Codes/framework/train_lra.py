@@ -112,22 +112,35 @@ def train_task(
             test_ds = IMDbByteDataset(split="test", seq_len=current_seq_len)
     except Exception as e:
         print(f"Error loading {task} dataset: {e}. Generating synthetic fallback.", flush=True)
-        # Synthetic fallback if external dataset download fails or hangs
         class SyntheticDataset(torch.utils.data.Dataset):
-            def __init__(self, size, seq_len, vocab_size, num_labels):
+            def __init__(self, size, seq_len, vocab_size, num_labels, seed=42):
+                super().__init__()
+                torch.manual_seed(seed)
+                self.input_ids = torch.randint(1, vocab_size, (size, seq_len))
+                # Deterministic prefix reasoning (mimicking ListOps hierarchical operations)
+                op = self.input_ids[:, 0] % 3  # 0: sum, 1: max, 2: min
+                labels = torch.zeros(size, dtype=torch.long)
+                for i in range(size):
+                    if op[i] == 0:
+                        labels[i] = int(self.input_ids[i, 1:16].sum().item() % num_labels)
+                    elif op[i] == 1:
+                        labels[i] = int(self.input_ids[i, 1:16].max().item() % num_labels)
+                    else:
+                        labels[i] = int(self.input_ids[i, 1:16].min().item() % num_labels)
+                self.labels = labels
                 self.size = size
-                self.seq_len = seq_len
-                self.vocab_size = vocab_size
-                self.num_labels = num_labels
+
             def __len__(self):
                 return self.size
+
             def __getitem__(self, idx):
                 return {
-                    "input_ids": torch.randint(1, self.vocab_size, (self.seq_len,)),
-                    "labels": torch.randint(0, self.num_labels, ())
+                    "input_ids": self.input_ids[idx],
+                    "labels": self.labels[idx],
                 }
-        train_ds = SyntheticDataset(2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"])
-        test_ds = SyntheticDataset(500, current_seq_len, cfg["vocab_size"], cfg["num_labels"])
+
+        train_ds = SyntheticDataset(2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=42)
+        test_ds = SyntheticDataset(500, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=100)
 
     model = build_small_transformer(
         current_seq_len,
@@ -158,10 +171,12 @@ def train_task(
         num_training_steps=total_steps,
     )
 
-    scaler = torch.amp.GradScaler("cuda", enabled=torch.cuda.is_available())
+    use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    amp_dtype = torch.bfloat16 if use_bf16 else torch.float32
+    scaler = torch.amp.GradScaler("cuda", enabled=False)
     best_acc = 0.0
     global_step = 0
-    print(f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, warmup_steps={warmup_steps}, total_steps={total_steps}", flush=True)
+    print(f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, bf16={use_bf16}, warmup_steps={warmup_steps}, total_steps={total_steps}", flush=True)
 
     for epoch in range(num_epochs):
         model.train()
@@ -172,15 +187,13 @@ def train_task(
             labels = batch["labels"].to(device)
 
             optimizer.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=torch.cuda.is_available()):
+            with torch.autocast("cuda", dtype=amp_dtype, enabled=use_bf16):
                 outputs = model(input_ids, labels=labels)
                 loss = outputs.loss
 
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            scaler.step(optimizer)
-            scaler.update()
+            optimizer.step()
             scheduler.step()
 
             epoch_loss += loss.item()
