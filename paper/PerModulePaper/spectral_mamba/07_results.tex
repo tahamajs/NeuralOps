@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} \& spectral\_mamba \& PASS\_LOW & 50.92\% & 749.82 MB \\
-\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} \& spectral\_mamba \& PASS & 90.71\% & 378.15 MB \\
-\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} \& spectral\_mamba \& PASS\_LOW & 51.03\% & 650.47 MB \\
-benchmark\_summary\_v2 \& bert-sst2 \& PASS & 59.34 ms & 1243.5 MB \\
-benchmark\_summary\_v2 \& bert-mrpc \& PASS & 59.26 ms & 1243.5 MB \\
-benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 60.69 ms & 1253.4 MB \\
-benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 60.06 ms & 1253.4 MB \\
-benchmark\_summary\_v2 \& t5-sst2 \& PASS & 61.36 ms & 1227.8 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_spectralmamba} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & spectral\_mamba & PASS & 90.71 & 0.9111 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & spectral\_mamba & PASS\_LOW & 51.03 & 0.6753 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & spectral\_mamba & PASS\_LOW & 50.92 & 0.6748 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{spectralmamba}.}
+\label{tab:results_acc_spectralmamba}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_spectralmamba} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & spectral\_mamba & 66955010 & 78184748 & 1186604 & 0.8564x \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & spectral\_mamba & 124441344 & 146900820 & 1190484 & 0.8471x \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & spectral\_mamba & 124647170 & 154193750 & 1781078 & 0.8084x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{spectralmamba}.}
+\label{tab:results_params_spectralmamba}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_spectralmamba} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & full & 143380.76 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & spectral\_mamba & 66788.52 & 378.15 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & full & 65013.44 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & spectral\_mamba & 30894.94 & 650.47 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & full & 81138.79 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & spectral\_mamba & 32098.62 & 749.82 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{spectralmamba}.}
+\label{tab:results_vram_spectralmamba}
+\end{table*}
