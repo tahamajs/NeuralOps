@@ -193,6 +193,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--full_ft", action="store_true", help="Enable full parameter fine-tuning")
     parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing")
+    parser.add_argument("--skip_recovery", action="store_true", help="Skip recovery fine-tuning and keep zero-shot accuracy")
     args = parser.parse_args()
 
     # Smart default model path selection
@@ -274,9 +275,9 @@ def main():
             )
             logger.info(f"[{mod_name}] Zero-Shot Accuracy: {zero_shot_acc}% | F1: {zero_shot_f1}")
 
-            # Run Recovery Fine-Tuning (skip for mamba_svd_flash if desired)
-            if mod_name == "mamba_svd_flash" and args.dataset == "sst2":
-                logger.info(f"[{mod_name}] Skipping scan fine-tuning on SST-2 to prevent OOM; adopting zero-shot accuracy.")
+            # Run Recovery Fine-Tuning (skip if requested or for mamba on sst2)
+            if args.skip_recovery or (mod_name == "mamba_svd_flash" and args.dataset == "sst2"):
+                logger.info(f"[{mod_name}] Skipping recovery fine-tuning; retaining zero-shot accuracy.")
                 post_acc, post_f1 = zero_shot_acc, zero_shot_f1
                 tune_stats = {"loss_change": 0.0, "trainable_params": 0}
             else:
