@@ -78,8 +78,8 @@ energy estimate before factorization, (iii) adaptively increasing rank when
 reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
 affine parameters after factorization to absorb distributional shift.
 
-A3 achieves \textbf{5.0\%} parameter reduction on DistilBERT, 
-\textbf{4.5\%} on RoBERTa, and \textbf{4.5\%} on GPT-2 
+A3 achieves \textbf{5.0$\times$} parameter reduction on DistilBERT (80\% fewer params), 
+\textbf{4.5$\times$} on RoBERTa, and \textbf{4.5$\times$} on GPT-2 
 at rank $r = 64$. On SST-2, accuracy drops by only 
 \textbf{-2.2\%}, \textbf{-2.8\%}, and \textbf{-2.9\%} respectively, 
 after 50 LoRA recovery steps. Peak VRAM decreases by 

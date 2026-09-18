@@ -132,3 +132,35 @@ where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the
 bulk of the computation; LoRA provides the recovery signal.
 
 \subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Dimension} \\
+\midrule
+$W$ & Weight matrix & $d_\text{out} \times d_\text{in}$ \\
+$U$ & Left factor matrix & $d_\text{out} \times r$ \\
+$V$ & Right factor matrix & $r \times d_\text{in}$ \\
+$\Sigma$ & Singular value diagonal matrix & $\min(d_\text{out}, d_\text{in})$ \\
+$r$ & Compression rank & scalar \\
+$\tau$ & Reconstruction error threshold & scalar \\
+$F$ & Empirical Fisher diagonal vector & $d_\text{in}$ \\
+$C_X$ & Input activation covariance matrix & $d_\text{in} \times d_\text{in}$ \\
+$x$ & Input activation vector & $d_\text{in}$ \\
+$y$ & Output activation vector & $d_\text{out}$ \\
+$\sigma_i$ & $i$-th singular value & scalar \\
+$\epsilon$ & Numerical stability constant & scalar ($10^{-6}$) \\
+$\gamma$ & LayerNorm scale vector & $d_\text{model}$ \\
+$\beta$ & LayerNorm shift vector & $d_\text{model}$ \\
+$\sigma_\text{target}$ & Pre-compression activation std & scalar \\
+$\sigma_\text{current}$ & Post-compression activation std & scalar \\
+$N$ & Number of calibration samples & scalar \\
+$L$ & Sequence length & scalar \\
+$B$ & Batch size & scalar \\
+\bottomrule
+\end{tabular}
+\caption{Mathematical symbols, operations, and tensor dimensions used throughout this paper.}
+\label{tab:notation_summary}
+\end{table}
