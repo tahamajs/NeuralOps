@@ -203,8 +203,8 @@ def compute_compression_metrics(
 
     num_svd_layers = sum(
         1 for m in model.modules()
-        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear")
-        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA"))
+        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear")
+        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA", "A3"))
         or hasattr(m, "q_down")
     )
     univ_count = sum(1 for m in model.modules() if "attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
@@ -809,7 +809,7 @@ def main():
                     help="Enable gradient checkpointing on the model")
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
-    ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
+    ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "gpt2", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
     ap.add_argument("--parent_checkpoint", type=str, default=None,
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     ap.add_argument("--fresh", action="store_true",
@@ -1782,7 +1782,7 @@ def main():
                     if hasattr(model, "config") and model.config is not None:
                         # Automatically propagate all parsed flags matching module name prefix or compressor keywords
                         for attr_name, attr_val in vars(args).items():
-                            if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "lora_rank", "lora_alpha", "sparsity"):
+                            if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "lora_rank", "lora_alpha", "sparsity", "use_fisher", "recalibrate_ln", "n_calib"):
                                 setattr(model.config, attr_name, attr_val)
                                 # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
                                 if attr_name.startswith(name + "_"):
@@ -2326,12 +2326,12 @@ def main():
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(
                         1 for m in model.modules()
-                        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear")
-                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA"))
+                        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear")
+                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3"))
                         or hasattr(m, "q_down")
                     )
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
+                    if name in ("a3", "a3_compressor", "aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
