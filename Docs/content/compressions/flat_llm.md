@@ -484,3 +484,9 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 300.68 | `PASS_NO_COMPRESSION` | N/A |
 | ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.18 | `PASS_NO_COMPRESSION` | N/A |
 | GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 630.16 | `PASS_NO_COMPRESSION` | N/A |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9081 | 1.00x | 0 | N/A | 2026-09-19 |
