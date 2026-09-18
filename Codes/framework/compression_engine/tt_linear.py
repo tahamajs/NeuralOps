@@ -360,10 +360,19 @@ class TTLinearLayer(nn.Module):
                     curr_matrix = curr_matrix.view(rows, -1)
 
                     try:
-                        U, S, Vt = torch.linalg.svd(curr_matrix, full_matrices=False)
+                        if torch.cuda.is_available() and curr_matrix.is_cuda:
+                            U, S, Vt = torch.linalg.svd(curr_matrix, full_matrices=False)
+                        else:
+                            mat_dev = curr_matrix.to(orig_device) if torch.cuda.is_available() else curr_matrix
+                            U, S, Vt = torch.linalg.svd(mat_dev, full_matrices=False)
                     except Exception:
-                        U, S, Vt = torch.linalg.svd(curr_matrix.cpu(), full_matrices=False)
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
+                        U, S, Vt = torch.linalg.svd(curr_matrix.cpu().float(), full_matrices=False)
                         U, S, Vt = U.to(orig_device), S.to(orig_device), Vt.to(orig_device)
+
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
 
                     r_right = min(cur_tt_rank, len(S), layer.cores[i].shape[-1])
                     U_trunc = U[:, :r_right]
