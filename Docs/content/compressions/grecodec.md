@@ -21,3 +21,9 @@ from Codes.framework.compression_engine import Module
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9129 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-grecodec](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-grecodec) | 2026-09-19 |
