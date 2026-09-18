@@ -105,6 +105,7 @@ def run_with_timeout(fn, args, timeout_seconds, queue=None):
 def _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t):
         model = model.to(device)
         injected = False
+        active_opt = "muon" if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon" else "adamw"
         path_name = ""
         had_nan = False
         rec_steps = 0
@@ -2524,6 +2525,7 @@ def main():
             pass
         model = model.to(device)
         injected = False
+        active_opt = "muon" if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon" else "adamw"
         had_nan = False
         path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
