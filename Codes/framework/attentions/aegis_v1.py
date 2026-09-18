@@ -601,9 +601,9 @@ class AegisAttentionV1(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
 
-        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_kv, Hkv, D).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
@@ -664,9 +664,9 @@ class AegisAttentionV1(BaseAttention):
             return self.out_proj(out), (attn if output_attentions else None)
 
         Hl, Hg = self.num_local_heads, self.num_global_heads
-        Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
-        K_local, K_global = K[:, :Hl], K[:, Hl:]
-        V_local, V_global = V[:, :Hl], V[:, Hl:]
+        Q_local, Q_global = Q[:, :Hl].contiguous(), Q[:, Hl:].contiguous()
+        K_local, K_global = K[:, :Hl].contiguous(), K[:, Hl:].contiguous()
+        V_local, V_global = V[:, :Hl].contiguous(), V[:, Hl:].contiguous()
         # 1. Sliding Window Local Attention (for local heads)
         ctx_local = local_window_attention(
             Q_local, K_local, V_local,
