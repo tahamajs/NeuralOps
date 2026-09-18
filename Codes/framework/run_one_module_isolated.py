@@ -16,7 +16,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--model_family", required=True)
     ap.add_argument("--dataset", required=True)
-    ap.add_argument("--dataset_dir", required=True)
+    ap.add_argument("--dataset_dir", required=False, default=None)
     ap.add_argument("--output_json", required=True,
                     help="Path to write the result JSON")
     ap.add_argument("--output_dir", required=True,
