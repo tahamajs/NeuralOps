@@ -237,8 +237,8 @@ class A3Compressor(BaseCompressor):
         rank: int = 64,
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
-        target_attention_only: bool = False,
-        max_error: float = 0.85,
+        target_attention_only: bool = True,
+        max_error: float = 0.20,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
@@ -270,7 +270,7 @@ class A3Compressor(BaseCompressor):
         self.n_calib = int(n_calib)
         self.max_retries = max(0, int(max_retries))
         # fallback_to_original attribute cleanly defined and defaulted to True
-        self.fallback_to_original = bool(kwargs.get("fallback_to_original", fallback_to_original))
+        self.fallback_to_original = True  # always safe
         # scale normalization toggle
         self.normalize_scale = bool(kwargs.get("normalize_scale", normalize_scale))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
@@ -659,7 +659,7 @@ class A3Compressor(BaseCompressor):
             fisher = fisher_map.get(name, None)
 
             factorized_layer, rel_err, chosen_rank = self.compress_linear(
-                module, name=name, cov=cov, fisher=fisher, rank=self.rank
+                module, name=name, cov=cov, fisher=fisher
             )
 
             if factorized_layer is not None:
@@ -761,8 +761,8 @@ def a3_compressor_factory(
         r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", rank)))
         u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)))
         recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", kwargs.get("recalibrate_ln", recalibrate_ln)))
-        target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", False)))
-        max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.85)))
+        target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", True)))
+        max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.20)))
         fallback = _cfg_get(comp_config, "a3_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True)))
         norm_scale = _cfg_get(comp_config, "a3_normalize_scale", _cfg_get(comp_config, "normalize_scale", kwargs.get("normalize_scale", True)))
         n_calib = _cfg_get(comp_config, "a3_n_calib", _cfg_get(comp_config, "n_calib", kwargs.get("n_calib", 500)))
@@ -770,8 +770,8 @@ def a3_compressor_factory(
         r = kwargs.get("rank", rank)
         u_fish = kwargs.get("use_fisher", use_fisher)
         recal_ln = kwargs.get("recalibrate_ln", recalibrate_ln)
-        target_attn = kwargs.get("target_attention_only", False)
-        max_err = kwargs.get("max_error", 0.85)
+        target_attn = kwargs.get("target_attention_only", True)
+        max_err = kwargs.get("max_error", 0.20)
         fallback = kwargs.get("fallback_to_original", True)
         norm_scale = kwargs.get("normalize_scale", True)
         n_calib = kwargs.get("n_calib", 500)

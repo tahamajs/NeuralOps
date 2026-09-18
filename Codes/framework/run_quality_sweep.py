@@ -834,6 +834,12 @@ def main():
                     help="Fallback to original weights if reconstruction error exceeds threshold")
     ap.add_argument("--defer_export", action="store_true", default=False,
                     help="Defer Hugging Face upload and Git commit to orchestrator script")
+    ap.add_argument("--max_error", type=float, default=0.20,
+                    help="Default maximum reconstruction error threshold across compression modules")
+    ap.add_argument("--a3_max_error", type=float, default=0.20,
+                    help="Maximum reconstruction error threshold for A3 before fallback")
+    ap.add_argument("--a3_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict A3 compression to attention layers only")
     ap.add_argument("--adaptive_ranks_max_error", type=float, default=0.85,
                     help="Maximum relative Frobenius reconstruction error threshold for AdaptiveRanks")
     ap.add_argument("--adaptive_ranks_energy_threshold", type=float, default=0.92,
@@ -2319,6 +2325,25 @@ def main():
                         if getattr(args, "kvtc_fallback_to_original", None) is not None:
                             setattr(model.config, "kvtc_fallback_to_original", args.kvtc_fallback_to_original)
                             setattr(model.config, "fallback_to_original", args.kvtc_fallback_to_original)
+
+                        # Enforce module-specific max_error and target_attention_only to prevent contamination from unrelated compressors
+                        if getattr(args, f"{name}_max_error", None) is not None:
+                            setattr(model.config, "max_error", getattr(args, f"{name}_max_error"))
+                        elif getattr(args, "max_error", None) is not None:
+                            setattr(model.config, "max_error", args.max_error)
+
+                        if getattr(args, f"{name}_target_attention_only", None) is not None:
+                            setattr(model.config, "target_attention_only", getattr(args, f"{name}_target_attention_only"))
+                        elif getattr(args, "target_attention_only", None) is not None:
+                            setattr(model.config, "target_attention_only", args.target_attention_only)
+
+                        if name in ("a3", "a3_compressor"):
+                            a3_err = getattr(args, "a3_max_error", getattr(args, "max_error", 0.20))
+                            setattr(model.config, "a3_max_error", a3_err)
+                            setattr(model.config, "max_error", a3_err)
+                            a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
+                            setattr(model.config, "a3_attention_only", a3_attn)
+                            setattr(model.config, "target_attention_only", a3_attn)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     model = model.to(device)
                     injected = True
