@@ -294,6 +294,13 @@ A Triton kernel for Adaptive SVD Attention fuses the frozen SVD base GEMM tile a
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.07%** | -2.99% | 0.8857 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd) | 2026-09-19 |
+
+
 > [!NOTE]
 > Language modeling perplexity and sequence latency metrics in Sections 8.1 and 8.2 represent benchmark estimates under simulated fused GEMM kernel execution across standard sequence configurations.
 
@@ -1083,4 +1090,3 @@ print('Output logits shape:', outputs.logits.shape)
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
