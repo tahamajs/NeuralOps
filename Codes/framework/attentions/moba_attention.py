@@ -647,13 +647,19 @@ def inject_moba(
             logger.error("moba copy_weights failed: %s", e)
             return None
 
+
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
         else:
             layer.attention = new_attn
+    elif hasattr(layer, "self_attn"):
+        layer.self_attn = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+
     return new_attn
 
 

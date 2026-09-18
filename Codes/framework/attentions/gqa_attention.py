@@ -223,7 +223,7 @@ class GroupedQueryAttention(BaseAttention):
         if num_kv_heads is None and src_attn is not None:
             num_kv_heads = getattr(src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None))
         if num_kv_heads is None:
-            num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
+            num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", max(1, self.num_heads // 4)))
         self.num_kv_heads: int = int(min(self.num_heads, max(1, int(num_kv_heads))))
 
         self.head_dim: int = self.hidden_size // max(1, self.num_heads)
