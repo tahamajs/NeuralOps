@@ -339,6 +339,7 @@ class AegisAttention(BaseAttention):
         self.head_dim: int = kwargs.get("head_dim", getattr(cfg, "head_dim", getattr(cfg, "d_kv", self.hidden_size // max(1, self.num_heads))) if cfg is not None else self.hidden_size // max(1, self.num_heads))
         self.num_kv_heads: int = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", self.num_heads)) if cfg is not None else self.num_heads))
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.rank: int = kwargs.get("rank", 64)
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.cfg: AegisConfig = aegis_cfg if aegis_cfg is not None else AegisConfig()
@@ -362,10 +363,10 @@ class AegisAttention(BaseAttention):
             self.num_local_heads = self.cfg.num_local_heads
             self.num_global_heads = self.cfg.num_global_heads
 
-        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank)
-        self.k_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank)
-        self.v_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank)
-        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank)
+        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank, rank=self.rank)
+        self.k_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank, rank=self.rank)
+        self.v_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank, rank=self.rank)
+        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, energy=self.cfg.svd_energy, min_rank=self.cfg.min_rank, max_rank=self.cfg.max_rank, rank=self.rank)
 
         rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
         for h in range(self.num_global_heads):
