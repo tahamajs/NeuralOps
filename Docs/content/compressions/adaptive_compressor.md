@@ -220,6 +220,13 @@ Fuse `CompressedAttentionLayer` projections directly into Triton FlashAttention 
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **roberta-base** | sst2 | `PASS` | 50.92% | **60.44%** | +9.52% | 0.7156 | 1.05x | 0 | [svd-linear-attention-roberta-base-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-adaptive) | 2026-09-19 |
+
+
 The empirical evaluation of `adaptive_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
