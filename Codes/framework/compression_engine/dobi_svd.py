@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class DobiSVDLinearLayer(nn.Module):
+    is_custom_attention: bool = True
     """
     Differentiable SVD Linear Layer (Dobi-SVD).
 
@@ -275,7 +276,7 @@ class DobiSVDCompressor(BaseCompressor):
         if raw_w.shape == (out_f, in_f):
             W = raw_w.float()
         elif raw_w.shape == (in_f, out_f):
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()

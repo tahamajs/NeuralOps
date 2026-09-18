@@ -568,7 +568,7 @@ class AdaSplashAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = Dh ** -0.5
-        logits = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H, L_q, L_k]
+        logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale  # [B, H, L_q, L_k]
 
         # Handle attention mask (padding mask) and T5 relative position bias
         position_bias = kwargs.get("position_bias", None)

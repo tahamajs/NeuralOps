@@ -270,7 +270,7 @@ class ResSVDAttention(BaseAttention):
                 p_c_cls = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 p_base_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in p_c_cls) or ("Conv1D" in p_base_cls) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -287,7 +287,7 @@ class ResSVDAttention(BaseAttention):
                     p_proj_cls = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     p_base_o_cls = getattr(base_o, "__class__", type(base_o)).__name__
                     if ("Conv1D" in p_proj_cls) or ("Conv1D" in p_base_o_cls) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -366,8 +366,8 @@ class ResSVDAttention(BaseAttention):
                     continue
 
                 if w.shape != (target.out_features, target.in_features):
-                    if w.t().shape == (target.out_features, target.in_features):
-                        w = w.t()
+                    if w.t().contiguous().shape == (target.out_features, target.in_features):
+                        w = w.t().contiguous()
                     elif w.shape[0] < target.out_features and target.out_features % w.shape[0] == 0:
                         repeats = target.out_features // w.shape[0]
                         w = w.repeat(repeats, 1)
@@ -471,7 +471,7 @@ class ResSVDAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal masking
         is_causal = (self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)) and (encoder_hidden_states is None)

@@ -72,7 +72,7 @@ class LowRankLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(self.U, self.V.t())
+        return torch.matmul(self.U, self.V.t().contiguous())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., in_features]
@@ -84,6 +84,7 @@ class LowRankLinear(nn.Module):
 
 
 class LowRankCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     SoKA Low-Rank Linear Compressor.
     Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.
@@ -182,7 +183,7 @@ class LowRankCompressor(BaseCompressor):
                 and raw_w.shape[0] < raw_w.shape[1]
             )
 
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             device = raw_w.device
             dtype = raw_w.dtype
             d_out, d_in = W.shape

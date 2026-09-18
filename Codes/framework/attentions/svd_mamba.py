@@ -39,7 +39,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     if w is not None:
         w = w.data.clone()
         if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
-            w = w.t()
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -104,6 +104,7 @@ def apply_rotary_pos_emb(
 
 
 class SVDLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""SVD-factorized linear layer with trainable LoRA adapters.
     Base weight = U @ diag(S) @ V^T.
     """
@@ -158,14 +159,14 @@ class SVDLinear(nn.Module):
             self.V.data.zero_()
             self.U.data[:min(self.out_features, U.size(0)), :r].copy_(U[:self.out_features, :r].to(self.U.dtype))
             self.S.data[:r].copy_(S[:r].to(self.S.dtype))
-            self.V.data[:min(self.in_features, Vt.size(1)), :r].copy_(Vt[:r, :self.in_features].t().to(self.V.dtype))
+            self.V.data[:min(self.in_features, Vt.size(1)), :r].copy_(Vt[:r, :self.in_features].t().contiguous().to(self.V.dtype))
 
             if bias is not None and self.bias is not None:
                 min_b = min(self.out_features, bias.size(0))
                 self.bias.data.zero_()
                 self.bias.data[:min_b].copy_(bias[:min_b])
 
-            rec = (self.U[:, :r] * self.S[:r].unsqueeze(0)) @ self.V[:, :r].t()
+            rec = (self.U[:, :r] * self.S[:r].unsqueeze(0)) @ self.V[:, :r].t().contiguous()
             f_norm = float(torch.linalg.norm(rec))
             if f_norm < 1e-4:
                 nn.init.normal_(self.U, std=0.02)
@@ -175,10 +176,10 @@ class SVDLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
-        return (self.U * self.S.unsqueeze(0)) @ self.V.t()
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = ((x @ self.V) * self.S) @ self.U.t() + self.bias
+        out = ((x @ self.V) * self.S) @ self.U.t().contiguous() + self.bias
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
@@ -397,7 +398,7 @@ class SVDMamba(BaseAttention):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
                     if c_attn_w.dim() == 2 and c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] == 3 * self.d_model:
-                        c_attn_w = c_attn_w.t()
+                        c_attn_w = c_attn_w.t().contiguous()
                     split_size = c_attn_w.size(0) // 3
                     w_q = c_attn_w[:split_size, :]
                     w_k = c_attn_w[split_size : 2 * split_size, :]
@@ -410,7 +411,7 @@ class SVDMamba(BaseAttention):
                 c_proj_w, c_proj_b = _unpack_weight_bias(src.c_proj)
                 if c_proj_w is not None:
                     if c_proj_w.dim() == 2 and c_proj_w.shape[0] != self.d_model and c_proj_w.shape[1] == self.d_model:
-                        c_proj_w = c_proj_w.t()
+                        c_proj_w = c_proj_w.t().contiguous()
                     w_o = c_proj_w
                     b_o = c_proj_b
 
@@ -607,7 +608,7 @@ class SVDMamba(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             causal_mask = torch.tril(torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool))
@@ -627,10 +628,10 @@ class SVDMamba(BaseAttention):
         xz = self.in_proj(hidden_states)          # [B, L, 2*inner]
         x, z = xz.chunk(2, dim=-1)                # each [B, L, inner]
 
-        x_t = x.transpose(1, 2)                   # [B, inner, L]
+        x_t = x.transpose(1, 2).contiguous()                   # [B, inner, L]
         x_pad = F.pad(x_t, (self.d_conv - 1, 0))
         x_conv = self.conv1d(x_pad)[..., :seqlen]
-        x_conv = x_conv.transpose(1, 2)           # [B, L, inner]
+        x_conv = x_conv.transpose(1, 2).contiguous()           # [B, L, inner]
         x_conv = F.silu(x_conv)
 
         x_proj = self.x_proj(x_conv)              # [B, L, dt_rank+2*d_state]

@@ -263,7 +263,7 @@ class XAttentionScorer:
         K_sample = K[:, :, ::stride, :]
 
         scale = D**-0.5
-        attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1)) * scale
+        attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
 
         scores = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=Q.dtype)
         N_s = Q_sample.size(2)
@@ -486,7 +486,7 @@ class DualStageStripeAttention(nn.Module):
             pass
 
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Expand block-level inter_mask to token-level
         expanded_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
@@ -776,7 +776,7 @@ class NEXUSAttention(BaseAttention):
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -791,7 +791,7 @@ class NEXUSAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -860,7 +860,7 @@ class NEXUSAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -970,7 +970,7 @@ class NEXUSAttention(BaseAttention):
         if use_dense:
             # For causal decoding, cross attention, or short sequences, use exact scaled dot product attention
             scale = 1.0 / math.sqrt(D)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
                 causal_diag = 1 + max(0, N_kv - N)
                 causal_mask = torch.triu(

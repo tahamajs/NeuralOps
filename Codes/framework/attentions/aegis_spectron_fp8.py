@@ -510,7 +510,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                     if w is not None:
                         w = w.data
                         if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (w.shape[0] < w.shape[1]):
-                            w = w.t()
+                            w = w.t().contiguous()
                     bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
                     b = bias_holder.data if bias_holder is not None else None
                 elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
@@ -547,7 +547,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 if c_w is not None:
                     c_w = c_w.data
                     if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (c_w.shape[0] < c_w.shape[1]):
-                        c_w = c_w.t()
+                        c_w = c_w.t().contiguous()
                     split_size = c_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = c_w[idx * split_size : (idx + 1) * split_size, :]
@@ -708,7 +708,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         B, h, N, d = Q.shape
         W = self.config.window_size
 
-        attn_weights = torch.matmul(Q, K.transpose(-1, -2)) / math.sqrt(d)
+        attn_weights = torch.matmul(Q, K.transpose(-1, -2).contiguous()) / math.sqrt(d)
 
         idx = torch.arange(N, device=Q.device)
         idx_q = idx.unsqueeze(-1)
@@ -779,10 +779,10 @@ class AegisSpectronFP8Attention(BaseAttention):
                 return out_lr.view(B, N, h, d).transpose(1, 2).contiguous()
             else:
                 # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
-                KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
+                KV = torch.matmul(phi_K_f.transpose(-1, -2).contiguous(), V_f)
                 Z = phi_K_f.sum(dim=1, keepdim=True)
                 num = torch.matmul(phi_Q_f, KV)
-                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)).clamp(min=1e-4)
+                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2).contiguous()).clamp(min=1e-4)
 
                 out_lr = (num / den).to(Q.dtype)
                 return out_lr.view(B, N, h, d).transpose(1, 2).contiguous()

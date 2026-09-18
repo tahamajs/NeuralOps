@@ -382,7 +382,7 @@ class XAttention(BaseAttention):
             bias_data = bias.data if bias is not None else None
             is_conv1d = "Conv1D" in c_attn.__class__.__name__ or hasattr(c_attn, "nf")
             if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -399,7 +399,7 @@ class XAttention(BaseAttention):
             w_o = c_proj.weight.data
             is_conv1d = "Conv1D" in c_proj.__class__.__name__ or hasattr(c_proj, "nf")
             if is_conv1d or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size):
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -447,7 +447,7 @@ class XAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy base weights into projection modules
@@ -575,7 +575,7 @@ class XAttention(BaseAttention):
             or str(_cfg_get(cfg, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         # True Block Sparse Routing with Padding Awareness
         if self.block_size > 0 and self.keep_ratio < 1.0 and N_k > self.block_size and N_q > self.block_size:
@@ -609,7 +609,7 @@ class XAttention(BaseAttention):
             k_valid_blocks = k_valid.view(B, 1, num_k_blocks, bsz, 1)
             K_blocks = (K_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blocks).sum(dim=3) / k_valid_blocks.sum(dim=3).clamp(min=1.0)
 
-            coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2)) * scale
+            coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous()) * scale
 
             if is_decoder:
                 q_block_pos = torch.arange(num_k_blocks - num_q_blocks, num_k_blocks, device=device).unsqueeze(1)

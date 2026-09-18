@@ -243,7 +243,7 @@ class PrimalAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -258,7 +258,7 @@ class PrimalAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -328,8 +328,8 @@ class PrimalAttention(BaseAttention):
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
@@ -405,9 +405,9 @@ class PrimalAttention(BaseAttention):
             K_land = K[:, :, idx, :]
 
         scale = 1.0 / (self.head_dim ** 0.5)
-        F1 = torch.matmul(Q.float(), K_land.float().transpose(-2, -1)) * scale
-        F2 = torch.matmul(Q_land.float(), K_land.float().transpose(-2, -1)) * scale
-        F3 = torch.matmul(Q_land.float(), K.float().transpose(-2, -1)) * scale
+        F1 = torch.matmul(Q.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
+        F2 = torch.matmul(Q_land.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
+        F3 = torch.matmul(Q_land.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # linalg.pinv requires float32/float64; under torch.autocast matmul might produce float16
         F2_f32 = F2.to(torch.float32)

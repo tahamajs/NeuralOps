@@ -420,7 +420,7 @@ class SOAAttention(BaseAttention):
 
                 c_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in c_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (c_attn_w.dim() == 2 and c_attn_w.shape[0] < c_attn_w.shape[1]):
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -443,7 +443,7 @@ class SOAAttention(BaseAttention):
 
                 p_cls = getattr(base_p, "__class__", type(base_p)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_p, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (out_w.dim() == 2 and out_w.shape[0] < out_w.shape[1]):
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
@@ -658,7 +658,7 @@ class SOAAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask for decoders
         is_causal = (self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)) and (encoder_hidden_states is None)

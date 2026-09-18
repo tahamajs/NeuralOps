@@ -35,6 +35,7 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 @COMPRESSOR_REGISTRY.register("entropy_budget")
 @COMPRESSOR_REGISTRY.register("entropy_budget_allocation")
 class EntropyBudgetCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Entropy Budget Low-Rank SVD Compressor.
 
@@ -252,7 +253,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-                W = raw_w.t().float()
+                W = raw_w.t().contiguous().float()
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
                 W = raw_w.float()

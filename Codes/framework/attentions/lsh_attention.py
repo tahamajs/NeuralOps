@@ -230,7 +230,7 @@ class LSHAttention(BaseAttention):
             bias_data = bias.data if bias is not None else None
             c_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
             if ("Conv1D" in c_cls) or hasattr(src.c_attn, "nf") or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]):
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -246,7 +246,7 @@ class LSHAttention(BaseAttention):
             w_o = src.c_proj.weight.data
             p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
             if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -280,7 +280,7 @@ class LSHAttention(BaseAttention):
                             w_data = layer.weight.data
                             l_cls = getattr(layer, "__class__", type(layer)).__name__
                             if ("Conv1D" in l_cls) or hasattr(layer, "nf") or (w_data.ndim == 2 and proj == "o" and w_data.shape[0] < w_data.shape[1]):
-                                w_data = w_data.t()
+                                w_data = w_data.t().contiguous()
                             extracted[proj] = (w_data, getattr(layer, "bias", None))
                             break
 
@@ -314,7 +314,7 @@ class LSHAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -401,7 +401,7 @@ class LSHAttention(BaseAttention):
 
         if is_decoder or is_cross_attention or N_q <= self.num_buckets:
             # Full exact causal / standard attention
-            scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
             if mask is not None:
                 if mask.dim() == 4:
@@ -434,7 +434,7 @@ class LSHAttention(BaseAttention):
             if self.proj_matrices.device != device:
                 self.proj_matrices = self.proj_matrices.to(device)
 
-            scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
             if mask is not None:
                 if mask.dim() == 4:

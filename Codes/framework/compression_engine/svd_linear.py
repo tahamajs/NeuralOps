@@ -31,6 +31,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 class SVDLinearLayer(nn.Module):
+    is_custom_attention: bool = True
     """
     Replace a linear layer with factorized U @ V, keeping top-`rank` components.
     Optionally dispatches fused in-SRAM kernel to eliminate memory roundtrips.
@@ -54,7 +55,7 @@ class SVDLinearLayer(nn.Module):
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         if is_conv1d:
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
             self.out_features = W.shape[0]
             self.in_features = W.shape[1]
         else:

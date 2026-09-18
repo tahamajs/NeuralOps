@@ -37,6 +37,7 @@ _ATTN_NAMES = {
 
 @COMPRESSOR_REGISTRY.register("mgie_budget")
 class MGIESVDBudgetCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.
     """
@@ -194,7 +195,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             raw_w = target_layer.weight.data
             cls_name = target_layer.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
 
             ent, U, S, Vt = self._compute_entropy(W)
             layer_data[name] = (module, target_layer, ent, U, S, Vt, W, is_conv1d)

@@ -365,7 +365,7 @@ class ChelaSlayAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -387,7 +387,7 @@ class ChelaSlayAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -461,8 +461,8 @@ class ChelaSlayAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -549,7 +549,7 @@ class ChelaSlayAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # 4. Standard dense softmax stream
-        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * (self.head_dim**-0.5)
+        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (self.head_dim**-0.5)
 
         if self.is_causal and not is_cross_attention and L == kv_len:
             causal_mask = torch.triu(torch.full((L, L), -1e4, device=x.device, dtype=torch.float32), diagonal=1)
@@ -613,7 +613,7 @@ class ChelaSlayAttention(BaseAttention):
         else:
             # Bidirectional linear attention (global summation)
             # KV: (B, H, 2F, head_dim)
-            KV = torch.matmul(k_feat.transpose(-2, -1).float(), v_masked.float())
+            KV = torch.matmul(k_feat.transpose(-2, -1).contiguous().float(), v_masked.float())
             Z = k_feat.float().sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
 
             num = torch.matmul(q_feat.float(), KV)  # (B, H, L, head_dim)
@@ -622,7 +622,7 @@ class ChelaSlayAttention(BaseAttention):
 
         # 6. Adaptive gating with step-0 dense representation preservation
         # gate produces (B, L, H) -> permute to (B, H, L, 1)
-        g = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)
+        g = torch.sigmoid(self.gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
