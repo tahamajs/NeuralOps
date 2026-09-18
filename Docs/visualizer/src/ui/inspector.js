@@ -122,5 +122,22 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
         renderTokenLifecycle(activeModule, currentModel);
         renderComponentPipeline(activeModule, currentModel);
         renderLatexFormula(activeModule);
+
+        // Render Python Implementation & Paper Citation Box
+        const descSection = document.getElementById('insp-desc');
+        if (descSection) {
+            const fileRef = activeModule.file ? `<code>${activeModule.file}</code>` : '—';
+            const classesRef = activeModule.classes && activeModule.classes.length ? activeModule.classes.map(c => `<span class="badge" style="background:rgba(56,189,248,0.15);color:#7dd3fc;border:1px solid rgba(56,189,248,0.3);margin-right:4px;">${c}</span>`).join('') : '—';
+            descSection.innerHTML = `
+                <div style="margin-bottom:8px;font-size:11px;line-height:1.6;color:var(--text-main);">
+                    ${descHtml}
+                </div>
+                <div style="background:rgba(6,13,24,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;margin-top:8px;font-size:11px;">
+                    <div style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">📄 Code Implementation &amp; Paper Classes</div>
+                    <div style="margin-bottom:4px;word-break:break-all;"><strong style="color:var(--cyan);">Source:</strong> ${fileRef}</div>
+                    <div style="margin-top:4px;"><strong style="color:var(--cyan);">PyTorch Classes:</strong> ${classesRef}</div>
+                </div>
+            `;
+        }
     }
 }
