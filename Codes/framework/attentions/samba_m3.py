@@ -340,7 +340,8 @@ class SAMBAM3Block(nn.Module):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model:
+                p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+                if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model):
                     c_attn_w = c_attn_w.t()
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -354,7 +355,8 @@ class SAMBAM3Block(nn.Module):
                     b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.d_model and out_w.shape[1] != self.d_model:
+                p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+                if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (out_w.shape[0] == self.d_model and out_w.shape[1] != self.d_model):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
