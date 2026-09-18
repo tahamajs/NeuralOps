@@ -1,0 +1,65 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+full,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:22:48.065725
+a3,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:22:48.710844
+aasvd,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:22:47.483992
+adaptive,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:22:47.615317
+adaptive_span,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:26.962891
+adaptive_sparse,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:29.352356
+adaptive_svd,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:40.704299
+adasplash,PASS,,,,,,,,,,,,,,,,,,,,,,,,2026-09-18T22:23:51.883374
+adasvd,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:06.529174
+admm,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:24:01.818659
+admm_pruner,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:02:55.517497
+aegis_hybrid,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:03:46.156310
+aegis_spectron_fp8,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:01.552920
+aegis_v1,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:38.970789
+aegis_v2,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:04:54.887092
+aegis_v3,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:05:29.266583
+aegis_v4,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:05:46.941711
+aegis_v5,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:06:18.550370
+aegis_v6,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:06:39.497196
+armor,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:06:49.292401
+ast,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:07:10.085328
+astro,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:07:17.155655
+asvd,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:07:48.036055
+bam_umoe,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:07:59.841547
+block_transformer_hiba,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:08:22.162822
+bonsai,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:08:28.335712
+cachenotes,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:08:59.480054
+chela_slay,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:09:06.192257
+come,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:09:34.308368
+cluster,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:09:41.655735
+compot,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:10:03.397877
+compot_compressor_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:10:10.604352
+compressed_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:10:37.593339
+compressed_attention_layer_energy,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:10:45.428920
+compressed_mha,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:11:12.104081
+coopq,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:11:20.492456
+cosformer,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:11:48.472086
+cr,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:12:17.014760
+cur,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:12:28.108724
+cur_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:12:49.129844
+cur_moe_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:12:59.737610
+custom_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:13:15.713802
+delta_kv,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:13:47.699722
+decay_linear_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:14:04.907466
+direct_svd,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:14:18.324227
+dobi,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:14:32.428061
+dobi_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:14:46.292461
+dynamic_rank,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:15:03.462301
+dynamic_rank_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:15:17.336213
+eat,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:15:36.389562
+enlighten,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:15:47.973785
+entropy_budget,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:16:07.965453
+entropy_rank_allocator_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:16:18.639279
+erc,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:16:38.703752
+expert_choice_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:17:07.433513
+faq,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:17:20.876219
+fasa,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:17:45.108473
+flap,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:17:51.395722
+flash3,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:18:18.999723
+flash3_fp8,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:18:25.613218
+flat_llm,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:18:49.552550
+fms,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:19:05.297135
+frandi,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:19:20.320068
+frandi_compressor_class,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,ValueError: could not convert string to float: '',,2026-09-18T22:19:35.654747
