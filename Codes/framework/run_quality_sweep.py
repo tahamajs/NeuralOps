@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
-from datasets import load_from_disk
+from datasets import load_from_disk, load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
@@ -2113,11 +2113,25 @@ def run_single_module_main(args) -> dict:
             Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
             Path("Codes/framework/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
+            Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2"),
+            Path("Codes/framework/data/glue_data/sst2"),
+            Path(__file__).parent / "data" / "glue_data" / "sst2",
         ]:
             if cand.exists():
                 args.dataset_dir = str(cand)
                 break
-    ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
+    try:
+        if args.dataset_dir and Path(args.dataset_dir).exists():
+            ds = load_from_disk(args.dataset_dir)
+        else:
+            ds = load_dataset(args.dataset)
+    except Exception as e:
+        LOG.warning("Failed to load dataset '%s' from disk/hub (%s). Falling back to local sst2.", args.dataset, e)
+        fallback_sst2 = Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2")
+        if not fallback_sst2.exists():
+            fallback_sst2 = Path(__file__).parent / "data" / "glue_data" / "sst2"
+        ds = load_from_disk(str(fallback_sst2))
+    train, val = ds["train"], ds["validation"]
     tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "right"
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
     # Train the newly initialized classifier in fp32. GradScaler cannot
@@ -3065,6 +3079,19 @@ def main():
         names = modules()
     else:
         names = [x.strip() for x in args.modules.split(",") if x.strip()]
+
+    if args.dataset_dir is None:
+        for cand in [
+            Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
+            Path("Codes/framework/data/glue_data") / args.dataset,
+            Path(__file__).parent / "data" / "glue_data" / args.dataset,
+            Path("D:/SVD_Project/Codes/framework/data/glue_data/sst2"),
+            Path("Codes/framework/data/glue_data/sst2"),
+            Path(__file__).parent / "data" / "glue_data" / "sst2",
+        ]:
+            if cand.exists():
+                args.dataset_dir = str(cand)
+                break
 
     out = Path(args.output_dir) if args.output_dir else Path("results")
     out.mkdir(parents=True, exist_ok=True)
