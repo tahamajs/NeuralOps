@@ -1,11 +1,40 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_progressive_token_pruning/roberta/summary.csv | progressive_token_pruning | PASS_NO_COMPRESSION | 80.5% <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 663.42 MB <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> |
-| results/unified_progressive_token_pruning/distilbert/summary.csv | progressive_token_pruning | PASS_NO_COMPRESSION | 90.83% <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 329.09 MB <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> |
-| results/unified_progressive_token_pruning/gpt2/summary.csv | progressive_token_pruning | PASS_NO_COMPRESSION | 78.78% <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 571.22 MB <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> |
-| results/agnews_unified_progressive_token_pruning/distilbert/summary.csv | progressive_token_pruning | PASS_NO_COMPRESSION | 71.4% <!-- source: results/agnews_unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 575.12 MB <!-- source: results/agnews_unified_progressive_token_pruning/distilbert/summary.csv line 2 --> |
-| results/mnli_unified_progressive_token_pruning/distilbert/summary.csv | progressive_token_pruning | PASS_NO_COMPRESSION | 41.1% <!-- source: results/mnli_unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 362.42 MB <!-- source: results/mnli_unified_progressive_token_pruning/distilbert/summary.csv line 2 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | progressive_token_pruning | PASS_NO_COMPRESSION | 90.83% <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 0.9111 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | progressive_token_pruning | PASS_NO_COMPRESSION | 78.78% <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 0.7942 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | progressive_token_pruning | PASS_NO_COMPRESSION | 80.5% <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 0.8233 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | progressive_token_pruning | 66955010 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 67840544 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 589848 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | progressive_token_pruning | 124441344 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 126212412 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 1179696 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | progressive_token_pruning | 124647170 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 133505342 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 1179696 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | full | 52437.93 tok/s <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/distilbert/summary.csv | distilbert | progressive_token_pruning | 19955.41 tok/s <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 329.09 MB <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/distilbert/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | full | 27168.64 tok/s <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | progressive_token_pruning | 9616.22 tok/s <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 571.22 MB <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | full | 24405.65 tok/s <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> |
+| results/unified_progressive_token_pruning/roberta/summary.csv | roberta | progressive_token_pruning | 9969.38 tok/s <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 663.42 MB <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> |

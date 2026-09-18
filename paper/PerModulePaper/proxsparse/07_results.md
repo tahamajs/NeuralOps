@@ -1,16 +1,43 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_proxsparse/roberta/summary.csv | proxsparse | PASS_LOW | 50.92% <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 361.54 MB <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> |
-| results/unified_proxsparse/distilbert/summary.csv | proxsparse | PASS | 78.33% <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> |
-| results/unified_proxsparse/gpt2/summary.csv | proxsparse | PASS_LOW | 54.01% <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 636.04 MB <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 25.87 ms <!-- source: results/benchmark_summary_v2.csv line 662 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 662 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 25.3 ms <!-- source: results/benchmark_summary_v2.csv line 663 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 663 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 27.45 ms <!-- source: results/benchmark_summary_v2.csv line 664 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 664 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 27.14 ms <!-- source: results/benchmark_summary_v2.csv line 665 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 665 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 52.7 ms <!-- source: results/benchmark_summary_v2.csv line 666 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 666 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 52.13 ms <!-- source: results/benchmark_summary_v2.csv line 667 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 667 --> |
-| results/all_121_compressors_gpu_matrix.csv | proxsparse | PASS | Comp Ratio: 1.0x, Time: 0.334s <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | 155.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> |
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | proxsparse | PASS | 78.33% <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 0.7845 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | proxsparse | PASS_LOW | 54.01% <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 0.4866 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | full | PASS | 75.11% <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 0.7586 <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | proxsparse | PASS_LOW | 50.92% <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 0.6748 <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | proxsparse | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> |
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | proxsparse | 66955010 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 66955010 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 4135682 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | proxsparse | 124441344 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 124441344 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 1536 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | proxsparse | 124647170 <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 124647170 <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 7679234 <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | proxsparse | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | full | 147172.28 tok/s <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 2 --> |
+| results/unified_proxsparse/distilbert/summary.csv | distilbert | proxsparse | 162708.29 tok/s <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> | 0.6790638698471917 <!-- source: results/unified_proxsparse/distilbert/summary.csv line 3 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | full | 62312.29 tok/s <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 2 --> |
+| results/unified_proxsparse/gpt2/summary.csv | gpt2 | proxsparse | 64596.44 tok/s <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 636.04 MB <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> | 0.5756725743412971 <!-- source: results/unified_proxsparse/gpt2/summary.csv line 3 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | full | 96397.05 tok/s <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_proxsparse/roberta/summary.csv line 2 --> |
+| results/unified_proxsparse/roberta/summary.csv | roberta | proxsparse | 90541.96 tok/s <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 361.54 MB <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> | 0.6366075558794869 <!-- source: results/unified_proxsparse/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | proxsparse | Elapsed 0.334s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | 155.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 88 --> |
