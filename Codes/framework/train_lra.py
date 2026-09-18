@@ -219,6 +219,8 @@ def train_task(
             print(f"[{task}/{module_name}] Epoch {epoch+1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)", flush=True)
             if acc > best_acc:
                 best_acc = acc
+        else:
+            print(f"[{task}/{module_name}] Epoch {epoch+1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f}", flush=True)
 
         if max_steps is not None and global_step >= max_steps:
             break
