@@ -324,6 +324,13 @@ print('Output logits shape:', outputs.logits.shape)
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-flash-attention3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3) | 2026-09-18 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Model | Dataset / Benchmark | Metric / Accuracy | Latency (ms) | Peak Memory (MB) |
@@ -366,4 +373,3 @@ The `FlashAttention3` architecture incorporates telemetry hooks for tracking sin
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
