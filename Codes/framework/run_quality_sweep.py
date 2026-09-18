@@ -179,7 +179,14 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
     a, b = fields(dataset_name)
     texts = batch[a] if b is None else list(zip(batch[a], batch[b]))
     x = tokenizer(texts, padding="max_length", truncation=True, max_length=seq_len, return_tensors="pt")
-    return {k: v.to(device) for k, v in x.items()}, torch.tensor(batch["label"], device=device)
+    is_cuda = (device.type == "cuda")
+    if is_cuda:
+        x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
+        y = torch.tensor(batch["label"]).pin_memory().to(device, non_blocking=True)
+    else:
+        x = {k: v.to(device) for k, v in x.items()}
+        y = torch.tensor(batch["label"], device=device)
+    return x, y
 
 
 def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
@@ -449,6 +456,7 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
     """Evaluate model and return dictionary containing accuracy, F1, precision, recall, val loss, and VRAM/speed."""
     model.eval()
     correct = total = 0
+    correct_gpu = torch.tensor(0, device=device, dtype=torch.long)
     total_loss = 0.0
     num_batches = 0
     all_preds = []
@@ -493,16 +501,20 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
             else:
                 raise exc
 
-        preds = logits.argmax(-1).cpu()
-        targets = y.cpu()
-        correct += int((preds == targets).sum())
-        total += len(targets)
+        preds = logits.argmax(-1)
+        targets = y.to(preds.device)
+        correct_gpu += (preds == targets).sum()
+        total += int(targets.numel())
         total_loss += loss_val
         num_batches += 1
-        all_preds.extend(preds.tolist())
-        all_targets.extend(targets.tolist())
+        all_preds.append(preds.detach().cpu())
+        all_targets.append(targets.detach().cpu())
         if "input_ids" in x:
             total_tokens += x["input_ids"].numel()
+
+    correct = int(correct_gpu.item())
+    all_preds = torch.cat(all_preds, dim=0).tolist() if all_preds else []
+    all_targets = torch.cat(all_targets, dim=0).tolist() if all_targets else []
 
     eval_time = max(1e-4, time.monotonic() - t0)
     tokens_per_sec = round(total_tokens / eval_time, 2)
