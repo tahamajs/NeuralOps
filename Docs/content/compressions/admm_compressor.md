@@ -181,6 +181,7 @@ def admm_joint_prune_quant_kernel(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **57.50%** | +6.50% | 0.5395 | 1.00x | 11 | N/A | 2026-09-18 |
+| **roberta-base** | ag_news | `PASS` | 74.50% | **81.30%** | +6.80% | 0.8033 | 1.00x | 27 | N/A | 2026-09-18 |
 
 
 The empirical evaluation of `admm_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
