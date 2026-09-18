@@ -143,6 +143,7 @@ class GatedLinearAttention(BaseAttention):
 
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -507,9 +508,9 @@ class GatedLinearAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         L_kv = kv_input.shape[1]
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(hidden_states)
 
         if position_embeddings is None:

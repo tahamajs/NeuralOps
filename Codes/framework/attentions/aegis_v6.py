@@ -351,6 +351,7 @@ class ContextFusionGate(nn.Module):
 class AegisAttentionV3(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -622,7 +623,7 @@ class AegisAttentionV3(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
+                    eye_w = torch.eye(self.all_head_size, self.all_head_size, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
                     target.decompose_from_weight(eye_w, None)
 
         if hasattr(old_attn, "is_decoder"):

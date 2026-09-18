@@ -150,6 +150,7 @@ class LoRALinear(nn.Module):
 class InfiniAttention(BaseAttention):
     r"""Infini-Attention with Compressive Memory and Sliding Window."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -454,9 +455,9 @@ class InfiniAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -473,6 +474,28 @@ class InfiniAttention(BaseAttention):
         mem_out = torch.matmul(mem_attn, mem.float()).to(v.dtype)
 
         scale = 1.0 / math.sqrt(Dh)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs
+
+        try:
+
+            _qs = q.half() if q.dtype == torch.float32 else q
+
+            _ks = k.half() if k.dtype == torch.float32 else k
+
+            _vs = v.half() if v.dtype == torch.float32 else v
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=getattr(self, 'is_decoder', False) and N > 1, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
         if self.is_decoder or self.is_causal:

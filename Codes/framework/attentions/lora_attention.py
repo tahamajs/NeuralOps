@@ -149,6 +149,7 @@ class LoRAAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -361,9 +362,9 @@ class LoRAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings", None)

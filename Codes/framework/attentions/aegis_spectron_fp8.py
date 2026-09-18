@@ -288,6 +288,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     Strictly causal for autoregressive decoders, with true RoPE and GQA support.
     """
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -775,7 +776,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True).clamp(min=1e-4)
 
                 out_lr = (num / den).to(Q.dtype)
-                return out_lr.view(B, N, h, d).transpose(1, 2)
+                return out_lr.view(B, N, h, d).transpose(1, 2).contiguous()
             else:
                 # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
                 KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
@@ -784,7 +785,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)).clamp(min=1e-4)
 
                 out_lr = (num / den).to(Q.dtype)
-                return out_lr.view(B, N, h, d).transpose(1, 2)
+                return out_lr.view(B, N, h, d).transpose(1, 2).contiguous()
 
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
         if self.linear_in is not None:
@@ -820,7 +821,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             out_tensor = gate * out_fwd + (1.0 - gate) * out_bwd
 
         out_tensor = out_tensor.clamp(min=-1e4, max=1e4)
-        return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
+        return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2).contiguous()
 
     def forward(
         self,
@@ -847,9 +848,9 @@ class AegisSpectronFP8Attention(BaseAttention):
         # Projections via FactorizedLinear (base + LoRA) with FP8 cast applied to projections
         fp8_fmt = getattr(self.config, "fp8_format", "e4m3")
         X_fp8 = fp8_cast_simulate(hidden_states, format=fp8_fmt)
-        Q = fp8_cast_simulate(self.q_proj(hidden_states), format=fp8_fmt).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
-        K = fp8_cast_simulate(self.k_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
-        V = fp8_cast_simulate(self.v_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
+        Q = fp8_cast_simulate(self.q_proj(hidden_states), format=fp8_fmt).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2).contiguous()
+        K = fp8_cast_simulate(self.k_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2).contiguous()
+        V = fp8_cast_simulate(self.v_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2).contiguous()
 
         # Apply Rotary Position Embeddings (RoPE) immediately after projections and BEFORE branching
         position_embeddings = kwargs.get("position_embeddings", None)

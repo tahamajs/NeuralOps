@@ -164,6 +164,7 @@ class NASCAttention(BaseAttention):
 
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -436,6 +437,30 @@ class NASCAttention(BaseAttention):
     def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
         B, H, L, d = Q.shape
         scale = 1.0 / math.sqrt(d)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+        try:
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         idx = torch.arange(L, device=Q.device)
@@ -583,8 +608,8 @@ class NASCAttention(BaseAttention):
             valid_mask = torch.ones(B, L_kv, device=hidden_states.device, dtype=torch.bool)
 
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2)
+        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)

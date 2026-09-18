@@ -81,6 +81,7 @@ class CompressedAttentionLayer(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -386,9 +387,9 @@ class CompressedAttentionLayer(BaseAttention):
         # Split into Q, K, V
         q, k, v = torch.split(qkv, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
 
-        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings", None)

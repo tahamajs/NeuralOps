@@ -149,6 +149,7 @@ class LoRALinear(nn.Module):
 class LEKAV1Attention(BaseAttention):
     r"""LEKAv1: Linear-time Efficient Kernel Attention (Hardened)."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -422,9 +423,9 @@ class LEKAV1Attention(BaseAttention):
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
-        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

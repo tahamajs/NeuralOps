@@ -168,6 +168,7 @@ class LoRALinear(nn.Module):
 class CosformerAttention(BaseAttention):
     r"""Cosformer Attention with Linear Complexity and Exact Multi-Architecture Support."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -486,9 +487,9 @@ class CosformerAttention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Projections
-        Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # 2. Rotary Position Embeddings (RoPE)
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)

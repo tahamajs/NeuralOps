@@ -142,6 +142,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("qcqa")
 @ATTENTION_REGISTRY.register("qcqa_attention")
 class QCQAAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,

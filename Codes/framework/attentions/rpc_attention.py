@@ -175,6 +175,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("rpc")
 @ATTENTION_REGISTRY.register("rpc_attention")
 class RPCAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Any = None,

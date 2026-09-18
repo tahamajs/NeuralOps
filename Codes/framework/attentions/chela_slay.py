@@ -196,6 +196,7 @@ class ChelaSlayAttention(BaseAttention):
            $$\text{Output} = W_O \left( g \odot O^{\text{dense}} + (1 - g) \odot O^{\text{linear}} \right)$$
     """
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -524,9 +525,9 @@ class ChelaSlayAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else x
 
         # 1. Linear projections
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.W_k(kv_input).view(B, -1, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.W_v(kv_input).view(B, -1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.W_k(kv_input).view(B, -1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(kv_input).view(B, -1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         kv_len = k.shape[2]
 
         # 2. Rotary Position Embeddings (RoPE)
