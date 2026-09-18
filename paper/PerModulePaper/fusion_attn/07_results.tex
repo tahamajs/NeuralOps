@@ -1,9 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 62.61\% & 661.02 MB \\
-\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 90.6\% & 329.66 MB \\
-\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 79.36\% & 569.74 MB \\
-\texttt{results/agnews\_unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 63.6\% & 571.06 MB \\
-\texttt{results/mnli\_unified\_fusion\_attn/roberta/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 37.3\% & 693.92 MB \\
-\texttt{results/mnli\_unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 34.6\% & 361.59 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_fusionattn} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & fusion\_attn & PASS\_NO\_COMPRESSION & 90.6 & 0.9091 \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & fusion\_attn & PASS\_NO\_COMPRESSION & 79.36 & 0.7978 \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & fusion\_attn & PASS\_NO\_COMPRESSION & 62.61 & 0.5821 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{fusionattn}.}
+\label{tab:results_acc_fusionattn}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_fusionattn} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & fusion\_attn & 66955010 & 67646246 & 691236 & 1.0x \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & fusion\_attn & 124441344 & 125823816 & 1382472 & 1.0x \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & fusion\_attn & 124647170 & 133116746 & 1382472 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{fusionattn}.}
+\label{tab:results_params_fusionattn}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_fusionattn} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & full & 52651.57 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & fusion\_attn & 26220.65 & 329.66 MB & 0.0000 \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & full & 27066.22 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & fusion\_attn & 12161.57 & 569.74 MB & 0.0000 \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & full & 27366.6 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & fusion\_attn & 12635.46 & 661.02 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{fusionattn}.}
+\label{tab:results_vram_fusionattn}
+\end{table*}
