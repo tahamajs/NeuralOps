@@ -308,7 +308,7 @@ class JambaInfoBlock(BaseAttention):
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
                 if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -325,7 +325,7 @@ class JambaInfoBlock(BaseAttention):
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
                     if "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -384,8 +384,8 @@ class JambaInfoBlock(BaseAttention):
             if w_q is not None:
                 if w_q.ndim != 2:
                     w_q = w_q.reshape(w_q.size(0), -1)
-                if w_q.shape != self.W_q1.weight.shape and self.W_q1.weight.shape == w_q.t().shape:
-                    w_q = w_q.t()
+                if w_q.shape != self.W_q1.weight.shape and self.W_q1.weight.shape == w_q.t().contiguous().shape:
+                    w_q = w_q.t().contiguous()
                 out_d = min(self.W_q1.weight.size(0), w_q.size(0))
                 in_d = min(self.W_q1.weight.size(1), w_q.size(1))
                 self.W_q1.weight.data[:out_d, :in_d].copy_(w_q[:out_d, :in_d].to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
@@ -398,8 +398,8 @@ class JambaInfoBlock(BaseAttention):
             if w_k is not None:
                 if w_k.ndim != 2:
                     w_k = w_k.reshape(w_k.size(0), -1)
-                if w_k.shape != self.W_k1.weight.shape and self.W_k1.weight.shape == w_k.t().shape:
-                    w_k = w_k.t()
+                if w_k.shape != self.W_k1.weight.shape and self.W_k1.weight.shape == w_k.t().contiguous().shape:
+                    w_k = w_k.t().contiguous()
                 out_d = min(self.W_k1.weight.size(0), w_k.size(0))
                 in_d = min(self.W_k1.weight.size(1), w_k.size(1))
                 self.W_k1.weight.data[:out_d, :in_d].copy_(w_k[:out_d, :in_d].to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
@@ -408,8 +408,8 @@ class JambaInfoBlock(BaseAttention):
             if w_v is not None:
                 if w_v.ndim != 2:
                     w_v = w_v.reshape(w_v.size(0), -1)
-                if w_v.shape != self.W_v.weight.shape and self.W_v.weight.shape == w_v.t().shape:
-                    w_v = w_v.t()
+                if w_v.shape != self.W_v.weight.shape and self.W_v.weight.shape == w_v.t().contiguous().shape:
+                    w_v = w_v.t().contiguous()
                 out_d = min(self.W_v.weight.size(0), w_v.size(0))
                 in_d = min(self.W_v.weight.size(1), w_v.size(1))
                 self.W_v.weight.data[:out_d, :in_d].copy_(w_v[:out_d, :in_d].to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
@@ -418,8 +418,8 @@ class JambaInfoBlock(BaseAttention):
             if w_o is not None:
                 if w_o.ndim != 2:
                     w_o = w_o.reshape(w_o.size(0), -1)
-                if w_o.shape != self.out_proj.weight.shape and self.out_proj.weight.shape == w_o.t().shape:
-                    w_o = w_o.t()
+                if w_o.shape != self.out_proj.weight.shape and self.out_proj.weight.shape == w_o.t().contiguous().shape:
+                    w_o = w_o.t().contiguous()
                 out_d = min(self.out_proj.weight.size(0), w_o.size(0))
                 in_d = min(self.out_proj.weight.size(1), w_o.size(1))
                 self.out_proj.weight.data[:out_d, :in_d].copy_(w_o[:out_d, :in_d].to(device=self.out_proj.weight.device, dtype=self.out_proj.weight.dtype))
@@ -477,8 +477,8 @@ class JambaInfoBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
-        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
+        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
+        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             causal_mask = torch.tril(torch.ones(L, L, device=x.device, dtype=torch.bool))

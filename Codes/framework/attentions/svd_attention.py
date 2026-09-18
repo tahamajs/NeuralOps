@@ -330,7 +330,7 @@ class SVDLinearAttention(BaseAttention):
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
                 if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size):
-                    c_attn_w = c_attn_w.t()
+                    c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -348,7 +348,7 @@ class SVDLinearAttention(BaseAttention):
                 out_w = src.c_proj.weight.detach()
                 p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
                 if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size):
-                    out_w = out_w.t()
+                    out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
@@ -546,7 +546,7 @@ class SVDLinearAttention(BaseAttention):
         # Full attention if rank is disabled, sequence length <= rank, or causal decoder mode
         # (SVD sequence projection collapses temporal causality in decoders)
         if self.rank is None or kv_len <= self.rank or is_causal:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
 
             if is_causal and seq_len > 1:
                 causal_mask = torch.triu(
@@ -602,10 +602,10 @@ class SVDLinearAttention(BaseAttention):
 
             # Project K and V through the stable subspace
             U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
-            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, head_dim]
-            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, head_dim]
+            K_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), K)  # [B, H, actual_r, head_dim]
+            V_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), V)  # [B, H, actual_r, head_dim]
 
-            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
+            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -648,7 +648,7 @@ class SVDLinearAttention(BaseAttention):
         U = self._last_u_r
         r = U.size(-1)
         I = torch.eye(r, device=U.device, dtype=torch.float32).unsqueeze(0)
-        gram = torch.matmul(U.transpose(-2, -1).float(), U.float())
+        gram = torch.matmul(U.transpose(-2, -1).contiguous().float(), U.float())
         loss = F.mse_loss(gram, I.expand_as(gram))
         return loss.requires_grad_(True)
 

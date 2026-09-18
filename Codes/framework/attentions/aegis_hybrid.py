@@ -696,9 +696,9 @@ class AegisHybridAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         # 1. Projections via FactorizedLinear (base + LoRA)
-        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2)  # [B, H, N, Dh]
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2).contiguous()  # [B, H, N, Dh]
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()  # [B, H_kv, N_k, Dh]
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()  # [B, H_kv, N_k, Dh]
 
         # 2. Rotary Position Embeddings (RoPE) - applied before GQA repetition & pathway splitting
         position_embeddings = kwargs.get("position_embeddings", None)
@@ -777,7 +777,7 @@ class AegisHybridAttention(BaseAttention):
 
         # ============== Branch 1: Local Window Attention ==============
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N, N_k]
+        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale  # [B, H, N, N_k]
 
         idx_q = torch.arange(N, device=device)
         idx_k = torch.arange(N_k, device=device)
@@ -808,7 +808,7 @@ class AegisHybridAttention(BaseAttention):
         if head_mask_tensor is not None:
             attn_local = attn_local * head_mask_tensor.to(attn_local.dtype)
 
-        local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
+        local_out = torch.matmul(attn_local, V).transpose(1, 2).contiguous()  # [B, N, H, Dh]
 
         # 2. Hybrid Combination: Local Window Attention + True O(N) Global Linear Attention
         if (not self.use_global) or is_decoder:
@@ -824,9 +824,9 @@ class AegisHybridAttention(BaseAttention):
                 K_g = K_g * keep.unsqueeze(-1)
                 V_g = V_g * keep.unsqueeze(-1)
 
-            phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
-            phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
-            V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
+            phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2).contiguous()  # [B, H, N, Dh]
+            phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2).contiguous()  # [B, H, N_k, Dh]
+            V_gf = V_g.float().transpose(1, 2).contiguous()                   # [B, H, N_k, Dh]
 
             # CRITICAL: Mask padding tokens POST-phi so they don't corrupt the KV state
             if mask_2d is not None:
@@ -863,7 +863,7 @@ class AegisHybridAttention(BaseAttention):
             if head_mask_tensor is not None:
                 global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
-            global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
+            global_out = global_out_h.transpose(1, 2).contiguous()  # [B, N, H, Dh]
 
             alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
             fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]

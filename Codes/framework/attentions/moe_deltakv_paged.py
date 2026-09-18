@@ -381,7 +381,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -405,7 +405,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 if b_o is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.data.copy_(b_o[:self.hidden_size])
             elif self.is_nested_encoder:
-                self.out_proj.weight.data.copy_(torch.eye(self.hidden_size, self.all_head_size))
+                self.out_proj.weight.data.copy_(torch.eye(self.all_head_size, self.all_head_size))
                 if self.out_proj.bias is not None:
                     self.out_proj.bias.data.zero_()
 
@@ -481,7 +481,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if self.is_causal or num_pages <= 2:
             # Full attention path for causal decoders or when sequence length fits in 1-2 pages
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q, k_hat.transpose(-2, -1)) * scale
+            scores = torch.matmul(q, k_hat.transpose(-2, -1).contiguous()) * scale
 
             if self.is_causal and N > 1:
                 causal_mask = torch.triu(
@@ -520,7 +520,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         q_bar = (q_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
         k_bar = (k_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
 
-        router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2)) / math.sqrt(d)
+        router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2).contiguous()) / math.sqrt(d)
 
         # Mask out fully-padded pages
         page_valid = valid_mask.view(B, 1, num_pages, self.page_size).any(dim=-1)  # [B, 1, num_pages]
@@ -563,7 +563,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_valid = torch.gather(valid_blocks_exp.expand(-1, H, -1, -1, -1), dim=3, index=expanded_idx_mask)
 
         q_expanded = q_blocks.unsqueeze(3)
-        attn_scores = torch.matmul(q_expanded, k_gathered.transpose(-1, -2)) / math.sqrt(d)
+        attn_scores = torch.matmul(q_expanded, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
         attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -10000.0)
 
         attn_probs = F.softmax(attn_scores, dim=-1)

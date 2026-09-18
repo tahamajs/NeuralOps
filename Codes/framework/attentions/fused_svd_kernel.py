@@ -123,6 +123,7 @@ if HAS_TRITON:
 
 
 class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
+    is_custom_attention: bool = True
     """
     Autograd Function dispatching Triton JIT fused kernel on CUDA GPUs
     with exact analytical backward gradient computation.
@@ -624,7 +625,7 @@ class FusedSVDKernelAttention(BaseAttention):
                     cls_c = getattr(mod_c, "__class__", type(mod_c)).__name__
                     base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
                     if "Conv1D" in cls_c or "Conv1D" in base_cls_c or hasattr(mod_c, "nf") or hasattr(base_c, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-                        w = w.t()
+                        w = w.t().contiguous()
                     q_dim = self.q_head_size
                     k_dim = self.kv_head_size
                     v_dim = self.kv_head_size
@@ -658,9 +659,9 @@ class FusedSVDKernelAttention(BaseAttention):
                         cls_o = getattr(mod_o, "__class__", type(mod_o)).__name__
                         base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
                         if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(mod_o, "nf") or hasattr(base_o, "nf"):
-                            out_w = out_w.t()
+                            out_w = out_w.t().contiguous()
                         elif out_w.ndim == 2 and out_w.shape[0] < out_w.shape[1]:
-                            out_w = out_w.t()
+                            out_w = out_w.t().contiguous()
                         w_o = out_w
                         out_b = getattr(base_o, "bias", getattr(mod_o, "bias", None))
                         b_o = out_b.data.clone() if out_b is not None else None
@@ -694,7 +695,7 @@ class FusedSVDKernelAttention(BaseAttention):
                     in_b = in_b.data.clone() if in_b is not None else None
 
                 if in_w.ndim == 2 and in_w.shape[0] < in_w.shape[1]:
-                    in_w = in_w.t()
+                    in_w = in_w.t().contiguous()
 
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
@@ -867,7 +868,7 @@ class FusedSVDKernelAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder or self.is_causal:
             causal_mask = torch.tril(torch.ones(L, L, device=x.device, dtype=torch.bool))

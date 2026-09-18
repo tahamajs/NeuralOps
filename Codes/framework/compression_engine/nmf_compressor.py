@@ -16,6 +16,7 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class NMFLinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Linear layer decomposed via Non-negative Matrix Factorization (NMF):
     W = H @ V + shift
@@ -165,7 +166,7 @@ class NMFLinear(nn.Module):
         k = min(r + 10, max_r)
         try:
             U, S, V = torch.svd_lowrank(W_abs, q=k, niter=2)
-            Vt = V.t()[:r, :]
+            Vt = V.t().contiguous()[:r, :]
             U = U[:, :r]
             S = S[:r]
 
@@ -201,12 +202,12 @@ class NMFLinear(nn.Module):
             H = H_init.clone()
             V = V_init.clone()
             for _ in range(n_iter):
-                HT = H.t()
+                HT = H.t().contiguous()
                 HTW = torch.matmul(HT, W_abs)
                 HTHV = torch.matmul(torch.matmul(HT, H), V).clamp_min(1e-10)
                 V = V * (HTW / HTHV)
 
-                VT = V.t()
+                VT = V.t().contiguous()
                 WVT = torch.matmul(W_abs, VT)
                 HVVT = torch.matmul(torch.matmul(H, V), VT).clamp_min(1e-10)
                 H = H * (WVT / HVVT)
@@ -354,7 +355,7 @@ class NMFCompressor(BaseCompressor):
             raw_w = target_layer.weight.data
             cls_name = target_layer.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
-            W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+            W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
             max_rank = min(W_orig.shape[0], W_orig.shape[1])
             r = min(self.rank, max_rank)
 

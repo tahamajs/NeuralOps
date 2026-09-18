@@ -68,11 +68,11 @@ class KMeansSTEFunction(torch.autograd.Function):
         grad_centroids = None
         if ctx.needs_input_grad[0]:
             if x_cast.ndim == 2:
-                grad_W = grad_output.t().matmul(x_cast)
+                grad_W = grad_output.t().contiguous().matmul(x_cast)
             else:
                 grad_output_flat = grad_output.reshape(-1, grad_output.shape[-1])
                 x_flat = x_cast.reshape(-1, x_cast.shape[-1])
-                grad_W = grad_output_flat.t().matmul(x_flat)
+                grad_W = grad_output_flat.t().contiguous().matmul(x_flat)
 
             grad_centroids = torch.zeros_like(centroids)
             flat_indices = indices.view(-1)
@@ -149,7 +149,7 @@ class KMeansLinear(nn.Module):
         raw_w = target_mod.weight.data
 
         if is_conv1d:
-            W = raw_w.t().float()  # [out_features, in_features]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
             self.in_features = raw_w.shape[0]
             self.out_features = raw_w.shape[1]
         else:
@@ -366,7 +366,7 @@ class KMeansCompressor(BaseCompressor):
 
             cls_name = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            orig_w = target_mod.weight.data.t().float() if is_conv1d else target_mod.weight.data.float()
+            orig_w = target_mod.weight.data.t().contiguous().float() if is_conv1d else target_mod.weight.data.float()
             norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
             out_f, in_f = orig_w.shape[0], orig_w.shape[1]
             orig_layer_params = in_f * out_f

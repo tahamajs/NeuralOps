@@ -54,6 +54,7 @@ def _init_orthogonal_spectral(shape: Tuple[int, ...], shape_2d: Tuple[int, int],
 
 
 class KroneckerTTLoRALayer(nn.Module):
+    is_custom_attention: bool = True
     """
     Kronecker-TT-LoRA Hybrid Compression Layer with Symmetric LoRA Bypass and Shape Padding.
     Combines Kronecker product structure (A1 ⊗ A2) with a 3-core Tensor-Train tensor T(G1, G2, G3)
@@ -210,7 +211,7 @@ class KroneckerTTLoRALayer(nn.Module):
             in_features = raw_w.shape[0]
             out_features = raw_w.shape[1]
             lin = nn.Linear(in_features, out_features, bias=getattr(target_mod, "bias", None) is not None, device=raw_w.device, dtype=raw_w.dtype)
-            lin.weight.data.copy_(raw_w.t())
+            lin.weight.data.copy_(raw_w.t().contiguous())
             if getattr(target_mod, "bias", None) is not None:
                 lin.bias.data.copy_(target_mod.bias.data)
             effective_base = lin
@@ -501,7 +502,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
             try:
                 adapted = self.compress_linear(module)
-                W_orig = raw_w.t().float() if ("conv1d" in target_mod.__class__.__name__.lower() or hasattr(target_mod, "nf")) else raw_w.float()
+                W_orig = raw_w.t().contiguous().float() if ("conv1d" in target_mod.__class__.__name__.lower() or hasattr(target_mod, "nf")) else raw_w.float()
                 delta_w = adapted.get_delta_w().float()
                 err = float(torch.norm(delta_w, p="fro").item() / max(torch.norm(W_orig, p="fro").item(), 1e-12))
                 self.layer_errors[name] = err

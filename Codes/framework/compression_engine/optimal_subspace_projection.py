@@ -64,7 +64,7 @@ class OptimalSubspaceLoRALinear(nn.Module):
         # Normalize to nn.Linear orientation (out_features, in_features); some
         # call sites pass Conv1D-style (in, out) weights for non-square layers.
         if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
-            weight = weight.t()
+            weight = weight.t().contiguous()
 
         self.weight = nn.Parameter(
             weight.to(device=target_device, dtype=target_dtype),
@@ -162,6 +162,7 @@ _ATTN_NAMES = {
 
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection")
 class OptimalSubspaceProjectionCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     Optimal Subspace Projection Compressor using activation-aware randomized SVD.
 
@@ -345,7 +346,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 cls_name = base_module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                 d_out, d_in = W.shape
                 device = raw_w.device
                 dtype = raw_w.dtype

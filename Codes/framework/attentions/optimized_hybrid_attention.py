@@ -287,7 +287,7 @@ class OptimizedHybridAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -302,7 +302,7 @@ class OptimizedHybridAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -371,8 +371,8 @@ class OptimizedHybridAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -431,7 +431,7 @@ class OptimizedHybridAttention(BaseAttention):
             band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
 
-        local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         local_scores = local_scores.masked_fill(~local_mask, -1e4)
         local_probs = F.softmax(local_scores, dim=-1).to(dtype)
         local_probs = torch.nan_to_num(local_probs, nan=0.0)
@@ -451,7 +451,7 @@ class OptimizedHybridAttention(BaseAttention):
         ck = torch.einsum("bhnd,bnr->bhrd", K, comp_k_weights)
         cv = torch.einsum("bhnd,bnr->bhrd", V, comp_v_weights)
 
-        global_scores = torch.matmul(Q.float(), ck.float().transpose(-2, -1)) * scale
+        global_scores = torch.matmul(Q.float(), ck.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder or self.is_causal:
             causal_global = torch.tril(torch.ones(N, self.compression_rank, device=device, dtype=torch.bool))

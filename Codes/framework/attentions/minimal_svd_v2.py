@@ -59,6 +59,7 @@ def apply_rotary_pos_emb(
 
 
 class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
     r"""SVD-Factorized Linear Transformation for NOVA Architecture."""
 
     def __init__(
@@ -301,7 +302,7 @@ class MinimalSVDAttentionV2(BaseAttention):
                 bias_data = bias.data.clone() if bias is not None else None
                 p_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -321,7 +322,7 @@ class MinimalSVDAttentionV2(BaseAttention):
                 w_o = w_o.data.clone()
                 p_cls = getattr(base_o, "__class__", type(base_o)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
@@ -394,7 +395,7 @@ class MinimalSVDAttentionV2(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into factorized projection modules
@@ -477,7 +478,7 @@ class MinimalSVDAttentionV2(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross and N > 1:
             causal_mask = torch.triu(

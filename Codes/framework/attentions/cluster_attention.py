@@ -350,7 +350,7 @@ class ClusterAttention(BaseAttention):
                 weight = weight.data.clone()
                 p_cls = getattr(base_c, "__class__", type(base_c)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.ndim == 2 and weight.shape[1] == 3 * self.hidden_size):
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bias_data = bias_mod.data.clone() if bias_mod is not None else None
@@ -371,7 +371,7 @@ class ClusterAttention(BaseAttention):
                 w_o = w_o.data.clone()
                 p_cls = getattr(base_o, "__class__", type(base_o)).__name__
                 if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, bias_o.data.clone() if bias_o is not None else None)
 
@@ -611,7 +611,7 @@ class ClusterAttention(BaseAttention):
 
         if is_decoder or is_cross_attention:
             # Exact attention with causal masking to prevent future token leakage
-            scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
             if mask is not None:
                 if mask.dim() == 4:
@@ -652,7 +652,7 @@ class ClusterAttention(BaseAttention):
             key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2) if valid_mask_2d is not None else torch.ones((B, 1, 1, L), dtype=torch.bool, device=device)
 
             if L <= 64 and (self.num_clusters >= 8 or not output_attentions):
-                scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+                scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
                 scores = scores.masked_fill(~key_valid_4d, -10000.0)
                 attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
                 attn = self.dropout(attn)
@@ -665,7 +665,7 @@ class ClusterAttention(BaseAttention):
                 centroids, cluster_ids, counts = self._kmeans_cluster(Q, K_num, self.n_iters, valid_mask=valid_mask_2d)
 
                 # 2. Centroid-to-Key Global Cross-Attention [B, H, K, L]
-                scores_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale
+                scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
                 scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
                 attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(dtype)
                 attn_cent = self.dropout(attn_cent)
@@ -674,7 +674,7 @@ class ClusterAttention(BaseAttention):
                 V_cent = torch.matmul(attn_cent, V)
 
                 # 3. Differentiable Query-to-Centroid soft assignment with learned sharpening & context gathering [B, H, L, Dh]
-                scores_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
+                scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
                 empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)  # [B, H, 1, K]
                 scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
                 temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
@@ -685,7 +685,7 @@ class ClusterAttention(BaseAttention):
 
                 # 4. Optional Local Sliding Window Attention
                 if self.window_size > 0 and self.window_size < L:
-                    scores_loc = torch.matmul(Q, K.transpose(-2, -1)) * scale
+                    scores_loc = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
                     idx = self._seq_idx[:L].to(device) if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L else torch.arange(L, device=device)
                     band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
                     band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d

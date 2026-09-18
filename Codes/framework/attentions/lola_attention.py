@@ -151,13 +151,13 @@ class LowRankCache(nn.Module):
                         y_k = torch.matmul(rk, self._cache_proj)
                         q_orth_k, _ = torch.linalg.qr(y_k)
                         self.low_rank_k_buf = torch.matmul(
-                            q_orth_k, torch.matmul(q_orth_k.transpose(-2, -1), rk)
+                            q_orth_k, torch.matmul(q_orth_k.transpose(-2, -1).contiguous(), rk)
                         ).to(self.recent_k.dtype)
 
                         y_v = torch.matmul(rv, self._cache_proj)
                         q_orth_v, _ = torch.linalg.qr(y_v)
                         self.low_rank_v_buf = torch.matmul(
-                            q_orth_v, torch.matmul(q_orth_v.transpose(-2, -1), rv)
+                            q_orth_v, torch.matmul(q_orth_v.transpose(-2, -1).contiguous(), rv)
                         ).to(self.recent_v.dtype)
                     except Exception:
                         pass
@@ -388,7 +388,7 @@ class LoLAAttention(BaseAttention):
                 bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bias_data = bias.data.clone() if bias is not None else None
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]):
-                    weight = weight.t()
+                    weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 q_w = weight[:split_size, :]
                 k_w = weight[split_size : 2 * split_size, :]
@@ -409,7 +409,7 @@ class LoLAAttention(BaseAttention):
                 p_cls = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                 b_cls = getattr(base_o, "__class__", type(base_o)).__name__
                 if ("Conv1D" in p_cls) or ("Conv1D" in b_cls) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
-                    w_o = w_o.t()
+                    w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
@@ -481,7 +481,7 @@ class LoLAAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         # Copy into projection modules
@@ -553,7 +553,7 @@ class LoLAAttention(BaseAttention):
             or any(_cfg_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
         )
 
-        scores_lr = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:
@@ -589,7 +589,7 @@ class LoLAAttention(BaseAttention):
             C = cached_k.size(1)
             K_cache = cached_k.view(B, H, C, d)
             V_cache = cached_v.view(B, H, C, d)
-            scores_cache = torch.matmul(Q, K_cache.transpose(-2, -1)) * scale * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
+            scores_cache = torch.matmul(Q, K_cache.transpose(-2, -1).contiguous()) * scale * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
             scores = torch.cat([scores_lr * torch.sigmoid(torch.clamp(self.LR_scale, min=-10.0, max=10.0)), scores_cache], dim=-1)
             V_comb = torch.cat([V, V_cache], dim=2)
         else:

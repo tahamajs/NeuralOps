@@ -84,7 +84,7 @@ def _delta_chunk_forward(
         denom = (1.0 + norm_k_sq).clamp(min=1.0)
         step = (at / denom).clamp(min=0.0, max=1.0)
 
-        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
+        delta_update = step * torch.matmul(kt.transpose(-1, -2).contiguous(), err)
         curr_S = bt * curr_S + delta_update
         curr_S = torch.nan_to_num(curr_S, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -487,7 +487,7 @@ class GatedDeltaNet(BaseAttention):
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
                 if hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -504,7 +504,7 @@ class GatedDeltaNet(BaseAttention):
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
                     if hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -575,8 +575,8 @@ class GatedDeltaNet(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 

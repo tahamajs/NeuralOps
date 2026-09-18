@@ -370,7 +370,7 @@ class GoldFinchAHNBlock(BaseAttention):
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 )
                 if is_conv1d:
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -392,7 +392,7 @@ class GoldFinchAHNBlock(BaseAttention):
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv1d:
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -459,8 +459,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -535,7 +535,7 @@ class GoldFinchAHNBlock(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim ** -0.5)
+        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * (self.head_dim ** -0.5)
 
         idx = torch.arange(L, device=x.device)
         dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()

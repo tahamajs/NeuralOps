@@ -267,7 +267,7 @@ class NativeSparseAttention(BaseAttention):
             if c_w is not None:
                 c_w = c_w.data.clone()
                 if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
-                    c_w = c_w.t()
+                    c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
@@ -282,7 +282,7 @@ class NativeSparseAttention(BaseAttention):
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t()
+                        o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
@@ -312,7 +312,7 @@ class NativeSparseAttention(BaseAttention):
                         if mod is not None and hasattr(mod, "weight"):
                             w_data = mod.weight.data.clone()
                             if (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
-                                w_data = w_data.t()
+                                w_data = w_data.t().contiguous()
                             extracted[proj_key] = (w_data, mod.bias.data.clone() if mod.bias is not None else None)
                             break
 
@@ -354,8 +354,8 @@ class NativeSparseAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
-                    w = w.t()
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                    w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
@@ -426,7 +426,7 @@ class NativeSparseAttention(BaseAttention):
 
             pass
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale  # [B, H, L, L]
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale  # [B, H, L, L]
 
         # Valid mask handling
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)

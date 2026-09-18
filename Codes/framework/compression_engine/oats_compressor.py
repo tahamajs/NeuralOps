@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class OATSLoRALinear(nn.Module):
+    is_custom_attention: bool = True
     """
     Linear layer containing OATS decomposed base weights (frozen)
     with optional trainable LoRA adapters (lora_A, lora_B).
@@ -68,7 +69,7 @@ class OATSLoRALinear(nn.Module):
         # Strictly ensure nn.Linear weight orientation (out_features, in_features) for F.linear.
         # Conv1D stores weight as (in_features, out_features) = (nx, nf).
         if weight.shape == (in_features, out_features) and in_features != out_features:
-            weight = weight.t()
+            weight = weight.t().contiguous()
 
         self.weight = nn.Parameter(
             weight.to(device=target_device, dtype=target_dtype),
@@ -120,7 +121,7 @@ class OATSLoRALinear(nn.Module):
 
         # Strictly orient weight as (out_features, in_features) for F.linear
         if weight.shape == (in_features, out_features) and in_features != out_features:
-            weight = weight.t()
+            weight = weight.t().contiguous()
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
@@ -463,7 +464,7 @@ class OATSCompressor(BaseCompressor):
                 cls_name = base_module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                 device = raw_w.device
                 dtype = raw_w.dtype
 

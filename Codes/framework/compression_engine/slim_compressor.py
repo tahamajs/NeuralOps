@@ -53,6 +53,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 @COMPRESSOR_REGISTRY.register("slim")
 @COMPRESSOR_REGISTRY.register("slim_compressor")
 class SLiMCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     SLiM Compressor: One-shot joint b-bit quantization, 2:4 structured sparsity, and low-rank residual recovery.
     """
@@ -146,7 +147,7 @@ class SLiMCompressor(BaseCompressor):
                 device = raw_w.device
                 dtype = raw_w.dtype
 
-                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
 
                 # 1. Quantize (Weights only; biases are preserved in full precision to avoid drift)
                 W_q = self._quantize(W)
@@ -196,7 +197,7 @@ class SLiMCompressor(BaseCompressor):
                             p.requires_grad = False
                         continue
 
-                final_w = W_final.t() if is_conv1d else W_final
+                final_w = W_final.t().contiguous() if is_conv1d else W_final
                 base_mod.weight.data = final_w.to(dtype=dtype, device=device)
                 compressed_layer = base_mod
                 # Preserve existing LoRA adapter weights if the source module has them

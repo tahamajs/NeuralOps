@@ -338,6 +338,7 @@ class CacheNotesKVCache:
 @COMPRESSOR_REGISTRY.register("cachenotes")
 @COMPRESSOR_REGISTRY.register("cachenotes_compressor")
 class CacheNotesCompressor(BaseCompressor):
+    is_custom_attention: bool = True
     """
     CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning
     with continuous learnable CPT Generator.
@@ -499,7 +500,7 @@ class CacheNotesCompressor(BaseCompressor):
                     cls_name = module.__class__.__name__.lower()
                     is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
                     raw_w = target_mod.weight.data.float().to(self.target_device)
-                    W = raw_w.t() if is_conv1d else raw_w
+                    W = raw_w.t().contiguous() if is_conv1d else raw_w
                     out_f, in_f = W.shape
 
                     # Generate learned importance
@@ -667,7 +668,7 @@ class CacheNotesCompressor(BaseCompressor):
             dtype = raw_w.dtype
 
             # Standardize shape to [out_features, in_features] in FP32
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             out_f, in_f = W.shape
 
             # Retrieve CPT importance modulation per output feature (learned or static)

@@ -322,7 +322,7 @@ class ViGAttention(BaseAttention):
             bias = getattr(old_attn.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if ("Conv1D" in old_attn.c_attn.__class__.__name__) or hasattr(old_attn.c_attn, "nf") or (weight.dim() == 2 and (weight.shape[0] < weight.shape[1] or weight.shape[1] == 3 * self.dim)):
-                weight = weight.t()
+                weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
@@ -337,7 +337,7 @@ class ViGAttention(BaseAttention):
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
             if ("Conv1D" in old_attn.c_proj.__class__.__name__) or hasattr(old_attn.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim))):
-                w_o = w_o.t()
+                w_o = w_o.t().contiguous()
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
@@ -388,7 +388,7 @@ class ViGAttention(BaseAttention):
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
-                return w.t()
+                return w.t().contiguous()
             return w
 
         with torch.no_grad():
@@ -520,7 +520,7 @@ class ViGAttention(BaseAttention):
 
         # Branch 1: Topological Graph Attention
         scale = 1.0 / math.sqrt(Dh)
-        scores_graph = torch.matmul(q, k.transpose(-1, -2)) * scale
+        scores_graph = torch.matmul(q, k.transpose(-1, -2).contiguous()) * scale
         scores_graph = scores_graph.masked_fill(~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0)
         if attention_mask is not None:
             scores_graph = apply_attention_mask(scores_graph, attention_mask)
@@ -540,19 +540,19 @@ class ViGAttention(BaseAttention):
 
         if is_decoder:
             causal_tril = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores_lin = torch.matmul(q_lin, k_lin.transpose(-1, -2)) * causal_tril
+            scores_lin = torch.matmul(q_lin, k_lin.transpose(-1, -2).contiguous()) * causal_tril
             denom_lin = scores_lin.sum(dim=-1, keepdim=True)
             out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(dtype)
         else:
-            kv = torch.matmul(k_lin.transpose(-1, -2), v_f)  # [B, H, Dh, Dh]
+            kv = torch.matmul(k_lin.transpose(-1, -2).contiguous(), v_f)  # [B, H, Dh, Dh]
             num = torch.matmul(q_lin, kv)                    # [B, H, N, Dh]
-            denom = torch.matmul(q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2))  # [B, H, N, 1]
+            denom = torch.matmul(q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous())  # [B, H, N, 1]
             out_global = (num / denom.clamp(min=1.0)).to(dtype)
 
         # Gated Fusion
         gates = torch.sigmoid(self.gate_net(hidden_states)).view(B, N, self.num_heads, 2)
-        gate_graph = gates[..., 0].transpose(1, 2).unsqueeze(-1).to(dtype)
-        gate_global = gates[..., 1].transpose(1, 2).unsqueeze(-1).to(dtype)
+        gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
+        gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
 
         out = gate_graph * out_graph + gate_global * out_global
         out = self.dropout(out)

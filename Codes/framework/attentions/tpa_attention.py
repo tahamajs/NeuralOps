@@ -350,7 +350,7 @@ class TPAttention(BaseAttention):
                 W = src.c_attn.weight.detach()
                 B_vec = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if W.shape[0] != 3 * self.dim and W.shape[1] == 3 * self.dim:
-                    W = W.t()
+                    W = W.t().contiguous()
                 if W.shape[0] == 3 * self.dim:
                     w_q, w_k, w_v = W.chunk(3, dim=0)
                     if B_vec is not None:
@@ -359,7 +359,7 @@ class TPAttention(BaseAttention):
                 if hasattr(src, "c_proj"):
                     w_o = src.c_proj.weight.detach()
                     if w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
-                        w_o = w_o.t()
+                        w_o = w_o.t().contiguous()
                     b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: BERT / RoBERTa (query, key, value, dense)
@@ -495,8 +495,8 @@ class TPAttention(BaseAttention):
                 if w is not None:
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-                    elif w.t().shape == target_layer.weight.shape:
-                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                    elif w.t().contiguous().shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.t().contiguous().to(target_layer.weight.dtype))
                     else:
                         min_0 = min(target_layer.weight.shape[0], w.shape[0])
                         min_1 = min(target_layer.weight.shape[1], w.shape[1])
@@ -689,7 +689,7 @@ class TPAttention(BaseAttention):
         else:
             # Fallback path if output_attentions or head_mask are explicitly requested
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(Q, K.transpose(-1, -2)) * scale
+            scores = torch.matmul(Q, K.transpose(-1, -2).contiguous()) * scale
             if is_causal_mask and custom_mask is None:
                 causal_mask = torch.triu(
                     torch.full((L, L), float("-inf"), device=scores.device, dtype=scores.dtype),
