@@ -1052,9 +1052,7 @@ def evaluate_single_combination_opt(
                         val_tokenized,
                         batch_size=current_batch_size,
                         shuffle=False,
-                        pin_memory=True,
-                        num_workers=4,
-                        prefetch_factor=2,
+                        pin_memory=is_cuda,
                     )
                     
                     with torch.no_grad():
