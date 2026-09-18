@@ -350,7 +350,7 @@ def build_model_instance(
         from transformers import Qwen2Config, Qwen2ForSequenceClassification
         kv_heads = max(1, num_heads // 2)
         cfg = Qwen2Config(
-            vocab_size=vocab_size if vocab_size != 30522 else 1000,
+            vocab_size=151936,
             hidden_size=hidden_size,
             intermediate_size=hidden_size * 2,
             num_hidden_layers=num_layers,
@@ -392,7 +392,8 @@ def _filter_batch(batch: Dict[str, torch.Tensor], model_family: str, model: nn.M
     try:
         sig = inspect.signature(model.forward)
         valid = set(sig.parameters.keys()) - {"self"}
-        if "kwargs" not in valid and "**kwargs" not in str(sig):
+        has_varkwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+        if not has_varkwargs:
             b = {k: v for k, v in b.items() if k in valid}
     except (ValueError, TypeError):
         pass
@@ -408,6 +409,8 @@ def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional
         loss = outputs.loss
     if hasattr(outputs, "logits"):
         logits = outputs.logits
+        if logits.dim() == 3:
+            logits = logits[:, -1, :num_labels]
     elif hasattr(outputs, "last_hidden_state"):
         hs = outputs.last_hidden_state
         logits = hs.mean(dim=1)[:, :num_labels]
@@ -464,11 +467,10 @@ def apply_module_to_model(
         module_type = "compressor"
     else:
         # Check files on disk
-        cur_file = Path(__file__).resolve()
-        codes_dir = cur_file.parent.parent
-        if (codes_dir / "framework" / "compression_engine" / f"{module_name}.py").exists():
+        import importlib.util
+        if importlib.util.find_spec(f"framework.compression_engine.{module_name}"):
             module_type = "compressor"
-        elif (codes_dir / "framework" / "attentions" / f"{module_name}.py").exists():
+        elif importlib.util.find_spec(f"framework.attentions.{module_name}"):
             module_type = "attention"
 
     if module_type == "attention":
@@ -500,8 +502,9 @@ def apply_module_to_model(
                 is_single_layer = isinstance(res, (BaseAttention, nn.Linear)) or ("Attention" in type(res).__name__ and not any(hasattr(res, a) for a in ("encoder", "transformer", "bert", "roberta", "distilbert", "gpt2", "qwen2")))
                 is_whole_model = (
                     res is not None
-                    and not is_single_layer
-                    and (res is model or (hasattr(res, "named_parameters") and any(hasattr(res, a) for a in ("config", "encoder", "transformer", "model", "roberta", "bert", "distilbert", "gpt2", "qwen2", "layers", "layer", "h"))))
+                    and res is not model
+                    and isinstance(res, nn.Module)
+                    and sum(p.numel() for p in res.parameters()) > 1000
                 )
                 if is_whole_model:
                     model = res
@@ -657,6 +660,8 @@ def _generate_synthetic_batch(
 
     if ds in {"wikitext2", "wikitext103", "c4", "lm", "ptb"}:
         labels = input_ids.clone()
+        labels[:, :-1] = input_ids[:, 1:]
+        labels[:, -1] = -100
     else:
         labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
 
@@ -728,17 +733,18 @@ def get_dataset_batch(
 
             if val_tokenized is not None and len(val_tokenized) > 0:
                 is_cuda = (device.type == "cuda")
-                import os, sys
-                num_workers_val = min(2, os.cpu_count() or 1)
-                loader = torch.utils.data.DataLoader(
-                    val_tokenized,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    pin_memory=False,
-                    num_workers=num_workers_val,
-                    prefetch_factor=2 if num_workers_val > 0 else None,
-                )
-                raw_batch = next(iter(loader))
+                n = min(batch_size, len(val_tokenized))
+                sample = val_tokenized[list(range(n))]
+                raw_batch = {}
+                for k in val_tokenized.column_names:
+                    if k in sample:
+                        vals = sample[k]
+                        if isinstance(vals[0], torch.Tensor):
+                            raw_batch[k] = torch.stack(vals)
+                        elif isinstance(vals[0], (int, float, bool)):
+                            raw_batch[k] = torch.tensor(vals)
+                        else:
+                            raw_batch[k] = vals
                 batch = {
                     ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
                     for k, v in raw_batch.items()
@@ -934,6 +940,7 @@ def evaluate_single_combination_opt(
             batch = get_dataset_batch(dataset, model_family, current_batch_size, seq_len, num_labels=num_labels, device=device, allow_synthetic=allow_synthetic)
             filtered_batch = _filter_batch(batch, model_family, model)
 
+            model.eval()
             # --- FLOPs Profiling (Warmup) ---
             flops_macs = 0.0
             with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, with_flops=True) as prof:
@@ -949,6 +956,7 @@ def evaluate_single_combination_opt(
             for _ in range(num_warmup):
                 with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                     model(**filtered_batch)
+            model.train()
 
             traj_loss, traj_grad_norm, traj_fwd_ms, traj_bwd_ms = [], [], [], []
             
