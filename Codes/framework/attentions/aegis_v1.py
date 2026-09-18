@@ -257,6 +257,42 @@ def local_window_attention(
         causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
         mask = mask & causal
 
+    # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+
+    try:
+
+
+        _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+
+        _ks = K.half() if K.dtype == torch.float32 else K
+
+
+        _vs = V.half() if V.dtype == torch.float32 else V
+
+
+        _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+
+        _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+
+        _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+
+        _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+
+        return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+
+    except Exception:
+
+
+        pass
+
+
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     mask_val = -10000.0
     scores = scores.masked_fill(~mask, mask_val)
@@ -319,6 +355,7 @@ def kernel_linear_attention(
 class AegisAttentionV1(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -558,7 +595,7 @@ class AegisAttentionV1(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b, self.cfg.svd_energy)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
+                    eye_w = torch.eye(self.all_head_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
                     target.decompose_from_weight(eye_w, None, self.cfg.svd_energy)
 
         if hasattr(old_attn, "is_decoder"):

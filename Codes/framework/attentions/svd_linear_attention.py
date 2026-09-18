@@ -253,6 +253,7 @@ class SVDLinearAttention(BaseAttention):
     """
 
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -897,9 +898,9 @@ class SVDLinearAttention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Project Q, K, V
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. RoPE support
         if position_embeddings is None:
@@ -976,9 +977,9 @@ class SVDLinearAttention(BaseAttention):
             x_t = x_t.unsqueeze(1)
 
         B = x_t.shape[0]
-        q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(x_t).view(B, 1, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if self.num_kv_heads < self.num_heads:
             k = repeat_kv(k, self.kv_repeat)

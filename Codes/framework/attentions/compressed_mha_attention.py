@@ -81,6 +81,7 @@ class CompressedDistilBertAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -399,9 +400,9 @@ class CompressedDistilBertAttention(BaseAttention):
         k = k_raw + self.bias_k
         v = v_raw + self.bias_v
 
-        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # Apply RoPE
         position_embeddings = kwargs.get("position_embeddings", None)

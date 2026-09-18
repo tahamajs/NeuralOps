@@ -182,6 +182,7 @@ class LoRALinear(nn.Module):
 class HymbaTransXBlock(BaseAttention):
     r"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block."""
 
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -502,11 +503,11 @@ class HymbaTransXBlock(BaseAttention):
 
         B, L, D = x.shape
 
-        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

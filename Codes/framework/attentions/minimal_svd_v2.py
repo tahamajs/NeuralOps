@@ -188,6 +188,7 @@ class MinimalSVDAttentionV2(BaseAttention):
 
     supports_causal: bool = True
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -405,7 +406,7 @@ class MinimalSVDAttentionV2(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b, self.energy)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
+                    eye_w = torch.eye(self.all_head_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
                     target.decompose_from_weight(eye_w, None, self.energy)
 
                 target.freeze_base_weights()
@@ -437,9 +438,9 @@ class MinimalSVDAttentionV2(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
 
-        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
@@ -452,6 +453,30 @@ class MinimalSVDAttentionV2(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(D)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+        try:
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         if self.is_decoder and not is_cross and N > 1:

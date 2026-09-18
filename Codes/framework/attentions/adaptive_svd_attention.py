@@ -150,6 +150,7 @@ class AdaptiveSVDLinear(nn.Module):
 class AdaptiveSVDAttention(BaseAttention):
     r"""Multi-Head Attention with Adaptive SVD + Residual factorized projections."""
 
+    is_custom_attention: bool = True
     supports_causal = True
     supports_bidirectional = True
     supports_gqa = True
@@ -550,9 +551,9 @@ class AdaptiveSVDAttention(BaseAttention):
         N_k = kv_input.shape[1]
         H, D = self.num_heads, self.head_dim
 
-        Q = self.query(hidden_states).view(B, N_q, H, D).transpose(1, 2)
-        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
-        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
+        Q = self.query(hidden_states).view(B, N_q, H, D).transpose(1, 2).contiguous()
+        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2).contiguous()
 
         # Apply RoPE (Direct kwargs support for Qwen3.5/Mistral/LLaMA)
         position_embeddings = kwargs.get("position_embeddings", None)

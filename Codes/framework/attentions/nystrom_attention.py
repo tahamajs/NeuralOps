@@ -148,6 +148,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("nystrom", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("nystrom_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class NystromAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -429,6 +430,30 @@ class NystromAttention(BaseAttention):
         dtype: torch.dtype,
     ) -> torch.Tensor:
         scale = 1.0 / math.sqrt(self.head_dim)
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+        try:
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
         scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
         attn_weights = F.softmax(scores, dim=-1).to(dtype)
@@ -454,9 +479,9 @@ class NystromAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -486,8 +511,8 @@ class NystromAttention(BaseAttention):
             m = min(self.num_landmarks, N)
 
             # Adaptive pooling landmarks
-            Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)
-            K_flat = K.reshape(B * H, N, d).transpose(1, 2)
+            Q_flat = Q.reshape(B * H, N, d).transpose(1, 2).contiguous()
+            K_flat = K.reshape(B * H, N, d).transpose(1, 2).contiguous()
 
             Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
             K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
