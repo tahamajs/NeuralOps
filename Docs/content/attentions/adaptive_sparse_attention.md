@@ -561,3 +561,9 @@ Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery st
 | Model Architecture | Baseline Acc | Adaptive Sparse Acc | Δ Acc | F1 Score | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------:|:-----------:|:------------------------|
 | ROBERTA | 78.56% | 66.51% | -12.05% | 0.6198 | 687.5 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-sparse) |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.71% | **89.56%** | -1.15% | 0.8926 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-adaptive-sparse-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-sparse-attention) | 2026-09-18 |
