@@ -481,11 +481,17 @@ def apply_module_to_model(
                 logger.warning("Could not import attention module '%s': %s", module_name, e)
 
         # Check if dedicated injector function is registered
-        custom_injector = (
-            ATTENTION_REGISTRY.get(f"inject_{module_name}")
-            or ATTENTION_REGISTRY.get(f"{module_name}_inject")
-            or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
-        )
+        resolved_mod = ATTENTION_REGISTRY.get(module_name)
+        custom_injector = None
+        if resolved_mod is not None and callable(resolved_mod) and not isinstance(resolved_mod, type):
+            custom_injector = resolved_mod
+        
+        if custom_injector is None:
+            custom_injector = (
+                ATTENTION_REGISTRY.get(f"inject_{module_name}")
+                or ATTENTION_REGISTRY.get(f"{module_name}_inject")
+                or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
+            )
         injected = False
         if custom_injector is not None and callable(custom_injector):
             try:
