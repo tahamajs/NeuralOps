@@ -846,7 +846,8 @@ def inject_spectron_layer(
     if model_config is None and hasattr(old_attn, "config"):
         model_config = old_attn.config
 
-    r = _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", 64)))
+    h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
+    r = _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", h_sz)))
     ranks = kwargs.pop("ranks", None)
     if ranks is None:
         ranks = {"q": r, "k": r, "v": r, "o": r}
