@@ -11,39 +11,17 @@ from datetime import datetime
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--module", required=True)
-    ap.add_argument("--model", required=True)
-    ap.add_argument("--model_family", required=True)
-    ap.add_argument("--dataset", required=True)
-    ap.add_argument("--dataset_dir", required=False, default=None)
-    ap.add_argument("--output_json", required=True,
-                    help="Path to write the result JSON")
-    ap.add_argument("--output_dir", required=True,
-                    help="Directory for checkpoints and metrics")
-    ap.add_argument("--rank", type=int, default=64)
-    ap.add_argument("--recovery_steps", type=int, default=50)
-    ap.add_argument("--lora_rank", type=int, default=16)
-    ap.add_argument("--batch_size", type=int, default=8)
-    ap.add_argument("--precision", default="fp16")
-    ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--timeout_hint", type=int, default=600)
-    
-    # Optional arguments that might be passed from the parent sweep script
-    ap.add_argument("--optimizer", type=str, default="adamw")
-    ap.add_argument("--learning_rate", type=float, default=2e-4)
-    ap.add_argument("--weight_decay", type=float, default=1e-2)
-    ap.add_argument("--use_muon", action="store_true")
-    ap.add_argument("--muon_lr", type=float, default=0.02)
-    ap.add_argument("--adam_lr", type=float, default=2e-4)
-    ap.add_argument("--head_lr", type=float, default=1e-4)
-    ap.add_argument("--finetune_mode", type=str, default="lora")
-    ap.add_argument("--seq_len", type=int, default=128)
-    ap.add_argument("--debug", action="store_true")
-    ap.add_argument("--target_layer", type=str, default="all")
+    from framework.run_quality_sweep import parse_args, run_single_module_main
 
-    args = ap.parse_args()
-    args.modules = [args.module]
+    parser_custom = argparse.ArgumentParser(add_help=False)
+    parser_custom.add_argument("--module", required=True)
+    parser_custom.add_argument("--output_json", required=True)
+    known, remaining = parser_custom.parse_known_args()
+
+    args = parse_args(remaining)
+    args.module = known.module
+    args.output_json = known.output_json
+    args.modules = [known.module]
 
     result = {
         "module": args.module,
