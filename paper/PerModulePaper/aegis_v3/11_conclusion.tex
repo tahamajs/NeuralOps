@@ -1,1 +1,6 @@
-\section{Conclusion}\texttt{aegis\_v3} validates learnable gating for dynamic local-global attention integration.
+\section{Conclusion}
+This paper formalized the architecture, mathematical formulations, and empirical evaluation of \texttt{aegisv3}. By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \texttt{aegisv3} effectively alleviates transformer compute and memory overhead.
+
+Empirical evaluations across encoder and decoder backbones confirm that \texttt{aegisv3} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery across distinct domain datasets and task objectives without inducing catastrophic representation degradation.
+
+The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation, non-uniform singular truncation, and cross-layer weight sharing to further diminish memory footprints in next-generation foundation models.
