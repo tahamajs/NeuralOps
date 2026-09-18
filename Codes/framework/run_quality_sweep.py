@@ -2078,6 +2078,8 @@ def parse_args(argv=None):
             free_gb = free_bytes / (1024 ** 3)
             total_gb = total_bytes / (1024 ** 3)
             LOG.info("GPU VRAM: %.2f GB free / %.2f GB total on %s", free_gb, total_gb, torch.cuda.get_device_name())
+        except Exception:
+            pass
 
     return args
 
