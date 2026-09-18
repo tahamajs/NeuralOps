@@ -1,3 +1,17 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{liftr}.
+\subsection{Algorithmic Formulation}
+The \texttt{liftr} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{LIFTR – Linearized Function Trick Compressor.
+Registered in COMPRESSOR\_REGISTRY as 'liftr' and 'liftr\_compressor'.
+
+Mathematical Formulation:
+1. Activation Function Linearization:
+   - $\\\\operatorname{ReLU}(x) \\\\to \\\\operatorname{Identity}(x)$
+   - $\\\\operatorname{GELU}(x) \\\\approx \\\\alpha \\\\cdot x$ (default $\\\\alpha = 0.8$)
+   - $\\\\operatorname{SiLU}(x) \\\\approx \\\\alpha \\\\cdot x$ (default $\\\\alpha = 0.8$)
+2. Quadratic Softmax Attention Linearization:
+   $$\\\\operatorname{Attn}(Q, K, V) = \\\\operatorname{Softmax}\\\\left(\\\\frac{Q K^\\\\top}{\\\\sqrt{d\_k}}\\\\ri}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

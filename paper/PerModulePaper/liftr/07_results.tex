@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{liftr}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_liftr/roberta/summary.csv} & liftr & PASS & 80.16\% & 585.62 MB \\
+\texttt{results/unified\_liftr/distilbert/summary.csv} & liftr & PASS & 90.14\% & 337.59 MB \\
+\texttt{results/unified\_liftr/gpt2/summary.csv} & liftr & PASS & 61.01\% & 634.91 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 27.04 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 25.29 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 27.23 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 29.18 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 17.91 ms & 429.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

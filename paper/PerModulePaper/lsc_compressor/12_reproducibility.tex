@@ -1,3 +1,8 @@
-\section{12 Reproducibility}
-
-Formal architectural specifications for \texttt{lsc_compressor}.
+\section{Reproducibility Guide}
+Evaluation commands can be reproduced directly using the unified framework runner:
+\begin{lstlisting}[language=bash]
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor lsc_compressor \
+    --output_dir results/unified_lsc_compressor
+\end{lstlisting}

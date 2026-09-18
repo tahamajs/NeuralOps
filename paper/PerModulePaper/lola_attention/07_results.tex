@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{lola_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_lola\_attention/roberta/summary.csv} & lola\_attention & PASS\_LOW & 50.92\% & 808.59 MB \\
+\texttt{results/unified\_lola\_attention/distilbert/summary.csv} & lola\_attention & PASS & 77.98\% & 260.06 MB \\
+\texttt{results/unified\_lola\_attention/gpt2/summary.csv} & lola\_attention & PASS & 57.22\% & 467.79 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

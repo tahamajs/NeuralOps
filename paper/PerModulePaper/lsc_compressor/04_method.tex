@@ -1,3 +1,17 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{lsc_compressor}.
+\subsection{Algorithmic Formulation}
+The \texttt{lsc_compressor} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{LSC: Low-Rank Spectral & Fourier-Domain Linear Compressor.
+Registered in COMPRESSOR\_REGISTRY as 'lsc' and 'lsc\_compressor'.
+
+Mathematical Formulation:
+1. 2D Discrete Fourier Transform:
+   $$\\\\widehat{W} = \\\\mathcal{F}\_{2D}(W) \\\\in \\\\mathbb{C}^{d\_{out} \\\\times d\_{in}}$$
+2. Spectral Magnitude Spectrum:
+   $$M\_{ij} = |\\\\widehat{W}\_{ij}| = \\\\sqrt{\\\\operatorname{Re}(\\\\widehat{W}\_{ij})^2 + \\\\operatorname{Im}(\\\\widehat{W}\_{ij})^2}$$
+3. Spectral Coefficient Selection:
+   $$\\\\mathcal{M}\_{spectral} = \\\\operatorname{Top-}k(M), \\\\quad k = \\\\min(r \\\\cdot r, d\_{out}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

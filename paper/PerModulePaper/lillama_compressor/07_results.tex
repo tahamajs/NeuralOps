@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{lillama_compressor}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_lillama/roberta/summary.csv} & lillama & PASS & 85.44\% & 583.49 MB \\
+\texttt{results/unified\_lillama/distilbert/summary.csv} & lillama & PASS & 87.5\% & 337.59 MB \\
+\texttt{results/unified\_lillama/gpt2/summary.csv} & lillama & PASS & 56.88\% & 634.91 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 25.96 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 25.44 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.47 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 28.13 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.5 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

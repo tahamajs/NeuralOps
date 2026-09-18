@@ -1,3 +1,8 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{lsc_compressor}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_lsc/roberta/summary.csv} & lsc & PASS & 72.02\% & 301.72 MB \\
+\texttt{results/unified\_lsc/distilbert/summary.csv} & lsc & PASS & 90.48\% & 311.19 MB \\
+\texttt{results/unified\_lsc/gpt2/summary.csv} & lsc & PASS & 62.04\% & 636.04 MB \\
+all\_121\_gpu\_matrix & lsc & PASS & 1.0x (0.402s) & 197.3 MB \\
+all\_121\_gpu\_matrix & lsc\_compressor & PASS & 1.0x (0.189s) & 197.3 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
