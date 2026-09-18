@@ -1,0 +1,2 @@
+module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate,trainable_params,initial_loss,final_loss,loss_change
+squeezing_heads,mrpc,PASS,37.75,0.1753,81.62,0.88,43.87,PASS,1181954,2.9415905475616455,0.541734516620636,2.3999

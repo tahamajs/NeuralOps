@@ -1,0 +1,37 @@
+{
+  "test": "rank_128",
+  "rank": 128,
+  "full_ft": false,
+  "zero_shot_acc": 68.38,
+  "zero_shot_f1": 0.8122,
+  "post_recovery_acc": 68.38,
+  "post_recovery_f1": 0.8122,
+  "zero_preds": {
+    "1": 408
+  },
+  "post_preds": {
+    "1": 408
+  },
+  "step_logs": [
+    {
+      "step": 1,
+      "loss": 0.6699,
+      "grad_norm": 2.0245
+    },
+    {
+      "step": 10,
+      "loss": 0.7275,
+      "grad_norm": 2.666
+    },
+    {
+      "step": 25,
+      "loss": 0.7078,
+      "grad_norm": 2.0761
+    },
+    {
+      "step": 50,
+      "loss": 0.7762,
+      "grad_norm": 3.18
+    }
+  ]
+}

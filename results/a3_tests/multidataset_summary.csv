@@ -1,0 +1,7 @@
+Model,Dataset,Status,Accuracy (%),F1,Elapsed (s)
+DistilBERT,mnli,PASS,44.4,0.0,175.1
+RoBERTa,mnli,PASS,40.1,0.0,87.7
+GPT-2,mnli,PASS_LOW,36.1,0.0,78.8
+DistilBERT,ag_news,PASS_LOW,25.3,0.0,54.0
+RoBERTa,ag_news,PASS_LOW,25.3,0.0,76.7
+GPT-2,ag_news,PASS_LOW,25.3,0.0,77.3
