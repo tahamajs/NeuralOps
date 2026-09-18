@@ -416,3 +416,8 @@ The `HeadRoPE` architecture incorporates telemetry hooks for tracking singular v
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **83.26%** | -7.34% | 0.8410 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-hymba-transx](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hymba-transx) | 2026-09-18 |
