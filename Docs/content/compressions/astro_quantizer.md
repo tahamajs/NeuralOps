@@ -540,6 +540,7 @@ print('Compressed output logits:', outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.20%** | +2.50% | 0.8170 | 1.00x | 45 | N/A | 2026-09-18 |
+| **distilbert-sst2** | ag_news | `PASS` | 51.00% | **62.90%** | +11.90% | 0.6281 | 1.00x | 33 | N/A | 2026-09-18 |
 
 
 Evaluations across sequence lengths and model scales:
