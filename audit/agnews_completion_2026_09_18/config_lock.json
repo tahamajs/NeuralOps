@@ -1,0 +1,26 @@
+{
+  "agnews": {
+    "dataset": "ag_news",
+    "batch_size": 32,
+    "learning_rate": 0.0002,
+    "finetune_steps": 200,
+    "finetune_mode": "head",
+    "seq_len": 128,
+    "seed": 42,
+    "optimizer": "adamw",
+    "precision": "fp16",
+    "num_labels": 4
+  },
+  "mnli": {
+    "dataset": "mnli",
+    "batch_size": 32,
+    "learning_rate": 0.0002,
+    "finetune_steps": 200,
+    "finetune_mode": "head",
+    "seq_len": 128,
+    "seed": 42,
+    "optimizer": "adamw",
+    "precision": "fp16",
+    "num_labels": 3
+  }
+}
