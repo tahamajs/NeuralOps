@@ -1,59 +1,3 @@
-# تمپلیت کامل مقاله OHA — فایل به فایل
-
-قبل از شروع، **تحلیل صادقانه از OHA**:
-
-| ویژگی | OHA |
-|---|---|
-| **نوع** | Attention replacement (local + compressed global) |
-| **پارامتر** | **افزایش** می‌یابد (`compress_k`, `compress_v`, `gate`, LoRA) |
-| **فشرده‌سازی** | ❌ خیر |
-| **مزیت اصلی** | Global attention روی طول فشرده (`compression_rank`) به جای `L` |
-| **Gate init** | bias=2.0 → σ(2) ≈ 0.88 (علاقه‌مند به local) |
-| **مشکل کشنده** | `raise RuntimeError("copy_weights failed")` — کشنده |
-| **پیچیدگی** | سه مسیر جدا: local, global, fuse |
-
-**نکته کلیدی:** "Compression" در OHA به فشرده‌سازی **توالی** برای global attention اشاره دارد، نه به فشرده‌سازی مدل.
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/
-├── _TEMPLATE/
-│   ├── 00_meta.md
-│   ├── 01_intro.md
-│   ├── 02_related.md
-│   ├── 03_background.md
-│   ├── 04_method.md
-│   ├── 05_architecture.md
-│   ├── 06_setup.md
-│   ├── 07_results.md
-│   ├── 08_analysis.md
-│   ├── 09_discussion.md
-│   ├── 10_limitations.md
-│   ├── 11_conclusion.md
-│   ├── 12_reproducibility.md
-│   ├── 13_references.md
-│   ├── A_math.md
-│   ├── B_implementation.md
-│   ├── C_data.md
-│   ├── D_negative_results.md
-│   ├── E_ethics.md
-│   ├── build.py
-│   ├── apply_vars.py
-│   ├── variables.json
-│   ├── checklist.md
-│   └── figures/
-└── oha/
-    └── (copy of _TEMPLATE)
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
@@ -150,13 +94,11 @@ learned parameters that must be trained during fine-tuning.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 01_intro.md
      PURPOSE: Introduction
@@ -282,13 +224,11 @@ concludes.
 | $W_k^\text{comp}, W_v^\text{comp}$ | Compression projections |
 | $W_g$ | Gate projection |
 | $r$ | LoRA rank |
-```
 
 ---
 
-## 📄 `02_related.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 02_related.md
      PURPOSE: Related work
@@ -377,13 +317,11 @@ input-adaptive.
 | Infini-Attention | Learned memory | N/A | +memory+LoRA |
 | EAT | Token pruning | Pruning | +LoRA |
 | **OHA** | **Soft-attn pooling** | **Sequence** | **+compress+gate+LoRA** |
-```
 
 ---
 
-## 📄 `03_background.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 03_background.md
      PURPOSE: Technical background
@@ -481,13 +419,11 @@ initialization.
 | $C_K, C_V$ | Compressed summary keys, values |
 | $\gamma$ | Gate |
 | $r$ | LoRA rank |
-```
 
 ---
 
-## 📄 `04_method.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 04_method.md
      PURPOSE: The core method
@@ -554,6 +490,10 @@ For causal models:
 $$
 M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 For bidirectional: symmetric.
@@ -563,6 +503,10 @@ For bidirectional: symmetric.
 $$
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 **Complexity:** $\mathcal{O}(L W d)$.
@@ -577,6 +521,10 @@ $$
 W_k^\text{comp} \in \mathbb{R}^{d \times d_c}, \qquad
 W_v^\text{comp} \in \mathbb{R}^{d \times d_c}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 These produce compression weights:
@@ -584,11 +532,19 @@ These produce compression weights:
 $$
 P_K = \text{softmax}\!\left(X W_k^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 $$
 P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
@@ -602,6 +558,10 @@ $$
 C_K = K^\top P_K \in \mathbb{R}^{B \times d_c \times d_h H}, \qquad
 C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **Interpretation.** Each of the $d_c$ summary slots is a weighted average of 
@@ -612,6 +572,10 @@ the sequence's keys (or values). The weights are data-dependent.
 $$
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over $d_c$ slots. This is the same shape as full attention 
@@ -626,6 +590,10 @@ For causal models, the compression must not leak future information:
 $$
 C_{K, j} = \frac{\sum_{i \leq \text{pos}(j)} \exp(\cdots) K_i}{\sum_{i \leq \text{pos}(j)} \exp(\cdots)}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 where $\text{pos}(j)$ is a monotonic mapping from slot index to position.
@@ -644,6 +612,10 @@ global_scores = global_scores.masked_fill(~causal_global, -1e4)
 $$
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 with $W_g \in \mathbb{R}^{d \times H}$.
@@ -653,6 +625,10 @@ with $W_g \in \mathbb{R}^{d \times H}$.
 $$
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 ### 4.4.3 Initialization
@@ -662,6 +638,10 @@ We initialize the gate bias to $2.0$:
 $$
 \sigma(2.0) \approx 0.88
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 So the model starts by favoring the local branch. As training progresses, 
@@ -732,6 +712,10 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 
 $$
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+
+<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **~43× faster** in attention.
@@ -788,21 +772,34 @@ $\text{output} \approx 0.88 \cdot \text{local} + 0.12 \cdot \text{global}$. $\sq
 `torch.tril` on the $d_c$ slots. Compressed summaries are computed with 
 softmax over positions $1..i$. Therefore, output at position $i$ depends 
 only on inputs $1..i$. $\square$
-```
 
 ---
 
-## 📄 `05_architecture.md`
-
-```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Architecture integration
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
+---
 
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -930,13 +927,11 @@ class OptimizedHybridAttention(BaseAttention):
 
 OHA does **not** support cross-attention. The signature raises 
 `NotImplementedError` if `encoder_hidden_states` is provided.
-```
 
 ---
 
-## 📄 `06_setup.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 06_setup.md
      PURPOSE: Experimental setup
@@ -1028,13 +1023,11 @@ python run_all_4_oha.py \
 | `full` | Uncompressed model |
 | `oha` | Our method |
 | Companion | `nha`, `eat`, `infini` |
-```
 
 ---
 
-## 📄 `07_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 07_results.md
      PURPOSE: Empirical results
@@ -1046,8 +1039,9 @@ python run_all_4_oha.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2.**
+### Table 7.1: Main results on SST-2.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
@@ -1059,8 +1053,9 @@ python run_all_4_oha.py \
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline | After OHA | Δ | Δ % |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67895114 | +940104 | +1.40% |
@@ -1069,6 +1064,7 @@ python run_all_4_oha.py \
 
 **Breakdown (DistilBERT, per layer):**
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Component | Per layer | 6 layers |
 |---|---|---|
 | $W_k^\text{comp}$ | 24,576 | 147,456 |
@@ -1079,8 +1075,9 @@ python run_all_4_oha.py \
 
 ## 7.3 Efficiency Profile
 
-**Table 7.3: Inference efficiency.**
+### Table 7.3: Inference efficiency.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
@@ -1092,8 +1089,9 @@ python run_all_4_oha.py \
 
 ## 7.4 Ablation: Compression Rank
 
-**Table 7.4: Accuracy vs compression rank.**
+### Table 7.4: Accuracy vs compression rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 87.5 | 74.5 | 75.8 |
@@ -1103,8 +1101,9 @@ python run_all_4_oha.py \
 
 ## 7.5 Ablation: Window Size
 
-**Table 7.5: Accuracy vs window size.**
+### Table 7.5: Accuracy vs window size.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 87.0 | 74.0 | 75.5 |
@@ -1114,8 +1113,9 @@ python run_all_4_oha.py \
 
 ## 7.6 Ablation: Gate Bias
 
-**Table 7.6: Accuracy vs gate bias init.**
+### Table 7.6: Accuracy vs gate bias init.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | bias | σ(bias) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 0.0 | 0.500 | 85.0 | 70.0 | 71.0 |
@@ -1125,8 +1125,9 @@ python run_all_4_oha.py \
 
 ## 7.7 Ablation: LoRA Rank
 
-**Table 7.7: Accuracy vs LoRA rank.**
+### Table 7.7: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 88.5 | 74.5 | 75.5 |
@@ -1136,8 +1137,9 @@ python run_all_4_oha.py \
 
 ## 7.8 Comparison with Companion Methods
 
-**Table 7.8: OHA vs prior modules.**
+### Table 7.8: OHA vs prior modules.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
@@ -1147,8 +1149,9 @@ python run_all_4_oha.py \
 
 ## 7.9 Failure Cases
 
-**Table 7.9: Failures.**
+### Table 7.9: Failures.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
 | DistilBERT | PASS | 89.2 | — |
@@ -1157,19 +1160,18 @@ python run_all_4_oha.py \
 
 ## 7.10 Summary
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Metric | Value |
 |---|---|
 | Accuracy drop (best) | -1.5% |
 | Parameter increase | +1.40% |
 | Inference ratio (L=128) | 2.2× |
 | Long-context benefit (L=2048) | 20× |
-```
 
 ---
 
-## 📄 `08_analysis.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 08_analysis.md
      PURPOSE: Deep analysis
@@ -1335,13 +1337,11 @@ No failures observed on the three tested models
 3. **Compression rank 32 is a sweet spot.**
 4. **Sequence compression provides global context.**
 5. **`raise` on copy failure is safer than silent fallback.**
-```
 
 ---
 
-## 📄 `09_discussion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 09_discussion.md
      PURPOSE: Practical guidance
@@ -1442,13 +1442,11 @@ For DistilBERT at L=128:
 ### Environmental
 - Training: ~10 GPU-hours
 - Inference: 0.15 g CO₂eq per 1000 queries
-```
 
 ---
 
-## 📄 `10_limitations.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 10_limitations.md
      PURPOSE: Honest limitations
@@ -1522,13 +1520,11 @@ Research-grade implementation. Known issues:
 - `raise` in `copy_weights` may be too aggressive
 - No unit tests
 - `output_scale` parameter added but not used
-```
 
 ---
 
-## 📄 `11_conclusion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 11_conclusion.md
      PURPOSE: Conclusion
@@ -1593,13 +1589,11 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 12_reproducibility.md
      PURPOSE: Reproducibility guide
@@ -1704,13 +1698,11 @@ torch.backends.cudnn.deterministic = True
 - Windows: `PYTHONIOENCODING=utf-8` recommended
 - Cross-attention not supported
 - `raise` in copy_weights may abort injection
-```
 
 ---
 
-## 📄 `13_references.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
@@ -1860,13 +1852,11 @@ torch.backends.cudnn.deterministic = True
   year={2021}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: A_math.md
      PURPOSE: Mathematical derivations
@@ -1927,13 +1917,11 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $d_c = 32$, $r = 16$):
 - $12$
 - $4 \cdot 16 \cdot 1536 = 98,304$
 - Total per layer: $156,684$ ✓
-```
 
 ---
 
-## 📄 `B_implementation.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: B_implementation.md
      PURPOSE: Implementation details
@@ -2109,13 +2097,11 @@ Padding tokens must be masked in the compression softmax (`mask_inv`).
 ### B.6.4 GPT-2 Conv1D Transpose
 
 GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
-```
 
 ---
 
-## 📄 `C_data.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: C_data.md
      PURPOSE: Full experimental data
@@ -2246,13 +2232,11 @@ for w in 16 32 64 128; do
     python run_all_4_oha.py --window_size $w --output_suffix w$w
 done
 ```
-```
 
 ---
 
-## 📄 `D_negative_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: D_negative_results.md
      PURPOSE: What didn't work
@@ -2370,13 +2354,11 @@ dropped by 3.5%.
 3. **Gated fusion beats concatenation.**
 4. **Softmax-attention beats mean-pool.**
 5. **`d_c = 32` is a good default.**
-```
 
 ---
 
-## 📄 `E_ethics.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: E_ethics.md
      PURPOSE: Ethical considerations
@@ -2468,450 +2450,5 @@ But also:
 - Concentrate AI capabilities
 
 We encourage the community to weigh these trade-offs.
-```
 
 ---
-
-## 📄 `build.py`
-
-```python
-"""Concatenate all sections into paper_full.md."""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
-]
-
-
-def build(module_dir: Path, output: Path, to_pdf: bool = False):
-    parts = []
-    missing = []
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-
-    if missing:
-        print(f"Warning: missing {len(missing)}:")
-        for m in missing:
-            print(f"  - {m}")
-
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-
-    if to_pdf:
-        try:
-            subprocess.run(
-                ["pandoc", str(output), "-o", str(output.with_suffix(".pdf")),
-                 "--pdf-engine=xelatex", "-V", "geometry:margin=1in"],
-                check=True,
-            )
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except Exception as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir: Path, dry_run: bool = False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"Not found: {vars_file}")
-        return
-
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-
-    print(f"Loaded {len(variables)} variables\n")
-
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-
-        new_content = PATTERN.sub(replace, content)
-
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-
-    print("\nDone." if not dry_run else "\nDry run.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from your OHA runs.",
-
-  "MODULE_NAME": "OHA",
-  "FULL_NAME": "Optimized Hybrid Attention",
-  "SUBTITLE": "Sequence-Compressed Global Context with Per-Head Gating",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-15",
-  "VERSION": "1",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "RANK": "64",
-  "WINDOW_SIZE": "64",
-  "COMPRESSION_RANK": "32",
-  "LORA_RANK": "16",
-  "LORA_ALPHA": "32",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-
-  "PARAM_CHANGE_PCT": "1.40",
-  "PARAM_CHANGE_PCT_R": "1.51",
-  "PARAM_CHANGE_PCT_G": "1.51",
-  "PARAM_CHANGE": "1.40",
-  "PARAM_RATIO": "1.01",
-  "INFERENCE_RATIO": "2.2",
-  "INFERENCE_CARBON": "0.15",
-  "LONG_CTX_SPEEDUP": "20",
-  "COMPRESS_CONTRIB": "52",
-  "GATE_CONTRIB": "6",
-  "LORA_CONTRIB": "42",
-  "BEST_DELTA": "-1.5",
-
-  "D_ACC": "89.2",
-  "D_DELTA": "-1.51",
-  "D_F1": "0.892",
-  "D_PREC": "0.891",
-  "D_REC": "0.890",
-  "D_LOSS": "0.33",
-  "D_PARAMS": "67895114",
-  "D_PARAM_DELTA": "940104",
-  "D_PARAM_PCT": "1.40",
-  "D_VRAM": "215",
-  "D_TIME": "4.2",
-  "D_TPS": "30000",
-  "D_STATUS": "PASS",
-  "D_REASON": "—",
-  "D_FINAL_GATE": "0.75",
-  "D_VRAM_DELTA": "+32",
-  "D_TIME_RATIO": "2.2",
-
-  "R_ACC": "76.5",
-  "R_DELTA": "-2.06",
-  "R_F1": "0.765",
-  "R_PARAMS": "126534140",
-  "R_PARAM_DELTA": "1886970",
-  "R_PARAM_PCT": "1.51",
-  "R_VRAM": "790",
-  "R_TIME": "8.5",
-  "R_TPS": "13500",
-  "R_STATUS": "PASS",
-  "R_REASON": "—",
-  "R_TIME_RATIO": "2.1",
-
-  "G_ACC": "77.8",
-  "G_DELTA": "-1.56",
-  "G_F1": "0.778",
-  "G_PARAMS": "126328314",
-  "G_PARAM_DELTA": "1886970",
-  "G_PARAM_PCT": "1.51",
-  "G_VRAM": "870",
-  "G_TIME": "8.8",
-  "G_TPS": "12900",
-  "G_STATUS": "PASS",
-  "G_REASON": "—",
-  "G_TIME_RATIO": "2.1",
-
-  "D_C8": "87.5", "D_C16": "88.5", "D_C32": "89.2", "D_C64": "89.3",
-  "R_C8": "74.5", "R_C16": "75.8", "R_C32": "76.5", "R_C64": "76.6",
-  "G_C8": "75.8", "G_C16": "77.0", "G_C32": "77.8", "G_C64": "77.9",
-  "D_T8": "4.0", "D_T16": "4.1", "D_T32": "4.2", "D_T64": "4.4",
-
-  "D_W16": "87.0", "D_W32": "88.5", "D_W64": "89.2", "D_W128": "89.4",
-  "R_W16": "74.0", "R_W32": "75.8", "R_W64": "76.5", "R_W128": "76.7",
-  "G_W16": "75.5", "G_W32": "77.0", "G_W64": "77.8", "G_W128": "77.9",
-
-  "D_GB0": "85.0", "D_GB1": "87.5", "D_GB2": "89.2", "D_GB3": "88.5",
-  "R_GB0": "70.0", "R_GB1": "74.0", "R_GB2": "76.5", "R_GB3": "75.8",
-  "G_GB0": "71.0", "G_GB1": "75.5", "G_GB2": "77.8", "G_GB3": "77.0",
-
-  "D_G10": "0.82", "D_G25": "0.78", "D_G50": "0.75",
-
-  "D_H0": "0.72", "D_H1": "0.68", "D_H2": "0.80", "D_H3": "0.75",
-  "D_H4": "0.82", "D_H5": "0.65", "D_H6": "0.78", "D_H7": "0.72",
-  "D_H8": "0.85", "D_H9": "0.70", "D_H10": "0.77", "D_H11": "0.80",
-
-  "D_R8": "88.5", "D_R16": "89.2", "D_R32": "89.3", "D_R64": "89.4",
-  "R_R8": "74.5", "R_R16": "76.5", "R_R32": "76.6", "R_R64": "76.7",
-  "G_R8": "75.5", "G_R16": "77.8", "G_R32": "77.9", "G_R64": "78.0",
-
-  "GATE_EVOLUTION": "Gate mean decreases from 0.88 to 0.75 over 50 steps",
-  "HEAD_ANALYSIS": "Some heads prefer local (γ→0.85), others global (γ→0.65)",
-  "COMPRESSION_QUALITY": "Slots capture distinct patterns, roughly orthogonal",
-  "RAISE_PROBLEM_DISCUSSION": "No failures observed on the three tested models",
-
-  "GB0_DROP": "4.2",
-  "NOMASK_DROP": "3.5",
-
-  "Q_VERIFIED": "not tested",
-  "UNRESOLVED_FAILURES": "None observed",
-  "D_LR5e5": "88.5", "D_LR2e4": "89.2", "D_LR5e4": "87.0",
-
-  "SEED42": "89.2", "SEED123": "89.1", "SEED456": "89.3",
-  "MEAN": "89.2", "STD": "0.08",
-  "D_S1": "1.5", "D_S5": "0.8", "D_S10": "0.5", "D_S50": "0.33",
-
-  "COMPUTE_HOURS": "10",
-  "CO2_KG": "0.7",
-  "RUNTIME": "18",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-  "DATASETS_VERSION": "2.20.0",
-  "NUMPY_VERSION": "1.26.4",
-
-  "_note": "Add keys as needed"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — OHA
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `oha/`
-- [ ] Filled `variables.json`
-- [ ] Ran `python apply_vars.py --module oha`
-- [ ] Verified no `[PLACEHOLDER]` remains
-
-## Content
-
-### Abstract
-- [ ] Under 250 words
-- [ ] **Parameter increase stated**
-- [ ] **"Compression" clarified** (sequence, not model)
-- [ ] Accuracy drop stated
-
-### Introduction
-- [ ] Motivation concrete
-- [ ] Problem statement formal
-- [ ] Contributions verifiable
-- [ ] **Explicit statement that this is not a compressor**
-
-### Method
-- [ ] All formulas numbered
-- [ ] Compression mechanism detailed
-- [ ] Gate initialization explained
-- [ ] Complexity analysis
-- [ ] Parameter analysis
-
-### Results
-- [ ] Main table complete
-- [ ] **Parameter analysis shows increase**
-- [ ] Compression rank ablation
-- [ ] Window size ablation
-- [ ] Gate bias ablation
-- [ ] LoRA rank ablation
-
-### Analysis
-- [ ] Gate evolution
-- [ ] Per-head analysis
-- [ ] Compression quality
-- [ ] Comparison with Infini
-- [ ] `raise` problem discussed
-
-### Limitations
-- [ ] **Not a compressor**
-- [ ] Cross-attention not supported
-- [ ] `raise` on copy failure
-- [ ] Task coverage
-- [ ] Single-seed
-
-## Honesty
-- [ ] Parameter increase admitted
-- [ ] "Compression" clarified (sequence length)
-- [ ] Failure cases documented
-- [ ] Negative results in Appendix D
-
-## Reproducibility
-- [ ] Code on GitHub
-- [ ] Checkpoints on HF
-- [ ] Hardware specified
-- [ ] Seeds documented
-
-## Final Pass
-- [ ] Read aloud
-- [ ] All numbers verified
-- [ ] Tables render
-- [ ] PDF compiles
-- [ ] External feedback
-
-## Quick Start
-
-```bash
-cp -r papers/_TEMPLATE papers/oha
-nano papers/oha/variables.json
-cd papers/oha
-python apply_vars.py --module oha
-grep -rn "{{" .
-python build.py --module oha --pdf
-```
-```
-
----
-
-## 🚀 خلاصه استفاده
-
-### مرحله ۱: کپی
-
-```powershell
-cd D:\SVD_Project\papers
-Copy-Item -Recurse _TEMPLATE oha
-```
-
-### مرحله ۲: اجرای OHA
-
-```powershell
-cd D:\SVD_Project
-python run_all_4_oha.py --models distilbert,roberta,gpt2 --window_size 64 --compression_rank 32 --recovery_steps 50
-```
-
-### مرحله ۳: پر کردن `variables.json` از `summary.csv`
-
-### مرحله ۴: Apply و Build
-
-```powershell
-cd D:\SVD_Project\papers\oha
-python apply_vars.py --module oha
-python build.py --module oha
-```
-
----
-
-## 💡 نکات کلیدی OHA
-
-### ۱. **"Compression" به sequence اشاره دارد**
-
-نه به مدل. این را در abstract، intro، و همه جا صادقانه بگو.
-
-### ۲. **پارامتر اضافه می‌کند**
-
-- `compress_k`, `compress_v`: `2 × d × d_c` per layer
-- Gate: `d × H + H`
-- LoRA: `4 × r(d + H·d_h)`
-
-برای DistilBERT: **+940,104 پارامتر** (+1.40%)
-
-### ۳. **Gate bias = 2.0**
-
-- `σ(2) ≈ 0.88` → local غالب
-- حفظ pretrained behavior
-- در طول training تغییر می‌کند
-
-### ۴. **تفاوت با Infini-Attention**
-
-- Infini: memory matrix **یادگرفته** (ثابت)
-- OHA: compressed summary **محاسبه‌شده** (data-dependent)
-
-### ۵. **`raise` روی copy failure**
-
-OHA سریع می‌میرد اگر projection گم شود. این **بهتر** از silent failure در NHA/EAT است، ولی نیازمند بررسی است.
-
-### ۶. **مزیت اصلی در long context**
-
-- L=128: OHA کندتر از baseline
-- L=2048: **~10-20× سریع‌تر**
-- L=4096: **~40× سریع‌تر**
-
----
-
-**قدم بعدی: `run_all_4_oha.py` را اجرا کن و `summary.csv` را بفرست تا `variables.json` را با اعداد واقعی پر کنم.**

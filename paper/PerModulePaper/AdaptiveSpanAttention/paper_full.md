@@ -105,6 +105,7 @@ revealing that heads have very different contextual needs.
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
 
+---
 
 ---
 
@@ -221,6 +222,7 @@ limitations. Section 11 concludes.
 | $g_z(d)$ | Soft ramp mask |
 | $\lambda$ | L1 span penalty weight |
 
+---
 
 ---
 
@@ -309,6 +311,7 @@ generalizes Sukhbaatar et al. (2019) to the current transformer ecosystem.
 | Adaptive Span (2019) | Learned | Yes | Yes | Yes | No (LSTM-era) |
 | **ASA-Span (ours)** | **Learned** | **Yes** | **Yes** | **Yes** | **Yes** |
 
+---
 
 ---
 
@@ -449,6 +452,7 @@ ASA-Span preserves this bias, applying the ramp **after** adding the bias.
 | $\lambda$ | Span penalty weight |
 | $S_\text{max}$ | Maximum span |
 
+---
 
 ---
 
@@ -513,6 +517,16 @@ The span is:
 $$
 z_h = \sigma(\ell_h) \cdot S_\text{max}
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
@@ -525,6 +539,16 @@ We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 $$
 \ell_h^{(0)} = \log \frac{0.982}{1 - 0.982} \approx 4.0
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}$. 
@@ -545,6 +569,16 @@ Given query position $i$ and key position $j$, define the distance:
 $$
 d_{ij} = \begin{cases} |i - j| & \text{if bidirectional} \\ \max(0, i - j) & \text{if causal} \end{cases}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 For causal models, keys after the query ($j > i$) are masked separately; 
@@ -555,6 +589,16 @@ The ramp mask is:
 $$
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
 $$
 
 ### 4.3.2 Properties
@@ -565,7 +609,17 @@ $$
   $$
   \frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 & d < z \\ 1/R & z \le d \le z + R \\ 0 & d > z + R \end{cases}
   \tag{4.5}
-  $$
+  
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+$$
 - **Bounded:** $g_z \in [0, 1]$.
 
 ### 4.3.3 Numerical Stability
@@ -575,6 +629,16 @@ We compute the ramp in FP32 and apply in log space:
 $$
 \tilde{S}_{ij} = S_{ij} + \log(g_{z_h}(d_{ij}) + \epsilon)
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
@@ -586,6 +650,16 @@ After masking, the attention row does not sum to 1. We renormalize:
 $$
 P_{ij} = \frac{\exp(\tilde{S}_{ij})}{\sum_j \exp(\tilde{S}_{ij})}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 This is equivalent to applying the ramp as a **multiplicative factor** before 
@@ -594,6 +668,16 @@ softmax:
 $$
 P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ## 4.5 Fast Path Optimization
@@ -618,6 +702,16 @@ We add to the loss:
 $$
 \mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.6.2 Effect
@@ -627,6 +721,16 @@ The gradient w.r.t. $\ell_h$:
 $$
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda \cdot S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up 
@@ -717,6 +821,16 @@ For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 $$
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j) : |i-j| > z} P_{ij} + \epsilon_R
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 where $\epsilon_R$ is the ramp-induced error:
@@ -724,6 +838,16 @@ where $\epsilon_R$ is the ramp-induced error:
 $$
 \epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.10.2 Head Span Heterogeneity
@@ -733,6 +857,16 @@ Empirically, spans converge to a bimodal distribution:
 $$
 z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.10.3 Equilibrium of L1 Penalty
@@ -742,22 +876,48 @@ The equilibrium span satisfies:
 $$
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
 \tag{4.14}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 The task loss derivative depends on the model, but in practice heads with 
 small gradients converge to small spans.
 
+---
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -923,6 +1083,7 @@ class AdaptiveSpanAttention(BaseAttention): ...
 | RoPE unavailable | Exception | Fallback |
 | CUDA OOM | RuntimeError | Reduce batch |
 
+---
 
 ---
 
@@ -1029,6 +1190,7 @@ python run_all_4_adaptive_span.py \
 | L1 penalty $\lambda$ | $\{0, 0.001, 0.01, 0.1\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
 
+---
 
 ---
 
@@ -1043,8 +1205,9 @@ python run_all_4_adaptive_span.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.**
+### Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Learned span | Attn mem | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 128 KB | 1.9 s |
@@ -1056,8 +1219,9 @@ python run_all_4_adaptive_span.py \
 
 ## 7.2 Learned Spans
 
-**Table 7.2: Span distribution across heads.**
+### Table 7.2: Span distribution across heads.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Mean span | Min | Max | Std | Reduction from $S_\text{max}$ |
 |---|---|---|---|---|---|
 | DistilBERT | **68** | 16 | 124 | 35 | 47% |
@@ -1069,8 +1233,9 @@ converge to < 16 (local), others to near $S_\text{max}$ (global).
 
 ## 7.3 Per-Layer Span Evolution
 
-**Table 7.3: Mean span per layer (DistilBERT).**
+### Table 7.3: Mean span per layer (DistilBERT).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Layer | Mean span |
 |---|---|
 | 0 | 95 |
@@ -1086,8 +1251,9 @@ integrate global context while late layers refine local features.
 
 ## 7.4 Efficiency
 
-**Table 7.4: Memory and time.**
+### Table 7.4: Memory and time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -1101,8 +1267,9 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 ## 7.5 Ablation: Max Span
 
-**Table 7.5: Accuracy vs $S_\text{max}$.**
+### Table 7.5: Accuracy vs $S_\text{max}$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $S_\text{max}$ | DistilBERT | RoBERTa | GPT-2 | Learned mean |
 |---|---|---|---|---|
 | 32 | 85.0 | 70.0 | 71.0 | 24 |
@@ -1112,8 +1279,9 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 ## 7.6 Ablation: Ramp Size
 
-**Table 7.6: Accuracy vs $R$.**
+### Table 7.6: Accuracy vs $R$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $R$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 1 | 87.0 | 73.0 | 73.5 |
@@ -1127,8 +1295,9 @@ pruning.
 
 ## 7.7 Ablation: L1 Penalty
 
-**Table 7.7: Accuracy and span vs $\lambda$.**
+### Table 7.7: Accuracy and span vs $\lambda$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $\lambda$ | DistilBERT acc | Mean span | Reduction |
 |---|---|---|---|
 | 0.0 | 90.5 | 126 | 0% |
@@ -1140,8 +1309,9 @@ pruning.
 
 ## 7.8 Ablation: LoRA Rank
 
-**Table 7.8: Accuracy vs LoRA rank.**
+### Table 7.8: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 86.0 | 72.0 | 73.0 |
@@ -1151,8 +1321,9 @@ pruning.
 
 ## 7.9 Ablation: Recovery Steps
 
-**Table 7.9: Accuracy vs recovery steps.**
+### Table 7.9: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 86.0 | 72.0 | 73.0 |
@@ -1162,8 +1333,9 @@ pruning.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: Comparison.**
+### Table 7.10: Comparison.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn mem |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |
@@ -1189,6 +1361,7 @@ convergence is reached.
 - **No speedup in current implementation.**
 - **All models pass quality gate.**
 
+---
 
 ---
 
@@ -1331,6 +1504,7 @@ Some heads need larger span than initialized
 5. **Attention entropy** correlates with learned span.
 6. **No speedup without hard truncation.**
 
+---
 
 ---
 
@@ -1442,6 +1616,7 @@ To realize speedup, one can:
 ### Environmental
 Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
+---
 
 ---
 
@@ -1514,6 +1689,7 @@ Research-grade implementation.
 
 Dual-use. See Appendix E.
 
+---
 
 ---
 
@@ -1580,6 +1756,7 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 
 None.
 
+---
 
 ---
 
@@ -1671,14 +1848,15 @@ torch.cuda.manual_seed_all(seed)
 - Fast path optimization needed for short sequences
 - No hard truncation for actual speedup
 
+---
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
+<!- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
      DEPENDENCIES: All
-     ═══════════════════════════════════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════════════════════════════════════ ->
 
 # 13. References
 
@@ -1809,6 +1987,7 @@ torch.cuda.manual_seed_all(seed)
 }
 ```
 
+-
 
 ---
 
@@ -1937,6 +2116,7 @@ $$
 The soft ramp approaches this as $R \to 0$. For finite $R$, the soft ramp 
 provides **smoother gradients** and **avoids boundary artifacts**.
 
+---
 
 ---
 
@@ -2069,6 +2249,7 @@ Use `logit = 4.0`.
 Without fast path, ramp is allocated even for short sequences. Add the 
 `if not ((span + ramp) >= N_k).all()` check.
 
+---
 
 ---
 
@@ -2205,6 +2386,7 @@ for S in 32 64 128 256; do
 done
 ```
 
+---
 
 ---
 
@@ -2320,6 +2502,7 @@ Aggressive L1 collapses spans; accuracy drops.
 4. **$\lambda = 0.01$** balances compression and accuracy.
 5. **Learned spans are interpretable.**
 
+---
 
 ---
 
@@ -2407,3 +2590,4 @@ But also:
 
 We encourage community discussion.
 
+---

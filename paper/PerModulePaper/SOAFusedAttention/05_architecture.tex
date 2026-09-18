@@ -9,10 +9,10 @@
 \toprule
 \textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
 \midrule
-DistilBERT & \texttt{layer[i].attention} & No & No & No \\
-RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
-GPT-2 & \texttt{h[i].attn} & No & No & No \\
-Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+DistilBERT & \texttt{layer[i].attention} \& No \& No \& No \\
+RoBERTa & \texttt{layer[i].attention.self} \& Yes \& No \& No \\
+GPT-2 & \texttt{h[i].attn} \& No \& No \& No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} \& No \& Yes \& Yes \\
 \bottomrule
 \end{tabular}
 \end{table}

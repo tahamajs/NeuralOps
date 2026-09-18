@@ -1,11 +1,26 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 – 2 pages (800 – 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support Matrix
 

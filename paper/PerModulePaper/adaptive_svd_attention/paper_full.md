@@ -1,44 +1,3 @@
-# Adaptive SVD Attention — تمپلیت کامل مقاله (۲۰ فایل)
-
-ساختار کامل پوشه `papers/adaptive_svd/` با محتوای کامل هر فایل. یک تمپلیت research-grade و کامل.
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/adaptive_svd/
-├── 00_meta.md
-├── 01_intro.md
-├── 02_related.md
-├── 03_background.md
-├── 04_method.md
-├── 05_architecture.md
-├── 06_setup.md
-├── 07_results.md
-├── 08_analysis.md
-├── 09_discussion.md
-├── 10_limitations.md
-├── 11_conclusion.md
-├── 12_reproducibility.md
-├── 13_references.md
-├── A_math.md
-├── B_implementation.md
-├── C_data.md
-├── D_negative_results.md
-├── E_ethics.md
-├── build.py
-├── apply_vars.py
-├── variables.json
-├── checklist.md
-└── figures/
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract, keywords, lay summary, ToC
@@ -148,13 +107,9 @@ calibrate.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 01_intro.md
      PURPOSE: Introduction — motivation, problem, contributions, organization
@@ -293,13 +248,9 @@ practical usage. Section 10 lists limitations. Section 11 concludes.
 | $H$ | Query head count | §1.4 |
 | $H_{kv}$ | KV head count (GQA) | §1.4 |
 | $N_l$ | Number of layers | §1.4 |
-```
 
 ---
 
-## 📄 `02_related.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 02_related.md
      PURPOSE: Related work
@@ -398,13 +349,9 @@ SVD preserves head count but compresses per-head projection matrices.
 | T5 bias support | Yes |
 | GQA support | Yes |
 | RoPE support | Yes |
-```
 
 ---
 
-## 📄 `03_background.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 03_background.md
      PURPOSE: Technical background
@@ -569,13 +516,9 @@ Adaptive SVD applies RoPE after the factorized $Q, K$ projections.
 | $H, H_{kv}$ | Query, KV head counts |
 | $d_h$ | Per-head dimension |
 | $\alpha$ | LoRA scaling |
-```
 
 ---
 
-## 📄 `04_method.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 04_method.md
      PURPOSE: The core method — most important section
@@ -627,6 +570,18 @@ For each projection weight $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\tex
 $$
 W_P = U_P \Sigma_P V_P^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 We compute this in **FP32** regardless of the model dtype. FP16 SVD can 
@@ -644,6 +599,18 @@ Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, define:
 $$
 s_i = \sigma_i^2, \quad \mathcal{E}(r) = \frac{\sum_{i=1}^{r} s_i}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} s_j}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The rank is:
@@ -651,6 +618,18 @@ The rank is:
 $$
 r_P = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.3.2 Implementation
@@ -693,6 +672,18 @@ $$
 U_{P, r} = U_{P, :, :r_P} \Sigma_{P, :r_P, :r_P}^{1/2}, \quad
 V_{P, r} = \Sigma_{P, :r_P, :r_P}^{1/2} V_{P, :r_P, :}^\top
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Then $U_{P, r} V_{P, r} = W_{P, r_P}$ (the truncated SVD).
@@ -717,6 +708,18 @@ The compressed projection computes:
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter count:**
@@ -737,6 +740,18 @@ The truncation residual is:
 $$
 \Delta W_P = W_P - U_{P, r} V_{P, r}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Its Frobenius norm is $\sqrt{(1 - \mathcal{E}(r_P))} \cdot \|W_P\|_F \leq \sqrt{1 - \tau} \|W_P\|_F$. 
@@ -751,6 +766,18 @@ $$
 A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad
 B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.5.3 Initialization
@@ -758,6 +785,18 @@ $$
 $$
 B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
@@ -767,6 +806,18 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + (x A_P^\top) B_P^\top + b_P
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter overhead:** $r_L (d_\text{in} + d_\text{out})$ per projection.
@@ -849,6 +900,18 @@ For a square $d \times d$ projection:
 $$
 \frac{d^2}{2 d (r_P + r_L)} = \frac{d}{2(r_P + r_L)}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Example.** $d = 768$, $r_P = 128$, $r_L = 16$:
@@ -868,6 +931,18 @@ $$
 $$
 \frac{\|W_P - U_{P, r} V_{P, r}\|_F}{\|W_P\|_F} = \sqrt{1 - \mathcal{E}(r_P)} \leq \sqrt{1 - \tau}
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2$ by 
@@ -889,6 +964,18 @@ At $\tau = 0.92$, the maximum relative error is $\sqrt{0.08} \approx 0.283$.
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P = W_{P, r_P} x + b_P
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** Substitute $B_P = 0$ into (4.9), and note $U_{P, r} V_{P, r} = W_{P, r_P}$. 
@@ -904,6 +991,18 @@ The parameter ratio per projection is:
 $$
 \rho_P = \frac{2 r_P d}{d^2} = \frac{2 r_P}{d} \quad \text{(for square } d \times d\text{)}
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2× reduction).
@@ -930,21 +1029,32 @@ At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2×
 - $r_L = 16$: balanced (default)
 - $r_L = 32$: more recovery capacity
 - $r_L = 64$: rarely needed
-```
 
 ---
 
-## 📄 `05_architecture.md`
-
-```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 – 2 pages (800 – 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support Matrix
 
@@ -1190,13 +1300,9 @@ target_mod = getattr(module, "base_layer", module)
 
 For T5, the same `AdaptiveSVDAttention` is used in both encoder and decoder 
 blocks. The decoder side has `is_decoder = True`, which enables causal masking.
-```
 
 ---
 
-## 📄 `06_setup.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 06_setup.md
      PURPOSE: Experimental setup
@@ -1330,13 +1436,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 | `svd_linear` | Fixed-rank SVD (rank 128) |
 | `a3` | Fisher-weighted (from prior work) |
 | `aasvd` | Full covariance (from prior work) |
-```
 
 ---
 
-## 📄 `07_results.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 07_results.md
      PURPOSE: Empirical results
@@ -1348,8 +1450,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
@@ -1369,8 +1472,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Total parameter counts.**
+### Table 7.2: Total parameter counts.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Model | Baseline | Adaptive SVD | Ratio |
 |---|---|---|---|
 | DistilBERT | 66,955,010 | 22000000 | **3.0×** |
@@ -1379,6 +1483,7 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 **Per-projection (DistilBERT):**
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Projection | Original | Compressed | Rank $r_P$ | Reduction |
 |---|---|---|---|---|
 | $W_Q$ | 589,824 | 196608 | 128 | 3.0× |
@@ -1388,8 +1493,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.3 Per-Layer Rank Distribution
 
-**Table 7.3: Energy-thresholded ranks for DistilBERT.**
+### Table 7.3: Energy-thresholded ranks for DistilBERT.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Layer | Q rank | K rank | V rank | O rank | Avg |
 |---|---|---|---|---|---|
 | 0 | 128 | 128 | 64 | 64 | 96 |
@@ -1405,8 +1511,9 @@ projections tend to have lower rank than query and key projections.
 
 ## 7.4 Reconstruction Error
 
-**Table 7.4: Relative Frobenius error at energy threshold τ.**
+### Table 7.4: Relative Frobenius error at energy threshold τ.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Model | Projection | Error | Theoretical bound |
 |---|---|---|---|
 | DistilBERT | Q | 0.27 | 0.283 |
@@ -1418,8 +1525,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.5 Efficiency Profile
 
-**Table 7.5: Inference efficiency.**
+### Table 7.5: Inference efficiency.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Model | Config | Time (s) | Tokens/s | VRAM (MB) |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 |
@@ -1431,8 +1539,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.6 Ablation: Energy Threshold
 
-**Table 7.6: Effect of energy threshold τ.**
+### Table 7.6: Effect of energy threshold τ.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | τ | Avg rank | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|---|
 | 0.85 | 64 | 85 | 5.0× | 70 | 71 |
@@ -1446,8 +1555,9 @@ minimal compression.
 
 ## 7.7 Ablation: Residual Rank
 
-**Table 7.7: Effect of residual adapter rank $r_L$.**
+### Table 7.7: Effect of residual adapter rank $r_L$.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 (no adapter) | 80 | 65 | 66 |
@@ -1462,8 +1572,9 @@ collapses accuracy.
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps (r_L = 16).**
+### Table 7.8: Accuracy vs recovery steps (r_L = 16).
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.4 | 0.8 | 0.7 |
@@ -1474,8 +1585,9 @@ collapses accuracy.
 
 ## 7.9 Ablation: SVD Rank Cap
 
-**Table 7.9: Effect of maximum rank cap (τ=0.92).**
+### Table 7.9: Effect of maximum rank cap (τ=0.92).
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Cap | DistilBERT | % Hit cap | Note |
 |---|---|---|---|
 | 64 | 85 | 20% | Under-cap |
@@ -1488,8 +1600,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: Adaptive SVD vs prior compression methods.**
+### Table 7.10: Adaptive SVD vs prior compression methods.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 79.36% |
@@ -1500,8 +1613,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.11 Compression Time
 
-**Table 7.11: Wall-clock compression time.**
+### Table 7.11: Wall-clock compression time.
 
+<!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
 | Model | SVD | Rank selection | Adapter init | Total |
 |---|---|---|---|---|
 | DistilBERT | 10 s | 2 s | 3 s | **15 s** |
@@ -1519,13 +1633,9 @@ calibration-based methods.
 - **Compression time:** 15–30 s
 - **Per-layer ranks:** 64 to 150
 - **No calibration required**
-```
 
 ---
 
-## 📄 `08_analysis.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 08_analysis.md
      PURPOSE: Deep analysis
@@ -1595,7 +1705,7 @@ be more compressed without losing critical information.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No adapter (pure truncation) | 0.85 | 0.85 | 0.85 |
+| No adapter (pure truncation) | 0.87 | 0.88 | 0.9 |
 | With adapter | **88.0** | **74.0** | **75.5** |
 | **Gain** | +5.5% | +4.8% | +4.9% |
 
@@ -1682,13 +1792,9 @@ No failures observed in this configuration.
 3. **τ=0.92 is robust** across models and layers.
 4. **Per-layer rank distribution** is bimodal: Q/K high, V low.
 5. **Faster than A3/AASVD** by 5× on compression time.
-```
 
 ---
 
-## 📄 `09_discussion.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 09_discussion.md
      PURPOSE: Practical guidance
@@ -1818,13 +1924,9 @@ tasks without re-compression.
 
 ### Environmental
 Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
-```
 
 ---
 
-## 📄 `10_limitations.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 10_limitations.md
      PURPOSE: Honest limitations
@@ -1928,13 +2030,9 @@ Research-grade:
 ## 10.13 Ethical Considerations
 
 Compression is dual-use. See Appendix E.
-```
 
 ---
 
-## 📄 `11_conclusion.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 11_conclusion.md
      PURPOSE: Conclusion
@@ -2000,13 +2098,9 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 12_reproducibility.md
      PURPOSE: Reproducibility guide
@@ -2084,7 +2178,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ### Table 7.1 (Main)
 
 ```bash
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
+python run_all_4_adaptive_svd.py - models distilbert,roberta,gpt2
 # → results/unified_adaptive_svd/{model}/summary.csv
 ```
 
@@ -2092,7 +2186,7 @@ python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
 
 ```bash
 for tau in 0.85 0.90 0.92 0.95 0.99; do
-    python run_all_4_adaptive_svd.py --energy_threshold $tau --output_suffix tau_$tau
+    python run_all_4_adaptive_svd.py - energy_threshold $tau - output_suffix tau_$tau
 done
 ```
 
@@ -2100,7 +2194,7 @@ done
 
 ```bash
 for rl in 0 4 8 16 32 64; do
-    python run_all_4_adaptive_svd.py --residual_rank $rl --output_suffix rl_$rl
+    python run_all_4_adaptive_svd.py - residual_rank $rl - output_suffix rl_$rl
 done
 ```
 
@@ -2108,7 +2202,7 @@ done
 
 ```bash
 for steps in 10 25 50 100 200; do
-    python run_all_4_adaptive_svd.py --recovery_steps $steps --output_suffix steps_$steps
+    python run_all_4_adaptive_svd.py - recovery_steps $steps - output_suffix steps_$steps
 done
 ```
 
@@ -2168,22 +2262,18 @@ print('Import OK')
 Run one model to verify:
 
 ```bash
-python run_all_4_adaptive_svd.py --models distilbert
+python run_all_4_adaptive_svd.py - models distilbert
 ```
 
 Expected: DistilBERT passes quality gate (≥56%).
-```
 
 ---
 
-## 📄 `13_references.md`
-
-```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
+<!- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
      DEPENDENCIES: All sections
-     ═══════════════════════════════════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════════════════════════════════════ ->
 
 # 13. References
 
@@ -2194,7 +2284,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={Psychometrika},
   volume={1},
   number={3},
-  pages={211--218},
+  pages={211-218},
   year={1936}
 }
 
@@ -2204,7 +2294,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217-288},
   year={2011}
 }
 
@@ -2214,7 +2304,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={IEEE Transactions on Information Theory},
   volume={60},
   number={8},
-  pages={5040--5053},
+  pages={5040-5053},
   year={2014}
 }
 
@@ -2224,7 +2314,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={IEEE Transactions on Automatic Control},
   volume={19},
   number={6},
-  pages={716--723},
+  pages={716-723},
   year={1974}
 }
 
@@ -2232,7 +2322,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   title={Estimating the dimension of a model},
   author={Schwarz, Gideon},
   journal={The Annals of Statistics},
-  pages={461--464},
+  pages={461-464},
   year={1978}
 }
 
@@ -2305,7 +2395,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={JMLR},
   volume={21},
   number={140},
-  pages={1--67},
+  pages={1-67},
   year={2020}
 }
 
@@ -2379,13 +2469,9 @@ Expected: DistilBERT passes quality gate (≥56%).
   year={2016}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: A_math.md
      PURPOSE: Formal proofs and derivations
@@ -2549,13 +2635,9 @@ positions. Adapters don't affect causality. $\square$
 between reconstruction error (bounded above) and task accuracy is 
 empirical. In practice, task accuracy drops correlate strongly with 
 reconstruction error at $\tau \in [0.90, 0.95]$.
-```
 
 ---
 
-## 📄 `B_implementation.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: B_implementation.md
      PURPOSE: Code-level details
@@ -2881,13 +2963,9 @@ Key entry points:
 - `AdaptiveSVDLinear` — the factorized linear module
 - `AdaptiveSVDAttention` — the attention wrapper
 - `inject_adaptive_svd()` — injection hook
-```
 
 ---
 
-## 📄 `C_data.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: C_data.md
      PURPOSE: Full experimental data
@@ -2963,8 +3041,8 @@ Key entry points:
 
 | Layer | Q error | K error | V error | O error |
 |---|---|---|---|---|
-| 0 | 0.024 | 0.024 | 0.024 | 0.024 |
-| 1 | 0.024 | 0.024 | 0.024 | 0.024 |
+| 0 | 0.024 | 0.025 | 0.025 | 0.026 |
+| 1 | 0.024 | 0.025 | 0.025 | 0.026 |
 | ... | ... | ... | ... | ... |
 
 ## C.8 Energy Threshold Ablation
@@ -3049,25 +3127,21 @@ Step  Loss
 
 ```bash
 # Main
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
+python run_all_4_adaptive_svd.py - models distilbert,roberta,gpt2
 
 # Energy threshold sweep
 for tau in 0.85 0.90 0.92 0.95 0.99; do
-    python run_all_4_adaptive_svd.py --energy_threshold $tau --output_suffix tau_$tau
+    python run_all_4_adaptive_svd.py - energy_threshold $tau - output_suffix tau_$tau
 done
 
 # Residual rank sweep
 for rl in 0 4 8 16 32 64; do
-    python run_all_4_adaptive_svd.py --residual_rank $rl --output_suffix rl_$rl
+    python run_all_4_adaptive_svd.py - residual_rank $rl - output_suffix rl_$rl
 done
-```
 ```
 
 ---
 
-## 📄 `D_negative_results.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: D_negative_results.md
      PURPOSE: What didn't work
@@ -3253,13 +3327,9 @@ Based on our negative results:
 3. **Interaction with quantization:** INT8 + Adaptive SVD?
 4. **Learning rate schedule:** Would cosine scheduling help?
 5. **Multi-task calibration:** Does rank transfer across tasks?
-```
 
 ---
 
-## 📄 `E_ethics.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: E_ethics.md
      PURPOSE: Ethical and broader impact considerations
@@ -3396,610 +3466,3 @@ This work does not involve human subjects. No IRB approval was required.
 All experimental results (positive and negative) are reported in Sections 
 7–8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
 documented in Section 6 and Appendix B.
-```
-
----
-
-## 📄 `build.py`
-
-```python
-"""
-Build script: concatenate all paper sections.
-
-Usage:
-    python build.py --module adaptive_svd
-    python build.py --module adaptive_svd --pdf
-"""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md",
-    "01_intro.md",
-    "02_related.md",
-    "03_background.md",
-    "04_method.md",
-    "05_architecture.md",
-    "06_setup.md",
-    "07_results.md",
-    "08_analysis.md",
-    "09_discussion.md",
-    "10_limitations.md",
-    "11_conclusion.md",
-    "12_reproducibility.md",
-    "13_references.md",
-    "A_math.md",
-    "B_implementation.md",
-    "C_data.md",
-    "D_negative_results.md",
-    "E_ethics.md",
-]
-
-
-def build(module_dir: Path, output: Path, to_pdf: bool = False):
-    parts = []
-    missing = []
-    
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-    
-    if missing:
-        print(f"Warning: {len(missing)} missing sections:")
-        for m in missing:
-            print(f"  - {m}")
-    
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-    
-    if to_pdf:
-        try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-    
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-    
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir: Path, dry_run: bool = False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"variables.json not found in {module_dir}")
-        return
-    
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-    
-    print(f"Loaded {len(variables)} variables")
-    print()
-    
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-        
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-        
-        new_content = PATTERN.sub(replace, content)
-        
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] Would update {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-        
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-    
-    print()
-    print("Dry run complete." if dry_run else "Done.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-    
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-    
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from your Adaptive SVD runs.",
-
-  "MODULE_NAME": "Adaptive SVD",
-  "FULL_NAME": "Adaptive SVD Attention",
-  "SUBTITLE": "Energy-Thresholded Low-Rank Factorization with Residual Adapters",
-  "CATEGORY": "adaptive low-rank attention",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-15",
-  "VERSION": "1",
-  "CHANGELOG": "initial draft",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "ENERGY_THRESHOLD": "0.92",
-  "SVD_RANK": "288",
-  "RESIDUAL_RANK": "16",
-  "MIN_RANK": "16",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-  "TRAINABLE_TENSORS": "96",
-
-  "VRAM_REDUCTION": "30",
-  "SPEEDUP": "5",
-  "LATENCY_RATIO": "1.2",
-  "ADAPTER_OVERHEAD": "12",
-  "NO_ADAPT_LOSS": "8",
-  "WITH_ADAPT_DROP": "2.7",
-  "FIXED_RANK_LOSS": "1.5",
-  "FIXED_RANK_GAIN": "1.5",
-  "RECOVERY_PCT": "60",
-  "AVG_GAIN": "5.0",
-
-  "D_ACC": "88.0",
-  "D_DELTA": "-2.7",
-  "D_F1": "0.880",
-  "D_F1_MACRO": "0.879",
-  "D_PREC": "0.881",
-  "D_REC": "0.879",
-  "D_LOSS": "0.36",
-  "D_COMP": "24",
-  "D_FALLBACK": "0",
-  "D_RATIO": "3.0",
-  "D_PARAMS": "22000000",
-  "D_VRAM": "130",
-  "D_TIME": "2.3",
-  "D_TPS": "48000",
-  "D_DISK": "45",
-  "D_DISK_RATIO": "3.0",
-  "D_TOTAL": "15",
-  "D_SVD": "10",
-  "D_RANK": "2",
-  "D_ADAPT": "3",
-  "D_TIME_RATIO": "1.2",
-  "D_AVG_ERR": "0.27",
-  "D_GAIN": "5.5",
-
-  "R_ACC": "74.0",
-  "R_DELTA": "-4.6",
-  "R_F1": "0.740",
-  "R_PREC": "0.740",
-  "R_REC": "0.739",
-  "R_LOSS": "0.55",
-  "R_COMP": "48",
-  "R_FALLBACK": "0",
-  "R_RATIO": "2.5",
-  "R_PARAMS": "50000000",
-  "R_VRAM": "550",
-  "R_TIME": "5.0",
-  "R_TPS": "22000",
-  "R_TOTAL": "30",
-  "R_SVD": "20",
-  "R_RANK": "4",
-  "R_ADAPT": "6",
-  "R_AVG_ERR": "0.28",
-  "R_GAIN": "4.8",
-
-  "G_ACC": "75.5",
-  "G_DELTA": "-3.9",
-  "G_F1": "0.750",
-  "G_PREC": "0.750",
-  "G_REC": "0.749",
-  "G_LOSS": "0.50",
-  "G_COMP": "48",
-  "G_FALLBACK": "0",
-  "G_RATIO": "2.5",
-  "G_PARAMS": "50000000",
-  "G_VRAM": "600",
-  "G_TIME": "5.3",
-  "G_TPS": "21000",
-  "G_TOTAL": "30",
-  "G_SVD": "20",
-  "G_RANK": "4",
-  "G_ADAPT": "6",
-  "G_AVG_ERR": "0.29",
-  "G_GAIN": "4.9",
-
-  "D_Q_A": "196608",
-  "D_Q_RANK": "128",
-  "D_Q_RED": "3.0",
-  "D_K_A": "196608",
-  "D_K_RANK": "128",
-  "D_K_RED": "3.0",
-  "D_V_A": "98304",
-  "D_V_RANK": "64",
-  "D_V_RED": "6.0",
-  "D_O_A": "98304",
-  "D_O_RANK": "64",
-  "D_O_RED": "6.0",
-
-  "D_L0_Q": "128", "D_L0_K": "128", "D_L0_V": "64", "D_L0_O": "64", "D_L0_AVG": "96",
-  "D_L1_Q": "140", "D_L1_K": "140", "D_L1_V": "70", "D_L1_O": "70", "D_L1_AVG": "105",
-  "D_L2_Q": "150", "D_L2_K": "150", "D_L2_V": "80", "D_L2_O": "80", "D_L2_AVG": "115",
-  "D_L3_Q": "150", "D_L3_K": "150", "D_L3_V": "80", "D_L3_O": "80", "D_L3_AVG": "115",
-  "D_L4_Q": "140", "D_L4_K": "140", "D_L4_V": "70", "D_L4_O": "70", "D_L4_AVG": "105",
-  "D_L5_Q": "128", "D_L5_K": "128", "D_L5_V": "64", "D_L5_O": "64", "D_L5_AVG": "96",
-
-  "D_AVG_Q": "139", "D_AVG_K": "139", "D_AVG_V": "71", "D_AVG_O": "71", "D_AVG_ALL": "105",
-  "MIN_RANK_OBS": "64",
-  "MAX_RANK_OBS": "150",
-
-  "D_ERR_Q": "0.27", "D_ERR_K": "0.26", "D_ERR_V": "0.28", "D_ERR_O": "0.28",
-
-  "AVG_RANK_85": "64",
-  "AVG_RANK_90": "90",
-  "AVG_RANK_92": "105",
-  "AVG_RANK_95": "160",
-  "AVG_RANK_99": "350",
-
-  "D_T85": "85", "D_T90": "87", "D_T92": "88", "D_T95": "89", "D_T99": "90",
-  "D_T85_R": "5.0", "D_T90_R": "3.5", "D_T92_R": "3.0", "D_T95_R": "2.0", "D_T99_R": "1.2",
-  "R_T85": "70", "R_T90": "72", "R_T92": "74", "R_T95": "75.5", "R_T99": "77",
-  "G_T85": "71", "G_T90": "74", "G_T92": "75.5", "G_T95": "77", "G_T99": "78.5",
-
-  "D_RL0": "80", "D_RL4": "85", "D_RL8": "87", "D_RL16": "88", "D_RL32": "88.2", "D_RL64": "88.3",
-  "D_RL1": "80", "D_RL2": "83",
-  "R_RL0": "65", "R_RL4": "70", "R_RL8": "72.5", "R_RL16": "74", "R_RL32": "74.3", "R_RL64": "74.4",
-  "G_RL0": "66", "G_RL4": "71.5", "G_RL8": "74", "G_RL16": "75.5", "G_RL32": "75.7", "G_RL64": "75.8",
-
-  "D_S10": "85", "D_S25": "87", "D_S50": "88", "D_S100": "88.3", "D_S200": "88.4",
-  "R_S10": "71", "R_S25": "73", "R_S50": "74", "R_S100": "74.5", "R_S200": "74.6",
-  "G_S10": "72", "G_S25": "74", "G_S50": "75.5", "G_S100": "75.8", "G_S200": "75.9",
-
-  "D_CAP64": "85", "D_CAP128": "88", "D_CAP256": "88", "D_CAP384": "88",
-  "D_HIT64": "20", "D_HIT128": "5", "D_HIT256": "0", "D_HIT384": "0",
-
-  "FR64": "86", "FR64_R": "5.0",
-  "FR128": "87.5", "FR128_R": "3.5",
-  "FR192": "88.5", "FR192_R": "1.7",
-
-  "SVDL_D": "84", "SVDL_DR": "3.0",
-  "SVDL_R": "70", "SVDL_RR": "2.5",
-  "SVDL_G": "72", "SVDL_GR": "2.5",
-  "A3_D": "85.5", "A3_DR": "2.8",
-  "A3_R": "72", "A3_RR": "2.3",
-  "A3_G": "74", "A3_GR": "2.3",
-  "AASVD_D": "85.0", "AASVD_DR": "3.0",
-  "AASVD_R": "72", "AASVD_RR": "2.5",
-  "AASVD_G": "73", "AASVD_GR": "2.5",
-  "A3_TIME": "60", "AASVD_TIME": "75",
-
-  "QWEN_VERIFIED": "partial",
-  "T5_VERIFIED": "not tested",
-
-  "D_LR5e5": "87.5", "D_LR1e4": "88", "D_LR2e4": "88", "D_LR5e4": "87",
-  "D_BS2": "85", "D_BS4": "87", "D_BS8": "88", "D_BS16": "88.1",
-  "R_BS2": "71", "R_BS4": "73", "R_BS8": "74",
-  "G_BS2": "72", "G_BS4": "74", "G_BS8": "75.5",
-
-  "SEED42_D": "88.0", "SEED123_D": "87.8", "SEED456_D": "88.1",
-  "SEED42_R": "74.0", "SEED123_R": "73.8", "SEED456_R": "74.1",
-  "SEED42_G": "75.5", "SEED123_G": "75.3", "SEED456_G": "75.6",
-  "SEED_MEAN_D": "88.0", "SEED_MEAN_R": "74.0", "SEED_MEAN_G": "75.5",
-  "SEED_STD_D": "0.15", "SEED_STD_R": "0.15", "SEED_STD_G": "0.15",
-
-  "TAU80_ACC": "80",
-  "TAU99_RATIO": "1.3",
-  "NO_ADAPT_ACC": "80",
-
-  "FAIL_LAYER": "none", "FAIL_MODEL": "N/A", "FAIL_REASON": "N/A", "FAIL_ACTION": "N/A",
-  "FAIL_CAUSE": "No failures observed in this configuration.",
-
-  "RUNTIME": "15",
-  "COMPUTE_HOURS": "10",
-  "CO2_KG": "0.7",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-  "DATASETS_VERSION": "2.20.0",
-  "NUMPY_VERSION": "1.26.4",
-  "PANDAS_VERSION": "2.2.2",
-
-  "BUCKET_LOW": "8", "BUCKET_MEDLOW": "6", "BUCKET_MEDHIGH": "8", "BUCKET_HIGH": "2",
-  "LOW_LAYERS": "V (all layers)", "MEDLOW_LAYERS": "O, V (later)", "MEDHIGH_LAYERS": "Q, K", "HIGH_LAYERS": "Q, K (middle)",
-
-  "D_S1": "1.5", "D_S5": "0.7", "D_S10": "0.4", "D_S25": "0.35", "D_S50": "0.30",
-  "R_S1": "2.0", "R_S5": "1.2", "R_S10": "0.8", "R_S25": "0.6", "R_S50": "0.55",
-  "G_S1": "1.8", "G_S5": "1.0", "G_S10": "0.7", "G_S25": "0.55", "G_S50": "0.50",
-
-  "_note": "Add keys as needed"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — Adaptive SVD
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `adaptive_svd/`
-- [ ] Filled `variables.json` with real values
-- [ ] Ran `python apply_vars.py --module adaptive_svd`
-- [ ] No `[PLACEHOLDER]` remains: `Select-String -Path "*.md" -Pattern "\{\{"`
-
-## Content Quality
-
-### Abstract
-- [ ] Under 250 words
-- [ ] Calibration-free nature highlighted
-- [ ] Energy threshold τ stated
-- [ ] Real parameter reduction stated
-- [ ] Per-layer rank range stated
-
-### Introduction
-- [ ] Motivation concrete (not "transformers are popular")
-- [ ] Problem statement formal
-- [ ] Contributions verifiable
-- [ ] Paper organization complete
-
-### Related Work
-- [ ] Covers classical SVD and rank selection
-- [ ] Covers activation-aware methods (A3, AASVD)
-- [ ] Covers PEFT (LoRA, AdaLoRA, PiSSA)
-- [ ] Includes "position of our work" section
-- [ ] All citations are real
-
-### Method
-- [ ] Every formula numbered
-- [ ] Every formula referenced in text
-- [ ] Algorithm 1 and 2 written
-- [ ] Complexity analysis complete
-- [ ] T5/GQA/RoPE support described
-
-### Results
-- [ ] Table 7.1 main results with all 3 models
-- [ ] Table 7.3 per-layer rank distribution
-- [ ] Table 7.6 energy threshold ablation
-- [ ] Table 7.7 residual rank ablation
-- [ ] Table 7.8 recovery steps ablation
-- [ ] Table 7.9 rank cap ablation
-- [ ] Table 7.10 companion comparison
-- [ ] All ablations have observations
-
-### Analysis
-- [ ] Explains why it works
-- [ ] Per-layer rank distribution analyzed
-- [ ] Comparison with A3/AASVD
-- [ ] Comparison with fixed rank
-- [ ] Numerical stability discussed
-
-### Limitations
-- [ ] Task coverage stated
-- [ ] Model coverage stated
-- [ ] Hardware coverage stated
-- [ ] Inference overhead stated
-- [ ] Single-seed limitation stated
-- [ ] T5/Qwen verification status stated
-
-## Reproducibility
-
-- [ ] Code on GitHub
-- [ ] Checkpoints on HuggingFace
-- [ ] Hardware specified
-- [ ] Seeds documented
-- [ ] Dependencies pinned
-- [ ] Runtime estimates provided
-- [ ] Reproduction commands tested
-- [ ] Per-layer ranks documented
-
-## Honesty
-
-- [ ] No overclaiming
-- [ ] Failure cases in Appendix D
-- [ ] Negative results documented
-- [ ] Single-seed transparency
-- [ ] "Calibration-free" accurate (not calibration-ignoring)
-- [ ] Parameter reduction verified
-
-## Formatting
-
-- [ ] All tables render
-- [ ] All equations render
-- [ ] Consistent citation style
-- [ ] No broken links
-- [ ] All `[PLACEHOLDER]` substituted
-
-## Ethics
-
-- [ ] Broader impact discussed
-- [ ] Environmental cost estimated
-- [ ] Bias concerns stated
-- [ ] Misuse risks stated
-- [ ] Funding disclosed
-- [ ] COI disclosed
-- [ ] LLM usage disclosed
-
-## Final Pass
-
-- [ ] Read entire paper aloud
-- [ ] Verify all numbers against `summary.csv`
-- [ ] Cross-check tables with data
-- [ ] Get feedback from 2+ readers
-- [ ] Address all feedback
-- [ ] PDF compiles
-- [ ] Ready to submit
-
-## Quick Start
-
-```bash
-# 1. Copy template
-cp -r papers/_TEMPLATE papers/adaptive_svd
-
-# 2. Fill variables.json
-nano papers/adaptive_svd/variables.json
-
-# 3. Apply
-cd papers/adaptive_svd
-python apply_vars.py --module adaptive_svd
-
-# 4. Verify
-grep -rn "{{" .
-# Should be empty
-
-# 5. Build
-python build.py --module adaptive_svd --pdf
-
-# 6. Review and submit
-```
-```
-
----
-
-## 🚀 خلاصه اجرا
-
-### مرحله ۱: کپی تمپلیت
-
-```powershell
-cd D:\SVD_Project\papers
-Copy-Item -Recurse _TEMPLATE adaptive_svd
-```
-
-### مرحله ۲: اجرای Adaptive SVD
-
-```powershell
-cd D:\SVD_Project
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2 --energy_threshold 0.92 --residual_rank 16 --recovery_steps 50
-```
-
-### مرحله ۳: پر کردن `variables.json`
-
-از فایل‌های `results/unified_adaptive_svd/*/summary.csv` و `metrics.json` 
-اعداد واقعی را بردار. `metrics.json` شامل `layer_ranks` است که per-layer 
-rank را می‌دهد.
-
-### مرحله ۴: Apply و بررسی
-
-```powershell
-cd D:\SVD_Project\papers\adaptive_svd
-python apply_vars.py --module adaptive_svd
-Select-String -Path "*.md" -Pattern "\{\{"
-```
-
-### مرحله ۵: ساخت مقاله
-
-```powershell
-python build.py --module adaptive_svd
-# یا با PDF:
-python build.py --module adaptive_svd --pdf
-```
-
----
-
-## 💡 نکات کلیدی Adaptive SVD
-
-### ۱. برجسته کردن Calibration-Free
-
-مزیت اصلی این ماژول **عدم نیاز به calibration** است. در abstract، intro، 
-و discussion این را برجسته کن.
-
-### ۲. Per-Layer Rank Distribution
-
-این تفاوت کلیدی با SVD معمولی است. `Table 7.3` و `Figure 8.2` این را نشان 
-بده. ranks از ۶۴ تا ۱۵۰ متغیر است.
-
-### ۳. T5 Support
-
-پشتیبانی از T5 relative attention bias **منحصربه‌فرد** است. در `Section 5.5.1` 
-و `B.7` توضیح بده.
-
-### ۴. مقایسه صادقانه با A3/AASVD
-
-مهم: Adaptive SVD **سریع‌تر** ولی ممکن است **دقت کمی کمتر** از A3/AASVD 
-بدهد. این trade-off را در `Section 8.6` و `Section 9.5` صادقانه گزارش کن.
-
-### ۵. Energy Bound
-
-$\tau = 0.92$ معادل error bound $\sqrt{1-0.92} \approx 0.283$. این را در 
-`Section 4.9.1` توضیح بده.
-
-### ۶. Pissa Comparison
-
-تفاوت کلیدی: PiSSA از principal components برای adapter استفاده می‌کند. 
-Adaptive SVD از آنها برای **frozen base** استفاده می‌کند. این را در 
-`Section 2.3` توضیح بده.
-
----
-
-**قدم بعدی: `run_all_4_adaptive_svd.py` را اجرا کن و `results/unified_adaptive_svd/*/metrics.json` 
-را بفرست تا `variables.json` را با اعداد واقعی پر کنم.**

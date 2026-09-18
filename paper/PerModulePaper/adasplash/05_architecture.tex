@@ -12,11 +12,11 @@ AdaSplash supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No &  \\
-RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No &  \\
-GPT-2 & \texttt{GPT2Attention} & No & No & No & No &  \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No & partial \\
-T5 & \texttt{T5Attention} & No & No & No & Yes & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No &  \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \& partial \\
+T5 & \texttt{T5Attention} \& No \& No \& No \& Yes \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -195,11 +195,11 @@ class AdaSplashAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & \texttt{copy\_weights} raises & Return None \\
-Shape mismatch & Assertion in \texttt{copy\_weights} & Skip layer \\
-Near-zero Frobenius & Check < 1e-4 & Raise \\
-Entmax support empty & \texttt{sum(p) < 1e-7} & Softmax fallback \\
-NaN in scores & \texttt{torch.isnan} & Mask to -10000 \\
+Missing weights & \texttt{copy\_weights} raises \& Return None \\
+Shape mismatch \& Assertion in \texttt{copy\_weights} \& Skip layer \\
+Near-zero Frobenius \& Check < 1e-4 \& Raise \\
+Entmax support empty & \texttt{sum(p) < 1e-7} \& Softmax fallback \\
+NaN in scores & \texttt{torch.isnan} \& Mask to -10000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -213,11 +213,11 @@ NaN in scores & \texttt{torch.isnan} & Mask to -10000 \\
 \toprule
 \textbf{Component} & \textbf{Precision} \\
 \midrule
-Scores & Model dtype \\
-Entmax bisection & FP32 internally \\
-Attention output & Model dtype \\
-Base weights & Model dtype \\
-LoRA & Model dtype \\
+Scores \& Model dtype \\
+Entmax bisection \& FP32 internally \\
+Attention output \& Model dtype \\
+Base weights \& Model dtype \\
+LoRA \& Model dtype \\
 \bottomrule
 \end{tabular}
 \end{table}

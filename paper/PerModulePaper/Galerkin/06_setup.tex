@@ -10,9 +10,9 @@
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} & \textbf{Path} \\
 \midrule
-DistilBERT & 6 & 768 & 12 & 66.9M & Flat & Galerkin \\
-RoBERTa & 12 & 768 & 12 & 124.6M & Nested & Galerkin \\
-GPT-2 & 12 & 768 & 12 & 124.4M & Causal & Fallback \\
+DistilBERT & 6 & 768 & 12 & 66.9M \& Flat \& Galerkin \\
+RoBERTa & 12 & 768 & 12 & 124.6M \& Nested \& Galerkin \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \& Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,9 +45,9 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Note} \\
 \midrule
-\texttt{rank} (basis dim $r$) & 64 & Default 64 \\
-\texttt{basis\_type} & \texttt{ortho\_dct} & DCT-II \\
-\texttt{layer\_id} & 0..N\_l & For logging \\
+\texttt{rank} (basis dim $r$) & 64 \& Default 64 \\
+\texttt{basis\_type} & \texttt{ortho\_dct} \& DCT-II \\
+\texttt{layer\_id} & 0..N\_l \& For logging \\
 \texttt{dropout} & 0.1 &  \\
 \bottomrule
 \end{tabular}
@@ -62,13 +62,13 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Recovery steps & 50 \\
 LoRA rank & 16 \\
 LoRA alpha & 32 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,7 +108,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\

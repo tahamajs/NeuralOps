@@ -52,6 +52,10 @@ For each of Q, K, V:
 $$
 W \approx U_k \Sigma_k V_k^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 where $k$ is the target rank.
@@ -61,11 +65,19 @@ where $k$ is the target rank.
 $$
 \text{down.weight} = V_k^\top \in \mathbb{R}^{k \times d_\text{in}}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 $$
 \text{up.weight} = U_k \Sigma_k \in \mathbb{R}^{d_\text{out} \times k}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 Note: we do NOT use $\Sigma^{1/2}$ on both sides; instead, we absorb $\Sigma_k$ 
@@ -83,6 +95,10 @@ The rank $k$ trades off compression and accuracy:
 $$
 \text{Compression} = \frac{d^2}{2 k d} = \frac{d}{2k}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 | $k$ | $d = 768$ ratio |
@@ -102,6 +118,10 @@ $W_O$ is **not factorized**. Instead, we wrap it in a `LoRALinear`:
 $$
 \text{out} = W_O \cdot \text{context} + b_O + \text{LoRA}(\text{context})
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 **Why not factorize $W_O$?**

@@ -1,6 +1,52 @@
 # 4. Method Formulation
-1. **$W$-Update**: $W^{(t+1)} = rg\min_W f(W) + rac{ho_1}{2} \|W - Z^{(t)} + U_1^{(t)}\|_F^2 + rac{ho_2}{2} \|W - Q^{(t)} + U_2^{(t)}\|_F^2$
+1. **$W$-Update**: $W^{(t+1)} = rg\min_W f(W) + rac{
+ho_1}{2} \|W - Z^{(t)} + U_1^{(t)}\|_F^2 + rac{
+ho_2}{2} \|W - Q^{(t)} + U_2^{(t)}\|_F^2$
 2. **$Z$-Update**: Projection onto 2:4 structured or block sparsity patterns. <!-- source: Codes/framework/compression_engine/admm_compressor.py line 21 -->
 3. **$Q$-Update**: Nearest neighbor quantization.
 4. **Dual Updates**: $U_1^{(t+1)} = U_1^{(t)} + W^{(t+1)} - Z^{(t+1)}, \quad U_2^{(t+1)} = U_2^{(t)} + W^{(t+1)} - Q^{(t+1)}$.
 5. **Monotonic Tracker**: Preserves the iterate with lowest reconstruction error. <!-- source: Codes/framework/compression_engine/admm_compressor.py line 58 -->
+
+
+## 2. Mathematical Formulations & Matrix Decompositions
+
+<!-- source: Codes/frontend/dist/Docs/content/compressions/admm_compressor.md -->
+### 2.1 Optimization Objective
+
+Let $W \in \mathbb{R}^{N \times M}$ be the target weight matrix of a linear layer. We define a joint operator $\Phi_{S, b}(W)$ that maps continuous weights into a sparse $b$-bit quantized matrix.
+
+1. **Sparsity Mask Selection**:
+   Let $k = \lfloor (1 - S) \cdot N \cdot M \rfloor$ be the number of non-zero parameters to retain. The magnitude threshold $\tau$ is defined by:
+   $$\tau = \text{TopK}_{k} \left( \{ |W_{i,j}| \}_{i=1, j=1}^{N, M} \right)
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+$$
+   The binary mask matrix $M \in \{0, 1\}^{N \times M}$ is:
+   $$M_{i,j} = \begin{cases} 1 & \text{if } |W_{i,j}| \ge \tau \\ 0 & \text{otherwise} \end{cases}
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+$$
+   The intermediate pruned weight matrix is $W_{\text{pruned}} = W \odot M$.
+
+2. **Symmetric Low-Bit Quantization**:
+   Given target bit width $b \in \{2, 4, 8\}$, the maximum discrete integer representation is:
+   $$Q_{\text{max}} = 2^{b - 1} - 1
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+$$
+   The continuous weights are scaled and clamped into $[-Q_{\text{max}}, Q_{\text{max}}]$:
+   $$W_{\text{scaled}} = \text{Clamp}\left( W_{\text{pruned}} \cdot Q_{\text{max}}, -Q_{\text{max}}, Q_{\text{max}} \right)
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+$$
+   $$W_{\text{quant}} = \frac{\lfloor W_{\text{scaled}} \rceil}{Q_{\text{max}}}
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+
+<!-- source: Codes/framework/compression_engine/admm_compressor.py line 227 -->
+$$
+
+---

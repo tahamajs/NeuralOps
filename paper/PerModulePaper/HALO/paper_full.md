@@ -1,66 +1,3 @@
-# تمپلیت کامل مقاله HALO-ReGLA — فایل به فایل
-
-قبل از شروع، خلاصه‌ای از HALO-ReGLA:
-
-**HALO-ReGLA = Hardware-Aware Linear Optics & Rectified Gated Linear Attention**
-
-ایده اصلی:
-- **دو استریم موازی:** dense softmax + linear attention
-- **گیت یادگیرنده:** `g = sigmoid(gate(x))` برای ترکیب دو استریم
-- **Rectified kernel:** `φ(x) = elu(x) + 1`
-- **Causal prefix sum** برای decoder، cumsum ساده برای encoder
-- Gate bias اولیه 1.8 → dense غالب در شروع
-
-تفاوت با NHA (که مشابه بود):
-
-| ویژگی | NHA | HALO-ReGLA |
-|---|---|---|
-| Dense branch | Local window | **Global dense softmax** |
-| Linear branch | RFF-based | **ELU kernel** |
-| Gate | Simple | **Per-head learnable** |
-| Initial bias | 3.0 | 1.8 |
-
-**نکته کلیدی:** HALO-ReGLA ترکیبی از **دقت dense** و **سرعت linear** را هدف می‌گیرد.
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/
-├── _TEMPLATE/
-│   ├── 00_meta.md
-│   ├── 01_intro.md
-│   ├── 02_related.md
-│   ├── 03_background.md
-│   ├── 04_method.md
-│   ├── 05_architecture.md
-│   ├── 06_setup.md
-│   ├── 07_results.md
-│   ├── 08_analysis.md
-│   ├── 09_discussion.md
-│   ├── 10_limitations.md
-│   ├── 11_conclusion.md
-│   ├── 12_reproducibility.md
-│   ├── 13_references.md
-│   ├── A_math.md
-│   ├── B_implementation.md
-│   ├── C_data.md
-│   ├── D_negative_results.md
-│   ├── E_ethics.md
-│   ├── build.py
-│   ├── apply_vars.py
-│   ├── variables.json
-│   └── checklist.md
-└── halo_regla/
-    └── (copy of _TEMPLATE)
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
@@ -167,13 +104,11 @@ linearly — a useful signal for model analysis.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 01_intro.md
      PURPOSE: Introduction
@@ -286,13 +221,11 @@ Section 11 concludes.
 | $\mathcal{A}_\text{lin}$ | Linear attention |
 | $\alpha$ | LoRA scaling |
 | $r$ | LoRA rank |
-```
 
 ---
 
-## 📄 `02_related.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 02_related.md
      PURPOSE: Related work
@@ -370,13 +303,11 @@ trains only LoRA + gate parameters, preserving the pretrained knowledge.
 | FLASH | Yes | Layer | No | No | No |
 | Hyena | No | No | No | No | No |
 | **HALO-ReGLA** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
-```
 
 ---
 
-## 📄 `03_background.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 03_background.md
      PURPOSE: Technical background
@@ -523,13 +454,11 @@ projections.
 | $\sigma$ | Sigmoid |
 | $\alpha$ | LoRA scaling |
 | $r$ | LoRA rank |
-```
 
 ---
 
-## 📄 `04_method.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 04_method.md
      PURPOSE: Method
@@ -581,6 +510,10 @@ S_{ij} = \frac{Q_i^\top K_j}{\sqrt{d_h}}, \quad
 S_{ij} \leftarrow S_{ij} + \text{mask}_{ij}, \quad
 O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
 $$
 
 **Complexity.** $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
@@ -598,6 +531,10 @@ Rectified kernel attention with cumulative sums for causality:
 $$
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
@@ -609,16 +546,28 @@ For each position $i$:
 $$
 \text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{d_h \times d_h}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 \text{den}^{(i)} = \sum_{j \le i} \phi(K_j) \in \mathbb{R}^{d_h}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{den}^{(i)} + \epsilon}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
@@ -630,6 +579,10 @@ For encoders (bidirectional), we use the same formulas without cumsum:
 $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdot \sum_j \phi(K_j) + \epsilon}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.3.4 Padding Handling
@@ -640,6 +593,10 @@ $$
 \phi(K_j) \leftarrow \phi(K_j) \cdot \text{valid}_j, \quad
 V_j \leftarrow V_j \cdot \text{valid}_j
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 This ensures padding contributes nothing to numerator or denominator.
@@ -651,6 +608,10 @@ The cumsum is computed in FP32 to avoid overflow:
 $$
 \text{cum}^{(i)} = \text{cumsum}(\phi(K) V^\top).\text{float}()
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 We cast back to the model dtype after cumsum.
@@ -664,6 +625,10 @@ For each head $h$, a linear projection computes the gate logit:
 $$
 \text{logit}_{h,i} = w_h^\top x_i + b_h
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 where $x_i \in \mathbb{R}^d$ is the input hidden state at position $i$. The 
@@ -672,6 +637,10 @@ gate is:
 $$
 g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.2 Output
@@ -679,6 +648,10 @@ $$
 $$
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.3 Initialization
@@ -799,6 +772,10 @@ ELU kernel is heuristic but works well in practice.
 $$
 \frac{\partial \mathcal{L}}{\partial g_h} = 0 \Rightarrow O^\text{dense}_h = O^\text{lin}_h
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+
+<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
 $$
 
 or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
@@ -810,21 +787,34 @@ or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
 The causal prefix-sum formulation ensures position $i$ only attends to 
 $j \le i$. This is because $\text{cum}^{(i)}$ depends only on $\{\phi(K_j), 
 V_j : j \le i\}$. $\square$
-```
 
 ---
 
-## 📄 `05_architecture.md`
-
-```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
+---
 
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -947,13 +937,11 @@ class HALOReGLAAttention(BaseAttention): ...
 | CUDA OOM in cumsum | RuntimeError | Reduce batch |
 | NaN in cumsum | `torch.isnan` | Cast FP32 |
 | RoPE shape mismatch | Exception | Skip RoPE |
-```
 
 ---
 
-## 📄 `06_setup.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 06_setup.md
      PURPOSE: Experimental setup
@@ -1054,13 +1042,11 @@ python run_all_4_halo_regla.py \
 | Kernel | $\{\text{elu}, \text{relu}, \text{softplus}\}$ |
 | Fusion | $\{\text{learned}, \text{fixed 0.5}, \text{fixed 0.8}\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
-```
 
 ---
 
-## 📄 `07_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 07_results.md
      PURPOSE: Results
@@ -1072,8 +1058,9 @@ python run_all_4_halo_regla.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with gate bias 1.8.**
+### Table 7.1: SST-2 results with gate bias 1.8.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Mean gate | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB | 1.9 s |
@@ -1085,8 +1072,9 @@ python run_all_4_halo_regla.py \
 
 ## 7.2 Gate Analysis
 
-**Table 7.2: Learned gate statistics per head.**
+### Table 7.2: Learned gate statistics per head.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Min $\bar{g}_h$ | Max $\bar{g}_h$ | Mean | Std |
 |---|---|---|---|---|
 | DistilBERT | 0.15 | 0.98 | 0.72 | 0.24 |
@@ -1098,8 +1086,9 @@ python run_all_4_halo_regla.py \
 
 ## 7.3 Per-Layer Gate Evolution
 
-**Table 7.3: Mean gate per layer (DistilBERT).**
+### Table 7.3: Mean gate per layer (DistilBERT).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Layer | Mean gate |
 |---|---|
 | 0 | 0.85 |
@@ -1114,8 +1103,9 @@ layers have lower gates (linear).
 
 ## 7.4 Efficiency
 
-**Table 7.4: Memory and time.**
+### Table 7.4: Memory and time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -1125,8 +1115,9 @@ layers have lower gates (linear).
 
 ## 7.5 Ablation: Gate Bias
 
-**Table 7.5: Accuracy vs gate bias.**
+### Table 7.5: Accuracy vs gate bias.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $b_h$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 85.0 | 72.0 | 73.0 |
@@ -1139,8 +1130,9 @@ layers have lower gates (linear).
 
 ## 7.6 Ablation: Kernel
 
-**Table 7.6: Accuracy vs kernel choice.**
+### Table 7.6: Accuracy vs kernel choice.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | ELU+1 | 89.5 | 76.5 | 77.5 |
@@ -1152,8 +1144,9 @@ layers have lower gates (linear).
 
 ## 7.7 Ablation: LoRA Rank
 
-**Table 7.7: Accuracy vs LoRA rank.**
+### Table 7.7: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 86.0 | 72.0 | 73.0 |
@@ -1163,8 +1156,9 @@ layers have lower gates (linear).
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps.**
+### Table 7.8: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 86.0 | 72.0 | 73.0 |
@@ -1174,8 +1168,9 @@ layers have lower gates (linear).
 
 ## 7.9 Comparison with Companion Methods
 
-**Table 7.9: Comparison.**
+### Table 7.9: Comparison.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense |
@@ -1187,8 +1182,9 @@ layers have lower gates (linear).
 
 ## 7.10 Scaling with Sequence Length
 
-**Table 7.10: Inference time at various $L$ (GPT-2).**
+### Table 7.10: Inference time at various $L$ (GPT-2).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $L$ | Dense | HALO | Speedup |
 |---|---|---|---|
 | 128 | 4.2 s | 5.5 s | 0.76× |
@@ -1202,13 +1198,11 @@ layers have lower gates (linear).
 - **No parameter reduction** (only gate added).
 - **No speedup without hard routing.**
 - **All models pass quality gate.**
-```
 
 ---
 
-## 📄 `08_analysis.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 08_analysis.md
      PURPOSE: Deep analysis
@@ -1347,13 +1341,11 @@ better than NHA's local window.
 4. **ELU+1 is optimal kernel.**
 5. **No speedup without hard routing.**
 6. **Causality preserved via prefix sums.**
-```
 
 ---
 
-## 📄 `09_discussion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 09_discussion.md
      PURPOSE: Practical guidance
@@ -1436,13 +1428,11 @@ For DistilBERT at $L = 128$:
 
 ### Environmental
 Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
-```
 
 ---
 
-## 📄 `10_limitations.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 10_limitations.md
      PURPOSE: Limitations
@@ -1507,13 +1497,11 @@ Research-grade. Numerical stability issues at extreme $L$.
 ## 10.11 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---
 
-## 📄 `11_conclusion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 11_conclusion.md
      PURPOSE: Conclusion
@@ -1576,13 +1564,11 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 12_reproducibility.md
      PURPOSE: Reproducibility
@@ -1662,13 +1648,11 @@ torch.cuda.manual_seed_all(seed)
 - FP32 needed for cumsum stability
 - Long sequences may OOM due to cumsum memory
 - RoPE may fail on some models
-```
 
 ---
 
-## 📄 `13_references.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
@@ -1784,13 +1768,11 @@ torch.cuda.manual_seed_all(seed)
   year={2013}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: A_math.md
      PURPOSE: Formal derivations
@@ -1882,13 +1864,11 @@ $$
 
 **Proof.** $O - O^\text{dense} = (1 - g)(O^\text{lin} - O^\text{dense})$. 
 Taking norms gives (A.6). $\square$
-```
 
 ---
 
-## 📄 `B_implementation.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: B_implementation.md
      PURPOSE: Code details
@@ -1997,13 +1977,11 @@ The gate output shape must be `(B, H, L, 1)` for proper broadcasting.
 ### B.6.5 Causality in Linear Stream
 
 Cumulative sum naturally enforces causality. Do not add extra masks.
-```
 
 ---
 
-## 📄 `C_data.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: C_data.md
      PURPOSE: Full data
@@ -2117,13 +2095,11 @@ for b in 0 0.5 1.0 1.8 3.0; do
     python run_all_4_halo_regla.py --gate_init_bias $b
 done
 ```
-```
 
 ---
 
-## 📄 `D_negative_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: D_negative_results.md
      PURPOSE: What didn't work
@@ -2231,13 +2207,11 @@ Add local window as third branch. Marginal improvement.
 3. **ELU+1 is the best kernel.**
 4. **Cumsum needs FP32.**
 5. **No speedup without hard routing.**
-```
 
 ---
 
-## 📄 `E_ethics.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: E_ethics.md
      PURPOSE: Ethical considerations
@@ -2316,504 +2290,5 @@ But also:
 - Concentrate AI capabilities
 
 We encourage community discussion.
-```
 
 ---
-
-## 📄 `build.py`
-
-```python
-"""Concatenate sections into paper_full.md."""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
-]
-
-
-def build(module_dir: Path, output: Path, to_pdf: bool = False):
-    parts = []
-    missing = []
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-
-    if missing:
-        print(f"Warning: {len(missing)} missing sections:")
-        for m in missing:
-            print(f"  - {m}")
-
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-
-    if to_pdf:
-        try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except Exception as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir: Path, dry_run: bool = False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"Not found: {vars_file}")
-        return
-
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-
-    print(f"Loaded {len(variables)} variables\n")
-
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-
-        new_content = PATTERN.sub(replace, content)
-
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-
-    print("\nDone." if not dry_run else "\nDry run.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from your HALO-ReGLA runs.",
-
-  "MODULE_NAME": "HALO-ReGLA",
-  "FULL_NAME": "HALO-ReGLA",
-  "SUBTITLE": "Hybrid Dense-Linear Attention with Rectified Gated Linear Attention",
-  "CATEGORY": "hybrid attention",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-15",
-  "VERSION": "1",
-  "CHANGELOG": "initial draft",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "HYBRID_RATIO": "4",
-  "GATE_BIAS": "1.8",
-  "LORA_RANK": "16",
-  "LORA_ALPHA": "32",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-
-  "ACC_TOLERANCE": "5",
-  "MEM_REDUCTION": "2",
-  "MAX_SPEEDUP": "3",
-  "LEARNED_DELTA": "2.5",
-  "FIXED_DROP": "3.5",
-
-  "D_ACC": "89.5",
-  "D_DELTA": "-1.2",
-  "D_F1": "0.895",
-  "D_GATE": "0.72",
-  "D_GATE_MIN": "0.15",
-  "D_GATE_MAX": "0.98",
-  "D_GATE_STD": "0.24",
-  "D_VRAM": "210",
-  "D_TIME": "2.8",
-  "D_VRAM_DELTA": "-15",
-  "D_L0_GATE": "0.85",
-  "D_L1_GATE": "0.80",
-  "D_L2_GATE": "0.75",
-  "D_L3_GATE": "0.70",
-  "D_L4_GATE": "0.65",
-  "D_L5_GATE": "0.60",
-
-  "R_ACC": "76.5",
-  "R_DELTA": "-2.1",
-  "R_F1": "0.765",
-  "R_GATE": "0.68",
-  "R_GATE_MIN": "0.12",
-  "R_GATE_MAX": "0.97",
-  "R_GATE_STD": "0.26",
-  "R_VRAM": "760",
-  "R_TIME": "5.2",
-  "R_VRAM_DELTA": "-8",
-
-  "G_ACC": "77.5",
-  "G_DELTA": "-1.9",
-  "G_F1": "0.775",
-  "G_GATE": "0.65",
-  "G_GATE_MIN": "0.10",
-  "G_GATE_MAX": "0.98",
-  "G_GATE_STD": "0.28",
-  "G_VRAM": "820",
-  "G_TIME": "5.5",
-  "G_VRAM_DELTA": "-5",
-
-  "D_TIME_RATIO": "1.5",
-  "G_TIME_RATIO": "1.3",
-
-  "D_B0": "85.0",
-  "D_B05": "87.0",
-  "D_B1": "88.5",
-  "D_B18": "89.5",
-  "D_B3": "89.0",
-  "D_B5": "88.0",
-  "R_B0": "72.0",
-  "R_B05": "74.0",
-  "R_B1": "75.5",
-  "R_B18": "76.5",
-  "R_B3": "76.0",
-  "G_B0": "73.0",
-  "G_B05": "75.0",
-  "G_B1": "76.5",
-  "G_B18": "77.5",
-  "G_B3": "77.0",
-
-  "D_ELU": "89.5",
-  "D_RELU": "87.0",
-  "D_SOFTPLUS": "89.0",
-  "D_IDENT": "78.0",
-  "R_ELU": "76.5",
-  "R_RELU": "74.0",
-  "R_SOFTPLUS": "76.0",
-  "R_IDENT": "65.0",
-  "G_ELU": "77.5",
-  "G_RELU": "75.5",
-  "G_SOFTPLUS": "77.0",
-  "G_IDENT": "67.0",
-
-  "D_LR4": "86.0",
-  "D_LR8": "88.0",
-  "D_LR16": "89.5",
-  "D_LR32": "89.7",
-  "R_LR4": "72.0",
-  "R_LR8": "74.5",
-  "R_LR16": "76.5",
-  "R_LR32": "76.7",
-  "G_LR4": "73.0",
-  "G_LR8": "75.5",
-  "G_LR16": "77.5",
-  "G_LR32": "77.7",
-
-  "D_S10": "86.0",
-  "D_S25": "88.0",
-  "D_S50": "89.5",
-  "D_S100": "89.7",
-  "R_S10": "72.0",
-  "R_S25": "74.5",
-  "R_S50": "76.5",
-  "R_S100": "76.8",
-  "G_S10": "73.0",
-  "G_S25": "75.5",
-  "G_S50": "77.5",
-  "G_S100": "77.7",
-
-  "GQA_D": "88.5",
-  "GQA_R": "75.5",
-  "GQA_G": "77.0",
-  "PRIMAL_D": "86.5",
-  "PRIMAL_R": "74.0",
-  "PRIMAL_G": "75.0",
-  "ASA_D": "88.5",
-  "ASA_R": "76.0",
-  "ASA_G": "76.5",
-
-  "D_FIX50": "86.0",
-  "D_FIX80": "88.5",
-  "R_FIX50": "72.5",
-  "R_FIX80": "75.0",
-  "G_FIX50": "73.5",
-  "G_FIX80": "76.0",
-
-  "IDENT_ACC": "78",
-  "RELU_ACC": "87",
-  "SOFT_ACC": "89",
-
-  "B_128": "4.2",
-  "H_128": "5.5",
-  "S_128": "0.76",
-  "B_512": "4.8",
-  "H_512": "6.0",
-  "S_512": "0.80",
-  "B_2048": "8.5",
-  "H_2048": "7.5",
-  "S_2048": "1.13",
-
-  "CAUSAL_VERIFIED": "✅ Verified on all three models",
-  "FAIL_LAYER_1": "layer.0",
-  "FAIL_MODEL_1": "GPT-2",
-  "FAIL_DROP_1": "1.5",
-  "FAIL_LAYER_2": "layer.5",
-  "FAIL_MODEL_2": "RoBERTa",
-  "FAIL_DROP_2": "1.8",
-  "FAIL_CAUSE": "Some heads need pure dense attention; gate should be > 0.9",
-  "UNRESOLVED_FAILURES": "Long-context cumsum memory",
-
-  "RUNTIME": "20",
-  "COMPUTE_HOURS": "15",
-  "CO2_KG": "1.0",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-
-  "Q_VERIFIED": "not tested",
-  "SEED42": "89.5",
-  "SEED123": "89.3",
-  "SEED456": "89.7",
-  "MEAN": "89.5",
-  "STD": "0.2",
-
-  "_note": "Add keys as needed"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — HALO-ReGLA
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `halo_regla/`
-- [ ] Filled `variables.json`
-- [ ] Ran `python apply_vars.py --module halo_regla`
-- [ ] No `[PLACEHOLDER]` remains
-
-## Content
-- [ ] Abstract under 250 words
-- [ ] Dense + linear streams described
-- [ ] Per-head gate described
-- [ ] Gate initialization explained
-
-## Method
-- [ ] Dense stream formula numbered
-- [ ] Linear stream formula numbered
-- [ ] Gate formula numbered
-- [ ] Prefix-sum causality proven
-
-## Results
-- [ ] Main table
-- [ ] Gate distribution
-- [ ] Per-layer gate
-- [ ] Gate bias ablation
-- [ ] Kernel ablation
-- [ ] LoRA rank ablation
-
-## Honesty
-- [ ] No parameter reduction — stated
-- [ ] No speedup without hard routing — stated
-- [ ] Failure cases in Appendix D
-- [ ] Cumsum memory limitation stated
-
-## Reproducibility
-- [ ] Code on GitHub
-- [ ] Checkpoints on HF
-- [ ] Hardware specified
-- [ ] Seeds documented
-
-## Final
-- [ ] Read aloud
-- [ ] PDF compiles
-- [ ] External feedback
-
----
-
-## Quick Start
-
-```bash
-cp -r papers/_TEMPLATE papers/halo_regla
-nano papers/halo_regla/variables.json
-cd papers/halo_regla
-python apply_vars.py --module halo_regla
-grep -rn "{{" .  # verify empty
-python build.py --module halo_regla --pdf
-```
-```
-
----
-
-## 🚀 خلاصه اجرا
-
-### مرحله ۱: کپی
-
-```powershell
-cd D:\SVD_Project\papers
-Copy-Item -Recurse _TEMPLATE halo_regla
-```
-
-### مرحله ۲: اجرای HALO-ReGLA
-
-```powershell
-cd D:\SVD_Project
-python run_all_4_halo_regla.py --models distilbert,roberta,gpt2 --gate_init_bias 1.8 --recovery_steps 50
-```
-
-### مرحله ۳: پر کردن `variables.json`
-
-### مرحله ۴: Apply و ساخت
-
-```powershell
-cd D:\SVD_Project\papers\halo_regla
-python apply_vars.py --module halo_regla
-python build.py --module halo_regla
-```
-
----
-
-## 💡 نکات کلیدی HALO-ReGLA
-
-### ۱. تفاوت اصلی با NHA
-
-| جنبه | NHA | HALO-ReGLA |
-|---|---|---|
-| Dense branch | Local window | **Global dense** |
-| Linear branch | RFF | **ELU+1 kernel** |
-| Gate bias init | 3.0 | 1.8 |
-| Cumsum | ندارد | **دارد** |
-
-### ۲. Dense + Linear به صورت موازی
-
-HALO-ReGLA **دو استریم** را همزمان محاسبه می‌کند:
-
-$$
-O_i = g_i \cdot O^\text{dense}_i + (1 - g_i) \cdot O^\text{lin}_i
-$$
-
-### ۳. Gate یادگیرنده per-head
-
-هر head یک گیت مستقل دارد که می‌تواند به سمت dense یا linear برود.
-
-**مقدار اولیه:** $\sigma(1.8) \approx 0.86$ → dense غالب.
-
-### ۴. Kernel انتخاب شده
-
-$$
-\phi(x) = \mathrm{elu}(x) + 1
-$$
-
-**مزایا:**
-- Non-negative → denominator مثبت
-- Smooth → gradient خوب
-- Bounded → بدون overflow
-
-### ۵. Causality با Prefix Sum
-
-در linear stream:
-
-$$
-\text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top
-$$
-
-این به صورت خودکار causality را حفظ می‌کند.
-
-### ۶. بدون Speedup واقعی
-
-**مهم:** HALO-ReGLA هر دو stream را محاسبه می‌کند. برای speedup واقعی:
-
-1. Train با هر دو
-2. شناسایی heads که $\bar{g}_h < 0.1$
-3. تبدیل به pure linear
-
-این limitation را **صادقانه** ذکر کن.
-
----
-
-**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_halo_regla/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

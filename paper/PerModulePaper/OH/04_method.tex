@@ -58,7 +58,7 @@ OHA replaces MHSA with a two-branch block:
 For causal models:
 
 \begin{equation}
-M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
+M_{ij}^\text{local} = \begin{cases} 0 \& j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
 \end{equation}
 
 For bidirectional: symmetric.
@@ -262,7 +262,7 @@ Compression $W_k^\text{comp}$ & $d \cdot d_c$ \\
 Compression $W_v^\text{comp}$ & $d \cdot d_c$ \\
 Gate $W_g$ & $d \cdot H + H$ \\
 LoRA (4 projections) & $4 r(d + H d_h)$ \\
-\textbf{Total} & see below \\
+\textbf{Total} \& see below \\
 \bottomrule
 \end{tabular}
 \end{table}

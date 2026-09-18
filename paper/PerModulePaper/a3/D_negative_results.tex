@@ -80,11 +80,11 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{LR} & \textbf{DistilBERT acc} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 0.85 & Stable \\
-1e-4 & 0.85 & Stable \\
-2e-4 & 0.85 & Stable \\
-5e-4 & 0.85 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 0.85 \& Stable \\
+1e-4 & 0.85 \& Stable \\
+2e-4 & 0.85 \& Stable \\
+5e-4 & 0.85 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,10 +117,10 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{Fix} & \textbf{Problem targeted} & \textbf{Result} \\
 \midrule
-Orthogonal init for U/V & Slow convergence & No change \\
-Different LN rescaling formula & Accuracy & No improvement \\
-Kalman filter for Fisher & Noise & Overkill \\
-Per-batch Fisher & Non-stationarity & No improvement \\
+Orthogonal init for U/V \& Slow convergence \& No change \\
+Different LN rescaling formula \& Accuracy \& No improvement \\
+Kalman filter for Fisher \& Noise \& Overkill \\
+Per-batch Fisher \& Non-stationarity \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & \textbf{AdaSplash} & \textbf{90.25} & -0.46 & 0.9055 & 67.55M & 195 MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
 RoBERTa & \textbf{AdaSplash} & \textbf{77.5} & -1.06 & 0.780 & 125.8M & 730 MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
 GPT-2 & \textbf{AdaSplash} & \textbf{78.78} & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \bottomrule
 \end{tabular}
@@ -83,12 +83,12 @@ on average. This is a \textbf{strict} property of the activation, not a soft mas
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 1.90 & 59000 & 183 MB \\
-DistilBERT & AdaSplash & 3.5 & 30000 & 195 \\
-RoBERTa & full & 4.10 & 27400 & 712 MB \\
-RoBERTa & AdaSplash & 7.5 & 17000 & 730 \\
-GPT-2 & full & 4.20 & 26700 & 793 MB \\
-GPT-2 & AdaSplash & 8.0 & 16000 & 810 \\
+DistilBERT \& full & 1.90 & 59000 & 183 MB \\
+DistilBERT \& AdaSplash & 3.5 & 30000 & 195 \\
+RoBERTa \& full & 4.10 & 27400 & 712 MB \\
+RoBERTa \& AdaSplash & 7.5 & 17000 & 730 \\
+GPT-2 \& full & 4.20 & 26700 & 793 MB \\
+GPT-2 \& AdaSplash & 8.0 & 16000 & 810 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -130,11 +130,11 @@ and non-smooth.
 \toprule
 \textbf{$W$} & \textbf{Accuracy} & \textbf{Effective context} \\
 \midrule
-8 & 77.2 & Very local \\
-16 & 78.10 & Local \\
-\textbf{32} & \textbf{78.78} & Balanced \\
-64 & 78.75 & Broad \\
-128 (full) & 78.80 & No windowing \\
+8 & 77.2 \& Very local \\
+16 & 78.10 \& Local \\
+\textbf{32} & \textbf{78.78} \& Balanced \\
+64 & 78.75 \& Broad \\
+128 (full) & 78.80 \& No windowing \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,7 +170,7 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{Params} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 (no LoRA) & 80.0 & baseline & 68.0 & 69.0 \\
+0 (no LoRA) & 80.0 \& baseline & 68.0 & 69.0 \\
 4 & 88.5 & +147456 & 75.0 & 76.5 \\
 8 & 89.8 & +294912 & 76.8 & 77.9 \\
 \textbf{16} & \textbf{90.25} & \textbf{+589824} & \textbf{77.5} & \textbf{78.78} \\
@@ -209,9 +209,9 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params change} & \textbf{Sparse?} \\
 \midrule
-full (softmax) & 90.71\% & 0\% & No \\
-\texttt{adaptive\_svd} & 88.0 & -60\% & No \\
-\texttt{nha} & 90.25 & +0.89\% & No \\
+full (softmax) & 90.71\% & 0\% \& No \\
+\texttt{adaptive\_svd} & 88.0 & -60\% \& No \\
+\texttt{nha} & 90.25 & +0.89\% \& No \\
 \textbf{AdaSplash} & \textbf{90.25} & \textbf{+0.89\%} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}

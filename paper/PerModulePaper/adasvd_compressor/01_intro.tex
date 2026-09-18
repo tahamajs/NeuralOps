@@ -1,1 +1,13 @@
-\section{Introduction}\subsection{Motivation}Uniform rank SVD treats all linear projections identically, disregarding differences in spectral decay.\subsection{Spectral Importance Allocation}\texttt{adasvd\_compressor} assigns ranks proportionally to nuclear norm $\|W\|_*$, initializing factors symmetrically and refining them via ALS.
+\section{01 Intro}
+
+ 1. Introduction
+Uniform rank truncation wastes capacity on parameter-sensitive projections while insufficiently compressing redundant layers. `adasvd\_compressor` calculates the nuclear norm of each layer's singular spectrum, allocating higher ranks to projections with broad singular spectra and lower ranks to rapidly decaying matrices. Factors are initialized with symmetric square-root singular values and refined via Alternating Least Squares (ALS).
+
+
+
+\subsection{1. Executive Abstract \& Theoretical Motivation}
+Uniform low-rank truncation across all neural network layers causes non-uniform accuracy degradation because different layers exhibit distinct singular value decay rates and information capacities. Critical transformer projections---such as self-attention key/query matrices and MLP gate projections---suffer severe performance drops under rigid rank constraints, whereas redundant layers can withstand aggressive rank reduction.
+
+\texttt{AdaSVDCompressor} addresses this imbalance by implementing an adaptive global rank allocation framework driven by layer-wise Nuclear Norm ($\|W\|_*$) importance metrics, combined with alternating least-squares iterative factor refinement. By evaluating the spectral energy distribution across all linear operators in a model, \texttt{AdaSVDCompressor} dynamically assigns rank budgets proportional to each layer's information capacity. Following initial truncated SVD initialization, the engine executes alternating optimization steps to refine left- and right-singular factor matrices ($U_r$ and $V_r^T$), compensating for cross-layer rank truncation errors under a global parameter removal target (\texttt{target_param_ratio}).
+
+---

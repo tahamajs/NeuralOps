@@ -350,12 +350,12 @@ for low-rank factorization.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{A3} \\
 \midrule
-**Factorization weighting** & Uniform (unweighted SVD) & Fisher diagonal \\
-**Rank selection** & Fixed & Adaptive escalation \\
-**Calibration memory** & Full activation buffer & Streaming O($d^2$) \\
-**Post-factorization fix** & None & LayerNorm recalibration \\
-**Error validation** & Silent & Strict Frobenius bound \\
-**Fallback** & Never & Automatic per-layer \\
+**Factorization weighting** \& Uniform (unweighted SVD) \& Fisher diagonal \\
+**Rank selection** \& Fixed \& Adaptive escalation \\
+**Calibration memory** \& Full activation buffer \& Streaming O($d^2$) \\
+**Post-factorization fix** \& None \& LayerNorm recalibration \\
+**Error validation** \& Silent \& Strict Frobenius bound \\
+**Fallback** \& Never \& Automatic per-layer \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -529,26 +529,26 @@ A3 compresses a pretrained transformer in \textbf{five phases}:
 phases 2--4 run per layer; phase 5 runs once at the end.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────────────────┐
-    │  Phase 1: Calibration (streaming)                │
-    │  Input: unlabeled text                           │
-    │  Output: {F^(ℓ), C_X^(ℓ)} per layer              │
-    └──────────────────────┬───────────────────────────┘
-                           │
-                           ▼
-    ┌──────────────────────────────────────────────────┐
-    │  For each layer ℓ:                               │
-    │    Phase 2: Weighted SVD at rank r               │
-    │    Phase 3: Frobenius validation                 │
-    │    Phase 4: If err > $\tau$: escalate rank, retry     │
-    │    If err > $\tau$ after max retries: fallback        │
-    └──────────────────────┬───────────────────────────┘
-                           │
-                           ▼
-    ┌──────────────────────────────────────────────────┐
-    │  Phase 5: LayerNorm recalibration (global)       │
-    │  Rescale $\gamma$ to match target $\sigma$                     │
-    └──────────────────────────────────────────────────┘
+    +--------------------------------------------------+
+    |  Phase 1: Calibration (streaming)                |
+    |  Input: unlabeled text                           |
+    |  Output: {F^(ℓ), C_X^(ℓ)} per layer              |
+    +----------------------+---------------------------+
+                           |
+                           v
+    +--------------------------------------------------+
+    |  For each layer ℓ:                               |
+    |    Phase 2: Weighted SVD at rank r               |
+    |    Phase 3: Frobenius validation                 |
+    |    Phase 4: If err > $\tau$: escalate rank, retry     |
+    |    If err > $\tau$ after max retries: fallback        |
+    +----------------------+---------------------------+
+                           |
+                           v
+    +--------------------------------------------------+
+    |  Phase 5: LayerNorm recalibration (global)       |
+    |  Rescale $\gamma$ to match target $\sigma$                     |
+    +--------------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Streaming Calibration}
@@ -885,10 +885,10 @@ A3 supports any transformer with linear or Conv1D layers:
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{FFN} & \textbf{Conv1D?} & \textbf{Verified} \\
 \midrule
-DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & `lin1, lin2` & No & ✅ \\
-RoBERTa-base & `query, key, value, output.dense` & `intermediate.dense, output.dense` & No & ✅ \\
-GPT-2 & `c\_attn` (fused), `c\_proj` & `c\_fc, c\_proj` & Yes & ✅ \\
-Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & `gate\_proj, up\_proj, down\_proj` & No & ✅ \\
+DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & `lin1, lin2` \& No & ✅ \\
+RoBERTa-base & `query, key, value, output.dense` & `intermediate.dense, output.dense` \& No & ✅ \\
+GPT-2 & `c\_attn` (fused), `c\_proj` & `c\_fc, c\_proj` \& Yes & ✅ \\
+Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & `gate\_proj, up\_proj, down\_proj` \& No & ✅ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -903,11 +903,11 @@ A3 compresses all linear layers by default, with the following protections:
 \toprule
 \textbf{Layer type} & \textbf{Compressed?} & \textbf{Reason} \\
 \midrule
-`classifier`, `score`, `lm\_head` & ❌ Never & Small and critical \\
-`pooler`, `embedding` & ❌ Never & Not linear \\
-Attention projections & ✅ Yes & Target of interest \\
-FFN layers & ✅ Yes (if `target\_attention\_only = False`) & Large parameter share \\
-LayerNorm & ❌ Never & Not factorizable \\
+`classifier`, `score`, `lm\_head` & ❌ Never \& Small and critical \\
+`pooler`, `embedding` & ❌ Never \& Not linear \\
+Attention projections & ✅ Yes \& Target of interest \\
+FFN layers & ✅ Yes (if `target\_attention\_only = False`) \& Large parameter share \\
+LayerNorm & ❌ Never \& Not factorizable \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1090,12 +1090,12 @@ input at position $j > i$ is zero, both before and after injection.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Reconstruction error > $\tau$ & Frobenius check & Fallback to original \\
-Weight shape mismatch & Assertion in `from\_linear` & Skip layer \\
-SVD convergence failure & Try/except & Retry on CPU \\
-No calibration data & `F\_map` empty & Unweighted SVD \\
-CUDA OOM in SVD & RuntimeError & Retry on CPU \\
-NaN in reconstruction & `torch.isnan` & Skip and log \\
+Reconstruction error > $\tau$ \& Frobenius check \& Fallback to original \\
+Weight shape mismatch \& Assertion in `from\_linear` \& Skip layer \\
+SVD convergence failure \& Try/except \& Retry on CPU \\
+No calibration data & `F\_map` empty \& Unweighted SVD \\
+CUDA OOM in SVD \& RuntimeError \& Retry on CPU \\
+NaN in reconstruction & `torch.isnan` \& Skip and log \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1135,9 +1135,9 @@ We evaluate on three pretrained backbones:
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1191,14 +1191,14 @@ calibration to keep memory bounded.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-Rank $r$ & 64 & Target rank \\
-`use\_fisher` & True & Activation-aware weighting \\
-`recalibrate\_ln` & True & LayerNorm recalibration \\
-`max\_error` $\tau$ & 0.20 & Frobenius threshold \\
-`max\_retries` & 3 & Adaptive escalation steps \\
-`fallback\_to\_original` & True & Safe fallback \\
-`normalize\_scale` & True & Clamp weights \\
-`target\_attention\_only` & False & Compress all layers \\
+Rank $r$ & 64 \& Target rank \\
+`use\_fisher` \& True \& Activation-aware weighting \\
+`recalibrate\_ln` \& True \& LayerNorm recalibration \\
+`max\_error` $\tau$ & 0.20 \& Frobenius threshold \\
+`max\_retries` & 3 \& Adaptive escalation steps \\
+`fallback\_to\_original` \& True \& Safe fallback \\
+`normalize\_scale` \& True \& Clamp weights \\
+`target\_attention\_only` \& False \& Compress all layers \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1213,14 +1213,14 @@ After A3 compression, we train LoRA adapters:
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
 Recovery steps & 50 \\
 LoRA rank & 16 \\
 LoRA alpha & 32 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1297,12 +1297,12 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
 Transformers & 4.44.0 \\
-OS & Windows / Linux \\
+OS \& Windows / Linux \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1351,11 +1351,11 @@ We compare against:
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
 DistilBERT & **A3** & **88.5** & -2.2 & 0.884 & 36 & **5.0$\times$** & 110 & 2.4 \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
 RoBERTa & **A3** & **75.8** & -2.8 & 0.775 & 72 & **4.5$\times$** & 450 & 5.2 \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
 GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5$\times$** & 500 & 5.5 \\
 \bottomrule
 \end{tabular}
@@ -1452,12 +1452,12 @@ GPT-2 & 72 & 0 & 48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{VRAM} & \textbf{Tokens/s} \\
 \midrule
-DistilBERT & full & 1.9 s & 183 MB & 59000 \\
-DistilBERT & A3 & 2.4 s & 110 MB & 48000 \\
-RoBERTa & full & 4.1 s & 712 MB & 27400 \\
-RoBERTa & A3 & 5.2 s & 450 MB & 22000 \\
-GPT-2 & full & 4.2 s & 793 MB & 26700 \\
-GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
+DistilBERT \& full & 1.9 s & 183 MB & 59000 \\
+DistilBERT \& A3 & 2.4 s & 110 MB & 48000 \\
+RoBERTa \& full & 4.1 s & 712 MB & 27400 \\
+RoBERTa \& A3 & 5.2 s & 450 MB & 22000 \\
+GPT-2 \& full & 4.2 s & 793 MB & 26700 \\
+GPT-2 \& A3 & 5.5 s & 500 MB & 21000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1630,9 +1630,9 @@ the standard deviation across features changes by up to \textbf{15\%}
 \toprule
 \textbf{Model} & \textbf{Method} & \textbf{Accuracy} & \textbf{Reconstruction err} \\
 \midrule
-DistilBERT & SVD (unweighted) & 86.4\% & 0.024 \\
+DistilBERT \& SVD (unweighted) & 86.4\% & 0.024 \\
 DistilBERT & **A3** & **88.5** & **0.024** \\
-RoBERTa & SVD & 86.4\% & 0.024 \\
+RoBERTa \& SVD & 86.4\% & 0.024 \\
 RoBERTa & **A3** & **75.8** & **0.024** \\
 \bottomrule
 \end{tabular}
@@ -1888,20 +1888,20 @@ A single recalibration pass, costing \textbf{2.3 ss}, recovers
 
 \begin{lstlisting}
 Start
-  │
-  ▼
-Need to reduce model size on disk? ─── Yes ─── Use A3
-  │
+  |
+  v
+Need to reduce model size on disk? --- Yes --- Use A3
+  |
   No
-  ▼
-Need to reduce inference VRAM? ─── Yes ─── Use A3
-  │
+  v
+Need to reduce inference VRAM? --- Yes --- Use A3
+  |
   No
-  ▼
-Need to reduce inference latency? ─── Yes ─── DON'T use A3
-  │
+  v
+Need to reduce inference latency? --- Yes --- DON'T use A3
+  |
   No
-  ▼
+  v
 Consider quantization instead
 \end{lstlisting}
 
@@ -1935,10 +1935,10 @@ latency, \textbf{small loss} for accuracy.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
-DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-**A3 (r=64)** & Low-rank & **5.0$\times$** & **88.5\%** \\
-**A3 (r=128)** & Low-rank & **2.5$\times$** & **86.4\%\%** \\
+ALBERT \& Sharing & 3.5$\times$ & 89.4\% \\
+DistilBERT \& Distill & 1.6$\times$ & 90.7\% \\
+**A3 (r=64)** \& Low-rank & **5.0$\times$** & **88.5\%** \\
+**A3 (r=128)** \& Low-rank & **2.5$\times$** & **86.4\%\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2242,7 +2242,7 @@ and checkpoints to enable replication and incremental improvement.
 
 \subsection{11.6 Acknowledgments}
 
-We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback. This work was supported by This research was supported by the Advanced Machine Learning & Efficiency Laboratory..
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback. This work was supported by This research was supported by the Advanced Machine Learning \& Efficiency Laboratory..
 
 \subsection{11.7 Author Contributions}
 
@@ -3073,7 +3073,7 @@ scale = scale.clamp(min=1e-3, max=1e3)
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Model & DistilBERT-base \\
+Model \& DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 13500000 \\
 Ratio & 5.0$\times$ \\
@@ -3144,14 +3144,14 @@ Average error & 0.17 \\
 \toprule
 \textbf{Layer} & \textbf{Module} & \textbf{Rank} & \textbf{Error} \\
 \midrule
-0 & q\_lin & 32 & 0.85 \\
-0 & k\_lin & 32 & 0.85 \\
-0 & v\_lin & 32 & 0.85 \\
-0 & out\_lin & 32 & 0.85 \\
-0 & lin1 & 32 & 0.85 \\
-0 & lin2 & 32 & 0.85 \\
+0 \& q\_lin & 32 & 0.85 \\
+0 \& k\_lin & 32 & 0.85 \\
+0 \& v\_lin & 32 & 0.85 \\
+0 \& out\_lin & 32 & 0.85 \\
+0 \& lin1 & 32 & 0.85 \\
+0 \& lin2 & 32 & 0.85 \\
 ... & ... & ... & ... \\
-5 & lin2 & 32 & 0.85 \\
+5 \& lin2 & 32 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3374,11 +3374,11 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{LR} & \textbf{DistilBERT acc} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 0.85 & Stable \\
-1e-4 & 0.85 & Stable \\
-2e-4 & 0.85 & Stable \\
-5e-4 & 0.85 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 0.85 \& Stable \\
+1e-4 & 0.85 \& Stable \\
+2e-4 & 0.85 \& Stable \\
+5e-4 & 0.85 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3409,10 +3409,10 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{Fix} & \textbf{Problem targeted} & \textbf{Result} \\
 \midrule
-Orthogonal init for U/V & Slow convergence & No change \\
-Different LN rescaling formula & Accuracy & No improvement \\
-Kalman filter for Fisher & Noise & Overkill \\
-Per-batch Fisher & Non-stationarity & No improvement \\
+Orthogonal init for U/V \& Slow convergence \& No change \\
+Different LN rescaling formula \& Accuracy \& No improvement \\
+Kalman filter for Fisher \& Noise \& Overkill \\
+Per-batch Fisher \& Non-stationarity \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3578,7 +3578,7 @@ The authors declare no competing interests.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

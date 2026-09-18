@@ -1,1 +1,140 @@
-\section{Methodology}\subsection{Factor Initialization and ALS Refinement}Singular values are split symmetrically: $A = U_r \sqrt{\Sigma_r}, B = \sqrt{\Sigma_r} V_r^\top$. Factors are iteratively refined via ALS with fallback safety.
+\section{04 Method}
+
+ 4. Method Formulation
+1. **Spectral Importance**: Layer budget is proportional to $\|W\|\_* = \sum\_i \sigma\_i$. 
+2. **Symmetric Factorization**: $A = U\_{:, :r} \sqrt{\Sigma\_r}, \quad B = \sqrt{\Sigma\_r} V\_{:r, :}^	op$. 
+3. **Alternating Least Squares**: Refine $A$ and $B$ to minimize $\|W - A B\|\_F^2$; revert to SVD factors if ALS error increases. 
+4. **SVDLinear Substitution**: Replace dense projections with factorized modules. 
+
+
+ 2. Mathematical Formulations \& Matrix Decompositions
+
+
+ 2.1 Layer Importance via Nuclear Norm Estimation
+For a model containing $L$ linear layers with weight matrices $W^{(l)} \in \mathbb{R}^{M\_l \times N\_l}$ (where $M\_l = d\_{\text{out}}^{(l)}$ and $N\_l = d\_{\text{in}}^{(l)}$ for $l \in \{1, \dots, L\}$), the exact SVD of layer $l$ is $W^{(l)} = U^{(l)} \Sigma^{(l)} (V^{(l)})^T$. The nuclear norm $\|W^{(l)}\|\_*$, representing the total spectral energy, defines the raw importance metric $\mathcal{I}\_l$:
+
+\[
+\mathcal{I}\_l = \|W^{(l)}\|\_* = \sum\_{i=1}^{\min(M\_l, N\_l)} \sigma\_i^{(l)}
+\]
+
+The normalized global importance fraction $\alpha\_l$ for layer $l$ is expressed as:
+
+\[
+\alpha\_l = \frac{\mathcal{I}\_l}{\sum\_{j=1}^{L} \mathcal{I}\_j} = \frac{\|W^{(l)}\|\_*}{\sum\_{j=1}^{L} \|W^{(j)}\|\_*}
+\]
+
+ 2.2 Adaptive Global Rank Allocation Formula
+Given a global parameter removal ratio $\rho \in (0, 1)$ (`target\_param\_ratio`), the engine computes layer $l$'s allocated rank $r\_l$ using the information-weighted allocation rule:
+
+\[
+r\_l = \min\left( \max\left( 1, \left\lfloor R\_{\max}^{(l)} \cdot (1 - \rho) \cdot \alpha\_l \cdot L \right\rfloor \right), R\_{\max}^{(l)} \right)
+\]
+
+where $R\_{\max}^{(l)} = \min(M\_l, N\_l)$ is the maximum possible rank for layer $l$, and $L$ represents the total number of compressible linear layers.
+
+ 2.3 Initial Factor Truncation
+For target rank $r\_l$, the initial left-singular factor $U\_{r\_l} \in \mathbb{R}^{M\_l \times r\_l}$, singular values $S\_{r\_l} \in \mathbb{R}^{r\_l}$, and right-singular factor $V\_{r\_l}^T \in \mathbb{R}^{r\_l \times N\_l}$ are extracted from the truncated SVD:
+
+\[
+W^{(l)} \approx U\_{r\_l} \operatorname{diag}(S\_{r\_l}) V\_{r\_l}^T
+\]
+
+ 2.4 Alternating Iterative Least-Squares Refinement
+To minimize reconstruction error $\|W^{(l)} - U\_{r\_l} \operatorname{diag}(S\_{r\_l}) V\_{r\_l}^T\|\_F^2$ under the allocated rank constraint, `AdaSVDCompressor` performs $T$ iterations (`num\_iters`) of alternating ridge-regularized updates:
+
+1. Left-Factor ($U\_{r\_l}$) Update Step:
+Holding $V\_{r\_l}^T$ and $\Sigma\_{r\_l} = \operatorname{diag}(S\_{r\_l})$ fixed, solve for updated $U\_{r\_l}$:
+
+\[
+U\_{r\_l}^{(t+1)} = W^{(l)} V\_{r\_l}^{(t)} \left( \Sigma\_{r\_l} + \epsilon I\_{r\_l} \right)^{-1}
+\]
+
+where $\epsilon = 10^{-6}$ is a Tikhonov stabilization factor.
+
+2. Right-Factor ($V\_{r\_l}^T$) Update Step:
+Holding updated $U\_{r\_l}^{(t+1)}$ fixed, solve for updated $V\_{r\_l}^T$:
+
+\[
+V\_{r\_l}^{(t+1)T} = \left( (U\_{r\_l}^{(t+1)})^T U\_{r\_l}^{(t+1)} + \epsilon I\_{r\_l} \right)^{-1} (U\_{r\_l}^{(t+1)})^T W^{(l)}
+\]
+
+3. Diagonal Singular Value Matrix Re-projection:
+Re-estimate the updated diagonal singular values $S\_{r\_l}^{(t+1)}$ by taking the diagonal elements of the projected weight matrix:
+
+\[
+S\_{r\_l}^{(t+1)} = \operatorname{diag}\left( (U\_{r\_l}^{(t+1)})^T W^{(l)} V\_{r\_l}^{(t+1)} \right)
+\]
+
+The refined weight matrix stored in the layer is synthesized as:
+
+\[
+\hat{W}^{(l)} = U\_{r\_l}^{(T)} \operatorname{diag}(S\_{r\_l}^{(T)}) V\_{r\_l}^{(T)T}
+\]
+
+---
+
+
+
+\subsection{2. Mathematical Formulations \& Matrix Decompositions}
+\subsubsection{2.1 Layer Importance via Nuclear Norm Estimation}
+For a model containing $L$ linear layers with weight matrices $W^{(l)} \in \mathbb{R}^{M_l \times N_l}$ (where $M_l = d_{\text{out}}^{(l)}$ and $N_l = d_{\text{in}}^{(l)}$ for $l \in \{1, \dots, L\}$), the exact SVD of layer $l$ is $W^{(l)} = U^{(l)} \Sigma^{(l)} (V^{(l)})^T$. The nuclear norm $\|W^{(l)}\|_*$, representing the total spectral energy, defines the raw importance metric $\mathcal{I}_l$:
+
+\[
+\mathcal{I}_l = \|W^{(l)}\|_* = \sum_{i=1}^{\min(M_l, N_l)} \sigma_i^{(l)}
+\]
+
+The normalized global importance fraction $\alpha_l$ for layer $l$ is expressed as:
+
+\[
+\alpha_l = \frac{\mathcal{I}_l}{\sum_{j=1}^{L} \mathcal{I}_j} = \frac{\|W^{(l)}\|_*}{\sum_{j=1}^{L} \|W^{(j)}\|_*}
+\]
+
+\subsubsection{2.2 Adaptive Global Rank Allocation Formula}
+Given a global parameter removal ratio $\rho \in (0, 1)$ (\texttt{target_param_ratio}), the engine computes layer $l$'s allocated rank $r_l$ using the information-weighted allocation rule:
+
+\[
+r_l = \min\left( \max\left( 1, \left\lfloor R_{\max}^{(l)} \cdot (1 - \rho) \cdot \alpha_l \cdot L \right\rfloor \right), R_{\max}^{(l)} \right)
+\]
+
+where $R_{\max}^{(l)} = \min(M_l, N_l)$ is the maximum possible rank for layer $l$, and $L$ represents the total number of compressible linear layers.
+
+\subsubsection{2.3 Initial Factor Truncation}
+For target rank $r_l$, the initial left-singular factor $U_{r_l} \in \mathbb{R}^{M_l \times r_l}$, singular values $S_{r_l} \in \mathbb{R}^{r_l}$, and right-singular factor $V_{r_l}^T \in \mathbb{R}^{r_l \times N_l}$ are extracted from the truncated SVD:
+
+\[
+W^{(l)} \approx U_{r_l} \operatorname{diag}(S_{r_l}) V_{r_l}^T
+\]
+
+\subsubsection{2.4 Alternating Iterative Least-Squares Refinement}
+To minimize reconstruction error $\|W^{(l)} - U_{r_l} \operatorname{diag}(S_{r_l}) V_{r_l}^T\|_F^2$ under the allocated rank constraint, \texttt{AdaSVDCompressor} performs $T$ iterations (\texttt{num_iters}) of alternating ridge-regularized updates:
+
+1. Left-Factor ($U_{r_l}$) Update Step:
+Holding $V_{r_l}^T$ and $\Sigma_{r_l} = \operatorname{diag}(S_{r_l})$ fixed, solve for updated $U_{r_l}$:
+
+\[
+U_{r_l}^{(t+1)} = W^{(l)} V_{r_l}^{(t)} \left( \Sigma_{r_l} + \epsilon I_{r_l} \right)^{-1}
+\]
+
+where $\epsilon = 10^{-6}$ is a Tikhonov stabilization factor.
+
+2. Right-Factor ($V_{r_l}^T$) Update Step:
+Holding updated $U_{r_l}^{(t+1)}$ fixed, solve for updated $V_{r_l}^T$:
+
+\[
+V_{r_l}^{(t+1)T} = \left( (U_{r_l}^{(t+1)})^T U_{r_l}^{(t+1)} + \epsilon I_{r_l} \right)^{-1} (U_{r_l}^{(t+1)})^T W^{(l)}
+\]
+
+3. Diagonal Singular Value Matrix Re-projection:
+Re-estimate the updated diagonal singular values $S_{r_l}^{(t+1)}$ by taking the diagonal elements of the projected weight matrix:
+
+\[
+S_{r_l}^{(t+1)} = \operatorname{diag}\left( (U_{r_l}^{(t+1)})^T W^{(l)} V_{r_l}^{(t+1)} \right)
+\]
+
+The refined weight matrix stored in the layer is synthesized as:
+
+\[
+\hat{W}^{(l)} = U_{r_l}^{(T)} \operatorname{diag}(S_{r_l}^{(T)}) V_{r_l}^{(T)T}
+\]
+
+---

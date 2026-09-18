@@ -1,77 +1,103 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 10_limitations.md
+     PURPOSE: Honest limitations
+     DEPENDENCIES: 09_discussion.md
+     LENGTH TARGET: 0.5 – 1 page (300 – 600 words)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 10. Limitations
 
-## 10.1 Attention-Only Compression
+## 10.1 Task Coverage
 
-We compress only the attention projections. The FFN remains uncompressed. 
-Total model reduction is therefore modest.
+Only **SST-2** is evaluated. Adaptive SVD may behave differently on:
+- Generation tasks (summarization, translation)
+- Multi-class classification (MNLI, AG News)
+- Token-level tasks (NER, POS)
+- Long-context tasks (>512 tokens)
 
-## 10.2 Attention Remains Quadratic
+## 10.2 Model Coverage
 
-The attention computation (Q·K^T) is not compressed. Long-context inference 
-is not improved.
+We test on three models (66.9M–124.6M params). Not tested:
+- Large models (>1B)
+- Deep models (>24 layers)
+- Mixture-of-Experts
+- Vision transformers
+- Multimodal transformers
 
-## 10.3 Task Coverage
+## 10.3 Hardware
 
-Only SST-2 is evaluated. Generalization to:
-- Generation tasks
-- Long-context
-- Multi-class classification
-- Token-level tasks
-- **T5-style seq2seq** (though we support the architecture, we don't test)
+All experiments on **RTX 4070 Laptop (8 GB)**. Behavior on:
+- A100/H100: SVD faster, method should scale
+- CPU inference: Two matmuls may be slower
+- Edge devices (Jetson): Untested
 
-is untested.
+## 10.4 Inference Latency
 
-## 10.4 Model Coverage
+Factorized layers are slower at inference:
+- Two matmuls instead of one
+- Intermediate $r$-dim tensor materialized
+- Adapter adds one more matmul
+- ~1.2× slower on GPU
 
-| Model size | Tested |
-|---|---|
-| ≤124M | Yes |
-| 1B+ | No |
-| T5-base/large | Not tested |
+**Mitigation.** The compressed model uses less memory, so larger batch sizes 
+may fit, potentially offsetting latency.
 
-## 10.5 Hardware
+## 10.5 Per-Projection Rank is Heuristic
 
-All experiments on RTX 4070. Other hardware untested.
+The energy threshold is a **principled heuristic**, not an optimization. The 
+optimal rank for downstream task may differ from the energy-thresholded rank.
 
-## 10.6 Energy Threshold Choice
+## 10.6 No Downstream Error Bound
 
-We use τ = 0.92 as a fixed default. A per-layer adaptive τ might improve 
-compression-accuracy tradeoffs, but we do not explore this.
+We provide:
+- **Reconstruction error bound** (Prop 4.9.1)
+- **No bound** on downstream task accuracy
 
-## 10.7 Residual Rank
+The gap between reconstruction and task accuracy is not characterized.
 
-We fix $r_a = 16$. Optimal $r_a$ may differ per model or per projection.
+## 10.7 Residual Adapter Overhead
 
-## 10.8 No Theoretical Bound on Task Accuracy
+The adapter adds $r_L (d_\text{in} + d_\text{out})$ parameters per projection. 
+For $d = 768$ and $r_L = 16$:
 
-We provide a bound on **reconstruction** error but not on **downstream task** 
-accuracy. The gap is not characterized.
+$$
+\text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
+$$
 
-## 10.9 Single-Seed Results
+vs. the compressed base of $r_P \cdot 1536$. This is ~12% 
+of the base.
 
-Multi-seed would strengthen conclusions.
+## 10.8 Single-Seed Results
 
-## 10.10 Nested Encoder Handling
+All results from a single seed. Standard error $\approx 1.69\%$ at $N = 872$. 
+Differences below 3.4% may be noise.
 
-For RoBERTa, we set `is_nested_encoder = True`, but we still factorize the 
-output projection. The interaction is not fully characterized.
-
-## 10.11 No Comparison with Some Methods
+## 10.9 No Comparison with All Baselines
 
 We do not compare with:
-- DistilBERT (distillation)
-- SparseGPT / Wanda (pruning)
+- DistilBERT / TinyBERT (distillation)
 - Performer / Linformer (attention replacement)
+- SparseGPT / Wanda (pruning)
+- Direct head pruning
+
+## 10.10 T5 and Qwen Verification
+
+T5 support is not tested, Qwen support is partial. Full 
+verification on these architectures is deferred to future work.
+
+## 10.11 Theoretical Guarantee on Per-Layer Optimality
+
+The energy threshold is not provably optimal. Alternatives (learned $\tau$, 
+per-layer $\tau$, activation-aware $\tau$) are not tested.
 
 ## 10.12 Code Quality
 
 Research-grade:
 - Broad exception handling
-- No fused kernels for factorized forward
 - No unit tests for edge cases
+- Numerical stability could be improved
+- T5 bias path untested on decoder side
 
 ## 10.13 Ethical Considerations
 
 Compression is dual-use. See Appendix E.
-
----

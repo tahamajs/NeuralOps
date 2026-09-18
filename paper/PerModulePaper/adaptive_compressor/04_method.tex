@@ -9,3 +9,45 @@ where $r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{\text{in}}, d_{\text{out}}
 
 \subsection{Module Substitution}
 Layers satisfying parameter reduction criteria ($r(d_{\text{in}} + d_{\text{out}}) < d_{\text{in}} d_{\text{out}}$) and relative reconstruction tolerance ($\text{err} \le 0.20$) are replaced with \texttt{SVDLinear}.
+
+
+
+\subsection{2. Mathematical Formulations \& Matrix Decompositions}
+\subsubsection{2.1 Multihead Attention Projection Matrix Factorization}
+For a \texttt{nn.MultiheadAttention} layer with input/output dimension $d_{\text{model}}$, the core parameter matrices consist of query projection $W_Q$, key projection $W_K$, value projection $W_V$, and output projection $W_O \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}$.
+
+For each matrix $W \in \{W_Q, W_K, W_V, W_O\}$, exact SVD computes:
+
+\[
+W = U \Sigma V^T = \sum_{i=1}^{R} \sigma_i u_i v_i^T, \quad R = d_{\text{model}}
+\]
+
+\subsubsection{2.2 Dynamic Cumulative Energy Rank Allocation}
+The cumulative energy ratio $E_k$ for top-$k$ singular components is defined as:
+
+\[
+E_k = \frac{\sum_{i=1}^{k} \sigma_i^2}{\sum_{i=1}^{R} \sigma_i^2} = \frac{\sum_{i=1}^{k} \sigma_i^2}{\|W\|_F^2}
+\]
+
+Given target energy threshold $\eta$ and minimum rank boundary $r_{\min}$, the adaptive rank $r^*$ is calculated via:
+
+\[
+r^* = \max\left( r_{\min}, \, \min \left\{ k \in \{1, \dots, R\} \;\middle|\; E_k \ge \eta \right\} \right)
+\]
+
+\subsubsection{2.3 Compressed Attention Layer Synthesis}
+Using adaptive rank $r^*$, the factorized weight $\hat{W}$ is synthesized into left-singular matrix $U_{r^*} \in \mathbb{R}^{d_{\text{model}} \times r^*}$, diagonal singular value scaling $S_{r^*} \in \mathbb{R}^{r^*}$, and right-singular matrix $V_{r^*}^T \in \mathbb{R}^{r^* \times d_{\text{model}}}$:
+
+\[
+\hat{W} = U_{r^*} \operatorname{diag}(S_{r^*}) V_{r^*}^T
+\]
+
+The linear projection transformation $Y = X W^T + b$ is evaluated as:
+
+\[
+Y = \left( (X V_{r^*}) \odot S_{r^*} \right) U_{r^*}^T + b
+\]
+
+Replacing $W_Q, W_K, W_V, W_O$ with factorized operators reduces total MultiheadAttention projection parameters from $4 d_{\text{model}}^2$ to $\sum_{m \in \{Q,K,V,O\}} r_m^* (2 d_{\text{model}} + 1)$.
+
+---

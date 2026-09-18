@@ -377,12 +377,12 @@ components. Compatible with AdaSplash.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Sparse?} & \textbf{Sinks?} \\
 \midrule
-Softmax attention & Dense & $\mathcal{O}(L^2)$ & No & No \\
-Longformer & Local & $\mathcal{O}(L W)$ & No & No \\
-BigBird & Local + random & $\mathcal{O}(L W)$ & No & No \\
-Sparsemax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
-Entmax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
-StreamingLLM & Sink + window & $\mathcal{O}(L W)$ & No & Yes \\
+Softmax attention \& Dense & $\mathcal{O}(L^2)$ \& No \& No \\
+Longformer \& Local & $\mathcal{O}(L W)$ \& No \& No \\
+BigBird \& Local + random & $\mathcal{O}(L W)$ \& No \& No \\
+Sparsemax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+Entmax \& Activation & $\mathcal{O}(L^2)$ \& Yes \& No \\
+StreamingLLM \& Sink + window & $\mathcal{O}(L W)$ \& No \& Yes \\
 **AdaSplash** & **Sink + window + entmax** & **$\mathcal{O}(L W)$** & **Yes** & **Yes** \\
 \bottomrule
 \end{tabular}
@@ -580,27 +580,27 @@ four modifications:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────────┐
-    │  Pretrained attention A with Q, K, V, O  │
-    └──────────────────┬───────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │  AdaSplash attention A':                 │
-    │    1. Project with frozen base + LoRA    │
-    │    2. Apply splash mask                  │
-    │    3. Apply $\alpha$-entmax                     │
-    │    4. Compute context, apply out_proj    │
-    └──────────────────┬───────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │  Compressed attention with:              │
-    │    - Frozen base weights (exact copy)    │
-    │    - Trainable LoRA adapters (rank r_L)  │
-    │    - $\alpha$-entmax sparse activations         │
-    │    - Local splash window                 │
-    └──────────────────────────────────────────┘
+    +------------------------------------------+
+    |  Pretrained attention A with Q, K, V, O  |
+    +------------------+-----------------------+
+                       |
+                       v
+    +------------------------------------------+
+    |  AdaSplash attention A':                 |
+    |    1. Project with frozen base + LoRA    |
+    |    2. Apply splash mask                  |
+    |    3. Apply $\alpha$-entmax                     |
+    |    4. Compute context, apply out_proj    |
+    +------------------+-----------------------+
+                       |
+                       v
+    +------------------------------------------+
+    |  Compressed attention with:              |
+    |    - Frozen base weights (exact copy)    |
+    |    - Trainable LoRA adapters (rank r_L)  |
+    |    - $\alpha$-entmax sparse activations         |
+    |    - Local splash window                 |
+    +------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: $\alpha$-Entmax Normalization}
@@ -854,7 +854,7 @@ Output: output Y $\in$ R^{B$\times$L$\times$d}
 11: if is_decoder:
 12:     causal_mask $\leftarrow$ tril(ones(L, L))
 13:     splash_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j < S)
-14:     S $\leftarrow$ S.masked_fill(~(causal & splash), -10000)
+14:     S $\leftarrow$ S.masked_fill(~(causal \& splash), -10000)
 15:
 16: A $\leftarrow$ $\alpha$_entmax(S, $\alpha$)
 17: A $\leftarrow$ dropout(A)
@@ -957,10 +957,10 @@ determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
 \midrule
-$\alpha$ & 1.5 & Higher = sparser (up to 2.0 = sparsemax) \\
-$W$ (splash radius) & 32 & Higher = more context, less sparsity \\
-$S$ (sink count) & 4 & Higher = more global context \\
-$r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
+$\alpha$ & 1.5 \& Higher = sparser (up to 2.0 = sparsemax) \\
+$W$ (splash radius) & 32 \& Higher = more context, less sparsity \\
+$S$ (sink count) & 4 \& Higher = more global context \\
+$r_L$ (LoRA rank) & 16 \& Higher = more recovery capacity \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1016,11 +1016,11 @@ AdaSplash supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No & No & ✅ \\
-RoBERTa & `BertSelfAttention` & Yes & No & No & No & ✅ \\
-GPT-2 & `GPT2Attention` & No & No & No & No & ✅ \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
-T5 & `T5Attention` & No & No & No & Yes & not tested \\
+DistilBERT & `MultiHeadSelfAttention` \& No \& No \& No \& No & ✅ \\
+RoBERTa & `BertSelfAttention` \& Yes \& No \& No \& No & ✅ \\
+GPT-2 & `GPT2Attention` \& No \& No \& No \& No & ✅ \\
+Qwen3.5 & `Qwen3Attention` \& No \& Yes \& Yes \& No \& partial \\
+T5 & `T5Attention` \& No \& No \& No \& Yes \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1198,11 +1198,11 @@ class AdaSplashAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
-Shape mismatch & Assertion in `copy\_weights` & Skip layer \\
-Near-zero Frobenius & Check < 1e-4 & Raise \\
-Entmax support empty & `sum(p) < 1e-7` & Softmax fallback \\
-NaN in scores & `torch.isnan` & Mask to -10000 \\
+Missing weights & `copy\_weights` raises \& Return None \\
+Shape mismatch \& Assertion in `copy\_weights` \& Skip layer \\
+Near-zero Frobenius \& Check < 1e-4 \& Raise \\
+Entmax support empty & `sum(p) < 1e-7` \& Softmax fallback \\
+NaN in scores & `torch.isnan` \& Mask to -10000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1215,11 +1215,11 @@ NaN in scores & `torch.isnan` & Mask to -10000 \\
 \toprule
 \textbf{Component} & \textbf{Precision} \\
 \midrule
-Scores & Model dtype \\
-Entmax bisection & FP32 internally \\
-Attention output & Model dtype \\
-Base weights & Model dtype \\
-LoRA & Model dtype \\
+Scores \& Model dtype \\
+Entmax bisection \& FP32 internally \\
+Attention output \& Model dtype \\
+Base weights \& Model dtype \\
+LoRA \& Model dtype \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1249,9 +1249,9 @@ preserves the outer LoRA.
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1285,11 +1285,11 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-$\alpha$ (entmax) & 1.5 & Sparsity parameter \\
-$W$ (splash radius) & 32 & Window size \\
-$S$ (sink count) & 4 & Fixed \\
-$n_\text{iter}$ (bisection) & 25 & Fixed \\
-$r_L$ (LoRA rank) & 16 & Adapter rank \\
+$\alpha$ (entmax) & 1.5 \& Sparsity parameter \\
+$W$ (splash radius) & 32 \& Window size \\
+$S$ (sink count) & 4 \& Fixed \\
+$n_\text{iter}$ (bisection) & 25 \& Fixed \\
+$r_L$ (LoRA rank) & 16 \& Adapter rank \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1302,13 +1302,13 @@ $r_L$ (LoRA rank) & 16 & Adapter rank \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
 Recovery steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
-Trainable params & LoRA only \\
+Precision \& FP16 \\
+Trainable params \& LoRA only \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1380,7 +1380,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -1424,11 +1424,11 @@ All experiments with seed 42.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & **AdaSplash** & **90.25** & -0.46 & 0.9055 & 67.55M & 195 MB \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
 RoBERTa & **AdaSplash** & **77.5** & -1.06 & 0.780 & 125.8M & 730 MB \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
 GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \bottomrule
 \end{tabular}
@@ -1490,12 +1490,12 @@ on average. This is a \textbf{strict} property of the activation, not a soft mas
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 1.90 & 59000 & 183 MB \\
-DistilBERT & AdaSplash & 3.5 & 30000 & 195 \\
-RoBERTa & full & 4.10 & 27400 & 712 MB \\
-RoBERTa & AdaSplash & 7.5 & 17000 & 730 \\
-GPT-2 & full & 4.20 & 26700 & 793 MB \\
-GPT-2 & AdaSplash & 8.0 & 16000 & 810 \\
+DistilBERT \& full & 1.90 & 59000 & 183 MB \\
+DistilBERT \& AdaSplash & 3.5 & 30000 & 195 \\
+RoBERTa \& full & 4.10 & 27400 & 712 MB \\
+RoBERTa \& AdaSplash & 7.5 & 17000 & 730 \\
+GPT-2 \& full & 4.20 & 26700 & 793 MB \\
+GPT-2 \& AdaSplash & 8.0 & 16000 & 810 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1535,11 +1535,11 @@ and non-smooth.
 \toprule
 \textbf{$W$} & \textbf{Accuracy} & \textbf{Effective context} \\
 \midrule
-8 & 77.2 & Very local \\
-16 & 78.10 & Local \\
-**32** & **78.78** & Balanced \\
-64 & 78.75 & Broad \\
-128 (full) & 78.80 & No windowing \\
+8 & 77.2 \& Very local \\
+16 & 78.10 \& Local \\
+**32** & **78.78** \& Balanced \\
+64 & 78.75 \& Broad \\
+128 (full) & 78.80 \& No windowing \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1573,7 +1573,7 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{Params} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 (no LoRA) & 80.0 & baseline & 68.0 & 69.0 \\
+0 (no LoRA) & 80.0 \& baseline & 68.0 & 69.0 \\
 4 & 88.5 & +147456 & 75.0 & 76.5 \\
 8 & 89.8 & +294912 & 76.8 & 77.9 \\
 **16** & **90.25** & **+589824** & **77.5** & **78.78** \\
@@ -1610,9 +1610,9 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params change} & \textbf{Sparse?} \\
 \midrule
-full (softmax) & 90.71\% & 0\% & No \\
-`adaptive\_svd` & 88.0 & -60\% & No \\
-`nha` & 90.25 & +0.89\% & No \\
+full (softmax) & 90.71\% & 0\% \& No \\
+`adaptive\_svd` & 88.0 & -60\% \& No \\
+`nha` & 90.25 & +0.89\% \& No \\
 **AdaSplash** & **90.25** & **+0.89\%** & **Yes** \\
 \bottomrule
 \end{tabular}
@@ -1774,8 +1774,8 @@ Full attention + softmax & 90.71\% & --- \\
 \midrule
 DistilBERT & **90.25** & 88.30 \\
 Sparsity & 42\% & 60\% \\
-Training stability & Stable & Oscillatory \\
-Speed & Fast & Slower (bisection) \\
+Training stability \& Stable \& Oscillatory \\
+Speed \& Fast \& Slower (bisection) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1831,8 +1831,8 @@ AdaSplash produces \textbf{more interpretable} attention:
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Pruning target} & \textbf{Reversible?} \\
 \midrule
-Magnitude pruning (50\%) & 85 & Weights & No \\
-Head pruning (50\%) & 82 & Heads & No \\
+Magnitude pruning (50\%) & 85 \& Weights \& No \\
+Head pruning (50\%) & 82 \& Heads \& No \\
 **AdaSplash** & **90.25** & **Activations** & **Yes ($\alpha$=1)** \\
 \bottomrule
 \end{tabular}
@@ -1943,15 +1943,15 @@ Preserving the first 4 tokens is critical. Without them, accuracy drops by
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Need size reduction? ─── Yes ─── Use A3/AASVD/Adaptive SVD
-  │ No
-  ▼
-Need interpretable attention? ─── Yes ─── AdaSplash
-  │ No
-  ▼
-Need latency reduction? ─── Yes ─── Use quantized attention
-  │ No
-  ▼
+Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
+  | No
+  v
+Need interpretable attention? --- Yes --- AdaSplash
+  | No
+  v
+Need latency reduction? --- Yes --- Use quantized attention
+  | No
+  v
 Consider AdaSplash for research
 \end{lstlisting}
 
@@ -1984,10 +1984,10 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Sparse} & \textbf{Latency} \\
 \midrule
-Softmax & Baseline & 0\% & No & 1$\times$ \\
-Longformer & Local & 0\% & No & ~1$\times$ \\
-Performer & Kernel & +linear & No & ~1$\times$ \\
-Sparsemax & Activation & 0\% & Yes & ~5$\times$ \\
+Softmax \& Baseline & 0\% \& No & 1$\times$ \\
+Longformer \& Local & 0\% \& No & ~1$\times$ \\
+Performer \& Kernel & +linear \& No & ~1$\times$ \\
+Sparsemax \& Activation & 0\% \& Yes & ~5$\times$ \\
 **AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9$\times$** \\
 \bottomrule
 \end{tabular}
@@ -2920,7 +2920,7 @@ for name, mod in model.named_modules():
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Model & DistilBERT-base \\
+Model \& DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 67549448 \\
 Parameter change & +594438 (+0.89\%) \\
@@ -3210,11 +3210,11 @@ signal weak; no improvement.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 89.5 & Stable \\
-1e-4 & 90.0 & Stable \\
-2e-4 & 90.25 & Stable \\
-5e-4 & 89.0 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 89.5 \& Stable \\
+1e-4 & 90.0 \& Stable \\
+2e-4 & 90.25 \& Stable \\
+5e-4 & 89.0 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3227,10 +3227,10 @@ signal weak; no improvement.
 \toprule
 \textbf{$n_\text{iter}$} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-10 & 89.5 & Fast \\
-15 & 90.10 & Medium \\
-25 & 90.25 & Slow \\
-50 & 90.28 & Very slow \\
+10 & 89.5 \& Fast \\
+15 & 90.10 \& Medium \\
+25 & 90.25 \& Slow \\
+50 & 90.28 \& Very slow \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3246,12 +3246,12 @@ but doubles the compute. Consider 15 for production.
 \toprule
 \textbf{W} & \textbf{GPT-2} & \textbf{Notes} \\
 \midrule
-4 & 75.5 & Too local \\
-8 & 77.2 & Underfit \\
-16 & 78.10 & Reasonable \\
-32 & 78.78 & Best \\
-64 & 78.75 & Diminishing returns \\
-128 & 78.80 & Full attention \\
+4 & 75.5 \& Too local \\
+8 & 77.2 \& Underfit \\
+16 & 78.10 \& Reasonable \\
+32 & 78.78 \& Best \\
+64 & 78.75 \& Diminishing returns \\
+128 & 78.80 \& Full attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3264,11 +3264,11 @@ but doubles the compute. Consider 15 for production.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Gradient clipping & Stability & No change \\
-Different LoRA init & Convergence & No change \\
-Layer-wise $\alpha$ & Rank & No improvement \\
-Position-relative splash & Flexibility & No improvement \\
-Hybrid softmax+entmax & Stability & No improvement \\
+Gradient clipping \& Stability \& No change \\
+Different LoRA init \& Convergence \& No change \\
+Layer-wise $\alpha$ \& Rank \& No improvement \\
+Position-relative splash \& Flexibility \& No improvement \\
+Hybrid softmax+entmax \& Stability \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3395,7 +3395,7 @@ None.
 
 \subsection{E.6 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.7 Acknowledgements}
 

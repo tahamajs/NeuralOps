@@ -20,7 +20,7 @@
 | Precision | 0.9029 |
 | Recall | 0.9023 |
 | Loss | 0.31 |
-| Peak VRAM | 2526 MB MB |
+| Peak VRAM | 2526 MB |
 | Inference time | 3.5 s |
 | Attention sparsity | 42% |
 | Effective support | 74 |
@@ -140,15 +140,15 @@ Step  Loss
 
 ```bash
 # Main
-python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+python run_all_4_adasplash.py - models distilbert,roberta,gpt2
 
 # Alpha sweep
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
-    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+    python run_all_4_adasplash.py - alpha $alpha - output_suffix a$alpha
 done
 
 # Splash radius sweep
 for W in 8 16 32 64 128; do
-    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+    python run_all_4_adasplash.py - splash_radius $W - output_suffix W$W
 done
 ```

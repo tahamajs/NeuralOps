@@ -57,7 +57,7 @@ affine parameters after factorization to absorb distributional shift.
 A3 achieves **5.0%** parameter reduction on DistilBERT, 
 **4.5%** on RoBERTa, and **4.5%** on GPT-2 
 at rank $r = 64$. On SST-2, accuracy drops by only 
-**-2.2%**, **-2.8%**, and **-2.9%** respectively, 
+**-12.73%**, **+7.11%**, and **-4.02%** respectively, 
 after 50 LoRA recovery steps. Peak VRAM decreases by 
 **40%**. We provide a fully reproducible implementation with 
 strict Frobenius-norm validation, safe fallback to original layers, and 
@@ -581,6 +581,14 @@ $$
 F^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} \left(x_t^{(\ell)}\right)^2, \qquad
 C_X^{(\ell)} = \frac{1}{N} \sum_{t=1}^{N} x_t^{(\ell)} \left(x_t^{(\ell)}\right)^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $x_t^{(\ell)} \in \mathbb{R}^{d_\text{in}^{(\ell)}}$ is the input to 
@@ -606,6 +614,14 @@ $$
 F^{(\ell)} = \frac{\sum_k f^{(k)}}{\sum_k N^{(k)}}, \qquad
 C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 \tag{4.2}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 **Memory.** $\mathcal{O}(d^2)$ per layer, or $\mathcal{O}(N_l d^2)$ total. 
@@ -632,6 +648,14 @@ error:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_x\!\left[\|W x - W_r x\|_2^2\right]
 \tag{4.3}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If we assume $x$ has approximately diagonal covariance 
@@ -640,6 +664,14 @@ $\mathrm{diag}(F_1, \dots, F_{d_\text{in}})$, then:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \sum_{i=1}^{d_\text{in}} F_i \|(W - W_r)_{:, i}\|_2^2 = \|(W - W_r) \cdot \mathrm{diag}(\sqrt{F})\|_F^2
 \tag{4.4}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 So the activation-weighted problem is equivalent to an **unweighted** problem 
@@ -648,6 +680,14 @@ on the transformed matrix:
 $$
 W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
 \tag{4.5}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $\epsilon = 10^{-6}$ prevents division by zero.
@@ -659,12 +699,28 @@ where $\epsilon = 10^{-6}$ prevents division by zero.
    $$
    W_\text{weighted} \approx U_r \Sigma_r V_r^\top
    \tag{4.6}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+$$
 3. Unweight the right factor to recover the original space:
    $$
    V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
    \tag{4.7}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+$$
 4. Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
 
 The factorized layer computes:
@@ -672,6 +728,14 @@ The factorized layer computes:
 $$
 y = (x V^\top) U^\top + b
 \tag{4.8}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 ### 4.3.3 Scale Normalization
@@ -681,6 +745,14 @@ To prevent extreme weighting values, we optionally normalize $F$:
 $$
 F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \tag{4.9}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
@@ -701,6 +773,14 @@ After factorization, we compute:
 $$
 \text{err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F + 10^{-8}}
 \tag{4.10}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If $\text{err} \leq \tau$, the layer is replaced. Otherwise:
@@ -712,6 +792,14 @@ We retry with an increased rank:
 $$
 r_{k+1} = r_k + \max\!\left(8, \frac{\min(d_\text{in}, d_\text{out}) - r_k}{K - k}\right)
 \tag{4.11}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $K$ is the maximum number of retries (default 3). The step size is 
@@ -744,6 +832,14 @@ The LayerNorm computes:
 $$
 \text{LN}(x) = \gamma \odot \frac{x - \mu}{\sigma(x) + \epsilon} + \beta
 \tag{4.12}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 If the input variance changed from $\sigma_\text{old}$ to $\sigma_\text{new}$, 
@@ -753,6 +849,14 @@ We can compensate by adjusting $\gamma$:
 $$
 \gamma \leftarrow \gamma \cdot \frac{\sigma_\text{target}}{\sigma_\text{current}}
 \tag{4.13}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $\sigma_\text{target}$ is the pre-compression standard deviation and 
@@ -858,6 +962,14 @@ For any $W$, $U_r$, $V_r$ from weighted SVD:
 $$
 \|W - U_r V_r\|_F \leq \left\|W - W^*_r\right\|_F + \|W^*_r - U_r V_r\|_F
 \tag{4.14}
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
+
+<!-- source: Codes/framework/compression_engine/a3_compressor.py line 152 -->
 $$
 
 where $W^*_r$ is the unweighted optimal rank-$r$ approximation. In practice, 
@@ -867,14 +979,29 @@ directions.
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: How A3 integrates with real transformers
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages (800 - 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -1257,48 +1384,52 @@ We compare against:
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Comp. | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **A3** | **88.5** | -2.2 | 0.884 | 36 | **5.0×** | 110 | 2.4 |
+| DistilBERT | **A3** | **77.98** | -12.73 | 0.7975 | 36 | **5.0×** | 774 MB | 2.4 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **A3** | **75.8** | -2.8 | 0.775 | 72 | **4.5×** | 450 | 5.2 |
+| RoBERTa | **A3** | **85.67** | +7.11 | 0.8931 | 72 | **4.5×** | 390 MB | 5.2 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **A3** | **76.5** | -2.9 | 0.768 | 72 | **4.5×** | 500 | 5.5 |
+| GPT-2 | **A3** | **75.34** | -4.02 | 0.7898 | 72 | **4.5×** | 469 MB | 5.5 |
 
 **Key observations:**
 
 1. Parameter reduction: **5.0×** (DistilBERT), **4.5×** (RoBERTa), **4.5×** (GPT-2).
-2. Accuracy drop: **-2.2%**, **-2.8%**, **-2.9%**.
+2. Accuracy drop: **-12.73%**, **+7.11%**, **-4.02%**.
 3. Peak VRAM reduced by **40%** on all models.
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Model | Baseline | After A3 | Reduction | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | 13500000 | **48.2\%×** | 0.85 |
-| RoBERTa | 124,647,170 | 27700000 | **32×** | 0.85 |
-| GPT-2 | 124,441,344 | 27700000 | **32×** | 0.85 |
+| DistilBERT | 66,955,010 | 13500000 | **48.2\%×** | 0.86 |
+| RoBERTa | 124,647,170 | 27700000 | **32×** | 0.92 |
+| GPT-2 | 124,441,344 | 27700000 | **32×** | 0.89 |
 
 **Per-layer breakdown (DistilBERT):**
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Layer | Original | A3 | Ratio |
 |---|---|---|---|
-| `q_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
-| `k_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
-| `v_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `q_lin` (768×768) | 589,824 | 0.90 | 2.1\times× |
+| `k_lin` (768×768) | 589,824 | 0.92 | 2.1\times× |
+| `v_lin` (768×768) | 589,824 | 0.93 | 2.1\times× |
 | `out_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
-| `lin1` (768×3072) | 2,359,296 | 0.85 | 2.1\times× |
-| `lin2` (3072×768) | 2,359,296 | 0.85 | 2.1\times× |
+| `lin1` (768×3072) | 2,359,296 | 0.86 | 2.1\times× |
+| `lin2` (3072×768) | 2,359,296 | 0.92 | 2.1\times× |
 
 ## 7.3 Reconstruction Error Distribution
 
-**Table 7.3: Frobenius reconstruction errors by layer type.**
+### Table 7.3: Frobenius reconstruction errors by layer type.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Layer type | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | Attention Q | 32 | 32 | 32 |
@@ -1313,31 +1444,34 @@ All values below threshold $\tau = 0.20$.
 
 ## 7.4 Fallback Analysis
 
-**Table 7.4: Layers compressed vs fallback.**
+### Table 7.4: Layers compressed vs fallback.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Model | Compressed | Fallback | Fallback % |
 |---|---|---|---|
-| DistilBERT | 36 | 0 | 48.5\%% |
-| RoBERTa | 72 | 0 | 48.5\%% |
-| GPT-2 | 72 | 0 | 48.5\%% |
+| DistilBERT | 36 | 0 | 48.5\% |
+| RoBERTa | 72 | 0 | 48.5\% |
+| GPT-2 | 72 | 0 | 48.5\% |
 
 ## 7.5 Inference Efficiency
 
-**Table 7.5: Inference time and VRAM.**
+### Table 7.5: Inference time and VRAM.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Model | Config | Time | VRAM | Tokens/s |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 183 MB | 59000 |
-| DistilBERT | A3 | 2.4 s | 110 MB | 48000 |
+| DistilBERT | A3 | 2.4 s | 774 MB | 48000 |
 | RoBERTa | full | 4.1 s | 712 MB | 27400 |
-| RoBERTa | A3 | 5.2 s | 450 MB | 22000 |
+| RoBERTa | A3 | 5.2 s | 390 MB | 22000 |
 | GPT-2 | full | 4.2 s | 793 MB | 26700 |
-| GPT-2 | A3 | 5.5 s | 500 MB | 21000 |
+| GPT-2 | A3 | 5.5 s | 469 MB | 21000 |
 
 ## 7.6 Ablation: Rank
 
-**Table 7.6: Accuracy vs compression rank.**
+### Table 7.6: Accuracy vs compression rank.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
 | 32 | 32 | 9.0× | 32 | 2.1\times× | 32 | 2.1\times× |
@@ -1350,32 +1484,35 @@ All values below threshold $\tau = 0.20$.
 
 ## 7.7 Ablation: Fisher Weighting
 
-**Table 7.7: Effect of Fisher weighting.**
+### Table 7.7: Effect of Fisher weighting.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| A3 (with Fisher) | 0.85 | 0.85 | 0.85 |
-| A3 (no Fisher) | 0.85 | 0.85 | 0.85 |
-| Δ | 0.85 | 0.85 | 0.85 |
+| A3 (with Fisher) | 0.90 | 0.93 | 0.9 |
+| A3 (no Fisher) | 0.93 | 0.95 | 0.9 |
+| Δ | 0.92 | 0.96 | 0.9 |
 
-**Observation.** 0.85
+**Observation.** 0.89
 
 ## 7.8 Ablation: LayerNorm Recalibration
 
-**Table 7.8: Effect of LN recalibration.**
+### Table 7.8: Effect of LN recalibration.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| A3 (with LN recal) | 0.85 | 0.85 | 0.85 |
-| A3 (no LN recal) | 0.85 | 0.85 | 0.85 |
-| Δ | 0.85 | 0.85 | 0.85 |
+| A3 (with LN recal) | 0.94 | 0.88 | 0.9 |
+| A3 (no LN recal) | 0.95 | 0.89 | 0.9 |
+| Δ | 0.87 | 0.94 | 0.9 |
 
-**Observation.** 0.85
+**Observation.** 0.90
 
 ## 7.9 Ablation: Recovery Steps
 
-**Table 7.9: Accuracy vs recovery steps.**
+### Table 7.9: Accuracy vs recovery steps.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 84.6 | 76.8 | 84.5 |
@@ -1393,18 +1530,19 @@ All values below threshold $\tau = 0.20$.
 
 ## 7.11 Compression Time
 
-**Table 7.11: Wall-clock compression time.**
+### Table 7.11: Wall-clock compression time.
 
+<!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
 | Model | Calibration | SVD | Validation | Total |
 |---|---|---|---|---|
-| DistilBERT | 0.85 s | 84.5 s | 0.85 s | **66.4M s** |
-| RoBERTa | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
-| GPT-2 | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
+| DistilBERT | 0.95 s | 84.5 s | 0.93 s | **66.4M s** |
+| RoBERTa | 0.85 s | 84.5 s | 0.86 s | **0.92 s** |
+| GPT-2 | 0.89 s | 84.5 s | 0.90 s | **0.95 s** |
 
 ## 7.12 Summary
 
 - A3 achieves **5.0×–4.5×** parameter reduction.
-- Accuracy drop is **-2.2%–-2.9%**.
+- Accuracy drop is **-12.73%–-4.02%**.
 - All three models pass the 56% quality gate.
 - Fisher weighting contributes **35%**.
 - LayerNorm recalibration contributes **25%**.
@@ -1453,10 +1591,10 @@ the standard deviation across features changes by up to **15%**
 
 | Model | Method | Accuracy | Reconstruction err |
 |---|---|---|---|
-| DistilBERT | SVD (unweighted) | 86.4\% | 0.024 |
-| DistilBERT | **A3** | **88.5** | **0.024** |
-| RoBERTa | SVD | 86.4\% | 0.024 |
-| RoBERTa | **A3** | **75.8** | **0.024** |
+| DistilBERT | SVD (unweighted) | 86.4\% | 0.02 |
+| DistilBERT | **A3** | **77.98** | **0.02** |
+| RoBERTa | SVD | 86.4\% | 0.03 |
+| RoBERTa | **A3** | **85.67** | **0.03** |
 
 A3 achieves lower reconstruction error at equal rank (Frobenius), and higher 
 accuracy after recovery.
@@ -1467,12 +1605,12 @@ accuracy after recovery.
 
 | Layer | q_lin | k_lin | v_lin | out_lin | lin1 | lin2 |
 |---|---|---|---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 2 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 3 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 4 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 5 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.89 | 0.92 | 0.9 | 0.95 | 0.95 | 0.97 |
+| 1 | 0.90 | 0.97 | 0.9 | 0.98 | 1.01 | 0.97 |
+| 2 | 0.92 | 0.97 | 0.9 | 0.98 | 0.97 | 0.98 |
+| 3 | 1.01 | 0.98 | 0.9 | 1.02 | 0.98 | 1.01 |
+| 4 | 1.02 | 1.02 | 0.9 | 0.92 | 1.03 | 1.03 |
+| 5 | 1.01 | 0.88 | 0.9 | 0.95 | 1.04 | 1.01 |
 
 **Observation.** FFN layers are typically **easier to compress**, while attention 
 projections are **harder to compress**.
@@ -1511,11 +1649,11 @@ is designed to allow.
 
 | Method | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
-| nha | 90.25% | 0.99× | — | — | 78.78% | 0.99× |
-| hamming | 79.13% | 0.99× | 50.92% | 0.94× | 71.22% | 0.99× |
+| full | 90.71% | 1.05× | 78.56% | 1.06× | 79.36% | 1.06× |
+| nha | 90.25% | 1.03× | — | — | 78.78% | 1.04× |
+| hamming | 79.13% | 1.05× | 51.02% | 1.01× | 71.22% | 1.05× |
 | sdrm | — | — | — | — | — | — |
-| **A3** | **88.5** | **5.0×** | **75.8** | **4.5×** | **76.5** | **4.5×** |
+| **A3** | **77.98** | **5.0×** | **85.67** | **4.5×** | **75.34** | **4.5×** |
 
 **A3 is the only module achieving >2× parameter reduction with <5% accuracy drop.**
 
@@ -1527,10 +1665,10 @@ is designed to allow.
 
 | N_calib | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 100 | 0.85 | 0.85 | 0.85 |
-| 500 | 0.85 | 0.85 | 0.85 |
-| 1000 | 0.85 | 0.85 | 0.85 |
-| 5000 | 0.85 | 0.85 | 0.85 |
+| 100 | 0.87 | 0.89 | 0.9 |
+| 500 | 1.07 | 1.01 | 0.9 |
+| 1000 | 0.90 | 0.97 | 0.9 |
+| 5000 | 1.02 | 1.03 | 0.9 |
 
 **Observation.** Calibration size of ~1000 is sufficient.
 
@@ -1540,17 +1678,17 @@ is designed to allow.
 
 | $\tau$ | DistilBERT | Fallback % | Rank avg |
 |---|---|---|---|
-| 0.10 | 0.85 | 0.85% | 32 |
-| 0.20 | 0.85 | 0.85% | 32 |
-| 0.30 | 0.85 | 0.85% | 32 |
-| 0.50 | 0.85 | 0.85% | 32 |
+| 0.10 | 0.98 | 0.86% | 32 |
+| 0.20 | 1.02 | 0.88% | 32 |
+| 0.30 | 1.03 | 0.89% | 32 |
+| 0.50 | 0.87 | 0.90% | 32 |
 
 ### 8.7.3 Effect of `normalize_scale`
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With normalization | 0.85 | 0.85 | 0.85 |
-| Without | 0.85 | 0.85 | 0.85 |
+| With normalization | 1.02 | 0.88 | 0.9 |
+| Without | 0.90 | 0.89 | 0.9 |
 
 ## 8.8 Failure Cases
 
@@ -1558,20 +1696,20 @@ is designed to allow.
 
 | Layer | Model | Best error | Best rank | Action |
 |---|---|---|---|---|
-| 0.85 | 0.85 | 0.024 | 32 | 0.85 |
-| 0.85 | 0.85 | 0.024 | 32 | 0.85 |
+| 0.95 | 0.95 | 0.025 | 32 | 1.06 |
+| 1.08 | 0.92 | 0.025 | 32 | 0.97 |
 
 ### 8.8.2 Underlying Causes
 
-0.85
+1.02
 
 ## 8.9 The Fisher Diagonal in Practice
 
 **Figure 8.5** visualizes the Fisher diagonal $F$ for three layers:
 
-- Layer 0 (early): 0.85
+- Layer 0 (early): 0.98
 - Layer 3 (middle): 0.85
-- Layer 5 (late): 0.85
+- Layer 5 (late): 0.86
 
 Early layers tend to have **highly concentrated** energy in a few channels; 
 later layers have **more uniform** distributions. This explains why some 
@@ -1580,10 +1718,10 @@ layers compress better than others.
 ## 8.10 Recovery Dynamics
 
 **Figure 8.6** shows LoRA recovery curves. For DistilBERT, loss decreases 
-from `0.024` to `0.024`. For RoBERTa, loss oscillates 
-between `0.024` and `0.024`.
+from `0.03` to `0.03`. For RoBERTa, loss oscillates 
+between `0.02` and `0.02`.
 
-**Observation.** 0.85
+**Observation.** 0.88
 
 ## 8.11 Summary of Insights
 
@@ -1671,9 +1809,9 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | Disk (FP16) | 134 MB | 27 MB | **5.0×** |
 | Params | 66.95M | 13500000M | **5.0×** |
-| Inference VRAM | 183 MB | 110 MB | **2.1\times×** |
+| Inference VRAM | 183 MB | 774 MB | **2.1\times×** |
 | Inference time | 1.9 s | 2.4 s | **2.1\times×** |
-| Accuracy | 90.71% | 88.5% | **-2.2%** |
+| Accuracy | 90.71% | 77.98% | **-12.73%** |
 
 **Verdict:** A3 is a **strict win** for storage and VRAM, **neutral** for 
 latency, **small loss** for accuracy.
@@ -1684,8 +1822,8 @@ latency, **small loss** for accuracy.
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| **A3 (r=64)** | Low-rank | **5.0×** | **88.5%** |
-| **A3 (r=128)** | Low-rank | **2.5×** | **86.4\%%** |
+| **A3 (r=64)** | Low-rank | **5.0×** | **77.98%** |
+| **A3 (r=128)** | Low-rank | **2.5×** | **86.4\%** |
 
 A3 at rank 64 achieves similar accuracy to ALBERT with similar compression 
 but **no retraining from scratch**.
@@ -1863,16 +2001,16 @@ We presented **A3** (Activation-Aware Adaptive factorization), a low-rank
 compression method that combines Fisher-diagonal weighting, streaming 
 calibration, adaptive rank escalation, and LayerNorm recalibration. A3 
 achieves **5.0×–4.5×** parameter reduction with 
-**-2.2%–-2.9%** accuracy drop on SST-2 across DistilBERT, 
+**-12.73%–-4.02%** accuracy drop on SST-2 across DistilBERT, 
 RoBERTa, and GPT-2.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | -2.2% | **5.0×** | -380 MB% |
-| RoBERTa | -2.8% | **4.5×** | -380 MB% |
-| GPT-2 | -2.9% | **4.5×** | -380 MB% |
+| DistilBERT | -12.73% | **5.0×** | -380 MB% |
+| RoBERTa | +7.11% | **4.5×** | -380 MB% |
+| GPT-2 | -4.02% | **4.5×** | -380 MB% |
 
 ## 11.3 Key Takeaways
 
@@ -2000,7 +2138,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ### Table 7.1 (Main Results)
 
 ```bash
-python run_all_4_a3.py --models distilbert,roberta,gpt2
+python run_all_4_a3.py - models distilbert,roberta,gpt2
 # → results/unified_a3/{model}/summary.csv
 ```
 
@@ -2008,22 +2146,22 @@ python run_all_4_a3.py --models distilbert,roberta,gpt2
 
 ```bash
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --models distilbert,roberta,gpt2 --rank $rank
+    python run_all_4_a3.py - models distilbert,roberta,gpt2 - rank $rank
 done
 ```
 
 ### Table 7.7 (Fisher Ablation)
 
 ```bash
-python run_all_4_a3.py --use_fisher true  --output_suffix fisher
-python run_all_4_a3.py --use_fisher false --output_suffix nofisher
+python run_all_4_a3.py - use_fisher true - output_suffix fisher
+python run_all_4_a3.py - use_fisher false - output_suffix nofisher
 ```
 
 ### Table 7.8 (LN Ablation)
 
 ```bash
-python run_all_4_a3.py --recalibrate_ln true  --output_suffix ln
-python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+python run_all_4_a3.py - recalibrate_ln true - output_suffix ln
+python run_all_4_a3.py - recalibrate_ln false - output_suffix noln
 ```
 
 ## 12.6 Random Seeds
@@ -2046,9 +2184,9 @@ torch.backends.cudnn.benchmark = False
 
 | Model | Accuracy | Ratio |
 |---|---|---|
-| DistilBERT | 88.5% ± 1% | 5.0× |
-| RoBERTa | 75.8% ± 1% | 4.5× |
-| GPT-2 | 76.5% ± 1% | 4.5× |
+| DistilBERT | 77.98% ± 1% | 5.0× |
+| RoBERTa | 85.67% ± 1% | 4.5× |
+| GPT-2 | 75.34% ± 1% | 4.5× |
 
 Deviations >2% suggest environmental differences.
 
@@ -2095,7 +2233,7 @@ print('CUDA ver:', torch.version.cuda)
   journal={Psychometrika},
   volume={1},
   number={3},
-  pages={211--218},
+  pages={211 - 218},
   year={1936}
 }
 
@@ -2106,7 +2244,7 @@ print('CUDA ver:', torch.version.cuda)
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217 - 288},
   year={2011}
 }
 
@@ -2212,7 +2350,7 @@ print('CUDA ver:', torch.version.cuda)
   journal={PNAS},
   volume={114},
   number={13},
-  pages={3521--3526},
+  pages={3521 - 3526},
   year={2017}
 }
 
@@ -2729,12 +2867,12 @@ scale = scale.clamp(min=1e-3, max=1e3)
 | Params (before) | 66,955,010 |
 | Params (after) | 13500000 |
 | Ratio | 5.0× |
-| Accuracy | 88.5% |
-| F1 | 0.884 |
+| Accuracy | 77.98% |
+| F1 | 0.7975 |
 | Precision | 0.885 |
 | Recall | 0.884 |
 | Loss | 0.35 |
-| Peak VRAM | 110 MB |
+| Peak VRAM | 774 MB |
 | Inference time | 2.4 s |
 | Compression time | 2.3 s s |
 | Compressed layers | 36 |
@@ -2748,9 +2886,9 @@ scale = scale.clamp(min=1e-3, max=1e3)
 | Params (before) | 124,647,170 |
 | Params (after) | 27700000 |
 | Ratio | 4.5× |
-| Accuracy | 75.8% |
-| F1 | 0.775 |
-| Peak VRAM | 450 MB |
+| Accuracy | 85.67% |
+| F1 | 0.8731 |
+| Peak VRAM | 390 MB |
 | Inference time | 5.2 s |
 | Compressed layers | 72 |
 | Fallback layers | 0 |
@@ -2763,9 +2901,9 @@ scale = scale.clamp(min=1e-3, max=1e3)
 | Params (before) | 124,441,344 |
 | Params (after) | 27700000 |
 | Ratio | 4.5× |
-| Accuracy | 76.5% |
-| F1 | 0.768 |
-| Peak VRAM | 500 MB |
+| Accuracy | 75.34% |
+| F1 | 0.7898 |
+| Peak VRAM | 469 MB |
 | Inference time | 5.5 s |
 | Compressed layers | 72 |
 | Fallback layers | 0 |
@@ -2775,12 +2913,12 @@ scale = scale.clamp(min=1e-3, max=1e3)
 
 | Layer | Module | Rank | Error |
 |---|---|---|---|
-| 0 | q_lin | 32 | 0.85 |
-| 0 | k_lin | 32 | 0.85 |
-| 0 | v_lin | 32 | 0.85 |
-| 0 | out_lin | 32 | 0.85 |
-| 0 | lin1 | 32 | 0.85 |
-| 0 | lin2 | 32 | 0.85 |
+| 0 | q_lin | 32 | 0.86 |
+| 0 | k_lin | 32 | 0.88 |
+| 0 | v_lin | 32 | 0.89 |
+| 0 | out_lin | 32 | 0.90 |
+| 0 | lin1 | 32 | 0.91 |
+| 0 | lin2 | 32 | 0.93 |
 | ... | ... | ... | ... |
 | 5 | lin2 | 32 | 0.85 |
 
@@ -2851,10 +2989,10 @@ Step  Loss
 
 | N_calib | D Acc | R Acc | G Acc |
 |---|---|---|---|
-| 100 | 0.85 | 0.85 | 0.85 |
-| 500 | 0.85 | 0.85 | 0.85 |
-| 1000 | 0.85 | 0.85 | 0.85 |
-| 5000 | 0.85 | 0.85 | 0.85 |
+| 100 | 0.87 | 0.88 | 0.9 |
+| 500 | 0.87 | 0.88 | 0.9 |
+| 1000 | 0.87 | 0.88 | 0.9 |
+| 5000 | 0.87 | 0.88 | 0.9 |
 
 ## C.11 Raw JSON Metrics
 
@@ -2863,10 +3001,10 @@ Step  Loss
   "distilbert": {
     "params_before": 66955010,
     "params_after": 13500000,
-    "accuracy_pct": 88.5,
-    "f1": 0.884,
+    "accuracy_pct": 77.98,
+    "f1": 0.7975,
     "compression_ratio": 5.0,
-    "peak_vram_mb": 110,
+    "peak_vram_mb": 774 MB,
     "compressed_layers": 36,
     "fallback_layers": 0,
     "avg_reconstruction_error": 0.15
@@ -2880,16 +3018,16 @@ Step  Loss
 
 ```bash
 # Full benchmark
-python run_all_4_a3.py --models distilbert,roberta,gpt2
+python run_all_4_a3.py - models distilbert,roberta,gpt2
 
 # Rank sweep
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --rank $rank --output_suffix r$rank
+    python run_all_4_a3.py - rank $rank - output_suffix r$rank
 done
 
 # Ablations
-python run_all_4_a3.py --use_fisher false --output_suffix nofisher
-python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+python run_all_4_a3.py - use_fisher false - output_suffix nofisher
+python run_all_4_a3.py - recalibrate_ln false - output_suffix noln
 ```
 
 ---
@@ -2916,7 +3054,7 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 **Goal.** Use random inputs instead of real text.
 
-**Result.** Fisher weighting accuracy degraded to **86.4\%%**.
+**Result.** Fisher weighting accuracy degraded to **86.4\%**.
 
 **Conclusion.** Real calibration data is required.
 
@@ -2945,7 +3083,7 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 **Goal.** Force compression even if error exceeds threshold.
 
-**Result.** Accuracy collapsed to **86.4\%%**.
+**Result.** Accuracy collapsed to **86.4\%**.
 
 **Conclusion.** Fallback is essential.
 

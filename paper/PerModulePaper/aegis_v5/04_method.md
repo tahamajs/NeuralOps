@@ -47,18 +47,24 @@ Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
    $$
    W = U \Sigma V^\top
    \tag{4.1}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 2. Select energy-based rank:
    $$
    r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
    \tag{4.2}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 3. Factor into $W \approx U_r V_r$ where:
    $$
    U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
    V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
    \tag{4.3}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 
 ### 4.2.2 Parameter Reduction
 
@@ -84,6 +90,8 @@ We freeze $(U_r, V_r)$ and add LoRA adapters:
 $$
 y = U_r V_r x + \frac{\alpha}{r_L} B A x
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 Only $A, B$ are trained.
@@ -102,6 +110,8 @@ $$
 H_\text{local} = \lceil 2H/3 \rceil, \quad
 H_\text{global} = H - H_\text{local}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 For $H = 12$:
@@ -115,6 +125,8 @@ Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
 $$
 \text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with a window mask $|i - j| \leq W/2$.
@@ -126,6 +138,8 @@ Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
 $$
 \text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
@@ -137,6 +151,8 @@ The outputs are concatenated:
 $$
 \text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 ## 4.4 Adaptive Gating
@@ -148,6 +164,8 @@ Each head has a learnable scalar $g_h$:
 $$
 \text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
@@ -171,6 +189,8 @@ causal attention:
 $$
 \text{if } \text{is\_decoder} : \text{standard causal softmax}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 This preserves correctness at the cost of quadratic complexity for decoders.
@@ -255,6 +275,8 @@ If $W = U\Sigma V^\top$, then:
 $$
 \|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
@@ -266,6 +288,8 @@ Standard RFF bound (Rahimi & Recht, 2007):
 $$
 \sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.

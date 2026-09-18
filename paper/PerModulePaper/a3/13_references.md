@@ -13,7 +13,7 @@
   journal={Psychometrika},
   volume={1},
   number={3},
-  pages={211--218},
+  pages={211 - 218},
   year={1936}
 }
 
@@ -24,7 +24,7 @@
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217 - 288},
   year={2011}
 }
 
@@ -130,7 +130,7 @@
   journal={PNAS},
   volume={114},
   number={13},
-  pages={3521--3526},
+  pages={3521 - 3526},
   year={2017}
 }
 

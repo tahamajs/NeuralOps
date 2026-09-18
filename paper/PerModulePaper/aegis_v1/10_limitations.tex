@@ -1,1 +1,8 @@
 \section{Limitations}Shallow architectures (DistilBERT) experience capacity constraints when heads are split across local and global duties.
+
+
+
+\subsection{Limitations \& Failure Modes}
+1. \textbf{Extreme Low-Rank Truncation Degradation}: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. \textbf{Sequence Length Scaling Invariants}: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. \textbf{Dynamic Memory Footprint}: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.

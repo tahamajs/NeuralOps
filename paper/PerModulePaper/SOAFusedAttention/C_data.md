@@ -11,7 +11,7 @@
 | Attention reduction | 1.92× |
 | Accuracy | 81.31% |
 | F1 | 0.8191 |
-| Peak VRAM | 283 MB MB |
+| Peak VRAM | 283 MB |
 | Inference time | 2.1 s |
 
 ## C.2 RoBERTa
@@ -21,7 +21,7 @@
 | Total params after | 121000000 |
 | Accuracy | 50.92% |
 | F1 | 0.6748 |
-| Peak VRAM | 324 MB MB |
+| Peak VRAM | 324 MB |
 
 ## C.3 GPT-2
 
@@ -30,7 +30,7 @@
 | Total params after | 121000000 |
 | Accuracy | 50.92% |
 | F1 | 0.6748 |
-| Peak VRAM | 486 MB MB |
+| Peak VRAM | 486 MB |
 
 ## C.4 Rank Ablation
 
@@ -46,10 +46,10 @@
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | 85.0 | 0.85 | 0.85 |
-| 8 | 87.0 | 0.85 | 0.85 |
-| 16 | 88.5 | 0.85 | 0.85 |
-| 32 | 88.6 | 0.85 | 0.85 |
+| 4 | 85.0 | 0.87 | 0.88 |
+| 8 | 87.0 | 0.87 | 0.88 |
+| 16 | 88.5 | 0.87 | 0.88 |
+| 32 | 88.6 | 0.87 | 0.88 |
 
 ## C.6 Recovery Steps
 

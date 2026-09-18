@@ -570,6 +570,12 @@ For each projection weight $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\tex
 $$
 W_P = U_P \Sigma_P V_P^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 We compute this in **FP32** regardless of the model dtype. FP16 SVD can 
@@ -587,6 +593,12 @@ Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, define:
 $$
 s_i = \sigma_i^2, \quad \mathcal{E}(r) = \frac{\sum_{i=1}^{r} s_i}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} s_j}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The rank is:
@@ -594,6 +606,12 @@ The rank is:
 $$
 r_P = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.3.2 Implementation
@@ -636,6 +654,12 @@ $$
 U_{P, r} = U_{P, :, :r_P} \Sigma_{P, :r_P, :r_P}^{1/2}, \quad
 V_{P, r} = \Sigma_{P, :r_P, :r_P}^{1/2} V_{P, :r_P, :}^\top
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Then $U_{P, r} V_{P, r} = W_{P, r_P}$ (the truncated SVD).
@@ -660,6 +684,12 @@ The compressed projection computes:
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter count:**
@@ -680,6 +710,12 @@ The truncation residual is:
 $$
 \Delta W_P = W_P - U_{P, r} V_{P, r}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Its Frobenius norm is $\sqrt{(1 - \mathcal{E}(r_P))} \cdot \|W_P\|_F \leq \sqrt{1 - \tau} \|W_P\|_F$. 
@@ -694,6 +730,12 @@ $$
 A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad
 B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.5.3 Initialization
@@ -701,6 +743,12 @@ $$
 $$
 B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
@@ -710,6 +758,12 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + (x A_P^\top) B_P^\top + b_P
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter overhead:** $r_L (d_\text{in} + d_\text{out})$ per projection.
@@ -792,6 +846,12 @@ For a square $d \times d$ projection:
 $$
 \frac{d^2}{2 d (r_P + r_L)} = \frac{d}{2(r_P + r_L)}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Example.** $d = 768$, $r_P = 128$, $r_L = 16$:
@@ -811,6 +871,12 @@ $$
 $$
 \frac{\|W_P - U_{P, r} V_{P, r}\|_F}{\|W_P\|_F} = \sqrt{1 - \mathcal{E}(r_P)} \leq \sqrt{1 - \tau}
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2$ by 
@@ -832,6 +898,12 @@ At $\tau = 0.92$, the maximum relative error is $\sqrt{0.08} \approx 0.283$.
 $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P = W_{P, r_P} x + b_P
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** Substitute $B_P = 0$ into (4.9), and note $U_{P, r} V_{P, r} = W_{P, r_P}$. 
@@ -847,6 +919,12 @@ The parameter ratio per projection is:
 $$
 \rho_P = \frac{2 r_P d}{d^2} = \frac{2 r_P}{d} \quad \text{(for square } d \times d\text{)}
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+
+<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2× reduction).
@@ -876,14 +954,29 @@ At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2×
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 – 2 pages (800 – 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support Matrix
 
@@ -1279,8 +1372,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
@@ -1300,8 +1394,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Total parameter counts.**
+### Table 7.2: Total parameter counts.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline | Adaptive SVD | Ratio |
 |---|---|---|---|
 | DistilBERT | 66,955,010 | 22000000 | **3.0×** |
@@ -1310,6 +1405,7 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 **Per-projection (DistilBERT):**
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Projection | Original | Compressed | Rank $r_P$ | Reduction |
 |---|---|---|---|---|
 | $W_Q$ | 589,824 | 196608 | 128 | 3.0× |
@@ -1319,8 +1415,9 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 7.3 Per-Layer Rank Distribution
 
-**Table 7.3: Energy-thresholded ranks for DistilBERT.**
+### Table 7.3: Energy-thresholded ranks for DistilBERT.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Layer | Q rank | K rank | V rank | O rank | Avg |
 |---|---|---|---|---|---|
 | 0 | 128 | 128 | 64 | 64 | 96 |
@@ -1336,8 +1433,9 @@ projections tend to have lower rank than query and key projections.
 
 ## 7.4 Reconstruction Error
 
-**Table 7.4: Relative Frobenius error at energy threshold τ.**
+### Table 7.4: Relative Frobenius error at energy threshold τ.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Projection | Error | Theoretical bound |
 |---|---|---|---|
 | DistilBERT | Q | 0.27 | 0.283 |
@@ -1349,8 +1447,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.5 Efficiency Profile
 
-**Table 7.5: Inference efficiency.**
+### Table 7.5: Inference efficiency.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Time (s) | Tokens/s | VRAM (MB) |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 |
@@ -1362,8 +1461,9 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 ## 7.6 Ablation: Energy Threshold
 
-**Table 7.6: Effect of energy threshold τ.**
+### Table 7.6: Effect of energy threshold τ.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | τ | Avg rank | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|---|
 | 0.85 | 64 | 85 | 5.0× | 70 | 71 |
@@ -1377,8 +1477,9 @@ minimal compression.
 
 ## 7.7 Ablation: Residual Rank
 
-**Table 7.7: Effect of residual adapter rank $r_L$.**
+### Table 7.7: Effect of residual adapter rank $r_L$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 (no adapter) | 80 | 65 | 66 |
@@ -1393,8 +1494,9 @@ collapses accuracy.
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps (r_L = 16).**
+### Table 7.8: Accuracy vs recovery steps (r_L = 16).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.4 | 0.8 | 0.7 |
@@ -1405,8 +1507,9 @@ collapses accuracy.
 
 ## 7.9 Ablation: SVD Rank Cap
 
-**Table 7.9: Effect of maximum rank cap (τ=0.92).**
+### Table 7.9: Effect of maximum rank cap (τ=0.92).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Cap | DistilBERT | % Hit cap | Note |
 |---|---|---|---|
 | 64 | 85 | 20% | Under-cap |
@@ -1419,8 +1522,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: Adaptive SVD vs prior compression methods.**
+### Table 7.10: Adaptive SVD vs prior compression methods.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 79.36% |
@@ -1431,8 +1535,9 @@ that $\tau$ is the primary driver of rank selection.
 
 ## 7.11 Compression Time
 
-**Table 7.11: Wall-clock compression time.**
+### Table 7.11: Wall-clock compression time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | SVD | Rank selection | Adapter init | Total |
 |---|---|---|---|---|
 | DistilBERT | 10 s | 2 s | 3 s | **15 s** |
@@ -1522,7 +1627,7 @@ be more compressed without losing critical information.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No adapter (pure truncation) | 0.85 | 0.85 | 0.85 |
+| No adapter (pure truncation) | 0.87 | 0.88 | 0.9 |
 | With adapter | **88.0** | **74.0** | **75.5** |
 | **Gain** | +5.5% | +4.8% | +4.9% |
 
@@ -2086,11 +2191,11 @@ Expected: DistilBERT passes quality gate (≥56%).
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
+<!- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
      DEPENDENCIES: All sections
-     ═══════════════════════════════════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════════════════════════════════════ ->
 
 # 13. References
 
@@ -2101,7 +2206,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={Psychometrika},
   volume={1},
   number={3},
-  pages={211--218},
+  pages={211-218},
   year={1936}
 }
 
@@ -2111,7 +2216,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217-288},
   year={2011}
 }
 
@@ -2121,7 +2226,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={IEEE Transactions on Information Theory},
   volume={60},
   number={8},
-  pages={5040--5053},
+  pages={5040-5053},
   year={2014}
 }
 
@@ -2131,7 +2236,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={IEEE Transactions on Automatic Control},
   volume={19},
   number={6},
-  pages={716--723},
+  pages={716-723},
   year={1974}
 }
 
@@ -2139,7 +2244,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   title={Estimating the dimension of a model},
   author={Schwarz, Gideon},
   journal={The Annals of Statistics},
-  pages={461--464},
+  pages={461-464},
   year={1978}
 }
 
@@ -2212,7 +2317,7 @@ Expected: DistilBERT passes quality gate (≥56%).
   journal={JMLR},
   volume={21},
   number={140},
-  pages={1--67},
+  pages={1-67},
   year={2020}
 }
 
@@ -2858,8 +2963,8 @@ Key entry points:
 
 | Layer | Q error | K error | V error | O error |
 |---|---|---|---|---|
-| 0 | 0.024 | 0.024 | 0.024 | 0.024 |
-| 1 | 0.024 | 0.024 | 0.024 | 0.024 |
+| 0 | 0.024 | 0.025 | 0.025 | 0.026 |
+| 1 | 0.024 | 0.025 | 0.025 | 0.026 |
 | ... | ... | ... | ... | ... |
 
 ## C.8 Energy Threshold Ablation

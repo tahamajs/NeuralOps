@@ -67,10 +67,10 @@ Sparsity at multiple attention layers. Marginal improvement.
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.001 & 78.0 & Near hard top-k \\
-0.01 & 85.0 & Very aggressive \\
-0.1 & 88.5 & Best \\
-1.0 & 87.0 & Too soft \\
+0.001 & 78.0 \& Near hard top-k \\
+0.01 & 85.0 \& Very aggressive \\
+0.1 & 88.5 \& Best \\
+1.0 & 87.0 \& Too soft \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ Very small chunks add overhead.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Straight-through hard mask & Gradient & Unstable \\
-Learned temperature & Quality & No improvement \\
-Per-head K/V & Quality & No improvement \\
-Multi-chunk gradients & Quality & No improvement \\
+Straight-through hard mask \& Gradient \& Unstable \\
+Learned temperature \& Quality \& No improvement \\
+Per-head K/V \& Quality \& No improvement \\
+Multi-chunk gradients \& Quality \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

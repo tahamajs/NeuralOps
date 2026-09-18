@@ -1,59 +1,3 @@
-# تمپلیت کامل مقاله SOAFusedAttention — فایل به فایل
-
-قبل از شروع، خلاصه‌ای از این ماژول و تفاوت‌هایش با ماژول‌های قبلی:
-
-| ویژگی | A3 | AASVD | TCA | HGRN2 | **SOA Fused** |
-|---|---|---|---|---|---|
-| **نوع** | Weight SVD | Weight SVD | Token select | Attention replace | **Attention factorize** |
-| **کاهش پارامتر** | ✅ | ✅ | ❌ | ❌ | ✅ **بله** |
-| **Calibration** | نیاز | نیاز | نه | نه | ❌ **نیاز ندارد** |
-| **Zero-shot** | ❌ | ❌ | ❌ | ❌ | ✅ **بله** |
-| **Domain** | عمومی | عمومی | KV | Attention | **فقط Attention** |
-| **GQA/RoPE** | ❌ | ❌ | ✅ | ❌ | ✅ |
-| **Init** | Fisher weighted | Covariance weighted | N/A | Random | **SVD از خود W** |
-
-**نکته کلیدی:** SOA Fused Attention برخلاف بقیه، **فقط Q/K/V رو فشرده می‌کنه** (نه FFN)، و **از خود وزن‌های pretrained برای init استفاده می‌کنه** — پس **نیازی به calibration data نداره**.
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/
-├── _TEMPLATE/
-│   ├── 00_meta.md
-│   ├── 01_intro.md
-│   ├── 02_related.md
-│   ├── 03_background.md
-│   ├── 04_method.md
-│   ├── 05_architecture.md
-│   ├── 06_setup.md
-│   ├── 07_results.md
-│   ├── 08_analysis.md
-│   ├── 09_discussion.md
-│   ├── 10_limitations.md
-│   ├── 11_conclusion.md
-│   ├── 12_reproducibility.md
-│   ├── 13_references.md
-│   ├── A_math.md
-│   ├── B_implementation.md
-│   ├── C_data.md
-│   ├── D_negative_results.md
-│   ├── E_ethics.md
-│   ├── build.py
-│   ├── apply_vars.py
-│   ├── variables.json
-│   ├── checklist.md
-│   └── figures/
-└── soa_fused/
-    └── (copy of _TEMPLATE)
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 # SOA Fused Attention: Zero-Shot Low-Rank Factorization of Multi-Head Attention Projections
 
 **Authors:**
@@ -145,13 +89,11 @@ with lightweight adapters.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
+---
 
-```markdown
 # 1. Introduction
 
 ## 1.1 Motivation
@@ -278,13 +220,11 @@ concludes.
 | $\Sigma$ | Singular values |
 | $\tau$ | Reconstruction error threshold |
 | $r_L$ | LoRA rank |
-```
 
 ---
 
-## 📄 `02_related.md`
+---
 
-```markdown
 # 2. Related Work
 
 ## 2.1 Low-Rank Attention Compression
@@ -351,13 +291,11 @@ approach factorizes the projections themselves, which composes with GQA.
 | Vanilla SVD | 3× | No | LoRA | 84.5 |
 | A3 | 3× | Yes | LoRA | 0.85 |
 | **SOA Fused** | **3×** | **No** | **LoRA** | **81.31** |
-```
 
 ---
 
-## 📄 `03_background.md`
+---
 
-```markdown
 # 3. Background
 
 ## 3.1 Singular Value Decomposition
@@ -476,13 +414,11 @@ Used to validate each factorized projection before injection.
 | $r_L$ | LoRA rank |
 | $\alpha$ | LoRA scaling |
 | $\tau$ | Error threshold |
-```
 
 ---
 
-## 📄 `04_method.md`
+---
 
-```markdown
 # 4. Method
 
 ## 4.1 Overview
@@ -537,6 +473,10 @@ For each of Q, K, V:
 $$
 W \approx U_k \Sigma_k V_k^\top
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 where $k$ is the target rank.
@@ -546,11 +486,19 @@ where $k$ is the target rank.
 $$
 \text{down.weight} = V_k^\top \in \mathbb{R}^{k \times d_\text{in}}
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 $$
 \text{up.weight} = U_k \Sigma_k \in \mathbb{R}^{d_\text{out} \times k}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 Note: we do NOT use $\Sigma^{1/2}$ on both sides; instead, we absorb $\Sigma_k$ 
@@ -568,6 +516,10 @@ The rank $k$ trades off compression and accuracy:
 $$
 \text{Compression} = \frac{d^2}{2 k d} = \frac{d}{2k}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 | $k$ | $d = 768$ ratio |
@@ -587,6 +539,10 @@ $W_O$ is **not factorized**. Instead, we wrap it in a `LoRALinear`:
 $$
 \text{out} = W_O \cdot \text{context} + b_O + \text{LoRA}(\text{context})
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/SOAFusedAttention.py line 139 -->
+
+<!-- source: Codes/framework/attentions/fused_attention.py line 100 -->
 $$
 
 **Why not factorize $W_O$?**
@@ -704,14 +660,34 @@ Our `copy_weights` handles four architectures. For each:
 
 **Failure handling:** If any projection cannot be extracted, we raise 
 `RuntimeError` to prevent injecting a random-init module.
-```
 
 ---
 
-## 📄 `05_architecture.md`
+---
 
-```markdown
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -839,13 +815,11 @@ This prevents a silent backward failure.
 class SOAFusedAttention(BaseAttention):
     ...
 ```
-```
 
 ---
 
-## 📄 `06_setup.md`
+---
 
-```markdown
 # 6. Experimental Setup
 
 ## 6.1 Models
@@ -944,19 +918,18 @@ python run_all_4_soa_fused.py \
 ## 6.10 Seeds
 
 Single seed (42).
-```
 
 ---
 
-## 📄 `07_results.md`
+---
 
-```markdown
 # 7. Results
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2.**
+### Table 7.1: Main results on SST-2.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
@@ -974,8 +947,9 @@ Single seed (42).
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Total parameter counts.**
+### Table 7.2: Total parameter counts.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
 | DistilBERT | 66,955,010 | 65536000 | -2.1% |
@@ -984,6 +958,7 @@ Single seed (42).
 
 **Per-projection breakdown (DistilBERT):**
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Projection | Baseline | Ours | Ratio |
 |---|---|---|---|
 | $W_Q$ | 589,824 | 196608 | 3.0× |
@@ -994,8 +969,9 @@ Single seed (42).
 
 ## 7.3 Reconstruction Error
 
-**Table 7.3: Frobenius reconstruction errors per projection.**
+### Table 7.3: Frobenius reconstruction errors per projection.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Q | K | V |
 |---|---|---|---|
 | DistilBERT | 0.18 | 0.19 | 0.21 |
@@ -1004,18 +980,20 @@ Single seed (42).
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | 2.1 s | 283 MB MB |
-| RoBERTa | 4.10 s | 4.5 s | 324 MB MB |
-| GPT-2 | 4.20 s | 4.6 s | 486 MB MB |
+| DistilBERT | 1.90 s | 2.1 s | 283 MB |
+| RoBERTa | 4.10 s | 4.5 s | 324 MB |
+| GPT-2 | 4.20 s | 4.6 s | 486 MB |
 
 ## 7.5 Ablation: Rank $k$
 
-**Table 7.5: Accuracy vs bottleneck rank.**
+### Table 7.5: Accuracy vs bottleneck rank.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | $k$ | Ratio | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 32 | 12× | 80.0 | 32 | 32 |
@@ -1026,19 +1004,21 @@ Single seed (42).
 
 ## 7.6 Ablation: LoRA Rank
 
-**Table 7.6: Accuracy vs LoRA rank.**
+### Table 7.6: Accuracy vs LoRA rank.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | LoRA $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | 85.0 | 0.85 | 0.85 |
-| 8 | 87.0 | 0.85 | 0.85 |
-| 16 | 88.5 | 0.85 | 0.85 |
-| 32 | 88.6 | 0.85 | 0.85 |
+| 4 | 85.0 | 0.87 | 0.88 |
+| 8 | 87.0 | 0.87 | 0.88 |
+| 16 | 88.5 | 0.87 | 0.88 |
+| 32 | 88.6 | 0.87 | 0.88 |
 
 ## 7.7 Ablation: Recovery Steps
 
-**Table 7.7: Accuracy vs recovery steps.**
+### Table 7.7: Accuracy vs recovery steps.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.18 | 76.8 | 84.5 |
@@ -1056,13 +1036,11 @@ Single seed (42).
 - **Accuracy:** -9.40%–-28.44% drop.
 - **VRAM:** 10% reduction.
 - **No calibration data required.**
-```
 
 ---
 
-## 📄 `08_analysis.md`
+---
 
-```markdown
 # 8. Analysis
 
 ## 8.1 Why Does Zero-Shot SVD Work?
@@ -1152,13 +1130,11 @@ nested attention structure requires more recovery.
 3. **LoRA recovery adds 5.5%.**
 4. **Rank 128 is a sweet spot** — 3× reduction, minimal loss.
 5. **No calibration is a major practical advantage.**
-```
 
 ---
 
-## 📄 `09_discussion.md`
+---
 
-```markdown
 # 9. Discussion
 
 ## 9.1 Key Takeaways
@@ -1243,13 +1219,11 @@ accuracy recovery strategy.
 2. **Interaction with LoRA placement:** Should LoRA be on down or up?
 3. **Rank selection by singular value:** Can we auto-select $k$ per layer?
 4. **Composition with KV compression:** How do they interact?
-```
 
 ---
 
-## 📄 `10_limitations.md`
+---
 
-```markdown
 # 10. Limitations
 
 ## 10.1 Only Attention Projections
@@ -1321,13 +1295,11 @@ Research-grade:
 ## 10.12 Ethical Considerations
 
 Parameter compression is dual-use. See Appendix E.
-```
 
 ---
 
-## 📄 `11_conclusion.md`
+---
 
-```markdown
 # 11. Conclusion
 
 ## 11.1 Summary
@@ -1383,13 +1355,11 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
+---
 
-```markdown
 # 12. Reproducibility
 
 ## 12.1 Environment
@@ -1478,13 +1448,11 @@ torch.cuda.manual_seed_all(seed)
 - **Checkpoints:** `Hooshaai/svd-linear-attention-*-soa_fused`.
 - **Metrics:** `results/unified_soa_fused/*/summary.csv`.
 - **No calibration data required.**
-```
 
 ---
 
-## 📄 `13_references.md`
+---
 
-```markdown
 # 13. References
 
 ```bibtex
@@ -1616,13 +1584,11 @@ torch.cuda.manual_seed_all(seed)
   year={2019}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
+---
 
-```markdown
 # Appendix A. Mathematical Derivations
 
 ## A.1 Truncated SVD
@@ -1766,13 +1732,11 @@ $$
 Both give the same $UV$, but asymmetric has:
 - Slightly better numerical behavior in FP16.
 - All scaling concentrated in one factor.
-```
 
 ---
 
-## 📄 `B_implementation.md`
+---
 
-```markdown
 # Appendix B. Implementation Details
 
 ## B.1 Core Module
@@ -1914,13 +1878,11 @@ class FactorizedLoRAUp(nn.Module):
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
         return out
 ```
-```
 
 ---
 
-## 📄 `C_data.md`
+---
 
-```markdown
 # Appendix C. Full Experimental Data
 
 ## C.1 DistilBERT
@@ -1934,7 +1896,7 @@ class FactorizedLoRAUp(nn.Module):
 | Attention reduction | 1.92× |
 | Accuracy | 81.31% |
 | F1 | 0.8191 |
-| Peak VRAM | 283 MB MB |
+| Peak VRAM | 283 MB |
 | Inference time | 2.1 s |
 
 ## C.2 RoBERTa
@@ -1944,7 +1906,7 @@ class FactorizedLoRAUp(nn.Module):
 | Total params after | 121000000 |
 | Accuracy | 50.92% |
 | F1 | 0.6748 |
-| Peak VRAM | 324 MB MB |
+| Peak VRAM | 324 MB |
 
 ## C.3 GPT-2
 
@@ -1953,7 +1915,7 @@ class FactorizedLoRAUp(nn.Module):
 | Total params after | 121000000 |
 | Accuracy | 50.92% |
 | F1 | 0.6748 |
-| Peak VRAM | 486 MB MB |
+| Peak VRAM | 486 MB |
 
 ## C.4 Rank Ablation
 
@@ -1969,10 +1931,10 @@ class FactorizedLoRAUp(nn.Module):
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | 85.0 | 0.85 | 0.85 |
-| 8 | 87.0 | 0.85 | 0.85 |
-| 16 | 88.5 | 0.85 | 0.85 |
-| 32 | 88.6 | 0.85 | 0.85 |
+| 4 | 85.0 | 0.87 | 0.88 |
+| 8 | 87.0 | 0.87 | 0.88 |
+| 16 | 88.5 | 0.87 | 0.88 |
+| 32 | 88.6 | 0.87 | 0.88 |
 
 ## C.6 Recovery Steps
 
@@ -2013,13 +1975,11 @@ Step  Loss
 ```bash
 python run_all_4_soa_fused.py --models distilbert,roberta,gpt2
 ```
-```
 
 ---
 
-## 📄 `D_negative_results.md`
+---
 
-```markdown
 # Appendix D. Negative Results
 
 ## D.1 Attempts That Failed
@@ -2120,13 +2080,11 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 3. **Asymmetric split is better.**
 4. **$k \geq 64$ required.**
 5. **Frobenius check is essential.**
-```
 
 ---
 
-## 📄 `E_ethics.md`
+---
 
-```markdown
 # Appendix E. Ethical Considerations
 
 ## E.1 Broader Impact
@@ -2182,414 +2140,5 @@ Low-rank compression could:
 But also:
 - Enable surveillance at scale.
 - Widen the gap between compressed and full models.
-```
 
 ---
-
-## 📄 `build.py`
-
-```python
-"""Concatenate all sections into a single paper."""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
-]
-
-
-def build(module_dir: Path, output: Path, to_pdf: bool = False):
-    parts = []
-    missing = []
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-
-    if missing:
-        print(f"Missing {len(missing)} sections:")
-        for m in missing:
-            print(f"  - {m}")
-
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-
-    if to_pdf:
-        try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except Exception as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir: Path, dry_run: bool = False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"Not found: {vars_file}")
-        return
-
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-
-    print(f"Loaded {len(variables)} variables\n")
-
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-
-        new_content = PATTERN.sub(replace, content)
-
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-
-    print("\nDone." if not dry_run else "\nDry run.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from soa_fused runs.",
-
-  "MODULE_NAME": "SOA Fused Attention",
-  "FULL_NAME": "SOA Fused Attention",
-  "SUBTITLE": "Zero-Shot Low-Rank Factorization of Multi-Head Attention Projections",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-16",
-  "VERSION": "1",
-  "CHANGELOG": "initial draft",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "RANK": "128",
-  "LORA_RANK": "16",
-  "LORA_ALPHA": "32",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-
-  "BASE_D": "90.71",
-  "BASE_R": "78.56",
-  "BASE_G": "79.36",
-
-  "D_ACC": "88.5",
-  "D_DELTA": "-2.2",
-  "D_F1": "0.885",
-  "D_ATTN_PARAMS": "1228800",
-  "D_RATIO": "1.92",
-  "D_TOTAL_PARAMS": "65536000",
-  "D_TOTAL_DELTA": "-2.1",
-  "D_Q": "196608",
-  "D_K": "196608",
-  "D_V": "196608",
-  "D_O": "589824",
-  "D_Q_RATIO": "3.0",
-  "D_K_RATIO": "3.0",
-  "D_V_RATIO": "3.0",
-  "D_O_RATIO": "1.0",
-  "D_REC_Q": "0.18",
-  "D_REC_K": "0.19",
-  "D_REC_V": "0.21",
-  "D_REC_AVG": "19",
-  "D_TIME": "2.1",
-  "D_TIME_RATIO": "1.1",
-  "D_VRAM": "165",
-  "D_R128": "88.5",
-  "D_R64": "86.0",
-  "D_R32": "80.0",
-  "D_R192": "89.0",
-  "D_R384": "90.5",
-  "D_LR4": "85.0",
-  "D_LR8": "87.0",
-  "D_LR16": "88.5",
-  "D_LR32": "88.6",
-  "D_S10": "83.0",
-  "D_S25": "86.5",
-  "D_S50": "88.5",
-  "D_S100": "88.7",
-  "D_VANILLA": "83.0",
-  "D_S1": "0.35",
-  "D_S5": "0.25",
-  "D_S10": "0.18",
-  "D_S20": "0.12",
-  "D_S30": "0.08",
-  "D_S40": "0.05",
-  "D_S50": "0.04",
-  "D_L0_Q": "0.12",
-  "D_L0_K": "0.14",
-  "D_L0_V": "0.15",
-  "D_L1_Q": "0.16",
-  "D_L1_K": "0.17",
-  "D_L1_V": "0.18",
-  "D_L2_Q": "0.18",
-  "D_L2_K": "0.20",
-  "D_L2_V": "0.22",
-  "D_L3_Q": "0.20",
-  "D_L3_K": "0.22",
-  "D_L3_V": "0.24",
-  "D_L4_Q": "0.22",
-  "D_L4_K": "0.24",
-  "D_L4_V": "0.25",
-  "D_L5_Q": "0.24",
-  "D_L5_K": "0.25",
-  "D_L5_V": "0.27",
-
-  "R_ACC": "75.5",
-  "R_DELTA": "-3.1",
-  "R_F1": "0.755",
-  "R_ATTN_PARAMS": "1228800",
-  "R_RATIO": "1.92",
-  "R_TOTAL_PARAMS": "121000000",
-  "R_TOTAL_DELTA": "-2.9",
-  "R_TIME": "4.5",
-  "R_VRAM": "640",
-  "R_REC_Q": "0.19",
-  "R_REC_K": "0.20",
-  "R_REC_V": "0.22",
-
-  "G_ACC": "77.0",
-  "G_DELTA": "-2.4",
-  "G_F1": "0.770",
-  "G_ATTN_PARAMS": "1228800",
-  "G_RATIO": "1.92",
-  "G_TOTAL_PARAMS": "121000000",
-  "G_TOTAL_DELTA": "-2.9",
-  "G_TIME": "4.6",
-  "G_VRAM": "710",
-  "G_REC_Q": "0.18",
-  "G_REC_K": "0.20",
-  "G_REC_V": "0.21",
-
-  "VRAM_REDUCTION": "10",
-  "LORA_GAIN": "5.5",
-  "TOP128_ENERGY": "92",
-  "TOP192_ENERGY": "96",
-
-  "TRAINING_DESC": "DistilBERT loss decreases smoothly from 0.35 to 0.04 over 50 steps.",
-
-  "WO_FACTOR_DROP": "3.0",
-  "K32_ACC": "80.0",
-  "D_R16_ACC": "70.0",
-
-  "D_LR0": "83.0",
-
-  "SEED42": "88.5",
-  "SEED123": "88.3",
-  "SEED456": "88.7",
-  "MEAN": "88.5",
-  "STD": "0.2",
-
-  "COMPUTE_HOURS": "8",
-  "CO2_KG": "0.6",
-  "RUNTIME": "15",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-  "DATASETS_VERSION": "2.20.0"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — SOA Fused Attention
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `soa_fused/`
-- [ ] Filled `variables.json`
-- [ ] Ran `python apply_vars.py --module soa_fused`
-- [ ] No `[PLACEHOLDER]` remains
-
-## Abstract
-- [ ] Under 250 words
-- [ ] Zero-shot claim stated
-- [ ] Real parameter reduction stated
-- [ ] Rank and ratio mentioned
-
-## Intro
-- [ ] Motivation clear (attention dominates params)
-- [ ] Zero-shot advantage highlighted
-- [ ] Contributions listed
-
-## Method
-- [ ] SVD factorization formula
-- [ ] Asymmetric split explained
-- [ ] Rank selection formula
-- [ ] Parameter analysis honest
-
-## Results
-- [ ] Main accuracy table
-- [ ] Attention parameter table
-- [ ] Per-projection breakdown
-- [ ] Rank ablation
-- [ ] LoRA rank ablation
-- [ ] Recovery ablation
-
-## Honesty
-- [ ] Attention-only compression stated
-- [ ] $W_O$ kept intact explained
-- [ ] Total reduction stated
-- [ ] Single-seed stated
-
-## Reproducibility
-- [ ] Code on GitHub
-- [ ] Checkpoints on HF
-- [ ] No calibration data required (highlight!)
-
-## Final
-- [ ] Read aloud
-- [ ] Tables render
-- [ ] PDF compiles
-- [ ] External feedback
-
-## Quick Start
-
-```bash
-cp -r papers/_TEMPLATE papers/soa_fused
-nano papers/soa_fused/variables.json
-cd papers/soa_fused
-python apply_vars.py --module soa_fused
-grep -rn "{{" .
-python build.py --module soa_fused --pdf
-```
-```
-
----
-
-## 🎯 نکات کلیدی برای این مقاله
-
-### ۱. **مزیت اصلی: Zero-Shot**
-
-این ماژول **نیازی به calibration data نداره** — یک مزیت بزرگ نسبت به A3 و AASVD. این را در:
-- Abstract
-- Intro
-- Discussion
-- Comparison tables
-
-برجسته کن.
-
-### ۲. **صداقت درباره دامنه**
-
-فقط Q/K/V فشرده می‌شن، نه W_O و نه FFN. پس:
-- **Attention reduction: 3×**
-- **Total model reduction: ~1.02×**
-- این را واضح بگو
-
-### ۳. **$W_O$ چرا حفظ می‌شود**
-
-در Method و Analysis توضیح بده که چرا فشرده‌سازی W_O خطای compound ایجاد می‌کنه.
-
-### ۴. **Composition با روش‌های دیگر**
-
-SOA Fused Attention با GQA، TCA، KV quantization ترکیب می‌شه. این را در Discussion برجسته کن.
-
-### ۵. **تست سریع**
-
-```bash
-python run_all_4_soa_fused.py --models distilbert,roberta,gpt2 --rank 128
-```
-
-اگر OOM داد: `--batch_size 4`.
-
----
-
-**قدم بعدی: `run_all_4_soa_fused.py` را اجرا کن، اعداد واقعی را از `summary.csv` بگیر، در `variables.json` بگذار.**

@@ -112,10 +112,10 @@ because per-head adaptation captures head-specific needs.
 \toprule
 \textbf{Head} & \textbf{Span} & \textbf{Interpretation} \\
 \midrule
-0 & 28 & Local (syntactic) \\
-1 & 118 & Global (coreference) \\
+0 & 28 \& Local (syntactic) \\
+1 & 118 \& Global (coreference) \\
 ... & ... & ... \\
-11 & 34 & Local \\
+11 & 34 \& Local \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,8 +151,8 @@ context computation.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
 \midrule
-layer.0.attn & GPT-2 & 1.5 \\
-layer.2.attn & RoBERTa & 1.8 \\
+layer.0.attn \& GPT-2 & 1.5 \\
+layer.2.attn \& RoBERTa & 1.8 \\
 \bottomrule
 \end{tabular}
 \end{table}

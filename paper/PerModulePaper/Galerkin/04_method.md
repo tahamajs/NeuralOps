@@ -56,6 +56,12 @@ $$
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
 c_k, \quad c_k = \begin{cases} 1/\sqrt{N} & k = 0 \\ \sqrt{2/N} & k \geq 1 \end{cases}
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
 $$
 
 We then orthonormalize via QR to correct for numerical error:
@@ -63,6 +69,12 @@ We then orthonormalize via QR to correct for numerical error:
 $$
 \Phi \leftarrow Q \text{ where } \Phi + 10^{-4} I = Q R
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
 $$
 
 ## 4.3 Projection and Attention
@@ -73,31 +85,61 @@ For each head:
    $$
    Q_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d}
    \tag{4.3}
-   $$
+   
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+$$
    
 2. **Compute attention** in the reduced space:
    $$
    A_\Phi = \mathrm{softmax}\!\left(\frac{Q_\Phi K_\Phi^\top}{\sqrt{d}}\right) \in \mathbb{R}^{B \times H \times r \times r}
    \tag{4.4}
-   $$
+   
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+$$
    
 3. **Apply to values:**
    $$
    O_\Phi = A_\Phi V_\Phi \in \mathbb{R}^{B \times H \times r \times d}
    \tag{4.5}
-   $$
+   
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+$$
    
 4. **Reconstruct** to original space:
    $$
    O = \Phi O_\Phi \in \mathbb{R}^{B \times H \times N \times d}
    \tag{4.6}
-   $$
+   
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+$$
 
 5. **Energy correction:**
    $$
    O \leftarrow O \cdot \sqrt{N / r}
    \tag{4.7}
-   $$
+   
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+$$
 
 ## 4.4 Why the Energy Correction?
 
@@ -121,6 +163,12 @@ Q_i K_j^\top / \sqrt{d} & j \leq i \\
 -\infty & j > i
 \end{cases}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 607 -->
 $$
 
 This preserves the autoregressive property. The Galerkin path is **not** 
@@ -196,6 +244,12 @@ preserves energy at rate:
 $$
 \frac{\|\Phi_r^\top k\|_2}{\|k\|_2} \approx 1 - \mathcal{O}(r^{-2\alpha})
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
+
+<!-- source: Codes/framework/attentions/galerkin_attention.py line 168 -->
 $$
 
 where $\alpha$ is the smoothness parameter of $k$. For $C^\infty$ kernels, 

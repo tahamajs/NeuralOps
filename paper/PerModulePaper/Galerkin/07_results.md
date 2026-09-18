@@ -9,8 +9,9 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: Accuracy on SST-2 validation.**
+### Table 7.1: Accuracy on SST-2 validation.
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Model | Path | Accuracy | Δ | F1 | Status |
 |---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | PASS |
@@ -28,8 +29,9 @@
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Model | Baseline | After Galerkin | Δ | Δ% |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67544834 | +589824 | +0.88% |
@@ -41,18 +43,20 @@ compression method.
 
 ## 7.3 Efficiency Profile
 
-**Table 7.3: Inference efficiency.**
+### Table 7.3: Inference efficiency.
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Model | Time (base) | Time (ours) | Ratio | VRAM (base) | VRAM (ours) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | 7.0 s | 3.7× | 183 MB | 341 MB MB |
-| RoBERTa | 4.1 s | 13.1 s | 3.2× | 712 MB | 672 MB MB |
-| GPT-2 | 4.2 s | 9.2 s | 2.2× | 793 MB | 569 MB MB |
+| DistilBERT | 1.9 s | 7.0 s | 3.7× | 183 MB | 341 MB |
+| RoBERTa | 4.1 s | 13.1 s | 3.2× | 712 MB | 672 MB |
+| GPT-2 | 4.2 s | 9.2 s | 2.2× | 793 MB | 569 MB |
 
 ## 7.4 Ablation: Basis Rank
 
-**Table 7.4: Accuracy vs basis rank (DistilBERT).**
+### Table 7.4: Accuracy vs basis rank (DistilBERT).
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | $r$ | Accuracy | Δ | Reconstructed energy % |
 |---|---|---|---|
 | 8 | 45.0 | -45.7 | 0.60 |
@@ -67,8 +71,9 @@ to **the basis itself**.
 
 ## 7.5 Ablation: Recovery Steps
 
-**Table 7.5: Accuracy vs recovery steps.**
+### Table 7.5: Accuracy vs recovery steps.
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 58.0 | 45.0 | 79.10 |
@@ -80,8 +85,9 @@ to **the basis itself**.
 
 ## 7.6 Per-Layer Analysis
 
-**Table 7.6: Accuracy by layer replacement (DistilBERT).**
+### Table 7.6: Accuracy by layer replacement (DistilBERT).
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Layers replaced | Accuracy |
 |---|---|
 | None (baseline) | 90.71% |
@@ -94,8 +100,9 @@ to **the basis itself**.
 
 ## 7.7 Comparison to Prior Modules
 
-**Table 7.7: Cross-module comparison.**
+### Table 7.7: Cross-module comparison.
 
+<!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
 | Module | DistilBERT | RoBERTa | GPT-2 | Params Δ |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 0 |

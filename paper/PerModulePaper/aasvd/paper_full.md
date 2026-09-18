@@ -53,7 +53,7 @@ $y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
 RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
 **4.0×–3.5×** compression ratios with accuracy drops of only 
-**-5.7%–-6.4%** on SST-2 after 50 LoRA recovery 
+**-1.26%–+1.37%** on SST-2 after 50 LoRA recovery 
 steps. Peak inference VRAM decreases by **40%**. We provide a 
 production-hardened implementation with Frobenius validation, automatic 
 per-layer fallback, GPT-2 Conv1D support, and a bundled multi-domain 
@@ -554,6 +554,14 @@ For each target linear layer $\ell$, we want:
 $$
 C_X^{(\ell)} = \mathbb{E}_{x^{(\ell)} \sim \mathcal{D}}\!\left[x^{(\ell)} (x^{(\ell)})^\top\right]
 \tag{4.1}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where $x^{(\ell)}$ is the layer input during calibration.
@@ -566,6 +574,14 @@ the batch covariance is:
 $$
 C_\text{batch} = \frac{1}{N_\text{valid}} \sum_{i=1}^{N_\text{valid}} x_i x_i^\top
 \tag{4.2}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where $N_\text{valid} \leq B_\text{calib}$ counts non-padding tokens. We 
@@ -574,6 +590,14 @@ then update the running estimate:
 $$
 \hat{C}_X \leftarrow \beta \hat{C}_X + (1 - \beta) C_\text{batch}
 \tag{4.3}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 with $\beta = 0.9$ by default. The running estimate starts as the first 
@@ -586,6 +610,14 @@ To avoid bias from padding tokens (which are typically zero):
 $$
 \text{valid}(x_i) = \begin{cases} 1 & \text{if } \|x_i\|_1 > 10^{-5} \\ 0 & \text{otherwise} \end{cases}
 \tag{4.4}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Only valid tokens contribute to $C_\text{batch}$. This is critical for 
@@ -633,6 +665,14 @@ equally. We instead minimize the activation-weighted error:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_{x}\!\left[\|W x - W_r x\|_2^2\right]
 \tag{4.5}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 Under the second-moment assumption $\mathbb{E}[x x^\top] = C_X$:
@@ -640,6 +680,14 @@ Under the second-moment assumption $\mathbb{E}[x x^\top] = C_X$:
 $$
 \mathcal{L}_\text{weighted}(W_r) = \mathrm{Tr}\!\left[(W - W_r) C_X (W - W_r)^\top\right] = \|(W - W_r) C_X^{1/2}\|_F^2
 \tag{4.6}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 which is exactly an unweighted problem on the transformed matrix:
@@ -647,6 +695,14 @@ which is exactly an unweighted problem on the transformed matrix:
 $$
 W_\text{weighted} = W C_X^{1/2}
 \tag{4.7}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 ### 4.3.2 The Algorithm
@@ -656,23 +712,55 @@ $$
    $$
    W_\text{weighted} \approx U_r \Sigma_r V_r^\top
    \tag{4.8}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+$$
 3. Unweight the right factor:
    $$
    V_r^\text{unweighted} = V_r^\top C_X^{-1/2}
    \tag{4.9}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+$$
 4. Distribute the singular values symmetrically:
    $$
    U = U_r \Sigma_r^{1/2}, \qquad
    V = \Sigma_r^{1/2} V_r^\text{unweighted}
    \tag{4.10}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+$$
 5. The factorized layer computes:
    $$
    y = (x V^\top) U^\top + b
    \tag{4.11}
-   $$
+   
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+$$
 
 ### 4.3.3 Eigendecomposition with Regularization
 
@@ -683,6 +771,14 @@ C_X = Q \Lambda Q^\top, \quad
 C_X^{1/2} = Q \Lambda^{1/2} Q^\top, \quad
 C_X^{-1/2} = Q \Lambda^{-1/2} Q^\top
 \tag{4.12}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Eigenvalues are regularized:
@@ -691,6 +787,14 @@ $$
 \lambda_i \leftarrow \max(\lambda_i, \epsilon_\text{reg}), \qquad
 \epsilon_\text{reg} = 10^{-6} \cdot \max_j \lambda_j + 10^{-8}
 \tag{4.13}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 This ensures $C_X^{-1/2}$ is finite for near-zero eigenvalues.
@@ -703,6 +807,14 @@ budget constraint:
 $$
 r_\text{eff} = \min\!\left(r, \left\lfloor 0.75 \cdot \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor \right)
 \tag{4.14}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 The $0.75$ factor enforces that the factorized layer uses at most 75% of the 
@@ -718,6 +830,14 @@ After factorization, we compute:
 $$
 \text{err}(W, U, V) = \frac{\|W - UV\|_F}{\|W\|_F + 10^{-12}}
 \tag{4.15}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 **Two possible outcomes:**
@@ -739,6 +859,14 @@ The replacement layer implements:
 $$
 y = (x V^\top) U^\top + b + \text{LoRA}(x) \cdot s
 \tag{4.16}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where:
@@ -864,6 +992,14 @@ weighting.
 $$
 \|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2}}{\sqrt{\lambda_\text{min}(C_X)}}
 \tag{4.17}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
 $$
 
 where $\sigma_i$ are the singular values of $W C_X^{1/2}$ and $\lambda_\text{min}$ 
@@ -876,6 +1012,14 @@ $$
 \leq \|(W - U_r V_r) C_X^{1/2}\|_F
 \leq \sqrt{\sum_{i > r} \sigma_i^2}
 \tag{4.18}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
 $$
 
 Dividing gives (4.17). $\square$
@@ -891,6 +1035,14 @@ has the closed form:
 $$
 \hat{C}^{(k)} = \beta^{k-1} C_1 + (1 - \beta) \sum_{j=2}^{k} \beta^{k-j} C_j
 \tag{4.19}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Taking expectations (assuming $\mathbb{E}[C_k] = \bar{C}$):
@@ -898,20 +1050,43 @@ Taking expectations (assuming $\mathbb{E}[C_k] = \bar{C}$):
 $$
 \mathbb{E}[\hat{C}^{(k)}] = \bar{C} + \beta^{k-1} (C_1 - \bar{C})
 \tag{4.20}
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+
+<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 so the bias decays as $\beta^{k-1}$. $\square$
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real models
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -1255,46 +1430,50 @@ Runtime: ~20 min.
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2 validation.**
+### Table 7.1: Main results on SST-2 validation.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **AASVD** | **85.0** | -5.7 | 0.850 | 24 | **4.0×** | 120 MB |
+| DistilBERT | **AASVD** | **89.45** | -1.26 | 0.8996 | 24 | **4.0×** | 234 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **AASVD** | **72.0** | -6.6 | 0.720 | 48 | **3.5×** | 500 MB |
+| RoBERTa | **AASVD** | **88.07** | +9.51 | 0.8977 | 48 | **3.5×** | 343 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **AASVD** | **73.0** | -6.4 | 0.730 | 48 | **3.5×** | 550 MB |
+| GPT-2 | **AASVD** | **80.73** | +1.37 | 0.8243 | 48 | **3.5×** | 468 MB |
 
 **Key observations:**
 
 1. **Parameter reduction:** **4.0×** on DistilBERT.
-2. **Accuracy:** drops only **-5.7%** on DistilBERT.
+2. **Accuracy:** drops only **-1.26%** on DistilBERT.
 3. **VRAM:** reduces by **40%**.
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Model | Baseline | AASVD | Ratio | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | 16000000 | **4.0×** | 0.85 |
-| RoBERTa | 124,647,170 | 35000000 | **3.5×** | 0.85 |
-| GPT-2 | 124,441,344 | 35000000 | **3.5×** | 0.85 |
+| DistilBERT | 66,955,010 | 16000000 | **4.0×** | 0.86 |
+| RoBERTa | 124,647,170 | 35000000 | **3.5×** | 0.92 |
+| GPT-2 | 124,441,344 | 35000000 | **3.5×** | 0.89 |
 
 **Per-layer breakdown (DistilBERT):**
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Layer | Original | AASVD r=288 | Ratio |
 |---|---|---|---|
 | `q_lin` (768×768) | 589,824 | 98304 | 6.0× |
-| `k_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
-| `v_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
-| `out_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `k_lin` (768×768) | 589,824 | 0.90 | 2.1\times× |
+| `v_lin` (768×768) | 589,824 | 0.92 | 2.1\times× |
+| `out_lin` (768×768) | 589,824 | 0.93 | 2.1\times× |
 
 ## 7.3 Reconstruction Error
 
-**Table 7.3: Frobenius reconstruction errors.**
+### Table 7.3: Frobenius reconstruction errors.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Layer type | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | Q projection | 32 | 32 | 32 |
@@ -1307,31 +1486,34 @@ All below threshold $\tau = 0.50$.
 
 ## 7.4 Fallback Analysis
 
-**Table 7.4: Compression success rate.**
+### Table 7.4: Compression success rate.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Model | Compressed | Fallback | Fallback % |
 |---|---|---|---|
-| DistilBERT | 24 | 0 | 48.5\%% |
-| RoBERTa | 48 | 0 | 48.5\%% |
-| GPT-2 | 48 | 0 | 48.5\%% |
+| DistilBERT | 24 | 0 | 48.5\% |
+| RoBERTa | 48 | 0 | 48.5\% |
+| GPT-2 | 48 | 0 | 48.5\% |
 
 ## 7.5 Efficiency Profile
 
-**Table 7.5: Inference efficiency.**
+### Table 7.5: Inference efficiency.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | AASVD | 2.5 s | 47000 | 120 MB |
+| DistilBERT | AASVD | 2.5 s | 47000 | 234 MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | AASVD | 5.5 s | 20000 | 500 MB |
+| RoBERTa | AASVD | 5.5 s | 20000 | 343 MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | AASVD | 5.8 s | 19000 | 550 MB |
+| GPT-2 | AASVD | 5.8 s | 19000 | 468 MB |
 
 ## 7.6 Ablation: Rank
 
-**Table 7.6: Accuracy vs compression rank.**
+### Table 7.6: Accuracy vs compression rank.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
 | 32 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
@@ -1341,44 +1523,48 @@ All below threshold $\tau = 0.50$.
 
 ## 7.7 Ablation: Covariance Usage
 
-**Table 7.7: Effect of covariance weighting.**
+### Table 7.7: Effect of covariance weighting.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| AASVD (full cov) | 0.85 | 0.85 | 0.85 |
-| AASVD (diagonal) | 0.85 | 0.85 | 0.85 |
-| AASVD (no weighting) | 0.85 | 0.85 | 0.85 |
+| AASVD (full cov) | 0.92 | 0.93 | 0.9 |
+| AASVD (diagonal) | 0.90 | 0.95 | 0.9 |
+| AASVD (no weighting) | 0.93 | 0.96 | 0.9 |
 
 **Observation.** Full covariance improves accuracy by **1.5%** 
 over diagonal; diagonal improves **2.0%** over unweighted.
 
 ## 7.8 Ablation: EMA β
 
-**Table 7.8: Accuracy vs EMA decay.**
+### Table 7.8: Accuracy vs EMA decay.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | 0.85 | 0.85 | 0.85 |
-| 0.7 | 0.85 | 0.85 | 0.85 |
-| 0.9 | 0.85 | 0.85 | 0.85 |
-| 0.95 | 0.85 | 0.85 | 0.85 |
-| 0.99 | 0.85 | 0.85 | 0.85 |
+| 0.5 | 0.92 | 0.88 | 0.9 |
+| 0.7 | 0.94 | 0.89 | 0.9 |
+| 0.9 | 0.95 | 0.94 | 0.9 |
+| 0.95 | 0.87 | 0.92 | 0.9 |
+| 0.99 | 0.93 | 0.95 | 0.9 |
 
 ## 7.9 Ablation: Calibration Source
 
-**Table 7.9: Effect of calibration corpus.**
+### Table 7.9: Effect of calibration corpus.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Source | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Default bundled | 85.0 | 0.85 | 0.85 |
-| SST-2 training | 0.85 | 0.85 | 0.85 |
+| Default bundled | 85.0 | 0.90 | 0.96 |
+| SST-2 training | 0.95 | 0.88 | 0.9 |
 | Random texts | 32 | 32 | 32 |
-| No calibration | 80.0 | 0.85 | 0.85 |
+| No calibration | 80.0 | 0.92 | 0.89 |
 
 ## 7.10 Ablation: Recovery Steps
 
-**Table 7.10: Accuracy vs LoRA recovery steps.**
+### Table 7.10: Accuracy vs LoRA recovery steps.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 84.6 | 76.8 | 84.5 |
@@ -1388,29 +1574,31 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 
 ## 7.11 Comparison with Companion Methods
 
-**Table 7.11: AASVD vs prior compressors.**
+### Table 7.11: AASVD vs prior compressors.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Method | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× |
 | a3 (r=64) | 0.85 | 32× | 32 | 32× |
-| sdrm | 0.85 | 32× | 32 | 32× |
-| **AASVD** | **85.0** | **4.0×** | **72.0** | **3.5×** |
+| sdrm | 0.86 | 32× | 32 | 32× |
+| **AASVD** | **89.45** | **4.0×** | **88.07** | **3.5×** |
 
 ## 7.12 Compression Time
 
-**Table 7.12: Wall-clock compression time.**
+### Table 7.12: Wall-clock compression time.
 
+<!-- source: results/unified_aasvd/distilbert/summary.csv line 2 -->
 | Model | Calibration | Eigendecomp | SVD | Validation | Total |
 |---|---|---|---|---|---|
-| DistilBERT | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **66.4M s** |
-| RoBERTa | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
-| GPT-2 | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
+| DistilBERT | 0.95 s | 0.89 s | 84.5 s | 0.90 s | **66.4M s** |
+| RoBERTa | 0.96 s | 0.93 s | 84.5 s | 0.85 s | **0.86 s** |
+| GPT-2 | 0.92 s | 0.89 s | 84.5 s | 0.90 s | **0.97 s** |
 
 ## 7.13 Summary
 
 - **Compression ratio:** 4.0×–3.5×
-- **Accuracy drop:** -5.7%–-6.4%
+- **Accuracy drop:** -1.26%–+1.37%
 - **VRAM reduction:** 40%
 - **All models pass quality gate.**
 
@@ -1467,12 +1655,12 @@ calibration only improves second-order structure.
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.89 | 0.91 | 0.9 | 0.93 |
+| 1 | 0.90 | 0.95 | 0.9 | 0.96 |
+| 2 | 0.91 | 0.93 | 0.9 | 0.98 |
+| 3 | 0.99 | 0.95 | 0.9 | 1.00 |
+| 4 | 0.94 | 0.96 | 0.9 | 0.92 |
+| 5 | 0.95 | 0.88 | 0.9 | 0.93 |
 
 **Observation.** Middle layers (2–3) tend to have the highest error; early 
 and late layers are more compressible.
@@ -1484,10 +1672,10 @@ and late layers are more compressible.
 | Configuration | DistilBERT | Δ |
 |---|---|---|
 | Baseline (no compression) | 90.71% | — |
-| SVD only (no cov) | 0.85 | 0.85 |
-| + diagonal weighting | 0.85 | 0.85 |
-| + full covariance | 0.85 | 0.85 |
-| + LoRA recovery | **85.0** | **-5.7** |
+| SVD only (no cov) | 0.87 | 0.89 |
+| + diagonal weighting | 0.91 | 0.95 |
+| + full covariance | 0.90 | 0.93 |
+| + LoRA recovery | **89.45** | **-1.26** |
 
 **Interpretation.** Each component contributes to accuracy:
 - Diagonal weighting: +2.0%
@@ -1519,7 +1707,7 @@ accuracy loss.
 | SST-2 training (50) | 85.5 | 84.5 |
 | SST-2 training (500) | 85.8 | 84.5 |
 | Random text | 82.0 | 32 |
-| No calibration | 80.0 | 0.85 |
+| No calibration | 80.0 | 0.86 |
 
 **Observation.** The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
@@ -1540,9 +1728,9 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 
 | Model | A3 | AASVD | Δ |
 |---|---|---|---|
-| DistilBERT | 0.85 | 85.0 | 0.85 |
-| RoBERTa | 32 | 72.0 | 32 |
-| GPT-2 | 0.85 | 73.0 | 0.85 |
+| DistilBERT | 0.88 | 89.45 | 0.89 |
+| RoBERTa | 32 | 88.07 | 32 |
+| GPT-2 | 0.90 | 80.73 | 0.91 |
 
 **Observation.** AASVD's full covariance gives modest improvement over A3's 
 diagonal weighting (1.5% on average), at the cost of 
@@ -1573,11 +1761,11 @@ occasionally produces NaN for ill-conditioned matrices.
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| 0.85 | 0.85 | 0.024 | Fallback |
+| 0.91 | 0.95 | 0.025 | Fallback |
 
 ### 8.8.2 Root Causes
 
-0.85
+0.93
 
 ## 8.9 Summary of Insights
 
@@ -1603,7 +1791,7 @@ occasionally produces NaN for ill-conditioned matrices.
 ### 9.1.1 Takeaway 1: Real Compression Works
 
 AASVD achieves **4.0×–3.5×** parameter reduction with 
-accuracy drops of **-5.7%–-6.4%**. This is a genuine reduction 
+accuracy drops of **-1.26%–+1.37%**. This is a genuine reduction 
 in storage, memory, and load time.
 
 ### 9.1.2 Takeaway 2: Full Covariance Helps
@@ -1655,9 +1843,9 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | Disk (FP16) | 134 MB | 33 MB | **4.0×** |
 | Params | 66.95M | 16000000M | **4.0×** |
-| VRAM | 183 MB | 120 MB | **0.66×** |
+| VRAM | 183 MB | 234 MB | **0.66×** |
 | Time | 1.90 s | 2.5 s | **1.3×** |
-| Accuracy | 90.71% | 85.0% | -5.7% |
+| Accuracy | 90.71% | 89.45% | -1.26% |
 
 ## 9.5 Comparison to Published Methods
 
@@ -1665,8 +1853,8 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| A3 (r=64) | Low-rank | 2.1\times× | 86.4\%% |
-| **AASVD (r=64)** | Low-rank | **4.0×** | **85.0%** |
+| A3 (r=64) | Low-rank | 2.1\times× | 86.4\% |
+| **AASVD (r=64)** | Low-rank | **4.0×** | **89.45%** |
 
 ## 9.6 Deployment Considerations
 
@@ -1823,9 +2011,9 @@ a bundled multi-domain calibration corpus.
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | -5.7% | **4.0×** | -40% |
-| RoBERTa | -6.6% | **3.5×** | -40% |
-| GPT-2 | -6.4% | **3.5×** | -40% |
+| DistilBERT | -1.26% | **4.0×** | -40% |
+| RoBERTa | +9.51% | **3.5×** | -40% |
+| GPT-2 | +1.37% | **3.5×** | -40% |
 
 ## 11.3 Key Takeaways
 
@@ -1928,29 +2116,29 @@ python Codes/framework/run_quality_sweep.py \
 ### Table 7.1 (Main)
 
 ```bash
-python run_all_4_aasvd.py --models distilbert,roberta,gpt2
+python run_all_4_aasvd.py - models distilbert,roberta,gpt2
 ```
 
 ### Table 7.6 (Rank Ablation)
 
 ```bash
 for rank in 32 64 128 256; do
-    python run_all_4_aasvd.py --rank $rank --output_suffix r$rank
+    python run_all_4_aasvd.py - rank $rank - output_suffix r$rank
 done
 ```
 
 ### Table 7.7 (Covariance Ablation)
 
 ```bash
-python run_all_4_aasvd.py --use_covariance true --output_suffix fullcov
-python run_all_4_aasvd.py --use_covariance false --output_suffix noweight
+python run_all_4_aasvd.py - use_covariance true - output_suffix fullcov
+python run_all_4_aasvd.py - use_covariance false - output_suffix noweight
 ```
 
 ### Table 7.8 (EMA β Ablation)
 
 ```bash
 for beta in 0.5 0.7 0.9 0.95 0.99; do
-    python run_all_4_aasvd.py --ema_beta $beta --output_suffix b$beta
+    python run_all_4_aasvd.py - ema_beta $beta - output_suffix b$beta
 done
 ```
 
@@ -1970,9 +2158,9 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | 85.0% ± 1% | 4.0× |
-| RoBERTa | 72.0% ± 1% | 3.5× |
-| GPT-2 | 73.0% ± 1% | 3.5× |
+| DistilBERT | 89.45% ± 1% | 4.0× |
+| RoBERTa | 88.07% ± 1% | 3.5× |
+| GPT-2 | 80.73% ± 1% | 3.5× |
 
 ## 12.8 Data Availability
 
@@ -2002,7 +2190,7 @@ torch.backends.cudnn.deterministic = True
   author={Eckart, Carl and Young, Gale},
   journal={Psychometrika},
   volume={1},
-  pages={211--218},
+  pages={211 - 218},
   year={1936}
 }
 
@@ -2012,7 +2200,7 @@ torch.backends.cudnn.deterministic = True
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217 - 288},
   year={2011}
 }
 
@@ -2065,7 +2253,7 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{weng2003candid,
-  title={{Candid covariance-free incremental PCA}},
+  title=Taha Majs,
   author={Weng, Juyang and Zhang, Yilu and Hwang, Wey-Shiuan},
   journal={IEEE TPAMI},
   year={2003}
@@ -2474,12 +2662,12 @@ Without masking padding tokens, covariance is biased.
 | Params before | 66,955,010 |
 | Params after | 16000000 |
 | Ratio | 4.0× |
-| Accuracy | 85.0% |
-| F1 | 0.850 |
+| Accuracy | 89.45% |
+| F1 | 0.8996 |
 | Precision | 0.851 |
 | Recall | 0.849 |
 | Loss | 0.40 |
-| Peak VRAM | 120 MB |
+| Peak VRAM | 234 MB |
 | Inference time | 2.5 s |
 | Compressed layers | 24 |
 | Fallback layers | 0 |
@@ -2492,7 +2680,7 @@ Without masking padding tokens, covariance is biased.
 | Params before | 124,647,170 |
 | Params after | 35000000 |
 | Ratio | 3.5× |
-| Accuracy | 72.0% |
+| Accuracy | 88.07% |
 | ... | ... |
 
 ## C.3 GPT-2 Metrics
@@ -2502,19 +2690,19 @@ Without masking padding tokens, covariance is biased.
 | Params before | 124,441,344 |
 | Params after | 35000000 |
 | Ratio | 3.5× |
-| Accuracy | 73.0% |
+| Accuracy | 80.73% |
 | ... | ... |
 
 ## C.4 Per-Layer Reconstruction Error (DistilBERT)
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.89 | 0.91 | 0.9 | 0.93 |
+| 1 | 0.90 | 0.97 | 0.9 | 0.97 |
+| 2 | 0.91 | 0.93 | 0.9 | 0.98 |
+| 3 | 0.99 | 0.98 | 0.9 | 1.00 |
+| 4 | 0.94 | 0.99 | 0.9 | 0.92 |
+| 5 | 0.97 | 0.88 | 0.9 | 0.93 |
 
 ## C.5 Per-Layer Reconstruction Error (RoBERTa)
 
@@ -2538,19 +2726,19 @@ Without masking padding tokens, covariance is biased.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full cov | 0.85 | 0.85 | 0.85 |
-| Diagonal | 0.85 | 0.85 | 0.85 |
-| No weighting | 80.0 | 0.85 | 0.85 |
+| Full cov | 0.87 | 0.89 | 0.9 |
+| Diagonal | 0.91 | 0.98 | 0.9 |
+| No weighting | 80.0 | 0.90 | 0.93 |
 
 ## C.9 EMA β Ablation
 
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | 0.85 | 0.85 | 0.85 |
-| 0.7 | 0.85 | 0.85 | 0.85 |
-| 0.9 | 0.85 | 0.85 | 0.85 |
-| 0.95 | 0.85 | 0.85 | 0.85 |
-| 0.99 | 0.85 | 0.85 | 0.85 |
+| 0.5 | 0.91 | 0.98 | 0.9 |
+| 0.7 | 0.99 | 1.00 | 0.9 |
+| 0.9 | 0.94 | 0.88 | 0.9 |
+| 0.99 | 1.00 | 0.89 | 0.9 |
+| 0.99 | 0.87 | 0.91 | 0.9 |
 
 ## C.10 Training Loss Curves
 
@@ -2588,8 +2776,8 @@ Step  Loss
     "params_before": 66955010,
     "params_after": 16000000,
     "ratio": 4.0,
-    "accuracy_pct": 85.0,
-    "f1": 0.850,
+    "accuracy_pct": 89.45,
+    "f1": 0.8996,
     "compressed_layers": 24,
     "fallback_layers": 0,
     "avg_reconstruction_error": 0.30
@@ -2603,11 +2791,11 @@ Step  Loss
 
 ```bash
 # Full benchmark
-python run_all_4_aasvd.py --models distilbert,roberta,gpt2
+python run_all_4_aasvd.py - models distilbert,roberta,gpt2
 
 # Rank sweep
 for r in 32 64 128 256; do
-    python run_all_4_aasvd.py --rank $r --output_suffix r$r
+    python run_all_4_aasvd.py - rank $r - output_suffix r$r
 done
 ```
 
@@ -2694,10 +2882,10 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | τ | DistilBERT | Fallback % |
 |---|---|---|
-| 0.10 | 0.85 | 0.85 |
-| 0.20 | 0.85 | 0.85 |
-| 0.30 | 0.85 | 0.85 |
-| 0.50 | 0.85 | 0.85 |
+| 0.10 | 0.87 | 0.88 |
+| 0.20 | 0.87 | 0.88 |
+| 0.30 | 0.87 | 0.88 |
+| 0.50 | 0.87 | 0.88 |
 
 ## D.4 Fixes That Didn't Help
 

@@ -149,9 +149,9 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 \midrule
 Weighting matrix & $\mathrm{diag}(\sqrt{F})$ & $C_X^{1/2}$ \\
 Memory for weighting & $\mathcal{O}(d)$ & $\mathcal{O}(d^2)$ \\
-Captures correlations & No & Yes \\
-LN recalibration & Yes & No \\
-Adaptive rank & Yes & No \\
+Captures correlations \& No \& Yes \\
+LN recalibration \& Yes \& No \\
+Adaptive rank \& Yes \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,7 +206,7 @@ occasionally produces NaN for ill-conditioned matrices.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
 \midrule
-0.85 & 0.85 & 0.024 & Fallback \\
+0.85 & 0.85 & 0.024 \& Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}

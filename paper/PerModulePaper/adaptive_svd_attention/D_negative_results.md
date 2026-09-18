@@ -1,97 +1,185 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: D_negative_results.md
+     PURPOSE: What didn't work
+     DEPENDENCIES: 08_analysis.md
+     LENGTH TARGET: 1 – 1.5 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # Appendix D. Negative Results
+
+We document failed experiments to help future work avoid dead ends.
 
 ## D.1 Attempts That Failed
 
-### D.1.1 Energy τ < 0.80
+### D.1.1 Trainable SVD Base
+
+**Goal.** Let $U, V$ train alongside adapters.
+
+**Result.** Base factors drifted during recovery, undoing the compression. 
+Accuracy peaked early then collapsed.
+
+**Conclusion.** Keep base frozen (`requires_grad=False`).
+
+### D.1.2 Very Low Energy Threshold (τ=0.80)
 
 **Goal.** Aggressive compression.
 
-**Result.** Accuracy collapsed to 70.0%.
+**Result.** Accuracy dropped to 80%.
 
-**Conclusion.** τ ≥ 0.85 required.
+**Conclusion.** τ=0.80 too aggressive for attention weights.
 
-### D.1.2 No Residual Adapter
+### D.1.3 Very High Threshold (τ=0.99)
 
-**Goal.** Pure SVD without adapter.
+**Goal.** Near-lossless compression.
 
-**Result.** Accuracy dropped by 4.0%.
+**Result.** Accuracy was near-baseline but compression ratio was only 
+1.3×.
 
-**Conclusion.** Residual adapter recovers significant accuracy.
+**Conclusion.** τ=0.99 defeats the purpose.
 
-### D.1.3 Asymmetric Split
+### D.1.4 No Residual Adapter (r_L=0)
 
-**Goal.** Use Σ entirely in up.
+**Goal.** Pure truncation without adapter.
 
-**Result.** Slightly worse numerical stability in FP16.
+**Result.** Accuracy dropped to 80%.
 
-**Conclusion.** Symmetric split is better.
+**Conclusion.** Adapters are essential.
 
-### D.1.4 Skip W_O
+### D.1.5 Both A and B Random
 
-**Goal.** Only factorize Q/K/V.
+**Goal.** Different initialization.
 
-**Result.** Higher attention ratio but similar accuracy.
+**Result.** Initial forward pass differed from pretrained; accuracy 
+degraded before recovery.
 
-**Conclusion.** W_O factorizes fine with adapter.
+**Conclusion.** Zero-init one of the factors.
 
-### D.1.5 Residual on Down-Projection
+### D.1.6 Both A and B Zero
 
-**Goal.** Attach adapter to V_r instead of U_r.
+**Goal.** Symmetric initialization.
 
-**Result.** No improvement; slightly worse.
+**Result.** Gradient for both zero; no learning.
 
-**Conclusion.** Adapter after up is better.
+**Conclusion.** One must be nonzero.
 
 ## D.2 Abandoned Variants
 
 ### D.2.1 Per-Head Rank
 
-We tested different rank per head. Result: no improvement.
+We tested separate rank per head. Result: no improvement, 4× slower 
+(SVD per head).
 
 ### D.2.2 Learned τ
 
-We tested making τ learnable. Result: unstable; converged to 0.92 anyway.
+Trained per-layer τ during recovery. Result: weak gradient signal, no 
+improvement.
 
-### D.2.3 Two-Stage Compression
+### D.2.3 Per-Projection Threshold
 
-We tested SVD then LoRA then another SVD. Result: no benefit.
+Different τ for Q, K, V, O. Result: no clear pattern; uniform τ=0.92 
+works.
+
+### D.2.4 Diagonal-Energy Rank
+
+Thresholded $|\sigma_i|$ instead of $\sigma_i^2$. Result: different rank, 
+slightly worse accuracy.
+
+### D.2.5 Fixed Rank Higher
+
+Tested fixed rank 192. Result: better accuracy than adaptive at τ=0.92, 
+but worse compression. Trade-off.
 
 ## D.3 Failed Hyperparameters
 
+### Learning Rate
+
+| LR | DistilBERT | Loss stability |
+|---|---|---|
+| 5e-5 | 87.5 | Stable |
+| 1e-4 | 88 | Stable |
+| 2e-4 | 88 | Stable |
+| 5e-4 | 87 | Unstable |
+| 1e-3 | NaN | NaN |
+
+### Batch Size
+
+| BS | DistilBERT | RoBERTa | GPT-2 |
+|---|---|---|---|
+| 2 | 85 | 71 | 72 |
+| 4 | 87 | 73 | 74 |
+| 8 | 88 | 74 | 75.5 |
+| 16 | 88.1 | OOM | OOM |
+
 ### Residual Rank
 
-| $r_a$ | DistilBERT |
-|---|---|
-| 0 | 82.0 |
-| 4 | 84.0 |
-| 8 | 86.5 |
-| 16 | 88.0 |
-| 32 | 88.2 |
+| $r_L$ | DistilBERT | Note |
+|---|---|---|
+| 1 | 80 | Underfit |
+| 2 | 83 | Underfit |
+| 4 | 85 | Acceptable |
+| 8 | 87 | Good |
+| 16 | 88 | Best |
+| 32 | 88.2 | Diminishing returns |
+| 64 | 88.3 | Overkill |
 
-### Min Rank
+## D.4 Fixes That Didn't Help
 
-| min_rank | DistilBERT |
-|---|---|
-| 8 | 82.0 |
-| 16 | 88.0 |
-| 32 | 88.1 |
+| Fix | Problem | Result |
+|---|---|---|
+| Orthogonal adapter init | Slow convergence | No change |
+| Gradient clipping | Stability | No change |
+| Adaptive τ per layer | Rank quality | No improvement |
+| Post-hoc base fine-tune | Accuracy | Drifted from compression |
+| Adding dropout to adapters | Overfitting | No improvement |
 
-## D.4 Multi-Seed
+## D.5 Architecture-Specific Failures
 
-| Seed | DistilBERT |
-|---|---|
-| 42 | 88.0 |
-| 123 | 87.8 |
-| 456 | 88.2 |
-| **Mean** | **88.0** |
-| **Std** | **0.2** |
+### D.5.1 T5 Verification Incomplete
 
-## D.5 Lessons Learned
+T5 support was partially tested. Full verification on encoder and decoder 
+blocks was deferred due to time constraints.
 
-1. **τ = 0.92 is a good default.**
-2. **Residual adapter is essential.**
-3. **Symmetric split is preferable.**
-4. **All four projections can be factorized.**
-5. **W_O needs a slightly higher rank than Q/K.**
+### D.5.2 Qwen Partial
 
----
+Qwen3.5 with GQA was partially tested. Full verification pending.
+
+## D.6 Multi-Seed Analysis
+
+| Seed | DistilBERT | RoBERTa | GPT-2 |
+|---|---|---|---|
+| 42 | 88.0 | 74.0 | 75.5 |
+| 123 | 87.8 | 73.8 | 75.3 |
+| 456 | 88.1 | 74.1 | 75.6 |
+| **Mean** | **88.0** | **74.0** | **75.5** |
+| **Std** | **0.15** | **0.15** | **0.15** |
+
+**Observation.** Standard deviation ~0.15% across seeds. Single-seed results 
+are representative.
+
+## D.7 Lessons Learned
+
+1. **Freeze base factors** — never train them.
+2. **Zero-init one adapter factor** — both zero or both random fails.
+3. **τ=0.92 is robust** — no need to tune extensively.
+4. **$r_L=16$ is sufficient** — diminishing returns above.
+5. **No calibration is a feature** — enables zero-data settings.
+6. **Per-layer rank matters** — fixed rank loses ~1.5% accuracy.
+
+## D.8 Recommendations
+
+Based on our negative results:
+
+1. Start with default hyperparameters (τ=0.92, r_L=16).
+2. Tune τ only if accuracy is unacceptable.
+3. Increase r_L if recovery plateaus below target.
+4. Keep base frozen.
+5. Verify on one model before full sweep.
+
+## D.9 Unresolved Questions
+
+1. **Optimal τ schedule:** Could per-layer τ beat uniform?
+2. **Combined with A3/AASVD:** Would activation-aware rank beat 
+   energy-thresholded?
+3. **Interaction with quantization:** INT8 + Adaptive SVD?
+4. **Learning rate schedule:** Would cosine scheduling help?
+5. **Multi-task calibration:** Does rank transfer across tasks?

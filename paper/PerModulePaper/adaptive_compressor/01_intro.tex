@@ -9,3 +9,12 @@ Uniform-rank SVD compression fails to accommodate the non-uniform parameter sens
 \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)
 \]
 This dynamic allocation achieves optimal trade-offs between parameter compression and task performance preservation.
+
+
+
+\subsection{1. Executive Abstract \& Theoretical Motivation}
+Self-Attention projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}$) inside \texttt{nn.MultiheadAttention} layers exhibit non-uniform singular value spectra across transformer blocks. Early layers focus on local syntactic correlations and require lower ranks, while deeper layers process global semantic relationships demanding higher subspace capacity.
+
+\texttt{AdaptiveTransformerCompressor} (registered as \texttt{adaptive_svd}) automates dynamic rank allocation across all MultiheadAttention blocks in transformer architectures. By evaluating the cumulative singular value energy threshold $\eta \in (0, 1)$ (\texttt{energy_threshold}, e.g., $\eta = 0.95$ for 95\% energy retention) across projection matrices, the engine dynamically calculates the minimum rank $r_l \ge r_{\min}$ (\texttt{min_rank}) needed for each projection operator independently. The uncompressed MultiheadAttention module is replaced in-place by a factorized \texttt{CompressedAttentionLayer}, reducing attention parameter footprint and latency.
+
+---

@@ -1,15 +1,207 @@
-\section{Architecture and Implementation}
+\section{05 Architecture}
 
-\subsection{\texttt{SVDLinear} Layer Design}
-Compressed projections are implemented via the custom \texttt{SVDLinear} class, which executes:
-\[
-y = (x V^\top) U^\top + \frac{\alpha}{r_{\text{lora}}} (x A_{\text{lora}}^\top) B_{\text{lora}}^\top + b
-\]
-By factoring $W$ into $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, intermediate tensor dimensions drop from $d_{\text{out}}$ to bottleneck rank $r$.
+ 5. Architecture and Implementation
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\linewidth]{figures/adaptivesvd.jpeg}
-\caption{Factorized \texttt{SVDLinear} architecture replacing monolithic dense projections.}
-\label{fig:arch_aa_svd}
-\end{figure}
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
+
+ 5.1 SVDLinear Module
+Dense layers selected for compression are substituted with `SVDLinear`:
+$$y = (x V^\top) U^\top + \text{bias}$$ 
+
+When optional recovery adaptation is enabled, auxiliary LoRA parameters are evaluated in parallel:
+$$y = (x V^\top) U^\top + \frac{\alpha}{r\_{\text{lora}}} (x A\_{\text{lora}}^\top) B\_{\text{lora}}^\top + \text{bias}$$ 
+
+ 5.2 Module Parameters
+- `V`: `nn.Parameter` of shape $(r, d\_{\text{in}})$ 
+- `U`: `nn.Parameter` of shape $(d\_{\text{out}}, r)$ 
+- `bias`: `nn.Parameter` of shape $(d\_{\text{out}})$ 
+- `lora\_A`: `nn.Parameter` of shape $(r\_{\text{lora}}, d\_{\text{in}})$ (optional) 
+- `lora\_B`: `nn.Parameter` of shape $(d\_{\text{out}}, r\_{\text{lora}})$ (optional) 
+
+
+ 3. Step-by-Step Calibration \& Execution Trace
+
+
+ 3.1 Dataflow \& Activation Anchoring Pipeline
+
+```
+              Calibration Text Inputs
+                         |
+                         v
+  +----------------------------------------------+
+  | Forward Pass with PyTorch Hooks              |
+  |   Capture Input Activations X\_l              |
+  |   Shape: (B, N, d\_in)                        |
+  +----------------------+-----------------------+
+                         |  [Activation Tensors X]
+                         v
+  +----------------------------------------------+
+  | Activation Matrix Flattening                 |
+  |   X\_flat = X.view(-1, d\_in)  [Shape: (K, d\_in)]|
+  +----------------------+-----------------------+
+                         |
+                         v
+  +----------------------------------------------+
+  | Activation SVD Decomposition                 |
+  |   [U\_X, S\_X, Vh\_X] = svd(X\_flat)             |
+  |   Anchor Basis: A\_anchor = Vh\_X[:r, :].T     |
+  |   Shape: (d\_in, r)                           |
+  +----------------------+-----------------------+
+                         |  [Anchor Matrix A\_anchor]
+                         v
+  +----------------------------------------------+
+  | Subspace Projection of Layer Weight          |
+  |   W\_anchored = W @ A\_anchor @ A\_anchor.T     |
+  |   Shape: (d\_out, d\_in)                       |
+  +----------------------+-----------------------+
+                         |  [Anchored Weight W\_anchored]
+                         v
+  +----------------------------------------------+
+  | Anchored SVD Factorization \& Reconstruction  |
+  |   [U, S, Vt] = svd(W\_anchored)               |
+  |   W\_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]|
+  +----------------------+-----------------------+
+                         |
+                         v
+              Compressed Model Layer Weight
+```
+
+ 3.2 Detailed Step-by-Step Trace
+1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
+2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
+3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A\_{\text{anchor}}$.
+4. **Weight Projection \& SVD**: Compute $W\_{\text{anchored}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}\_{\text{AASVD}}$ to parameter storage.
+
+---
+
+
+ 3. Step-by-Step Calibration \& Execution Trace
+
+
+ 3.1 Dataflow \& Activation Anchoring Pipeline
+
+```
+              Calibration Text Inputs
+                         |
+                         v
+  +----------------------------------------------+
+  | Forward Pass with PyTorch Hooks              |
+  |   Capture Input Activations X\_l              |
+  |   Shape: (B, N, d\_in)                        |
+  +----------------------+-----------------------+
+                         |  [Activation Tensors X]
+                         v
+  +----------------------------------------------+
+  | Activation Matrix Flattening                 |
+  |   X\_flat = X.view(-1, d\_in)  [Shape: (K, d\_in)]|
+  +----------------------+-----------------------+
+                         |
+                         v
+  +----------------------------------------------+
+  | Activation SVD Decomposition                 |
+  |   [U\_X, S\_X, Vh\_X] = svd(X\_flat)             |
+  |   Anchor Basis: A\_anchor = Vh\_X[:r, :].T     |
+  |   Shape: (d\_in, r)                           |
+  +----------------------+-----------------------+
+                         |  [Anchor Matrix A\_anchor]
+                         v
+  +----------------------------------------------+
+  | Subspace Projection of Layer Weight          |
+  |   W\_anchored = W @ A\_anchor @ A\_anchor.T     |
+  |   Shape: (d\_out, d\_in)                       |
+  +----------------------+-----------------------+
+                         |  [Anchored Weight W\_anchored]
+                         v
+  +----------------------------------------------+
+  | Anchored SVD Factorization \& Reconstruction  |
+  |   [U, S, Vt] = svd(W\_anchored)               |
+  |   W\_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]|
+  +----------------------+-----------------------+
+                         |
+                         v
+              Compressed Model Layer Weight
+```
+
+ 3.2 Detailed Step-by-Step Trace
+1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
+2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
+3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A\_{\text{anchor}}$.
+4. **Weight Projection \& SVD**: Compute $W\_{\text{anchored}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}\_{\text{AASVD}}$ to parameter storage.
+
+---
+
+
+ 3. Step-by-Step Calibration \& Execution Trace
+
+
+ 3.1 Dataflow \& Activation Anchoring Pipeline
+
+```
+              Calibration Text Inputs
+                         |
+                         v
+  +----------------------------------------------+
+  | Forward Pass with PyTorch Hooks              |
+  |   Capture Input Activations X\_l              |
+  |   Shape: (B, N, d\_in)                        |
+  +----------------------+-----------------------+
+                         |  [Activation Tensors X]
+                         v
+  +----------------------------------------------+
+  | Activation Matrix Flattening                 |
+  |   X\_flat = X.view(-1, d\_in)  [Shape: (K, d\_in)]|
+  +----------------------+-----------------------+
+                         |
+                         v
+  +----------------------------------------------+
+  | Activation SVD Decomposition                 |
+  |   [U\_X, S\_X, Vh\_X] = svd(X\_flat)             |
+  |   Anchor Basis: A\_anchor = Vh\_X[:r, :].T     |
+  |   Shape: (d\_in, r)                           |
+  +----------------------+-----------------------+
+                         |  [Anchor Matrix A\_anchor]
+                         v
+  +----------------------------------------------+
+  | Subspace Projection of Layer Weight          |
+  |   W\_anchored = W @ A\_anchor @ A\_anchor.T     |
+  |   Shape: (d\_out, d\_in)                       |
+  +----------------------+-----------------------+
+                         |  [Anchored Weight W\_anchored]
+                         v
+  +----------------------------------------------+
+  | Anchored SVD Factorization \& Reconstruction  |
+  |   [U, S, Vt] = svd(W\_anchored)               |
+  |   W\_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]|
+  +----------------------+-----------------------+
+                         |
+                         v
+              Compressed Model Layer Weight
+```
+
+ 3.2 Detailed Step-by-Step Trace
+1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
+2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
+3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A\_{\text{anchor}}$.
+4. **Weight Projection \& SVD**: Compute $W\_{\text{anchored}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}\_{\text{AASVD}}$ to parameter storage.
+
+---

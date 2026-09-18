@@ -12,9 +12,9 @@ ASA provides three benefits:
 \toprule
 \textbf{Benefit} & \textbf{Mechanism} \\
 \midrule
-\textbf{Memory reduction} & Chunked computation \\
-\textbf{Per-head adaptation} & Learned sparsity logits \\
-\textbf{Interpretability} & Head-level sparsity budgets \\
+\textbf{Memory reduction} \& Chunked computation \\
+\textbf{Per-head adaptation} \& Learned sparsity logits \\
+\textbf{Interpretability} \& Head-level sparsity budgets \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,8 +143,8 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
 \midrule
-layer.0.attn & GPT-2 & 1.5 \\
-layer.2.attn & RoBERTa & 2.0 \\
+layer.0.attn \& GPT-2 & 1.5 \\
+layer.2.attn \& RoBERTa & 2.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

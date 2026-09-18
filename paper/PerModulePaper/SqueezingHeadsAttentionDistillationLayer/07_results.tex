@@ -12,11 +12,11 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Trainable} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.9 s \\
 DistilBERT & \textbf{SH} & \textbf{90.25} & -0.46 & 0.9055 & \textbf{589824} & 200 MB & 2.3 s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.1 s \\
 RoBERTa & \textbf{SH} & \textbf{76.8} & -1.8 & 0.768 & \textbf{1179648} & 720 MB & 4.5 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.2 s \\
 GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
@@ -125,10 +125,10 @@ First head & 74.0 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Trainable} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Baseline & 100\% \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & ~95\% \\
-AASVD & 85.0 & 72.0 & 73.0 & Low-rank & 100\% \\
-LoRA only & 89.5 & 75.0 & 76.0 & Adapter & ~1\% \\
+full & 90.71\% & 78.56\% & 79.36\% \& Baseline & 100\% \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & ~95\% \\
+AASVD & 85.0 & 72.0 & 73.0 \& Low-rank & 100\% \\
+LoRA only & 89.5 & 75.0 & 76.0 \& Adapter & ~1\% \\
 \textbf{SH} & \textbf{90.25} & \textbf{76.8} & \textbf{77.5} & \textbf{Distill} & \textbf{~1\%} \\
 \bottomrule
 \end{tabular}

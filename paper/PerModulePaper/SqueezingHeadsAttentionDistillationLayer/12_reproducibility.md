@@ -31,20 +31,20 @@ python run_all_4_squeezing_heads.py \
 
 ### Main (Table 7.1)
 ```bash
-python run_all_4_squeezing_heads.py --lora_rank 16
+python run_all_4_squeezing_heads.py - lora_rank 16
 ```
 
 ### LoRA Rank Ablation (Table 7.4)
 ```bash
 for r in 4 8 16 32; do
-    python run_all_4_squeezing_heads.py --lora_rank $r --output_suffix r$r
+    python run_all_4_squeezing_heads.py - lora_rank $r - output_suffix r$r
 done
 ```
 
 ### Head-Dim Reduction (Table 7.2)
 ```bash
 for s in 1.0 1.5 2.0 2.5; do
-    python run_all_4_squeezing_heads.py --head_dim_reduction $s --output_suffix s$s
+    python run_all_4_squeezing_heads.py - head_dim_reduction $s - output_suffix s$s
 done
 ```
 

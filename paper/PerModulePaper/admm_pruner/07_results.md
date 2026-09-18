@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 From `results/unified_admm_pruner/*/summary.csv`:
 
+<!-- source: results/unified_admm/distilbert/summary.csv line 2 -->
 | Model | Status | Accuracy (%) | F1 Score | Pruned Layers | Sparsity | Avg Recon Error | Peak VRAM (MB) |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 84.29% <!-- source: results/unified_admm_pruner/distilbert/summary.csv line 3 --> | 0.8603 <!-- source: results/unified_admm_pruner/distilbert/summary.csv line 3 --> | 36 <!-- source: results/unified_admm_pruner/distilbert/summary.csv line 3 --> | 50% <!-- source: results/unified_admm_pruner_4models_summary.csv line 1 --> | 0.3571 <!-- source: results/unified_admm_pruner/distilbert/summary.csv line 3 --> | 551.24 <!-- source: results/unified_admm_pruner/distilbert/summary.csv line 3 --> |

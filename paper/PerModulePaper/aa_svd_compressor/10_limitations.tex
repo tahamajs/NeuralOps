@@ -1,6 +1,6 @@
-\section{Limitations}
+\section{10 Limitations}
 
-\begin{itemize}
-\item \textbf{Distributional Dependence:} Accuracy depends on calibration text representation. Out-of-domain activation shifts can degrade reconstructed weight fidelity.
-\item \textbf{Uniform Rank Constraint:} The basic compressor enforces a uniform bottleneck rank across all target layers, disregarding inter-layer variance in singular value decay rates.
-\end{itemize}
+ 10. Limitations
+
+1. **Calibration Sensitivity**: Covariance estimation depends on the diversity of the calibration corpus. Extreme domain shifts between calibration and test distributions may degrade factor accuracy.
+2. **Fixed Rank Allocation**: In its default configuration, `aa\_svd\_compressor` applies a uniform rank $r$ across all factorized layers rather than dynamically adjusting ranks per layer based on individual singular value spectra.

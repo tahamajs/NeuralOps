@@ -1,2 +1,12 @@
 # Appendix A. ALS Objective
 Minimizes $\min_{A, B} \|W - A B\|_F^2$ by alternately solving least-squares subproblems.
+
+
+## 1. Executive Abstract & Theoretical Motivation
+
+<!-- source: Codes/frontend/dist/Docs/content/compressions/adasvd_compressor.md -->
+Uniform low-rank truncation across all neural network layers causes non-uniform accuracy degradation because different layers exhibit distinct singular value decay rates and information capacities. Critical transformer projections—such as self-attention key/query matrices and MLP gate projections—suffer severe performance drops under rigid rank constraints, whereas redundant layers can withstand aggressive rank reduction.
+
+`AdaSVDCompressor` addresses this imbalance by implementing an adaptive global rank allocation framework driven by layer-wise Nuclear Norm ($\|W\|_*$) importance metrics, combined with alternating least-squares iterative factor refinement. By evaluating the spectral energy distribution across all linear operators in a model, `AdaSVDCompressor` dynamically assigns rank budgets proportional to each layer's information capacity. Following initial truncated SVD initialization, the engine executes alternating optimization steps to refine left- and right-singular factor matrices ($U_r$ and $V_r^T$), compensating for cross-layer rank truncation errors under a global parameter removal target (`target_param_ratio`).
+
+---

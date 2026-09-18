@@ -1,1 +1,267 @@
-\section{Methodology}Projections utilize \texttt{FactorizedLinear} layers. Local sliding-window attention is fused with low-rank global projections via learned gating.
+\section{04 Method}
+
+ 4. Method Formulation
+1. **FactorizedLinear Projections**:
+   $$y = 	ext{lin}\_2(	ext{lin}\_1(x)) + rac{lpha}{r\_{	ext{lora}}} (x A\_{	ext{lora}}^	op) B\_{	ext{lora}}^	op$$ 
+2. **Local Sliding Window Branch**: Dense softmax attention masked to $|i - j| \le W$. 
+3. **Global Low-Rank Branch**: Factorized linear attention.
+4. **Learned Gating Fusion**: Output is dynamically weighted via a sigmoid gate initialized with bias 1.8. 
+
+
+ 2. Rigorous Mathematical Foundations \& Derivations
+
+
+```
+                       Input Sequence X ∈ ℝ^{B \times  L \times  D}
+                                       |
+            +--------------------------+--------------------------+
+            v                                                     v
+  Factorized Linear Projections:                            Rotary Embeddings
+  Q = X W\_Q1 W\_Q2 + ΔW\_Q                                     (RoPE applied to Q, K)
+  K = X W\_K1 W\_K2 + ΔW\_K                                          |
+  V = X W\_V1 W\_V2 + ΔW\_V                                          v
+            |                                            Pruning Gate: g = σ(W\_p X)
+            +--------------------------+--------------------------+
+            v                          v                          v
+   Local Window Attention        Pruned Keys/Values          Fusion Gate:
+    (Radius W, Softmax)        Kg = g ⊙ K,  Vg = g ⊙ V    α = σ(W\_f X + 1.8)
+   Scores: (Q K^T)/√d + M\_band         |                          |
+   O\_local = Softmax(Scores) V         v                          |
+            |                  Global Linear Attention:           |
+            |                  φ(u) = ELU(u) + 1 > 0              |
+            |                  KV = φ(Kg)^T Vg,  Z = φ(Kg)^T 1    |
+            |                  O\_global = (φ(Q) KV) / (φ(Q) Z + ε)|
+            |                          |                          |
+            +------------+-------------+                          |
+                         v                                        |
+             Gated Convex Interpolation:                          |
+        O = α ⊙ O\_local + (1 - α) ⊙ O\_global <-------------------+
+                         |
+                         v
+             Output Factorized Projection:
+                Y = O W\_O1 W\_O2 + ΔW\_O + b\_O
+```
+
+ 2.1 Low-Rank SVD Factorization with LoRA Residuals
+
+For any linear projection $W \in \mathbb{R}^{D\_{\text{in}} \times D\_{\text{out}}}$ with rank bottleneck $r \ll \min(D\_{\text{in}}, D\_{\text{out}})$:
+$$W\_1 \in \mathbb{R}^{D\_{\text{in}} \times r}, \quad W\_2 \in \mathbb{R}^{r \times D\_{\text{out}}}$$
+Given pretrained weight matrix $W\_{\text{base}}$, singular value decomposition yields:
+$$W\_{\text{base}} = U \Sigma V^\top = \sum\_{i=1}^{\min(D\_{\text{in}}, D\_{\text{out}})} \sigma\_i u\_i v\_i^\top$$
+Truncating to rank $r$ gives the optimal Frobenius-norm low-rank approximation by the Eckart-Young-Mirsky Theorem:
+$$W\_1 = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad W\_2 = \Sigma\_{:r, :r}^{1/2} V\_{:, :r}^\top$$
+To guarantee that the factorized module can adapt to non-linear distribution shifts induced by hybrid attention, each `FactorizedLinear` incorporates a parallel trainable LoRA adapter:
+$$Y = X \left( W\_1 W\_2 \right) + \frac{\alpha\_{\text{lora}}}{r} X \left( A B \right) + b$$
+where $A \in \mathbb{R}^{D\_{\text{in}} \times r\_{\text{lora}}}$ is initialized via Kaiming uniform distribution and $B \in \mathbb{R}^{r\_{\text{lora}} \times D\_{\text{out}}}$ is initialized to zero ($B \equiv 0$). Consequently, at initialization $t=0$:
+$$\Delta W = \frac{\alpha\_{\text{lora}}}{r} A B = 0 \implies Y(0) = X W\_1 W\_2 + b$$
+During backpropagation, base factorized matrices $W\_1$ and $W\_2$ remain frozen, while gradients $\frac{\partial \mathcal{L}}{\partial A}$ and $\frac{\partial \mathcal{L}}{\partial B}$ update the adapter parameters.
+
+---
+
+ 2.2 Local Window Attention Formulation
+
+Let $Q, K, V \in \mathbb{R}^{B \times H \times L \times d\_h}$ denote the projected query, key, and value tensors. For local window radius $W$:
+$$S\_{i, j}^{\text{local}} = \frac{Q\_i K\_j^\top}{\sqrt{d\_h}} + M\_{i, j}^{\text{local}}$$
+where the local attention mask $M\_{i, j}^{\text{local}}$ is defined conditionally:
+- **Bidirectional Encoders** (BERT, RoBERTa):
+  $$M\_{i, j}^{\text{local}} = \begin{cases}
+  0 & \text{if } |i - j| \le W \\
+  -10000.0 & \text{otherwise}
+  \end{cases}$$
+- **Autoregressive Decoders** (GPT-2, Qwen3.5):
+  $$M\_{i, j}^{\text{local}} = \begin{cases}
+  0 & \text{if } 0 \le i - j \le W \\
+  -10000.0 & \text{otherwise (future tokens or beyond window)}
+  \end{cases}$$
+The local context representation is computed via numerically stabilized softmax:
+$$A\_{i, :}^{\text{local}} = \operatorname{softmax}\left(S\_{i, :}^{\text{local}}\right), \quad O\_i^{\text{local}} = \sum\_{j=1}^L A\_{i, j}^{\text{local}} V\_j$$
+
+---
+
+ 2.3 Global Kernelized Linear Attention with Token Pruning
+
+Global linear attention maps queries and keys into an implicit reproducing kernel Hilbert space using the non-negative feature map:
+$$\phi(u) = \operatorname{ELU}(u) + 1.0 = \begin{cases}
+u + 1.0 & \text{if } u > 0 \\
+e^u & \text{if } u \le 0
+\end{cases}$$
+Notice that $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$, guaranteeing non-negativity without upper-bound saturation.
+
+ Token Pruning Mechanism:
+A lightweight projection $W\_p \in \mathbb{R}^{D \times 1}$ with sigmoid activation computes importance score $g\_t$:
+$$g\_t = \sigma(x\_t W\_p + b\_p) \in (0, 1)$$
+The projected keys and values are modulated prior to accumulation:
+$$K\_{g, t} = g\_t \odot K\_t, \quad V\_{g, t} = g\_t \odot V\_t$$
+
+ Bidirectional Mode (Encoders):
+Under bidirectional attention, the associative property of matrix multiplication allows global pre-accumulation of key-value and key-normalizer statistics:
+$$S = \sum\_{j=1}^L \phi(K\_{g, j})^\top V\_{g, j} \in \mathbb{R}^{B \times H \times d\_h \times d\_h}, \quad Z = \sum\_{j=1}^L \phi(K\_{g, j})^\top \in \mathbb{R}^{B \times H \times d\_h \times 1}$$
+The global output for query token $i$ is evaluated in $\mathcal{O}(1)$ tensor operations:
+$$O\_i^{\text{global}} = \frac{\phi(Q\_i) S}{\phi(Q\_i) Z + \epsilon\_{\text{norm}}}$$
+Time complexity is $\mathcal{O}(B \cdot H \cdot L \cdot d\_h^2)$ with memory $\mathcal{O}(B \cdot H \cdot d\_h^2)$ independent of sequence length $L$.
+
+---
+
+ 2.4 Mathematical Proofs
+
+ Theorem 1 (Strict Positivity and Numerical Invertibility of ELU+1 Normalizer)
+*Let $\phi(u) = \operatorname{ELU}(u) + 1.0$. For any query $Q \in \mathbb{R}^{d\_h}$ and keys $K\_j \in \mathbb{R}^{d\_h}$ with $g\_j > 0$, the denominator:*
+$$D\_i = \phi(Q\_i) Z\_i + \epsilon = \sum\_{d=1}^{d\_h} \phi(Q\_{i, d}) \left( \sum\_{j=1}^i \phi(K\_{g, j, d}) \right) + \epsilon$$
+*satisfies $D\_i \ge \epsilon > 0$. Consequently, division by zero or NaN gradients cannot occur.*
+
+**Proof:**
+1. By definition of ELU:
+   - For $u > 0$, $\phi(u) = u + 1 > 1 > 0$.
+   - For $u \le 0$, $\phi(u) = e^u \in (0, 1]$.
+   Thus, $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$.
+2. For all valid tokens $j$, key gating $g\_j = \sigma(\cdot) \in (0, 1)$, so $K\_{g, j} = g\_j K\_j \in \mathbb{R}^{d\_h}$. Since $\phi(K\_{g, j, d}) > 0$ and $\phi(Q\_{i, d}) > 0$, each product term $\phi(Q\_{i, d}) \phi(K\_{g, j, d}) > 0$.
+3. Summing across valid head dimensions $d \in \{1, \dots, d\_h\}$ and sequence indices yields a strictly non-negative inner product:
+   $$\sum\_{d=1}^{d\_h} \phi(Q\_{i, d}) Z\_{i, d} \ge 0$$
+4. Adding $\epsilon = 10^{-6}$ strictly bounds the denominator from below: $D\_i \ge \epsilon > 0$. Division by zero is mathematically impossible. $\blacksquare$
+
+ Theorem 2 (Zero Future-Token Information Leakage in Causal Decoders)
+*In autoregressive mode (`is\_decoder=True`), the output $O\_t$ at time step $t$ has zero gradient with respect to any future input $X\_{t+k}$ ($k \ge 1$):*
+$$\frac{\partial O\_t}{\partial X\_{t+k}} \equiv 0, \quad \forall k \ge 1$$
+
+**Proof:**
+1. In causal mode, $O\_t = O\_t^{\text{local}}$.
+2. In the local pathway:
+   $$S\_{t, j}^{\text{local}} = \frac{Q\_t K\_j^\top}{\sqrt{d\_h}} + M\_{t, j}^{\text{local}}$$
+   For all $j > t$, $M\_{t, j}^{\text{local}} = -10000.0$. In softmax:
+   $$\exp(S\_{t, j}^{\text{local}}) = \exp\left(\frac{Q\_t K\_j^\top}{\sqrt{d\_h}} - 10000\right) \approx 0 \implies A\_{t, j}^{\text{local}} = 0, \quad \forall j > t$$
+   Hence $O\_t^{\text{local}} = \sum\_{j=1}^t A\_{t, j}^{\text{local}} V\_j$, which is independent of $X\_{t+k}$.
+3. Applying the chain rule:
+   $$\frac{\partial O\_t}{\partial X\_{t+k}} = \frac{\partial O\_t^{\text{local}}}{\partial X\_{t+k}} = 0$$
+   Strict causality is preserved. $\blacksquare$
+
+---
+
+
+
+\subsection{2. Rigorous Mathematical Foundations \& Derivations}
+
+\begin{lstlisting}
+                       Input Sequence X ∈ ℝ^{B \times  L \times  D}
+                                       |
+            +--------------------------+--------------------------+
+            v                                                     v
+  Factorized Linear Projections:                            Rotary Embeddings
+  Q = X W_Q1 W_Q2 + ΔW_Q                                     (RoPE applied to Q, K)
+  K = X W_K1 W_K2 + ΔW_K                                          |
+  V = X W_V1 W_V2 + ΔW_V                                          v
+            |                                            Pruning Gate: g = \sigma (W_p X)
+            +--------------------------+--------------------------+
+            v                          v                          v
+   Local Window Attention        Pruned Keys/Values          Fusion Gate:
+    (Radius W, Softmax)        Kg = g ⊙ K,  Vg = g ⊙ V    α = \sigma (W_f X + 1.8)
+   Scores: (Q K^T)/√d + M_band         |                          |
+   O_local = Softmax(Scores) V         v                          |
+            |                  Global Linear Attention:           |
+            |                  φ(u) = ELU(u) + 1 > 0              |
+            |                  KV = φ(Kg)^T Vg,  Z = φ(Kg)^T 1    |
+            |                  O_global = (φ(Q) KV) / (φ(Q) Z + ε)|
+            |                          |                          |
+            +------------+-------------+                          |
+                         v                                        |
+             Gated Convex Interpolation:                          |
+        O = α ⊙ O_local + (1 - α) ⊙ O_global <-------------------+
+                         |
+                         v
+             Output Factorized Projection:
+                Y = O W_O1 W_O2 + ΔW_O + b_O
+\end{lstlisting}
+
+
+\subsubsection{2.1 Low-Rank SVD Factorization with LoRA Residuals}
+
+For any linear projection $W \in \mathbb{R}^{D_{\text{in}} \times D_{\text{out}}}$ with rank bottleneck $r \ll \min(D_{\text{in}}, D_{\text{out}})$:
+$$W_1 \in \mathbb{R}^{D_{\text{in}} \times r}, \quad W_2 \in \mathbb{R}^{r \times D_{\text{out}}}$$
+Given pretrained weight matrix $W_{\text{base}}$, singular value decomposition yields:
+$$W_{\text{base}} = U \Sigma V^\top = \sum_{i=1}^{\min(D_{\text{in}}, D_{\text{out}})} \sigma_i u_i v_i^\top$$
+Truncating to rank $r$ gives the optimal Frobenius-norm low-rank approximation by the Eckart-Young-Mirsky Theorem:
+$$W_1 = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad W_2 = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top$$
+To guarantee that the factorized module can adapt to non-linear distribution shifts induced by hybrid attention, each \texttt{FactorizedLinear} incorporates a parallel trainable LoRA adapter:
+$$Y = X \left( W_1 W_2 \right) + \frac{\alpha_{\text{lora}}}{r} X \left( A B \right) + b$$
+where $A \in \mathbb{R}^{D_{\text{in}} \times r_{\text{lora}}}$ is initialized via Kaiming uniform distribution and $B \in \mathbb{R}^{r_{\text{lora}} \times D_{\text{out}}}$ is initialized to zero ($B \equiv 0$). Consequently, at initialization $t=0$:
+$$\Delta W = \frac{\alpha_{\text{lora}}}{r} A B = 0 \implies Y(0) = X W_1 W_2 + b$$
+During backpropagation, base factorized matrices $W_1$ and $W_2$ remain frozen, while gradients $\frac{\partial \mathcal{L}}{\partial A}$ and $\frac{\partial \mathcal{L}}{\partial B}$ update the adapter parameters.
+
+---
+
+\subsubsection{2.2 Local Window Attention Formulation}
+
+Let $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$ denote the projected query, key, and value tensors. For local window radius $W$:
+$$S_{i, j}^{\text{local}} = \frac{Q_i K_j^\top}{\sqrt{d_h}} + M_{i, j}^{\text{local}}$$
+where the local attention mask $M_{i, j}^{\text{local}}$ is defined conditionally:
+- \textbf{Bidirectional Encoders} (BERT, RoBERTa):
+  $$M_{i, j}^{\text{local}} = \begin{cases}
+  0 & \text{if } |i - j| \le W \\
+  -10000.0 & \text{otherwise}
+  \end{cases}$$
+- \textbf{Autoregressive Decoders} (GPT-2, Qwen3.5):
+  $$M_{i, j}^{\text{local}} = \begin{cases}
+  0 & \text{if } 0 \le i - j \le W \\
+  -10000.0 & \text{otherwise (future tokens or beyond window)}
+  \end{cases}$$
+The local context representation is computed via numerically stabilized softmax:
+$$A_{i, :}^{\text{local}} = \operatorname{softmax}\left(S_{i, :}^{\text{local}}\right), \quad O_i^{\text{local}} = \sum_{j=1}^L A_{i, j}^{\text{local}} V_j$$
+
+---
+
+\subsubsection{2.3 Global Kernelized Linear Attention with Token Pruning}
+
+Global linear attention maps queries and keys into an implicit reproducing kernel Hilbert space using the non-negative feature map:
+$$\phi(u) = \operatorname{ELU}(u) + 1.0 = \begin{cases}
+u + 1.0 & \text{if } u > 0 \\
+e^u & \text{if } u \le 0
+\end{cases}$$
+Notice that $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$, guaranteeing non-negativity without upper-bound saturation.
+
+#### Token Pruning Mechanism:
+A lightweight projection $W_p \in \mathbb{R}^{D \times 1}$ with sigmoid activation computes importance score $g_t$:
+$$g_t = \sigma(x_t W_p + b_p) \in (0, 1)$$
+The projected keys and values are modulated prior to accumulation:
+$$K_{g, t} = g_t \odot K_t, \quad V_{g, t} = g_t \odot V_t$$
+
+#### Bidirectional Mode (Encoders):
+Under bidirectional attention, the associative property of matrix multiplication allows global pre-accumulation of key-value and key-normalizer statistics:
+$$S = \sum_{j=1}^L \phi(K_{g, j})^\top V_{g, j} \in \mathbb{R}^{B \times H \times d_h \times d_h}, \quad Z = \sum_{j=1}^L \phi(K_{g, j})^\top \in \mathbb{R}^{B \times H \times d_h \times 1}$$
+The global output for query token $i$ is evaluated in $\mathcal{O}(1)$ tensor operations:
+$$O_i^{\text{global}} = \frac{\phi(Q_i) S}{\phi(Q_i) Z + \epsilon_{\text{norm}}}$$
+Time complexity is $\mathcal{O}(B \cdot H \cdot L \cdot d_h^2)$ with memory $\mathcal{O}(B \cdot H \cdot d_h^2)$ independent of sequence length $L$.
+
+---
+
+\subsubsection{2.4 Mathematical Proofs}
+
+#### Theorem 1 (Strict Positivity and Numerical Invertibility of ELU+1 Normalizer)
+*Let $\phi(u) = \operatorname{ELU}(u) + 1.0$. For any query $Q \in \mathbb{R}^{d_h}$ and keys $K_j \in \mathbb{R}^{d_h}$ with $g_j > 0$, the denominator:*
+$$D_i = \phi(Q_i) Z_i + \epsilon = \sum_{d=1}^{d_h} \phi(Q_{i, d}) \left( \sum_{j=1}^i \phi(K_{g, j, d}) \right) + \epsilon$$
+*satisfies $D_i \ge \epsilon > 0$. Consequently, division by zero or NaN gradients cannot occur.*
+
+\textbf{Proof:}
+1. By definition of ELU:
+   - For $u > 0$, $\phi(u) = u + 1 > 1 > 0$.
+   - For $u \le 0$, $\phi(u) = e^u \in (0, 1]$.
+   Thus, $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$.
+2. For all valid tokens $j$, key gating $g_j = \sigma(\cdot) \in (0, 1)$, so $K_{g, j} = g_j K_j \in \mathbb{R}^{d_h}$. Since $\phi(K_{g, j, d}) > 0$ and $\phi(Q_{i, d}) > 0$, each product term $\phi(Q_{i, d}) \phi(K_{g, j, d}) > 0$.
+3. Summing across valid head dimensions $d \in \{1, \dots, d_h\}$ and sequence indices yields a strictly non-negative inner product:
+   $$\sum_{d=1}^{d_h} \phi(Q_{i, d}) Z_{i, d} \ge 0$$
+4. Adding $\epsilon = 10^{-6}$ strictly bounds the denominator from below: $D_i \ge \epsilon > 0$. Division by zero is mathematically impossible. $\blacksquare$
+
+#### Theorem 2 (Zero Future-Token Information Leakage in Causal Decoders)
+*In autoregressive mode (\texttt{is_decoder=True}), the output $O_t$ at time step $t$ has zero gradient with respect to any future input $X_{t+k}$ ($k \ge 1$):*
+$$\frac{\partial O_t}{\partial X_{t+k}} \equiv 0, \quad \forall k \ge 1$$
+
+\textbf{Proof:}
+1. In causal mode, $O_t = O_t^{\text{local}}$.
+2. In the local pathway:
+   $$S_{t, j}^{\text{local}} = \frac{Q_t K_j^\top}{\sqrt{d_h}} + M_{t, j}^{\text{local}}$$
+   For all $j > t$, $M_{t, j}^{\text{local}} = -10000.0$. In softmax:
+   $$\exp(S_{t, j}^{\text{local}}) = \exp\left(\frac{Q_t K_j^\top}{\sqrt{d_h}} - 10000\right) \approx 0 \implies A_{t, j}^{\text{local}} = 0, \quad \forall j > t$$
+   Hence $O_t^{\text{local}} = \sum_{j=1}^t A_{t, j}^{\text{local}} V_j$, which is independent of $X_{t+k}$.
+3. Applying the chain rule:
+   $$\frac{\partial O_t}{\partial X_{t+k}} = \frac{\partial O_t^{\text{local}}}{\partial X_{t+k}} = 0$$
+   Strict causality is preserved. $\blacksquare$
+
+---

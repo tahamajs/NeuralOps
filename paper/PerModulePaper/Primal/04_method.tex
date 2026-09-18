@@ -178,7 +178,7 @@ We enforce this by adding a causal mask to $\tilde{A}$:
 
 \begin{equation}
 \tilde{A}_\text{causal} = \tilde{A} + M, \qquad
-M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
+M_{ij} = \begin{cases} 0 \& j \le i \\ -10^4 \& j > i \end{cases}
 \end{equation}
 
 Then softmax. This is not a true causal approximation (the landmarks see 

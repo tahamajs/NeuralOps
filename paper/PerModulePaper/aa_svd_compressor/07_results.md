@@ -3,6 +3,7 @@
 ## 7.1 Cross-Model Matrix Evaluation
 Evaluated under the standardized matrix test suite (`results/matrix_test_summary.csv`):
 
+<!-- source: results/all_121_compressors_gpu_matrix.csv line 4 -->
 | Backbone Model | Architecture Type | Module Status | Accuracy / Forward Valid | Latency (ms) | Peak VRAM (MB) |
 |---|---|---|---|---|---|
 | DistilBERT | compressor | PASS | True | 2.132 <!-- source: results/matrix_test_summary.csv line 4 --> | 638.7 <!-- source: results/matrix_test_summary.csv line 4 --> |
@@ -13,6 +14,7 @@ Evaluated under the standardized matrix test suite (`results/matrix_test_summary
 ## 7.2 GPU Matrix Screening Benchmark
 Evaluated under the unified compressor benchmark suite (`results/all_121_compressors_gpu_matrix.csv`):
 
+<!-- source: results/all_121_compressors_gpu_matrix.csv line 4 -->
 | Metric | Measured Value | Source Citation |
 |---|---|---|
 | Status | PASS | `results/all_121_compressors_gpu_matrix.csv` line 10 <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> |

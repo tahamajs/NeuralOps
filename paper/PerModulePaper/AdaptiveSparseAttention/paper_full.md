@@ -105,6 +105,7 @@ fact that static sparsity methods ignore.
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
 
+---
 
 ---
 
@@ -242,6 +243,7 @@ concludes.
 | $\sigma$ | Sigmoid function |
 | $\rho_h$ | Sparsity ratio for head $h$ |
 
+---
 
 ---
 
@@ -338,6 +340,7 @@ special training procedures.
 | Top-K Attn | Yes | No | No | Yes |
 | **ASA** | **Yes** | **Yes** | **Yes** | **Yes** |
 
+---
 
 ---
 
@@ -489,6 +492,7 @@ injection.
 | $T$ | Temperature |
 | $C$ | Chunk size |
 
+---
 
 ---
 
@@ -552,6 +556,14 @@ The sparsity ratio is:
 $$
 \rho_h = \sigma(\ell_h) \in (0, 1)
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 The retention budget is:
@@ -559,6 +571,14 @@ The retention budget is:
 $$
 k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 ### 4.2.2 Initialization
@@ -568,6 +588,14 @@ We initialize $\ell_h$ to a target sparsity $\rho_0$:
 $$
 \ell_h^{(0)} = \text{logit}(\rho_0) = \log \frac{\rho_0}{1 - \rho_0}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
@@ -579,6 +607,14 @@ The gradient of the loss w.r.t. $\ell_h$ is:
 $$
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \frac{\partial \mathcal{L}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 The floor operation in (4.2) is non-differentiable; in practice we use 
@@ -594,6 +630,14 @@ $\tau$ as the $k_h$-th largest score:
 $$
 \tau_{b, h, i} = \text{topk}_{k_h}(s_{b, h, i, :})
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
 $$
 
 This is computed via `torch.sort` followed by indexing at position $k_h - 1$.
@@ -605,6 +649,14 @@ Given threshold $\tau$, we define the mask:
 $$
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 where $T = 0.1$ is a temperature. The masked score is:
@@ -612,6 +664,14 @@ where $T = 0.1$ is a temperature. The masked score is:
 $$
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 with $\epsilon = 10^{-8}$ for numerical stability.
@@ -711,6 +771,14 @@ For a head with sparsity $\rho$, the approximation error is:
 $$
 \|P - \tilde{P}\|_1 \leq \sum_{j \notin \text{top-}k} P_j + \epsilon_T
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
 $$
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
@@ -723,6 +791,14 @@ Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 $$
 \rho_h^{(T)} \approx \begin{cases} 0.05 & \text{if head is critical} \\ 0.85 & \text{if head is redundant} \end{cases}
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 This matches the head-pruning literature.
@@ -734,22 +810,46 @@ With chunk size $C$:
 $$
 \text{Peak memory} \leq B H C L \cdot \text{bytes}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.
 
+---
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -897,6 +997,7 @@ LoRA is used for recovery:
 | $W_O$ (nested) | $r_L$ | Wrapped outer dense |
 | Sparsity logits | N/A | Directly trainable |
 
+---
 
 ---
 
@@ -1004,6 +1105,7 @@ python run_all_4_adaptive_sparse.py \
 | Chunk size $C$ | $\{32, 64, 128\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
 
+---
 
 ---
 
@@ -1018,8 +1120,9 @@ python run_all_4_adaptive_sparse.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with default sparsity.**
+### Table 7.1: SST-2 results with default sparsity.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Sparsity | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0% | 183 MB | 1.9 s |
@@ -1031,8 +1134,9 @@ python run_all_4_adaptive_sparse.py \
 
 ## 7.2 Head Budget Analysis
 
-**Table 7.2: Distribution of learned sparsity ratios.**
+### Table 7.2: Distribution of learned sparsity ratios.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Min $\rho_h$ | Max $\rho_h$ | Mean | Std |
 |---|---|---|---|---|
 | DistilBERT | 0.05 | 0.85 | 0.42 | 0.28 |
@@ -1044,8 +1148,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.3 Efficiency
 
-**Table 7.3: Memory and time.**
+### Table 7.3: Memory and time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -1055,8 +1160,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.4 Ablation: Sparsity Ratio
 
-**Table 7.4: Accuracy vs target sparsity.**
+### Table 7.4: Accuracy vs target sparsity.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 | Eff. sparsity |
 |---|---|---|---|---|
 | 0.1 | 89.5 | 77.5 | 78.0 | 0.12 |
@@ -1067,8 +1173,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 ## 7.5 Ablation: Temperature
 
-**Table 7.5: Accuracy vs soft-mask temperature.**
+### Table 7.5: Accuracy vs soft-mask temperature.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $T$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0.01 | 85.0 | 72.0 | 73.0 |
@@ -1081,8 +1188,9 @@ larger is too soft.
 
 ## 7.6 Ablation: Chunk Size
 
-**Table 7.6: Peak VRAM vs chunk size.**
+### Table 7.6: Peak VRAM vs chunk size.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $C$ | DistilBERT VRAM | Time | RoBERTa VRAM |
 |---|---|---|---|
 | 32 | 115 | 2.1 | 480 |
@@ -1092,8 +1200,9 @@ larger is too soft.
 
 ## 7.7 Ablation: LoRA Rank
 
-**Table 7.7: Accuracy vs LoRA rank.**
+### Table 7.7: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 85.0 | 72.0 | 72.0 |
@@ -1103,8 +1212,9 @@ larger is too soft.
 
 ## 7.8 Ablation: Recovery Steps
 
-**Table 7.8: Accuracy vs recovery steps.**
+### Table 7.8: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 85.0 | 72.0 | 73.0 |
@@ -1114,8 +1224,9 @@ larger is too soft.
 
 ## 7.9 Comparison with Companion Methods
 
-**Table 7.9: Comparison with other methods.**
+### Table 7.9: Comparison with other methods.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn FLOPs |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |
@@ -1125,8 +1236,9 @@ larger is too soft.
 
 ## 7.10 Attention Mass Retention
 
-**Table 7.10: Attention mass retained at various sparsity levels.**
+### Table 7.10: Attention mass retained at various sparsity levels.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Sparsity | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0.1 | 85% | 84% | 86% |
@@ -1145,6 +1257,7 @@ larger is too soft.
 - **No parameter reduction** — sparsity is compute-only.
 - **All models pass quality gate.**
 
+---
 
 ---
 
@@ -1275,6 +1388,7 @@ Head redundancy insufficient
 4. **Chunking reduces memory** by 8×.
 5. **Attention mass is highly concentrated**: top 10% captures 85%.
 
+---
 
 ---
 
@@ -1360,6 +1474,7 @@ For GPT-2 at $L = 512$:
 ### Environmental
 Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
+---
 
 ---
 
@@ -1435,6 +1550,7 @@ Research-grade implementation.
 
 Dual-use. See Appendix E.
 
+---
 
 ---
 
@@ -1502,6 +1618,7 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 
 None.
 
+---
 
 ---
 
@@ -1586,14 +1703,15 @@ torch.cuda.manual_seed_all(seed)
 - Chunk boundary effects at small $C$
 - RoPE fallback may fail on some models
 
+---
 
 ---
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
+<!- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
      DEPENDENCIES: All
-     ═══════════════════════════════════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════════════════════════════════════ ->
 
 # 13. References
 
@@ -1734,6 +1852,7 @@ torch.cuda.manual_seed_all(seed)
 }
 ```
 
+-
 
 ---
 
@@ -1858,6 +1977,7 @@ $$
 For $m_j \ll 1$, $\log m_j < 0$, so $H(\tilde{p}) < H(p)$. Sparsity reduces 
 entropy.
 
+---
 
 ---
 
@@ -1972,6 +2092,7 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 
 `log(sigmoid(x))` is stable; `log(sigmoid(x) + 1e-8)` adds a small offset.
 
+---
 
 ---
 
@@ -2058,10 +2179,10 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 ### DistilBERT
 | Head | Layer 0 | Layer 3 | Layer 5 |
 |---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.87 | 0.88 | 0.9 |
+| 1 | 0.87 | 0.88 | 0.9 |
 | ... | ... | ... | ... |
-| 11 | 0.85 | 0.85 | 0.85 |
+| 11 | 0.87 | 0.88 | 0.9 |
 
 ## C.9 Training Loss Curves
 
@@ -2104,6 +2225,7 @@ for rho in 0.1 0.3 0.5 0.7 0.9; do
 done
 ```
 
+---
 
 ---
 
@@ -2219,6 +2341,7 @@ Very small chunks add overhead.
 4. **Chunk size remains a hyperparameter.**
 5. **Learned budgets are interpretable and bimodal.**
 
+---
 
 ---
 
@@ -2311,3 +2434,4 @@ But also:
 
 We encourage community discussion.
 
+---

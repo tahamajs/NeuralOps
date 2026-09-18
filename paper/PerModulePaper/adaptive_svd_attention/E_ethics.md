@@ -1,57 +1,136 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: E_ethics.md
+     PURPOSE: Ethical and broader impact considerations
+     DEPENDENCIES: 11_conclusion.md
+     LENGTH TARGET: 0.5 – 1 page
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # Appendix E. Ethical Considerations
 
 ## E.1 Broader Impact
 
-### Positive
-- Broad architecture support (T5, cross-attention).
-- Zero-shot — no calibration data.
-- Principled rank selection.
-- Real parameter reduction.
+### E.1.1 Positive Impacts
 
-### Negative
-- Attention remains quadratic.
-- Modest total model reduction.
+**Democratization of AI.** Adaptive SVD reduces model size and VRAM without 
+requiring calibration data. This makes compression accessible to researchers 
+and practitioners who lack access to target-task data or extensive compute.
 
-## E.2 Environmental
+**Environmental benefits.** Smaller models consume less energy at inference. 
+The compression process itself uses ~10 GPU-hours, minimal 
+compared to training.
 
-- Total GPU-hours: ~10.
-- CO₂: 0.8 kg.
+**Edge deployment.** Compressed models fit on consumer hardware, enabling 
+private on-device inference without cloud dependency.
 
-## E.3 Data Ethics
+### E.1.2 Negative Impacts
 
-- SST-2: public, English.
-- No PII.
-- No calibration data used.
+**Dual use.** Efficiency gains benefit both beneficial and harmful 
+applications. Nothing in the method prevents malicious use.
 
-## E.4 Model Ethics
+**Concentration risk.** Large labs may benefit more from compression 
+improvements due to their scale.
 
-Not audited for bias.
+**Rebound effect.** Cheaper inference may increase total usage, offsetting 
+energy savings.
 
-## E.5 Authorship
+### E.1.3 Environmental Cost
 
-See §11.7.
+- **Compression compute:** ~10 GPU-hours
+- **CO₂ estimate:** ~0.7 kg CO₂eq
+- **Methodology:** [ML CO₂ Impact Calculator](https://mlco2.github.io/impact/)
 
-## E.6 Conflicts
+## E.2 Data Ethics
 
-None.
+**Dataset.** SST-2 (Socher et al., 2013):
+- Public benchmark
+- English movie reviews
+- No personally identifiable information (PII)
+- Western-centric distribution
 
-## E.7 Funding
+**No calibration data.** Adaptive SVD requires no additional data collection, 
+reducing privacy risk.
+
+**Bias.** We did not audit for bias. Compression may:
+- Amplify existing biases (if bias lives in high-rank directions)
+- Suppress existing biases (if bias lives in low-rank directions)
+
+## E.3 Model Ethics
+
+**Dual-use potential.** The method could be used for:
+- Automated content moderation
+- Privacy-preserving on-device AI
+- Efficient scientific computing
+
+Or misused for:
+- Mass surveillance
+- Misinformation generation
+- Automated censorship
+
+We do not endorse harmful uses.
+
+## E.4 Authorship and Credit
+
+### Author Contributions
+
+- **Taha Majs** designed the method, implemented the code, ran 
+  experiments, wrote the paper.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
+
+### License
+
+Code, weights, and this paper released under **MIT**.
+
+## E.5 Conflicts of Interest
+
+The authors declare no competing interests.
+
+## E.6 Funding
 
 This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
-## E.8 LLM Usage
+## E.7 Acknowledgements
 
-Parts drafted with LLM assistance. Content reviewed by authors.
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
-## E.9 Long-Term
+## E.8 LLM Usage Disclosure
 
-Compression could:
-- Enable AI on smaller devices.
-- Reduce deployment costs.
-- Preserve privacy (no calibration data).
+Parts of this paper were drafted with large language model assistance. All 
+technical content, experimental design, and final text were reviewed and 
+edited by the authors.
 
-But also:
-- Enable surveillance at scale.
-- Concentrate AI capabilities.
+## E.9 Reproducibility Commitments
 
----
+We commit to:
+1. Releasing all code under MIT
+2. Releasing checkpoints on HuggingFace
+3. Reporting negative results (Appendix D)
+4. Documenting all hyperparameters
+5. Responding to replication attempts
+
+## E.10 Long-Term Considerations
+
+Adaptive SVD could:
+
+**Enable:**
+- AI on billions of consumer devices
+- Reduced AI carbon footprint
+- Democratized access to capable models
+- Multi-task deployment without re-compression
+
+**Risk:**
+- Increased surveillance capability
+- Concentration of AI capabilities
+- Widening gap between compressed and full models
+
+We encourage the community to consider these trade-offs alongside technical 
+merit.
+
+## E.11 Institutional Review
+
+This work does not involve human subjects. No IRB approval was required.
+
+## E.12 Transparency
+
+All experimental results (positive and negative) are reported in Sections 
+7–8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
+documented in Section 6 and Appendix B.

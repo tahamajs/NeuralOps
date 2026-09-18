@@ -58,6 +58,14 @@ The sparsity ratio is:
 $$
 \rho_h = \sigma(\ell_h) \in (0, 1)
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 The retention budget is:
@@ -65,6 +73,14 @@ The retention budget is:
 $$
 k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 ### 4.2.2 Initialization
@@ -74,6 +90,14 @@ We initialize $\ell_h$ to a target sparsity $\rho_0$:
 $$
 \ell_h^{(0)} = \text{logit}(\rho_0) = \log \frac{\rho_0}{1 - \rho_0}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
@@ -85,6 +109,14 @@ The gradient of the loss w.r.t. $\ell_h$ is:
 $$
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \frac{\partial \mathcal{L}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 The floor operation in (4.2) is non-differentiable; in practice we use 
@@ -100,6 +132,14 @@ $\tau$ as the $k_h$-th largest score:
 $$
 \tau_{b, h, i} = \text{topk}_{k_h}(s_{b, h, i, :})
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
 $$
 
 This is computed via `torch.sort` followed by indexing at position $k_h - 1$.
@@ -111,6 +151,14 @@ Given threshold $\tau$, we define the mask:
 $$
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 where $T = 0.1$ is a temperature. The masked score is:
@@ -118,6 +166,14 @@ where $T = 0.1$ is a temperature. The masked score is:
 $$
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 with $\epsilon = 10^{-8}$ for numerical stability.
@@ -217,6 +273,14 @@ For a head with sparsity $\rho$, the approximation error is:
 $$
 \|P - \tilde{P}\|_1 \leq \sum_{j \notin \text{top-}k} P_j + \epsilon_T
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 637 -->
 $$
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
@@ -229,6 +293,14 @@ Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 $$
 \rho_h^{(T)} \approx \begin{cases} 0.05 & \text{if head is critical} \\ 0.85 & \text{if head is redundant} \end{cases}
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 This matches the head-pruning literature.
@@ -240,6 +312,14 @@ With chunk size $C$:
 $$
 \text{Peak memory} \leq B H C L \cdot \text{bytes}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
+
+<!-- source: Codes/framework/attentions/adaptive_sparse_attention.py line 145 -->
 $$
 
 independent of the query length. This enables processing arbitrarily long 

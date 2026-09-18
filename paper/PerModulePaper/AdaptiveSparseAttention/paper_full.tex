@@ -381,10 +381,10 @@ effectively performing soft head pruning.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{ASA} \\
 \midrule
-Sparsity pattern & Fixed or uniform & **Per-head learned** \\
-Top-$k$ selection & Hard (non-diff) & **Soft (differentiable)** \\
-Head budget & Uniform & **Heterogeneous** \\
-Training & From scratch & **Pretrained + LoRA** \\
+Sparsity pattern \& Fixed or uniform & **Per-head learned** \\
+Top-$k$ selection \& Hard (non-diff) & **Soft (differentiable)** \\
+Head budget \& Uniform & **Heterogeneous** \\
+Training \& From scratch & **Pretrained + LoRA** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -722,10 +722,10 @@ for pruned keys --- this is a possible future extension.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA} \\
 \midrule
-$W_Q$ & $d H d_h$ & Same \\
-$W_K$ & $d H_{kv} d_h$ & Same \\
-$W_V$ & $d H_{kv} d_h$ & Same \\
-$W_O$ & $H d_h d$ & Same \\
+$W_Q$ & $d H d_h$ \& Same \\
+$W_K$ & $d H_{kv} d_h$ \& Same \\
+$W_V$ & $d H_{kv} d_h$ \& Same \\
+$W_O$ & $H d_h d$ \& Same \\
 **Sparsity logits** & 0 & **$H$** \\
 **LoRA** & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
 \bottomrule
@@ -782,11 +782,11 @@ sequences.
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & Flat & No & No & No & ✅ \\
-RoBERTa & Nested & No & No & No & ✅ \\
-GPT-2 & Causal & No & No & No & ✅ \\
-T5 & Causal + bias & No & No & Yes & not tested \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
+DistilBERT \& Flat \& No \& No \& No & ✅ \\
+RoBERTa \& Nested \& No \& No \& No & ✅ \\
+GPT-2 \& Causal \& No \& No \& No & ✅ \\
+T5 \& Causal + bias \& No \& No \& Yes \& not tested \\
+Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& No \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -909,10 +909,10 @@ The caller can then skip the layer.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Injection aborts \\
-RoPE embedding missing & Exception & Fallback to no RoPE \\
-LoRA rank mismatch & Shape check & Zero-init LoRA \\
-CUDA OOM in chunk & RuntimeError & Reduce chunk size \\
+Missing weights & `copy\_weights` raises \& Injection aborts \\
+RoPE embedding missing \& Exception \& Fallback to no RoPE \\
+LoRA rank mismatch \& Shape check \& Zero-init LoRA \\
+CUDA OOM in chunk \& RuntimeError \& Reduce chunk size \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -943,9 +943,9 @@ LoRA is used for recovery:
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 12 & 64 & 66.9M & Flat \\
-RoBERTa-base & 12 & 12 & 64 & 124.6M & Nested \\
-GPT-2 & 12 & 12 & 64 & 124.4M & Causal \\
+DistilBERT-base & 6 & 12 & 64 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 12 & 64 & 124.6M \& Nested \\
+GPT-2 & 12 & 12 & 64 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -997,12 +997,12 @@ LoRA alpha & 32 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
 Steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1059,7 +1059,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -1095,11 +1095,11 @@ python run_all_4_adaptive_sparse.py \
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Sparsity} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 0\% & 183 MB & 1.9 s \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 0\% & 183 MB & 1.9 s \\
 DistilBERT & **ASA** & **88.5** & -2.2 & 0.885 & 0.42 & 120 MB & 2.1 s \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 0\% & 712 MB & 4.1 s \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 0\% & 712 MB & 4.1 s \\
 RoBERTa & **ASA** & **76.0** & -2.6 & 0.760 & 0.45 & 500 MB & 4.5 s \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 0\% & 793 MB & 4.2 s \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 0\% & 793 MB & 4.2 s \\
 GPT-2 & **ASA** & **76.5** & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
@@ -1135,10 +1135,10 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
-DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & ASA & 120 MB & 2.1 s \\
-GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & ASA & 550 MB & 4.6 s \\
+DistilBERT \& full & 183 MB & 1.90 s \\
+DistilBERT \& ASA & 120 MB & 2.1 s \\
+GPT-2 \& full & 793 MB & 4.20 s \\
+GPT-2 \& ASA & 550 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1247,10 +1247,10 @@ larger is too soft.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & **2$\times$** \\
-**ASA** & **88.5** & **76.0** & **76.5** & Sparse & 1.00$\times$ & **2$\times$** \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & **2$\times$** \\
+**ASA** & **88.5** & **76.0** & **76.5** \& Sparse & 1.00$\times$ & **2$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1309,9 +1309,9 @@ ASA provides three benefits:
 \toprule
 \textbf{Benefit} & \textbf{Mechanism} \\
 \midrule
-**Memory reduction** & Chunked computation \\
-**Per-head adaptation** & Learned sparsity logits \\
-**Interpretability** & Head-level sparsity budgets \\
+**Memory reduction** \& Chunked computation \\
+**Per-head adaptation** \& Learned sparsity logits \\
+**Interpretability** \& Head-level sparsity budgets \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1438,8 +1438,8 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
 \midrule
-layer.0.attn & GPT-2 & 1.5 \\
-layer.2.attn & RoBERTa & 2.0 \\
+layer.0.attn \& GPT-2 & 1.5 \\
+layer.2.attn \& RoBERTa & 2.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2446,10 +2446,10 @@ Sparsity at multiple attention layers. Marginal improvement.
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.001 & 78.0 & Near hard top-k \\
-0.01 & 85.0 & Very aggressive \\
-0.1 & 88.5 & Best \\
-1.0 & 87.0 & Too soft \\
+0.001 & 78.0 \& Near hard top-k \\
+0.01 & 85.0 \& Very aggressive \\
+0.1 & 88.5 \& Best \\
+1.0 & 87.0 \& Too soft \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2479,10 +2479,10 @@ Very small chunks add overhead.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Straight-through hard mask & Gradient & Unstable \\
-Learned temperature & Quality & No improvement \\
-Per-head K/V & Quality & No improvement \\
-Multi-chunk gradients & Quality & No improvement \\
+Straight-through hard mask \& Gradient \& Unstable \\
+Learned temperature \& Quality \& No improvement \\
+Per-head K/V \& Quality \& No improvement \\
+Multi-chunk gradients \& Quality \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

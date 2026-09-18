@@ -10,9 +10,9 @@
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,9 +64,9 @@ Calibration:
 Rank $r$ & 288 \\
 EMA $\beta$ & 0.9 \\
 \texttt{max\_error} $\tau$ & 0.50 \\
-\texttt{fallback\_to\_original} & True \\
-\texttt{target\_attention\_only} & True \\
-\texttt{use\_fused\_kernel} & False \\
+\texttt{fallback\_to\_original} \& True \\
+\texttt{target\_attention\_only} \& True \\
+\texttt{use\_fused\_kernel} \& False \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,14 +80,14 @@ EMA $\beta$ & 0.9 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
 Recovery steps & 50 \\
 LoRA rank & 16 \\
 LoRA alpha & 32 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -148,7 +148,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\

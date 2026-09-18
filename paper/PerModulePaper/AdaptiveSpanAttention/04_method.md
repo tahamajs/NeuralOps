@@ -59,6 +59,16 @@ The span is:
 $$
 z_h = \sigma(\ell_h) \cdot S_\text{max}
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
@@ -71,6 +81,16 @@ We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 $$
 \ell_h^{(0)} = \log \frac{0.982}{1 - 0.982} \approx 4.0
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}$. 
@@ -91,6 +111,16 @@ Given query position $i$ and key position $j$, define the distance:
 $$
 d_{ij} = \begin{cases} |i - j| & \text{if bidirectional} \\ \max(0, i - j) & \text{if causal} \end{cases}
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 For causal models, keys after the query ($j > i$) are masked separately; 
@@ -101,6 +131,16 @@ The ramp mask is:
 $$
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
 $$
 
 ### 4.3.2 Properties
@@ -111,7 +151,17 @@ $$
   $$
   \frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 & d < z \\ 1/R & z \le d \le z + R \\ 0 & d > z + R \end{cases}
   \tag{4.5}
-  $$
+  
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+$$
 - **Bounded:** $g_z \in [0, 1]$.
 
 ### 4.3.3 Numerical Stability
@@ -121,6 +171,16 @@ We compute the ramp in FP32 and apply in log space:
 $$
 \tilde{S}_{ij} = S_{ij} + \log(g_{z_h}(d_{ij}) + \epsilon)
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
@@ -132,6 +192,16 @@ After masking, the attention row does not sum to 1. We renormalize:
 $$
 P_{ij} = \frac{\exp(\tilde{S}_{ij})}{\sum_j \exp(\tilde{S}_{ij})}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 This is equivalent to applying the ramp as a **multiplicative factor** before 
@@ -140,6 +210,16 @@ softmax:
 $$
 P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ## 4.5 Fast Path Optimization
@@ -164,6 +244,16 @@ We add to the loss:
 $$
 \mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.6.2 Effect
@@ -173,6 +263,16 @@ The gradient w.r.t. $\ell_h$:
 $$
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda \cdot S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up 
@@ -263,6 +363,16 @@ For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 $$
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j) : |i-j| > z} P_{ij} + \epsilon_R
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 where $\epsilon_R$ is the ramp-induced error:
@@ -270,6 +380,16 @@ where $\epsilon_R$ is the ramp-induced error:
 $$
 \epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.10.2 Head Span Heterogeneity
@@ -279,6 +399,16 @@ Empirically, spans converge to a bimodal distribution:
 $$
 z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
 \tag{4.13}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 ### 4.10.3 Equilibrium of L1 Penalty
@@ -288,6 +418,16 @@ The equilibrium span satisfies:
 $$
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
 \tag{4.14}
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+
+<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
 $$
 
 The task loss derivative depends on the model, but in practice heads with 

@@ -15,6 +15,14 @@ Squeezing Heads replaces each pretrained attention projection with a
 $$
 \text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 The forward pass is:
@@ -22,6 +30,14 @@ The forward pass is:
 $$
 y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
@@ -53,6 +69,14 @@ For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 $$
 y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Complexity.**
@@ -78,6 +102,14 @@ of $W_Q, W_K, W_V$:
 $$
 W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
@@ -85,6 +117,14 @@ Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
 $$
 W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Why leading?** The leading dimensions correspond to the principal 
@@ -102,6 +142,14 @@ $H_\text{target} < H_\text{source}$:
 $$
 W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
@@ -170,6 +218,14 @@ If we reduce head dimension from $d_h$ to $d_h'$:
 $$
 \text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Example.** $d_h = 64 \to d_h' = 32$, $r_L = 16$:
@@ -177,6 +233,14 @@ $$
 $$
 \text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.

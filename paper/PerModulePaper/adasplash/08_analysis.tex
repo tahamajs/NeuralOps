@@ -110,8 +110,8 @@ Full attention + softmax & 90.71\% & -- \\
 \midrule
 DistilBERT & \textbf{90.25} & 88.30 \\
 Sparsity & 42\% & 60\% \\
-Training stability & Stable & Oscillatory \\
-Speed & Fast & Slower (bisection) \\
+Training stability \& Stable \& Oscillatory \\
+Speed \& Fast \& Slower (bisection) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -173,8 +173,8 @@ AdaSplash produces \textbf{more interpretable} attention:
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Pruning target} & \textbf{Reversible?} \\
 \midrule
-Magnitude pruning (50\%) & 85 & Weights & No \\
-Head pruning (50\%) & 82 & Heads & No \\
+Magnitude pruning (50\%) & 85 \& Weights \& No \\
+Head pruning (50\%) & 82 \& Heads \& No \\
 \textbf{AdaSplash} & \textbf{90.25} & \textbf{Activations} & \textbf{Yes ($\alpha$=1)} \\
 \bottomrule
 \end{tabular}

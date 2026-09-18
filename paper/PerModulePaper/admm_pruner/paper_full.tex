@@ -16,7 +16,7 @@
 \section{Experimental Setup}Standardized SST-2 benchmark evaluation targeting 50\% structured sparsity.
 
 
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Pruned Layers} & \textbf{Sparsity} & \textbf{Recon Error} \\\midrule DistilBERT & PASS & 84.29 & 36 & 50\% & 0.3571 \\ RoBERTa & PASS & 80.62 & 72 & 50\% & 0.3513 \\ GPT-2 & PASS\_LOW & 51.49 & 48 & 50\% & 0.3565 \\ Qwen 3.5 & PASS & 78.21 & 48 & 50\% & 0.3569 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_admm\_pruner/*/summary.csv}.}\label{tab:admm_pruner_results}\end{table}
+\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Pruned Layers} & \textbf{Sparsity} & \textbf{Recon Error} \\\midrule DistilBERT \& PASS & 84.29 & 36 & 50\% & 0.3571 \\ RoBERTa \& PASS & 80.62 & 72 & 50\% & 0.3513 \\ GPT-2 \& PASS\_LOW & 51.49 & 48 & 50\% & 0.3565 \\ Qwen 3.5 \& PASS & 78.21 & 48 & 50\% & 0.3569 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_admm\_pruner/*/summary.csv}.}\label{tab:admm_pruner_results}\end{table}
 
 
 \section{Detailed Analysis}The method prunes 72 layers in RoBERTa with 50\% sparsity, maintaining over 80.6\% accuracy.

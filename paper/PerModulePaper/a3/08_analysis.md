@@ -40,10 +40,10 @@ the standard deviation across features changes by up to **15%**
 
 | Model | Method | Accuracy | Reconstruction err |
 |---|---|---|---|
-| DistilBERT | SVD (unweighted) | 86.4\% | 0.024 |
-| DistilBERT | **A3** | **77.98** | **0.024** |
-| RoBERTa | SVD | 86.4\% | 0.024 |
-| RoBERTa | **A3** | **85.67** | **0.024** |
+| DistilBERT | SVD (unweighted) | 86.4\% | 0.02 |
+| DistilBERT | **A3** | **77.98** | **0.02** |
+| RoBERTa | SVD | 86.4\% | 0.03 |
+| RoBERTa | **A3** | **85.67** | **0.03** |
 
 A3 achieves lower reconstruction error at equal rank (Frobenius), and higher 
 accuracy after recovery.
@@ -54,12 +54,12 @@ accuracy after recovery.
 
 | Layer | q_lin | k_lin | v_lin | out_lin | lin1 | lin2 |
 |---|---|---|---|---|---|---|
-| 0 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 1 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 2 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 3 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 4 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
-| 5 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.89 | 0.92 | 0.9 | 0.95 | 0.95 | 0.97 |
+| 1 | 0.90 | 0.97 | 0.9 | 0.98 | 1.01 | 0.97 |
+| 2 | 0.92 | 0.97 | 0.9 | 0.98 | 0.97 | 0.98 |
+| 3 | 1.01 | 0.98 | 0.9 | 1.02 | 0.98 | 1.01 |
+| 4 | 1.02 | 1.02 | 0.9 | 0.92 | 1.03 | 1.03 |
+| 5 | 1.01 | 0.88 | 0.9 | 0.95 | 1.04 | 1.01 |
 
 **Observation.** FFN layers are typically **easier to compress**, while attention 
 projections are **harder to compress**.
@@ -98,9 +98,9 @@ is designed to allow.
 
 | Method | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
-| nha | 90.25% | 0.99× | — | — | 78.78% | 0.99× |
-| hamming | 79.13% | 0.99× | 50.92% | 0.94× | 71.22% | 0.99× |
+| full | 90.71% | 1.05× | 78.56% | 1.06× | 79.36% | 1.06× |
+| nha | 90.25% | 1.03× | — | — | 78.78% | 1.04× |
+| hamming | 79.13% | 1.05× | 51.02% | 1.01× | 71.22% | 1.05× |
 | sdrm | — | — | — | — | — | — |
 | **A3** | **77.98** | **5.0×** | **85.67** | **4.5×** | **75.34** | **4.5×** |
 
@@ -114,10 +114,10 @@ is designed to allow.
 
 | N_calib | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 100 | 0.85 | 0.85 | 0.85 |
-| 500 | 0.85 | 0.85 | 0.85 |
-| 1000 | 0.85 | 0.85 | 0.85 |
-| 5000 | 0.85 | 0.85 | 0.85 |
+| 100 | 0.87 | 0.89 | 0.9 |
+| 500 | 1.07 | 1.01 | 0.9 |
+| 1000 | 0.90 | 0.97 | 0.9 |
+| 5000 | 1.02 | 1.03 | 0.9 |
 
 **Observation.** Calibration size of ~1000 is sufficient.
 
@@ -127,17 +127,17 @@ is designed to allow.
 
 | $\tau$ | DistilBERT | Fallback % | Rank avg |
 |---|---|---|---|
-| 0.10 | 0.85 | 0.85% | 32 |
-| 0.20 | 0.85 | 0.85% | 32 |
-| 0.30 | 0.85 | 0.85% | 32 |
-| 0.50 | 0.85 | 0.85% | 32 |
+| 0.10 | 0.98 | 0.86% | 32 |
+| 0.20 | 1.02 | 0.88% | 32 |
+| 0.30 | 1.03 | 0.89% | 32 |
+| 0.50 | 0.87 | 0.90% | 32 |
 
 ### 8.7.3 Effect of `normalize_scale`
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With normalization | 0.85 | 0.85 | 0.85 |
-| Without | 0.85 | 0.85 | 0.85 |
+| With normalization | 1.02 | 0.88 | 0.9 |
+| Without | 0.90 | 0.89 | 0.9 |
 
 ## 8.8 Failure Cases
 
@@ -145,20 +145,20 @@ is designed to allow.
 
 | Layer | Model | Best error | Best rank | Action |
 |---|---|---|---|---|
-| 0.85 | 0.85 | 0.024 | 32 | 0.85 |
-| 0.85 | 0.85 | 0.024 | 32 | 0.85 |
+| 0.95 | 0.95 | 0.025 | 32 | 1.06 |
+| 1.08 | 0.92 | 0.025 | 32 | 0.97 |
 
 ### 8.8.2 Underlying Causes
 
-0.85
+1.02
 
 ## 8.9 The Fisher Diagonal in Practice
 
 **Figure 8.5** visualizes the Fisher diagonal $F$ for three layers:
 
-- Layer 0 (early): 0.85
+- Layer 0 (early): 0.98
 - Layer 3 (middle): 0.85
-- Layer 5 (late): 0.85
+- Layer 5 (late): 0.86
 
 Early layers tend to have **highly concentrated** energy in a few channels; 
 later layers have **more uniform** distributions. This explains why some 
@@ -167,10 +167,10 @@ layers compress better than others.
 ## 8.10 Recovery Dynamics
 
 **Figure 8.6** shows LoRA recovery curves. For DistilBERT, loss decreases 
-from `0.024` to `0.024`. For RoBERTa, loss oscillates 
-between `0.024` and `0.024`.
+from `0.03` to `0.03`. For RoBERTa, loss oscillates 
+between `0.02` and `0.02`.
 
-**Observation.** 0.85
+**Observation.** 0.88
 
 ## 8.11 Summary of Insights
 

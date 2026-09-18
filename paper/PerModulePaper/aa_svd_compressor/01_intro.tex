@@ -1,13 +1,11 @@
-\section{Introduction}
+\section{01 Intro}
 
-\subsection{Motivation}
-In standard transformer architectures, dense linear projections within multi-head attention ($W_Q, W_K, W_V, W_O$) and feed-forward networks dominate parameter storage and inference latency. Low-rank factorization approximates a weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ by a product of two lower-rank matrices $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, reducing parameter footprint from $d_{\text{in}} d_{\text{out}}$ to $r(d_{\text{in}} + d_{\text{out}})$.
+ 1. Introduction
 
-While the classical Eckart--Young--Mirsky theorem establishes truncated SVD as the optimal rank-$r$ approximation in unweighted Frobenius norm, modern transformer representations exhibit significant activation anisotropy and outlier dimensions. Naive weight truncation discards low-magnitude singular vectors that align with high-variance activation channels, causing catastrophic degradation in perplexity and downstream accuracy.
+ 1.1 Motivation
+In standard transformer architectures such as DistilBERT, RoBERTa, and GPT-2, linear projection layers ($W\_Q, W\_K, W\_V, W\_O$ in multi-head attention and intermediate/output layers in feed-forward networks) dominate total parameter storage and runtime computational budgets. For instance, in DistilBERT ($d=768$), each self-attention projection accounts for $768 \times 768 = 589,824$ parameters. Physical low-rank matrix factorization replaces $W \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}$ with factor matrices $U \in \mathbb{R}^{d\_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d\_{\text{in}}}$, reducing parameter complexity from $d\_{\text{in}} d\_{\text{out}}$ down to $r(d\_{\text{in}} + d\_{\text{out}})$.
 
-\subsection{Activation-Aware Decomposition}
-Activation-Aware SVD (\texttt{aa\_svd\_compressor}) preconditions each weight matrix by the empirical activation covariance accumulated over calibration sequences. By factorizing the preconditioned matrix and projecting back to parameter space, the decomposition directly minimizes the error observed at layer outputs:
-\[
-\min_{U, V} \mathbb{E}_{X \sim \mathcal{D}} \| W X - U V X \|_F^2
-\]
-The engine physically instantiates factorized \texttt{SVDLinear} layers, yielding immediate parameter and compute reduction on standard hardware accelerators.
+However, naive truncated SVD minimizes unweighted Frobenius reconstruction error $\|W - \hat{W}\|\_F^2$, implicitly assuming that all feature dimensions in the input space are independently and identically distributed. In practice, modern deep language models develop pronounced outlier channels with activation variances up to $100\times$ larger than typical channels. Truncating singular components without accounting for activation magnitude results in severe representation collapse.
+
+ 1.2 Our Approach
+To resolve this limitation, `aa\_svd\_compressor` computes empirical input activation covariances over multi-domain calibration text tokens. By preconditioning weights prior to singular value decomposition and unweighting singular vectors during layer construction, the factorization minimizes activation-weighted reconstruction error $\|(W - \hat{W}) X\|\_F^2$. The compressed model replaces target dense layers with structural `SVDLinear` modules that execute two sequential lower-dimensional matrix multiplications, achieving true physical parameter reduction and FLOP savings without requiring custom sparse kernels.

@@ -79,7 +79,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ### Table 7.1 (Main Results)
 
 ```bash
-python run_all_4_a3.py --models distilbert,roberta,gpt2
+python run_all_4_a3.py - models distilbert,roberta,gpt2
 # → results/unified_a3/{model}/summary.csv
 ```
 
@@ -87,22 +87,22 @@ python run_all_4_a3.py --models distilbert,roberta,gpt2
 
 ```bash
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --models distilbert,roberta,gpt2 --rank $rank
+    python run_all_4_a3.py - models distilbert,roberta,gpt2 - rank $rank
 done
 ```
 
 ### Table 7.7 (Fisher Ablation)
 
 ```bash
-python run_all_4_a3.py --use_fisher true  --output_suffix fisher
-python run_all_4_a3.py --use_fisher false --output_suffix nofisher
+python run_all_4_a3.py - use_fisher true - output_suffix fisher
+python run_all_4_a3.py - use_fisher false - output_suffix nofisher
 ```
 
 ### Table 7.8 (LN Ablation)
 
 ```bash
-python run_all_4_a3.py --recalibrate_ln true  --output_suffix ln
-python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+python run_all_4_a3.py - recalibrate_ln true - output_suffix ln
+python run_all_4_a3.py - recalibrate_ln false - output_suffix noln
 ```
 
 ## 12.6 Random Seeds

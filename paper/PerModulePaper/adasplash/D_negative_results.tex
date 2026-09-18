@@ -85,11 +85,11 @@ signal weak; no improvement.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 89.5 & Stable \\
-1e-4 & 90.0 & Stable \\
-2e-4 & 90.25 & Stable \\
-5e-4 & 89.0 & Unstable \\
-1e-3 & NaN & NaN \\
+5e-5 & 89.5 \& Stable \\
+1e-4 & 90.0 \& Stable \\
+2e-4 & 90.25 \& Stable \\
+5e-4 & 89.0 \& Unstable \\
+1e-3 \& NaN \& NaN \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,10 +103,10 @@ signal weak; no improvement.
 \toprule
 \textbf{$n_\text{iter}$} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-10 & 89.5 & Fast \\
-15 & 90.10 & Medium \\
-25 & 90.25 & Slow \\
-50 & 90.28 & Very slow \\
+10 & 89.5 \& Fast \\
+15 & 90.10 \& Medium \\
+25 & 90.25 \& Slow \\
+50 & 90.28 \& Very slow \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,12 +123,12 @@ but doubles the compute. Consider 15 for production.
 \toprule
 \textbf{W} & \textbf{GPT-2} & \textbf{Notes} \\
 \midrule
-4 & 75.5 & Too local \\
-8 & 77.2 & Underfit \\
-16 & 78.10 & Reasonable \\
-32 & 78.78 & Best \\
-64 & 78.75 & Diminishing returns \\
-128 & 78.80 & Full attention \\
+4 & 75.5 \& Too local \\
+8 & 77.2 \& Underfit \\
+16 & 78.10 \& Reasonable \\
+32 & 78.78 \& Best \\
+64 & 78.75 \& Diminishing returns \\
+128 & 78.80 \& Full attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,11 +142,11 @@ but doubles the compute. Consider 15 for production.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Gradient clipping & Stability & No change \\
-Different LoRA init & Convergence & No change \\
-Layer-wise $\alpha$ & Rank & No improvement \\
-Position-relative splash & Flexibility & No improvement \\
-Hybrid softmax+entmax & Stability & No improvement \\
+Gradient clipping \& Stability \& No change \\
+Different LoRA init \& Convergence \& No change \\
+Layer-wise $\alpha$ \& Rank \& No improvement \\
+Position-relative splash \& Flexibility \& No improvement \\
+Hybrid softmax+entmax \& Stability \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

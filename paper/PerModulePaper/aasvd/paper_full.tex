@@ -326,13 +326,13 @@ generalization to the full $d \times d$ matrix.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Bit-width / Rank} & \textbf{Retrain?} \\
 \midrule
-SVD (Eckart-Young) & Low-rank & Rank $r$ & No \\
-AWQ & Quantization & 4-bit & No \\
-GPTQ & Quantization & 3-4 bit & No \\
-SparseGPT & Pruning & 50-60\% & No \\
-Wanda & Pruning & 50\% & No \\
-LoRA & Adapter & +$\Delta W$ & Yes \\
-**AASVD** & Low-rank & Rank $r$ & LoRA only \\
+SVD (Eckart-Young) \& Low-rank \& Rank $r$ \& No \\
+AWQ \& Quantization & 4-bit \& No \\
+GPTQ \& Quantization & 3-4 bit \& No \\
+SparseGPT \& Pruning & 50-60\% \& No \\
+Wanda \& Pruning & 50\% \& No \\
+LoRA \& Adapter & +$\Delta W$ \& Yes \\
+**AASVD** \& Low-rank \& Rank $r$ \& LoRA only \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -347,11 +347,11 @@ AASVD differs from prior low-rank compression along three axes:
 \toprule
 \textbf{Axis} & \textbf{Prior methods} & \textbf{AASVD} \\
 \midrule
-**Weighting** & Unweighted or diagonal & Full covariance \\
-**Calibration** & Requires data & Bundled corpus \\
-**Accumulation** & Batch or fixed & Streaming EMA \\
+**Weighting** \& Unweighted or diagonal \& Full covariance \\
+**Calibration** \& Requires data \& Bundled corpus \\
+**Accumulation** \& Batch or fixed \& Streaming EMA \\
 **Memory** & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(d^2)$ \\
-**Fallback** & Rarely & Per-layer automatic \\
+**Fallback** \& Rarely \& Per-layer automatic \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -371,10 +371,10 @@ We compare against companion methods in our benchmark suite:
 \toprule
 \textbf{Method} & \textbf{Weighting} & \textbf{Transform} & \textbf{Recovery} \\
 \midrule
-A3 & Fisher diagonal & $W \cdot \mathrm{diag}(\sqrt{F})$ & LN rescale \\
-**AASVD** & **Full covariance** & $W \cdot C_X^{1/2}$ & None \\
-SDRM & Adaptive rank & Unweighted & LoRA \\
-SVD-Linear & Unweighted & None & LoRA \\
+A3 \& Fisher diagonal & $W \cdot \mathrm{diag}(\sqrt{F})$ \& LN rescale \\
+**AASVD** & **Full covariance** & $W \cdot C_X^{1/2}$ \& None \\
+SDRM \& Adaptive rank \& Unweighted \& LoRA \\
+SVD-Linear \& Unweighted \& None \& LoRA \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -544,25 +544,25 @@ AASVD compresses each targeted \texttt{nn.Linear} (or \texttt{Conv1D}) layer in 
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-   ┌───────────────────────────────────────────┐
-   │  Phase 1: Streaming EMA Calibration       │
-   │  Input: bundled or user texts             │
-   │  Output: C_X^(ℓ) for each target layer    │
-   └────────────────┬──────────────────────────┘
-                    │
-                    ▼
-   ┌───────────────────────────────────────────┐
-   │  For each layer ℓ:                        │
-   │    Phase 2: Weighted SVD at rank r        │
-   │    Phase 3: Frobenius validation          │
-   │    Phase 4: Replace or fallback           │
-   └────────────────┬──────────────────────────┘
-                    │
-                    ▼
-   ┌───────────────────────────────────────────┐
-   │  Compressed model with SVDLinear layers   │
-   │  Ready for LoRA recovery fine-tuning      │
-   └───────────────────────────────────────────┘
+   +-------------------------------------------+
+   |  Phase 1: Streaming EMA Calibration       |
+   |  Input: bundled or user texts             |
+   |  Output: C_X^(ℓ) for each target layer    |
+   +----------------+--------------------------+
+                    |
+                    v
+   +-------------------------------------------+
+   |  For each layer ℓ:                        |
+   |    Phase 2: Weighted SVD at rank r        |
+   |    Phase 3: Frobenius validation          |
+   |    Phase 4: Replace or fallback           |
+   +----------------+--------------------------+
+                    |
+                    v
+   +-------------------------------------------+
+   |  Compressed model with SVDLinear layers   |
+   |  Ready for LoRA recovery fine-tuning      |
+   +-------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Streaming Covariance Calibration}
@@ -634,11 +634,11 @@ We ship a \textbf{default multi-domain corpus} of 5 documents:
 \toprule
 \textbf{\#} & \textbf{Domain} & \textbf{Approximate length} \\
 \midrule
-1 & Technical prose (attention mechanisms) & 45 tokens \\
-2 & Mathematical prose (SVD, activations) & 38 tokens \\
-3 & Source code (Python attention) & 42 tokens \\
-4 & Technical prose (distributed training) & 42 tokens \\
-5 & Mathematical prose (chain-of-thought) & 48 tokens \\
+1 \& Technical prose (attention mechanisms) & 45 tokens \\
+2 \& Mathematical prose (SVD, activations) & 38 tokens \\
+3 \& Source code (Python attention) & 42 tokens \\
+4 \& Technical prose (distributed training) & 42 tokens \\
+5 \& Mathematical prose (chain-of-thought) & 48 tokens \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -971,10 +971,10 @@ so the bias decays as $\beta^{k-1}$. $\square$
 \toprule
 \textbf{Architecture} & \textbf{Target layers} & \textbf{Conv1D?} & \textbf{Nested?} \\
 \midrule
-DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & No & No \\
-RoBERTa-base & `query, key, value, output.dense` & No & Yes \\
-GPT-2 & `c\_attn, c\_proj` & Yes & No \\
-Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & No & No \\
+DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` \& No \& No \\
+RoBERTa-base & `query, key, value, output.dense` \& No \& Yes \\
+GPT-2 & `c\_attn, c\_proj` \& Yes \& No \\
+Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` \& No \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -993,12 +993,12 @@ AASVD protects the following layers from compression:
 \toprule
 \textbf{Pattern} & \textbf{Reason} \\
 \midrule
-`lm\_head` & Output projection tied to embeddings \\
-`classifier` & Task-specific head, small \\
-`head` & Same as above \\
-`output\_layer` & Task-specific \\
-`score` & GPT-2 classification head \\
-`pooler` & BERT pooler, not a projection \\
+`lm\_head` \& Output projection tied to embeddings \\
+`classifier` \& Task-specific head, small \\
+`head` \& Same as above \\
+`output\_layer` \& Task-specific \\
+`score` \& GPT-2 classification head \\
+`pooler` \& BERT pooler, not a projection \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1182,9 +1182,9 @@ class AASVDCompressor(BaseCompressor):
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
-RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
-GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+DistilBERT-base & 6 & 768 & 12 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \& Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1238,9 +1238,9 @@ Calibration:
 Rank $r$ & 288 \\
 EMA $\beta$ & 0.9 \\
 `max\_error` $\tau$ & 0.50 \\
-`fallback\_to\_original` & True \\
-`target\_attention\_only` & True \\
-`use\_fused\_kernel` & False \\
+`fallback\_to\_original` \& True \\
+`target\_attention\_only` \& True \\
+`use\_fused\_kernel` \& False \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1253,14 +1253,14 @@ EMA $\beta$ & 0.9 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
 Recovery steps & 50 \\
 LoRA rank & 16 \\
 LoRA alpha & 32 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1337,7 +1337,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -1376,11 +1376,11 @@ Runtime: ~20 min.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
 DistilBERT & **AASVD** & **85.0** & -5.7 & 0.850 & 24 & **4.0$\times$** & 120 MB \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
 RoBERTa & **AASVD** & **72.0** & -6.6 & 0.720 & 48 & **3.5$\times$** & 500 MB \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
 GPT-2 & **AASVD** & **73.0** & -6.4 & 0.730 & 48 & **3.5$\times$** & 550 MB \\
 \bottomrule
 \end{tabular}
@@ -1473,12 +1473,12 @@ GPT-2 & 48 & 0 & 48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & AASVD & 2.5 s & 47000 & 120 MB \\
-RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & AASVD & 5.5 s & 20000 & 500 MB \\
-GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & AASVD & 5.8 s & 19000 & 550 MB \\
+DistilBERT \& full & 1.90 s & 59000 & 183 MB \\
+DistilBERT \& AASVD & 2.5 s & 47000 & 120 MB \\
+RoBERTa \& full & 4.10 s & 27400 & 712 MB \\
+RoBERTa \& AASVD & 5.5 s & 20000 & 500 MB \\
+GPT-2 \& full & 4.20 s & 26700 & 793 MB \\
+GPT-2 \& AASVD & 5.8 s & 19000 & 550 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1782,9 +1782,9 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 \midrule
 Weighting matrix & $\mathrm{diag}(\sqrt{F})$ & $C_X^{1/2}$ \\
 Memory for weighting & $\mathcal{O}(d)$ & $\mathcal{O}(d^2)$ \\
-Captures correlations & No & Yes \\
-LN recalibration & Yes & No \\
-Adaptive rank & Yes & No \\
+Captures correlations \& No \& Yes \\
+LN recalibration \& Yes \& No \\
+Adaptive rank \& Yes \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1837,7 +1837,7 @@ occasionally produces NaN for ill-conditioned matrices.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
 \midrule
-0.85 & 0.85 & 0.024 & Fallback \\
+0.85 & 0.85 & 0.024 \& Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1910,15 +1910,15 @@ task-specific calibration. This makes AASVD usable out-of-the-box.
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Need to reduce model size on disk? ─── Yes ─── Use AASVD
-  │ No
-  ▼
-Need to reduce inference VRAM? ─── Yes ─── Use AASVD
-  │ No
-  ▼
-Need to reduce latency? ─── Yes ─── Consider quantization
-  │ No
-  ▼
+Need to reduce model size on disk? --- Yes --- Use AASVD
+  | No
+  v
+Need to reduce inference VRAM? --- Yes --- Use AASVD
+  | No
+  v
+Need to reduce latency? --- Yes --- Consider quantization
+  | No
+  v
 Consider other approaches
 \end{lstlisting}
 
@@ -1949,10 +1949,10 @@ Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
-DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-A3 (r=64) & Low-rank & 2.1\times$\times$ & 86.4\%\% \\
-**AASVD (r=64)** & Low-rank & **4.0$\times$** & **85.0\%** \\
+ALBERT \& Sharing & 3.5$\times$ & 89.4\% \\
+DistilBERT \& Distill & 1.6$\times$ & 90.7\% \\
+A3 (r=64) \& Low-rank & 2.1\times$\times$ & 86.4\%\% \\
+**AASVD (r=64)** \& Low-rank & **4.0$\times$** & **85.0\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2041,11 +2041,11 @@ Only SST-2 is evaluated. AASVD may behave differently on:
 \toprule
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
-$\le$124M parameters & Tested \\
->1B parameters & Not tested \\
->24 layers & Not tested \\
-Mixture-of-Experts & Not tested \\
-Vision transformers & Not tested \\
+$\le$124M parameters \& Tested \\
+>1B parameters \& Not tested \\
+>24 layers \& Not tested \\
+Mixture-of-Experts \& Not tested \\
+Vision transformers \& Not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3130,10 +3130,10 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Different $\beta$ init & Convergence & No change \\
-Per-layer $\beta$ & Non-stationarity & No change \\
-SVD on CPU always & Stability & Slower, no gain \\
-Separate calibration per layer & Precision & No change \\
+Different $\beta$ init \& Convergence \& No change \\
+Per-layer $\beta$ \& Non-stationarity \& No change \\
+SVD on CPU always \& Stability \& Slower, no gain \\
+Separate calibration per layer \& Precision \& No change \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3234,7 +3234,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

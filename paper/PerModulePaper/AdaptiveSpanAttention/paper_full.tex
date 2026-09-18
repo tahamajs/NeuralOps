@@ -318,13 +318,13 @@ top-$k$ approximation.
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{ASA-Span} \\
 \midrule
-Window type & Fixed & **Learned per-head** \\
+Window type \& Fixed & **Learned per-head** \\
 Differentiability & --- & **Soft ramp** \\
 Regularization & --- & **L1 span penalty** \\
-Distance-based & Yes & **Yes** \\
-Modern architectures & Limited & **BERT, RoBERTa, GPT-2, T5** \\
-RoPE support & No & **Yes** \\
-GQA support & No & **Yes** \\
+Distance-based \& Yes & **Yes** \\
+Modern architectures \& Limited & **BERT, RoBERTa, GPT-2, T5** \\
+RoPE support \& No & **Yes** \\
+GQA support \& No & **Yes** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -562,7 +562,7 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \item \textbf{Differentiable in $z$:}
 \end{itemize}
 \begin{equation}
-\frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 & d < z \\ 1/R & z \le d \le z + R \\ 0 & d > z + R \end{cases}
+\frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
 \end{equation}
 \begin{itemize}
 \item \textbf{Bounded:} $g_z \in [0, 1]$.
@@ -636,10 +636,10 @@ $\lambda$.
 \toprule
 \textbf{$\lambda$} & \textbf{Effect} \\
 \midrule
-0.0 & No compression; spans stay open \\
-0.001 & Mild compression \\
-0.01 & Balanced (recommended) \\
-0.1 & Aggressive; likely accuracy drop \\
+0.0 \& No compression; spans stay open \\
+0.001 \& Mild compression \\
+0.01 \& Balanced (recommended) \\
+0.1 \& Aggressive; likely accuracy drop \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -711,10 +711,10 @@ mask after training and use sparse kernels.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA-Span} \\
 \midrule
-$W_Q$ & $d H d_h$ & Same \\
-$W_K$ & $d H_{kv} d_h$ & Same \\
-$W_V$ & $d H_{kv} d_h$ & Same \\
-$W_O$ & $H d_h d$ & Same \\
+$W_Q$ & $d H d_h$ \& Same \\
+$W_K$ & $d H_{kv} d_h$ \& Same \\
+$W_V$ & $d H_{kv} d_h$ \& Same \\
+$W_O$ & $H d_h d$ \& Same \\
 **Span logits** & 0 & **$H$** \\
 **LoRA** & 0 & $2 r_L (\cdots)$ \\
 \bottomrule
@@ -772,11 +772,11 @@ small gradients converge to small spans.
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & Flat & No & No & No & ✅ \\
-RoBERTa & Nested & No & No & No & ✅ \\
-GPT-2 & Causal & No & No & No & ✅ \\
-T5 & Causal + bias & No & No & Yes & not tested \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
+DistilBERT \& Flat \& No \& No \& No & ✅ \\
+RoBERTa \& Nested \& No \& No \& No & ✅ \\
+GPT-2 \& Causal \& No \& No \& No & ✅ \\
+T5 \& Causal + bias \& No \& No \& Yes \& not tested \\
+Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& No \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -954,9 +954,9 @@ class AdaptiveSpanAttention(BaseAttention): ...
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
 \midrule
-DistilBERT-base & 6 & 12 & 64 & 66.9M & Flat \\
-RoBERTa-base & 12 & 12 & 64 & 124.6M & Nested \\
-GPT-2 & 12 & 12 & 64 & 124.4M & Causal \\
+DistilBERT-base & 6 & 12 & 64 & 66.9M \& Flat \\
+RoBERTa-base & 12 & 12 & 64 & 124.6M \& Nested \\
+GPT-2 & 12 & 12 & 64 & 124.4M \& Causal \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1008,12 +1008,12 @@ LoRA alpha & 32 \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
 Steps & 50 \\
 Batch size & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1067,7 +1067,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -1103,11 +1103,11 @@ python run_all_4_adaptive_span.py \
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Learned span} & \textbf{Attn mem} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & --- & 0.9099 & --- & 128 KB & 1.9 s \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & --- & 128 KB & 1.9 s \\
 DistilBERT & **ASA-Span** & **89.5** & -1.2 & 0.895 & **68** & 128 KB & 2.1 s \\
-RoBERTa & full & 78.56\% & --- & 0.8124 & --- & 128 KB & 4.1 s \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & --- & 128 KB & 4.1 s \\
 RoBERTa & **ASA-Span** & **76.5** & -2.1 & 0.765 & **72** & 128 KB & 4.5 s \\
-GPT-2 & full & 79.36\% & --- & 0.7978 & --- & 128 KB & 4.2 s \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & --- & 128 KB & 4.2 s \\
 GPT-2 & **ASA-Span** & **77.5** & -1.9 & 0.775 & **75** & 128 KB & 4.6 s \\
 \bottomrule
 \end{tabular}
@@ -1167,10 +1167,10 @@ integrate global context while late layers refine local features.
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
-DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & ASA-Span & 190 MB & 2.1 s \\
-GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & ASA-Span & 780 MB & 4.6 s \\
+DistilBERT \& full & 183 MB & 1.90 s \\
+DistilBERT \& ASA-Span & 190 MB & 2.1 s \\
+GPT-2 \& full & 793 MB & 4.20 s \\
+GPT-2 \& ASA-Span & 780 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1285,11 +1285,11 @@ pruning.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn mem} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & **2$\times$** \\
-ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse & 1.00$\times$ & 1.00$\times$ \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** & Learned span & 1.00$\times$ & 1.00$\times$ \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & **2$\times$** \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$\times$ & 1.00$\times$ \\
+**ASA-Span** & **89.5** & **76.5** & **77.5** \& Learned span & 1.00$\times$ & 1.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1454,10 +1454,10 @@ because per-head adaptation captures head-specific needs.
 \toprule
 \textbf{Head} & \textbf{Span} & \textbf{Interpretation} \\
 \midrule
-0 & 28 & Local (syntactic) \\
-1 & 118 & Global (coreference) \\
+0 & 28 \& Local (syntactic) \\
+1 & 118 \& Global (coreference) \\
 ... & ... & ... \\
-11 & 34 & Local \\
+11 & 34 \& Local \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1492,8 +1492,8 @@ context computation.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
 \midrule
-layer.0.attn & GPT-2 & 1.5 \\
-layer.2.attn & RoBERTa & 1.8 \\
+layer.0.attn \& GPT-2 & 1.5 \\
+layer.2.attn \& RoBERTa & 1.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2556,11 +2556,11 @@ Multiple disjoint windows per head. No improvement.
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.5 & 82.0 & Near hard \\
-1 & 87.0 & Sharp \\
-8 & 88.5 & OK \\
-32 & 89.5 & Best \\
-64 & 88.5 & Too smooth \\
+0.5 & 82.0 \& Near hard \\
+1 & 87.0 \& Sharp \\
+8 & 88.5 \& OK \\
+32 & 89.5 \& Best \\
+64 & 88.5 \& Too smooth \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2589,10 +2589,10 @@ Aggressive L1 collapses spans; accuracy drops.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Hard truncation during training & Speed & Accuracy loss \\
-Gradient clipping on span & Stability & No improvement \\
-Warmup on span & Convergence & No improvement \\
-Per-layer $\lambda$ & Quality & No improvement \\
+Hard truncation during training \& Speed \& Accuracy loss \\
+Gradient clipping on span \& Stability \& No improvement \\
+Warmup on span \& Convergence \& No improvement \\
+Per-layer $\lambda$ \& Quality \& No improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

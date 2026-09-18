@@ -9,8 +9,9 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.**
+### Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Learned span | Attn mem | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 128 KB | 1.9 s |
@@ -22,8 +23,9 @@
 
 ## 7.2 Learned Spans
 
-**Table 7.2: Span distribution across heads.**
+### Table 7.2: Span distribution across heads.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Mean span | Min | Max | Std | Reduction from $S_\text{max}$ |
 |---|---|---|---|---|---|
 | DistilBERT | **68** | 16 | 124 | 35 | 47% |
@@ -35,8 +37,9 @@ converge to < 16 (local), others to near $S_\text{max}$ (global).
 
 ## 7.3 Per-Layer Span Evolution
 
-**Table 7.3: Mean span per layer (DistilBERT).**
+### Table 7.3: Mean span per layer (DistilBERT).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Layer | Mean span |
 |---|---|
 | 0 | 95 |
@@ -52,8 +55,9 @@ integrate global context while late layers refine local features.
 
 ## 7.4 Efficiency
 
-**Table 7.4: Memory and time.**
+### Table 7.4: Memory and time.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -67,8 +71,9 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 ## 7.5 Ablation: Max Span
 
-**Table 7.5: Accuracy vs $S_\text{max}$.**
+### Table 7.5: Accuracy vs $S_\text{max}$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $S_\text{max}$ | DistilBERT | RoBERTa | GPT-2 | Learned mean |
 |---|---|---|---|---|
 | 32 | 85.0 | 70.0 | 71.0 | 24 |
@@ -78,8 +83,9 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 ## 7.6 Ablation: Ramp Size
 
-**Table 7.6: Accuracy vs $R$.**
+### Table 7.6: Accuracy vs $R$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $R$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 1 | 87.0 | 73.0 | 73.5 |
@@ -93,8 +99,9 @@ pruning.
 
 ## 7.7 Ablation: L1 Penalty
 
-**Table 7.7: Accuracy and span vs $\lambda$.**
+### Table 7.7: Accuracy and span vs $\lambda$.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $\lambda$ | DistilBERT acc | Mean span | Reduction |
 |---|---|---|---|
 | 0.0 | 90.5 | 126 | 0% |
@@ -106,8 +113,9 @@ pruning.
 
 ## 7.8 Ablation: LoRA Rank
 
-**Table 7.8: Accuracy vs LoRA rank.**
+### Table 7.8: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 86.0 | 72.0 | 73.0 |
@@ -117,8 +125,9 @@ pruning.
 
 ## 7.9 Ablation: Recovery Steps
 
-**Table 7.9: Accuracy vs recovery steps.**
+### Table 7.9: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 86.0 | 72.0 | 73.0 |
@@ -128,8 +137,9 @@ pruning.
 
 ## 7.10 Comparison with Companion Methods
 
-**Table 7.10: Comparison.**
+### Table 7.10: Comparison.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn mem |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |

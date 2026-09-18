@@ -17,7 +17,7 @@
 | Loss | 0.73 |
 | Params (before) | 66,955,010 |
 | Params (after) | 67544834 |
-| Peak VRAM | 341 MB MB |
+| Peak VRAM | 341 MB |
 | Inference time | 7.0 s |
 | Path | Galerkin |
 
@@ -30,7 +30,7 @@
 | F1 | 0.6748 |
 | Params (before) | 124,647,170 |
 | Params (after) | 132913922 |
-| Peak VRAM | 672 MB MB |
+| Peak VRAM | 672 MB |
 | Inference time | 13.1 s |
 | Path | Galerkin |
 | Status | PASS_LOW |
@@ -44,7 +44,7 @@
 | F1 | 0.6763 |
 | Params (before) | 124,441,344 |
 | Params (after) | 125630220 |
-| Peak VRAM | 569 MB MB |
+| Peak VRAM | 569 MB |
 | Inference time | 9.2 s |
 | Path | **Decoder fallback** |
 | Status | PASS |

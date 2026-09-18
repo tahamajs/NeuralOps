@@ -16,7 +16,7 @@
 \section{Experimental Setup}Standardized SST-2 evaluations across three model families.
 
 
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT & PASS & 84.98 & 66.95M & 59.65M & 1.122$\times$ & 319.2 \\ RoBERTa & PASS\_LOW & 51.26 & 124.65M & 108.87M & 1.145$\times$ & 596.3 \\ GPT-2 & PASS & 59.52 & 124.44M & 101.58M & 1.225$\times$ & 476.0 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_hybrid/*/summary.csv}.}\label{tab:aegis_hybrid_results}\end{table}
+\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT \& PASS & 84.98 & 66.95M & 59.65M & 1.122$\times$ & 319.2 \\ RoBERTa \& PASS\_LOW & 51.26 & 124.65M & 108.87M & 1.145$\times$ & 596.3 \\ GPT-2 \& PASS & 59.52 & 124.44M & 101.58M & 1.225$\times$ & 476.0 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_hybrid/*/summary.csv}.}\label{tab:aegis_hybrid_results}\end{table}
 
 
 \section{Detailed Analysis}The module reduces GPT-2 parameters by 18.37\% (over 22.8M parameters) while maintaining functional attention routing.

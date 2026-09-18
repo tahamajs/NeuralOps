@@ -1,1 +1,60 @@
 \section*{Appendix B. Implementation}\addcontentsline{toc}{section}{Appendix B}Implemented in \texttt{Codes/framework/compression\_engine/adaptive\_ranks.py}.
+
+
+
+\subsection{6. Production CUDA / Triton Execution Blueprint}
+Below is a production Triton GPU execution kernel supporting adaptive factorized attention projections.
+
+
+\begin{lstlisting}
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def adaptive_rank_proj_kernel(
+    X_ptr, U_ptr, S_ptr, Vt_ptr, Out_ptr, Bias_ptr,
+    B_N, d_model, r_allocated,
+    stride_xb, stride_xn,
+    stride_ud, stride_ur,
+    stride_vtr, stride_vtm,
+    stride_outb, stride_outn,
+    BLOCK_M: tl.constexpr,
+    BLOCK_R: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+):
+    """
+    Triton kernel for executing adaptive rank-allocated projection operations.
+    """
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_r = tl.arange(0, BLOCK_R)
+
+    # 1. Multiply X with Vt^T
+    acc_r = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+    for k in range(0, d_model, BLOCK_N):
+        offs_k = k + tl.arange(0, BLOCK_N)
+        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_model), other=0.0)
+        vt_tile = tl.load(Vt_ptr + offs_r[:, None] * stride_vtr + offs_k[None, :] * stride_vtm, mask=(offs_r[:, None] < r_allocated) & (offs_k[None, :] < d_model), other=0.0)
+        acc_r += tl.dot(x_tile, tl.trans(vt_tile))
+
+    # 2. Multiply with singular values
+    s_vals = tl.load(S_ptr + offs_r, mask=offs_r < r_allocated, other=1.0)
+    acc_r_scaled = acc_r * s_vals[None, :]
+
+    # 3. Multiply with U^T
+    u_tile = tl.load(U_ptr + offs_n[:, None] * stride_ud + offs_r[None, :] * stride_ur, mask=(offs_n[:, None] < d_model) & (offs_r[None, :] < r_allocated), other=0.0)
+    out_tile = tl.dot(acc_r_scaled.to(tl.float16), tl.trans(u_tile))
+
+    if Bias_ptr is not None:
+        b_tile = tl.load(Bias_ptr + offs_n, mask=offs_n < d_model, other=0.0)
+        out_tile += b_tile[None, :]
+
+    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_model))
+\end{lstlisting}
+
+
+---

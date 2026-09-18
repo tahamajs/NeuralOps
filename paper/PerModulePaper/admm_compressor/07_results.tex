@@ -1,1 +1,13 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params} & \textbf{VRAM (MB)} \\\midrule DistilBERT & PASS & 90.37 & 66.95M & 183.1 \\ RoBERTa & PASS & 62.04 & 124.65M & 520.2 \\ GPT-2 & PASS\_NO\_COMP & 79.36 & 124.44M & 628.4 \\ Qwen 3.5 & PASS & 88.42 & 763.22M & 1851.3 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_admm/*/summary.csv}.}\label{tab:admm_results}\end{table}
+\section{07 Results}
+
+ 7. Empirical Results
+
+ 7.1 Unified Benchmark Results
+From `results/unified\_admm/*/summary.csv`:
+
+| Model | Status | Accuracy (%) | F1 Score | Params | Peak VRAM (MB) | Tokens/sec |
+|---|---|---|---|---|---|---|
+| DistilBERT | PASS | 90.37%  | 0.9050  | 66,955,010  | 183.07  | 50,559.5  |
+| RoBERTa | PASS | 62.04%  | 0.6505  | 124,647,170  | 520.18  | 21,347.7  |
+| GPT-2 | PASS\_NO\_COMPRESSION | 79.36%  | 0.7978  | 124,441,344  | 628.41  | 19,301.5  |
+| Qwen 3.5 | PASS | 88.42%  | 0.8947  | 763,217,728  | 1851.31  | 1,099.7  |

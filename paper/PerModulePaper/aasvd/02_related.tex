@@ -58,13 +58,13 @@ generalization to the full $d \times d$ matrix.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Bit-width / Rank} & \textbf{Retrain?} \\
 \midrule
-SVD (Eckart-Young) & Low-rank & Rank $r$ & No \\
-AWQ & Quantization & 4-bit & No \\
-GPTQ & Quantization & 3-4 bit & No \\
-SparseGPT & Pruning & 50-60\% & No \\
-Wanda & Pruning & 50\% & No \\
-LoRA & Adapter & +$\Delta W$ & Yes \\
-\textbf{AASVD} & Low-rank & Rank $r$ & LoRA only \\
+SVD (Eckart-Young) \& Low-rank \& Rank $r$ \& No \\
+AWQ \& Quantization & 4-bit \& No \\
+GPTQ \& Quantization & 3-4 bit \& No \\
+SparseGPT \& Pruning & 50-60\% \& No \\
+Wanda \& Pruning & 50\% \& No \\
+LoRA \& Adapter & +$\Delta W$ \& Yes \\
+\textbf{AASVD} \& Low-rank \& Rank $r$ \& LoRA only \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,11 +80,11 @@ AASVD differs from prior low-rank compression along three axes:
 \toprule
 \textbf{Axis} & \textbf{Prior methods} & \textbf{AASVD} \\
 \midrule
-\textbf{Weighting} & Unweighted or diagonal & Full covariance \\
-\textbf{Calibration} & Requires data & Bundled corpus \\
-\textbf{Accumulation} & Batch or fixed & Streaming EMA \\
+\textbf{Weighting} \& Unweighted or diagonal \& Full covariance \\
+\textbf{Calibration} \& Requires data \& Bundled corpus \\
+\textbf{Accumulation} \& Batch or fixed \& Streaming EMA \\
 \textbf{Memory} & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(d^2)$ \\
-\textbf{Fallback} & Rarely & Per-layer automatic \\
+\textbf{Fallback} \& Rarely \& Per-layer automatic \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,10 +105,10 @@ We compare against companion methods in our benchmark suite:
 \toprule
 \textbf{Method} & \textbf{Weighting} & \textbf{Transform} & \textbf{Recovery} \\
 \midrule
-A3 & Fisher diagonal & $W \cdot \mathrm{diag}(\sqrt{F})$ & LN rescale \\
-\textbf{AASVD} & \textbf{Full covariance} & $W \cdot C_X^{1/2}$ & None \\
-SDRM & Adaptive rank & Unweighted & LoRA \\
-SVD-Linear & Unweighted & None & LoRA \\
+A3 \& Fisher diagonal & $W \cdot \mathrm{diag}(\sqrt{F})$ \& LN rescale \\
+\textbf{AASVD} & \textbf{Full covariance} & $W \cdot C_X^{1/2}$ \& None \\
+SDRM \& Adaptive rank \& Unweighted \& LoRA \\
+SVD-Linear \& Unweighted \& None \& LoRA \\
 \bottomrule
 \end{tabular}
 \end{table}

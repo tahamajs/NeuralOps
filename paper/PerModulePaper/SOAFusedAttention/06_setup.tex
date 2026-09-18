@@ -63,12 +63,12 @@ Majority baseline: 50.92\%. Max length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-Optimizer & AdamW \\
+Optimizer \& AdamW \\
 LR & 2e-4 \\
 WD & 1e-2 \\
 Steps & 50 \\
 Batch & 8 \\
-Precision & FP16 \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,7 +119,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & NVIDIA RTX 4070 Laptop \\
+GPU \& NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -146,11 +146,11 @@ python run_all_4_soa_fused.py \
 \toprule
 \textbf{Baseline} & \textbf{Description} \\
 \midrule
-\texttt{full} & Standard attention \\
-\texttt{soa\_fused} & Our method \\
-\texttt{soa\_fused\_k64} & Rank 64 (ablation) \\
-\texttt{soa\_fused\_k192} & Rank 192 (ablation) \\
-Vanilla SVD & Unweighted SVD (same as ours, but without LoRA) \\
+\texttt{full} \& Standard attention \\
+\texttt{soa\_fused} \& Our method \\
+\texttt{soa\_fused\_k64} \& Rank 64 (ablation) \\
+\texttt{soa\_fused\_k192} \& Rank 192 (ablation) \\
+Vanilla SVD \& Unweighted SVD (same as ours, but without LoRA) \\
 \bottomrule
 \end{tabular}
 \end{table}

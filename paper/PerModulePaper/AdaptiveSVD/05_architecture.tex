@@ -12,11 +12,11 @@ Adaptive SVD supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No &  \\
-RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No &  \\
-GPT-2 & \texttt{GPT2Attention} & No & No & No & No &  \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No & partial \\
-T5 & \texttt{T5Attention} & No & No & No & \textbf{Yes} & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No \& No &  \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No \& No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes \& No \& partial \\
+T5 & \texttt{T5Attention} \& No \& No \& No & \textbf{Yes} \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -236,11 +236,11 @@ class AdaptiveSVDAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & \texttt{copy\_weights} raises & Return None \\
-Shape mismatch & Assertion & Skip layer \\
-Near-zero Frobenius & Check < 1e-4 & Skip layer \\
-NaN in SVD & \texttt{torch.isnan} & Fallback \\
-T5 bias mismatch & Embedding shape & Skip \\
+Missing weights & \texttt{copy\_weights} raises \& Return None \\
+Shape mismatch \& Assertion \& Skip layer \\
+Near-zero Frobenius \& Check < 1e-4 \& Skip layer \\
+NaN in SVD & \texttt{torch.isnan} \& Fallback \\
+T5 bias mismatch \& Embedding shape \& Skip \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -254,10 +254,10 @@ T5 bias mismatch & Embedding shape & Skip \\
 \toprule
 \textbf{Component} & \textbf{Precision} \\
 \midrule
-SVD & FP32 \\
-Factor storage & Model dtype \\
-Forward & Model dtype \\
-Adapter init & FP32 then cast \\
+SVD \& FP32 \\
+Factor storage \& Model dtype \\
+Forward \& Model dtype \\
+Adapter init \& FP32 then cast \\
 \bottomrule
 \end{tabular}
 \end{table}

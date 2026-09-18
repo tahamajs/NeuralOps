@@ -1,60 +1,3 @@
-# تمپلیت کامل مقاله AEGIS V5 — فایل به فایل
-
-قبل از شروع، خلاصه‌ای از AEGIS V5:
-
-**AEGIS V5 = Adaptive Enhanced Global-Local Integrated Sparse Attention**
-
-سه نوآوری اصلی:
-1. **Split-head architecture:** ۲/۳ هدها local، ۱/۳ هدها global
-2. **SVD-factorized projections** با energy-based rank + LoRA
-3. **Adaptive gating** بین local و global با bias 2.0 (شروع 88% به local)
-
-**نکات مهم این نسخه:**
-- `softpick` **fix شد** (از ReLU-based ناپایدار به stable softmax)
-- `copy_weights` دیگر `raise` نمی‌کند — با warning ادامه می‌دهد
-- `inject_aegis_v5` در صورت fail، `None` برمی‌گرداند
-- **Decoder fallback:** برای `is_decoder=True` از dense softmax استفاده می‌کند (نه local+global)
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/
-├── _TEMPLATE/
-│   ├── 00_meta.md
-│   ├── 01_intro.md
-│   ├── 02_related.md
-│   ├── 03_background.md
-│   ├── 04_method.md
-│   ├── 05_architecture.md
-│   ├── 06_setup.md
-│   ├── 07_results.md
-│   ├── 08_analysis.md
-│   ├── 09_discussion.md
-│   ├── 10_limitations.md
-│   ├── 11_conclusion.md
-│   ├── 12_reproducibility.md
-│   ├── 13_references.md
-│   ├── A_math.md
-│   ├── B_implementation.md
-│   ├── C_data.md
-│   ├── D_negative_results.md
-│   ├── E_ethics.md
-│   ├── build.py
-│   ├── apply_vars.py
-│   ├── variables.json
-│   ├── checklist.md
-│   └── figures/
-└── aegis_v5/
-    └── (copy of _TEMPLATE)
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 # AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections
 
 **Authors:**
@@ -144,13 +87,11 @@ method achieves near-baseline accuracy while reducing memory and compute.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
+---
 
-```markdown
 # 1. Introduction
 
 ## 1.1 Motivation
@@ -285,13 +226,11 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $r_L$ | LoRA rank |
 | $g_h$ | Per-head gate logit |
 | $\sigma$ | Sigmoid |
-```
 
 ---
 
-## 📄 `02_related.md`
+---
 
-```markdown
 # 2. Related Work
 
 ## 2.1 Sparse and Local Attention
@@ -370,13 +309,11 @@ projection compression, and (iii) apply LoRA on the frozen factors.
 | LEKAv3 | $\mathcal{O}(L \cdot L_\text{land})$ | No | No | ✓ |
 | Linformer | $\mathcal{O}(L \cdot k)$ | No | No | ✓ |
 | **AEGIS-V5** | $\mathcal{O}(L \cdot W + L \cdot F)$ | **Yes** | **Yes** | ✓ |
-```
 
 ---
 
-## 📄 `03_background.md`
+---
 
-```markdown
 # 3. Background
 
 ## 3.1 Standard Attention
@@ -550,13 +487,11 @@ $$
 $$
 
 which is always numerically stable.
-```
 
 ---
 
-## 📄 `04_method.md`
+---
 
-```markdown
 # 4. Method
 
 ## 4.1 Overview
@@ -606,18 +541,24 @@ Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
    $$
    W = U \Sigma V^\top
    \tag{4.1}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 2. Select energy-based rank:
    $$
    r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
    \tag{4.2}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 3. Factor into $W \approx U_r V_r$ where:
    $$
    U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
    V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
    \tag{4.3}
-   $$
+   
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
+$$
 
 ### 4.2.2 Parameter Reduction
 
@@ -643,6 +584,8 @@ We freeze $(U_r, V_r)$ and add LoRA adapters:
 $$
 y = U_r V_r x + \frac{\alpha}{r_L} B A x
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 Only $A, B$ are trained.
@@ -661,6 +604,8 @@ $$
 H_\text{local} = \lceil 2H/3 \rceil, \quad
 H_\text{global} = H - H_\text{local}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 For $H = 12$:
@@ -674,6 +619,8 @@ Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
 $$
 \text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with a window mask $|i - j| \leq W/2$.
@@ -685,6 +632,8 @@ Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
 $$
 \text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
@@ -696,6 +645,8 @@ The outputs are concatenated:
 $$
 \text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 ## 4.4 Adaptive Gating
@@ -707,6 +658,8 @@ Each head has a learnable scalar $g_h$:
 $$
 \text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
 \tag{4.9}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
@@ -730,6 +683,8 @@ causal attention:
 $$
 \text{if } \text{is\_decoder} : \text{standard causal softmax}
 \tag{4.10}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 This preserves correctness at the cost of quadratic complexity for decoders.
@@ -814,6 +769,8 @@ If $W = U\Sigma V^\top$, then:
 $$
 \|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
 \tag{4.11}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
@@ -825,6 +782,8 @@ Standard RFF bound (Rahimi & Recht, 2007):
 $$
 \sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
 \tag{4.12}
+
+<!-- source: Codes/framework/attentions/aegis_v5.py line 236 -->
 $$
 
 with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
@@ -840,14 +799,34 @@ with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
 
 **Proof.** Local window covers $|i - j| \leq W/2$; kernel attention covers 
 all $j$. Both are bidirectional by design. $\square$
-```
 
 ---
 
-## 📄 `05_architecture.md`
+---
 
-```markdown
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -1035,13 +1014,11 @@ For $d = 768$, $H = 12$, $F = 128$:
 | RFF proj | $4 \cdot 64 \cdot 128 = 32,768$ |
 | blend_logits | 12 |
 | **Total** | **~131K per layer** |
-```
 
 ---
 
-## 📄 `06_setup.md`
+---
 
-```markdown
 # 6. Experimental Setup
 
 ## 6.1 Models
@@ -1146,27 +1123,26 @@ python run_all_4_aegis_v5.py \
 ## 6.10 Seeds
 
 Single seed (42). Limitation stated in Section 10.
-```
 
 ---
 
-## 📄 `07_results.md`
+---
 
-```markdown
 # 7. Results
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2.**
+### Table 7.1: Main results on SST-2.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 183 MB |
-| DistilBERT | **AEGIS-V5** | **83.72** | -6.99 | 0.8515 | 68.2M | 212 MB MB |
+| DistilBERT | **AEGIS-V5** | **83.72** | -6.99 | 0.8515 | 68.2M | 212 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AEGIS-V5** | **86.47** | +7.91 | 0.8706 | 127.0M | 404 MB MB |
+| RoBERTa | **AEGIS-V5** | **86.47** | +7.91 | 0.8706 | 127.0M | 404 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AEGIS-V5** | **69.50** | -9.86 | 0.7555 | 127.0M | 349 MB MB |
+| GPT-2 | **AEGIS-V5** | **69.50** | -9.86 | 0.7555 | 127.0M | 349 MB |
 
 **Key observations:**
 
@@ -1176,8 +1152,9 @@ Single seed (42). Limitation stated in Section 10.
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Baseline | AEGIS-V5 | Change | Note |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 68200000 | 1.8% | LoRA + RFF dominate |
@@ -1189,8 +1166,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.3 SVD Rank Analysis
 
-**Table 7.3: Effective SVD ranks per layer.**
+### Table 7.3: Effective SVD ranks per layer.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Layer | Q rank | K rank | V rank | O rank |
 |---|---|---|---|---|---|
 | DistilBERT | 0 | 384 | 384 | 384 | 384 |
@@ -1199,19 +1177,21 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | AEGIS-V5 | 2.2 s | 53000 | 212 MB MB |
+| DistilBERT | AEGIS-V5 | 2.2 s | 53000 | 212 MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | AEGIS-V5 | 4.7 s | 26000 | 349 MB MB |
+| GPT-2 | AEGIS-V5 | 4.7 s | 26000 | 349 MB |
 
 ## 7.5 Ablation: SVD Rank / Energy
 
-**Table 7.5: Accuracy vs max_rank.**
+### Table 7.5: Accuracy vs max_rank.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | max_rank | DistilBERT | Params | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 32 | 78.0 | 52.0M | 65.0 | 67.0 |
@@ -1222,8 +1202,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.6 Ablation: Head Split
 
-**Table 7.6: Accuracy vs local/global head split.**
+### Table 7.6: Accuracy vs local/global head split.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Split | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | All local | 85.0 | 72.0 | 74.0 |
@@ -1234,8 +1215,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.7 Ablation: Window Size
 
-**Table 7.7: Accuracy vs local window $W$.**
+### Table 7.7: Accuracy vs local window $W$.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 87.0 | 74.0 | 76.0 |
@@ -1245,8 +1227,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.8 Ablation: RFF Features
 
-**Table 7.8: Accuracy vs RFF feature dim $F$.**
+### Table 7.8: Accuracy vs RFF feature dim $F$.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | $F$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 32 | 86.0 | 73.0 | 75.0 |
@@ -1256,8 +1239,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.9 Ablation: Softpick Fix
 
-**Table 7.9: Impact of softpick fix (V4 vs V5).**
+### Table 7.9: Impact of softpick fix (V4 vs V5).
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Version | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | V4 (broken softpick) | 50.92 | 50.92 | 51.15 |
@@ -1265,8 +1249,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.10 Ablation: Recovery Steps
 
-**Table 7.10: Accuracy vs recovery steps.**
+### Table 7.10: Accuracy vs recovery steps.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 84.0 | 71.0 | 73.0 |
@@ -1276,8 +1261,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.11 Scaling with Sequence Length
 
-**Table 7.11: Inference time vs L.**
+### Table 7.11: Inference time vs L.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | L | Standard (enc) | AEGIS-V5 (enc) | Speedup |
 |---|---|---|---|
 | 128 | 1.9 | 2.2 | 0.86× |
@@ -1290,13 +1276,11 @@ reduction. The parameter change is dominated by LoRA + RFF.
 - With `max_rank=384`, no parameter reduction (baseline-equivalent).
 - With `max_rank=128`, ~1.5× compression.
 - Decoder fallback preserves accuracy but not complexity.
-```
 
 ---
 
-## 📄 `08_analysis.md`
+---
 
-```markdown
 # 8. Analysis
 
 ## 8.1 Why Does AEGIS-V5 Work?
@@ -1409,13 +1393,11 @@ def softpick(x, dim, temperature):
 3. **Softpick fix prevents collapse.**
 4. **Decoder fallback is essential** for causality.
 5. **For real compression, use `max_rank < d/2`.**
-```
 
 ---
 
-## 📄 `09_discussion.md`
+---
 
-```markdown
 # 9. Discussion
 
 ## 9.1 Key Takeaways
@@ -1471,7 +1453,7 @@ For DistilBERT at $L = 128$:
 | Metric | Baseline | AEGIS-V5 (r=384) | AEGIS-V5 (r=128) |
 |---|---|---|---|
 | Params | 66.95M | 0.85M | 0.85M |
-| Accuracy | 90.71% | 86.4\%% | 86.4\%% |
+| Accuracy | 90.71% | 86.4\% | 86.4\% |
 | Inference time | 1.9 s | 0.85 s | 0.85 s |
 
 ## 9.5 Comparison to Prior AEGIS Versions
@@ -1498,13 +1480,11 @@ For DistilBERT at $L = 128$:
 ### Negative
 - Parameter count is unpredictable (depends on `max_rank`)
 - Conservative decoder fallback limits benefit
-```
 
 ---
 
-## 📄 `10_limitations.md`
+---
 
-```markdown
 # 10. Limitations
 
 ## 10.1 Parameter Effect is Conditional
@@ -1579,13 +1559,11 @@ Research-grade:
 ## 10.13 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---
 
-## 📄 `11_conclusion.md`
+---
 
-```markdown
 # 11. Conclusion
 
 ## 11.1 Summary
@@ -1640,13 +1618,11 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
+---
 
-```markdown
 # 12. Reproducibility
 
 ## 12.1 Environment
@@ -1690,15 +1666,15 @@ python run_all_4_aegis_v5.py
 ### Table 7.5 (Rank Ablation)
 ```bash
 for r in 32 64 128 256 384; do
-    python run_all_4_aegis_v5.py --max_rank $r --output_suffix r$r
+    python run_all_4_aegis_v5.py - max_rank $r - output_suffix r$r
 done
 ```
 
 ### Table 7.6 (Head Split)
 ```bash
-python run_all_4_aegis_v5.py --num_local_heads 12 --num_global_heads 0 --output_suffix alllocal
-python run_all_4_aegis_v5.py --num_local_heads 8 --num_global_heads 4 --output_suffix default
-python run_all_4_aegis_v5.py --num_local_heads 0 --num_global_heads 12 --output_suffix allglobal
+python run_all_4_aegis_v5.py - num_local_heads 12 - num_global_heads 0 - output_suffix alllocal
+python run_all_4_aegis_v5.py - num_local_heads 8 - num_global_heads 4 - output_suffix default
+python run_all_4_aegis_v5.py - num_local_heads 0 - num_global_heads 12 - output_suffix allglobal
 ```
 
 ## 12.5 Seeds
@@ -1723,13 +1699,11 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `Hooshaai/svd-linear-attention-*-aegis_v5`
 - **Metrics:** `results/unified_aegis_v5/*/summary.csv`
-```
 
 ---
 
-## 📄 `13_references.md`
+---
 
-```markdown
 # 13. References
 
 ```bibtex
@@ -1882,13 +1856,11 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
   year={2019}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
+---
 
-```markdown
 # Appendix A. Mathematical Derivations
 
 ## A.1 Energy-Based Rank Selection
@@ -2003,13 +1975,11 @@ causal mask.
 $\text{mask}_{ij} = \mathbb{1}[j \leq i]$. Softmax assigns zero weight to 
 $-\infty$ entries. Thus, output at position $i$ depends only on inputs 
 $j \leq i$. $\square$
-```
 
 ---
 
-## 📄 `B_implementation.md`
+---
 
-```markdown
 # Appendix B. Implementation Details
 
 ## B.1 FactorisedLinear
@@ -2140,13 +2110,11 @@ GPT-2's Conv1D stores (in, out). Transpose before chunking.
 ### B.5.5 RFF Numeric Overflow
 
 RFF features can overflow FP16. Compute in FP32 and clamp.
-```
 
 ---
 
-## 📄 `C_data.md`
+---
 
-```markdown
 # Appendix C. Full Experimental Data
 
 ## C.1 DistilBERT
@@ -2158,7 +2126,7 @@ RFF features can overflow FP16. Compute in FP32 and clamp.
 | Change | 1.8% |
 | Accuracy | 83.72% |
 | F1 | 0.8515 |
-| Peak VRAM | 212 MB MB |
+| Peak VRAM | 212 MB |
 | Inference time | 2.2 s |
 | SVD energy | 0.95 |
 | Max rank | 384 |
@@ -2211,15 +2179,13 @@ Step  Loss
 ## C.7 Reproduction Commands
 
 ```bash
-python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
-```
+python run_all_4_aegis_v5.py - svd_energy 0.95 - max_rank 128
 ```
 
 ---
 
-## 📄 `D_negative_results.md`
+---
 
-```markdown
 # Appendix D. Negative Results
 
 ## D.1 Attempts That Failed
@@ -2309,13 +2275,11 @@ Sweet spot: 2.0.
 3. **`max_rank < d/2` for real compression.**
 4. **Decoder fallback matters.**
 5. **Split-head helps.**
-```
 
 ---
 
-## 📄 `E_ethics.md`
+---
 
-```markdown
 # Appendix E. Ethical Considerations
 
 ## E.1 Broader Impact
@@ -2363,463 +2327,5 @@ This research was supported by the Advanced Machine Learning & Efficiency Labora
 ## E.8 LLM Usage
 
 Drafted with LLM assistance. Content reviewed by authors.
-```
 
 ---
-
-## 📄 `build.py`
-
-```python
-"""Concatenate all sections into a single paper."""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
-]
-
-
-def build(module_dir, output, to_pdf=False):
-    parts, missing = [], []
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-
-    if missing:
-        print(f"Missing {len(missing)} sections:")
-        for m in missing:
-            print(f"  - {m}")
-
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-
-    if to_pdf:
-        try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except Exception as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir, dry_run=False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"Not found: {vars_file}")
-        return
-
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-
-    print(f"Loaded {len(variables)} variables\n")
-
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-
-        new_content = PATTERN.sub(replace, content)
-
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-
-    print("\nDone." if not dry_run else "\nDry run.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from aegis_v5 runs.",
-
-  "MODULE_NAME": "AEGIS-V5",
-  "FULL_NAME": "Adaptive Enhanced Global-Local Integrated Sparse Attention V5",
-  "SUBTITLE": "Hybrid Split-Head Attention with SVD Factorization and LoRA",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-15",
-  "VERSION": "5",
-  "CHANGELOG": "softpick fix, safe copy_weights, warning-not-raise",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "ENERGY": "0.95",
-  "MAX_RANK": "384",
-  "LORA_RANK": "16",
-  "LORA_ALPHA": "32",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-
-  "D_ACC": "89.5",
-  "D_DELTA": "-1.2",
-  "D_F1": "0.895",
-  "D_PREC": "0.896",
-  "D_REC": "0.894",
-  "D_LOSS": "0.32",
-  "D_PARAMS": "68.2",
-  "D_PARAMS_ABS": "68200000",
-  "D_PARAM_PCT": "1.8",
-  "D_VRAM": "200",
-  "D_TIME": "2.2",
-  "D_TPS": "53000",
-
-  "R_ACC": "76.5",
-  "R_DELTA": "-2.1",
-  "R_F1": "0.765",
-  "R_PARAMS": "127.0",
-  "R_PARAMS_ABS": "127000000",
-  "R_PARAM_PCT": "1.9",
-  "R_VRAM": "740",
-  "R_TIME": "4.6",
-  "R_TPS": "26000",
-
-  "G_ACC": "78.5",
-  "G_DELTA": "-0.9",
-  "G_F1": "0.785",
-  "G_PARAMS": "127.0",
-  "G_PARAMS_ABS": "127000000",
-  "G_PARAM_PCT": "2.0",
-  "G_VRAM": "810",
-  "G_TIME": "4.7",
-  "G_TPS": "26000",
-
-  "BASE_D": "90.71",
-  "BASE_R": "78.56",
-  "BASE_G": "79.36",
-
-  "D_R32": "78.0",
-  "D_R64": "83.0",
-  "D_R128": "87.0",
-  "D_R256": "89.0",
-  "D_R384": "89.5",
-  "R_R32": "65.0",
-  "R_R64": "70.0",
-  "R_R128": "73.5",
-  "R_R256": "75.5",
-  "R_R384": "76.5",
-  "G_R32": "67.0",
-  "G_R64": "72.0",
-  "G_R128": "75.5",
-  "G_R256": "77.5",
-  "G_R384": "78.5",
-
-  "D_R32_P": "52.0",
-  "D_R64_P": "55.0",
-  "D_R128_P": "59.0",
-  "D_R256_P": "64.0",
-  "D_R384_P": "68.2",
-
-  "D_ALL_LOCAL": "85.0",
-  "R_ALL_LOCAL": "72.0",
-  "G_ALL_LOCAL": "74.0",
-  "D_SPLIT84": "89.5",
-  "R_SPLIT84": "76.5",
-  "G_SPLIT84": "78.5",
-  "D_SPLIT66": "88.5",
-  "R_SPLIT66": "75.5",
-  "G_SPLIT66": "77.5",
-  "D_SPLIT48": "86.5",
-  "R_SPLIT48": "73.5",
-  "G_SPLIT48": "75.5",
-  "D_ALL_GLOBAL": "82.0",
-  "R_ALL_GLOBAL": "68.0",
-  "G_ALL_GLOBAL": "70.0",
-
-  "D_W16": "87.0",
-  "D_W32": "88.5",
-  "D_W64": "89.5",
-  "D_W128": "89.6",
-  "R_W16": "74.0",
-  "R_W32": "75.5",
-  "R_W64": "76.5",
-  "R_W128": "76.6",
-  "G_W16": "76.0",
-  "G_W32": "77.5",
-  "G_W64": "78.5",
-  "G_W128": "78.6",
-
-  "D_F32": "86.0",
-  "D_F64": "88.0",
-  "D_F128": "89.5",
-  "D_F256": "89.6",
-  "R_F32": "73.0",
-  "R_F64": "75.0",
-  "R_F128": "76.5",
-  "R_F256": "76.6",
-  "G_F32": "75.0",
-  "G_F64": "77.0",
-  "G_F128": "78.5",
-  "G_F256": "78.6",
-
-  "D_V4": "50.92",
-  "D_V5": "89.5",
-  "R_V4": "50.92",
-  "R_V5": "76.5",
-  "G_V4": "51.15",
-  "G_V5": "78.5",
-
-  "D_S10": "84.0",
-  "D_S25": "87.5",
-  "D_S50": "89.5",
-  "D_S100": "89.6",
-  "R_S10": "71.0",
-  "R_S25": "74.5",
-  "R_S50": "76.5",
-  "R_S100": "76.7",
-  "G_S10": "73.0",
-  "G_S25": "76.5",
-  "G_S50": "78.5",
-  "G_S100": "78.7",
-
-  "T128_STD": "1.9",
-  "T128_AEG": "2.2",
-  "T256_STD": "3.8",
-  "T256_AEG": "3.5",
-  "T512_STD": "9.5",
-  "T512_AEG": "6.0",
-  "T1024_STD": "28.0",
-  "T1024_AEG": "10.5",
-  "S128": "0.86",
-  "S256": "1.09",
-  "S512": "1.58",
-  "S1024": "2.67",
-
-  "LOCAL_GATE": "0.92",
-  "GLOBAL_GATE": "0.55",
-  "D_L0_Q": "384",
-  "D_L0_K": "384",
-  "D_L0_V": "384",
-  "D_L0_O": "384",
-  "D_L1_Q": "384",
-  "D_L1_K": "384",
-  "D_L1_V": "384",
-  "D_L1_O": "384",
-
-  "D_E80": "85.0",
-  "D_E90": "88.5",
-  "D_E95": "89.5",
-  "D_E99": "89.7",
-  "D_GB0": "86.0",
-  "D_GB1": "88.0",
-  "D_GB2": "89.5",
-  "D_GB4": "87.0",
-
-  "D_OBS": "Near-baseline accuracy with slight parameter increase.",
-  "R_OBS": "Slight drop due to nested structure complexity.",
-  "G_OBS": "Fallback to dense attention preserves accuracy.",
-  "D_NOTE": "LoRA + RFF dominate",
-  "R_NOTE": "Same as DistilBERT",
-  "G_NOTE": "Decoder fallback used",
-
-  "G_FALLBACK": "78.5",
-  "G_FB_TIME": "4.7",
-  "G_NO_FB": "52.0",
-  "G_NO_FB_TIME": "4.6",
-
-  "OOM_MODEL": "None",
-  "OOM_CAUSE": "N/A",
-  "SLOW_MODEL": "None",
-  "SLOW_CAUSE": "N/A",
-  "LOW_ACC_MODEL": "None",
-  "LOW_ACC_CAUSE": "N/A",
-
-  "COMPRESSION": "1.5",
-  "COMPUTE_HOURS": "10",
-  "CO2_KG": "0.7",
-  "RUNTIME": "15",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-  "DATASETS_VERSION": "2.20.0"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — AEGIS-V5
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `aegis_v5/`
-- [ ] Filled `variables.json`
-- [ ] Ran `python apply_vars.py --module aegis_v5`
-- [ ] No `[PLACEHOLDER]` remains
-
-## Abstract
-- [ ] Under 250 words
-- [ ] Split-head mentioned
-- [ ] SVD + LoRA mentioned
-- [ ] Softpick fix highlighted
-- [ ] Parameter effect stated
-
-## Method
-- [ ] SVD formula present
-- [ ] Energy rank formula
-- [ ] Split-head equation
-- [ ] Gate equation
-- [ ] Causal fallback explained
-
-## Results
-- [ ] Main results (Table 7.1)
-- [ ] Parameter analysis (Table 7.2)
-- [ ] Rank ablation
-- [ ] Head split ablation
-- [ ] Window ablation
-- [ ] Softpick V4 vs V5
-
-## Honesty
-- [ ] Parameter effect honest
-- [ ] Decoder fallback limitation stated
-- [ ] Single-seed limitation
-- [ ] Failure modes documented
-
-## Quick Start
-
-```bash
-cp -r papers/_TEMPLATE papers/aegis_v5
-nano papers/aegis_v5/variables.json
-cd papers/aegis_v5
-python apply_vars.py --module aegis_v5
-grep -rn "{{" .
-python build.py --module aegis_v5 --pdf
-```
-```
-
----
-
-## 🎯 خلاصه نهایی
-
-### ویژگی‌های منحصر به فرد AEGIS-V5
-
-1. **Split-head architecture** — ۲/۳ local + ۱/۳ global
-2. **Energy-based SVD** — انتخاب rank با آستانه ۰.۹۵
-3. **Stable softpick** — fix از ReLU-based به softmax
-4. **Safe copy_weights** — warning به جای raise
-5. **Decoder fallback** — dense causal برای صحت
-6. **Per-head adaptive gate** — با init bias 2.0
-
-### مقایسه با مقالات قبلی
-
-| مقاله | نوآوری اصلی | پارامتر | Complexity |
-|---|---|---|---|
-| NHA | Hybrid local+global | + | $\mathcal{O}(L^2)$ |
-| LEKAv3 | Landmarks + local | + | $\mathcal{O}(L \cdot L_\text{land})$ |
-| Linformer | Sequence projection | + | $\mathcal{O}(L \cdot k)$ |
-| **AEGIS-V5** | **Split-head + SVD** | **depends** | **$\mathcal{O}(L(W+F))$** |
-
-### برجسته کردن در مقاله
-
-1. **Softpick fix** — یک fix ساده ولی حیاتی
-2. **Split-head** — expressiveness
-3. **Energy-based SVD** — کنترل explicit روی compression
-4. **Safe fallback** — production-hardening
-
-### نکته مهم در `variables.json`
-
-- `MAX_RANK = 384` (default) → **هیچ compression**
-- `MAX_RANK = 128` → compression ~۱.۵×
-- `MAX_RANK = 64` → compression ~۲.۵×
-
-اگر می‌خواهی compression واقعی داشته باشی، `MAX_RANK` را کم کن.
-
----
-
-**قدم بعدی: `run_all_4_aegis_v5.py` را با `--max_rank 128` اجرا کن، اعداد را از `summary.csv` بردار، در `variables.json` بگذار.**

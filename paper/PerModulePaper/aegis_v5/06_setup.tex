@@ -44,15 +44,15 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Notes} \\
 \midrule
-\texttt{svd\_energy} ($\eta$) & 0.95 & SVD rank selection \\
-\texttt{min\_rank} & 4 & Floor for SVD rank \\
-\texttt{max\_rank} & 384 & Ceiling for SVD rank \\
-\texttt{num\_local\_heads} & 8 & Local attention heads \\
-\texttt{num\_global\_heads} & 4 & Global attention heads \\
-\texttt{local\_window} ($W$) & 64 & Sliding window \\
-\texttt{rff\_features} ($F$) & 128 & RFF dimension \\
-\texttt{gate\_init\_bias} & 1.8 & Prior for local (overridden to 2.0) \\
-\texttt{softpick\_temperature} & 1.0 & Attention temperature \\
+\texttt{svd\_energy} ($\eta$) & 0.95 \& SVD rank selection \\
+\texttt{min\_rank} & 4 \& Floor for SVD rank \\
+\texttt{max\_rank} & 384 \& Ceiling for SVD rank \\
+\texttt{num\_local\_heads} & 8 \& Local attention heads \\
+\texttt{num\_global\_heads} & 4 \& Global attention heads \\
+\texttt{local\_window} ($W$) & 64 \& Sliding window \\
+\texttt{rff\_features} ($F$) & 128 \& RFF dimension \\
+\texttt{gate\_init\_bias} & 1.8 \& Prior for local (overridden to 2.0) \\
+\texttt{softpick\_temperature} & 1.0 \& Attention temperature \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,8 +77,8 @@ For actual compression, set \texttt{max\_rank = 128} or lower.
 \texttt{batch\_size} & 8 \\
 Learning rate & 2e-4 \\
 Weight decay & 1e-2 \\
-Optimizer & AdamW \\
-Precision & FP16 \\
+Optimizer \& AdamW \\
+Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,7 +123,7 @@ FAIL & < 50.92\% \\
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
-GPU & RTX 4070 Laptop \\
+GPU \& RTX 4070 Laptop \\
 VRAM & 8 GB \\
 CUDA & 12.1 \\
 PyTorch & 2.4.0 \\
@@ -150,11 +150,11 @@ python run_all_4_aegis_v5.py \
 \toprule
 \textbf{Baseline} & \textbf{Description} \\
 \midrule
-\texttt{full} & Standard attention \\
-\texttt{aegis\_v5} & Our method \\
-\texttt{aegis\_v4} & Prior version (broken softpick) \\
-\texttt{aegis\_v5\_no\_split} & No head split (all local) \\
-\texttt{aegis\_v5\_no\_svd} & No SVD factorization \\
+\texttt{full} \& Standard attention \\
+\texttt{aegis\_v5} \& Our method \\
+\texttt{aegis\_v4} \& Prior version (broken softpick) \\
+\texttt{aegis\_v5\_no\_split} \& No head split (all local) \\
+\texttt{aegis\_v5\_no\_svd} \& No SVD factorization \\
 \bottomrule
 \end{tabular}
 \end{table}

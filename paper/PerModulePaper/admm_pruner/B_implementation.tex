@@ -1,1 +1,80 @@
-\section*{Appendix B. Implementation}\addcontentsline{toc}{section}{Appendix B}Implemented in \texttt{Codes/framework/compression\_engine/admm\_pruner.py}.
+\section{B Implementation}
+
+ Appendix B. Implementation
+Implemented in `Codes/framework/compression\_engine/admm\_pruner.py`.
+
+
+
+\subsection{3. Step-by-Step Calibration \& Execution Trace}
+\subsubsection{3.1 Dataflow \& Transformation Trace}
+
+1. \textbf{Initialization}:
+Extract weight tensor $W \in \mathbb{R}^{N \times M}$ from target \texttt{nn.Linear} module. Furthermore, Allocate auxiliary buffers $Z \leftarrow W$ and dual variable $U \leftarrow \mathbf{0}_{N \times M}$.
+
+2. **Iterative ADMM Loop ($k = 1 \dots K$)**:
+Compute candidate matrix $V = Z + U \in \mathbb{R}^{N \times M}$. Furthermore, Flatten $|V|$ to 1D tensor of length $N \cdot M$. Concurrently, Compute quantile threshold $\tau = \text{Percentile}(|V|, 100 \cdot S)$. In this setting, Generate sparse tensor $Z = \text{where}(|V| > \tau, V, 0)$. Additionally, Update dual accumulator $U = U + (W - Z)$.
+
+3. \textbf{Weight Overwrite}:
+Assign final $Z$ tensor back to \texttt{module.weight.data} with original precision and device attributes.
+
+
+
+\begin{lstlisting}
+Input Weight W [N, M]
+       |
+       +---------------------------------+
+       v                                 v
+Auxiliary Buffer Z [N, M]      Dual Multiplier U [N, M]
+       |                                 |
+       +--------------+------------------+
+                      v
+            Candidate V = Z + U [N, M]
+                      |
+                      v
+           Quantile Threshold \tau 
+                      |
+                      v
+             Masking \& Hard Cut
+                      |
+                      v
+           Updated Sparse Z [N, M]
+                      |
+                      v
+            Dual Update U += W - Z
+\end{lstlisting}
+
+
+---
+
+\subsection{6. Production CUDA / Triton Execution Blueprint}
+
+\begin{lstlisting}
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def admm_threshold_kernel(
+    V_ptr, Z_ptr, Threshold_ptr,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load candidate values V = Z + U
+    v_vals = tl.load(V_ptr + offsets, mask=mask, other=0.0)
+    threshold = tl.load(Threshold_ptr)
+
+    # Compute soft/hard threshold
+    abs_v = tl.abs(v_vals)
+    z_vals = tl.where(abs_v > threshold, v_vals, 0.0)
+
+    # Store result Z
+    tl.store(Z_ptr + offsets, z_vals, mask=mask)
+\end{lstlisting}
+
+
+---

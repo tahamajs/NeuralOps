@@ -10,10 +10,10 @@
 \toprule
 \textbf{Architecture} & \textbf{Target layers} & \textbf{Conv1D?} & \textbf{Nested?} \\
 \midrule
-DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & No & No \\
-RoBERTa-base & \texttt{query, key, value, output.dense} & No & Yes \\
-GPT-2 & \texttt{c\_attn, c\_proj} & Yes & No \\
-Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & No & No \\
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} \& No \& No \\
+RoBERTa-base & \texttt{query, key, value, output.dense} \& No \& Yes \\
+GPT-2 & \texttt{c\_attn, c\_proj} \& Yes \& No \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} \& No \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,12 +33,12 @@ AASVD protects the following layers from compression:
 \toprule
 \textbf{Pattern} & \textbf{Reason} \\
 \midrule
-\texttt{lm\_head} & Output projection tied to embeddings \\
-\texttt{classifier} & Task-specific head, small \\
-\texttt{head} & Same as above \\
-\texttt{output\_layer} & Task-specific \\
-\texttt{score} & GPT-2 classification head \\
-\texttt{pooler} & BERT pooler, not a projection \\
+\texttt{lm\_head} \& Output projection tied to embeddings \\
+\texttt{classifier} \& Task-specific head, small \\
+\texttt{head} \& Same as above \\
+\texttt{output\_layer} \& Task-specific \\
+\texttt{score} \& GPT-2 classification head \\
+\texttt{pooler} \& BERT pooler, not a projection \\
 \bottomrule
 \end{tabular}
 \end{table}

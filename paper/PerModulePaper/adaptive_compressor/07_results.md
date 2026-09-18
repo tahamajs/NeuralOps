@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 Evaluated under the standardized unified benchmark (`results/unified_adaptive_compressor/`):
 
+<!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 2 -->
 | Backbone Model | Compression Status | Accuracy (%) | F1 Score | Params Before | Params After | Compression Rate | Peak VRAM (MB) |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 88.07% <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> | 0.8807 <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> | 58,107,650 <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> | 1.1523x <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> | 382.72 <!-- source: results/unified_adaptive_compressor/distilbert/summary.csv line 3 --> |

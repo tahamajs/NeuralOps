@@ -2,16 +2,17 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2.**
+### Table 7.1: Main results on SST-2.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 183 MB |
-| DistilBERT | **AEGIS-V5** | **83.72** | -6.99 | 0.8515 | 68.2M | 212 MB MB |
+| DistilBERT | **AEGIS-V5** | **83.72** | -6.99 | 0.8515 | 68.2M | 212 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AEGIS-V5** | **86.47** | +7.91 | 0.8706 | 127.0M | 404 MB MB |
+| RoBERTa | **AEGIS-V5** | **86.47** | +7.91 | 0.8706 | 127.0M | 404 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AEGIS-V5** | **69.50** | -9.86 | 0.7555 | 127.0M | 349 MB MB |
+| GPT-2 | **AEGIS-V5** | **69.50** | -9.86 | 0.7555 | 127.0M | 349 MB |
 
 **Key observations:**
 
@@ -21,8 +22,9 @@
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Parameter counts.**
+### Table 7.2: Parameter counts.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Baseline | AEGIS-V5 | Change | Note |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 68200000 | 1.8% | LoRA + RFF dominate |
@@ -34,8 +36,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.3 SVD Rank Analysis
 
-**Table 7.3: Effective SVD ranks per layer.**
+### Table 7.3: Effective SVD ranks per layer.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Layer | Q rank | K rank | V rank | O rank |
 |---|---|---|---|---|---|
 | DistilBERT | 0 | 384 | 384 | 384 | 384 |
@@ -44,19 +47,21 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | AEGIS-V5 | 2.2 s | 53000 | 212 MB MB |
+| DistilBERT | AEGIS-V5 | 2.2 s | 53000 | 212 MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | AEGIS-V5 | 4.7 s | 26000 | 349 MB MB |
+| GPT-2 | AEGIS-V5 | 4.7 s | 26000 | 349 MB |
 
 ## 7.5 Ablation: SVD Rank / Energy
 
-**Table 7.5: Accuracy vs max_rank.**
+### Table 7.5: Accuracy vs max_rank.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | max_rank | DistilBERT | Params | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 32 | 78.0 | 52.0M | 65.0 | 67.0 |
@@ -67,8 +72,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.6 Ablation: Head Split
 
-**Table 7.6: Accuracy vs local/global head split.**
+### Table 7.6: Accuracy vs local/global head split.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Split | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | All local | 85.0 | 72.0 | 74.0 |
@@ -79,8 +85,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.7 Ablation: Window Size
 
-**Table 7.7: Accuracy vs local window $W$.**
+### Table 7.7: Accuracy vs local window $W$.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 87.0 | 74.0 | 76.0 |
@@ -90,8 +97,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.8 Ablation: RFF Features
 
-**Table 7.8: Accuracy vs RFF feature dim $F$.**
+### Table 7.8: Accuracy vs RFF feature dim $F$.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | $F$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 32 | 86.0 | 73.0 | 75.0 |
@@ -101,8 +109,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.9 Ablation: Softpick Fix
 
-**Table 7.9: Impact of softpick fix (V4 vs V5).**
+### Table 7.9: Impact of softpick fix (V4 vs V5).
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Version | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | V4 (broken softpick) | 50.92 | 50.92 | 51.15 |
@@ -110,8 +119,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.10 Ablation: Recovery Steps
 
-**Table 7.10: Accuracy vs recovery steps.**
+### Table 7.10: Accuracy vs recovery steps.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 84.0 | 71.0 | 73.0 |
@@ -121,8 +131,9 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 ## 7.11 Scaling with Sequence Length
 
-**Table 7.11: Inference time vs L.**
+### Table 7.11: Inference time vs L.
 
+<!-- source: results/unified_aegis_v5/distilbert/summary.csv line 2 -->
 | L | Standard (enc) | AEGIS-V5 (enc) | Speedup |
 |---|---|---|---|
 | 128 | 1.9 | 2.2 | 0.86× |

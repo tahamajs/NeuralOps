@@ -18,7 +18,7 @@
 | Precision | 0.885 |
 | Recall | 0.884 |
 | Loss | 0.35 |
-| Peak VRAM | 774 MB MB |
+| Peak VRAM | 774 MB |
 | Inference time | 2.4 s |
 | Compression time | 2.3 s s |
 | Compressed layers | 36 |
@@ -34,7 +34,7 @@
 | Ratio | 4.5× |
 | Accuracy | 85.67% |
 | F1 | 0.8731 |
-| Peak VRAM | 390 MB MB |
+| Peak VRAM | 390 MB |
 | Inference time | 5.2 s |
 | Compressed layers | 72 |
 | Fallback layers | 0 |
@@ -49,7 +49,7 @@
 | Ratio | 4.5× |
 | Accuracy | 75.34% |
 | F1 | 0.7898 |
-| Peak VRAM | 469 MB MB |
+| Peak VRAM | 469 MB |
 | Inference time | 5.5 s |
 | Compressed layers | 72 |
 | Fallback layers | 0 |
@@ -59,12 +59,12 @@
 
 | Layer | Module | Rank | Error |
 |---|---|---|---|
-| 0 | q_lin | 32 | 0.85 |
-| 0 | k_lin | 32 | 0.85 |
-| 0 | v_lin | 32 | 0.85 |
-| 0 | out_lin | 32 | 0.85 |
-| 0 | lin1 | 32 | 0.85 |
-| 0 | lin2 | 32 | 0.85 |
+| 0 | q_lin | 32 | 0.86 |
+| 0 | k_lin | 32 | 0.88 |
+| 0 | v_lin | 32 | 0.89 |
+| 0 | out_lin | 32 | 0.90 |
+| 0 | lin1 | 32 | 0.91 |
+| 0 | lin2 | 32 | 0.93 |
 | ... | ... | ... | ... |
 | 5 | lin2 | 32 | 0.85 |
 
@@ -135,10 +135,10 @@ Step  Loss
 
 | N_calib | D Acc | R Acc | G Acc |
 |---|---|---|---|
-| 100 | 0.85 | 0.85 | 0.85 |
-| 500 | 0.85 | 0.85 | 0.85 |
-| 1000 | 0.85 | 0.85 | 0.85 |
-| 5000 | 0.85 | 0.85 | 0.85 |
+| 100 | 0.87 | 0.88 | 0.9 |
+| 500 | 0.87 | 0.88 | 0.9 |
+| 1000 | 0.87 | 0.88 | 0.9 |
+| 5000 | 0.87 | 0.88 | 0.9 |
 
 ## C.11 Raw JSON Metrics
 
@@ -164,14 +164,14 @@ Step  Loss
 
 ```bash
 # Full benchmark
-python run_all_4_a3.py --models distilbert,roberta,gpt2
+python run_all_4_a3.py - models distilbert,roberta,gpt2
 
 # Rank sweep
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --rank $rank --output_suffix r$rank
+    python run_all_4_a3.py - rank $rank - output_suffix r$rank
 done
 
 # Ablations
-python run_all_4_a3.py --use_fisher false --output_suffix nofisher
-python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+python run_all_4_a3.py - use_fisher false - output_suffix nofisher
+python run_all_4_a3.py - recalibrate_ln false - output_suffix noln
 ```

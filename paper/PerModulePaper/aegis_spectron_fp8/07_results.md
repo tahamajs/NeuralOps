@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 From `results/unified_aegis_spectron_fp8/*/summary.csv`:
 
+<!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 2 -->
 | Model | Status | Accuracy (%) | Params Before | Params After | Compression Rate | Peak VRAM (MB) | Tokens/sec |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 79.59% <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> | 54,753,068 <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> | 1.2229x <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> | 290.29 <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> | 9,858.7 <!-- source: results/unified_aegis_spectron_fp8/distilbert/summary.csv line 3 --> |

@@ -1,15 +1,16 @@
-\section{Mathematical Background}
+\section{03 Background}
 
-\subsection{Singular Value Decomposition}
-For a linear layer with weights $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the full SVD decomposes $W$ as:
-\[
-W = U \Sigma V^\top = \sum_{i=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i u_i v_i^\top
-\]
-Under rank-$r$ truncation, the reconstructed weight matrix is $\hat{W} = U_r \Sigma_r V_r^\top$.
+ 3. Mathematical Background
 
-\subsection{Activation-Weighted Objective}
-For activation tokens $X \in \mathbb{R}^{N \times d_{\text{in}}}$, minimizing the output reconstruction discrepancy requires:
-\[
-\min_{\operatorname{rank}(\hat{W}) \le r} \| (W - \hat{W}) X^\top \|_F^2 = \min_{\operatorname{rank}(\hat{W}) \le r} \| (W - \hat{W}) C_X^{1/2} \|_F^2
-\]
-where $C_X = \frac{1}{N} X^\top X$ is the activation covariance matrix.
+ 3.1 Truncated SVD
+Let $W \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}$. Full Singular Value Decomposition yields:
+$$W = U \Sigma V^\top$$
+where $U \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{out}}}$ and $V \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ are orthogonal matrices, and $\Sigma = \operatorname{diag}(\sigma\_1, \sigma\_2, \dots, \sigma\_k)$ contains singular values in descending order $\sigma\_1 \ge \sigma\_2 \ge \dots \ge 0$.
+
+Truncation to rank $r < k$ selects the top $r$ singular components:
+$$\hat{W} = U\_r \Sigma\_r V\_r^\top$$
+
+ 3.2 Output Error Minimization
+Given input representations $X \in \mathbb{R}^{B \times d\_{\text{in}}}$, the layer output error is:
+$$\mathcal{L} = \| W X^\top - \hat{W} X^\top \|\_F^2 = \operatorname{Tr}\left( (W - \hat{W}) X^\top X (W - \hat{W})^\top \right) = \| (W - \hat{W}) C\_X^{1/2} \|\_F^2$$
+where $C\_X = \frac{1}{B} X^\top X \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ is the uncentered empirical activation covariance matrix.

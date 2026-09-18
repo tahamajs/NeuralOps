@@ -16,7 +16,7 @@
 \section{Experimental Setup}Evaluations use standardized SST-2 benchmark protocols across DistilBERT, RoBERTa, and GPT-2.
 
 
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} \\\midrule DistilBERT & PASS & 90.48 & 66.95M & 66.95M & 1.000$\times$ \\ RoBERTa & PASS & 73.39 & 124.65M & 109.74M & 1.136$\times$ \\ GPT-2 & PASS\_NO\_COMP & 79.36 & 124.44M & 124.44M & 1.000$\times$ \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_adasvd/*/summary.csv}.}\label{tab:adasvd_results}\end{table}
+\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} \\\midrule DistilBERT \& PASS & 90.48 & 66.95M & 66.95M & 1.000$\times$ \\ RoBERTa \& PASS & 73.39 & 124.65M & 109.74M & 1.136$\times$ \\ GPT-2 \& PASS\_NO\_COMP & 79.36 & 124.44M & 124.44M & 1.000$\times$ \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_adasvd/*/summary.csv}.}\label{tab:adasvd_results}\end{table}
 
 
 \section{Detailed Analysis}On RoBERTa, 40 layers are factorized, achieving an 11.96\% parameter reduction while preserving classification capability.

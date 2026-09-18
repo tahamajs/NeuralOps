@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Status} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & PASS \\
-DistilBERT & \textbf{Galerkin} & \textbf{50.92} & \textbf{-39.79} & 0.6748 & PASS \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & PASS \\
-RoBERTa & \textbf{Galerkin} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & PASS_LOW \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & PASS \\
-GPT-2 & \textbf{Galerkin} & \textbf{51.26} & \textbf{-28.10} & 0.6763 & PASS \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 \& PASS \\
+DistilBERT & \textbf{Galerkin} & \textbf{50.92} & \textbf{-39.79} & 0.6748 \& PASS \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 \& PASS \\
+RoBERTa & \textbf{Galerkin} & \textbf{50.92} & \textbf{-27.64} & 0.6748 \& PASS_LOW \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 \& PASS \\
+GPT-2 & \textbf{Galerkin} & \textbf{51.26} & \textbf{-28.10} & 0.6763 \& PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -62,9 +62,9 @@ compression method.
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & 7.0 s & 3.7$\times$ & 183 MB & 341 MB MB \\
-RoBERTa & 4.1 s & 13.1 s & 3.2$\times$ & 712 MB & 672 MB MB \\
-GPT-2 & 4.2 s & 9.2 s & 2.2$\times$ & 793 MB & 569 MB MB \\
+DistilBERT & 1.9 s & 7.0 s & 3.7$\times$ & 183 MB & 341 MB \\
+RoBERTa & 4.1 s & 13.1 s & 3.2$\times$ & 712 MB & 672 MB \\
+GPT-2 & 4.2 s & 9.2 s & 2.2$\times$ & 793 MB & 569 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -148,7 +148,7 @@ All 6 & 50.92 \\
 \textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & 0 \\
-nha & 90.25\% & FAIL & 78.78\% & +0.88\% \\
+nha & 90.25\% \& FAIL & 78.78\% & +0.88\% \\
 nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
 hamming & 79.13\% & 50.92\% & 71.22\% & +0.88\% \\
 \textbf{Galerkin} & \textbf{50.92} & \textbf{50.92} & \textbf{51.26} & \textbf{+0.88\%} \\

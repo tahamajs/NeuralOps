@@ -11,7 +11,7 @@
   author={Eckart, Carl and Young, Gale},
   journal={Psychometrika},
   volume={1},
-  pages={211--218},
+  pages={211 - 218},
   year={1936}
 }
 
@@ -21,7 +21,7 @@
   journal={SIAM Review},
   volume={53},
   number={2},
-  pages={217--288},
+  pages={217 - 288},
   year={2011}
 }
 
@@ -74,7 +74,7 @@
 }
 
 @article{weng2003candid,
-  title={{Candid covariance-free incremental PCA}},
+  title=Taha Majs,
   author={Weng, Juyang and Zhang, Yilu and Hwang, Wey-Shiuan},
   journal={IEEE TPAMI},
   year={2003}

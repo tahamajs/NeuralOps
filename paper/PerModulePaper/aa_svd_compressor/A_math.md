@@ -1,6 +1,17 @@
 # Appendix A. Mathematical Proofs
 
 ## A.1 Equivalence of Covariance-Weighted SVD
-We minimize $\|(W - \hat{W}) X^	op\|_F^2$. Let $C_X = rac{1}{N} X^	op X = C_X^{1/2} C_X^{1/2}$.
+We minimize $\|(W - \hat{W}) X^	op\|_F^2$. Let $C_X = 
+rac{1}{N} X^	op X = C_X^{1/2} C_X^{1/2}$.
 Then $\|(W - \hat{W}) X^	op\|_F^2 = N \|(W - \hat{W}) C_X^{1/2}\|_F^2$.
-Letting $	ilde{W} = W C_X^{1/2}$ and $	ilde{W}_r = \hat{W} C_X^{1/2}$, the Eckart--Young theorem guarantees that the optimal rank-$r$ approximation $	ilde{W}_r$ is obtained via standard truncated SVD of $	ilde{W}$. Multiplying by $C_X^{-1/2}$ on the right yields the optimal unweighted factor $V_r$.
+Letting $	ilde{W} = W C_X^{1/2}$ and $	ilde{W}_r = \hat{W} C_X^{1/2}$, the Eckart - Young theorem guarantees that the optimal rank-$r$ approximation $	ilde{W}_r$ is obtained via standard truncated SVD of $	ilde{W}$. Multiplying by $C_X^{-1/2}$ on the right yields the optimal unweighted factor $V_r$.
+
+
+## 1. Executive Abstract & Theoretical Motivation
+
+<!-- source: Codes/frontend/dist/Docs/content/compressions/aa_svd_compressor.md -->
+Standard SVD acts purely on static weight matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, operating under the implicit assumption that all input directions in $\mathbb{R}^{d_{\text{in}}}$ are equally probable. However, in transformer architectures, input activations $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ lie on low-dimensional non-linear manifolds due to layer normalization, residual connections, and token correlation. Truncating weight singular vectors that align strongly with high-variance activation subspaces causes catastrophic perplexity spikes.
+
+`AASVDCompressor` (Anchored Adaptive SVD) resolves this by anchoring low-rank SVD decomposition directly to the empirical activation subspace. By capturing input activation tensors during forward calibration passes, the engine computes the right-singular vectors of the activations via SVD to form an anchor projection matrix $P_{\text{anchor}}$. The weight matrix $W$ is projected onto this activation anchor space prior to low-rank factorization, ensuring that singular component truncation preserves the activation directions essential to network function.
+
+---

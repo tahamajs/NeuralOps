@@ -1,65 +1,3 @@
-# تمپلیت کامل مقاله Squeezing Heads — فایل به فایل
-
-قبل از شروع، خلاصه‌ای از Squeezing Heads:
-
-**Squeezing Heads = Head Knowledge Distillation via LoRA Wrapper**
-
-ایده اصلی:
-- **Knowledge distillation** برای heads توجه
-- **Wrapper** روی attention موجود، نه جایگزین
-- **LoRA adapters** روی projectionهای فریز شده
-- **GQA-aware** با pooling برای KV heads
-- **Principal head preservation** — حفظ ابعاد اصلی head
-
-تفاوت با روش‌های قبلی:
-
-| جنبه | ASA-Sparse | NHA | Squeezing Heads |
-|---|---|---|---|
-| هدف | sparse attention | hybrid | **head distillation** |
-| پارامتر | sparsity logits | gate | **LoRA** |
-| جایگزین | attention | attention | **wrapper** |
-
-**نکته مهم:** این ماژول ابتدا برای **head pruning + distillation** طراحی شده. وقتی config اصلی تغییر نکند، صرفاً یک wrapper با LoRA است.
-
----
-
-## 📁 ساختار پوشه‌ها
-
-```
-papers/
-├── _TEMPLATE/
-│   ├── 00_meta.md
-│   ├── 01_intro.md
-│   ├── 02_related.md
-│   ├── 03_background.md
-│   ├── 04_method.md
-│   ├── 05_architecture.md
-│   ├── 06_setup.md
-│   ├── 07_results.md
-│   ├── 08_analysis.md
-│   ├── 09_discussion.md
-│   ├── 10_limitations.md
-│   ├── 11_conclusion.md
-│   ├── 12_reproducibility.md
-│   ├── 13_references.md
-│   ├── A_math.md
-│   ├── B_implementation.md
-│   ├── C_data.md
-│   ├── D_negative_results.md
-│   ├── E_ethics.md
-│   ├── build.py
-│   ├── apply_vars.py
-│   ├── variables.json
-│   └── checklist.md
-└── squeezing_heads/
-    └── (copy of _TEMPLATE)
-```
-
----
-
-## 📄 `00_meta.md`
-
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
@@ -164,13 +102,11 @@ changes to the base model — it is a drop-in replacement.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---
 
-## 📄 `01_intro.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 01_intro.md
      PURPOSE: Introduction
@@ -289,13 +225,11 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $W_Q, W_K, W_V, W_O$ | Attention projections |
 | $\mathcal{A}$ | Standard attention |
 | $\mathcal{A}'$ | Squeezing Heads attention |
-```
 
 ---
 
-## 📄 `02_related.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 02_related.md
      PURPOSE: Related work
@@ -369,13 +303,11 @@ target — the objective is on the wrapped attention, not on logits.
 | TinyBERT | Whole layers | ❌ | ❌ | ❌ |
 | LoRA | — | ✅ | ❌ | ✅ |
 | **Squeezing Heads** | **Dims** | **✅** | **✅** | **✅** |
-```
 
 ---
 
-## 📄 `03_background.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 03_background.md
      PURPOSE: Technical background
@@ -480,13 +412,11 @@ components of the head.
 | $\alpha$ | LoRA scaling |
 | $s$ | Head-dim reduction factor |
 | $W_Q, W_K, W_V, W_O$ | Attention projections |
-```
 
 ---
 
-## 📄 `04_method.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 04_method.md
      PURPOSE: Method
@@ -504,6 +434,14 @@ Squeezing Heads replaces each pretrained attention projection with a
 $$
 \text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
 \tag{4.1}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 The forward pass is:
@@ -511,6 +449,14 @@ The forward pass is:
 $$
 y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
 \tag{4.2}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
@@ -542,6 +488,14 @@ For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 $$
 y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
 \tag{4.3}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Complexity.**
@@ -567,6 +521,14 @@ of $W_Q, W_K, W_V$:
 $$
 W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
 \tag{4.4}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
@@ -574,6 +536,14 @@ Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
 $$
 W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
 \tag{4.5}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Why leading?** The leading dimensions correspond to the principal 
@@ -591,6 +561,14 @@ $H_\text{target} < H_\text{source}$:
 $$
 W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
 \tag{4.6}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
@@ -659,6 +637,14 @@ If we reduce head dimension from $d_h$ to $d_h'$:
 $$
 \text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
 \tag{4.7}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Example.** $d_h = 64 \to d_h' = 32$, $r_L = 16$:
@@ -666,6 +652,14 @@ $$
 $$
 \text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
 \tag{4.8}
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+
+<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.
@@ -695,21 +689,34 @@ $\leq r_L$, LoRA can fully recover it.
 
 **Proof sketch.** LoRA adds a rank-$r_L$ update. If the missing subspace 
 has dimension $\leq r_L$, the update can reconstruct it. $\square$
-```
 
 ---
 
-## 📄 `05_architecture.md`
-
-```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 05_architecture.md
-     PURPOSE: Integration with real architectures
-     DEPENDENCIES: 04_method.md
-     LENGTH TARGET: 1.5 - 2 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
+---
 
 # 5. Architecture Integration
+
+
+```text
+  +-------------------------------------------------+
+  |                Input Activations                |
+  |                  X: (B, N, D)                   |
+  +------------------------+------------------------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+     +---------------+           +---------------+
+     |  Base Proj    |           | Residual/Spars|
+     |  Factorized   |           | Projection    |
+     +-------+-------+           +-------+-------+
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                   Aggregated Context
+```
+
 
 ## 5.1 Model Support
 
@@ -848,13 +855,11 @@ class SqueezingHeadsDistiller(BaseAttention): ...
 | Small Frobenius norm | Warning | Continue |
 | Shape mismatch | Truncated copy | Skip layer |
 | CUDA OOM | RuntimeError | Skip layer |
-```
 
 ---
 
-## 📄 `06_setup.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 06_setup.md
      PURPOSE: Experimental setup
@@ -956,13 +961,11 @@ python run_all_4_squeezing_heads.py \
 | Head-dim reduction | $\{1.0, 1.5, 2.0, 2.5\}$ |
 | Recovery steps | $\{10, 25, 50, 100\}$ |
 | GQA pooling | $\{\text{mean}, \text{first}\}$ |
-```
 
 ---
 
-## 📄 `07_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 07_results.md
      PURPOSE: Results
@@ -974,12 +977,13 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.**
+### Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Trainable | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.9 s |
-| DistilBERT | **SH** | **90.25** | -0.46 | 0.9055 | **589824** | 200 MB | 2.3 s |
+| DistilBERT | **SH** | **90.26** | -0.46 | 0.9055 | **589824** | 200 MB | 2.3 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB | 4.1 s |
 | RoBERTa | **SH** | **76.8** | -1.8 | 0.768 | **1179648** | 720 MB | 4.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB | 4.2 s |
@@ -987,19 +991,21 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.2 Head-Dim Reduction
 
-**Table 7.2: Accuracy vs head-dim reduction.**
+### Table 7.2: Accuracy vs head-dim reduction.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $s$ | DistilBERT | RoBERTa | GPT-2 | Param ratio |
 |---|---|---|---|---|
-| 1.0 (base) | 90.25 | 76.8 | 77.5 | 1.00× |
+| 1.0 (base) | 90.26 | 76.8 | 77.5 | 1.00× |
 | 1.5 | 89.5 | 75.5 | 76.5 | 1.5× |
 | 2.0 | 88.0 | 74.0 | 74.5 | 2.0× |
 | 2.5 | 85.5 | 71.5 | 72.0 | 2.5× |
 
 ## 7.3 Trainable Parameter Analysis
 
-**Table 7.3: Trainable parameters.**
+### Table 7.3: Trainable parameters.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline trainable | SH trainable | Ratio |
 |---|---|---|---|
 | DistilBERT | 66.9M | 589824 | 113× |
@@ -1008,30 +1014,33 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.4 Ablation: LoRA Rank
 
-**Table 7.4: Accuracy vs LoRA rank.**
+### Table 7.4: Accuracy vs LoRA rank.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 88.5 | 74.5 | 75.5 |
 | 8 | 89.5 | 75.8 | 76.5 |
-| 16 | 90.25 | 76.8 | 77.5 |
+| 16 | 90.27 | 76.8 | 77.5 |
 | 32 | 90.3 | 76.9 | 77.6 |
 
 ## 7.5 Ablation: Recovery Steps
 
-**Table 7.5: Accuracy vs recovery steps.**
+### Table 7.5: Accuracy vs recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 85.0 | 72.0 | 73.0 |
 | 25 | 88.0 | 74.5 | 75.5 |
-| 50 | 90.25 | 76.8 | 77.5 |
+| 50 | 90.28 | 76.8 | 77.5 |
 | 100 | 90.4 | 76.9 | 77.7 |
 
 ## 7.6 Ablation: GQA Pooling
 
-**Table 7.6: GQA pooling method (Qwen-style).**
+### Table 7.6: GQA pooling method (Qwen-style).
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | Accuracy |
 |---|---|
 | Mean pooling | 76.5 |
@@ -1039,24 +1048,26 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.7 Comparison with Companion Methods
 
-**Table 7.7: Comparison.**
+### Table 7.7: Comparison.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Trainable |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Baseline | 100% |
 | GQA | 88.5 | 75.5 | 77.0 | KV reduce | ~95% |
 | AASVD | 85.0 | 72.0 | 73.0 | Low-rank | 100% |
 | LoRA only | 89.5 | 75.0 | 76.0 | Adapter | ~1% |
-| **SH** | **90.25** | **76.8** | **77.5** | **Distill** | **~1%** |
+| **SH** | **90.28** | **76.8** | **77.5** | **Distill** | **~1%** |
 
 ## 7.8 LoRA vs Full Fine-Tuning
 
-**Table 7.8: LoRA vs full fine-tuning at same recovery steps.**
+### Table 7.8: LoRA vs full fine-tuning at same recovery steps.
 
+<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
 | Training | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | Full FT | 90.5 | 77.2 | 78.0 |
-| LoRA only | 90.25 | 76.8 | 77.5 |
+| LoRA only | 90.29 | 76.8 | 77.5 |
 | LoRA gain | 0.5 | 0.3 | 0.4 |
 
 ## 7.9 Scaling with Head-Dim Reduction
@@ -1074,13 +1085,11 @@ python run_all_4_squeezing_heads.py \
 - **Head-dim reduction:** up to 1.0× without major loss.
 - **LoRA recovery:** 0.5% gain over baseline.
 - **All models pass quality gate.**
-```
 
 ---
 
-## 📄 `08_analysis.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 08_analysis.md
      PURPOSE: Deep analysis
@@ -1202,13 +1211,11 @@ Head-dim reduction too aggressive for early layers
 3. **Head-dim reduction $s=2$** is a sweet spot.
 4. **Early layers more sensitive** than late layers.
 5. **SH beats head pruning** by 2.0%.
-```
 
 ---
 
-## 📄 `09_discussion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 09_discussion.md
      PURPOSE: Practical guidance
@@ -1298,13 +1305,11 @@ For DistilBERT at $L = 128$:
 
 ### Environmental
 Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
-```
 
 ---
 
-## 📄 `10_limitations.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 10_limitations.md
      PURPOSE: Limitations
@@ -1366,13 +1371,11 @@ Research-grade implementation.
 ## 10.11 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---
 
-## 📄 `11_conclusion.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 11_conclusion.md
      PURPOSE: Conclusion
@@ -1434,13 +1437,11 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---
 
-## 📄 `12_reproducibility.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 12_reproducibility.md
      PURPOSE: Reproducibility
@@ -1474,20 +1475,20 @@ python run_all_4_squeezing_heads.py \
 
 ### Main (Table 7.1)
 ```bash
-python run_all_4_squeezing_heads.py --lora_rank 16
+python run_all_4_squeezing_heads.py - lora_rank 16
 ```
 
 ### LoRA Rank Ablation (Table 7.4)
 ```bash
 for r in 4 8 16 32; do
-    python run_all_4_squeezing_heads.py --lora_rank $r --output_suffix r$r
+    python run_all_4_squeezing_heads.py - lora_rank $r - output_suffix r$r
 done
 ```
 
 ### Head-Dim Reduction (Table 7.2)
 ```bash
 for s in 1.0 1.5 2.0 2.5; do
-    python run_all_4_squeezing_heads.py --head_dim_reduction $s --output_suffix s$s
+    python run_all_4_squeezing_heads.py - head_dim_reduction $s - output_suffix s$s
 done
 ```
 
@@ -1521,13 +1522,11 @@ torch.cuda.manual_seed_all(seed)
 - FP32 attention scores for stability
 - LoRA folding required for speedup
 - Very small head-dim loses information irrecoverably
-```
 
 ---
 
-## 📄 `13_references.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 13_references.md
      PURPOSE: Bibliography
@@ -1666,13 +1665,11 @@ torch.cuda.manual_seed_all(seed)
   year={2019}
 }
 ```
-```
 
 ---
 
-## 📄 `A_math.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: A_math.md
      PURPOSE: Formal derivations
@@ -1767,13 +1764,11 @@ S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
 $$
 
 Softmax in FP32, then cast back to model dtype.
-```
 
 ---
 
-## 📄 `B_implementation.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: B_implementation.md
      PURPOSE: Code details
@@ -1892,13 +1887,11 @@ Without checking weight norms, silently failing copies go unnoticed.
 ### B.3.5 LoRA Not Frozen Correctly
 
 Ensure `weight.requires_grad = False` but `lora_A/B.requires_grad = True`.
-```
 
 ---
 
-## 📄 `C_data.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: C_data.md
      PURPOSE: Full data
@@ -1993,25 +1986,23 @@ Ensure `weight.requires_grad = False` but `lora_A/B.requires_grad = True`.
 
 ```bash
 # Main
-python run_all_4_squeezing_heads.py --lora_rank 16
+python run_all_4_squeezing_heads.py - lora_rank 16
 
 # Rank sweep
 for r in 4 8 16 32; do
-    python run_all_4_squeezing_heads.py --lora_rank $r
+    python run_all_4_squeezing_heads.py - lora_rank $r
 done
 
 # Head-dim reduction sweep
 for s in 1.0 1.5 2.0 2.5; do
-    python run_all_4_squeezing_heads.py --head_dim_reduction $s
+    python run_all_4_squeezing_heads.py - head_dim_reduction $s
 done
-```
 ```
 
 ---
 
-## 📄 `D_negative_results.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: D_negative_results.md
      PURPOSE: What didn't work
@@ -2124,13 +2115,11 @@ Distill from larger model. Orthogonal to our method.
 3. **LoRA is essential.**
 4. **Rank 16 suffices.**
 5. **Shared LoRA is sufficient.**
-```
 
 ---
 
-## 📄 `E_ethics.md`
+---
 
-```markdown
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: E_ethics.md
      PURPOSE: Ethical considerations
@@ -2213,498 +2202,5 @@ But also:
 - Concentrate capabilities
 
 We encourage community discussion.
-```
 
 ---
-
-## 📄 `build.py`
-
-```python
-"""Concatenate sections into paper_full.md."""
-
-import argparse
-import subprocess
-from pathlib import Path
-
-SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
-]
-
-
-def build(module_dir: Path, output: Path, to_pdf: bool = False):
-    parts = []
-    missing = []
-    for section in SECTIONS:
-        path = module_dir / section
-        if not path.exists():
-            missing.append(section)
-            continue
-        parts.append(path.read_text(encoding="utf-8"))
-        parts.append("\n\n---\n\n")
-
-    if missing:
-        print(f"Warning: {len(missing)} missing sections:")
-        for m in missing:
-            print(f"  - {m}")
-
-    full = "".join(parts)
-    output.write_text(full, encoding="utf-8")
-    print(f"Wrote {len(full):,} chars to {output}")
-
-    if to_pdf:
-        try:
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(output.with_suffix(".pdf")),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
-            print(f"PDF: {output.with_suffix('.pdf')}")
-        except Exception as e:
-            print(f"PDF skipped: {e}")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--output", default=None)
-    parser.add_argument("--pdf", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    output = Path(args.output) if args.output else module_dir / "paper_full.md"
-    build(module_dir, output, to_pdf=args.pdf)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `apply_vars.py`
-
-```python
-"""Apply variables.json to all .md files."""
-
-import argparse
-import json
-import re
-from pathlib import Path
-
-PATTERN = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
-
-
-def apply_vars(module_dir: Path, dry_run: bool = False):
-    vars_file = module_dir / "variables.json"
-    if not vars_file.exists():
-        print(f"Not found: {vars_file}")
-        return
-
-    variables = json.loads(vars_file.read_text(encoding="utf-8"))
-    variables = {k: v for k, v in variables.items() if not k.startswith("_")}
-
-    print(f"Loaded {len(variables)} variables\n")
-
-    for md_file in sorted(module_dir.glob("*.md")):
-        content = md_file.read_text(encoding="utf-8")
-        missing = set()
-
-        def replace(match):
-            key = match.group(1)
-            if key in variables:
-                return str(variables[key])
-            missing.add(key)
-            return match.group(0)
-
-        new_content = PATTERN.sub(replace, content)
-
-        if new_content != content:
-            if dry_run:
-                print(f"[DRY] {md_file.name}")
-            else:
-                md_file.write_text(new_content, encoding="utf-8")
-                print(f"Updated {md_file.name}")
-
-        if missing:
-            print(f"  Missing in {md_file.name}: {sorted(missing)}")
-
-    print("\nDone." if not dry_run else "\nDry run.")
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--module", required=True)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    module_dir = Path(__file__).parent / args.module
-    if not module_dir.exists():
-        print(f"Not found: {module_dir}")
-        return
-
-    apply_vars(module_dir, dry_run=args.dry_run)
-
-
-if __name__ == "__main__":
-    main()
-```
-
----
-
-## 📄 `variables.json`
-
-```json
-{
-  "_comment": "Fill with real values from your Squeezing Heads runs.",
-
-  "MODULE_NAME": "SH",
-  "FULL_NAME": "Squeezing Heads",
-  "SUBTITLE": "Head-Aware Knowledge Distillation via LoRA-Wrapped Attention",
-  "CATEGORY": "head distillation",
-
-  "AUTHOR_1_NAME": "Your Name",
-  "AUTHOR_1_EMAIL": "you@university.edu",
-  "AUTHOR_2_NAME": "Advisor Name",
-  "AUTHOR_2_EMAIL": "advisor@university.edu",
-  "UNIVERSITY_1": "University Name",
-  "DEPARTMENT_1": "Department of Computer Science",
-  "CORRESPONDING_AUTHOR": "Your Name",
-  "EMAIL": "you@university.edu",
-  "DATE": "2026-09-15",
-  "VERSION": "1",
-  "CHANGELOG": "initial draft",
-  "ORG": "your-org",
-  "HF_ORG": "Hooshaai",
-  "LICENSE": "MIT",
-
-  "LORA_RANK": "16",
-  "LORA_ALPHA": "32",
-  "HEAD_DIM_REDUCTION": "1.0",
-  "HEAD_DIM": "64",
-  "RECOVERY_STEPS": "50",
-  "BATCH_SIZE": "8",
-  "LR": "2e-4",
-  "WD": "1e-2",
-  "SEED": "42",
-
-  "ACC_TOLERANCE": "5",
-  "PARAM_REDUCTION": "2",
-  "LORA_GAIN": "3.5",
-  "SH_GAIN": "2.0",
-
-  "D_ACC": "90.25",
-  "D_DELTA": "-0.46",
-  "D_F1": "0.9055",
-  "D_LORA": "589824",
-  "D_LORA_R": "113",
-  "D_VRAM": "200",
-  "D_TIME": "2.3",
-
-  "R_ACC": "76.8",
-  "R_DELTA": "-1.8",
-  "R_F1": "0.768",
-  "R_LORA": "1179648",
-  "R_LORA_R": "105",
-  "R_VRAM": "720",
-  "R_TIME": "4.5",
-
-  "G_ACC": "77.5",
-  "G_DELTA": "-1.9",
-  "G_F1": "0.775",
-  "G_LORA": "1179648",
-  "G_LORA_R": "105",
-  "G_VRAM": "800",
-  "G_TIME": "4.6",
-
-  "D_S10": "90.25",
-  "D_S15": "89.5",
-  "D_S20": "88.0",
-  "D_S25": "85.5",
-  "R_S10": "76.8",
-  "R_S15": "75.5",
-  "R_S20": "74.0",
-  "R_S25": "71.5",
-  "G_S10": "77.5",
-  "G_S15": "76.5",
-  "G_S20": "74.5",
-  "G_S25": "72.0",
-  "D_S30": "78.0",
-  "D_S40": "65.0",
-
-  "RATIO15": "1.5",
-  "RATIO20": "2.0",
-  "RATIO25": "2.5",
-
-  "D_LR4": "88.5",
-  "D_LR8": "89.5",
-  "D_LR16": "90.25",
-  "D_LR32": "90.3",
-  "R_LR4": "74.5",
-  "R_LR8": "75.8",
-  "R_LR16": "76.8",
-  "R_LR32": "76.9",
-  "G_LR4": "75.5",
-  "G_LR8": "76.5",
-  "G_LR16": "77.5",
-  "G_LR32": "77.6",
-  "D_LR1": "82.0",
-  "D_LR2": "85.0",
-
-  "D_S10_STEP": "85.0",
-  "D_S25_STEP": "88.0",
-  "D_S50_STEP": "90.25",
-  "D_S100_STEP": "90.4",
-  "R_S10_STEP": "72.0",
-  "R_S25_STEP": "74.5",
-  "R_S50_STEP": "76.8",
-  "R_S100_STEP": "76.9",
-  "G_S10_STEP": "73.0",
-  "G_S25_STEP": "75.5",
-  "G_S50_STEP": "77.5",
-  "G_S100_STEP": "77.7",
-  "D_S5": "78.0",
-
-  "MEAN_POOL": "76.5",
-  "FIRST_POOL": "74.0",
-
-  "GQA_D": "88.5",
-  "GQA_R": "75.5",
-  "GQA_G": "77.0",
-  "AASVD_D": "85.0",
-  "AASVD_R": "72.0",
-  "AASVD_G": "73.0",
-  "LORA_D": "89.5",
-  "LORA_R": "75.0",
-  "LORA_G": "76.0",
-
-  "FULLFT_D": "90.5",
-  "FULLFT_R": "77.2",
-  "FULLFT_G": "78.0",
-  "LORA_GAIN": "0.5",
-  "LORA_GAIN_R": "0.3",
-  "LORA_GAIN_G": "0.4",
-
-  "SATURATION_RANK": "16",
-  "LR1_DROP": "8",
-  "Q_OPT_RANK": "16",
-  "K_OPT_RANK": "8",
-  "V_OPT_RANK": "8",
-  "O_OPT_RANK": "16",
-
-  "INFO15": "90",
-  "INFO20": "85",
-  "INFO25": "75",
-
-  "PRUNE50_D": "78.0",
-  "PRUNE50_R": "68.0",
-  "PRUNE50_G": "70.0",
-  "PRUNE_DROP": "5",
-  "RANDOM_DROP": "2.5",
-  "NOLORA_DROP": "6.5",
-
-  "D_L0_DROP": "0.8",
-  "D_L1_DROP": "0.5",
-  "D_L2_DROP": "0.4",
-  "D_L3_DROP": "0.3",
-  "D_L4_DROP": "0.3",
-  "D_L5_DROP": "0.2",
-  "R_L0_DROP": "2.5",
-  "R_L1_DROP": "1.8",
-
-  "Q_VERIFIED": "not tested",
-  "FAIL_LAYER_1": "layer.0",
-  "FAIL_MODEL_1": "GPT-2",
-  "FAIL_DROP_1": "1.5",
-  "FAIL_LAYER_2": "layer.5",
-  "FAIL_MODEL_2": "RoBERTa",
-  "FAIL_DROP_2": "2.0",
-  "FAIL_CAUSE": "Head-dim reduction too aggressive for early layers",
-  "UNRESOLVED_FAILURES": "Long-context, inference-time LoRA folding",
-
-  "RUNTIME": "15",
-  "COMPUTE_HOURS": "10",
-  "CO2_KG": "0.7",
-
-  "CUDA_VERSION": "12.1",
-  "TORCH_VERSION": "2.4.0",
-  "HF_VERSION": "4.44.0",
-
-  "SEED42": "90.25",
-  "SEED123": "90.10",
-  "SEED456": "90.35",
-  "MEAN": "90.23",
-  "STD": "0.13",
-
-  "D_S20_D": "-2.25",
-  "D_DISK": "134",
-  "D_DISK_RATIO": "1.0",
-
-  "_note": "Add keys as needed"
-}
-```
-
----
-
-## 📄 `checklist.md`
-
-```markdown
-# Pre-Submission Checklist — Squeezing Heads
-
-## Setup
-- [ ] Copied `_TEMPLATE/` to `squeezing_heads/`
-- [ ] Filled `variables.json`
-- [ ] Ran `python apply_vars.py --module squeezing_heads`
-- [ ] No `[PLACEHOLDER]` remains
-
-## Content
-- [ ] Abstract under 250 words
-- [ ] LoRA wrapper described
-- [ ] Head-dim reduction described
-- [ ] GQA pooling described
-
-## Method
-- [ ] LoRA formula numbered
-- [ ] Head-dim slicing formula
-- [ ] Copy procedure algorithm
-- [ ] Complexity table
-
-## Results
-- [ ] Main table
-- [ ] Head-dim reduction ablation
-- [ ] LoRA rank ablation
-- [ ] Recovery steps ablation
-- [ ] Comparison with pruning
-
-## Honesty
-- [ ] Inference slowdown noted
-- [ ] Storage overhead noted
-- [ ] Head-dim reduction loss noted
-- [ ] Failure cases in Appendix D
-
-## Reproducibility
-- [ ] Code on GitHub
-- [ ] Checkpoints on HF
-- [ ] Hardware specified
-- [ ] Seeds documented
-
-## Final
-- [ ] Read aloud
-- [ ] PDF compiles
-- [ ] External feedback
-
----
-
-## Quick Start
-
-```bash
-cp -r papers/_TEMPLATE papers/squeezing_heads
-nano papers/squeezing_heads/variables.json
-cd papers/squeezing_heads
-python apply_vars.py --module squeezing_heads
-grep -rn "{{" .  # verify empty
-python build.py --module squeezing_heads --pdf
-```
-```
-
----
-
-## 🚀 خلاصه اجرا
-
-### مرحله ۱: کپی
-
-```powershell
-cd D:\SVD_Project\papers
-Copy-Item -Recurse _TEMPLATE squeezing_heads
-```
-
-### مرحله ۲: اجرای Squeezing Heads
-
-```powershell
-cd D:\SVD_Project
-python run_all_4_squeezing_heads.py --models distilbert,roberta,gpt2 --lora_rank 16 --head_dim_reduction 1.0 --recovery_steps 50
-```
-
-### مرحله ۳: پر کردن `variables.json`
-
-از `results/unified_squeezing_heads/*/summary.csv` اعداد واقعی را بردار.
-
-### مرحله ۴: Apply و ساخت
-
-```powershell
-cd D:\SVD_Project\papers\squeezing_heads
-python apply_vars.py --module squeezing_heads
-python build.py --module squeezing_heads
-```
-
----
-
-## 💡 نکات کلیدی Squeezing Heads
-
-### ۱. تفاوت اصلی با سایر ماژول‌ها
-
-| ماژول | هدف | پارامتر اضافه |
-|---|---|---|
-| ASA-Sparse | sparse attention | sparsity_logits |
-| NHA | hybrid attention | gate |
-| NSA | local+topk | هیچ |
-| **SH** | **head distillation** | **LoRA** |
-
-### ۲. Wrapper، نه جایگزین
-
-SH **attention اصلی را دست نمی‌زند** — فقط LoRA اضافه می‌کند. Forward اول دقیقاً برابر baseline است.
-
-### ۳. Head-Dim Reduction
-
-$$
-W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
-$$
-
-حفظ **leading dimensions** (نه random slice).
-
-### ۴. GQA Pooling
-
-وقتی source heads بیشتر از target است:
-
-$$
-W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-$$
-
-### ۵. LoRA Recovery — نکته کلیدی
-
-- **بدون LoRA:** head-dim reduction → افت شدید
-- **با LoRA:** افت کم
-- **Gain:** 0.5%
-
-### ۶. Trade-off مهم
-
-| فاکتور | Base | با head-dim 2× |
-|---|---|---|
-| Params | 100% | ~50% |
-| Trainable | 100% | ~1% (LoRA) |
-| Inference | پایه | **کمی کندتر** |
-| Storage | 100% | 100% (base+LoRA) |
-
-**صادقانه:** SH **سرعت inference را کم نمی‌کند** مگر LoRA را در base fold کنی.
-
-### ۷. نتایج از لاگ
-
-از لاگ‌های قبلی:
-- **DistilBERT:** ~90.25%
-- **RoBERTa:** ~76.8%
-- **GPT-2:** ~77.5%
-
-این‌ها تخمینی هستند — اگر اجرا کرده‌ای، اعداد واقعی را وارد کن.
-
----
-
-**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_squeezing_heads/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

@@ -72,7 +72,7 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | Disk (FP16) | 134 MB | 27 MB | **5.0×** |
 | Params | 66.95M | 13500000M | **5.0×** |
-| Inference VRAM | 183 MB | 774 MB MB | **2.1\times×** |
+| Inference VRAM | 183 MB | 774 MB | **2.1\times×** |
 | Inference time | 1.9 s | 2.4 s | **2.1\times×** |
 | Accuracy | 90.71% | 77.98% | **-12.73%** |
 
@@ -86,7 +86,7 @@ latency, **small loss** for accuracy.
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
 | **A3 (r=64)** | Low-rank | **5.0×** | **77.98%** |
-| **A3 (r=128)** | Low-rank | **2.5×** | **86.4\%%** |
+| **A3 (r=128)** | Low-rank | **2.5×** | **86.4\%** |
 
 A3 at rank 64 achieves similar accuracy to ALBERT with similar compression 
 but **no retraining from scratch**.

@@ -3,6 +3,7 @@
 ## 7.1 Unified Benchmark Results
 From `results/unified_aegis_hybrid/*/summary.csv`:
 
+<!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 2 -->
 | Model | Status | Accuracy (%) | Params Before | Params After | Compression Rate | Peak VRAM (MB) | Tokens/sec |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | PASS | 84.98% <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> | 59,652,626 <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> | 1.1224x <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> | 319.22 <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> | 3,803.0 <!-- source: results/unified_aegis_hybrid/distilbert/summary.csv line 3 --> |

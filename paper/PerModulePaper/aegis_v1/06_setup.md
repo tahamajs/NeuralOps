@@ -1,2 +1,38 @@
 # 6. Experimental Setup
 Evaluated on SST-2 across DistilBERT, RoBERTa-base, and GPT-2 with 50 LoRA recovery fine-tuning steps (`recovery_steps=50`).
+
+
+
+## Configuration & Hyperparameters
+
+The `AegisAttentionV1` module (registered under `aegis_v1`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AegisAttentionV1` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `AegisAttentionV1`. |
+| `AegisAttentionV1` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `AegisAttentionV1` | `aegis_cfg` | `Any` | `None` | Controls `aegis_cfg` configuration in `AegisAttentionV1`. |
+| `AegisAttentionV1` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttentionV1`. |
+| `AegisAttentionV1` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttentionV1`. |
+| `AegisConfigV1` | `svd_energy` | `float` | `0.95` | Controls `svd_energy` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `num_local_heads` | `int` | `8` | Controls `num_local_heads` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `num_global_heads` | `int` | `4` | Controls `num_global_heads` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `local_window` | `int` | `64` | Controls `local_window` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `temperature` | `float` | `1.0` | Controls `temperature` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `use_zero_sum_keys` | `bool` | `True` | Controls `use_zero_sum_keys` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `use_adaptive_gate` | `bool` | `True` | Controls `use_adaptive_gate` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `gate_init_bias` | `float` | `1.8` | Controls `gate_init_bias` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `AegisConfigV1`. |
+| `AegisConfigV1` | `is_decoder` | `bool` | `False` | Controls `is_decoder` configuration in `AegisConfigV1`. |
+| `FactorisedLinear` | `in_features_or_weight` | `Any` | **Required** | Controls `in_features_or_weight` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `out_features_or_bias` | `Any` | `None` | Controls `out_features_or_bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |

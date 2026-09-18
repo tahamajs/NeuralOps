@@ -41,15 +41,15 @@ python run_all_4_aegis_v5.py
 ### Table 7.5 (Rank Ablation)
 ```bash
 for r in 32 64 128 256 384; do
-    python run_all_4_aegis_v5.py --max_rank $r --output_suffix r$r
+    python run_all_4_aegis_v5.py - max_rank $r - output_suffix r$r
 done
 ```
 
 ### Table 7.6 (Head Split)
 ```bash
-python run_all_4_aegis_v5.py --num_local_heads 12 --num_global_heads 0 --output_suffix alllocal
-python run_all_4_aegis_v5.py --num_local_heads 8 --num_global_heads 4 --output_suffix default
-python run_all_4_aegis_v5.py --num_local_heads 0 --num_global_heads 12 --output_suffix allglobal
+python run_all_4_aegis_v5.py - num_local_heads 12 - num_global_heads 0 - output_suffix alllocal
+python run_all_4_aegis_v5.py - num_local_heads 8 - num_global_heads 4 - output_suffix default
+python run_all_4_aegis_v5.py - num_local_heads 0 - num_global_heads 12 - output_suffix allglobal
 ```
 
 ## 12.5 Seeds

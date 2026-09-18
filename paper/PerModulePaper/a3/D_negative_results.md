@@ -20,7 +20,7 @@
 
 **Goal.** Use random inputs instead of real text.
 
-**Result.** Fisher weighting accuracy degraded to **86.4\%%**.
+**Result.** Fisher weighting accuracy degraded to **86.4\%**.
 
 **Conclusion.** Real calibration data is required.
 
@@ -49,7 +49,7 @@
 
 **Goal.** Force compression even if error exceeds threshold.
 
-**Result.** Accuracy collapsed to **86.4\%%**.
+**Result.** Accuracy collapsed to **86.4\%**.
 
 **Conclusion.** Fallback is essential.
 

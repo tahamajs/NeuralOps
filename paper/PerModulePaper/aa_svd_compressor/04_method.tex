@@ -1,29 +1,219 @@
-\section{Methodology}
+\section{04 Method}
 
-\subsection{Streaming Activation Covariance}
-During calibration, activation forward hooks compute the empirical second-moment matrix for every target linear layer using exponential smoothing:
-\[
-C_X^{(t)} = \beta C_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum_{i=1}^B X_i^\top X_i
-\]
-where $\beta \in [0, 1)$ governs the memory horizon.
+ 4. Method Formulation
 
-\subsection{Symmetric Whitening Eigendecomposition}
-To ensure strict positive semi-definiteness, the covariance matrix is symmetrized and decomposed in FP32 precision:
+ 4.1 Streaming Covariance Accumulation
+During calibration over batches $t = 1, \dots, T$, `aa\_svd\_compressor` hooks target linear layers and maintains a running Exponential Moving Average (EMA) of activation covariance:
+$$C\_X^{(t)} = \beta C\_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum\_{i=1}^B X\_i^\top X\_i
+
+
+
+
+
+$$where default decay factor $\beta = 0.9$ (configurable via `ema\_beta`).
+
+ 4.2 Symmetric Whitening and Factorization
+To condition the weight matrix without numerical instability, the symmetric covariance $C\_X$ is regularized and decomposed via eigendecomposition in FP32 precision:
+$$C\_{\text{sym}} = \frac{1}{2}(C\_X + C\_X^\top) = Q \Lambda Q^\top
+
+
+
+
+
+$$$$\Lambda\_{\text{reg}} = \operatorname{clamp}(\Lambda, \epsilon, \infty), \quad \epsilon = 10^{-6} \cdot \max(\Lambda) + 10^{-8}
+
+
+
+
+
+$$$$C\_X^{1/2} = Q \Lambda\_{\text{reg}}^{1/2} Q^\top, \quad C\_X^{-1/2} = Q \Lambda\_{\text{reg}}^{-1/2} Q^\top
+
+
+
+
+
+$$
+The preconditioned weight is formed as:
+$$\tilde{W} = W C\_X^{1/2}
+
+
+
+
+
+$$Performing standard SVD on $\tilde{W}$:
+$$\tilde{W} = \tilde{U} \tilde{\Sigma} \tilde{V}^\top
+
+
+
+
+
+$$The low-rank factors are constructed with symmetric singular value distribution:
+$$U\_r = \tilde{U}\_{:, :r} \tilde{\Sigma}\_r^{1/2}, \quad V\_r = (\tilde{\Sigma}\_r^{1/2} \tilde{V}\_{:r, :}^\top) C\_X^{-1/2}
+
+
+
+
+
+$$
+ 4.3 Fallback and Relative Error Guard
+Before layer replacement, relative Frobenius reconstruction error is evaluated:
+$$\text{err} = \frac{\|W - U\_r V\_r\|\_F}{\max(\|W\|\_F, 10^{-12})}
+
+
+
+
+
+$$If $\text{err} > \text{max\\_error}$ (default 0.50) or if the parameter constraint $r(d\_{\text{in}} + d\_{\text{out}}) \ge d\_{\text{in}} d\_{\text{out}}$ is violated, the layer is safely retained in its original uncompressed form.
+
+
+ 2. Mathematical Formulations \& Matrix Decompositions
+
+
+ 2.1 Empirical Activation Subspace Extraction
+Given a calibration text dataset passed through model $M$, forward hooks intercept the input activation tensor $X^{(l)} \in \mathbb{R}^{B \times N \times d\_{\text{in}}}$ for each linear layer $l$. Flattening across batch $B$ and sequence length $N$ yields the calibration matrix $\bar{X}^{(l)} \in \mathbb{R}^{K \times d\_{\text{in}}}$ where $K = B \cdot N$.
+
+Applying SVD to the activation matrix $\bar{X}^{(l)}$:
+
 \[
-C_{\text{sym}} = \frac{1}{2}(C_X + C_X^\top) = Q \Lambda Q^\top
-\]
-Eigenvalues are clamped to a minimum floor $\epsilon = 10^{-6} \max(\Lambda) + 10^{-8}$. The whitening and de-whitening matrices are:
-\[
-C_X^{1/2} = Q \Lambda^{1/2} Q^\top, \quad C_X^{-1/2} = Q \Lambda^{-1/2} Q^\top
-\]
-Preconditioning $W$ yields $\tilde{W} = W C_X^{1/2}$. Computing $\tilde{W} \approx \tilde{U}_r \tilde{\Sigma}_r \tilde{V}_r^\top$, the final factors are:
-\[
-U_r = \tilde{U}_r \tilde{\Sigma}_r^{1/2}, \quad V_r = \tilde{\Sigma}_r^{1/2} \tilde{V}_r^\top C_X^{-1/2}
+\bar{X}^{(l)} = U\_X \Sigma\_X V\_X^T
 \]
 
-\subsection{Reconstruction Error Guardrail}
-The relative Frobenius error is validated prior to module substitution:
+where $V\_X^T \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ represents the right-singular vectors (principal components) of the input activation distribution.
+
+ 2.2 Activation Anchor Space Construction
+To isolate the top $r$ dominant input activation directions, the engine extracts the top $r$ rows of $V\_X^T$, forming the projection basis matrix $A\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times r}$:
+
 \[
-\delta = \frac{\| W - U_r V_r \|_F}{\| W \|_F}
+A\_{\text{anchor}} = (V\_{X}[:r, :])^T = V\_{X}[:, :r]
 \]
-If $\delta > \delta_{\max}$ or if parameter count does not strictly decrease, the uncompressed layer is preserved.
+
+The corresponding orthogonal projection operator $P\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ onto the rank-$r$ activation subspace is defined as:
+
+\[
+P\_{\text{anchor}} = A\_{\text{anchor}} A\_{\text{anchor}}^T
+\]
+
+ 2.3 Weight Anchoring \& Low-Rank SVD
+The dense weight matrix $W \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}$ is projected onto the activation subspace to produce the anchored weight matrix $W\_{\text{anchored}}$:
+
+\[
+W\_{\text{anchored}} = W P\_{\text{anchor}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T \quad \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}
+\]
+
+Next, SVD is performed on the anchored weight matrix:
+
+\[
+W\_{\text{anchored}} = U\_{\text{anc}} \Sigma\_{\text{anc}} V\_{\text{anc}}^T
+\]
+
+Truncating to rank $r = \min(\text{rank}, d\_{\text{out}}, d\_{\text{in}})$, the final low-rank approximation $\hat{W}\_{\text{AASVD}}$ is synthesized as:
+
+\[
+\hat{W}\_{\text{AASVD}} = U\_{\text{anc}}[:, :r] \operatorname{diag}(\Sigma\_{\text{anc}}[:r]) (V\_{\text{anc}}[:r, :])^T
+\]
+
+Because $W\_{\text{anchored}}$ is constrained to the range of $P\_{\text{anchor}}$, its dominant singular components align naturally with the principal variance directions of the input activations.
+
+---
+
+
+ 2. Mathematical Formulations \& Matrix Decompositions
+
+
+ 2.1 Empirical Activation Subspace Extraction
+Given a calibration text dataset passed through model $M$, forward hooks intercept the input activation tensor $X^{(l)} \in \mathbb{R}^{B \times N \times d\_{\text{in}}}$ for each linear layer $l$. Flattening across batch $B$ and sequence length $N$ yields the calibration matrix $\bar{X}^{(l)} \in \mathbb{R}^{K \times d\_{\text{in}}}$ where $K = B \cdot N$.
+
+Applying SVD to the activation matrix $\bar{X}^{(l)}$:
+
+\[
+\bar{X}^{(l)} = U\_X \Sigma\_X V\_X^T
+\]
+
+where $V\_X^T \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ represents the right-singular vectors (principal components) of the input activation distribution.
+
+ 2.2 Activation Anchor Space Construction
+To isolate the top $r$ dominant input activation directions, the engine extracts the top $r$ rows of $V\_X^T$, forming the projection basis matrix $A\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times r}$:
+
+\[
+A\_{\text{anchor}} = (V\_{X}[:r, :])^T = V\_{X}[:, :r]
+\]
+
+The corresponding orthogonal projection operator $P\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ onto the rank-$r$ activation subspace is defined as:
+
+\[
+P\_{\text{anchor}} = A\_{\text{anchor}} A\_{\text{anchor}}^T
+\]
+
+ 2.3 Weight Anchoring \& Low-Rank SVD
+The dense weight matrix $W \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}$ is projected onto the activation subspace to produce the anchored weight matrix $W\_{\text{anchored}}$:
+
+\[
+W\_{\text{anchored}} = W P\_{\text{anchor}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T \quad \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}
+\]
+
+Next, SVD is performed on the anchored weight matrix:
+
+\[
+W\_{\text{anchored}} = U\_{\text{anc}} \Sigma\_{\text{anc}} V\_{\text{anc}}^T
+\]
+
+Truncating to rank $r = \min(\text{rank}, d\_{\text{out}}, d\_{\text{in}})$, the final low-rank approximation $\hat{W}\_{\text{AASVD}}$ is synthesized as:
+
+\[
+\hat{W}\_{\text{AASVD}} = U\_{\text{anc}}[:, :r] \operatorname{diag}(\Sigma\_{\text{anc}}[:r]) (V\_{\text{anc}}[:r, :])^T
+\]
+
+Because $W\_{\text{anchored}}$ is constrained to the range of $P\_{\text{anchor}}$, its dominant singular components align naturally with the principal variance directions of the input activations.
+
+---
+
+
+ 2. Mathematical Formulations \& Matrix Decompositions
+
+
+ 2.1 Empirical Activation Subspace Extraction
+Given a calibration text dataset passed through model $M$, forward hooks intercept the input activation tensor $X^{(l)} \in \mathbb{R}^{B \times N \times d\_{\text{in}}}$ for each linear layer $l$. Flattening across batch $B$ and sequence length $N$ yields the calibration matrix $\bar{X}^{(l)} \in \mathbb{R}^{K \times d\_{\text{in}}}$ where $K = B \cdot N$.
+
+Applying SVD to the activation matrix $\bar{X}^{(l)}$:
+
+\[
+\bar{X}^{(l)} = U\_X \Sigma\_X V\_X^T
+\]
+
+where $V\_X^T \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ represents the right-singular vectors (principal components) of the input activation distribution.
+
+ 2.2 Activation Anchor Space Construction
+To isolate the top $r$ dominant input activation directions, the engine extracts the top $r$ rows of $V\_X^T$, forming the projection basis matrix $A\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times r}$:
+
+\[
+A\_{\text{anchor}} = (V\_{X}[:r, :])^T = V\_{X}[:, :r]
+\]
+
+The corresponding orthogonal projection operator $P\_{\text{anchor}} \in \mathbb{R}^{d\_{\text{in}} \times d\_{\text{in}}}$ onto the rank-$r$ activation subspace is defined as:
+
+\[
+P\_{\text{anchor}} = A\_{\text{anchor}} A\_{\text{anchor}}^T
+\]
+
+ 2.3 Weight Anchoring \& Low-Rank SVD
+The dense weight matrix $W \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}$ is projected onto the activation subspace to produce the anchored weight matrix $W\_{\text{anchored}}$:
+
+\[
+W\_{\text{anchored}} = W P\_{\text{anchor}} = W A\_{\text{anchor}} A\_{\text{anchor}}^T \quad \in \mathbb{R}^{d\_{\text{out}} \times d\_{\text{in}}}
+\]
+
+Next, SVD is performed on the anchored weight matrix:
+
+\[
+W\_{\text{anchored}} = U\_{\text{anc}} \Sigma\_{\text{anc}} V\_{\text{anc}}^T
+\]
+
+Truncating to rank $r = \min(\text{rank}, d\_{\text{out}}, d\_{\text{in}})$, the final low-rank approximation $\hat{W}\_{\text{AASVD}}$ is synthesized as:
+
+\[
+\hat{W}\_{\text{AASVD}} = U\_{\text{anc}}[:, :r] \operatorname{diag}(\Sigma\_{\text{anc}}[:r]) (V\_{\text{anc}}[:r, :])^T
+\]
+
+Because $W\_{\text{anchored}}$ is constrained to the range of $P\_{\text{anchor}}$, its dominant singular components align naturally with the principal variance directions of the input activations.
+
+---

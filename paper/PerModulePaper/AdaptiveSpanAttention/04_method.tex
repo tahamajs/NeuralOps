@@ -176,10 +176,10 @@ $\lambda$.
 \toprule
 \textbf{$\lambda$} & \textbf{Effect} \\
 \midrule
-0.0 & No compression; spans stay open \\
-0.001 & Mild compression \\
-0.01 & Balanced (recommended) \\
-0.1 & Aggressive; likely accuracy drop \\
+0.0 \& No compression; spans stay open \\
+0.001 \& Mild compression \\
+0.01 \& Balanced (recommended) \\
+0.1 \& Aggressive; likely accuracy drop \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -253,10 +253,10 @@ mask after training and use sparse kernels.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA-Span} \\
 \midrule
-$W_Q$ & $d H d_h$ & Same \\
-$W_K$ & $d H_{kv} d_h$ & Same \\
-$W_V$ & $d H_{kv} d_h$ & Same \\
-$W_O$ & $H d_h d$ & Same \\
+$W_Q$ & $d H d_h$ \& Same \\
+$W_K$ & $d H_{kv} d_h$ \& Same \\
+$W_V$ & $d H_{kv} d_h$ \& Same \\
+$W_O$ & $H d_h d$ \& Same \\
 \textbf{Span logits} & 0 & \textbf{$H$} \\
 \textbf{LoRA} & 0 & $2 r_L (\cdots)$ \\
 \bottomrule

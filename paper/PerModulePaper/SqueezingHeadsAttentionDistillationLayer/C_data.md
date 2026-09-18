@@ -92,16 +92,16 @@
 
 ```bash
 # Main
-python run_all_4_squeezing_heads.py --lora_rank 16
+python run_all_4_squeezing_heads.py - lora_rank 16
 
 # Rank sweep
 for r in 4 8 16 32; do
-    python run_all_4_squeezing_heads.py --lora_rank $r
+    python run_all_4_squeezing_heads.py - lora_rank $r
 done
 
 # Head-dim reduction sweep
 for s in 1.0 1.5 2.0 2.5; do
-    python run_all_4_squeezing_heads.py --head_dim_reduction $s
+    python run_all_4_squeezing_heads.py - head_dim_reduction $s
 done
 ```
 

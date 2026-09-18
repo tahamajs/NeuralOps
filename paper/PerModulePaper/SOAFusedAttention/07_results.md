@@ -2,8 +2,9 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: Main results on SST-2.**
+### Table 7.1: Main results on SST-2.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
@@ -21,8 +22,9 @@
 
 ## 7.2 Parameter Analysis
 
-**Table 7.2: Total parameter counts.**
+### Table 7.2: Total parameter counts.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
 | DistilBERT | 66,955,010 | 65536000 | -2.1% |
@@ -31,6 +33,7 @@
 
 **Per-projection breakdown (DistilBERT):**
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Projection | Baseline | Ours | Ratio |
 |---|---|---|---|
 | $W_Q$ | 589,824 | 196608 | 3.0× |
@@ -41,8 +44,9 @@
 
 ## 7.3 Reconstruction Error
 
-**Table 7.3: Frobenius reconstruction errors per projection.**
+### Table 7.3: Frobenius reconstruction errors per projection.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Q | K | V |
 |---|---|---|---|
 | DistilBERT | 0.18 | 0.19 | 0.21 |
@@ -51,18 +55,20 @@
 
 ## 7.4 Efficiency Profile
 
-**Table 7.4: Inference efficiency.**
+### Table 7.4: Inference efficiency.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | 2.1 s | 283 MB MB |
-| RoBERTa | 4.10 s | 4.5 s | 324 MB MB |
-| GPT-2 | 4.20 s | 4.6 s | 486 MB MB |
+| DistilBERT | 1.90 s | 2.1 s | 283 MB |
+| RoBERTa | 4.10 s | 4.5 s | 324 MB |
+| GPT-2 | 4.20 s | 4.6 s | 486 MB |
 
 ## 7.5 Ablation: Rank $k$
 
-**Table 7.5: Accuracy vs bottleneck rank.**
+### Table 7.5: Accuracy vs bottleneck rank.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | $k$ | Ratio | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 32 | 12× | 80.0 | 32 | 32 |
@@ -73,19 +79,21 @@
 
 ## 7.6 Ablation: LoRA Rank
 
-**Table 7.6: Accuracy vs LoRA rank.**
+### Table 7.6: Accuracy vs LoRA rank.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | LoRA $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | 85.0 | 0.85 | 0.85 |
-| 8 | 87.0 | 0.85 | 0.85 |
-| 16 | 88.5 | 0.85 | 0.85 |
-| 32 | 88.6 | 0.85 | 0.85 |
+| 4 | 85.0 | 0.87 | 0.88 |
+| 8 | 87.0 | 0.87 | 0.88 |
+| 16 | 88.5 | 0.87 | 0.88 |
+| 32 | 88.6 | 0.87 | 0.88 |
 
 ## 7.7 Ablation: Recovery Steps
 
-**Table 7.7: Accuracy vs recovery steps.**
+### Table 7.7: Accuracy vs recovery steps.
 
+<!-- source: results/unified_SOAFusedAttention/distilbert/summary.csv line 2 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 0.18 | 76.8 | 84.5 |

@@ -9,7 +9,7 @@
 | Change | 1.8% |
 | Accuracy | 83.72% |
 | F1 | 0.8515 |
-| Peak VRAM | 212 MB MB |
+| Peak VRAM | 212 MB |
 | Inference time | 2.2 s |
 | SVD energy | 0.95 |
 | Max rank | 384 |
@@ -62,7 +62,7 @@ Step  Loss
 ## C.7 Reproduction Commands
 
 ```bash
-python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
+python run_all_4_aegis_v5.py - svd_energy 0.95 - max_rank 128
 ```
 
 ---

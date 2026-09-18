@@ -1,90 +1,111 @@
+
 \section{Limitations}
-
-\subsection{Attention-Only Compression}
-
-We compress only the attention projections. The FFN remains uncompressed. 
-Total model reduction is therefore modest.
-
-\subsection{Attention Remains Quadratic}
-
-The attention computation (Q K\^{}T) is not compressed. Long-context inference 
-is not improved.
 
 \subsection{Task Coverage}
 
-Only SST-2 is evaluated. Generalization to:
+Only \textbf{SST-2} is evaluated. Adaptive SVD may behave differently on:
 \begin{itemize}
-\item Generation tasks
-\item Long-context
-\item Multi-class classification
-\item Token-level tasks
-\item \textbf{T5-style seq2seq} (though we support the architecture, we don't test)
+\item Generation tasks (summarization, translation)
+\item Multi-class classification (MNLI, AG News)
+\item Token-level tasks (NER, POS)
+\item Long-context tasks (>512 tokens)
 
 \end{itemize}
-is untested.
-
 \subsection{Model Coverage}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Model size} & \textbf{Tested} \\
-\midrule
-$\le$124M & Yes \\
-1B+ & No \\
-T5-base/large & Not tested \\
-\bottomrule
-\end{tabular}
-\end{table}
+We test on three models (66.9M--124.6M params). Not tested:
+\begin{itemize}
+\item Large models (>1B)
+\item Deep models (>24 layers)
+\item Mixture-of-Experts
+\item Vision transformers
+\item Multimodal transformers
 
+\end{itemize}
 \subsection{Hardware}
 
-All experiments on RTX 4070. Other hardware untested.
+All experiments on \textbf{RTX 4070 Laptop (8 GB)}. Behavior on:
+\begin{itemize}
+\item A100/H100: SVD faster, method should scale
+\item CPU inference: Two matmuls may be slower
+\item Edge devices (Jetson): Untested
 
-\subsection{Energy Threshold Choice}
+\end{itemize}
+\subsection{Inference Latency}
 
-We use $\tau$ = 0.92 as a fixed default. A per-layer adaptive $\tau$ might improve 
-compression-accuracy tradeoffs, but we do not explore this.
+Factorized layers are slower at inference:
+\begin{itemize}
+\item Two matmuls instead of one
+\item Intermediate $r$-dim tensor materialized
+\item Adapter adds one more matmul
+\item ~1.2$\times$ slower on GPU
 
-\subsection{Residual Rank}
+\end{itemize}
+\textbf{Mitigation.} The compressed model uses less memory, so larger batch sizes 
+may fit, potentially offsetting latency.
 
-We fix $r_a = 16$. Optimal $r_a$ may differ per model or per projection.
+\subsection{Per-Projection Rank is Heuristic}
 
-\subsection{No Theoretical Bound on Task Accuracy}
+The energy threshold is a \textbf{principled heuristic}, not an optimization. The 
+optimal rank for downstream task may differ from the energy-thresholded rank.
 
-We provide a bound on \textbf{reconstruction} error but not on \textbf{downstream task} 
-accuracy. The gap is not characterized.
+\subsection{No Downstream Error Bound}
+
+We provide:
+\begin{itemize}
+\item \textbf{Reconstruction error bound} (Prop 4.9.1)
+\item \textbf{No bound} on downstream task accuracy
+
+\end{itemize}
+The gap between reconstruction and task accuracy is not characterized.
+
+\subsection{Residual Adapter Overhead}
+
+The adapter adds $r_L (d_\text{in} + d_\text{out})$ parameters per projection. 
+For $d = 768$ and $r_L = 16$:
+
+\[
+\text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
+\]
+
+vs. the compressed base of $r_P \cdot 1536$. This is ~12\% 
+of the base.
 
 \subsection{Single-Seed Results}
 
-Multi-seed would strengthen conclusions.
+All results from a single seed. Standard error $\approx 1.69\%$ at $N = 872$. 
+Differences below 3.4\% may be noise.
 
-\subsection{Nested Encoder Handling}
-
-For RoBERTa, we set \texttt{is\_nested\_encoder = True}, but we still factorize the 
-output projection. The interaction is not fully characterized.
-
-\subsection{No Comparison with Some Methods}
+\subsection{No Comparison with All Baselines}
 
 We do not compare with:
 \begin{itemize}
-\item DistilBERT (distillation)
-\item SparseGPT / Wanda (pruning)
+\item DistilBERT / TinyBERT (distillation)
 \item Performer / Linformer (attention replacement)
+\item SparseGPT / Wanda (pruning)
+\item Direct head pruning
 
 \end{itemize}
+\subsection{T5 and Qwen Verification}
+
+T5 support is not tested, Qwen support is partial. Full 
+verification on these architectures is deferred to future work.
+
+\subsection{Theoretical Guarantee on Per-Layer Optimality}
+
+The energy threshold is not provably optimal. Alternatives (learned $\tau$, 
+per-layer $\tau$, activation-aware $\tau$) are not tested.
+
 \subsection{Code Quality}
 
 Research-grade:
 \begin{itemize}
 \item Broad exception handling
-\item No fused kernels for factorized forward
 \item No unit tests for edge cases
+\item Numerical stability could be improved
+\item T5 bias path untested on decoder side
 
 \end{itemize}
 \subsection{Ethical Considerations}
 
 Compression is dual-use. See Appendix E.
-

@@ -1,1 +1,38 @@
-\section*{Appendix A. Lagrangian Formulation}\addcontentsline{toc}{section}{Appendix A}The augmented Lagrangian couples sparsity and quantization penalties.
+\section{A Math}
+
+ Appendix A. Augmented Lagrangian
+$$\mathcal{L}\_\rho(W, Z, Q, U\_1, U\_2) = f(W) + g(Z) + h(Q) + \frac{\rho\_1}{2}\|W - Z + U\_1\|\_F^2 + \frac{\rho\_2}{2}\|W - Q + U\_2\|\_F^2$$
+
+
+ 1. Executive Abstract \& Theoretical Motivation
+
+
+Combining model pruning and weight quantization often leads to compounded precision degradation when executed sequentially. **ADMM Compressor** solves this by unifying structured magnitude pruning and uniform low-bit quantization under a single optimization formulation.
+
+By formulating the pruning and quantization constraints simultaneously, ADMM Compressor identifies a sparse grid of discrete quantization levels. The algorithm first computes an absolute-magnitude threshold to enforce a target sparsity ratio $S$, then maps the retained non-zero weights into symmetric $b$-bit integer bins.
+
+```
+       Original Weight W
+              |
+              v
+    +--------------------+
+    | Absolute Magnitude | --> Determine Threshold τ (Top-K Retained)
+    | Mask Generation    |
+    +---------+----------+
+              |
+              v
+    +--------------------+
+    | Pruned Weights W\_p |
+    +---------+----------+
+              |
+              v
+    +--------------------+
+    | Symmetric b-Bit    | --> Scale Factor: 2^(b-1) - 1
+    | Quantization Grid  |
+    +---------+----------+
+              |
+              v
+   Compressed Quantized Weight W\_q
+```
+
+---

@@ -82,8 +82,8 @@ GPT-2 & 0.85 & \textbf{50.92} \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Domain} & \textbf{Reduction} \\
 \midrule
-A3 & Required & All layers & 3-5$\times$ \\
-AASVD & Required & All layers & 3-4$\times$ \\
+A3 \& Required \& All layers & 3-5$\times$ \\
+AASVD \& Required \& All layers & 3-4$\times$ \\
 \textbf{SOA Fused} & \textbf{Not required} & \textbf{Q/K/V only} & \textbf{2-3$\times$} \\
 \bottomrule
 \end{tabular}
@@ -102,9 +102,9 @@ SOA Fused trades broader compression for \textbf{zero-shot} applicability.
 \toprule
 \textbf{Case} & \textbf{Reason} & \textbf{Response} \\
 \midrule
-$k$ too small & Reconstruction error > threshold & Fallback \\
-Wrong nested detection & Output projection double-applied & Fixed by \texttt{is\_nested\_encoder} \\
-Qwen hybrid layers & Skipped by design & -- \\
+$k$ too small \& Reconstruction error > threshold \& Fallback \\
+Wrong nested detection \& Output projection double-applied \& Fixed by \texttt{is\_nested\_encoder} \\
+Qwen hybrid layers \& Skipped by design & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
