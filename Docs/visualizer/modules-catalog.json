@@ -45,7 +45,7 @@
     {
       "id": "SVD-Mamba",
       "name": "SVD-Mamba: SVD-Factorized Selective State Space Model with Global",
-      "file": "Codes/framework/attentions/SVD-Mamba.py",
+      "file": "Codes/framework/attentions/svd_mamba.py",
       "type": "Attention Module",
       "category": "Low-Rank SVD & Factorization",
       "paradigm": "svd",
