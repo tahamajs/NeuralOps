@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 19, in <module>
+    import torch
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\__init__.py", line 274, in <module>
+    _load_dll_libraries()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\__init__.py", line 257, in _load_dll_libraries
+    raise err
+OSError: [WinError 1455] The paging file is too small for this operation to complete. Error loading "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\lib\cufft64_11.dll" or one of its dependencies.
