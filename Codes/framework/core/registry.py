@@ -124,13 +124,31 @@ class Registry:
             )
         return self._dict[k]
 
+    def _load_all(self) -> None:
+        """Attempt to load all modules in the associated package."""
+        if self.name == "compressors":
+            try:
+                import framework.compression_engine
+            except Exception as e:
+                logger.warning("Error loading compression_engine: %s", e)
+        elif self.name == "attentions":
+            try:
+                import framework.attentions
+            except Exception as e:
+                logger.warning("Error loading attentions: %s", e)
+
     def keys(self) -> List[str]:
         """Return a list of all registered keys (in original casing)."""
+        self._load_all()
         return list(self._dict.keys())
 
     def list_available(self) -> List[str]:
         """Return a list of all registered keys."""
-        return list(self._dict.keys())
+        return self.keys()
+
+    def list(self) -> List[str]:
+        """Return a list of all registered keys."""
+        return self.keys()
 
     def items(self):
         """Return registered key-value pairs."""
