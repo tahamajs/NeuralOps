@@ -250,6 +250,31 @@ $r = 256$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\ti
 \label{tab:app_rank_ablation}
 \end{table}
 
+\subsection{C.9.1 Comprehensive 48-Configuration Hyperparameter Sweep}
+\label{sec:app_sweep_data}
+
+To determine the global Pareto frontier across operational configurations, an exhaustive grid of 48 hyperparameter combinations was evaluated on DistilBERT/SST-2 across threshold $\tau \in \{0.30, 0.40, 0.50, 0.60\}$, initial rank $r \in \{64, 128, 192, 256\}$, layer scope (attention-only vs.\ full 24-layer), and auxiliary modules (Fisher weighting, LayerNorm recalibration). Table~\ref{tab:app_sweep_top} reports the salient Pareto configurations.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Config} & $\tau$ & \textbf{Rank} & \textbf{Scope} & \textbf{Layers} & \textbf{Ratio} & \textbf{Acc} & \textbf{Time (s)} \\
+\midrule
+Config 5  & 0.30 & 128 & Attn-only & 7/24  & 0.9888$\times$ & \textbf{90.71\%} & 10.0 \\
+Config 2  & 0.30 & 64  & Attn-only & 7/24  & 0.9897$\times$ & 90.60\% & 10.6 \\
+Config 14 & 0.40 & 64  & Attn-only & 24/24 & 0.9421$\times$ & 90.60\% & 10.9 \\
+Config 26 & 0.50 & 64  & Attn-only & 24/24 & \textbf{0.9104$\times$} & \textbf{90.02\%} & \textbf{1.68} \\
+Config 47 & 0.60 & 256 & Attn-only & 24/24 & 0.9295$\times$ & 90.37\% & 1.31 \\
+Config 44 & 0.60 & 192 & Attn-only & 24/24 & \textbf{0.8943$\times$} & 89.68\% & 1.30 \\
+\bottomrule
+\end{tabular}
+\caption{Representative Pareto-optimal configurations from the 48-run hyperparameter optimization sweep on DistilBERT/SST-2. Baseline accuracy: 90.71\%. Source: \texttt{results/a3\_optimization/config\_sweep.csv}.}
+\label{tab:app_sweep_top}
+\end{table}
+
+
 \subsection{C.10 Ablations on Weighting and Calibration Hyperparameters}
 \label{sec:app_hyperparam_ablations}
 
