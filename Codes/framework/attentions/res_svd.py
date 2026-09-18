@@ -75,6 +75,8 @@ def apply_rotary_pos_emb(
 
 
 @ATTENTION_REGISTRY.register("res_svd")
+@ATTENTION_REGISTRY.register("ressvd")
+@ATTENTION_REGISTRY.register("res_svd_attention")
 @ATTENTION_REGISTRY.register("spectral_residual_svd")
 class ResSVDAttention(BaseAttention):
     def __init__(
