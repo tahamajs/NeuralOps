@@ -126,36 +126,57 @@ export async function openModuleDocModal(moduleData) {
         }
     }
 
-    // Render Markdown to HTML
+    // Render Markdown and Math safely without syntax mangling
+    const mathBlocks = [];
+    const mathInlines = [];
+
+    // 1. Temporarily replace block math ($$...$$)
+    let processedMd = markdownContent.replace(/\$\$([\s\S]+?)\$\$/g, (match, expr) => {
+        const id = `___MATH_BLOCK_${mathBlocks.length}___`;
+        let rendered = match;
+        if (window.katex) {
+            try {
+                rendered = window.katex.renderToString(expr.trim(), { displayMode: true, throwOnError: false });
+            } catch (e) {
+                rendered = `<div class="katex-display">$$ ${expr} $$</div>`;
+            }
+        }
+        mathBlocks.push(rendered);
+        return id;
+    });
+
+    // 2. Temporarily replace inline math ($...$)
+    processedMd = processedMd.replace(/\$([^\$\n]+?)\$/g, (match, expr) => {
+        const id = `___MATH_INLINE_${mathInlines.length}___`;
+        let rendered = match;
+        if (window.katex) {
+            try {
+                rendered = window.katex.renderToString(expr.trim(), { displayMode: false, throwOnError: false });
+            } catch (e) {
+                rendered = `<code>$${expr}$</code>`;
+            }
+        }
+        mathInlines.push(rendered);
+        return id;
+    });
+
+    // 3. Render Markdown to HTML
     let htmlOutput = '';
     if (window.marked && typeof window.marked.parse === 'function') {
-        htmlOutput = window.marked.parse(markdownContent);
+        htmlOutput = window.marked.parse(processedMd);
     } else {
-        htmlOutput = `<pre style="white-space:pre-wrap;font-family:inherit;">${markdownContent}</pre>`;
+        htmlOutput = `<pre style="white-space:pre-wrap;font-family:inherit;">${processedMd}</pre>`;
     }
+
+    // 4. Restore rendered KaTeX expressions
+    mathBlocks.forEach((rendered, i) => {
+        htmlOutput = htmlOutput.replace(new RegExp(`___MATH_BLOCK_${i}___`, 'g'), rendered);
+    });
+    mathInlines.forEach((rendered, i) => {
+        htmlOutput = htmlOutput.replace(new RegExp(`___MATH_INLINE_${i}___`, 'g'), rendered);
+    });
 
     bodyEl.innerHTML = htmlOutput;
-
-    // Render KaTeX formulas embedded in markdown ($...$ and $$...$$)
-    if (window.katex) {
-        // Block math $$...$$
-        bodyEl.innerHTML = bodyEl.innerHTML.replace(/\$\$([\s\S]+?)\$\$/g, (match, expr) => {
-            try {
-                return window.katex.renderToString(expr.trim(), { displayMode: true, throwOnError: false });
-            } catch (err) {
-                return match;
-            }
-        });
-
-        // Inline math $...$
-        bodyEl.innerHTML = bodyEl.innerHTML.replace(/\$([^\$\n]+?)\$/g, (match, expr) => {
-            try {
-                return window.katex.renderToString(expr.trim(), { displayMode: false, throwOnError: false });
-            } catch (err) {
-                return match;
-            }
-        });
-    }
 }
 
 /**
