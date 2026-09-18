@@ -489,25 +489,21 @@ class FusedSVDKernelAttention(BaseAttention):
         dropout: float = 0.1,
         **kwargs: Any,
     ) -> None:
-        actual_rank = rank or _cfg_get(config, "rank", _cfg_get(config, "svd_rank", 32))
-        super().__init__(config, rank=actual_rank)
-
-        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
-
-        self.hidden_size: int = int(
+        h_dim = int(
             kwargs.get("hidden_size")
             or _cfg_get(config, "hidden_size", None)
             or _cfg_get(config, "dim", None)
             or _cfg_get(config, "d_model", None)
             or _cfg_get(config, "n_embd", None)
-            or getattr(src_attn, "embed_dim", None)
-            or getattr(src_attn, "hidden_size", None)
-            or (src_attn.q_lin.in_features if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
-            or (src_attn.q_proj.in_features if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
-            or (src_attn.query.in_features if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features") else None)
-            or (src_attn.c_attn.nx if hasattr(src_attn, "c_attn") and hasattr(src_attn.c_attn, "nx") else None)
+            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn", None), "embed_dim", None)
+            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn", None), "hidden_size", None)
             or 768
         )
+        self.hidden_size: int = h_dim
+        actual_rank = rank or _cfg_get(config, "rank", _cfg_get(config, "svd_rank", self.hidden_size))
+        super().__init__(config, rank=actual_rank)
+
+        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
         self.num_heads: int = int(
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
