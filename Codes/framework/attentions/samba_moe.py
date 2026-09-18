@@ -241,7 +241,8 @@ class SambaMoEBlock(BaseAttention):
 @ATTENTION_REGISTRY.register("samba_moe_inject")
 @ATTENTION_REGISTRY.register("inject_samba_moe")
 def inject_samba_moe(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -251,7 +252,9 @@ def inject_samba_moe(
 ) -> Optional[SambaMoEBlock]:
     """Safe injection hook for SambaMoEBlock."""
     try:
-        target = layer
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get("model", kwargs.get("layer", None))
         if target is None:
             return None
 
