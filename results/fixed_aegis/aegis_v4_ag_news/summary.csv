@@ -1,0 +1,2 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+aegis_v4,PASS,38.7,0.3408,0.3408,0.4512,0.3678,1.3313,39.51,417.69,38337.4,124442880,102422928,0,1.215,17.69,0.0,0,0,,,60,1179648,,adapted_gpt2,2026-09-18T22:18:04.709730
