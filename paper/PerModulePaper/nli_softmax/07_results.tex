@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{nli_softmax}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_nli\_softmax/roberta/summary.csv} & nli\_softmax & PASS & 60.32\% & 640.61 MB \\
+\texttt{results/unified\_nli\_softmax/distilbert/summary.csv} & nli\_softmax & PASS & 89.33\% & 315.91 MB \\
+\texttt{results/unified\_nli\_softmax/gpt2/summary.csv} & nli\_softmax & PASS\_LOW & 55.28\% & 557.88 MB \\
+all\_121\_gpu\_matrix & nli\_softmax & PASS & 1.0x (0.166s) & 127.0 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{minimal_svd_v2}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & minimal\_svd\_v2 & PASS & 64.56\% & 579.51 MB \\
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & minimal\_svd\_v2 & PASS & 88.19\% & 173.28 MB \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & minimal\_svd\_v2 & PASS & 59.86\% & 495.67 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 44.45 ms & 1058.5 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 44.7 ms & 1058.5 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 45.79 ms & 1068.4 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 45.38 ms & 1068.4 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 47.72 ms & 1037.1 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

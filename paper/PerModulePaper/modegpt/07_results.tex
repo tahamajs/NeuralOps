@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{modegpt}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_modegpt/roberta/summary.csv} & modegpt & PASS & 72.02\% & 301.72 MB \\
+\texttt{results/unified\_modegpt/distilbert/summary.csv} & modegpt & PASS & 90.48\% & 311.19 MB \\
+\texttt{results/unified\_modegpt/gpt2/summary.csv} & modegpt & PASS & 60.55\% & 639.66 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 21.71 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 21.63 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 22.72 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 23.54 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.07 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

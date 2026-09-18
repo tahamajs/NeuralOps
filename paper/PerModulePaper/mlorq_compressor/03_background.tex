@@ -1,3 +1,14 @@
-\section{03 Background}
+\section{Mathematical Background}
 
-Formal architectural specifications for \texttt{mlorq_compressor}.
+\subsection{Linear Projection Formulation}
+Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ represent the parameter tensor of a linear projection. For an input activation matrix $X \in \mathbb{R}^{N \times d_{\text{in}}}$, the standard projection computes:
+\[
+y = X W^\top + b
+\]
+
+\subsection{Constrained Optimization}
+Model compression optimizes reconstructed parameters under structural constraints $\Omega$:
+\[
+\min_{\hat{W} \in \Omega} \mathbb{E}_{X \sim \mathcal{D}} \| X W^\top - X \hat{W}^\top \|_F^2
+\]
+where $\Omega$ enforces the structural sparsity, quantization codebook, or low-rank subspace bounds required by hardware accelerators.
