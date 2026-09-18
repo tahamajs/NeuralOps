@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 298.71 MB \\
-\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 182.94 MB \\
-\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & mamba\_svd\_flash & FAIL & 0.0\% & 793.19 MB \\
-\texttt{results/master\_benchmark\_summary.csv} & mamba\_svd\_flash & c4 & "O(N) FLOPs\% & 72.992 MB \\
-benchmark\_summary\_v2 & bert-sst2 & TIMEOUT & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & bert-mrpc & TIMEOUT & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & TIMEOUT & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & TIMEOUT & 0.0 ms & 0.0 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_mambasvdflash} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & mamba\_svd\_flash & FAIL & 0.0 & 0.9099 \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & mamba\_svd\_flash & FAIL & 0.0 & 0.6354 \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & mamba\_svd\_flash & FAIL & 0.0 & 0.7586 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{mambasvdflash}.}
+\label{tab:results_acc_mambasvdflash}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_mambasvdflash} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & mamba\_svd\_flash & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & mamba\_svd\_flash & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & mamba\_svd\_flash & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{mambasvdflash}.}
+\label{tab:results_params_mambasvdflash}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_mambasvdflash} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & full & 58298.82 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_mamba\_svd\_flash/distilbert/summary.csv} & distilbert & mamba\_svd\_flash & 58298.82 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & full & 27154.27 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_mamba\_svd\_flash/gpt2/summary.csv} & gpt2 & mamba\_svd\_flash & 64043.03 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & full & 26868.5 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_mamba\_svd\_flash/roberta/summary.csv} & roberta & mamba\_svd\_flash & 92803.91 & 298.71 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{mambasvdflash}.}
+\label{tab:results_vram_mambasvdflash}
+\end{table*}

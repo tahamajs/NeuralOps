@@ -1,7 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_mlorq/roberta/summary.csv} & mlorq & PASS & 72.02\% & 301.72 MB \\
-\texttt{results/unified\_mlorq/distilbert/summary.csv} & mlorq & PASS & 90.48\% & 311.19 MB \\
-\texttt{results/unified\_mlorq/gpt2/summary.csv} & mlorq & PASS & 62.04\% & 635.54 MB \\
-all\_121\_gpu\_matrix & mlorq & PASS & 1.0x (12.625s) & 140.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_mlorqcompressor} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & mlorq & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & mlorq & PASS & 62.04 & 0.6783 \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & mlorq & PASS & 72.02 & 0.7724 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & mlorq & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{mlorqcompressor}.}
+\label{tab:results_acc_mlorqcompressor}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_mlorqcompressor} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & mlorq & 66955010 & 66955010 & 592130 & 1.0x \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & mlorq & 124441344 & 124441344 & 1536 & 1.0x \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & mlorq & 124647170 & 124647170 & 592130 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & mlorq & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{mlorqcompressor}.}
+\label{tab:results_params_mlorqcompressor}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_mlorqcompressor} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & full & 166772.58 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_mlorq/distilbert/summary.csv} & distilbert & mlorq & 155916.18 & 311.19 MB & 0.0 \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & full & 71722.69 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_mlorq/gpt2/summary.csv} & gpt2 & mlorq & 69940.53 & 635.54 MB & 0.0 \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & full & 112179.18 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_mlorq/roberta/summary.csv} & roberta & mlorq & 114414.86 & 301.72 MB & 0.0 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & mlorq & Elapsed 12.625s & 140.2 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{mlorqcompressor}.}
+\label{tab:results_vram_mlorqcompressor}
+\end{table*}

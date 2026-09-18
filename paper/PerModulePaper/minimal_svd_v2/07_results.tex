@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & minimal\_svd\_v2 & PASS & 64.56\% & 579.51 MB \\
-\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & minimal\_svd\_v2 & PASS & 88.19\% & 173.28 MB \\
-\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & minimal\_svd\_v2 & PASS & 59.86\% & 495.67 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 44.45 ms & 1058.5 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 44.7 ms & 1058.5 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 45.79 ms & 1068.4 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 45.38 ms & 1068.4 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 47.72 ms & 1037.1 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_minimalsvdv2} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & minimal\_svd\_v2 & PASS & 88.19 & 0.8891 \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & minimal\_svd\_v2 & PASS & 59.86 & 0.7107 \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & minimal\_svd\_v2 & PASS & 64.56 & 0.7193 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{minimalsvdv2}.}
+\label{tab:results_acc_minimalsvdv2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_minimalsvdv2} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & minimal\_svd\_v2 & 66955010 & 58107656 & 589830 & 1.1523x \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & minimal\_svd\_v2 & 124441344 & 106746636 & 1179660 & 1.1658x \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & minimal\_svd\_v2 & 124647170 & 114039566 & 1179660 & 1.093x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{minimalsvdv2}.}
+\label{tab:results_params_minimalsvdv2}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_minimalsvdv2} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & full & 58001.39 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & minimal\_svd\_v2 & 25832.74 & 173.28 MB & 0.0000 \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & full & 27623.29 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & minimal\_svd\_v2 & 11161.39 & 495.67 MB & 0.0000 \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & full & 27376.47 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & minimal\_svd\_v2 & 13146.62 & 579.51 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{minimalsvdv2}.}
+\label{tab:results_vram_minimalsvdv2}
+\end{table*}
