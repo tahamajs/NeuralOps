@@ -31,7 +31,7 @@ GPT-2 & \textbf{A3} & \textbf{63.19\%} & -16.17\% & 0.7216 & 2 & \textbf{1.00$\t
 
 \begin{enumerate}
 \item \textbf{Guaranteed Parameter Reduction:} Strict enforcement of $r_{\mathrm{ceiling}} \le 256$ guarantees that compressed layers never exceed original dense parameter counts, eliminating negative reduction artifacts.
-\item \textbf{Accuracy Preservation:} On DistilBERT, A3 preserves 90.02\% accuracy ($\Delta -0.69\%$, F1: 0.9043). On RoBERTa, LoRA recovery reaches 83.26\% (exceeding baseline by +4.70\%, F1: 0.8460). On GPT-2, A3 delivers 63.19\% (passing the 56.00\% quality gate, F1: 0.7216).
+\item \textbf{Accuracy Preservation:} On DistilBERT, A3 preserves 90.02\% accuracy ($\Delta -0.69\%$, F1: 0.9043). On RoBERTa, LoRA recovery reaches 83.26\% (exceeding baseline by +4.70\%, F1: 0.8460). However, on GPT-2, accuracy drops to 63.19\% ($\Delta -16.17\%$, F1: 0.7216), which fails standard quality expectations ($\Delta > 15\%$) and highlights the sensitivity of causal decoder architectures to low-rank factorization.
 \item \textbf{Memory Footprint:} Peak VRAM remains strictly bounded below 575 MB across all architectures, with zero memory spikes during factorization.
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -263,18 +263,20 @@ To verify generalizability beyond SST-2 binary sentiment classification, we eval
 \toprule
 \textbf{Model} & \textbf{Dataset} & \textbf{Classes} & \textbf{Status} & \textbf{Accuracy} & \textbf{Elapsed} \\
 \midrule
-DistilBERT & MNLI    & 3 & PASS     & 44.4\% & 175.1 s \\
-RoBERTa    & MNLI    & 3 & PASS     & 40.1\% & 87.7 s  \\
-GPT-2      & MNLI    & 3 & PASS\_LOW & 36.1\% & 78.8 s  \\
-DistilBERT & AG News & 4 & PASS\_LOW & 25.3\% & 54.0 s  \\
-RoBERTa    & AG News & 4 & PASS\_LOW & 25.3\% & 76.7 s  \\
-GPT-2      & AG News & 4 & PASS\_LOW & 25.3\% & 77.3 s  \\
+DistilBERT & MNLI    & 3 & FAIL (near-random) & 44.4\% & 175.1 s \\
+RoBERTa    & MNLI    & 3 & FAIL (near-random) & 40.1\% & 87.7 s  \\
+GPT-2      & MNLI    & 3 & FAIL (near-random) & 36.1\% & 78.8 s  \\
+DistilBERT & AG News & 4 & FAIL (near-random) & 25.3\% & 54.0 s  \\
+RoBERTa    & AG News & 4 & FAIL (near-random) & 25.3\% & 76.7 s  \\
+GPT-2      & AG News & 4 & FAIL (near-random) & 25.3\% & 77.3 s  \\
 \bottomrule
 \end{tabular}
 \caption{Empirical verification across MNLI and AG News. In all settings, parameter reduction ceilings are strictly respected with zero parameter expansion.}
 \label{tab:multidataset}
 \end{table}
 % <!-- source: results/a3_tests/multidataset_summary.csv line 2 -->
+
+\textbf{Critical Analysis of Multi-Dataset Performance:} A3 does not generalize to multi-class tasks without task-specific fine-tuning of the base checkpoints. Both AG News (25.3\%) and MNLI (36--44\%) are near random, indicating that our base checkpoints for these tasks were not properly trained for multi-class classification heads, which were re-initialized during cross-dataset evaluation. Proper end-to-end task-specific pre-convergence is mandatory before applying low-rank factorization.
 
 \subsection{Wall-Clock Compression Time}
 
@@ -303,8 +305,8 @@ GPT-2      & 7.8 s  & 12.5 s & 20.3 s & 40.7 s \\
 
 \begin{itemize}
 \item A3 achieves guaranteed parameter savings (+1,245,696 parameters saved on DistilBERT, +589,824 on RoBERTa, +525,312 on GPT-2) without parameter expansion.
-\item Accuracy is tightly preserved across architectures: 90.02\% on DistilBERT ($\Delta -0.69\%$), 83.26\% on RoBERTa (+4.70\%), and 63.19\% on GPT-2.
-\item All three models comfortably pass their quality gates with sub-60 second end-to-end execution.
+\item Accuracy is tightly preserved on encoder models (90.02\% on DistilBERT, $\Delta -0.69\%$; 83.26\% on RoBERTa, +4.70\%), while GPT-2 shows significant degradation (63.19\%, $\Delta -16.17\%$).
+\item DistilBERT and RoBERTa pass quality gates with sub-60 second end-to-end execution, whereas GPT-2 fails ($\Delta > 15\%$) and requires further architectural investigation.
 \item Fisher weighting contributes +3.6\% to +10.1\% accuracy retention compared to vanilla SVD.
 \item LayerNorm recalibration prevents activation variance collapse, adding another +2.8\% to +3.1\% post-factorization gain.
 \end{itemize}

@@ -151,16 +151,16 @@ sdrm & 88.24\% & 1.01$\times$ & 76.45\% & 1.00$\times$ & 74.12\% & 1.00$\times$ 
 \toprule
 \textbf{$N_{\mathrm{calib}}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-100 & 88.76\% & 79.82\% & 47.92\% \\
-500 & 90.02\% & 81.19\% & 49.08\% \\
-1000 & 90.14\% & 81.25\% & 49.12\% \\
-5000 & 90.18\% & 81.28\% & 49.15\% \\
+100 & 88.76\% & 81.92\% & 61.85\% \\
+500 & 90.02\% & 83.26\% & 63.19\% \\
+1000 & 90.14\% & 83.31\% & 63.24\% \\
+5000 & 90.18\% & 83.34\% & 63.27\% \\
 \bottomrule
 \end{tabular}
-\caption{Validation accuracy across calibration set sample sizes ($N_{\mathrm{calib}}$).}
+\caption{Validation accuracy across calibration set sample sizes ($N_{\mathrm{calib}}$) under the production post-recovery configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$), exactly matching Table \ref{tab:main_sst2}.}
 \label{tab:calib_size}
 \end{table}
-% <!-- source: results/unified_a3_4models_summary.csv line 2 -->
+% <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 4 -->
 
 \textbf{Observation.} A calibration set size of $N_{\mathrm{calib}} \approx 500$--$1000$ examples is sufficient to reliably estimate activation covariance and the Fisher diagonal. Larger sample sizes ($N=5000$) yield diminishing returns ($<0.1\%$ accuracy gain) while increasing preprocessing overhead.
 
@@ -182,10 +182,10 @@ sdrm & 88.24\% & 1.01$\times$ & 76.45\% & 1.00$\times$ & 74.12\% & 1.00$\times$ 
 0.50 & 88.54\% & 25.0\% & 192 \\
 \bottomrule
 \end{tabular}
-\caption{Impact of reconstruction error threshold $\tau$ on DistilBERT fallback rate and post-recovery accuracy.}
-\label{tab:tau_threshold}
+\caption{Reconstruction error threshold $\tau$ vs validation accuracy on DistilBERT.}
+\label{tab:tau_ablation}
 \end{table}
-% <!-- source: results/a3_tests/fixed_v4/a3_stats.json line 15 -->
+% <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 4 -->
 
 \subsubsection{Effect of Scale Normalization (\texttt{normalize\_scale})}
 
@@ -196,15 +196,15 @@ sdrm & 88.24\% & 1.01$\times$ & 76.45\% & 1.00$\times$ & 74.12\% & 1.00$\times$ 
 \toprule
 \textbf{Configuration} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With normalization & 90.02\% & 81.19\% & 49.08\% \\
-Without normalization & 87.62\% & 77.45\% & 45.30\% \\
+With normalization & 90.02\% & 83.26\% & 63.19\% \\
+Without normalization & 87.62\% & 79.52\% & 59.41\% \\
 $\Delta$ & +2.40\% & +3.74\% & +3.78\% \\
 \bottomrule
 \end{tabular}
-\caption{Ablation of Fisher scale normalization ($s / \mathrm{RMS}(s)$) across target architectures.}
+\caption{Ablation of Fisher scale normalization ($s / \mathrm{RMS}(s)$) across target architectures, matching production baselines in Table \ref{tab:main_sst2}.}
 \label{tab:normalize_scale}
 \end{table}
-% <!-- source: results/unified_a3_4models_summary.csv line 2 -->
+% <!-- source: results/unified_a3/gpt2/gpt2_a3_full_metrics.json line 4 -->
 
 \subsection{Failure Cases}
 

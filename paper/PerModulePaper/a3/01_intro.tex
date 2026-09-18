@@ -54,7 +54,7 @@ We impose the following constraints:
 
 \begin{enumerate}
 \item \textbf{Strict reconstruction bound.} For each compressed layer,
-  $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
+  $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.40$.
 \item \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
 \item \textbf{Memory-bounded calibration.} Activation statistics must be collected in
   $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.

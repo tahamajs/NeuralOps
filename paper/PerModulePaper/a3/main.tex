@@ -80,10 +80,10 @@ affine parameters after factorization to absorb distributional shift.
 
 A3 achieves guaranteed parameter reduction without expansion (+1.25M parameters saved on DistilBERT, 
 +0.59M on RoBERTa, +0.53M on GPT-2) under an enforced rank ceiling $r_{\mathrm{ceiling}} \le 256$. 
-On SST-2, A3 preserves 90.02\% validation accuracy on DistilBERT ($\Delta -0.69\%$, F1: 0.9043), 
-improves RoBERTa accuracy to 83.26\% ($\Delta +4.70\%$, F1: 0.8460), and achieves 63.19\% on GPT-2 
-(F1: 0.7216), comfortably passing quality gates across all architectures. 
-We further demonstrate cross-task generalizability on MNLI and AG News. 
+On SST-2, A3 preserves 90.02\% validation accuracy on DistilBERT ($\Delta -0.69\%$, F1: 0.9043) and 
+achieves 83.26\% on RoBERTa ($\Delta +4.70\%$, F1: 0.8460), passing quality gates on DistilBERT and RoBERTa, 
+while GPT-2 shows significant degradation (-16.17\%, 63.19\% accuracy, F1: 0.7216) that requires further investigation. 
+We additionally evaluate on MNLI and AG News, finding that A3 requires task-specific base checkpoints to achieve meaningful accuracy on multi-class tasks. 
 We provide an open-source, fully reproducible implementation with strict Frobenius-norm validation, 
 zero-overhead CPU FP32 SVD factorization, and automated Hugging Face hub integration.
 
