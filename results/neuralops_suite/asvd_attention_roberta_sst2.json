@@ -6,28 +6,28 @@
   "dataset": "sst2",
   "status": "PASS",
   "error_message": null,
-  "forward_latency_ms": 305.01,
-  "backward_latency_ms": 1813.1,
-  "total_step_latency_ms": 2118.11,
-  "throughput_samples_per_sec": 1.89,
+  "forward_latency_ms": 4.81,
+  "backward_latency_ms": 46.37,
+  "total_step_latency_ms": 51.18,
+  "throughput_samples_per_sec": 78.16,
   "speedup_vs_baseline": 1.0,
   "param_count": 0,
   "trainable_param_count": 0,
   "compression_ratio": 0.9778086240815119,
   "peak_memory_mb": 0.0,
   "memory_savings_pct": 0.0,
-  "loss": 0.7127,
+  "loss": 0.71,
   "accuracy_pct": 49.08,
   "f1_score": 0.0,
   "perplexity": 0.0,
-  "grad_norm": 1.7167,
+  "grad_norm": 1.9991,
   "mcc": 0.0,
   "pearson": 0.0,
   "spearman": 0.0,
-  "fidelity_score": 0.9999,
+  "fidelity_score": 1.0,
   "flops_macs": 299790464,
-  "throughput_tokens_sec": 120.86,
-  "latency_variance_ms": 3031046.5919,
+  "throughput_tokens_sec": 5002.06,
+  "latency_variance_ms": 1742.822,
   "ci_lower": null,
   "ci_upper": null,
   "p_value_vs_baseline": null,
@@ -35,22 +35,22 @@
   "std_seed_acc": null,
   "trajectories": {
     "loss": [
-      0.7092,
-      0.7163
+      0.7076,
+      0.7124
     ],
     "grad_norm": [
-      1.7275,
-      1.7058
+      1.9796,
+      2.0186
     ],
     "fwd_latency_ms": [
-      517.9425,
-      92.0717
+      4.0592,
+      5.5516
     ],
     "bwd_latency_ms": [
-      3541.0154,
-      85.1768
+      88.114,
+      4.6331
     ]
   },
-  "timestamp": "2026-09-18 13:43:24",
+  "timestamp": "2026-09-18 14:32:04",
   "quality_gate_56pct": "FAIL (<56%)"
 }
