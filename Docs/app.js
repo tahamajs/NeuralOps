@@ -633,6 +633,30 @@ function renderMarkdown(md, item) {
         html = html.split(m.id).join(m.rendered);
     }
 
+    // ── Module Quick-Launch & 3D Visualizer Integration Banner ──
+    if (item && (item.category === 'attentions' || item.category === 'compressions')) {
+        const cleanId = (item.id || '').replace('.md', '');
+        const cleanTitle = (item.title || cleanId);
+        const catBadge = item.category === 'attentions' ? '⚡ Attention Architecture' : '🗜️ Compression Engine';
+        const bannerHtml = `
+        <div class="module-action-hero" style="background: linear-gradient(135deg, rgba(8, 16, 32, 0.85) 0%, rgba(16, 26, 48, 0.6) 100%); border: 1px solid rgba(83, 236, 217, 0.3); border-radius: 12px; padding: 18px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.35);">
+            <div>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+                    <span style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:10px; font-family:var(--font-mono); padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.5px;">${catBadge}</span>
+                    <span style="color:var(--tx-muted); font-size:11px; font-family:var(--font-mono);">${cleanId}</span>
+                </div>
+                <h2 style="margin:0; font-size:1.25rem; font-weight:700; color:#f8fafc; letter-spacing:-0.02em;">${cleanTitle}</h2>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <a href="./visualizer/?module=${encodeURIComponent(cleanId)}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#ffffff; font-weight:600; font-size:12px; padding:8px 16px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 15px rgba(14,165,233,0.35); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Explore in 3D Atlas
+                </a>
+            </div>
+        </div>`;
+        html = bannerHtml + html;
+    }
+
     // Training Plots Injection
     const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
     let plotMatches = [];

@@ -1173,3 +1173,34 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
     html { scroll-behavior: auto; }
     .stat-card::after, .arch-card::after { display: none; }
 }
+
+/* ── Modern Website Polish & Module Hero Banner ────────────────────────────── */
+.module-action-hero {
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform var(--dur-med) var(--ease-out), border-color var(--dur-med);
+}
+
+.module-action-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(83, 236, 217, 0.6), transparent);
+}
+
+.module-action-hero:hover {
+    border-color: rgba(83, 236, 217, 0.55);
+}
+
+.btn-3d-glow {
+    position: relative;
+    transition: all var(--dur-med) var(--ease-out);
+}
+
+.btn-3d-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
