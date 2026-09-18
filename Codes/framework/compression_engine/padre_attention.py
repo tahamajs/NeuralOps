@@ -734,3 +734,6 @@ def inject_padre(
         logger.warning("Failed to inject PADReAttention at layer %d: %s", layer_idx, e)
         return None
 
+
+inject_padre_attention = inject_padre
+
