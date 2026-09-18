@@ -72,8 +72,9 @@ def evaluate(model, dataset, batch_size):
     return 100.0 * correct / max(1, total)
 
 
-def train_task(task, module_name, output_dir):
+def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
     cfg = TASK_CONFIG[task]
+    num_epochs = epochs if epochs is not None else cfg.get("epochs", 10)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     try:
@@ -108,13 +109,14 @@ def train_task(task, module_name, output_dir):
         model, _ = apply_module_to_model(model, module_name, device=device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=0.01)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg["epochs"])
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     train_loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, num_workers=0)
 
     scaler = torch.amp.GradScaler("cuda", enabled=torch.cuda.is_available())
     best_acc = 0.0
-    for epoch in range(cfg["epochs"]):
+    global_step = 0
+    for epoch in range(num_epochs):
         model.train()
         for batch in train_loader:
             input_ids = batch["input_ids"].to(device)
@@ -131,14 +133,21 @@ def train_task(task, module_name, output_dir):
             scaler.step(optimizer)
             scaler.update()
 
+            global_step += 1
+            if max_steps is not None and global_step >= max_steps:
+                break
+
         scheduler.step()
 
-        # Evaluate every 5 epochs
-        if (epoch + 1) % 5 == 0 or (epoch + 1) == cfg["epochs"]:
+        # Evaluate every 5 epochs or last epoch
+        if (epoch + 1) % 5 == 0 or (epoch + 1) == num_epochs or (max_steps is not None and global_step >= max_steps):
             acc = evaluate(model, test_ds, cfg["batch_size"])
-            print(f"[{task}/{module_name}] Epoch {epoch+1}/{cfg['epochs']} | Acc: {acc:.2f}%", flush=True)
+            print(f"[{task}/{module_name}] Epoch {epoch+1}/{num_epochs} (step {global_step}) | Acc: {acc:.2f}%", flush=True)
             if acc > best_acc:
                 best_acc = acc
+
+        if max_steps is not None and global_step >= max_steps:
+            break
 
     # Save result
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -147,7 +156,7 @@ def train_task(task, module_name, output_dir):
             "task": task,
             "module": module_name,
             "best_accuracy": best_acc,
-            "epochs": cfg["epochs"]
+            "epochs": num_epochs
         }, f, indent=2)
 
     return best_acc
@@ -158,7 +167,9 @@ if __name__ == "__main__":
     parser.add_argument("--task", required=True, choices=["listops", "imdb"])
     parser.add_argument("--module", required=True)
     parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--max_steps", type=int, default=None, help="Maximum training steps per epoch or run")
     args = parser.parse_args()
 
-    acc = train_task(args.task, args.module, args.output_dir)
+    acc = train_task(args.task, args.module, args.output_dir, epochs=args.epochs, max_steps=args.max_steps)
     print(f"Final: {args.task}/{args.module} = {acc:.2f}%")

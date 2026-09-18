@@ -33,25 +33,63 @@ def compute_perplexity(model, tokenizer, dataset_name="wikitext-2-raw-v1",
     nlls = []
     prev_end_loc = 0
 
-    for begin_loc in range(0, encodings.input_ids.size(1), stride):
-        end_loc = min(begin_loc + max_length, encodings.input_ids.size(1))
-        trg_len = end_loc - prev_end_loc
-        input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
-        target_ids = input_ids.clone()
-        target_ids[:, :-trg_len] = -100
+    try:
+        for begin_loc in range(0, encodings.input_ids.size(1), stride):
+            end_loc = min(begin_loc + max_length, encodings.input_ids.size(1))
+            trg_len = end_loc - prev_end_loc
+            input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+            target_ids = input_ids.clone()
+            target_ids[:, :-trg_len] = -100
 
-        with torch.no_grad():
-            outputs = model(input_ids, labels=target_ids)
-            neg_log_likelihood = outputs.loss * trg_len
+            with torch.no_grad():
+                outputs = model(input_ids, labels=target_ids)
+                neg_log_likelihood = outputs.loss * trg_len
 
-        nlls.append(neg_log_likelihood)
-        prev_end_loc = end_loc
+            nlls.append(neg_log_likelihood.cpu())
+            prev_end_loc = end_loc
 
-        if end_loc == encodings.input_ids.size(1):
-            break
+            del outputs, input_ids, target_ids
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        if len(nlls) >= max_samples:
-            break
+            if end_loc == encodings.input_ids.size(1):
+                break
+
+            if len(nlls) >= max_samples:
+                break
+    except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+        if "out of memory" in str(e).lower() or "cuda" in str(e).lower():
+            logger_msg = f"CUDA OOM/Error during PPL eval: {e}. Falling back to CPU..."
+            print(logger_msg)
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            model = model.to("cpu")
+            device = torch.device("cpu")
+            nlls = []
+            prev_end_loc = 0
+            for begin_loc in range(0, encodings.input_ids.size(1), stride):
+                end_loc = min(begin_loc + max_length, encodings.input_ids.size(1))
+                trg_len = end_loc - prev_end_loc
+                input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+                target_ids = input_ids.clone()
+                target_ids[:, :-trg_len] = -100
+
+                with torch.no_grad():
+                    outputs = model(input_ids, labels=target_ids)
+                    neg_log_likelihood = outputs.loss * trg_len
+
+                nlls.append(neg_log_likelihood.cpu())
+                prev_end_loc = end_loc
+
+                del outputs, input_ids, target_ids
+
+                if end_loc == encodings.input_ids.size(1):
+                    break
+
+                if len(nlls) >= max_samples:
+                    break
+        else:
+            raise e
 
     ppl = torch.exp(torch.stack(nlls).sum() / prev_end_loc)
     return ppl.item()
