@@ -419,3 +419,8 @@ The `GriffinSSDBlock` architecture incorporates telemetry hooks for tracking sin
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.19%** | -2.87% | 0.8874 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-griffin-ssd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-griffin-ssd) | 2026-09-19 |
