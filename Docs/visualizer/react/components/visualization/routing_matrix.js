@@ -235,27 +235,24 @@ export const ROUTING_MATRIX = {
   "aegis_spectron_fp8": {
     "id": "aegis_spectron_fp8",
     "name": "AEGIS-Spectron-FP8: Tri-Branch Hybrid Attention with Token-Level ",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "H",
+    "subcategory": "quantization",
     "states": [
       "idle",
-      "show_W",
-      "decompose",
-      "singular_values",
-      "truncate",
-      "reconstruct",
-      "error_heatmap"
+      "calibration",
+      "scale_calc",
+      "quantize_int8_fp8",
+      "dequantize",
+      "output"
     ],
     "substates": [
-      "no_weighting"
+      "dynamic_scale_visible"
     ],
-    "defaultState": "decompose",
+    "defaultState": "quantize_int8_fp8",
     "forbidden": [
-      "qkv",
-      "softmax",
-      "attention_matrix",
-      "causal_mask",
-      "square_attention"
+      "svd_singular_values",
+      "state_space_scan",
+      "quadratic_square"
     ]
   },
   "aegis_v1": {
