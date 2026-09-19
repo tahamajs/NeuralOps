@@ -46,10 +46,21 @@ def get_existing_repos():
         return set()
 
 def upload_target(repo_id, metrics_file, weights_file, summary_file, dataset_name, module_name, rank_str, env):
-    try:
-        api.create_repo(repo_id=repo_id, repo_type="model", private=True, exist_ok=True)
-    except Exception as err:
-        print(f"  [WARN] Failed to create repo {repo_id}: {err}")
+    import time
+    for attempt in range(5):
+        try:
+            api.create_repo(repo_id=repo_id, repo_type="model", private=True, exist_ok=True)
+            break
+        except Exception as err:
+            err_str = str(err)
+            if "429" in err_str or "rate limit" in err_str.lower():
+                print(f"  [RATE-LIMIT 429] Waiting 65s for window reset (attempt {attempt+1}/5)...")
+                time.sleep(65)
+            else:
+                print(f"  [WARN] Failed to create repo {repo_id}: {err}")
+                return False
+    else:
+        print(f"  [ERROR] Exceeded retries for {repo_id}")
         return False
 
     perf_info = {}
