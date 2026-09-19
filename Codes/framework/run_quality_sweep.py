@@ -1663,6 +1663,8 @@ def parse_args(argv=None):
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     ap.add_argument("--fresh", action="store_true",
                     help="Fresh clean sweep: do not resume or skip any modules")
+    ap.add_argument("--no_skip", action="store_true", default=False,
+                    help="Do not skip any requested modules even if already in summary.csv")
     ap.add_argument("--rank", type=int, default=None,
                     help="SVD/projection rank for attention modules")
     ap.add_argument("--lora_rank", type=int, default=32,
@@ -3219,7 +3221,7 @@ def main():
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
                 
-    existing = set() if args.fresh else {
+    existing = set() if (args.fresh or getattr(args, "no_skip", False)) else {
         m for m, r in summary_dict.items()
         if r.get("status") in {"PASS", "PASS_LOW", "REJECTED_EXPANSION", "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED"}
     }
