@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { materials, edgeMatDense, edgeMatSvd, edgeMatMoe, edgeMatMla, getOrCreateCustomMaterial, getOrCreateCustomEdgeMaterial } from '../core/materials.js';
 import { createLayerLabelSprite, createTensorBadgeSprite } from './label_builder.js';
-import { buildResidualBypass } from './conduit_builder.js';
+import { buildResidualBypass, buildLayerConduits, buildInterLayerConduits } from './conduit_builder.js';
 import { anyKey } from '../utils/math.js';
 
 /**
@@ -174,12 +174,32 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
         }
     });
 
-    // Build Residual Bypass Conduits per Layer
-    layerMinMax.forEach(bounds => {
-        if (bounds.maxY - bounds.minY > 1.5) {
-            buildResidualBypass(bounds.minY - 0.2, bounds.maxY + 0.2, offsetX, granularGroup, visualObjects);
-        }
+    // Group nodes by layer for structured computational conduits
+    const nodesByLayer = new Map();
+    nodes.forEach(node => {
+        const lIdx = node.parent_layer_index ?? (node.parent_layer_idx ?? 0);
+        if (!nodesByLayer.has(lIdx)) nodesByLayer.set(lIdx, []);
+        nodesByLayer.get(lIdx).push(node);
     });
+
+    // Build comprehensive intra-layer conduits, port rings, and residual junctions (+)
+    nodesByLayer.forEach(layerNodes => {
+        buildLayerConduits(
+            layerNodes,
+            offsetX,
+            isCompressedSide,
+            context.modelKey || 'distilbert',
+            context.paradigm || 'svd',
+            granularGroup,
+            visualObjects
+        );
+    });
+
+    // Build inter-layer vertical trunk conduits connecting layers in sequence
+    const layerBoundsArray = Array.from(layerMinMax.entries())
+        .map(([lIdx, b]) => ({ lIdx, minY: b.minY, maxY: b.maxY }))
+        .sort((a, b) => a.lIdx - b.lIdx);
+    buildInterLayerConduits(layerBoundsArray, offsetX, isCompressedSide, granularGroup, visualObjects);
 
     return topY;
 }

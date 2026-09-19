@@ -2884,3 +2884,231 @@ kbd {
     margin: 24px 0;
 }
 
+/* ==========================================================================
+   Attention Inspector & Educational Deep-Dive Enhancements
+   ========================================================================== */
+.attn-comp-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(6, 13, 24, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 7px 10px;
+    transition: all 0.15s ease;
+}
+
+.attn-comp-step:hover {
+    background: rgba(14, 28, 44, 0.85);
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateX(2px);
+}
+
+.attn-step-idx {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.attn-step-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.attn-step-title {
+    font-size: 11px;
+    color: #f1f5f9;
+    line-height: 1.35;
+}
+
+.attn-step-title strong {
+    color: #e2e8f0;
+}
+
+.attn-op-math {
+    background: rgba(15, 23, 42, 0.7);
+    color: #38bdf8;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+
+.attn-step-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+/* Attention Probability Heatmap */
+.attn-heatmap-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.attn-hm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attn-hm-label {
+    width: 48px;
+    text-align: right;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: #94a3b8;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attn-hm-cells {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.attn-hm-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    padding: 5px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.attn-hm-cell:hover {
+    transform: scale(1.15);
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   Presentation Mode (5-Minute Demo Minimalistic Cinema)
+   ========================================================================== */
+body.present-mode #top-bar {
+    opacity: 0.15;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+body.present-mode #top-bar:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.present-mode #catalog-modal,
+body.present-mode #filter-chips-bar {
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+body.present-mode #inspector-panel {
+    background: rgba(6, 12, 22, 0.72) !important;
+    backdrop-filter: blur(20px) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+.present-banner {
+    animation: presentSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes presentSlideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.present-progress-track {
+    animation: presentSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes presentSlideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.present-dot:hover {
+    transform: scale(1.35) !important;
+    box-shadow: 0 0 8px var(--cyan);
+}
+
+/* ==========================================================================
+   Learn Modal & Educational Atlas
+   ========================================================================== */
+.learn-topic-btn {
+    outline: none;
+}
+
+.learn-topic-btn:hover {
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.learn-topic-btn.active {
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2) inset;
+}
+
+/* ==========================================================================
+   Model Matrix Dashboard Modal
+   ========================================================================== */
+.mmd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: var(--font-mono);
+}
+
+.mmd-th {
+    background: rgba(15, 23, 42, 0.95);
+    color: #94a3b8;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mmd-td {
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
+.mmd-row {
+    transition: background 0.15s ease;
+}
+
+.mmd-row:hover {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+
