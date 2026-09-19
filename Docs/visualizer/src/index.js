@@ -465,10 +465,19 @@ export async function bootstrapApp() {
             const insp = document.getElementById('inspector');
             if (insp) insp.classList.remove('hidden');
         }
+    } else if (!store.get('activeResearchModule') && catalogModules.length > 0) {
+        const defaultMod = catalogModules.find(m => m.id === 'svd_linear' || m.id === 'SOAFusedAttention') || catalogModules[0];
+        store.set({ activeResearchModule: defaultMod, currentCompression: defaultMod.paradigm || 'svd' });
     }
 
     rebuildSceneForModel(store.get('currentModel'), store.get('currentCompression'));
     smoothFlyCamera(camera, controls, maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35));
+
+    // Prime Inspector with first node so telemetry and mathematical formulas are immediately available
+    if (interactableMeshes.length > 0) {
+        const firstNode = interactableMeshes[0].userData;
+        updateInspectorWithNode(firstNode, firstNode.side === 'baseline', store.get('activeResearchModule'), store.get('currentModel'));
+    }
 
     // Restore deep-linked state from URL hash if present
     if (typeof window !== 'undefined' && window.location.hash) {

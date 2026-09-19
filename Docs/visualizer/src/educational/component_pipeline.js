@@ -33,8 +33,12 @@ export function renderComponentPipeline(moduleMeta, modelKey = 'distilbert') {
                 <strong class="cpi-name" style="color: ${c.color || 'var(--cyan)'};">${escapeHtml(c.name)}</strong>
                 <span class="cpi-shape">${escapeHtml(c.shape_transform || '—')}</span>
             </div>
-            <p class="cpi-role">${escapeHtml(c.role || '')}</p>
-            ${c.math_latex ? `<div class="cpi-math">$$ ${c.math_latex} $$</div>` : ''}
+            <p class="cpi-role" style="font-size:10px; color:var(--text-faint); margin:4px 0 2px 0;">${escapeHtml(c.role || '')}</p>
+            ${c.math_latex ? `
+                <div style="margin-top:6px; padding:4px 8px; background:rgba(6,13,24,0.65); border-radius:5px; border:1px solid rgba(56,189,248,0.2);">
+                    <div class="cpi-math" style="font-size:11px; color:#38bdf8; text-align:center;">$$ ${c.math_latex} $$</div>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 
@@ -42,7 +46,7 @@ export function renderComponentPipeline(moduleMeta, modelKey = 'distilbert') {
         listEl.querySelectorAll('.cpi-math').forEach(el => {
             const raw = el.textContent.replace(/\$\$/g, '').trim();
             if (raw) {
-                try { window.katex.render(raw, el, { displayMode: false, throwOnError: false }); } catch (e) {}
+                try { window.katex.render(raw, el, { displayMode: true, throwOnError: false }); } catch (e) {}
             }
         });
     }
