@@ -2804,7 +2804,7 @@ def run_single_module_main(args) -> dict:
             elif (
                 name != "full"
                 and not injected
-                and not _name_injected
+                and not name.startswith("inject_")
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("num_injected_attention_layers", 0) == 0
                 and p_after >= p_before
