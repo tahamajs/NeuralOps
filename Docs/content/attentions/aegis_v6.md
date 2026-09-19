@@ -632,3 +632,4 @@ The `AegisAttentionV3` architecture incorporates telemetry hooks for tracking si
 | **gpt2** | ag_news | `PASS` | 79.70% | **36.00%** | -43.70% | 0.2902 | 1.28x | 0 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.81%** | -4.25% | 0.8783 | 1.25x | 6 | [svd-linear-attention-distilbert-sst2-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v6) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **51.40%** | -30.40% | 0.4655 | 1.25x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-v6](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-v6) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.30%** | -1.00% | 0.9290 | 1.25x | 0 | N/A | 2026-09-19 |
