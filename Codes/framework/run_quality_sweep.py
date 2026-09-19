@@ -1523,7 +1523,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     if device.type == "cuda":
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         if "qwen" in str(name).lower() or total_vram_gb <= 8.5:
-            target_micro = min(4, curr_batch_size)
+            target_micro = min(2, curr_batch_size)
         else:
             target_micro = curr_batch_size
         micro_bs = min(curr_batch_size, target_micro)
@@ -2499,13 +2499,18 @@ def run_single_module_main(args) -> dict:
     se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
     z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
     # Dataset-aware chance and threshold calibration
+    stat_margin_pct = 5.08  # fallback default
     if getattr(args, "dataset", "") == "sst2":
+        stat_margin_pct = 5.08
         pass_threshold_pct = 56.00   # binary, chance = 50%
     elif getattr(args, "dataset", "") == "mnli":
-        pass_threshold_pct = 35.00   # 3-class (majority=35.4%, chance=33.3%, margin-adjusted)
+        stat_margin_pct = 1.45       # 3 * 0.483%
+        pass_threshold_pct = 36.90   # 3-class (majority=35.45% + 1.45% 3-sigma margin)
     elif getattr(args, "dataset", "") == "ag_news":
+        stat_margin_pct = 2.50
         pass_threshold_pct = 30.00   # 4-class, chance = 25%
     else:
+        stat_margin_pct = round(z_score * se * 100.0, 2)
         pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
 
     LOG.info("=" * 80)
