@@ -275,3 +275,4 @@ print("Model attention layers successfully replaced.")
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **79.80%** | -2.00% | 0.7976 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.60%** | -1.70% | 0.9223 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-replace](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-replace) | 2026-09-19 |
