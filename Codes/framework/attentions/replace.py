@@ -448,26 +448,18 @@ class ReplaceAttention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
+        B, N = batch_size, seq_len
         try:
-
             _qs = Q.half() if Q.dtype == torch.float32 else Q
-
             _ks = K.half() if K.dtype == torch.float32 else K
-
             _vs = V.half() if V.dtype == torch.float32 else V
-
-            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+            _is_causal = getattr(self, 'is_decoder', False) and N > 1
 
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
-
             _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
             return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
-
         except Exception:
-
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -500,9 +492,10 @@ class ReplaceAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
-        context = torch.matmul(probs, V)
+        context = torch.matmul(probs, V)  # [B, H, N, d]
 
         valid_mask = _get_valid_mask(attention_mask, batch_size, seq_len, device)
+        # valid_mask is [B, N], broadcast to [B, 1, N, 1] for [B, H, N, d] context
         context = context * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
 
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
