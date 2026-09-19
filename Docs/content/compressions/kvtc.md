@@ -27,3 +27,4 @@ TODO: Identify specific limitations and edge cases for this module.
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.48%** | -0.58% | 0.9089 | 1.00x | 20 | [svd-linear-attention-distilbert-sst2-kvtc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kvtc) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **79.10%** | -2.70% | 0.7904 | 1.00x | 20 | [svd-linear-attention-distilbert-mnli-full-kvtc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-kvtc) | 2026-09-19 |
