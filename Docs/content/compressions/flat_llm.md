@@ -490,3 +490,4 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9081 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-flat-llm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flat-llm) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8175 | 1.00x | 0 | N/A | 2026-09-19 |
