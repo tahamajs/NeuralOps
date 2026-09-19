@@ -108,3 +108,9 @@ lora_attn,REJECTED_EXPANSION,94.3,0.939,0.939,0.9411,0.9377,0.1885,24.3,354.45,4
 lsc,PASS,94.6,0.9422,0.9422,0.9437,0.9412,0.2029,8.04,326.47,110159.0,66956548,66956548,593668,1.0,0.0,0.0,0,36,0.9806,0.9806,0,0,,legacy_bert,2026-09-19T17:50:54.100188
 lsh,REJECTED_EXPANSION,90.6,0.9006,0.9006,0.903,0.8994,0.3226,40.8,362.58,25280.34,66956548,67546372,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66956548 after=67546372 delta=589824 (+0.9%),legacy_bert,2026-09-19T17:52:05.729799
 mamba,SKIP_BLOCKED,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,BLOCKED: ARCHITECTURAL_INCOMPATIBLE: Unidirectional causal SSM architecture is fundamentally incompatible with bidirectional DistilBERT representations (34.1%),blocked,2026-09-19T17:52:36.236182
+mamba_shedder,PASS,94.8,0.9441,0.9441,0.9458,0.943,0.2068,7.57,326.47,107985.03,66956548,66956548,593668,1.0,0.0,0.0,0,0,0.4804,0.4804,0,0,,legacy_bert,2026-09-19T17:55:07.188714
+mamba_svd_flash,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-19T17:58:29.765438
