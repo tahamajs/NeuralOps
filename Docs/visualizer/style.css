@@ -2502,6 +2502,7 @@ kbd {
 }
 #tour-step-label.show {
     opacity: 1;
+    pointer-events: auto;
     transform: translateX(-50%) translateY(0);
 }
 #tour-step-label strong {
