@@ -231,6 +231,7 @@ Swift‑SVD (registered as `"swift_svd"`) provides a fast, no‑frills SVD compr
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **82.91%** | -8.15% | 0.8372 | 1.44x | 0 | [svd-linear-attention-distilbert-sst2-swift-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-swift-svd) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **51.90%** | -29.90% | 0.4855 | 1.44x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `swift_svd` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
