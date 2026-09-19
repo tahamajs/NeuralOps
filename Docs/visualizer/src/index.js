@@ -40,6 +40,7 @@ import { togglePresentMode } from './educational/present_mode.js';
 import { openLearnModal } from './educational/learn_modal.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
+import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -276,6 +277,9 @@ export async function bootstrapApp() {
     const heatmapBtn = document.getElementById('btn-open-heatmap');
     if (heatmapBtn) heatmapBtn.addEventListener('click', () => openAttentionHeatmapExplorer());
 
+    const predictionBtn = document.getElementById('btn-open-prediction');
+    if (predictionBtn) predictionBtn.addEventListener('click', () => openTokenPredictionPlayground());
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
@@ -288,6 +292,8 @@ export async function bootstrapApp() {
             openLearnModal();
         } else if (e.key === 'h' || e.key === 'H') {
             openAttentionHeatmapExplorer();
+        } else if (e.key === 't' || e.key === 'T') {
+            openTokenPredictionPlayground();
         }
     });
 
