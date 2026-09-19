@@ -183,11 +183,11 @@ class UnifiedMoE(nn.Module):
     def __init__(
         self,
         dim: int,
-        num_experts: int = 8,
-        top_k: int = 2,
+        num_experts: int = 2,
+        top_k: int = 1,
         output_dim: Optional[int] = None,
         noise_std: float = 0.1,
-        expert_multiplier: int = 2,
+        expert_multiplier: int = 1,
     ) -> None:
         super().__init__()
         self.dim: int = dim
@@ -284,8 +284,8 @@ class BAMUMoEBlock(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: int = 64,
-        num_experts: int = 8,
-        top_k: int = 2,
+        num_experts: int = 2,
+        top_k: int = 1,
         layer_id: Optional[int] = None,
         num_layers: Optional[int] = None,
         old_attn: Optional[nn.Module] = None,

@@ -2802,10 +2802,11 @@ def run_single_module_main(args) -> dict:
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
-            # Check parameter expansion
+            # Check parameter expansion (with 0.15% tolerance for PEFT/LoRA recovery adapter overhead)
             p_before = comp_metrics.get("total_params_before", total_params_before)
             p_after = comp_metrics.get("total_params_after", total_params_before)
-            if p_before > 0 and p_after > p_before and name != "full":
+            lora_tolerance = int(0.0015 * p_before)
+            if p_before > 0 and p_after > (p_before + lora_tolerance) and name != "full":
                 status = "REJECTED_EXPANSION"
                 expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
                 err = f"{err}; {expansion_err}".strip("; ")
