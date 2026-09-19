@@ -671,6 +671,22 @@ h1 span {
     font-weight: 800;
 }
 
+.layer-depth-card {
+    margin-top: 12px;
+    animation: fadeIn 0.25s ease;
+}
+
+.depth-step-btn {
+    user-select: none;
+}
+.depth-step-btn:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+.depth-step-btn.active {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
 .timecode {
     color: var(--muted);
     font: 700 9px/1 var(--font-mono);

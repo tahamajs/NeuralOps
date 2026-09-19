@@ -2,17 +2,22 @@
  * educational/layer_depth_profile.js
  * ==================================
  * Layer-by-Layer Depth Specialization & Telemetry Engine.
- * Formulates the theoretical and empirical differences across Transformer depth:
+ * Pure ESM module with zero external runtime dependencies (Node & Browser compatible).
+ *
+ * Formulates theoretical and empirical differences across Transformer depth:
  * 1. Normalized Relative Depth (tau in [0.0, 1.0])
- * 2. 4-Stage Architectural Progression (Lexical -> Syntactic -> Disambiguation -> Semantic Output)
- * 3. Attention Entropy Transition (Diffuse -> Inductive -> Sharp)
+ * 2. 4-Stage Architectural Progression:
+ *    - Stage 1: Morpho-Syntactic & Local Receptive Field (tau in [0.0, 0.25])
+ *    - Stage 2: Syntactic Dependencies & Multi-Hop Induction (tau in [0.25, 0.50])
+ *    - Stage 3: Contextual Disambiguation & Semantic Binding (tau in [0.50, 0.75])
+ *    - Stage 4: High-Level Abstraction & Logit Shaping (tau in [0.75, 1.00])
+ * 3. Attention Entropy Evolution: H(A_l) = 1.05 + 2.07 * (1 - tau)^1.35 nats (Diffuse -> Sharp)
  * 4. Singular Value Spectral Decay & Optimal Low-Rank (r*) Allocation
  * 5. Residual Stream Highway Dominance vs Sublayer Delta Evolution
- * 6. FFN Activation Sparsity Scaling
- * 7. Depth-Aware 3D PBR Materials, Stage Platform Halos, and Layer Badges
+ * 6. FFN Intermediate Activation Sparsity Scaling
+ * 7. Live Telemetry Card Rendering for Inspector Drawer
  */
 
-import * as THREE from 'three';
 import { MODEL_SPECS } from '../constants.js';
 
 // Depth Phase Palettes (PBR colors and glowing rims)
@@ -67,10 +72,6 @@ export const LAYER_PHASES = [
     }
 ];
 
-// Material Caching per Layer Depth & Type
-const layerDepthMaterialCache = new Map();
-const layerDepthEdgeCache = new Map();
-
 /**
  * Computes the full Layer Depth Profile for a specific layer index in a model.
  * @param {number|string} layerOrIdx - Layer index or identifier ('embeddings', 'output')
@@ -79,8 +80,8 @@ const layerDepthEdgeCache = new Map();
  * @returns {object} Layer depth profile
  */
 export function getLayerDepthProfile(layerOrIdx, currentModel = 'distilbert', customTotalLayers = null) {
-    const spec = MODEL_SPECS[currentModel] || MODEL_SPECS.distilbert;
-    const totalLayers = customTotalLayers || spec.num_layers || 6;
+    const spec = (currentModel && MODEL_SPECS[currentModel]) || MODEL_SPECS.distilbert;
+    const totalLayers = customTotalLayers || (spec && spec.num_layers) || 6;
 
     let layerIdx = 0;
     let isSpecial = false;
@@ -165,7 +166,7 @@ export function getLayerDepthProfile(layerOrIdx, currentModel = 'distilbert', cu
         layerIndex: layerIdx,
         totalLayers,
         modelKey: currentModel,
-        modelName: spec.name,
+        modelName: (spec && spec.name) || currentModel,
         normalizedDepth,
         phaseIndex,
         phaseName: phase.name,
@@ -192,205 +193,16 @@ export function getLayerDepthProfile(layerOrIdx, currentModel = 'distilbert', cu
 }
 
 /**
- * Gets or creates a depth-shifted standard PBR material for 3D tensor meshes.
- * @param {number} layerIdx - Layer index
- * @param {number} totalLayers - Total layers in model
- * @param {string} type - Node type ('dense', 'svd', etc.)
- * @param {boolean} isCompressedSide - True if compressed column
- * @returns {THREE.MeshStandardMaterial}
- */
-export function getLayerDepthMaterial(layerIdx, totalLayers, type = 'dense', isCompressedSide = false) {
-    const key = `${layerIdx}_${totalLayers}_${type}_${isCompressedSide}`;
-    if (layerDepthMaterialCache.has(key)) {
-        return layerDepthMaterialCache.get(key);
-    }
-
-    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
-    let mat;
-
-    if (type === 'dense' && !isCompressedSide) {
-        // Base dense material tinted with subtle layer phase hue
-        const c = new THREE.Color(LAYER_PHASES[profile.phaseIndex].materialColor);
-        mat = new THREE.MeshStandardMaterial({
-            color: c,
-            roughness: 0.28,
-            metalness: 0.38,
-            transparent: true,
-            opacity: 0.94,
-            emissive: c.clone().multiplyScalar(0.2),
-            emissiveIntensity: 0.25
-        });
-    } else if (type === 'svd') {
-        // Compressed SVD preserves purple/teal identity but shifts emissive glow with layer depth
-        const baseColor = new THREE.Color(0x3acbb8);
-        const emissiveColor = new THREE.Color(LAYER_PHASES[profile.phaseIndex].colorHex).multiplyScalar(0.4);
-        mat = new THREE.MeshStandardMaterial({
-            color: baseColor,
-            roughness: 0.22,
-            metalness: 0.52,
-            emissive: emissiveColor,
-            emissiveIntensity: 0.45
-        });
-    } else {
-        const c = new THREE.Color(LAYER_PHASES[profile.phaseIndex].colorHex);
-        mat = new THREE.MeshStandardMaterial({
-            color: c,
-            roughness: 0.3,
-            metalness: 0.4
-        });
-    }
-
-    layerDepthMaterialCache.set(key, mat);
-    return mat;
-}
-
-/**
- * Gets or creates a depth-shifted edge outline wireframe material.
- * @param {number} layerIdx - Layer index
- * @param {number} totalLayers - Total layers in model
- * @returns {THREE.LineBasicMaterial}
- */
-export function getLayerDepthEdgeMaterial(layerIdx, totalLayers) {
-    const key = `${layerIdx}_${totalLayers}_edge`;
-    if (layerDepthEdgeCache.has(key)) {
-        return layerDepthEdgeCache.get(key);
-    }
-
-    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
-    const edgeColor = LAYER_PHASES[profile.phaseIndex].edgeColor;
-    const mat = new THREE.LineBasicMaterial({
-        color: edgeColor,
-        transparent: true,
-        opacity: 0.70
-    });
-
-    layerDepthEdgeCache.set(key, mat);
-    return mat;
-}
-
-/**
- * Builds an interactive 3D layer stage platform ring in world space.
- * @param {number} layerIdx - Layer index
- * @param {number} totalLayers - Total layers in model
- * @param {object} bounds - { minY, maxY } bounds of the layer
- * @param {number} offsetX - Column X position (-4.5 or +4.5)
- * @param {boolean} isCompressedSide - True if compressed column
- * @param {THREE.Group} targetGroup - Scene group to attach to
- * @param {Array<THREE.Object3D>} visualObjects - Registry array for disposal
- * @returns {THREE.Mesh}
- */
-export function createLayerStageRing(layerIdx, totalLayers, bounds, offsetX, isCompressedSide, targetGroup, visualObjects) {
-    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
-    const ringY = bounds.minY - 0.25;
-    const ringRadiusX = 2.4;
-    const ringRadiusZ = 1.3;
-
-    // Elliptical ring geometry
-    const curve = new THREE.EllipseCurve(
-        0, 0,
-        ringRadiusX, ringRadiusZ,
-        0, 2 * Math.PI,
-        false,
-        0
-    );
-    const points = curve.getPoints(48);
-    const ringPoints = points.map(p => new THREE.Vector3(p.x, 0, p.y));
-    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
-
-    const ringMat = new THREE.LineBasicMaterial({
-        color: profile.ringColor,
-        transparent: true,
-        opacity: 0.35,
-        linewidth: 1
-    });
-
-    const ringLine = new THREE.LineLoop(ringGeo, ringMat);
-    ringLine.position.set(offsetX, ringY, 0);
-    ringLine.userData = {
-        isLayerStageRing: true,
-        parent_layer_index: layerIdx,
-        side: isCompressedSide ? 'compressed' : 'baseline'
-    };
-
-    if (targetGroup) targetGroup.add(ringLine);
-    if (visualObjects) visualObjects.push(ringLine);
-
-    return ringLine;
-}
-
-/**
- * Creates an upgraded 3D Billboard Sprite displaying complete layer depth metadata.
- * @param {string} text - Title text
- * @param {number} layerIdx - Layer index
- * @param {number} totalLayers - Total layers
- * @param {number} worldX - World X position
- * @param {number} worldY - World Y position
- * @param {boolean} isMacro - Macro mode
- * @param {THREE.Group} targetGroup - Scene group
- * @param {Array<THREE.Object3D>} visualObjects - Disposal registry
- * @returns {THREE.Sprite}
- */
-export function createLayerLabelSpriteWithDepth(text, layerIdx, totalLayers, worldX, worldY, isMacro = false, targetGroup, visualObjects) {
-    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
-    const canvas = document.createElement('canvas');
-    canvas.width = 340;
-    canvas.height = 92;
-    const ctx = canvas.getContext('2d');
-
-    // Background Card
-    ctx.fillStyle = isMacro ? 'rgba(8, 18, 36, 0.94)' : 'rgba(5, 12, 22, 0.90)';
-    ctx.strokeStyle = profile.themeColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(4, 4, 332, 84, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // Stage Pip & Header
-    ctx.fillStyle = profile.themeColor;
-    ctx.beginPath();
-    ctx.arc(22, 28, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = 'bold 20px ui-monospace, Consolas, monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, 36, 28);
-
-    // Subtitle Tag
-    ctx.font = 'bold 12px ui-monospace, Consolas, monospace';
-    ctx.fillStyle = profile.themeColor;
-    ctx.fillText(profile.shortTag.toUpperCase(), 36, 50);
-
-    // Telemetry Footnote
-    ctx.font = '11px ui-monospace, Consolas, monospace';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.fillText(`Ent: ${profile.attentionEntropy} nats  |  Rec: r=${profile.optimalSvdRank}  |  Res: ${profile.residualPercent}%`, 18, 72);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.94 });
-    const sprite = new THREE.Sprite(spriteMat);
-    sprite.position.set(worldX, worldY, 0);
-    sprite.scale.set(3.8, 1.03, 1.0);
-    sprite.raycast = () => {};
-
-    if (targetGroup) targetGroup.add(sprite);
-    if (visualObjects) visualObjects.push(sprite);
-    return sprite;
-}
-
-/**
  * Renders the complete interactive Layer Depth Telemetry Card into the Inspector Drawer.
  * @param {object|number|string} nodeOrLayerIdx - Selected node or layer identifier
  * @param {string} currentModel - Active model key
  * @param {string} containerId - Target HTML element ID
  */
 export function renderLayerDepthProfile(nodeOrLayerIdx, currentModel = 'distilbert', containerId = 'layer-depth-profile-card') {
+    if (typeof document === 'undefined') return;
+
     let container = document.getElementById(containerId);
     if (!container) {
-        // Create container and insert right after attention-deep-dive-card or inspector stat grid
         const parent = document.querySelector('.drawer-body');
         if (!parent) return;
         container = document.createElement('div');
@@ -579,7 +391,7 @@ export function renderLayerDepthProfile(nodeOrLayerIdx, currentModel = 'distilbe
     `;
 
     // Render KaTeX if available
-    if (window.katex) {
+    if (typeof window !== 'undefined' && window.katex) {
         container.querySelectorAll('.katex-math-render').forEach(el => {
             const raw = el.textContent.replace(/\$\$/g, '').trim();
             try {
