@@ -23,12 +23,14 @@ for %%R in (32 64 128 256) do (
     --dataset mnli ^
     --dataset_dir Codes\framework\data\glue_data\mnli ^
     --rank %%R ^
-    --batch_size 8 --parallel 1 --no_skip ^
+    --batch_size 8 --parallel 1 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
     --output_dir results\rank_ablation\mnli_rank%%R ^
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_mnli_rank%%R.log 2>&1
   echo Finished MNLI rank=%%R
+  echo Uploading MNLI rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset mnli --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
@@ -42,12 +44,14 @@ for %%R in (32 64 128 256) do (
     --dataset sst2 ^
     --dataset_dir Codes\framework\data\glue_data\sst2 ^
     --rank %%R ^
-    --batch_size 8 --parallel 1 --no_skip ^
+    --batch_size 8 --parallel 1 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
     --output_dir results\rank_ablation\sst2_rank%%R ^
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_sst2_rank%%R.log 2>&1
   echo Finished SST-2 rank=%%R
+  echo Uploading SST-2 rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset sst2 --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
@@ -61,12 +65,14 @@ for %%R in (32 64 128 256) do (
     --dataset ag_news ^
     --dataset_dir Codes\framework\data\ag_news ^
     --rank %%R ^
-    --batch_size 8 --parallel 1 --no_skip ^
+    --batch_size 8 --parallel 1 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
     --output_dir results\rank_ablation\agnews_rank%%R ^
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_agnews_rank%%R.log 2>&1
   echo Finished AG News rank=%%R
+  echo Uploading AG News rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset agnews --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
