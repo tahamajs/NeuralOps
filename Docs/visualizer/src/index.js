@@ -42,6 +42,7 @@ import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.j
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { openCompressionSimulator } from './interactive/compression_simulator.js';
+import { openModelRaceModal } from './interactive/model_race.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -300,6 +301,9 @@ export async function bootstrapApp() {
             }
         });
     });
+
+    const raceBtn = document.getElementById('btn-open-race');
+    if (raceBtn) raceBtn.addEventListener('click', () => openModelRaceModal());
 
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
