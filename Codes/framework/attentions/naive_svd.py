@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.attentions.minimal_svd import MinimalSVDAttention, FactorizedLinear
+from framework.attentions.minimal_svd import MinimalSVDAttention
 
 logger = logging.getLogger(__name__)
 
