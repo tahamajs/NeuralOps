@@ -674,3 +674,9 @@ assert out.shape == (2, 64, 768)
 
 ## Future Work
 - Integration with hardware-accelerated FlashAttention-3 backends.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-template-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-template-attention) | 2026-09-19 |
