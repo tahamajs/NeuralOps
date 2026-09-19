@@ -39,6 +39,7 @@ import { initDocModal } from './educational/doc_modal.js';
 import { togglePresentMode } from './educational/present_mode.js';
 import { openLearnModal } from './educational/learn_modal.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
+import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -272,6 +273,9 @@ export async function bootstrapApp() {
         rebuildSceneForModel(m, (store.get('activeResearchModule') && store.get('activeResearchModule').paradigm) || 'svd');
     }));
 
+    const heatmapBtn = document.getElementById('btn-open-heatmap');
+    if (heatmapBtn) heatmapBtn.addEventListener('click', () => openAttentionHeatmapExplorer());
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
@@ -282,6 +286,8 @@ export async function bootstrapApp() {
             togglePresentMode({ camera, controls, store, rebuildSceneForModel });
         } else if (e.key === 'l' || e.key === 'L') {
             openLearnModal();
+        } else if (e.key === 'h' || e.key === 'H') {
+            openAttentionHeatmapExplorer();
         }
     });
 
