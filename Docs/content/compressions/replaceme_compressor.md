@@ -399,3 +399,4 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **73.39%** | -17.67% | 0.7778 | 1.24x | 0 | [svd-linear-attention-distilbert-sst2-replaceme](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-replaceme) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **63.50%** | -18.30% | 0.6311 | 1.24x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **90.90%** | -3.40% | 0.9038 | 1.24x | 0 | [svd-linear-attention-distilbert-agnews-full-replaceme](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-replaceme) | 2026-09-19 |
