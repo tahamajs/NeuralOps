@@ -1,3 +1,13 @@
+---
+title: NeuralOps & SVD Linear Attention Research Hub
+emoji: 📚
+colorFrom: indigo
+colorTo: purple
+sdk: static
+pinned: false
+license: mit
+---
+
 # 📚 NeuralOps Documentation & Research Hub
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
