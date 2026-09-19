@@ -23,3 +23,13 @@ inject_jamba,CAUSAL_INCOMPATIBLE,"decoder-only SSM, cannot run on bidirectional 
 inject_kda,CAUSAL_INCOMPATIBLE,"causal state-space attention, incompatible with bidirectional encoder"
 inject_samba_m3,CAUSAL_INCOMPATIBLE,"causal Mamba S3, incompatible with bidirectional encoder"
 inject_samba_moe,CAUSAL_INCOMPATIBLE,"causal Mamba MoE, incompatible with bidirectional encoder"
+
+# Category C — Hybrid SSM architectures (permanent negatives)
+jamba,REJECTED_EXPANSION,"Mamba+Transformer hybrid adds +139% params; not a compression method"
+jamba_info,REJECTED_EXPANSION,"Mamba+Transformer hybrid adds +37.5% params"
+hymba_transx,REJECTED_EXPANSION,"Hybrid attention-SSM adds +33.9% params"
+samba_m3,REJECTED_EXPANSION,"Samba M3 adds +23% params"
+svd-mamba,REJECTED_EXPANSION,"SVD-Mamba hybrid adds +13.2% params"
+reap_moe,REJECTED_EXPANSION,"MoE routing layers expand parameter count beyond non-expansion limit"
+samba_moe,REJECTED_EXPANSION,"Mamba + MoE combination expands model size by +86%"
+
