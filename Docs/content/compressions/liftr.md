@@ -426,3 +426,9 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 90.14% | 0.9029 | 1.0 | 0 | 337.59 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-liftr) |
 | ROBERTA | 80.16% | 0.8309 | 1.0 | 0 | 585.62 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-liftr) |
 | GPT2 | 61.01% | 0.6654 | 1.0 | 0 | 634.91 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-liftr) |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9139 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-liftr](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-liftr) | 2026-09-19 |
