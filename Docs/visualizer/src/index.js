@@ -38,6 +38,7 @@ import { initModuleCatalog } from './ui/module_catalog.js';
 import { initDocModal } from './educational/doc_modal.js';
 import { togglePresentMode } from './educational/present_mode.js';
 import { openLearnModal } from './educational/learn_modal.js';
+import { openGuidedLessonsModal } from './educational/guided_lessons.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
@@ -272,6 +273,14 @@ export async function bootstrapApp() {
     const learnBtn = document.getElementById('btn-open-learn');
     if (learnBtn) learnBtn.addEventListener('click', () => openLearnModal());
 
+    const lessonsBtn = document.getElementById('btn-open-lessons');
+    if (lessonsBtn) lessonsBtn.addEventListener('click', () => openGuidedLessonsModal({
+        camera,
+        controls,
+        smoothFlyCamera: (cam, ctrl, y, d, x) => smoothFlyCamera(cam, ctrl, y, d, x),
+        selectPartIn3D: (t) => window.selectPartIn3D && window.selectPartIn3D(t)
+    }));
+
     const matrixBtn = document.getElementById('btn-open-model-matrix');
     if (matrixBtn) matrixBtn.addEventListener('click', () => openModelMatrixDashboard((m) => {
         store.set({ currentModel: m });
@@ -353,6 +362,8 @@ export async function bootstrapApp() {
             if (compressionBtn) compressionBtn.click();
         } else if (e.key === 'v' || e.key === 'V') {
             if (videoBtn) videoBtn.click();
+        } else if (e.key === 'g' || e.key === 'G') {
+            if (lessonsBtn) lessonsBtn.click();
         }
     });
 
