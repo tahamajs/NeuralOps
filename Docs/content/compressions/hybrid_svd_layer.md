@@ -258,6 +258,7 @@ The Hybrid SVD Layer (`SVDSingleHead` and `DirectSVDEncoderLayer`) provides a no
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **76.38%** | -14.68% | 0.7804 | 1.91x | 36 | [svd-linear-attention-distilbert-sst2-hybrid-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hybrid-svd) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **37.50%** | -44.30% | 0.3298 | 1.91x | 36 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `hybrid_svd_layer` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
