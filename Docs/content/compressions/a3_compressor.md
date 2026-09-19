@@ -220,6 +220,7 @@ compressed_model = a3_compressor_factory(
 | **roberta-agnews** | ag_news | `PASS` | 93.40% | **93.70%** | +0.30% | 0.9345 | 1.04x | 32 | N/A | 2026-09-18 |
 | **distilbert-base-uncased** | mnli | `PASS` | 34.40% | **42.10%** | +7.70% | 0.3542 | 1.05x | 21 | [svd-linear-attention-distilbert-base-uncased-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-a3) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **72.30%** | -9.50% | 0.7224 | 1.05x | 21 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.30%** | -5.00% | 0.8857 | 1.05x | 21 | N/A | 2026-09-19 |
 
 
 The hardened A3 compressor implementation was evaluated natively on a dedicated remote GPU server under full hardware acceleration:
