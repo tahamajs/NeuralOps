@@ -232,6 +232,13 @@ To advance the capabilities and versatility of bidirectional grid attention arch
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.19%** | -2.87% | 0.8815 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-vig](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-vig) | 2026-09-19 |
+
+
 > **Notice**: Empirical benchmark evaluation for `vig_attention` across standard sequence lengths and language modeling benchmarks is currently underway. Hardware profiling and latency numbers will be published upon test completion.
 
 ### 8.1 Language Modeling Quality & Throughput
