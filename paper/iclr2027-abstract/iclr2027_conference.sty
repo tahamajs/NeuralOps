@@ -29,7 +29,7 @@
 \newif\ificlrfinal
 \iclrfinalfalse
 \def\iclrfinalcopy{\iclrfinaltrue}
-\font\iclrtenhv  = phvb at 8pt
+\IfFileExists{phvb.tfm}{\font\iclrtenhv = phvb at 8pt}{\font\iclrtenhv = cmss8 at 8pt}
 
 % Specify the dimensions of each page
 
