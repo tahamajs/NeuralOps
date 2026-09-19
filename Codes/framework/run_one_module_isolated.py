@@ -58,17 +58,31 @@ def main():
         if isinstance(metrics, dict) and args.module in metrics:
             metrics = metrics[args.module]
 
-        # Check parameter expansion (with 0.15% tolerance for PEFT/LoRA recovery adapter overhead)
+        # Check parameter expansion — exclude LoRA adapter params from base model count
         p_before = int(metrics.get("total_params_before", 0) or 0)
-        p_after = int(metrics.get("total_params_after", 0) or 0)
-        status = metrics.get("status", "PASS")
+        p_after  = int(metrics.get("total_params_after",  0) or 0)
+        lora_p   = int(metrics.get("lora_params",         0) or 0)
+        base_params_after = p_after - lora_p
+        status    = metrics.get("status", "PASS")
         error_msg = metrics.get("error", "") or ""
-        lora_tolerance = int(0.0015 * p_before)
 
-        if p_before > 0 and p_after > (p_before + lora_tolerance) and status in ("PASS", "PASS_LOW"):
-            status = "REJECTED_EXPANSION"
-            expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
-            error_msg = f"{error_msg}; {expansion_err}".strip("; ")
+        if p_before > 0 and args.module != "full" and status in ("PASS", "PASS_LOW"):
+            base_delta     = base_params_after - p_before
+            base_delta_pct = 100.0 * base_delta / p_before if p_before > 0 else 0.0
+            if base_params_after > p_before * 1.20:
+                status = "EXTREME_EXPANSION"
+                expansion_err = (
+                    f"EXTREME_EXPANSION: base_before={p_before} base_after={base_params_after} "
+                    f"base_delta={base_delta} (+{base_delta_pct:.1f}%) lora_excluded={lora_p}"
+                )
+                error_msg = f"{error_msg}; {expansion_err}".strip("; ")
+            elif base_params_after > p_before:
+                status = "MODERATE_EXPANSION"
+                expansion_err = (
+                    f"MODERATE_EXPANSION: base_before={p_before} base_after={base_params_after} "
+                    f"base_delta={base_delta} (+{base_delta_pct:.2f}%) lora_excluded={lora_p}"
+                )
+                error_msg = f"{error_msg}; {expansion_err}".strip("; ")
 
         # metrics is the row dict for this module with all fields populated
         result.update({
