@@ -1,0 +1,11 @@
+# Blocklist for modules that violate the non-expansion guarantee or are hardware-incompatible.
+# Format: one module name per line. Lines starting with # are comments.
+# Reason codes: REJECTED_EXPANSION = param count exceeds baseline; CRASH_INCOMPATIBLE = hardware crash
+#
+# Module                       Reason                              Detail
+inject_granite_hybrid          # REJECTED_EXPANSION + CRASH        66.9M -> 216.5M (+149.6M, 3.24x), C0000005 on MNLI
+bam_umoe                       # REJECTED_EXPANSION                66.9M -> 180.9M (+114M, 2.70x)
+expert_choice_moe              # REJECTED_EXPANSION                66.9M -> 180.9M (+114M, 2.70x)
+hgrn2                          # REJECTED_EXPANSION                params exceeded baseline by 44%
+adaptive_sparse                # REJECTED_EXPANSION                params exceeded baseline by 44%
+granite_hybrid                 # REJECTED_EXPANSION                same family as inject_granite_hybrid
