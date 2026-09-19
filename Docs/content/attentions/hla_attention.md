@@ -347,4 +347,4 @@ The `HLAAttention` architecture incorporates telemetry hooks for tracking singul
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **74.66%** | -16.40% | 0.7691 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-hla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hla) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **75.46%** | -15.60% | 0.7627 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-hla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hla) | 2026-09-19 |
