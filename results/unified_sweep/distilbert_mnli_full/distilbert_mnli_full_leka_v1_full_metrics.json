@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_leka_v1",
     "performance": {
-        "accuracy_pct": 34.9,
-        "f1_score": 0.3272,
-        "f1_macro": 0.3272,
-        "precision": 0.3418,
-        "recall": 0.3447,
-        "val_loss": 1.0954,
-        "status": "REJECTED_EXPANSION",
-        "elapsed_s": 63.91
+        "accuracy_pct": 35.6,
+        "f1_score": 0.3349,
+        "f1_macro": 0.3349,
+        "precision": 0.3442,
+        "recall": 0.3515,
+        "val_loss": 1.0955,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 35.81
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -34,8 +34,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 382.53,
-        "tokens_per_sec": 19335.34
+        "peak_vram_mb": 382.35,
+        "tokens_per_sec": 12981.34
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 300.73,
+        "L_128_vram_mb": 300.23,
         "L_256_vram_mb": 308.6,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T16:58:43.993825"
+    "timestamp": "2026-09-19T22:47:26.898984"
 }
