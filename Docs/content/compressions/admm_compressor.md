@@ -183,6 +183,7 @@ def admm_joint_prune_quant_kernel(
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **57.50%** | +6.50% | 0.5395 | 1.00x | 11 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **81.30%** | +6.80% | 0.8033 | 1.00x | 27 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.83%** | -0.23% | 0.9129 | 1.00x | 11 | [svd-linear-attention-distilbert-sst2-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-admm) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.70%** | -1.10% | 0.8058 | 1.00x | 11 | [svd-linear-attention-distilbert-mnli-full-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-admm) | 2026-09-19 |
 
 
 The empirical evaluation of `admm_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
