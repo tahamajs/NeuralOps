@@ -1,12 +1,12 @@
 {
   "id": "granite_hybrid",
-  "name": "Granite Hybrid",
+  "name": "Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.",
   "file": "Codes/framework/attentions/granite_hybrid.py",
   "type": "Attention Module",
-  "category": "Mixture of Experts & Routing",
-  "paradigm": "moe",
-  "icon": "\ud83d\udd00",
-  "description": "Granite Hybrid Attention-SSM Layer with MoE Feed-Forward. Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained weight transfer.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.  Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained weight transfer. Hardened across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.",
   "classes": [
     "Mamba2",
     "MixtureOfExperts",
@@ -16,104 +16,58 @@
   "math_latex": "[X_{\\text{ssm}}, Z] = X W_{\\text{in}} \\in \\mathbb{R}^{B \\times L \\times 2 D_{\\text{inner}}}, \\quad D_{\\text{inner}} = D \\cdot \\text{expand}",
   "components": [
     {
-      "id": "router_gate",
-      "name": "Dynamic Routing Gating (4 Experts)",
-      "role": "Top-2 Expert Token Dispatcher",
-      "shape_transform": "[4 \u00d7 d_in]",
-      "color": "#ec4899"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "expert_0",
-      "name": "Sparse Expert Module 0",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "expert_1",
-      "name": "Sparse Expert Module 1",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
-    },
-    {
-      "id": "expert_2",
-      "name": "Sparse Expert Module 2",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
-    },
-    {
-      "id": "expert_3",
-      "name": "Sparse Expert Module 3",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
-    },
-    {
-      "id": "aggregator",
-      "name": "Softmax Weighted Combiner",
-      "role": "Weighted Token Reconstruction",
-      "shape_transform": "[d_out \u00d7 d_in]",
-      "color": "#a855f7"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 151254528,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 293839872,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 294224640,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 54136320,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 1435406336,
-      "savings_ratio": 0.53,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

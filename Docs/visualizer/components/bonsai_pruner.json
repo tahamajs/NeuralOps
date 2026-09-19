@@ -1,12 +1,12 @@
 {
   "id": "bonsai_pruner",
-  "name": "Bonsai Pruner",
+  "name": "Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent ",
   "file": "Codes/framework/compression_engine/bonsai_pruner.py",
   "type": "Compression Engine",
-  "category": "Structured Pruning & Channel Slicing",
-  "paradigm": "slicegpt",
-  "icon": "\u2702\ufe0f",
-  "description": "Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery & [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'. Production-hardened with:",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery & [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.  Production-hardened with: - Multi-architecture support: DistilBERT, RoBERTa, GPT-2 (Conv1D), Qwen3.5 (GQA) - Robust activation collection & calibration forward handling (never crashes on malformed inputs) - Safe LayerNor",
   "classes": [
     "BonsaiPrunedLoRALinear",
     "BonsaiPruner"
@@ -15,90 +15,58 @@
   "math_latex": "s_t = s_{\\text{target}} \\cdot \\left( 1 - \\left( 1 - \\frac{t}{T} \\right)^3 \\right)",
   "components": [
     {
-      "id": "q_slice",
-      "name": "Sliced Query Projection (-45%)",
-      "role": "Orthogonally Concentrated Projection",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#f59e0b"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "k_slice",
-      "name": "Sliced Key Projection (-45%)",
-      "role": "Compressed Dimensional Key Map",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#d97706"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "v_slice",
-      "name": "Sliced Value Projection (-45%)",
-      "role": "Compressed Value Manifold",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#b45309"
-    },
-    {
-      "id": "out_slice",
-      "name": "Sliced Output Transform",
-      "role": "Channel Pruned Output Reconstruction",
-      "shape_transform": "[d_out \u00d7 55% d_in]",
-      "color": "#f59e0b"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 43687584,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 45227712,
-      "storage_saved_formatted": "43.1 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 78705984,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 90455424,
-      "storage_saved_formatted": "86.3 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 79090752,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 90455424,
-      "storage_saved_formatted": "86.3 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 8200191,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 332939240,
-      "savings_ratio": 1.82,
-      "storage_saved_bytes": 322043952,
-      "storage_saved_formatted": "307.1 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }
