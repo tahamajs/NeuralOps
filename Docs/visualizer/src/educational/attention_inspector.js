@@ -14,6 +14,7 @@
 import { detectAttentionVariant, ATTENTION_VARIANTS } from './attention_types.js';
 import { MODEL_SPECS } from '../constants.js';
 import { escapeHtml } from '../utils/dom.js';
+import { renderMatrixUnfoldingVisualizer, openMatrixUnfoldingModal } from './matrix_unfolding.js';
 
 /**
  * Renders the comprehensive Attention Masterclass and telemetry card in the inspector drawer.
@@ -223,7 +224,23 @@ export function renderAttentionInspector(moduleMeta, currentModel = 'distilbert'
             </div>
         </div>
 
-        <!-- 7. Interactive Sample Attention Heatmap -->
+        <!-- 7. Interactive Matrix Deconstruction (Opening the S x S Square) -->
+        <div style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.35); border-radius:8px; padding:12px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                <span style="font-size:11px; font-weight:700; color:#c084fc; text-transform:uppercase; letter-spacing:0.5px;">
+                    📐 Attention Matrix Square Deconstruction
+                </span>
+                <button id="btn-inspector-unfold-modal" class="round-button" style="font-size:10px; padding:3px 10px; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid #c084fc; cursor:pointer;" title="Open Fullscreen Matrix Deconstruction Engine">
+                    ⛶ Full Engine
+                </button>
+            </div>
+            <div style="font-size:10px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">
+                Interactive step-by-step proof: Trace how a 1D sequence unfolds into an \(S \times S\) square (\(Q \cdot K^\top\)), scales by \(1/\sqrt{d_k}\), normalizes via Softmax, and folds back into value context vectors:
+            </div>
+            <div id="inspector-matrix-unfold-mount"></div>
+        </div>
+
+        <!-- 8. Interactive Sample Attention Heatmap -->
         <div style="background:rgba(6,13,24,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:11px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.5px;">🔥 Attention Probability Heatmap</span>
@@ -234,6 +251,26 @@ export function renderAttentionInspector(moduleMeta, currentModel = 'distilbert'
             </div>
         </div>
     `;
+
+    // Mount Interactive Matrix Unfolding Stepper
+    const unfoldMount = container.querySelector('#inspector-matrix-unfold-mount');
+    if (unfoldMount) {
+        const pKey = variant.id === 'linear_attention' ? 'linear_attention' :
+                     variant.id === 'gqa' ? 'gqa' :
+                     variant.id === 'mla' ? 'mla' :
+                     variant.id === 'sliding_window' ? 'sliding_window' :
+                     (moduleMeta && moduleMeta.paradigm === 'svd' ? 'svd_lowrank' : 'dense_mha');
+
+        renderMatrixUnfoldingVisualizer(unfoldMount, {
+            activeStep: 2, // Step 3: Opening the S x S Square!
+            activeParadigm: pKey,
+            causal: variant.causal,
+            scaled: true
+        });
+    }
+
+    const modalBtn = container.querySelector('#btn-inspector-unfold-modal');
+    if (modalBtn) modalBtn.onclick = () => openMatrixUnfoldingModal();
 
     // Render KaTeX for formulas
     if (typeof window !== 'undefined' && window.katex) {
