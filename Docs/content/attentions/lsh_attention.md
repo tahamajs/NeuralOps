@@ -313,7 +313,7 @@ def _lsh_chunked_flash_attn_kernel(
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **82.57%** | -8.03% | 0.8245 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-lsh-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-lsh-attention) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **78.21%** | -12.85% | 0.8053 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-lsh](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-lsh) | 2026-09-19 |
 
 
 The empirical evaluation of `lsh_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
