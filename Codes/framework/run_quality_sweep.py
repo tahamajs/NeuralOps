@@ -50,6 +50,8 @@ FIELDS = [
     "total_params_after",
     "trainable_recovery_params",
     "compression_rate",
+    "compression_rate_raw",
+    "compression_rate_net",
     "compression_ratio_pct",
     "flops_reduction_pct",
     "num_compressed_layers",
@@ -1021,17 +1023,22 @@ def compute_compression_metrics(
             if hasattr(m, "is_custom_attention") or hasattr(m, "span_logits")
         )
     lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
+    raw_params_after = total_params_after - lora_params
 
     is_compression = (
         module_type == "compressor"
         or (total_params_after < total_params_before and module_name != "full")
     )
 
-    if is_compression and total_params_after > 0:
-        compression_rate = round(total_params_before / max(1, total_params_after), 4)
-        compression_ratio_pct = round((1.0 - total_params_after / max(1, total_params_before)) * 100.0, 2)
+    if total_params_after > 0:
+        compression_rate_net = round(total_params_before / max(1, total_params_after), 4)
+        compression_rate_raw = round(total_params_before / max(1, raw_params_after), 4)
+        compression_rate = compression_rate_net if is_compression else 1.0
+        compression_ratio_pct = round((1.0 - total_params_after / max(1, total_params_before)) * 100.0, 2) if is_compression else 0.0
     else:
         compression_rate = 1.0
+        compression_rate_raw = 1.0
+        compression_rate_net = 1.0
         compression_ratio_pct = 0.0
 
     num_compressed_layers = comp_stats.get("num_compressed", 0)
@@ -1057,30 +1064,32 @@ def compute_compression_metrics(
             except (ValueError, TypeError):
                 pass
 
-    avg_reconstruction_error = comp_stats.get("avg_reconstruction_error", None)
-    if avg_reconstruction_error is None and layer_errors:
-        avg_reconstruction_error = round(float(sum(layer_errors.values()) / max(1, len(layer_errors))), 4)
+    err_values = list(layer_errors.values())
+    avg_reconstruction_error = (
+        round(sum(err_values) / len(err_values), 4) if err_values else None
+    )
 
-    weighted_reconstruction_error = comp_stats.get("weighted_reconstruction_error", None)
-    if weighted_reconstruction_error is None and layer_errors:
-        total_w_err, total_w_params = 0.0, 0
-        named_mods = dict(model.named_modules())
-        for mod_name, err_val in layer_errors.items():
-            sub_mod = named_mods.get(mod_name)
-            n_params = sum(p.numel() for p in sub_mod.parameters()) if sub_mod is not None else 1
-            total_w_err += err_val * n_params
-            total_w_params += n_params
-        if total_w_params > 0:
-            weighted_reconstruction_error = round(float(total_w_err / total_w_params), 4)
-        else:
-            weighted_reconstruction_error = avg_reconstruction_error
+    if err_values and layer_ranks:
+        weighted_sum = sum(
+            layer_errors[k] * layer_ranks.get(k, 1)
+            for k in layer_errors
+            if k in layer_ranks
+        )
+        total_rank = sum(layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks)
+        weighted_reconstruction_error = (
+            round(weighted_sum / max(1, total_rank), 4) if total_rank > 0 else avg_reconstruction_error
+        )
+    else:
+        weighted_reconstruction_error = avg_reconstruction_error
 
+    # FLOPs reduction estimation for factorized linear modules
     flops_reduction_pct = comp_stats.get("flops_reduction_percent", comp_stats.get("flops_reduction_pct", None))
     if flops_reduction_pct is None:
-        if num_svd_layers > 0:
-            orig_flops, fact_flops = 0, 0
+        if is_compression:
+            orig_flops = 0
+            fact_flops = 0
             for m in model.modules():
-                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"):
+                if m.__class__.__name__ in ("SVDLinear", "FactorisedLinear"):
                     in_f = getattr(m, "in_features", None)
                     out_f = getattr(m, "out_features", None)
                     r = getattr(m, "rank", None)
@@ -1101,6 +1110,8 @@ def compute_compression_metrics(
         "total_params_after": total_params_after,
         "trainable_recovery_params": trainable_recovery_params,
         "compression_rate": compression_rate,
+        "compression_rate_raw": compression_rate_raw,
+        "compression_rate_net": compression_rate_net,
         "compression_ratio_pct": compression_ratio_pct,
         "flops_reduction_pct": flops_reduction_pct,
         "num_compressed_layers": num_compressed_layers,
@@ -2698,6 +2709,8 @@ def run_single_module_main(args) -> dict:
                 "total_params_after": total_params_before,
                 "trainable_recovery_params": 0,
                 "compression_rate": 1.0,
+                "compression_rate_raw": 1.0,
+                "compression_rate_net": 1.0,
                 "compression_ratio_pct": 0.0,
                 "flops_reduction_pct": 0.0,
                 "num_compressed_layers": 0,
@@ -2718,21 +2731,21 @@ def run_single_module_main(args) -> dict:
                 err = "note: recovery_loss_nan"
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
-            # Module claimed compression but did not compress anything.
-            # Also check: was ANY module in the model injected by class-name match?
-            # This catches attention modules that forgot to set is_custom_attention=True.
-            _name_injected = any(
-                name.lower().replace("_", "") in m.__class__.__name__.lower().replace("_", "")
-                for m in model.modules()
-                if m.__class__.__name__ not in ("Module", "Linear", "LayerNorm", "Dropout", "ReLU", "GELU")
-            ) if model is not None else False
-            if (
+
+            # Check parameter expansion
+            p_before = comp_metrics.get("total_params_before", total_params_before)
+            p_after = comp_metrics.get("total_params_after", total_params_before)
+            if p_before > 0 and p_after > p_before and name != "full":
+                status = "REJECTED_EXPANSION"
+                expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
+                err = f"{err}; {expansion_err}".strip("; ")
+            elif (
                 name != "full"
                 and not injected
                 and not _name_injected
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("num_injected_attention_layers", 0) == 0
-                and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
+                and p_after >= p_before
             ):
                 status = "PASS_NO_COMPRESSION"
                 err = "note: zero compressed layers, model grew (LoRA only)"
@@ -2768,6 +2781,8 @@ def run_single_module_main(args) -> dict:
             "total_params_after": comp_metrics.get("total_params_after", total_params_before),
             "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
             "compression_rate": comp_metrics.get("compression_rate", 1.0),
+            "compression_rate_raw": comp_metrics.get("compression_rate_raw", 1.0),
+            "compression_rate_net": comp_metrics.get("compression_rate_net", 1.0),
             "compression_ratio_pct": comp_metrics.get("compression_ratio_pct", 0.0),
             "flops_reduction_pct": comp_metrics.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp_metrics.get("num_compressed_layers", 0),
