@@ -9,6 +9,7 @@ import { renderStructuralTransformation } from '../educational/transformation.js
 import { renderTokenLifecycle } from '../educational/token_lifecycle.js';
 import { renderComponentPipeline } from '../educational/component_pipeline.js';
 import { renderLatexFormula } from '../educational/formula_renderer.js';
+import { renderAttentionInspector } from '../educational/attention_inspector.js';
 import { formatParamCount } from '../utils/format.js';
 
 /**
@@ -117,6 +118,8 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
     if (factDelta) factDelta.innerText = meta.storage || (meta.compression || (isLeft ? '1.0x Base' : 'Compressed'));
 
     // Sub-renderers
+    renderAttentionInspector(activeModule || node, currentModel);
+
     if (activeModule) {
         renderStructuralTransformation(activeModule, currentModel);
         renderTokenLifecycle(activeModule, currentModel);
