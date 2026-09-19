@@ -159,6 +159,7 @@ def huffman_decode_kernel(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9105 | 1.00x | 35 | [svd-linear-attention-distilbert-sst2-huffman](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-huffman) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.50%** | -0.30% | 0.8145 | 1.00x | 35 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `huffman_coder` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
