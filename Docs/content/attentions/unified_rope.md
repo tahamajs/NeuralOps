@@ -215,6 +215,13 @@ A proposed Triton kernel fuses Query/Key low-rank scaling, half-rotation index m
 
 ## 7. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.99%** | -2.07% | 0.8950 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-unified-rope](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-unified-rope) | 2026-09-19 |
+
+
 ### 7.1 Language Modeling Quality & Throughput
 *Pending actual benchmark results.* Benchmark evaluations across GLUE (SST-2, MRPC, MNLI) and LongBench suites are scheduled for execution on standardized GPU clusters.
 
