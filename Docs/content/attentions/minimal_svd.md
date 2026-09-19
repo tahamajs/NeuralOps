@@ -228,6 +228,7 @@ The architectural paradigm introduced by MinimalSVD unlocks several fertile traj
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.35%** | -4.71% | 0.8722 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-minimal-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-svd) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **55.10%** | -26.70% | 0.5441 | 1.15x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `minimal_svd` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
