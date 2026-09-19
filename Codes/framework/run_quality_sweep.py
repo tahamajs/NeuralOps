@@ -71,6 +71,28 @@ DEPRECATED_MODULES = {
     "hgrn2_gated_deltanet": "same as gated_delta_net",
 }
 
+# ---------------------------------------------------------------------------
+# Blocklist: modules that violate the non-expansion guarantee or are hardware-
+# incompatible. Loaded from Codes/framework/config/blocklist.txt.
+# These are recorded as SKIP_BLOCKED and never retried.
+# ---------------------------------------------------------------------------
+def _load_blocklist() -> dict:
+    """Return {module_name: reason_comment} from blocklist.txt."""
+    bl_path = Path(__file__).resolve().parent / "config" / "blocklist.txt"
+    blocked = {}
+    if bl_path.exists():
+        for raw in bl_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("#", 1)
+            name = parts[0].strip()
+            reason = parts[1].strip() if len(parts) > 1 else "blocked"
+            if name:
+                blocked[name] = reason
+    return blocked
+
+BLOCKED_MODULES: dict = _load_blocklist()
 
 
 
@@ -2508,8 +2530,10 @@ def run_single_module_main(args) -> dict:
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
-    # In fresh mode, evaluate everything; otherwise only skip legitimate PASS results
-    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
+    # In fresh mode, evaluate everything; otherwise only skip modules that genuinely PASSED.
+    # PASS_LOW is NOT skipped — it gets re-evaluated on new datasets where thresholds differ.
+    # CRASH/FAIL/REJECTED_EXPANSION are always re-tried unless in BLOCKED_MODULES.
+    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") == "PASS"}
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
@@ -2517,10 +2541,34 @@ def run_single_module_main(args) -> dict:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
             continue
-        if name in existing:
-            LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (%s, %.2f%%)",
-                     n, len(names), name, summary_dict[name].get("status"), float(summary_dict[name].get("accuracy_pct", 0.0)))
+        if name in BLOCKED_MODULES:
+            bl_reason = BLOCKED_MODULES[name]
+            LOG.warning(">>> Skipping BLOCKED module [%d/%d]: %s (%s)", n, len(names), name, bl_reason)
+            row = {
+                "module_name": name, "status": "SKIP_BLOCKED",
+                "accuracy_pct": 0.0, "elapsed_s": 0.0,
+                "error": f"BLOCKED: {bl_reason}",
+                "path": "blocked", "timestamp": datetime.now().isoformat(),
+            }
+            summary_dict[name] = row
+            # Atomic write to CSV so blocklist entries appear in live summary.csv
+            _tmp = path.with_suffix(".tmp")
+            with _tmp.open("w", newline="", encoding="utf8") as _f:
+                _w = csv.DictWriter(_f, fieldnames=FIELDS, extrasaction="ignore")
+                _w.writeheader()
+                for _m in summary_dict:
+                    _w.writerow(summary_dict[_m])
+            if _tmp.exists():
+                if path.exists():
+                    try: path.unlink()
+                    except Exception: pass
+                _tmp.rename(path)
             continue
+        if name in existing:
+            LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (PASS, %.2f%%)",
+                     n, len(names), name, float(summary_dict[name].get("accuracy_pct", 0.0)))
+            continue
+
         LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
                  n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
         t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
@@ -3213,10 +3261,13 @@ def main():
         clear_vram_between_modules()
         return row
 
-    pending_names = [n for n in names if n not in existing]
+    pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
+
     for n in names:
         if n in existing:
             print(f">>> Skipping {n} (already PASS)")
+        elif n in BLOCKED_MODULES:
+            print(f">>> Skipping BLOCKED {n}")
 
     workers = max(1, getattr(args, "parallel", 1))
     if workers > 1:
