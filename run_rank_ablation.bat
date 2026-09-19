@@ -40,7 +40,7 @@ for %%R in (32 64 128 256) do (
   python -u Codes\framework\run_quality_sweep.py ^
     --model models\distilbert_agnews_full ^
     --dataset ag_news ^
-    --dataset_dir Codes\framework\data\ag_news ^
+    --dataset_dir Codes\framework\data\glue_data\ag_news ^
     --rank %%R ^
     --batch_size 16 --parallel 3 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
