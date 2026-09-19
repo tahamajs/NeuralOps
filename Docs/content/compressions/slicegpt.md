@@ -433,6 +433,13 @@ The `SliceGPTCompressor` module (registered under `slicegpt`) provides configura
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **82.80%** | -8.26% | 0.8197 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-slicegpt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-slicegpt) | 2026-09-19 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Evaluation Suite | Base Model | Metric | Value | Latency Reduction | Peak Memory Delta | Status |
