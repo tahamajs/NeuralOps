@@ -1,11 +1,25 @@
-# Blocklist for modules that violate the non-expansion guarantee or are hardware-incompatible.
-# Format: one module name per line. Lines starting with # are comments.
-# Reason codes: REJECTED_EXPANSION = param count exceeds baseline; CRASH_INCOMPATIBLE = hardware crash
-#
-# Module                       Reason                              Detail
-inject_granite_hybrid          # REJECTED_EXPANSION + CRASH        66.9M -> 216.5M (+149.6M, 3.24x), C0000005 on MNLI
-bam_umoe                       # REJECTED_EXPANSION                66.9M -> 180.9M (+114M, 2.70x)
-expert_choice_moe              # REJECTED_EXPANSION                66.9M -> 180.9M (+114M, 2.70x)
-hgrn2                          # REJECTED_EXPANSION                params exceeded baseline by 44%
-adaptive_sparse                # REJECTED_EXPANSION                params exceeded baseline by 44%
-granite_hybrid                 # REJECTED_EXPANSION                same family as inject_granite_hybrid
+# Blocklist for modules that violate the non-expansion guarantee or are hardware/architecture incompatible.
+# Format: <module_name>,<REASON_CODE>,"<Detailed justification / empirical failure reason>"
+# Lines starting with # are comments.
+
+# Category A — REJECTED_EXPANSION (Parameter count growth; violates non-expansion constraint)
+inject_granite_hybrid,REJECTED_EXPANSION,"Mamba2+MoE adds 149.6M params (66.9M -> 216.5M, 3.24x); architectural addition cannot compress baseline"
+granite_hybrid,REJECTED_EXPANSION,"Alias of inject_granite_hybrid; adds full Mamba2 SSM + 4-expert MoE on top of standard attention"
+bam_umoe,REJECTED_EXPANSION,"8-expert MoE adds 114M parameters across 6 layers (66.9M -> 180.9M, 2.70x); cannot satisfy parameter reduction"
+expert_choice_moe,REJECTED_EXPANSION,"8-expert MoE architecture adds 114M parameters; routing capacity requires large parameter overhead"
+hgrn2,REJECTED_EXPANSION,"HGRN2 gated recurrent replacement increases parameter count by 44% over baseline DistilBERT attention"
+adaptive_sparse,REJECTED_EXPANSION,"Learned sparse routing structures increase layer parameter count by 44% over baseline"
+
+# Category B — ARCHITECTURAL_INCOMPATIBLE (Mode collapse / causal break / task mismatch)
+aegis_spectron_fp8,ARCHITECTURAL_INCOMPATIBLE,"Dynamic spectral entropy router bias forces local window attention branch, causing 34.0% single-class mode collapse on multi-class NLI"
+compressed_attention,ARCHITECTURAL_INCOMPATIBLE,"Joint QKV SVD rank truncation (rank 128) is too aggressive for 3-class sentence pair entailment; results in 36.1% near-chance accuracy"
+compressed_mha,ARCHITECTURAL_INCOMPATIBLE,"Aggressive multi-head SVD projection collapse yields single-class prediction (34.1% accuracy) on MNLI"
+inject_mamba,ARCHITECTURAL_INCOMPATIBLE,"Causal State Space Model (SSM) breaks bidirectional token visibility required for encoder sentence pair classification (34.1%)"
+mamba,ARCHITECTURAL_INCOMPATIBLE,"Unidirectional causal SSM architecture is fundamentally incompatible with bidirectional DistilBERT representations (34.1%)"
+kronecker_linear_class,ARCHITECTURAL_INCOMPATIBLE,"Kronecker product factorization combined with classification layer collapses to single-class prediction (34.0%)"
+
+# Causal SSM modules — architecturally incompatible with bidirectional encoders
+inject_jamba,CAUSAL_INCOMPATIBLE,"decoder-only SSM, cannot run on bidirectional DistilBERT"
+inject_kda,CAUSAL_INCOMPATIBLE,"causal state-space attention, incompatible with bidirectional encoder"
+inject_samba_m3,CAUSAL_INCOMPATIBLE,"causal Mamba S3, incompatible with bidirectional encoder"
+inject_samba_moe,CAUSAL_INCOMPATIBLE,"causal Mamba MoE, incompatible with bidirectional encoder"
