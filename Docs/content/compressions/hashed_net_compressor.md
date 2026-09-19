@@ -178,6 +178,7 @@ The HashedNet Compressor (registered as `"hashed_net"`) brings the power of hash
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9087 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-hashed-net](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hashed-net) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.10%** | -0.70% | 0.8106 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.60%** | +0.30% | 0.9422 | 1.00x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `hashed_net_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
