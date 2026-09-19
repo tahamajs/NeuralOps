@@ -206,6 +206,7 @@ ToMoE (registered as `"tomoe"`) provides a simple yet effective way to introduce
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-tomoe](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tomoe) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.90%** | +0.10% | 0.8185 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9400 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-tomoe](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-tomoe) | 2026-09-19 |
 
 
 The empirical evaluation of `tomoe_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
