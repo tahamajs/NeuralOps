@@ -229,6 +229,7 @@ def admm_threshold_kernel(
 | **gpt2** | ag_news | `PASS` | 79.70% | **78.90%** | -0.80% | 0.7828 | 1.00x | 48 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **87.27%** | -3.79% | 0.8734 | 1.00x | 36 | [svd-linear-attention-distilbert-sst2-admm-pruner](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-admm-pruner) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **66.50%** | -15.30% | 0.6611 | 1.00x | 36 | [svd-linear-attention-distilbert-mnli-full-admm-pruner](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-admm-pruner) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.60%** | -2.70% | 0.9117 | 1.00x | 36 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `admm_pruner` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
