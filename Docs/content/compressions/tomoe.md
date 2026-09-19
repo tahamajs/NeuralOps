@@ -200,6 +200,13 @@ ToMoE (registered as `"tomoe"`) provides a simple yet effective way to introduce
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9125 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-tomoe](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tomoe) | 2026-09-19 |
+
+
 The empirical evaluation of `tomoe_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
