@@ -462,3 +462,9 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.88%** | -2.18% | 0.8889 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-nasc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nasc) | 2026-09-19 |
