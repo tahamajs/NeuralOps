@@ -370,8 +370,8 @@
   "granite_hybrid": {
     "id": "granite_hybrid",
     "name": "Granite-Hybrid Attention: Interleaved Mamba-2 State Space Archite",
-    "category": "D",
-    "subcategory": "recurrent_linear",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "paradigm": "moe",
     "file": "Codes/framework/attentions/granite_hybrid.py"
   },
@@ -458,16 +458,16 @@
   "jamba": {
     "id": "jamba",
     "name": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block",
-    "category": "D",
-    "subcategory": "recurrent_linear",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "paradigm": "svd",
     "file": "Codes/framework/attentions/jamba.py"
   },
   "jamba_info": {
     "id": "jamba_info",
     "name": "Information-Bottlenecked Jamba Architecture with Dual Operational",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "paradigm": "ssm",
     "file": "Codes/framework/attentions/jamba_info.py"
   },
