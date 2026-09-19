@@ -306,6 +306,7 @@ During early training epochs, keep temperature high to explore rank distribution
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9137 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-dobi](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-dobi) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.80%** | +0.00% | 0.8177 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.30%** | +0.00% | 0.9390 | 1.00x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `dobi_svd` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
