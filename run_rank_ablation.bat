@@ -44,7 +44,7 @@ for %%R in (32 64 128 256) do (
     --dataset sst2 ^
     --dataset_dir Codes\framework\data\glue_data\sst2 ^
     --rank %%R ^
-    --batch_size 8 --parallel 1 --no_skip --defer_export ^
+    --batch_size 8 --parallel 3 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
     --output_dir results\rank_ablation\sst2_rank%%R ^
     --modules %COMP_MODULES% ^
@@ -65,7 +65,7 @@ for %%R in (32 64 128 256) do (
     --dataset ag_news ^
     --dataset_dir Codes\framework\data\ag_news ^
     --rank %%R ^
-    --batch_size 8 --parallel 1 --no_skip --defer_export ^
+    --batch_size 8 --parallel 3 --no_skip --defer_export ^
     --recovery_steps 80 --finetune_steps 150 ^
     --output_dir results\rank_ablation\agnews_rank%%R ^
     --modules %COMP_MODULES% ^
