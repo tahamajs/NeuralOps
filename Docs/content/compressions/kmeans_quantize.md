@@ -339,6 +339,13 @@ print('Compressed output logits:', outputs.logits.shape)
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9089 | 2.73x | 36 | [svd-linear-attention-distilbert-sst2-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kmeans) | 2026-09-19 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Evaluation Suite | Base Model | Metric | Value | Latency Reduction | Peak Memory Delta | Status |
@@ -394,4 +401,3 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
