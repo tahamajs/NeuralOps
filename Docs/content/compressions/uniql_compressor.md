@@ -205,6 +205,7 @@ UniQL (registered as `"uniql"`) provides a straightforward, joint low‑rank and
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9139 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-uniql](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-uniql) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **82.30%** | +0.50% | 0.8225 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.90%** | +0.60% | 0.9454 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-uniql](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-uniql) | 2026-09-19 |
 
 
 The empirical evaluation of `uniql_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
