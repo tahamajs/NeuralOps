@@ -173,6 +173,7 @@ def lsc_fft_reconstruct_kernel(
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **91.06%** | +0.00% | 0.9137 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-lsc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-lsc) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.50%** | -0.30% | 0.8145 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-lsc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-lsc) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.60%** | +0.30% | 0.9422 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-lsc](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-lsc) | 2026-09-19 |
 
 
 The empirical evaluation of `lsc_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
