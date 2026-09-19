@@ -1,12 +1,12 @@
 {
   "id": "salt_attention",
-  "name": "Salt Attention",
+  "name": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning.",
   "file": "Codes/framework/attentions/salt_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning. Parameter-efficient adaptation mechanism for transformer attention projections combining orthogonal singular vector preservation, singular value rescaling ($\\gamma$), and additive low-rank adapters ($A B$).",
+  "description": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning.  Parameter-efficient adaptation mechanism for transformer attention projections combining orthogonal singular vector preservation, singular value rescaling ($\\gamma$), and additive low-rank adapters ($A B$). Hardened for multi-architecture production deployment.",
   "classes": [
     "SALTLinear",
     "SALTAttention"
@@ -16,82 +16,57 @@
   "components": [
     {
       "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=16)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[16 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
       "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=16)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 16]",
-      "color": "#2dd4bf"
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
       "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
       "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 221184,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 25161216,
-      "savings_ratio": 32.0,
-      "storage_saved_bytes": 82280448,
-      "storage_saved_formatted": "78.5 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 221184,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 41653248,
-      "savings_ratio": 32.0,
-      "storage_saved_bytes": 164560896,
-      "storage_saved_formatted": "156.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 196608,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 41743104,
-      "savings_ratio": 36.0,
-      "storage_saved_bytes": 165150720,
-      "storage_saved_formatted": "157.5 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 366592,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 144932864,
-      "savings_ratio": 40.67,
-      "storage_saved_bytes": 698056704,
-      "storage_saved_formatted": "665.7 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

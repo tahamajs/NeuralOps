@@ -1,103 +1,71 @@
 {
   "id": "hgrn2_layer",
-  "name": "Hgrn2 Layer",
+  "name": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer.",
   "file": "Codes/framework/attentions/hgrn2_layer.py",
   "type": "Attention Module",
-  "category": "Linear Attention & State-Space (SSM)",
-  "paradigm": "ssm",
-  "icon": "\ud83d\udc0d",
-  "description": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer. Implements bidirectional/causal element-wise linear recurrence with dynamic input-dependent log-space forget gating, input modulation, LoRA adapters, and multi-architecture pretrained weight transfer.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer.  Implements bidirectional/causal element-wise linear recurrence with dynamic input-dependent log-space forget gating, input modulation, LoRA adapters, and multi-architecture pretrained weight transfer.",
   "classes": [
     "HGRN2Layer"
   ],
-  "methods_count": 11,
+  "methods_count": 12,
   "math_latex": "f_t = \\exp(-\\operatorname{softplus}(W_f x_t + b_f)) \\in (0, 1)^D, \\quad b_f = 1.5",
   "components": [
     {
-      "id": "in_proj",
-      "name": "SVD-Factorized Input Projection",
-      "role": "Expanded State Channel Projector",
-      "shape_transform": "[2*d_in \u00d7 d_in]",
-      "color": "#10b981"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "conv1d",
-      "name": "1D Causal Depthwise Convolution",
-      "role": "Local Token Neighborhood Mixing",
-      "shape_transform": "[d_state \u00d7 kernel_size]",
-      "color": "#059669"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "selective_scan",
-      "name": "Selective Scan State Space Recurrence",
-      "role": "Linear-Time Associative Global Scan",
-      "shape_transform": "[h_t = A*h_{t-1} + B*x_t]",
-      "color": "#34d399"
-    },
-    {
-      "id": "out_proj",
-      "name": "Factorized Output Projection",
-      "role": "Output Projection with Residual Merge",
-      "shape_transform": "[d_out \u00d7 d_in]",
-      "color": "#047857"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7108608,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 66485760,
-      "savings_ratio": 1.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7108608,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 124302336,
-      "savings_ratio": 1.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7108608,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 124687104,
-      "savings_ratio": 1.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 16407552,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 529915904,
-      "savings_ratio": 0.91,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

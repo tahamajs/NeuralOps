@@ -1,96 +1,87 @@
 {
   "id": "gated_deltanet_block",
-  "name": "Gated DELTANET Block",
+  "name": "Gated DeltaNet Block with Optional Multi-Head Attention Bypass.",
   "file": "Codes/framework/attentions/gated_deltanet_block.py",
   "type": "Attention Module",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
-  "description": "Gated DeltaNet Block with Optional Multi-Head Attention Bypass. Implements an efficient hybrid linear-recurrent block switching dynamically between standard multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.",
+  "category": "Mixture of Experts & Routing",
+  "paradigm": "moe",
+  "icon": "\ud83d\udd00",
+  "description": "Gated DeltaNet Block with Optional Multi-Head Attention Bypass.  Implements an efficient hybrid linear-recurrent block switching dynamically between standard multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.",
   "classes": [
     "GatedDeltaNetBlock"
   ],
   "methods_count": 15,
-  "math_latex": "\\text{Output} = \\begin{cases} \\text{LayerNorm}(X + \\text{MHA}(X, X, X)), & \\text{if } \\text{use\\_full\\_attention} \\\\ \\text{LayerNorm}(X + \\text{GatedDeltaNet}(X)), & \\text{otherwise} \\end{cases}",
+  "math_latex": "\\text{Output} = \\begin{cases}\n    \\text{LayerNorm}(X + \\text{MHA}(X, X, X)), & \\text{if } \\text{use\\_full\\_attention} \\\\\n    \\text{LayerNorm}(X + \\text{GatedDeltaNet}(X)), & \\text{otherwise}\n\\end{cases}",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=64)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[64 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "id": "router",
+      "name": "Top-K Gating Router",
+      "role": "Sparse Token Dispatch",
+      "shape_transform": "[K \u00d7 d_in] Softmax",
+      "color": "#b57ee0",
+      "math_latex": "G(x) = \\text{Softmax}(\\text{TopK}(x W_g, K=2))"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=64)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 64]",
-      "color": "#2dd4bf"
+      "id": "expert_0",
+      "name": "Specialized Feed-Forward Expert 0",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#c084fc",
+      "math_latex": "E_0(x) = \\text{GELU}(x W_{0,1} + b_{0,1}) W_{0,2} + b_{0,2}"
     },
     {
-      "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "id": "expert_1",
+      "name": "Specialized Feed-Forward Expert 1",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#a855f7",
+      "math_latex": "E_1(x) = \\text{GELU}(x W_{1,1} + b_{1,1}) W_{1,2} + b_{1,2}"
+    },
+    {
+      "id": "expert_2",
+      "name": "Specialized Feed-Forward Expert 2",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#9333ea",
+      "math_latex": "E_2(x) = \\text{GELU}(x W_{2,1} + b_{2,1}) W_{2,2} + b_{2,2}"
+    },
+    {
+      "id": "expert_3",
+      "name": "Specialized Feed-Forward Expert 3",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#7e22ce",
+      "math_latex": "E_3(x) = \\text{GELU}(x W_{3,1} + b_{3,1}) W_{3,2} + b_{3,2}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 29142528,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 74317824,
-      "storage_saved_formatted": "70.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 49615872,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 148635648,
-      "storage_saved_formatted": "141.8 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 786432,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 48820992,
-      "savings_ratio": 9.0,
-      "storage_saved_bytes": 150994944,
-      "storage_saved_formatted": "144.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 1400832,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 169754624,
-      "savings_ratio": 10.64,
-      "storage_saved_bytes": 648413184,
-      "storage_saved_formatted": "618.4 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 19841024,
+      "savings_ratio": 0.56
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "id": "kmeans_quantize",
-  "name": "Kmeans Quantize",
+  "name": "KMeans-based weight clustering quantizer with STE. Registered as 'kmeans' a",
   "file": "Codes/framework/compression_engine/kmeans_quantize.py",
   "type": "Compression Engine",
   "category": "Quantization & Mixed Precision",
@@ -13,86 +13,61 @@
     "KMeansCompressor"
   ],
   "methods_count": 14,
-  "math_latex": "\\tilde{W} = \\text{RoundClip}\\left(\\frac{W}{\\gamma}, -1, 1\\right), \\quad y = x \\tilde{W}^\\top \\cdot \\gamma",
+  "math_latex": "W = S \\odot (Q_W - Z), \\quad Q_W \\in \\{-8, \\dots, 7\\}, \\quad S = \\text{scale}",
   "components": [
     {
-      "id": "weight_pack",
-      "name": "1.58-Bit Ternary Weights {-1, 0, +1}",
-      "role": "Multiplication-Free Matrix Vector Additions",
-      "shape_transform": "[d_out \u00d7 d_in] Ternary",
-      "color": "#a855f7"
+      "id": "scale_quant",
+      "name": "Channel / Block Scales (FP8 / INT4)",
+      "role": "Dynamic Range Quantization",
+      "shape_transform": "[d_{out} // block_size]",
+      "color": "#a855f7",
+      "math_latex": "s = \\frac{\\max(|W|)}{2^{b-1} - 1}, \\quad b=4"
     },
     {
-      "id": "absmax_scale",
-      "name": "Dynamic AbsMax Scaling & RMSNorm",
-      "role": "Per-Tensor Dynamic Range Recovery",
-      "shape_transform": "[1] Floating Scale",
-      "color": "#c084fc"
+      "id": "packed_weight",
+      "name": "Packed Low-Bit Integer Weight Matrix",
+      "role": "4-bit Memory Footprint",
+      "shape_transform": "[d_{out} \u00d7 d_{in} // 2]",
+      "color": "#c084fc",
+      "math_latex": "q = \\text{clamp}\\left(\\left\\lfloor \\frac{W}{s} \\right\\rceil, -8, 7\\right)"
     },
     {
-      "id": "residual_merge",
-      "name": "High-Precision Residual Conduit",
-      "role": "FP16 Residual Preservation",
-      "shape_transform": "[d_out \u00d7 d_in]",
-      "color": "#e9d5ff"
+      "id": "dequant_kernel",
+      "name": "Fused GEMM Dequantization Kernel",
+      "role": "Zero-Overhead Accumulation",
+      "shape_transform": "TensorCore Fused",
+      "color": "#e9d5ff",
+      "math_latex": "\\hat{W} = q \\times s, \\quad Y = X \\hat{W}^\\top"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7077888,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 66301440,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1622016,
+      "savings_ratio": 4.0
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7077888,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 123933696,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1622016,
+      "savings_ratio": 4.0
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 7077888,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 124318464,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1622016,
+      "savings_ratio": 4.0
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 14909440,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 493961216,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 2781184,
+      "savings_ratio": 4.0
     }
   }
 }
