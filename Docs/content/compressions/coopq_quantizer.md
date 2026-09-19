@@ -569,6 +569,7 @@ print('Compressed output logits:', outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **89.56%** | -1.50% | 0.9003 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-coopq](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-coopq) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **80.40%** | -1.40% | 0.8031 | 1.00x | 0 | N/A | 2026-09-19 |
 
 
 Evaluations across sequence lengths and model scales:
