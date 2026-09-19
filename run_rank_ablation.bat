@@ -29,6 +29,8 @@ for %%R in (32 64 128 256) do (
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_mnli_rank%%R.log 2>&1
   echo Finished MNLI rank=%%R
+  echo Uploading MNLI rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset mnli --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
@@ -48,6 +50,8 @@ for %%R in (32 64 128 256) do (
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_sst2_rank%%R.log 2>&1
   echo Finished SST-2 rank=%%R
+  echo Uploading SST-2 rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset sst2 --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
@@ -67,6 +71,8 @@ for %%R in (32 64 128 256) do (
     --modules %COMP_MODULES% ^
     >> logs\rank_ablation_agnews_rank%%R.log 2>&1
   echo Finished AG News rank=%%R
+  echo Uploading AG News rank=%%R to Hugging Face...
+  python Codes\framework\upload_ablation_to_hf.py --base_dir results\rank_ablation --dataset agnews --ranks %%R >> logs\rank_ablation_hf_upload.log 2>&1
 )
 
 echo =====================================================================
