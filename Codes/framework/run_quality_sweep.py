@@ -2802,14 +2802,31 @@ def run_single_module_main(args) -> dict:
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
-            # Check parameter expansion (with 0.15% tolerance for PEFT/LoRA recovery adapter overhead)
+            # Check parameter expansion — exclude LoRA adapter params from base model count
             p_before = comp_metrics.get("total_params_before", total_params_before)
             p_after = comp_metrics.get("total_params_after", total_params_before)
-            lora_tolerance = int(0.0015 * p_before)
-            if p_before > 0 and p_after > (p_before + lora_tolerance) and name != "full":
-                status = "REJECTED_EXPANSION"
-                expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
-                err = f"{err}; {expansion_err}".strip("; ")
+            lora_p = comp_metrics.get("lora_params", 0) or 0
+            base_params_after = p_after - lora_p
+
+            if p_before > 0 and name != "full":
+                base_delta = base_params_after - p_before
+                base_delta_pct = 100.0 * base_delta / p_before if p_before > 0 else 0.0
+                if base_params_after > p_before * 1.20:
+                    status = "EXTREME_EXPANSION"
+                    expansion_err = (
+                        f"EXTREME_EXPANSION: base_before={p_before} base_after={base_params_after} "
+                        f"base_delta={base_delta} (+{base_delta_pct:.1f}%) lora_excluded={lora_p}"
+                    )
+                    err = f"{err}; {expansion_err}".strip("; ")
+                elif base_params_after > p_before:
+                    status = "MODERATE_EXPANSION"
+                    expansion_err = (
+                        f"MODERATE_EXPANSION: base_before={p_before} base_after={base_params_after} "
+                        f"base_delta={base_delta} (+{base_delta_pct:.2f}%) lora_excluded={lora_p}"
+                    )
+                    err = f"{err}; {expansion_err}".strip("; ")
+                # else: base_params_after <= p_before → PASS (LoRA overhead excluded correctly)
+
             elif (
                 name != "full"
                 and not injected
@@ -3231,7 +3248,11 @@ def main():
                 
     existing = set() if (args.fresh or getattr(args, "no_skip", False)) else {
         m for m, r in summary_dict.items()
-        if r.get("status") in {"PASS", "PASS_LOW", "REJECTED_EXPANSION", "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED"}
+        if r.get("status") in {
+            "PASS", "PASS_LOW", "REJECTED_EXPANSION",
+            "EXTREME_EXPANSION", "MODERATE_EXPANSION",
+            "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED",
+        }
     }
     
     FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
