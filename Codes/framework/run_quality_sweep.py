@@ -3156,6 +3156,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--precision", str(args.precision),
         "--seed", str(args.seed),
         "--cached_batches_dir", str(Path(args.output_dir or "results") / "batch_cache"),
+        "--defer_export",
     ]
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
