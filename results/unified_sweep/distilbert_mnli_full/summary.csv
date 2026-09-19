@@ -153,25 +153,9 @@ inject_svd_llm_v2,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,5.15,0.0,0.0,6
 inject_svd_mamba,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,3.52,0.0,0.0,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_svd_mamba),legacy_bert,2026-09-19T11:39:27.313643
 inject_svd_proj_attn,PASS,51.6,0.5029,0.5029,0.5064,0.5127,0.9908,88.12,272.14,14101.32,66955779,55749123,589824,1.201,16.74,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T11:44:41.667055
 inject_svd_sequence,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,4.52,0.0,0.0,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_svd_linear_attention),legacy_bert,2026-09-19T11:45:13.717407
-<<<<<<< HEAD,,,,,,,,,,,,,,,,,,,,,,,,,
 inject_swift_svd,PASS,51.1,0.481,0.481,0.5407,0.505,0.9877,53.64,297.05,21271.18,66955779,46464771,634371,1.441,30.6,48.25,0,0,,,36,0,,legacy_bert,2026-09-19T11:48:03.670619
 inject_tlinformer,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,0.86,0.0,0.0,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_tlinformer),legacy_bert,2026-09-19T11:48:35.184239
 inject_token_compressed_attn,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,0.54,0.0,0.0,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_token_compressed_attn),legacy_bert,2026-09-19T11:48:58.441792
-=======,,,,,,,,,,,,,,,,,,,,,,,,,
->>>>>>> origin/main,,,,,,,,,,,,,,,,,,,,,,,,,
 jamba,REJECTED_EXPANSION,59.0,0.5712,0.5712,0.6017,0.5846,0.9173,173.49,703.41,6228.77,66955779,160323075,1105920,1.0,0.0,0.0,0,0,,,18,1105920,NON_EXPANSION VIOLATION: before=66955779 after=160323075 delta=93367296 (+139.4%),legacy_bert,2026-09-19T12:30:20.289289
 jamba_info,REJECTED_EXPANSION,62.1,0.6004,0.6004,0.669,0.6147,0.8252,203.16,484.83,6127.01,66955779,92046345,1400832,1.0,0.0,0.0,0,0,,,12,1400832,NON_EXPANSION VIOLATION: before=66955779 after=92046345 delta=25090566 (+37.5%),legacy_bert,2026-09-19T12:34:14.089859
 kda,REJECTED_EXPANSION,33.4,0.3293,0.3293,0.3306,0.332,1.1901,71.07,336.37,19013.38,66955779,67545681,589902,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (33.40%) below chance threshold (36.90%); NON_EXPANSION VIOLATION: before=66955779 after=67545681 delta=589902 (+0.9%),legacy_bert,2026-09-19T12:35:50.325078
-kmeans,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:37:29.036544
-kronecker,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:49:59.444504
-kronecker_linear_class,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:51:08.380901
-kronecker_tt_lora,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:52:45.064818
-kvtc,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:53:41.205659
-leka_v1,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:55:14.272840
-leka_v2,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:56:18.450805
-leka_v3,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:58:02.185993
-liftr,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:58:54.150911
-lillama,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:59:55.384980
-linformer,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:01:09.625064
-lola,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:04:11.239937
-lora_attn,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:05:17.778352
