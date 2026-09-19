@@ -215,7 +215,7 @@ Replace all expert feed-forward layers in Mixture-of-Experts architectures with 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **72.13%** | -18.93% | 0.7197 | 1.93x | 0 | [svd-linear-attention-distilbert-sst2-kronecker](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kronecker) | 2026-09-19 |
-| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **38.60%** | -43.20% | 0.3811 | 1.93x | 0 | [svd-linear-attention-distilbert-mnli-full-kronecker](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-kronecker) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **39.00%** | -42.80% | 0.3851 | 1.93x | 0 | [svd-linear-attention-distilbert-mnli-full-kronecker](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-kronecker) | 2026-09-19 |
 
 
 The empirical evaluation of `kronecker_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
