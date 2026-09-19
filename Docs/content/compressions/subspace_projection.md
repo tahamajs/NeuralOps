@@ -454,3 +454,4 @@ You have exceeded the rate limit for repository creation (300 per day). You can 
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9109 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-subspace-projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-subspace-projection) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **82.10%** | +0.30% | 0.8202 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9404 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-subspace-projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-subspace-projection) | 2026-09-19 |
