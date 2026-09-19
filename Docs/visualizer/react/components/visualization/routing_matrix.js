@@ -1111,25 +1111,23 @@ export const ROUTING_MATRIX = {
   "granite_hybrid": {
     "id": "granite_hybrid",
     "name": "Granite-Hybrid Attention: Interleaved Mamba-2 State Space Archite",
-    "category": "D",
-    "subcategory": "recurrent_linear",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "states": [
       "idle",
-      "t0",
-      "t1",
-      "t2",
-      "t3",
-      "t4",
+      "layer_route",
+      "hybrid_ssm_step",
+      "hybrid_attn_step",
+      "fusion_gate",
       "output"
     ],
-    "substates": [],
-    "defaultState": "t1",
+    "substates": [
+      "layer_index_indicator_visible"
+    ],
+    "defaultState": "hybrid_ssm_step",
     "forbidden": [
-      "qkv",
-      "softmax",
-      "attention_matrix",
-      "square_attention",
-      "dense_score_matrix"
+      "pure_dense_only",
+      "svd_singular_values"
     ]
   },
   "griffin_ssd": {
@@ -1382,51 +1380,45 @@ export const ROUTING_MATRIX = {
   "jamba": {
     "id": "jamba",
     "name": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block",
-    "category": "D",
-    "subcategory": "recurrent_linear",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "states": [
       "idle",
-      "t0",
-      "t1",
-      "t2",
-      "t3",
-      "t4",
+      "layer_route",
+      "hybrid_ssm_step",
+      "hybrid_attn_step",
+      "fusion_gate",
       "output"
     ],
-    "substates": [],
-    "defaultState": "t1",
+    "substates": [
+      "layer_index_indicator_visible"
+    ],
+    "defaultState": "hybrid_ssm_step",
     "forbidden": [
-      "qkv",
-      "softmax",
-      "attention_matrix",
-      "square_attention",
-      "dense_score_matrix"
+      "pure_dense_only",
+      "svd_singular_values"
     ]
   },
   "jamba_info": {
     "id": "jamba_info",
     "name": "Information-Bottlenecked Jamba Architecture with Dual Operational",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "I",
+    "subcategory": "hybrid_composite",
     "states": [
       "idle",
-      "show_W",
-      "decompose",
-      "singular_values",
-      "truncate",
-      "reconstruct",
-      "error_heatmap"
+      "layer_route",
+      "hybrid_ssm_step",
+      "hybrid_attn_step",
+      "fusion_gate",
+      "output"
     ],
     "substates": [
-      "no_weighting"
+      "layer_index_indicator_visible"
     ],
-    "defaultState": "decompose",
+    "defaultState": "hybrid_ssm_step",
     "forbidden": [
-      "qkv",
-      "softmax",
-      "attention_matrix",
-      "causal_mask",
-      "square_attention"
+      "pure_dense_only",
+      "svd_singular_values"
     ]
   },
   "kda_attention": {
