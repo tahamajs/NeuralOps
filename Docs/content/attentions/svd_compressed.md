@@ -216,6 +216,13 @@ A Triton kernel for Lagrangian SVD-Compressed Attention streams layer-specific r
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **52.30%** | -29.50% | 0.4860 | 1.20x | 0 | N/A | 2026-09-19 |
+
+
 The empirical evaluation of `svd_compressed` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -996,4 +1003,3 @@ The `SVDCompressedAttention` architecture incorporates telemetry hooks for track
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
