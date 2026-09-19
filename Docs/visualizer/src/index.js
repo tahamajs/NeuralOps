@@ -192,20 +192,25 @@ export async function bootstrapApp() {
 
         // Update Tree and HUD
         buildHierarchicalTree(modelKey, moduleKey, modelData, (nodeId) => {
-            selectPartIn3D(nodeId, interactableMeshes);
-            const foundMesh = interactableMeshes.find(m => m.userData && m.userData.id === nodeId);
-            if (foundMesh) {
-                updateInspectorWithNode(foundMesh.userData, foundMesh.userData.side === 'baseline', store.get('activeResearchModule'), modelKey);
-            }
+            window.selectPartIn3D(nodeId);
         });
 
         updateComparisonHUD(modelKey, moduleKey, modelData);
+        const numLayers = (MODEL_SPECS[modelKey] && MODEL_SPECS[modelKey].num_layers) || 6;
+        buildLayerQuickPills(modelKey, numLayers);
     }
 
     // 4. Raycasting & Node Interactivity
     setupRaycasting(canvas, camera, interactableMeshes, (nodeData, isLeft, mesh) => {
         selectPartIn3D(mesh, interactableMeshes);
         updateInspectorWithNode(nodeData, isLeft, store.get('activeResearchModule'), store.get('currentModel'));
+        smoothFlyCamera(camera, controls, mesh.position.y, 8.5, mesh.position.x);
+
+        // Update active layer UI indicator if node belongs to a layer
+        const lIdx = nodeData.parent_layer_index ?? nodeData.parent_layer_idx;
+        if (lIdx !== undefined && lIdx !== null && lIdx !== 999) {
+            updateActiveLayerIndicator(lIdx, nodeData.parent_layer_name);
+        }
     });
 
     // 5. Controls & User Events
@@ -219,8 +224,12 @@ export async function bootstrapApp() {
             store.set({ simulationSpeed: speed });
         },
         onScrub: (step) => {
-            const targetY = 1.0 + step * VISUAL_CONFIG.TOKENS.layerStride;
-            smoothFlyCamera(camera, controls, targetY, 18.0);
+            if (window.navigateToLayer) {
+                window.navigateToLayer(step);
+            } else {
+                const targetY = 1.0 + step * VISUAL_CONFIG.TOKENS.layerStride;
+                smoothFlyCamera(camera, controls, targetY, 18.0);
+            }
         },
         onSwitchView: (viewMode) => {
             if (viewMode === '2d') {
@@ -402,8 +411,159 @@ export async function bootstrapApp() {
             if (lessonsBtn) lessonsBtn.click();
         } else if (e.key === 'u' || e.key === 'U') {
             openMatrixUnfoldingModal();
+        } else if (e.key >= '0' && e.key <= '9') {
+            window.navigateToLayer(parseInt(e.key, 10));
         }
     });
+
+    function updateActiveLayerIndicator(layerIdx, label) {
+        // Update layer pills in bottom dock
+        document.querySelectorAll('.layer-pill-btn').forEach(pill => {
+            const pVal = pill.getAttribute('data-layer');
+            if (String(pVal) === String(layerIdx)) {
+                pill.classList.add('active');
+            } else {
+                pill.classList.remove('active');
+            }
+        });
+
+        // Update timeline scrubber and labels
+        const scrubber = document.getElementById('timeline-scrubber');
+        const stepLabel = document.getElementById('timeline-step');
+        const titleLabel = document.getElementById('timeline-label');
+
+        const numericIdx = parseInt(layerIdx, 10);
+        if (!isNaN(numericIdx)) {
+            if (scrubber) scrubber.value = numericIdx;
+            if (stepLabel) stepLabel.innerText = `L${numericIdx}`;
+            if (titleLabel) titleLabel.innerText = label || `Layer ${numericIdx}`;
+        } else {
+            if (stepLabel) stepLabel.innerText = '00 Global';
+            if (titleLabel) titleLabel.innerText = label || String(layerIdx);
+        }
+
+        // Expand and scroll to layer node in tree explorer
+        document.querySelectorAll('.tree-layer-node').forEach(node => {
+            const nodeIdx = parseInt(node.dataset.layerIndex, 10);
+            if (!isNaN(numericIdx) && nodeIdx === numericIdx) {
+                node.classList.add('open');
+                node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    }
+
+    window.navigateToLayer = (layerIdentifier) => {
+        if (layerIdentifier === undefined || layerIdentifier === null) return;
+
+        let targetMeshes = [];
+        const numericIdx = (typeof layerIdentifier === 'number') ? layerIdentifier : parseInt(layerIdentifier, 10);
+        const strId = String(layerIdentifier).toLowerCase().trim();
+
+        // 1. Try matching by parent_layer_index (numeric)
+        if (!isNaN(numericIdx) && numericIdx !== 999) {
+            targetMeshes = interactableMeshes.filter(m => 
+                m.userData && (
+                    m.userData.parent_layer_index === numericIdx ||
+                    m.userData.parent_layer_idx === numericIdx ||
+                    (m.userData.id && (
+                        m.userData.id.includes(`.layer.${numericIdx}.`) ||
+                        m.userData.id.includes(`.layers.${numericIdx}.`) ||
+                        m.userData.id.includes(`.h.${numericIdx}.`)
+                    ))
+                )
+            );
+        }
+
+        // 2. Try matching by keyword (e.g. 'embeddings', 'output', 'classifier', 'pooler', 'layer 0')
+        if (targetMeshes.length === 0) {
+            targetMeshes = interactableMeshes.filter(m => {
+                if (!m.userData) return false;
+                const id = (m.userData.id || '').toLowerCase();
+                const label = (m.userData.label || '').toLowerCase();
+                const pName = (m.userData.parent_layer_name || '').toLowerCase();
+                return id.includes(strId) || label.includes(strId) || pName.includes(strId);
+            });
+        }
+
+        if (targetMeshes.length === 0) return;
+
+        // Calculate average Y position of this layer
+        let sumY = 0;
+        targetMeshes.forEach(m => { sumY += m.position.y; });
+        const avgY = sumY / targetMeshes.length;
+
+        // Find primary representative mesh (prefer attention q_lin/q_proj or first node)
+        const primaryMesh = targetMeshes.find(m => {
+            const id = (m.userData.id || '').toLowerCase();
+            return id.includes('q_lin') || id.includes('q_proj') || id.includes('attn') || id.includes('attention');
+        }) || targetMeshes[0];
+
+        if (primaryMesh) {
+            selectPartIn3D(primaryMesh, interactableMeshes);
+            updateInspectorWithNode(primaryMesh.userData, primaryMesh.userData.side === 'baseline', store.get('activeResearchModule'), store.get('currentModel'));
+        }
+
+        // Smoothly fly camera right in front of this layer
+        smoothFlyCamera(camera, controls, avgY, 10.0, 0);
+
+        // Update active layer UI indicators
+        if (!isNaN(numericIdx)) {
+            updateActiveLayerIndicator(numericIdx, (primaryMesh && primaryMesh.userData.parent_layer_name) || `Layer ${numericIdx}`);
+        } else {
+            updateActiveLayerIndicator(strId, strId);
+        }
+    };
+
+    function buildLayerQuickPills(modelKey, numLayers = 6) {
+        const pillsContainer = document.getElementById('layer-quick-pills');
+        const scrubber = document.getElementById('timeline-scrubber');
+        if (!pillsContainer) return;
+
+        pillsContainer.innerHTML = '';
+
+        if (scrubber) {
+            scrubber.min = '0';
+            scrubber.max = String(Math.max(1, numLayers - 1));
+        }
+
+        // 1. Embeddings Pill
+        const embBtn = document.createElement('button');
+        embBtn.className = 'layer-pill-btn';
+        embBtn.setAttribute('data-layer', 'embeddings');
+        embBtn.textContent = 'Emb';
+        embBtn.title = 'Jump to Input Embeddings';
+        embBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.navigateToLayer('embeddings');
+        };
+        pillsContainer.appendChild(embBtn);
+
+        // 2. Layer Pills L0 .. L(numLayers - 1)
+        for (let i = 0; i < numLayers; i++) {
+            const lBtn = document.createElement('button');
+            lBtn.className = `layer-pill-btn ${i === 0 ? 'active' : ''}`;
+            lBtn.setAttribute('data-layer', String(i));
+            lBtn.textContent = `L${i}`;
+            lBtn.title = `Jump to Transformer Layer ${i}`;
+            lBtn.onclick = (e) => {
+                e.stopPropagation();
+                window.navigateToLayer(i);
+            };
+            pillsContainer.appendChild(lBtn);
+        }
+
+        // 3. Output Pill
+        const outBtn = document.createElement('button');
+        outBtn.className = 'layer-pill-btn';
+        outBtn.setAttribute('data-layer', 'output');
+        outBtn.textContent = 'Out';
+        outBtn.title = 'Jump to Output Head / Classifier';
+        outBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.navigateToLayer('output');
+        };
+        pillsContainer.appendChild(outBtn);
+    }
 
     window.selectPartIn3D = (target) => {
         const mesh = selectPartIn3D(target, interactableMeshes);
