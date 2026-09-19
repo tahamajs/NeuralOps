@@ -10,6 +10,7 @@ import { escapeHtml } from '../utils/dom.js';
 
 export const ATTENTION_TOUR_STEPS = [
     {
+        id: 'ingress',
         step: 1,
         title: 'Transformer Architecture & Token Ingress',
         target: 'embeddings',
@@ -21,6 +22,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Tokens enter the transformer stack at the baseplate, mapping discrete vocabulary indices into continuous 768-dimensional latent vectors combined with positional encodings to inject sequence order.'
     },
     {
+        id: 'qkv_projections',
         step: 2,
         title: 'The Q · K · V Retrieval Engine (Linear Projections)',
         target: 'transformer.layer.0.attention.q_lin',
@@ -32,6 +34,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Attention operates as an associative retrieval system: Queries (Q) represent "What am I looking for?", Keys (K) represent "What attributes do I offer?", and Values (V) represent the contextual content transmitted when an attention match occurs.'
     },
     {
+        id: 'scaled_dot_product',
         step: 3,
         title: 'Scaled Dot-Product Attention & Softmax Normalization',
         target: 'transformer.layer.0.attention.q_lin',
@@ -43,6 +46,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Pairwise token affinities are computed via dot product Q K^T. We scale by 1/√d_k to normalize variance to 1.0; without scaling, large dimensions cause dot products to explode in magnitude, pushing softmax into vanishing gradient regions.'
     },
     {
+        id: 'multi_head_subspaces',
         step: 4,
         title: 'Multi-Head Attention (MHA) Subspace Splitting',
         target: 'transformer.layer.0.attention.q_lin',
@@ -54,6 +58,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Rather than performing a single attention function, MHA projects queries, keys, and values into 12 distinct 64-dimensional representation subspaces. This allows the model to simultaneously attend to syntax, pronouns, and long-range factual dependencies.'
     },
     {
+        id: 'quadratic_bottleneck',
         step: 5,
         title: 'The Quadratic O(N²) Sequence Complexity Bottleneck',
         target: 'transformer.layer.0.attention.out_lin',
@@ -65,6 +70,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Because every token attends to every other token, compute and GPU VRAM scale quadratically with sequence length S. In autoregressive generation, caching past Keys and Values rapidly consumes tens of gigabytes, making compression essential.'
     },
     {
+        id: 'svd_compression',
         step: 6,
         title: 'SVD Low-Rank Bottleneck Compression (Our Research)',
         target: 'transformer.layer.0.attention.q_lin',
@@ -76,6 +82,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Our production-hardened SVD factorization replaces heavy 768×768 weight matrices with factorized bottleneck twins: Factor V projects 768 down to rank 64, and Factor U expands 64 back to 768, cutting storage by over 80% with minimal loss.'
     },
     {
+        id: 'gqa_compression',
         step: 7,
         title: 'Grouped-Query Attention (GQA) & KV Slicing',
         target: 'transformer.layer.0.attention.q_lin',
@@ -87,6 +94,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'Modern LLMs like Qwen-2.5 and LLaMA-3 group multiple query heads to share a single Key and Value head. This maintains multi-head expressive query power while slashing the memory footprint of the autoregressive KV cache by 87.5%.'
     },
     {
+        id: 'mla_compression',
         step: 8,
         title: 'Multi-Head Latent Attention (MLA) DeepSeek Paradigm',
         target: 'transformer.layer.0.attention.q_lin',
@@ -98,6 +106,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'DeepSeek MLA compresses Key and Value representations into a shared 512-dimensional latent vector c_t^{KV}. Decompression matrices are mathematically absorbed directly into the Query projections, achieving near-zero cache overhead.'
     },
     {
+        id: 'moe_routing',
         step: 9,
         title: 'Mixture of Experts (MoE) & Structured Pruning',
         target: 'transformer.layer.0.ffn.lin1',
@@ -109,6 +118,7 @@ export const ATTENTION_TOUR_STEPS = [
         narrative: 'In the Feed-Forward layer, learned routers dispatch tokens to specialized neural sub-networks, scaling model capacity without increasing FLOPs. Structured slicing removes inactive principal channels directly from GPU tensors.'
     },
     {
+        id: 'residual_highway',
         step: 10,
         title: 'Residual Skip Highway & Complete Inference Engine',
         target: 'transformer.layer.0.attention.out_lin',
