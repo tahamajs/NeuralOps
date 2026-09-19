@@ -170,7 +170,7 @@ class ExpertChoiceMoE(nn.Module):
     def __init__(
         self,
         d_model: int,
-        n_experts: int = 8,
+        n_experts: int = 2,
         capacity_factor: float = 1.0,
         noise_std: float = 0.05,
     ) -> None:
@@ -187,9 +187,9 @@ class ExpertChoiceMoE(nn.Module):
 
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(d_model, d_model * 2),
+                nn.Linear(d_model, d_model),
                 nn.GELU(),
-                nn.Linear(d_model * 2, d_model),
+                nn.Linear(d_model, d_model),
             )
             for _ in range(n_experts)
         ])
@@ -258,7 +258,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = 64,
-        n_experts: int = 8,
+        n_experts: int = 2,
         capacity_factor: float = 1.0,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,

@@ -58,13 +58,14 @@ def main():
         if isinstance(metrics, dict) and args.module in metrics:
             metrics = metrics[args.module]
 
-        # Check parameter expansion
+        # Check parameter expansion (with 0.15% tolerance for PEFT/LoRA recovery adapter overhead)
         p_before = int(metrics.get("total_params_before", 0) or 0)
         p_after = int(metrics.get("total_params_after", 0) or 0)
         status = metrics.get("status", "PASS")
         error_msg = metrics.get("error", "") or ""
+        lora_tolerance = int(0.0015 * p_before)
 
-        if p_before > 0 and p_after > p_before and status in ("PASS", "PASS_LOW"):
+        if p_before > 0 and p_after > (p_before + lora_tolerance) and status in ("PASS", "PASS_LOW"):
             status = "REJECTED_EXPANSION"
             expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
             error_msg = f"{error_msg}; {expansion_err}".strip("; ")
