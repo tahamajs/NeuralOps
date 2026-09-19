@@ -317,3 +317,8 @@ The `MinimalMoEFallback` architecture incorporates telemetry hooks for tracking 
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **80.85%** | -10.21% | 0.8280 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-samba-moe](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-samba-moe) | 2026-09-19 |
