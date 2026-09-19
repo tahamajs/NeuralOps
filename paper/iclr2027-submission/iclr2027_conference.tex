@@ -26,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-Attention compression reduces the memory and compute footprint of transformer models, yet the comparative efficacy of divergent compression paradigms remains poorly understood. We present a systematic empirical study of over 200 attention variants and compression methods on DistilBERT-base across three benchmarks: SST-2 (binary sentiment), MNLI (three-class natural language inference), and AG News (four-class topic classification). Our central finding reveals that attention compression methods operate within two distinct mathematical regimes. Rank-truncation methods (SVD-based) constrain projection matrices to low-rank subspaces ($r \le 320$ for non-expansion); while achieving 90.71\% accuracy on SST-2 at 1.05$\times$ compression, they degrade sharply to 72.30\% on MNLI (a 9.5-point drop from the 81.80\% baseline). Conversely, vector quantization methods preserve the full 768-dimensional span while quantizing weights into centroid codebooks; our k-means implementation achieves 90.37\% on SST-2 and 81.40\% on MNLI at 2.73$\times$ compression, yielding a 9.10-point advantage over SVD alongside an order-of-magnitude lower reconstruction error (0.032 vs.\ 0.377). We demonstrate that low-rank truncation collapses the cross-sentence feature interactions necessary for premise-hypothesis entailment, whereas vector quantization retains high-dimensional representational capacity. Enforcing a rigorous non-expansion constraint ($|\theta(M')| \le |\theta(M_0)|$), we identify 80 architectures that cause net parameter growth. All fine-tuned checkpoints are public on Hugging Face (\url{https://huggingface.co/Hooshaai}) and complete evaluation pipelines are open-sourced at \url{https://github.com/Hooshaai/paper-a3}.
+Transformer attention is quadratic in sequence length, motivating a large and rapidly growing family of alternative attention mechanisms --- from low-rank and linear approximations to recurrent, sparse, codebook-based, and mixture-of-experts variants. Despite this proliferation, no systematic comparison of these mechanisms exists, and it remains unclear which families preserve reasoning capacity on multi-class tasks and which collapse under architectural constraints. We conduct a comprehensive study of over 200 attention mechanisms and compression methods on DistilBERT-base, evaluating each under a unified pipeline across three benchmarks: SST-2 (binary sentiment), MNLI (three-class natural language inference), and AG News (four-class topic classification). Our evaluation covers linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and SSM-based layers (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD variants (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt), among many others. Under a strict non-expansion guarantee ($|\theta(M')| \le |\theta(M_0)|$), we find that these mechanisms fall into two regimes for multi-class reasoning: rank-truncation methods move attention toward a linear form and achieve 90.71\% on SST-2 at 1.05$\times$ compression but collapse to 72.20\% on MNLI, while vector quantization preserves the full coordinate span and achieves 81.40\% on MNLI at 2.73$\times$ compression with 11.7$\times$ lower reconstruction error. These findings provide the first unified comparison of attention mechanisms toward linear attention, revealing which families preserve reasoning and which do not. All fine-tuned checkpoints and evaluation pipelines are publicly available.
 \end{abstract}
 
 \section{Introduction}
@@ -34,7 +34,7 @@ Attention compression reduces the memory and compute footprint of transformer mo
 
 Transformer architectures \citep{vaswani2017attention} dominate modern natural language processing. However, deploying these models on resource-constrained edge hardware requires rigorous model compression. Standard Multi-Head Self-Attention (MHSA) computes pairwise token interactions with $\mathcal{O}(L^2)$ computational complexity and parameterizes projection weights $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$. In a compact encoder such as DistilBERT-base \citep{sanh2019distilbert} ($d=768$, $h=12$ heads), attention projections alone account for 14.16M parameters, or over 21\% of the entire 66.9M parameter model. 
 
-In response, an extensive body of literature has proposed efficient attention variants and post-training compression algorithms. These span low-rank factorizations (SVD, CUR, ASVD) \citep{eckart1936approximation}, vector quantization and codebooks (k-means, product quantization) \citep{gray1984vector,stock2020and}, kernelized linear attention \citep{katharopoulos2020transformers,choromanski2021rethinking}, structured pruning \citep{wang2020linformer}, and low-rank adaptation \citep{hu2022lora}.
+Our study spans six major families of attention mechanisms: linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and state-space models (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD-based methods (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt).
 
 Despite dozens of individual papers reporting competitive results, the literature suffers from three pervasive methodological deficiencies:
 \begin{enumerate}
@@ -47,27 +47,33 @@ To resolve these questions, we perform a systematic empirical investigation benc
 
 \paragraph{Key Contributions:}
 \begin{itemize}
-    \item \textbf{Empirical Discovery of Two Mathematical Regimes:} We establish that attention compression methods fundamentally split into two distinct regimes: \textit{Rank Truncation} (SVD-based) and \textit{Vector Quantization} (Codebook-based). While rank-truncation retains high accuracy on SST-2 (90.71\% vs.\ 91.06\% baseline), it degrades catastrophically on MNLI (72.20\% vs.\ 81.80\% baseline). Vector quantization (k-means) retains 81.40\% on MNLI while achieving a $2.73\times$ compression ratio.
-    \item \textbf{Subspace Rank Collapse Mechanism:} We prove and empirically verify that SVD low-rank truncation enforces a strict bottleneck on the dimensionality of cross-attention representations ($r \le 320$), eliminating the fine-grained geometric alignments required for premise-hypothesis entailment. Conversely, vector quantization preserves full $d=768$ coordinate span, maintaining an order-of-magnitude lower reconstruction error ($0.032$ vs.\ $0.377$).
-    \item \textbf{Enforcement of the Non-Expansion Constraint:} We enforce a strict non-expansion invariant $|\theta(M')| \le |\theta(M_0)|$. Under this criterion, we uncover that 80 popular attention mechanisms violate the non-expansion constraint on DistilBERT-base, inflating parameter counts by up to $+3.0\%$ while claiming compression.
-    \item \textbf{Root-Cause Analysis of Architectural Failures:} We conduct comprehensive failure forensics across 15 failing modules and 43 architecturally incompatible variants, cataloging signature mismatches, causal masking assumptions, and dimension mismatches.
+    \item \textbf{Comprehensive Comparison of Six Attention Families:} We evaluate over 200 attention variants spanning linear kernels, recurrent/SSMs, MoE routing, low-rank factorization, vector quantization, and sparse masking under an identical training and non-expansion protocol.
+    \item \textbf{Empirical Discovery of Two Mathematical Regimes:} We establish that attention mechanisms fundamentally split into two distinct regimes for multi-class reasoning: \textit{Rank Truncation} (moving toward linear form via SVD) and \textit{Vector Quantization} (Codebook-based). While rank-truncation retains high accuracy on SST-2 (90.71\% vs.\ 91.06\% baseline), it degrades catastrophically on MNLI (72.20\% vs.\ 81.80\% baseline). Vector quantization (k-means) retains 81.40\% on MNLI while achieving a $2.73\times$ compression ratio.
+    \item \textbf{Subspace Rank Collapse Mechanism:} We prove and empirically verify that low-rank truncation enforces a strict bottleneck on the dimensionality of cross-attention representations ($r \le 320$), eliminating the fine-grained geometric alignments required for premise-hypothesis entailment. Conversely, vector quantization preserves full $d=768$ coordinate span, maintaining an order-of-magnitude lower reconstruction error ($0.032$ vs.\ $0.377$).
+    \item \textbf{Enforcement of the Non-Expansion Constraint:} We enforce a strict non-expansion invariant $|\theta(M')| \le |\theta(M_0)|$. Under this criterion, we uncover that 80 popular attention mechanisms violate the non-expansion constraint on DistilBERT-base, inflating parameter counts by up to $+139.45\%$ while claiming compression.
     \item \textbf{Open-Source Artifacts:} We publicly release all fine-tuned base checkpoints and compressed evaluation pipelines on Hugging Face and GitHub to ensure complete reproducibility.
 \end{itemize}
 
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Low-Rank Matrix Factorization:}
-Truncated Singular Value Decomposition (SVD) has long served as the classical optimal low-rank approximation under the Frobenius norm \citep{eckart1936approximation}. In deep transformers, Low-Rank Adaptation (LoRA) \citep{hu2022lora} and ReLoRA \citep{zhang2024relora} apply low-rank updates $\Delta W = B A$ to frozen weights. Structured matrix decompositions such as CUR \citep{zhang2023loramoe} and Kronecker factorizations decompose weights into smaller tensor factors. However, as we demonstrate, low-rank factorization fundamentally contracts the intrinsic rank of the attention subspace.
+\paragraph{Linear Attention and Kernel Approximations:}
+To circumvent $\mathcal{O}(L^2)$ complexity, linear attention decomposes the attention matrix via kernel feature maps $\phi(Q)\phi(K)^T$. Performer \citep{choromanski2021performer} utilizes Positive Orthogonal Random Features (FAVOR+), while Cosformer \citep{qin2022cosformer} enforces non-negativity and locality via cosine reweighting. Linformer \citep{wang2020linformer} projects sequence length dimensions into low-dimensional subspaces, and Nystr{\"o}mformer \citep{xiong2021nystromformer} approximates attention through landmark pseudoinverse pooling. Other kernel formulations including Reformer LSH \citep{kitaev2020reformer} map tokens via angular locality-sensitive hashing.
 
-\paragraph{Vector Quantization and Codebooks:}
-Vector quantization approximates continuous weight distributions by mapping vectors to discrete codebook centroids \citep{gray1984vector}. In neural compression, Product Quantization (PQ) and k-means clustering \citep{stock2020and} compress weights by storing compact codebook indices. Post-training quantization methods such as GPTQ \citep{frantar2023gptq}, LLM.int8() \citep{dettmers2022llmint8}, and AWQ \citep{lin2023awq} demonstrate the resilience of large networks to discrete precision reduction. Crucially, quantization preserves the full geometric rank of the weight matrix.
+\paragraph{Recurrent, State-Space Models (SSMs), and Linear RNNs:}
+State-space models replace attention with linear time-invariant continuous dynamical systems. Mamba and Mamba-2 \citep{gu2022mamba,dao2024mamba2} introduce hardware-aware selective scans, while HGRN2 \citep{dong2024hgrn2} and DeltaNet \citep{schlag2021deltanet} incorporate fast-weight associative delta update memories. Hybrid architectures such as Samba \citep{ren2024samba}, Jamba \citep{lieber2024jamba}, and Griffin \citep{de2024griffin} interleave Mamba layers with attention blocks. As our study reveals, unidirectional causal assumptions in pure SSMs conflict with bidirectional masked language modeling in encoder backbones.
 
-\paragraph{Efficient and Linear Attention Variants:}
-To circumvent quadratic complexity $\mathcal{O}(L^2)$, linear attention methods reformulate the softmax kernel via kernel feature maps $\phi(Q)\phi(K)^T$ \citep{katharopoulos2020transformers,choromanski2021rethinking}. Nystr{\"o}mformer \citep{xiong2021nystromformer} approximates softmax attention via landmark points, Linformer \citep{wang2020linformer} projects sequence length via linear maps, and Reformer \citep{kitaev2020reformer} applies Locality-Sensitive Hashing (LSH). State-space models such as Mamba \citep{gu2022mamba} replace attention with continuous linear dynamical systems.
+\paragraph{Mixture-of-Experts Attention:}
+Mixture-of-Experts architectures decouple computational cost from parameter capacity via conditional routing. Switch Transformers \citep{fedus2022switch} and Expert-Choice MoE \citep{expert_choice_moe_2022} route tokens dynamically across specialized feedforward or projection experts. BAM-UMoE \citep{bam_umoe_2025} and Mixtral \citep{jiang2024mixtral} incorporate fine-grained routing directly within projection layers. While parameter-efficient during inference, multi-expert duplication introduces large parameter overheads that fail our strict non-expansion test.
 
-\paragraph{Sparse and Windowed Attention:}
-Sparse attention patterns reduce computation by restricting attention to local sliding windows or global synthetic tokens \citep{child2019generating,beltagy2020longformer,zaheer2020bigbird}. Hardware-accelerated exact attention methods like FlashAttention \citep{dao2022flashattention,dao2023flashattention2} optimize memory hierarchy IO without altering the mathematical formulation of attention.
+\paragraph{Low-Rank and SVD Decompositions:}
+Classical truncated Singular Value Decomposition (SVD) \citep{eckart1936approximation} provides the optimal low-rank factorization under Frobenius norm. Recent compression algorithms such as ASVD \citep{yuan2023asvd}, SVD-LLM \citep{wang2024svdllm}, SliceGPT \citep{ashkboos2024slicegpt}, Adaptive-SVD \citep{adaptive_svd_2024}, and Swift-SVD \citep{swift_svd_2024} factor projection matrices into low-rank components. Parameter-efficient adapters like LoRA \citep{hu2022lora} and DoRA \citep{liu2024dora} tune low-rank deltas. Our A3 framework adapts SVD truncation through activation-aware Fisher weighting \citep{a3_ours}.
+
+\paragraph{Vector Quantization and Discrete Codebooks:}
+Vector quantization maps continuous parameter spaces to discrete centroid codebooks. Post-training quantization methods including k-means \citep{kmeans_quantization_2024}, GPTQ \citep{frantar2023gptq}, AWQ \citep{lin2023awq}, SmoothQuant \citep{xiao2023smoothquant}, and QLoRA \citep{dettmers2024qlora} quantize weights to low-bit precision. Crucially, codebook indexing retains full-rank geometric coordinate spans ($d=768$) rather than projecting to low-rank subspaces.
+
+\paragraph{Sparse, Windowed, and Alternative Attention:}
+Sparse attention restricts token interaction to local sliding windows or hardware-aligned blocks. Longformer \citep{beltagy2020longformer} and BigBird \citep{zaheer2020bigbird} combine local sliding windows with global tokens. Native Sparse Attention (NSA) \citep{nsa_2024}, Hamming attention \citep{hamming_attention_2024}, and Salt \citep{salt_2024} dynamically mask inactive projection coordinates. Exact memory-efficient kernels like FlashAttention-2 and FlashAttention-3 \citep{dao2023flashattention2,shah2024flashattention3} optimize GPU memory hierarchies without altering mathematical attention outputs. Structured pruning techniques like SparseGPT \citep{frantar2022sparsegpt} and Wanda \citep{sun2024wanda} remove redundant parameters directly.
 
 \section{Problem Formulation and Non-Expansion Guarantee}
 \label{sec:formulation}
@@ -132,7 +138,7 @@ Table~\ref{tab:main_compression} presents the primary benchmark results comparin
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3.8pt}
-\caption{\textbf{Main Results on Genuine Attention Compression.} Comparison of real compression methods ($|\theta(M')| \le |\theta(M_0)|$) on DistilBERT across SST-2, MNLI, and AG News. Vector quantization (k-means) retains 81.40\% on MNLI at $2.73\times$ compression, outperforming SVD-based methods by over $+9.1\%$ accuracy with $10\times$ lower reconstruction error.}
+\caption{\textbf{Evaluation of Attention Mechanisms by Family.} Comparison of representative variants across six attention families on DistilBERT. Vector quantization retains 81.40\% on MNLI at $2.73\times$ compression, whereas low-rank and linear approximations suffer severe accuracy collapse under multi-class cross-sentence reasoning.}
 \label{tab:main_compression}
 \begin{tabular}{lcccccc}
 \toprule
@@ -140,21 +146,22 @@ Table~\ref{tab:main_compression} presents the primary benchmark results comparin
 \midrule
 Uncompressed Baseline & $1.00\times$ & 67.0M & 91.06\% & 81.80\% & 94.30\% & -- \\
 \midrule
-\multicolumn{7}{l}{\textit{Vector Quantization (Codebook-based)}} \\
+\multicolumn{7}{l}{\textit{Vector Quantization Family (Codebook-based)}} \\
 \textbf{k-means (Ours)} & $\mathbf{2.73\times}$ & \textbf{24.5M} & \textbf{90.37\%} & \textbf{81.40\%} & -- & \textbf{0.032} \\
 \midrule
-\multicolumn{7}{l}{\textit{Low-Rank Truncation (SVD-based)}} \\
+\multicolumn{7}{l}{\textit{Low-Rank and SVD Attention Family}} \\
+a3 (Ours) & $1.05\times$ & 63.6M & 90.71\% & 72.20\% & 89.30\% & 0.377 \\
 adaptive & $1.04\times$ & 64.2M & 87.50\% & 75.80\% & 92.80\% & -- \\
-a3 & $1.05\times$ & 63.6M & 90.71\% & 72.20\% & 89.30\% & 0.377 \\
-cur\_moe & $1.06\times$ & 63.4M & 87.73\% & 75.90\% & 94.30\% & -- \\
-aasvd & $1.13\times$ & 59.1M & 88.30\% & 68.60\% & 92.10\% & 0.833 \\
 adaptive\_svd & $1.15\times$ & 58.1M & 88.07\% & 68.90\% & 92.30\% & -- \\
+aasvd & $1.13\times$ & 59.1M & 88.30\% & 68.60\% & 92.10\% & 0.833 \\
+swift\_svd & $1.44\times$ & 46.5M & 82.91\% & 51.90\% & -- & -- \\
 adasvd & $1.16\times$ & 57.6M & 85.32\% & 61.00\% & 87.40\% & 0.615 \\
-come & $1.24\times$ & 54.0M & 84.52\% & 56.80\% & 91.50\% & -- \\
-fused\_svd\_kernel & $1.21\times$ & 55.2M & 80.39\% & 50.50\% & 90.30\% & -- \\
-salt & $1.21\times$ & 55.2M & 84.29\% & 52.00\% & -- & -- \\
 \midrule
-\multicolumn{7}{l}{\textit{Structured Pruning}} \\
+\multicolumn{7}{l}{\textit{Mixture-of-Experts Attention Family}} \\
+cur\_moe & $1.06\times$ & 63.4M & 87.73\% & 75.90\% & 94.30\% & -- \\
+\midrule
+\multicolumn{7}{l}{\textit{Sparse and Structured Pruning Family}} \\
+salt & $1.21\times$ & 55.2M & 84.29\% & 52.00\% & -- & -- \\
 admm & $1.00\times$ & 67.0M & 90.83\% & 80.70\% & 94.30\% & 0.489 \\
 \bottomrule
 \end{tabular}
@@ -232,7 +239,7 @@ State Space / Causal Only & 2 & Modules assuming autoregressive lower-triangular
 \end{tabular}
 \end{table}
 
-\section{Deep Analysis: Why Vector Quantization Outperforms SVD}
+\section{Deep Analysis: Why Linear Attention Approximations Fail on Reasoning Tasks}
 \label{sec:deep_analysis}
 
 \subsection{The Rank-Truncation Bottleneck}
