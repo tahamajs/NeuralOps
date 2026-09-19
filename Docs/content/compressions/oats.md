@@ -28,3 +28,4 @@ TODO: Identify specific limitations and edge cases for this module.
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9074 | 1.00x | 36 | [svd-linear-attention-distilbert-sst2-oats](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-oats) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.60%** | -0.20% | 0.8154 | 1.00x | 36 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9403 | 1.00x | 36 | [svd-linear-attention-distilbert-agnews-full-oats](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-oats) | 2026-09-19 |
