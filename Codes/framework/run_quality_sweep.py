@@ -3127,7 +3127,7 @@ def main():
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
                 
-    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
+    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") == "PASS"}
     
     FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
               "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "total_params_before",
