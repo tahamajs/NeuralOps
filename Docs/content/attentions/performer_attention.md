@@ -345,6 +345,13 @@ def _performer_causal_scan_kernel(
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **73.51%** | -17.55% | 0.7366 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-performer](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-performer) | 2026-09-19 |
+
+
 ### 8.1 Language Modeling Quality & Throughput ($B=2, D=768, H=12$)
 | Benchmark / Metric | Performer (FAVOR+) | Dense MHA Baseline | Relative Delta |
 | :--- | :--- | :--- | :--- |
