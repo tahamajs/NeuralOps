@@ -148,3 +148,9 @@ To evaluate TT in an isolated experimental session, run:
 python Codes/experimental/runners/run_all_4_tt.py --models distilbert,roberta,gpt2
 ```
 TT will **not** be selected by `run_all_benchmarks_queue.py`.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9127 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-tt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tt) | 2026-09-19 |
