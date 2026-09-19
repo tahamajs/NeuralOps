@@ -6,11 +6,11 @@
 
 import assert from 'node:assert';
 import test, { describe, it } from 'node:test';
-import { GUIDED_LESSONS, computeQuadraticStats } from '../src/educational/guided_lessons.js';
+import { GUIDED_LESSONS, computeQuadraticStats, computeAttentionScalingDemo } from '../src/educational/guided_lessons.js';
 
 describe('Feature 1.7: Guided Lessons Mode', () => {
-    it('verifies all 5 guided lessons are complete and structurally rigorous', () => {
-        assert.strictEqual(GUIDED_LESSONS.length, 5);
+    it('verifies all 6 guided lessons are complete and structurally rigorous', () => {
+        assert.strictEqual(GUIDED_LESSONS.length, 6);
 
         GUIDED_LESSONS.forEach((lesson, idx) => {
             assert.strictEqual(lesson.number, idx + 1);
@@ -27,6 +27,28 @@ describe('Feature 1.7: Guided Lessons Mode', () => {
                 assert.ok(s.explanation.length > 20);
             });
         });
+    });
+
+    it('proves mathematical necessity of 1/sqrt(dk) variance stabilization in attention', () => {
+        const scaled = computeAttentionScalingDemo(64, true);
+        const unscaled = computeAttentionScalingDemo(64, false);
+
+        assert.strictEqual(scaled.scaled, true);
+        assert.strictEqual(unscaled.scaled, false);
+
+        // Scaled by 1/sqrt(64) = 1/8
+        assert.strictEqual(scaled.scaleFactor, 0.125);
+        assert.strictEqual(unscaled.scaleFactor, 1.0);
+
+        // Sum of probabilities must sum to 1.0 in both cases
+        const sumScaled = scaled.probs.reduce((a, b) => a + b, 0);
+        const sumUnscaled = unscaled.probs.reduce((a, b) => a + b, 0);
+        assert.ok(Math.abs(sumScaled - 1.0) < 1e-6);
+        assert.ok(Math.abs(sumUnscaled - 1.0) < 1e-6);
+
+        // Unscaled logits cause severe gradient saturation (max probability near 1.0, grad near 0)
+        assert.ok(unscaled.gradMagnitude < 0.01, 'Unscaled attention should exhibit vanishing gradients');
+        assert.ok(scaled.gradMagnitude > 0.10, 'Scaled attention should maintain healthy backprop gradient flow');
     });
 
     it('computes exact quadratic attention scaling metrics and explosion ratios', () => {
