@@ -33,4 +33,6 @@ svd-mamba,REJECTED_EXPANSION,"SVD-Mamba hybrid adds +13.2% params"
 reap_moe,REJECTED_EXPANSION,"MoE routing layers expand parameter count beyond non-expansion limit"
 samba_moe,REJECTED_EXPANSION,"Mamba + MoE combination expands model size by +86%"
 mamba_svd_flash,ARCHITECTURAL_INCOMPATIBLE,"Projection d -> d*r instantiates 453M params (1.73 GB); exceeds 8GB VRAM"
-
+spectral_mamba,ARCHITECTURAL_INCOMPATIBLE,"injection mechanism incompatibility"
+spectraformer,ARCHITECTURAL_INCOMPATIBLE,"injection mechanism incompatibility"
+inject_spectral_mamba,ARCHITECTURAL_INCOMPATIBLE,"injection mechanism incompatibility"
