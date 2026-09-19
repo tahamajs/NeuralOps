@@ -192,6 +192,7 @@ def bonsai_step_mask_kernel(
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **78.44%** | -12.62% | 0.7526 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-bonsai](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-bonsai) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **44.00%** | -37.80% | 0.3889 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-bonsai](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-bonsai) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **52.20%** | -42.10% | 0.4694 | 1.00x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `bonsai_pruner` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
