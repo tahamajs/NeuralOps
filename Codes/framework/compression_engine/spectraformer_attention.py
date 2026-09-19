@@ -454,7 +454,7 @@ class SpectraformerAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
@@ -475,6 +475,12 @@ class SpectraformerAttention(BaseAttention):
         4. Random orthogonal feature projection with ReLU activation
         5. Linear attention context computation (recurrent for causal, global for bidirectional)
         """
+        if hidden_states is None:
+            hidden_states = kwargs.get("hidden_states") or (args[0] if args else None)
+        if hidden_states is None:
+            raise ValueError("SpectraformerAttention forward requires hidden_states")
+        if attention_mask is None:
+            attention_mask = kwargs.get("attention_mask")
         B, N, _ = hidden_states.shape
 
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()

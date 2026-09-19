@@ -73,6 +73,7 @@ class SDRMCompressor(BaseCompressor):
         self.max_error = float(max_error or _cfg_get(cfg_obj, 'max_error', 0.50))
         self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
+        self.protect_output_proj: bool = bool(_cfg_get(cfg_obj, 'protect_output_proj', True))
 
         # Target device derivation
         if device is not None:
