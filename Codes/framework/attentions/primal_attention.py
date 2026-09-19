@@ -405,21 +405,22 @@ class PrimalAttention(BaseAttention):
             K_land = K[:, :, idx, :]
 
         scale = 1.0 / (self.head_dim ** 0.5)
-        F1 = torch.matmul(Q.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
-        F2 = torch.matmul(Q_land.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
-        F3 = torch.matmul(Q_land.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        with torch.cuda.amp.autocast(enabled=False):
+            F1 = torch.matmul(Q.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
+            F2 = torch.matmul(Q_land.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
+            F3 = torch.matmul(Q_land.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # linalg.pinv requires float32/float64; under torch.autocast matmul might produce float16
-        F2_f32 = F2.to(torch.float32)
-        F2_pinv = torch.linalg.pinv(F2_f32, rcond=1e-4)
+            # linalg.pinv requires float32/float64; execute in pure FP32
+            F2_f32 = F2.to(torch.float32)
+            F2_pinv = torch.linalg.pinv(F2_f32, rcond=1e-4)
 
-        # Iterative Schulz refinement: X_{t+1} = X_t (2I - F2 X_t)
-        I = torch.eye(num_landmarks, device=hidden_states.device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        X = F2_pinv
-        for _ in range(min(self.pinv_iters, 4)):
-            X = torch.matmul(X, 2.0 * I - torch.matmul(F2_f32, X))
+            # Iterative Schulz refinement: X_{t+1} = X_t (2I - F2 X_t)
+            I = torch.eye(num_landmarks, device=hidden_states.device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+            X = F2_pinv
+            for _ in range(min(self.pinv_iters, 4)):
+                X = torch.matmul(X, 2.0 * I - torch.matmul(F2_f32, X))
 
-        attn = torch.matmul(F1, torch.matmul(X, F3))
+            attn = torch.matmul(F1, torch.matmul(X, F3))
 
         # Causal masking
         is_causal = self.is_decoder or kwargs.get("is_causal", False)

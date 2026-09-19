@@ -444,12 +444,12 @@ class HGRN2OuterBlock(BaseAttention):
                 vt = vt * m_t
 
             # Outer-product update: S_t = f_t * S_{t-1} + (1 - f_t) * (k_t \otimes v_t)
-            kv = kt.unsqueeze(-1) @ vt.unsqueeze(-2)  # [B, H, d, d]
+            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)  # [B, H, d, d]
             S = ft * S + (1.0 - ft) * kv
             # Denominator running state: z_t = f_t * z_{t-1} + (1 - f_t) * k_t
             z = ft_z * z + (1.0 - ft_z) * kt
 
-            num = (qt.unsqueeze(-2) @ S).squeeze(-2)                              # [B, H, d]
+            num = (qt.contiguous().unsqueeze(-2) @ S).squeeze(-2)                              # [B, H, d]
             denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1.0)             # [B, H, 1]
             y_t = num / denom
             y_fwd_list.append(y_t)
@@ -476,7 +476,7 @@ class HGRN2OuterBlock(BaseAttention):
                 kt = kt * m_t
                 vt = vt * m_t
 
-            kv = kt.unsqueeze(-1) @ vt.unsqueeze(-2)
+            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
             S_bwd = ft * S_bwd + (1.0 - ft) * kv
             z_bwd = ft_z * z_bwd + (1.0 - ft_z) * kt
 
