@@ -250,6 +250,22 @@ export async function bootstrapApp() {
 
     // 8. Global Window Exports for Inline HTML Handlers
     window.smoothFlyCamera = (y, dist, x = 0) => smoothFlyCamera(camera, controls, y, dist, x);
+    window.smoothZoomBy = (factor) => smoothZoomBy(camera, controls, factor);
+
+    const zoomInBtn = document.getElementById('btn-zoom-in');
+    const zoomOutBtn = document.getElementById('btn-zoom-out');
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => smoothZoomBy(camera, controls, 0.78));
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => smoothZoomBy(camera, controls, 1.28));
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        if (e.key === '+' || e.key === '=') {
+            smoothZoomBy(camera, controls, 0.8);
+        } else if (e.key === '-' || e.key === '_') {
+            smoothZoomBy(camera, controls, 1.25);
+        }
+    });
+
     window.selectPartIn3D = (target) => {
         const mesh = selectPartIn3D(target, interactableMeshes);
         if (mesh) {
