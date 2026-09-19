@@ -3003,7 +3003,10 @@ def run_single_module_main(args) -> dict:
         if num_comp == 0 and m_name != "full":
             display_name = f"{m_name} (efficient-attn)"
 
-        acc_val = float(r.get("accuracy_pct", 0.0))
+        try:
+            acc_val = float(r.get("accuracy_pct", 0.0) or 0.0)
+        except (ValueError, TypeError):
+            acc_val = 0.0
         delta_acc = acc_val - base_benchmark_acc if m_name != "full" else 0.0
         f1_val = r.get("f1_score", "N/A")
         try:
@@ -3023,6 +3026,18 @@ def run_single_module_main(args) -> dict:
         except (ValueError, TypeError):
             vram_str = str(vram)
 
+        try:
+            inf_time = float(r.get('eval_time_s', r.get('elapsed_s', 0.0)) or 0.0)
+            inf_time_str = f"{inf_time:.2f}"
+        except (ValueError, TypeError):
+            inf_time_str = "0.00"
+
+        try:
+            lat = float(r.get('latency_ms', 0.0)) if r.get('latency_ms') not in ("", "N/A", None) else None
+            lat_str = f"{lat:.2f}" if lat is not None else "N/A"
+        except (ValueError, TypeError):
+            lat_str = "N/A"
+
         summary_rows.append({
             "Module": display_name,
             "Status": r.get("status", "N/A"),
@@ -3032,8 +3047,8 @@ def run_single_module_main(args) -> dict:
             "Compressed Layers": r.get("num_compressed_layers", "0"),
             "Compression Rate": comp_rate_str,
             "Peak VRAM": vram_str,
-            "Inference Time (s)": f"{float(r.get('eval_time_s', r.get('elapsed_s', 0.0))):.2f}",
-            "Latency (ms/samp)": f"{float(r.get('latency_ms', 0.0)):.2f}" if r.get('latency_ms') else "N/A",
+            "Inference Time (s)": inf_time_str,
+            "Latency (ms/samp)": lat_str,
         })
 
     import pandas as pd
