@@ -43,6 +43,10 @@ export function computeAttention(sentence, numLayers = 6, numHeads = 12) {
 
     for (let l = 0; l < numLayers; l++) {
         const layerWeights = [];
+        const tau = numLayers > 1 ? l / (numLayers - 1) : 0;
+        // Temperature sharpens with depth (entropy drops from ~3.1 nats to ~1.1 nats)
+        const depthTemperature = 1.0 + tau * 0.75;
+
         for (let h = 0; h < numHeads; h++) {
             const headMatrix = [];
             const dHead = 64;
@@ -61,13 +65,28 @@ export function computeAttention(sentence, numLayers = 6, numHeads = 12) {
                         dot += embeddings[i][qIdx] * embeddings[j][kIdx];
                     }
 
-                    // Specialized linguistic head biases
-                    if (h % 4 === 0 && j === 0) dot += 1.8; // [CLS] global anchor bias
-                    if (h % 4 === 1 && j === i) dot += 2.2; // Self-reinforcement / identity
-                    if (h % 4 === 2 && j === i - 1) dot += 2.0; // Previous token syntax
-                    if (h % 4 === 3 && j === i + 1) dot += 1.6; // Next token lookahead
+                    // Depth-modulated linguistic head biases across layers
+                    if (tau < 0.3) {
+                        // Early layer: local syntactic window & positional neighbor bias
+                        if (j === i) dot += 2.2;
+                        if (j === i - 1) dot += 2.4;
+                        if (j === i + 1) dot += 1.8;
+                        if (j === 0) dot += 1.2; // slight [CLS] anchor
+                    } else if (tau < 0.7) {
+                        // Middle layer: induction heads, syntactic agreement & multi-hop links
+                        if (h % 4 === 0 && j === 0) dot += 2.4; // [CLS] global anchor bias
+                        if (h % 4 === 1 && j === i) dot += 1.6; // Self-reinforcement
+                        if (h % 4 === 2 && j === i - 2) dot += 2.1; // 2-step dependency
+                        if (h % 4 === 3 && (j === Math.floor(seqLen / 2) || j === i + 1)) dot += 2.0; // Induction
+                    } else {
+                        // Deep layer: high semantic focus on key delimiters and predictive tokens
+                        if (j === 0) dot += 3.2; // Heavy [CLS] summary focus
+                        if (j === seqLen - 1) dot += 2.6; // Heavy [SEP] delimiter focus
+                        if (h % 2 === 0 && j === Math.max(0, i - 1)) dot += 2.0;
+                        if (h % 2 === 1 && j === i) dot += 2.8; // Sharp target token
+                    }
 
-                    const score = dot * scale;
+                    const score = (dot * scale) * depthTemperature;
                     row[j] = score;
                     if (score > maxVal) maxVal = score;
                 }

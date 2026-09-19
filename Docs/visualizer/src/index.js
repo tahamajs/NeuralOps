@@ -43,6 +43,7 @@ import { openGuidedLessonsModal } from './educational/guided_lessons.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
 import { openMatrixUnfoldingModal } from './educational/matrix_unfolding.js';
+import { renderLayerDepthProfile, getLayerDepthProfile } from './educational/layer_depth_profile.js';
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { openCompressionSimulator } from './interactive/compression_simulator.js';
 import { openModelRaceModal } from './interactive/model_race.js';
@@ -509,8 +510,17 @@ export async function bootstrapApp() {
         // Update active layer UI indicators
         if (!isNaN(numericIdx)) {
             updateActiveLayerIndicator(numericIdx, (primaryMesh && primaryMesh.userData.parent_layer_name) || `Layer ${numericIdx}`);
+            renderLayerDepthProfile(numericIdx, store.get('currentModel'));
+
+            // Synchronize attention heatmap modal if open
+            const heatSelect = document.getElementById('heatmap-layer-select');
+            if (heatSelect) {
+                heatSelect.value = String(numericIdx);
+                heatSelect.dispatchEvent(new Event('change'));
+            }
         } else {
             updateActiveLayerIndicator(strId, strId);
+            renderLayerDepthProfile(strId, store.get('currentModel'));
         }
     };
 
@@ -531,20 +541,22 @@ export async function bootstrapApp() {
         embBtn.className = 'layer-pill-btn';
         embBtn.setAttribute('data-layer', 'embeddings');
         embBtn.textContent = 'Emb';
-        embBtn.title = 'Jump to Input Embeddings';
+        embBtn.title = 'Jump to Input Embeddings & Tokenizer';
         embBtn.onclick = (e) => {
             e.stopPropagation();
             window.navigateToLayer('embeddings');
         };
         pillsContainer.appendChild(embBtn);
 
-        // 2. Layer Pills L0 .. L(numLayers - 1)
+        // 2. Layer Pills L0 .. L(numLayers - 1) with depth-phase coloring
         for (let i = 0; i < numLayers; i++) {
+            const profile = getLayerDepthProfile(i, modelKey, numLayers);
             const lBtn = document.createElement('button');
             lBtn.className = `layer-pill-btn ${i === 0 ? 'active' : ''}`;
             lBtn.setAttribute('data-layer', String(i));
             lBtn.textContent = `L${i}`;
-            lBtn.title = `Jump to Transformer Layer ${i}`;
+            lBtn.title = `${profile.phaseName} (Ent: ${profile.attentionEntropy} nats, r*=${profile.optimalSvdRank})`;
+            lBtn.style.borderLeft = `2px solid ${profile.themeColor}`;
             lBtn.onclick = (e) => {
                 e.stopPropagation();
                 window.navigateToLayer(i);
@@ -557,7 +569,7 @@ export async function bootstrapApp() {
         outBtn.className = 'layer-pill-btn';
         outBtn.setAttribute('data-layer', 'output');
         outBtn.textContent = 'Out';
-        outBtn.title = 'Jump to Output Head / Classifier';
+        outBtn.title = 'Jump to Output Head / LM Logits Unembedding';
         outBtn.onclick = (e) => {
             e.stopPropagation();
             window.navigateToLayer('output');

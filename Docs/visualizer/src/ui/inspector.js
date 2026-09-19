@@ -10,6 +10,7 @@ import { renderTokenLifecycle } from '../educational/token_lifecycle.js';
 import { renderComponentPipeline } from '../educational/component_pipeline.js';
 import { renderLatexFormula } from '../educational/formula_renderer.js';
 import { renderAttentionInspector } from '../educational/attention_inspector.js';
+import { renderLayerDepthProfile } from '../educational/layer_depth_profile.js';
 import { formatParamCount } from '../utils/format.js';
 import { store } from '../state/store.js';
 
@@ -137,6 +138,7 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
 
     // Sub-renderers: Always executed with complete data
     renderAttentionInspector(curMod || node, currentModel);
+    renderLayerDepthProfile(node, currentModel);
     renderStructuralTransformation(curMod, currentModel);
     renderTokenLifecycle(curMod, currentModel);
     renderComponentPipeline(curMod, currentModel);
