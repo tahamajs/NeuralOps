@@ -60,6 +60,10 @@ FIELDS = [
     "weighted_reconstruction_error",
     "num_injected_attention_layers",
     "lora_params",
+    "latency_ms_per_token",
+    "throughput_tok_per_sec",
+    "perplexity",
+    "long_context_accuracy",
     "error",
     "path",
     "timestamp",
@@ -3257,7 +3261,8 @@ def main():
     }
     
     FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
-              "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "total_params_before",
+              "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "latency_ms_per_token", "throughput_tok_per_sec",
+              "perplexity", "long_context_accuracy", "total_params_before",
               "total_params_after", "trainable_recovery_params", "compression_rate", "compression_ratio_pct",
               "flops_reduction_pct", "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
               "weighted_reconstruction_error", "num_injected_attention_layers", "lora_params", "error", "path", "timestamp"]
@@ -3280,6 +3285,10 @@ def main():
             "elapsed_s":                     result.get("elapsed_s", 0.0),
             "peak_vram_mb":                  result.get("peak_vram_mb", 0.0),
             "tokens_per_sec":                result.get("tokens_per_sec", 0.0),
+            "latency_ms_per_token":         result.get("latency_ms_per_token", result.get("latency_ms", 0.0)),
+            "throughput_tok_per_sec":       result.get("throughput_tok_per_sec", result.get("tokens_per_sec", 0.0)),
+            "perplexity":                   result.get("perplexity", ""),
+            "long_context_accuracy":        result.get("long_context_accuracy", ""),
             "total_params_before":           result.get("total_params_before", result.get("params_before", 0)),
             "total_params_after":            result.get("total_params_after", result.get("params_after", 0)),
             "trainable_recovery_params":     result.get("trainable_recovery_params", 0),
