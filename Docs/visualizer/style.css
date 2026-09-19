@@ -180,14 +180,14 @@ body.view-2d .detail-kicker {
     position: absolute;
     z-index: 12;
     inset: 0 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 24px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    min-height: 82px;
-    padding: 16px clamp(18px, 3vw, 44px);
+    gap: 16px;
+    min-height: 64px;
+    padding: 10px clamp(16px, 2.5vw, 36px);
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(5, 10, 18, .96), rgba(5, 10, 18, .46), transparent);
+    background: linear-gradient(180deg, rgba(5, 10, 18, .96), rgba(5, 10, 18, .50), transparent);
 }
 
 .eyebrow {
@@ -211,7 +211,7 @@ body.view-2d .detail-kicker {
 
 h1 {
     margin: 0;
-    font-size: clamp(22px, 2.8vw, 38px);
+    font-size: clamp(20px, 2.4vw, 32px);
     line-height: 1;
     letter-spacing: -.04em;
     font-weight: 800;
@@ -225,8 +225,15 @@ h1 span {
 .top-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: calc(100vw - 380px);
+    gap: 6px;
     pointer-events: auto;
+    scrollbar-width: none;
+}
+.top-actions::-webkit-scrollbar {
+    display: none;
 }
 
 .view-toggle {
@@ -265,22 +272,22 @@ h1 span {
     border-color: rgba(151, 180, 181, .34);
     background: rgba(132, 163, 164, .20);
     box-shadow: inset 0 0 14px rgba(151, 180, 181, .08);
-}
-
 .status, .round-button {
-    min-height: 38px;
+    min-height: 32px;
+    height: 32px;
     border: 1px solid var(--line);
     border-radius: 999px;
     background: rgba(9, 20, 33, .72);
     backdrop-filter: blur(16px);
     color: var(--ink);
+    flex-shrink: 0;
 }
 
 .status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 13px;
+    gap: 7px;
+    padding: 0 10px;
     color: var(--muted);
     font: 700 9px/1 var(--font-mono);
     letter-spacing: .06em;
@@ -299,14 +306,15 @@ h1 span {
 }
 
 .round-button {
-    padding: 0 14px;
-    font-size: 11px;
-    font-weight: 780;
+    padding: 0 10px;
+    font-size: 10px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 .round-button:hover {
@@ -368,28 +376,28 @@ h1 span {
    ========================================================================== */
 .mechanism-nav {
     position: absolute;
-    z-index: 13;
-    top: 91px;
+    z-index: 11;
+    top: 68px;
     left: 50%;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    width: min(920px, calc(100vw - 40px));
-    padding: 5px;
+    width: min(780px, calc(100vw - 40px));
+    padding: 3px;
     transform: translateX(-50%);
     border: 1px solid var(--line);
-    border-radius: 18px;
-    background: rgba(8, 18, 30, .76);
+    border-radius: 14px;
+    background: rgba(8, 18, 30, .80);
     backdrop-filter: blur(22px);
-    box-shadow: 0 12px 50px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+    box-shadow: 0 10px 40px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 .mechanism-button {
     min-width: 0;
-    height: 43px;
-    padding: 0 10px;
+    height: 36px;
+    padding: 0 8px;
     overflow: hidden;
     border: 1px solid transparent;
-    border-radius: 13px;
+    border-radius: 10px;
     background: transparent;
     color: var(--muted);
     text-align: left;
@@ -400,13 +408,13 @@ h1 span {
 .mechanism-button b {
     display: block;
     color: var(--ink);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.15;
 }
 
 .mechanism-button small {
     display: block;
-    margin-top: 3px;
+    margin-top: 2px;
     overflow: hidden;
     font: 650 8px/1 var(--font-mono);
     white-space: nowrap;
@@ -434,16 +442,17 @@ h1 span {
 .detail-card {
     position: absolute;
     z-index: 9;
-    top: 162px;
-    left: clamp(16px, 2.7vw, 40px);
-    width: min(286px, 26vw);
-    padding: 18px 19px;
+    top: 118px;
+    left: clamp(16px, 2.5vw, 36px);
+    width: min(276px, 24vw);
+    padding: 16px 18px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: linear-gradient(145deg, rgba(15, 33, 53, .92), rgba(8, 18, 31, .75));
     backdrop-filter: blur(20px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
     pointer-events: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .detail-kicker {
@@ -527,9 +536,9 @@ h1 span {
 .compare-card {
     position: absolute;
     z-index: 9;
-    top: 162px;
-    right: clamp(16px, 2.7vw, 40px);
-    width: min(238px, 22vw);
+    top: 118px;
+    right: clamp(16px, 2.5vw, 36px);
+    width: min(238px, 20vw);
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -537,6 +546,14 @@ h1 span {
     backdrop-filter: blur(20px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
     pointer-events: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+body.inspector-open .compare-card,
+.inspector-drawer:not(.hidden) ~ .compare-card {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(50px) !important;
 }
 
 .compare-head {
@@ -580,42 +597,52 @@ h1 span {
 .control-dock {
     position: absolute;
     z-index: 14;
-    inset: auto 50% max(17px, env(safe-area-inset-bottom));
-    width: min(820px, calc(100vw - 38px));
-    display: grid;
-    grid-template-columns: auto auto minmax(180px, 1fr) auto;
-    gap: 11px;
-    align-items: center;
-    padding: 10px 14px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 50%;
     transform: translateX(-50%);
+    width: min(920px, calc(100vw - 32px));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
     border: 1px solid var(--line-strong);
-    border-radius: 19px;
-    background: rgba(8, 18, 30, .84);
+    border-radius: 18px;
+    background: rgba(8, 18, 30, .88);
     backdrop-filter: blur(24px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.07);
 }
 
+.dock-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .primary, .secondary {
-    height: 41px;
+    height: 36px;
     border: 1px solid var(--line);
-    border-radius: 12px;
-    font-weight: 820;
+    border-radius: 10px;
+    font-weight: 750;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .primary {
-    min-width: 78px;
+    min-width: 72px;
     border-color: transparent;
     background: var(--cyan);
     color: #03121a;
+    font-size: 11px;
 }
 
 .secondary {
-    min-width: 43px;
-    padding: 0 14px;
+    min-width: 36px;
+    padding: 0 10px;
     background: rgba(20, 39, 58, .74);
     color: var(--ink);
+    font-size: 11px;
 }
 
 .primary:hover {
@@ -630,8 +657,15 @@ h1 span {
 
 .timeline {
     display: flex;
-    gap: 9px;
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
     align-items: center;
+}
+
+.timeline input[type="range"] {
+    flex: 1;
+    min-width: 60px;
 }
 
 .layer-quick-pills {
@@ -639,7 +673,8 @@ h1 span {
     gap: 3px;
     align-items: center;
     overflow-x: auto;
-    max-width: 340px;
+    max-width: 260px;
+    flex-shrink: 0;
     scrollbar-width: none;
 }
 .layer-quick-pills::-webkit-scrollbar {
@@ -718,17 +753,22 @@ input[type="range"] {
    ========================================================================== */
 .legend {
     position: absolute;
-    z-index: 8;
-    left: clamp(16px, 2.7vw, 40px);
-    bottom: 95px;
+    z-index: 12;
+    left: clamp(16px, 2.5vw, 36px);
+    bottom: 22px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px 14px;
-    max-width: 520px;
+    max-width: 360px;
     color: var(--muted);
     font-size: 9px;
     pointer-events: none;
     font-family: var(--font-mono);
+    transition: opacity 0.2s ease;
+}
+
+.legend.hidden {
+    display: none !important;
 }
 
 .legend span {
@@ -742,6 +782,8 @@ input[type="range"] {
     height: 3px;
     border-radius: 99px;
 }
+
+.view-panels {
     position: absolute;
     inset: 56px 0 0 0;
     display: grid;
