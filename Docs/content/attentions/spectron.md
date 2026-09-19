@@ -805,3 +805,9 @@ The `LowRankSparseLinear` architecture incorporates telemetry hooks for tracking
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.93%** | -4.13% | 0.8792 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-spectron) | 2026-09-19 |
