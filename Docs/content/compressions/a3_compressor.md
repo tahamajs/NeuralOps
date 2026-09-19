@@ -216,7 +216,7 @@ compressed_model = a3_compressor_factory(
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9105 | 1.05x | 22 | [svd-linear-attention-distilbert-sst2-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-a3) | 2026-09-19 |
 | **distilbert-sst2** | mnli | `PASS` | 38.50% | **44.40%** | +5.90% | 0.3516 | 1.02x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | mnli | `PASS` | 35.60% | **40.10%** | +4.50% | 0.2981 | 1.00x | 3 | N/A | 2026-09-18 |
-| **distilbert-mnli** | mnli | `PASS` | 68.30% | **62.30%** | -6.00% | 0.6224 | 1.05x | 21 | N/A | 2026-09-18 |
+| **distilbert-mnli** | mnli | `PASS` | 53.10% | **59.90%** | +6.80% | 0.5983 | 1.05x | 21 | [svd-linear-attention-distilbert-mnli-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-a3) | 2026-09-19 |
 | **roberta-agnews** | ag_news | `PASS` | 93.40% | **93.70%** | +0.30% | 0.9345 | 1.04x | 32 | N/A | 2026-09-18 |
 | **distilbert-base-uncased** | mnli | `PASS` | 34.40% | **42.10%** | +7.70% | 0.3542 | 1.05x | 21 | [svd-linear-attention-distilbert-base-uncased-a3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-a3) | 2026-09-19 |
 

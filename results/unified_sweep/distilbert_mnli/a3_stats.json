@@ -1,10 +1,10 @@
 {
   "compressor_name": "a3",
   "original_parameters": 66955779,
-  "compressed_parameters": 63693315,
-  "saved_parameters": 3262464,
-  "compression_ratio": 0.9512743478049893,
-  "reduction_percentage": 4.872565219501068,
+  "compressed_parameters": 63633411,
+  "saved_parameters": 3322368,
+  "compression_ratio": 0.9503796677505612,
+  "reduction_percentage": 4.962033224943884,
   "factorized_layers": 21,
   "skipped_layers": 3,
   "num_compressed": 21,
@@ -38,112 +38,112 @@
   "rank": 128,
   "use_fisher": true,
   "recalibrate_ln": true,
-  "avg_reconstruction_error": 0.3760011496252111,
-  "weighted_reconstruction_error": 0.37600114962521103,
+  "avg_reconstruction_error": 0.37697261603133164,
+  "weighted_reconstruction_error": 0.37697261603133164,
   "layer_stats": {
     "distilbert.transformer.layer.0.attention.q_lin": {
       "rank": 281,
-      "rel_error": 0.34850760966040184,
+      "rel_error": 0.3485768265936329,
       "weighted": true
     },
     "distilbert.transformer.layer.0.attention.k_lin": {
       "rank": 242,
-      "rel_error": 0.39509159353651513,
+      "rel_error": 0.39513339494287125,
       "weighted": true
     },
     "distilbert.transformer.layer.0.attention.v_lin": {
       "rank": 281,
-      "rel_error": 0.37116314309220844,
+      "rel_error": 0.3711981545146953,
       "weighted": true
     },
     "distilbert.transformer.layer.0.attention.out_lin": {
       "rank": 281,
-      "rel_error": 0.3949774019993544,
+      "rel_error": 0.39489115282460047,
       "weighted": true
     },
     "distilbert.transformer.layer.1.attention.q_lin": {
       "rank": 242,
-      "rel_error": 0.3803049851875532,
+      "rel_error": 0.38016658831083233,
       "weighted": true
     },
     "distilbert.transformer.layer.1.attention.k_lin": {
       "rank": 242,
-      "rel_error": 0.3545130034237042,
+      "rel_error": 0.3545018137661713,
       "weighted": true
     },
     "distilbert.transformer.layer.1.attention.v_lin": {
       "rank": 281,
-      "rel_error": 0.3691385169428179,
+      "rel_error": 0.36897827647549186,
       "weighted": true
     },
     "distilbert.transformer.layer.1.attention.out_lin": {
       "rank": 320,
-      "rel_error": 0.3656386268281686,
+      "rel_error": 0.360048602043712,
       "weighted": true
     },
     "distilbert.transformer.layer.2.attention.q_lin": {
       "rank": 281,
-      "rel_error": 0.3738746109471117,
+      "rel_error": 0.37357042426514103,
       "weighted": true
     },
     "distilbert.transformer.layer.2.attention.k_lin": {
       "rank": 281,
-      "rel_error": 0.37960500254160007,
+      "rel_error": 0.37924422698096033,
       "weighted": true
     },
     "distilbert.transformer.layer.2.attention.v_lin": {
       "rank": 281,
-      "rel_error": 0.377076329976342,
+      "rel_error": 0.37699440084422897,
       "weighted": true
     },
     "distilbert.transformer.layer.2.attention.out_lin": {
       "rank": 320,
-      "rel_error": 0.3732141814186336,
+      "rel_error": 0.3739235992749445,
       "weighted": true
     },
     "distilbert.transformer.layer.3.attention.q_lin": {
       "rank": 242,
-      "rel_error": 0.3896809417236634,
+      "rel_error": 0.3882811231404485,
       "weighted": true
     },
     "distilbert.transformer.layer.3.attention.k_lin": {
       "rank": 242,
-      "rel_error": 0.39078078719610954,
+      "rel_error": 0.38972112519905544,
       "weighted": true
     },
     "distilbert.transformer.layer.3.attention.v_lin": {
       "rank": 320,
-      "rel_error": 0.37960488702070927,
+      "rel_error": 0.37848063487736827,
       "weighted": true
     },
     "distilbert.transformer.layer.4.attention.q_lin": {
       "rank": 281,
-      "rel_error": 0.3814587593127109,
+      "rel_error": 0.3784328591183489,
       "weighted": true
     },
     "distilbert.transformer.layer.4.attention.k_lin": {
       "rank": 281,
-      "rel_error": 0.3797424864109,
+      "rel_error": 0.3765942444353278,
       "weighted": true
     },
     "distilbert.transformer.layer.4.attention.v_lin": {
       "rank": 320,
-      "rel_error": 0.38716733121186564,
+      "rel_error": 0.3840685226493801,
       "weighted": true
     },
     "distilbert.transformer.layer.5.attention.q_lin": {
       "rank": 281,
-      "rel_error": 0.39080114984307657,
+      "rel_error": 0.3859185907535441,
       "weighted": true
     },
     "distilbert.transformer.layer.5.attention.k_lin": {
-      "rank": 320,
-      "rel_error": 0.34932206187057374,
+      "rank": 281,
+      "rel_error": 0.3973860289653895,
       "weighted": true
     },
     "distilbert.transformer.layer.5.attention.v_lin": {
       "rank": 320,
-      "rel_error": 0.364360731985412,
+      "rel_error": 0.36031434668182083,
       "weighted": true
     }
   },
