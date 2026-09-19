@@ -221,3 +221,4 @@ CUDA kernel errors might be asynchronously reported at some other API call, so t
 For debugging consider passing CUDA_LAUNCH_BLOCKING=1
 Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
 ",legacy_bert,2026-09-19T02:05:29.445162
+svd-mamba,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6941,69.9,809.99,9193.86,66955010,75796082,1032960,1.0,0.0,28.53,6,0,,,6,1032960,note: evaluated accuracy (50.92%) below chance threshold (56.00%),legacy_bert,2026-09-19T02:05:59.780669
