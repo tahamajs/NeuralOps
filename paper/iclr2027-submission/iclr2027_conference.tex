@@ -177,13 +177,13 @@ Uncompressed Baseline & $1.00\times$ & 91.06\% & 81.80\% & 94.30\% & -- & Baseli
 \texttt{kmeans} & $\mathbf{2.73\times}$ & \textbf{90.37\%} & \textbf{81.40\%} & \textbf{94.70\%} & \textbf{0.0322} & COMPRESSION \\
 \texttt{kronecker} & $1.93\times$ & 72.13\% & 39.00\% & 75.80\% & -- & COMPRESSION \\
 \texttt{hybrid\_svd} & $1.91\times$ & 76.38\% & 37.50\% & 73.50\% & 0.6620 & COMPRESSION \\
-\texttt{swift\_svd} & $1.44\times$ & 82.91\% & 51.90\% & -- & -- & COMPRESSION \\
+\texttt{swift\_svd} & $1.44\times$ & 82.91\% & 51.90\% & 89.00\% & -- & COMPRESSION \\
 \texttt{inject\_aegis\_v6} & $1.25\times$ & 90.71\% & 79.20\% & -- & -- & COMPRESSION \\
 \texttt{come} & $1.24\times$ & 84.52\% & 56.80\% & 91.50\% & -- & COMPRESSION \\
 \texttt{replaceme} & $1.24\times$ & 73.39\% & 63.50\% & 90.90\% & -- & COMPRESSION \\
 \texttt{fused\_svd\_kernel} & $1.21\times$ & 80.39\% & 50.50\% & 90.30\% & -- & COMPRESSION \\
-\texttt{salt} & $1.21\times$ & 84.29\% & 52.00\% & -- & -- & COMPRESSION \\
-\texttt{svd\_compressed} & $1.20\times$ & 0.00\% & 52.30\% & -- & -- & COMPRESSION \\
+\texttt{salt} & $1.21\times$ & 84.29\% & 52.00\% & 88.70\% & -- & COMPRESSION \\
+\texttt{svd\_compressed} & $1.20\times$ & 0.00\% & 52.30\% & 89.70\% & -- & COMPRESSION \\
 \texttt{adasvd} & $1.16\times$ & 85.32\% & 61.00\% & 87.40\% & 0.6147 & COMPRESSION \\
 \texttt{adaptive\_svd} & $1.15\times$ & 88.07\% & 68.90\% & 92.30\% & -- & COMPRESSION \\
 \texttt{aasvd} & $1.13\times$ & 88.30\% & 68.60\% & 92.10\% & 0.8333 & COMPRESSION \\
@@ -207,18 +207,18 @@ Table~\ref{tab:parameter_neutral} summarizes parameter-neutral methods ($\text{c
 \textbf{Method} & \textbf{SST-2} & \textbf{MNLI} & \textbf{AG News} & \textbf{Recon. Err} & \textbf{Status} \\
 \midrule
 \texttt{ast} & 90.37\% & 82.40\% & 94.40\% & 0.3698 & PASS \\
-\texttt{uniql} & 91.06\% & 82.30\% & -- & -- & PASS \\
+\texttt{uniql} & 91.06\% & 82.30\% & 94.90\% & -- & PASS \\
 \texttt{nmf} & 90.48\% & 82.30\% & 94.70\% & -- & PASS \\
 \texttt{liftr} & 91.06\% & 82.30\% & 94.90\% & -- & PASS \\
 \texttt{roast} & 90.83\% & 82.20\% & 94.30\% & 1.0001 & PASS \\
 \texttt{erc} & 90.60\% & 82.10\% & 94.40\% & 0.6341 & PASS \\
-\texttt{subspace\_projection} & 90.71\% & 82.10\% & -- & -- & PASS \\
-\texttt{soka} & 90.71\% & 82.10\% & -- & -- & PASS \\
+\texttt{subspace\_projection} & 90.71\% & 82.10\% & 94.40\% & -- & PASS \\
+\texttt{soka} & 90.71\% & 82.10\% & 94.40\% & -- & PASS \\
 \texttt{direct\_svd} & 90.60\% & 82.10\% & 94.40\% & 0.6341 & PASS \\
 \texttt{salr} & 90.37\% & 82.00\% & 94.90\% & -- & PASS \\
 \texttt{rpca} & 90.37\% & 82.00\% & 94.90\% & 0.6341 & PASS \\
 \texttt{dynamic\_rank} & 90.60\% & 81.90\% & 94.40\% & -- & PASS \\
-\texttt{tomoe} & 90.94\% & 81.90\% & -- & -- & PASS \\
+\texttt{tomoe} & 90.94\% & 81.90\% & 94.40\% & -- & PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -242,7 +242,7 @@ Table~\ref{tab:linear_family} contrasts prominent linear and sub-quadratic atten
 \texttt{nystrom} & 90.94\% (PASS) & 81.80\% (REJECTED) & 94.20\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
 \texttt{nsa} & 90.94\% (PASS) & 81.60\% (REJECTED) & 94.20\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
 \texttt{hamming} & 81.54\% (PASS) & 38.80\% (REJECTED) & 89.70\% (REJECTED) & $1.00\times$ & MODERATE\_EXP \\
-\texttt{salt} & 84.29\% (PASS) & 52.00\% (PASS) & -- & $1.21\times$ & COMPRESSION \\
+\texttt{salt} & 84.29\% (PASS) & 52.00\% (PASS) & 88.70\% (PASS) & $1.21\times$ & COMPRESSION \\
 \bottomrule
 \end{tabular}
 \end{table}

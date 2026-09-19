@@ -1,70 +1,43 @@
 \section{Empirical Results and Benchmark Evaluations}
+\label{sec:results}
 
-\subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_kroneckercompressor} details empirical evaluation metrics across target backbones.
+\subsection{Multi-Benchmark Task Performance}
+We evaluate \texttt{kronecker\_compressor} across three canonical language understanding tasks using DistilBERT-base: SST-2 (binary sentiment classification), MNLI (multi-genre natural language inference), and AG News (four-way topic categorization). All benchmarks were executed under standardized hyperparameters with rank ceiling $r_{\mathrm{ceiling}} = 256$ and quality gate $\tau = 0.40$.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{llccccccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & kronecker & PASS & 90.94 & 0.9123 \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & kronecker & PASS & 60.32 & 0.7038 \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & kronecker & PASS & 70.07 & 0.7603 \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & kronecker & PASS & Comp 358.64x & Mem -0.0\% \\
+SST-2 & PASS & 72.13\% & 0.7197 & 1.93$\times$ & -- & 257.1 MB & 20643 & 24.89 s \\
+MNLI & PASS & 39.00\% & 0.3851 & 1.93$\times$ & -- & 259.3 MB & 22656 & 55.65 s \\
+AG News & PASS & 75.80\% & 0.7442 & 1.93$\times$ & -- & 294.1 MB & 43505 & 32.61 s \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{kroneckercompressor}.}
-\label{tab:results_acc_kroneckercompressor}
+\caption{Empirical evaluation of \texttt{kronecker\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
+\label{tab:results_kronecker_compressor}
 \end{table*}
 
-\subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_kroneckercompressor} documents parameter compression factors and adapter overhead.
+\subsection{Parameter Scaling and Compression Dynamics}
+Table~\ref{tab:params_kronecker_compressor} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
 
 \begin{table*}[t]
 \centering
 \small
 \begin{tabular}{llccccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\textbf{Benchmark} & \textbf{Params Before} & \textbf{Params After} & \textbf{Param. $\Delta$} & \textbf{Trainable Recovery} & \textbf{Comp. Layers} & \textbf{Fallback Layers} \\
 \midrule
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & kronecker & 66955010 & 66758403 & 985347 & 1.0029x \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & kronecker & 124441344 & 124048130 & 787970 & 1.0032x \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & kronecker & 124647170 & 124647170 & 592130 & 1.0x \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & kronecker & Baseline FP32 & Reduced (358.64x) & 0 & 358.64x \\
+SST-2 & 66,955,010 & 34,662,146 & -32,292,864 (-48.23\%) & 1,327,104 & 0 & 0 \\
+MNLI & 66,955,779 & 34,662,915 & -32,292,864 (-48.23\%) & 1,327,104 & 0 & 0 \\
+AG News & 66,956,548 & 34,663,684 & -32,292,864 (-48.23\%) & 1,327,104 & 0 & 0 \\
 \bottomrule
 \end{tabular}
-\caption{Parameter scaling and recovery parameter counts for \texttt{kroneckercompressor}.}
-\label{tab:results_params_kroneckercompressor}
+\caption{Parameter allocation and layer decomposition for \texttt{kronecker\_compressor}.}
+\label{tab:params_kronecker_compressor}
 \end{table*}
 
-\subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_kroneckercompressor} presents memory profiling and execution throughput.
-
-\begin{table*}[t]
-\centering
-\small
-\begin{tabular}{llcccc}
-\toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
-\midrule
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & full & 160032.71 & 389.51 MB & 0.0000 \\
-\texttt{results/unified\_kronecker/distilbert/summary.csv} & distilbert & kronecker & 157132.82 & 315.07 MB & 0.3274622009712534 \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & full & 71960.77 & 793.19 MB & 0.0000 \\
-\texttt{results/unified\_kronecker/gpt2/summary.csv} & gpt2 & kronecker & 69983.27 & 643.3 MB & 0.2137064098441871 \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & full & 115870.9 & 298.71 MB & 0.0000 \\
-\texttt{results/unified\_kronecker/roberta/summary.csv} & roberta & kronecker & 109075.39 & 301.72 MB & 0.0 \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & kronecker & Elapsed 0.782s & 129.8 MB & Verified \\
-\bottomrule
-\end{tabular}
-\caption{Inference throughput and VRAM footprint for \texttt{kroneckercompressor}.}
-\label{tab:results_vram_kroneckercompressor}
-\end{table*}
+\subsection{Inference Efficiency and Memory Footprint}
+Execution profiling demonstrates that \texttt{kronecker\_compressor} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
