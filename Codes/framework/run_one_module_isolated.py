@@ -16,11 +16,17 @@ def main():
     parser_custom = argparse.ArgumentParser(add_help=False)
     parser_custom.add_argument("--module", required=True)
     parser_custom.add_argument("--output_json", required=True)
+    parser_custom.add_argument("--perplexity", action="store_true", default=False,
+                               help="Evaluate causal language modeling perplexity on WikiText-2")
+    parser_custom.add_argument("--long_context", action="store_true", default=False,
+                               help="Evaluate 4096-token sequence classification on Byte-Level IMDb")
     known, remaining = parser_custom.parse_known_args()
 
     args = parse_args(remaining)
     args.module = known.module
     args.output_json = known.output_json
+    args.perplexity = getattr(known, "perplexity", False)
+    args.long_context = getattr(known, "long_context", False)
     args.modules = [known.module]
     # Never let the child read a stale summary.csv — always run fresh
     args.fresh = True
@@ -97,10 +103,15 @@ def main():
             "precision":                    float(metrics.get("precision", 0.0) or 0.0),
             "recall":                       float(metrics.get("recall", 0.0) or 0.0),
             "val_loss":                     float(metrics.get("val_loss", 0.0) or 0.0),
-            # Speed / VRAM
+            # Speed / VRAM / Pareto metrics
             "peak_vram_mb":                 float(metrics.get("peak_vram_mb", 0.0) or 0.0),
             "tokens_per_sec":               float(metrics.get("tokens_per_sec", 0.0) or 0.0),
+            "throughput":                   float(metrics.get("tokens_per_sec", 0.0) or 0.0),
+            "throughput_tok_per_sec":       float(metrics.get("tokens_per_sec", 0.0) or 0.0),
+            "latency_ms_per_token":         float(metrics.get("latency_ms_per_token", metrics.get("latency_ms", 0.0)) or 0.0),
             "elapsed_s":                    float(metrics.get("elapsed_s", 0.0) or 0.0),
+            "perplexity":                   float(metrics.get("perplexity", 0.0) or 0.0) if metrics.get("perplexity") is not None else "",
+            "long_context_accuracy":        float(metrics.get("long_context_accuracy", 0.0) or 0.0) if metrics.get("long_context_accuracy") is not None else "",
             # Compression / param counts
             "params_before":                p_before,
             "params_after":                 p_after,
