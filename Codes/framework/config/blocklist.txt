@@ -9,3 +9,9 @@ expert_choice_moe              # REJECTED_EXPANSION                66.9M -> 180.
 hgrn2                          # REJECTED_EXPANSION                params exceeded baseline by 44%
 adaptive_sparse                # REJECTED_EXPANSION                params exceeded baseline by 44%
 granite_hybrid                 # REJECTED_EXPANSION                same family as inject_granite_hybrid
+aegis_spectron_fp8             # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 34.0%, single-class prediction)
+compressed_attention           # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 36.1%, near-chance)
+compressed_mha                 # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 34.1%, single-class prediction)
+inject_mamba                   # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 34.1%, causal break on bidirectional encoder)
+mamba                          # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 34.1%, causal break on bidirectional encoder)
+kronecker_linear_class         # ARCHITECTURAL_INCOMPATIBLE        mode collapse (acc 34.0%, single-class prediction)
