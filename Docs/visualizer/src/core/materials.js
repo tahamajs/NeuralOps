@@ -64,7 +64,14 @@ export const edgeMatSvd = new THREE.LineBasicMaterial({ color: C.edgeSvd, transp
 export const edgeMatMoe = new THREE.LineBasicMaterial({ color: C.edgeMoe, transparent: true, opacity: 0.75 });
 export const edgeMatMla = new THREE.LineBasicMaterial({ color: C.edgeMla, transparent: true, opacity: 0.85 });
 export const edgeMatMacro = new THREE.LineBasicMaterial({ color: C.edgeMacro, transparent: true, opacity: 0.65 });
-export const edgeMatResidual = new THREE.LineBasicMaterial({ color: C.edgeResidual, transparent: true, opacity: 0.6 });
+export const edgeMatResidual = new THREE.LineBasicMaterial({ color: C.edgeResidual, transparent: true, opacity: 0.75 });
+
+// 3D Computational Graph Conduit & Connection Materials
+export const conduitMatBaseline = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
+export const conduitMatCompressed = new THREE.LineBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.55 });
+export const conduitMatMoE = new THREE.LineBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.6 });
+export const junctionMatResidual = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.85 });
+export const portRingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.75 });
 
 // Token Particle Materials
 export const tokenMaterialBaseline = new THREE.MeshBasicMaterial({ color: C.tokenBaseline });

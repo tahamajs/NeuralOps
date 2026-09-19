@@ -36,6 +36,9 @@ import { updateInspectorWithNode } from './ui/inspector.js';
 import { buildHierarchicalTree } from './ui/tree_explorer.js';
 import { initModuleCatalog } from './ui/module_catalog.js';
 import { initDocModal } from './educational/doc_modal.js';
+import { togglePresentMode } from './educational/present_mode.js';
+import { openLearnModal } from './educational/learn_modal.js';
+import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -257,12 +260,28 @@ export async function bootstrapApp() {
     if (zoomInBtn) zoomInBtn.addEventListener('click', () => smoothZoomBy(camera, controls, 0.78));
     if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => smoothZoomBy(camera, controls, 1.28));
 
+    const presentBtn = document.getElementById('btn-present-mode');
+    if (presentBtn) presentBtn.addEventListener('click', () => togglePresentMode({ camera, controls, store, rebuildSceneForModel }));
+
+    const learnBtn = document.getElementById('btn-open-learn');
+    if (learnBtn) learnBtn.addEventListener('click', () => openLearnModal());
+
+    const matrixBtn = document.getElementById('btn-open-model-matrix');
+    if (matrixBtn) matrixBtn.addEventListener('click', () => openModelMatrixDashboard((m) => {
+        store.set({ currentModel: m });
+        rebuildSceneForModel(m, (store.get('activeResearchModule') && store.get('activeResearchModule').paradigm) || 'svd');
+    }));
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
             smoothZoomBy(camera, controls, 0.8);
         } else if (e.key === '-' || e.key === '_') {
             smoothZoomBy(camera, controls, 1.25);
+        } else if (e.key === 'p' || e.key === 'P') {
+            togglePresentMode({ camera, controls, store, rebuildSceneForModel });
+        } else if (e.key === 'l' || e.key === 'L') {
+            openLearnModal();
         }
     });
 
