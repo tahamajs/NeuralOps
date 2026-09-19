@@ -11,6 +11,13 @@ import { materials, edgeMatDense, edgeMatSvd, edgeMatMoe, edgeMatMla, getOrCreat
 import { createLayerLabelSprite, createTensorBadgeSprite } from './label_builder.js';
 import { buildResidualBypass, buildLayerConduits, buildInterLayerConduits } from './conduit_builder.js';
 import { anyKey } from '../utils/math.js';
+import { MODEL_SPECS } from '../constants.js';
+import { 
+    getLayerDepthMaterial, 
+    getLayerDepthEdgeMaterial, 
+    createLayerStageRing, 
+    createLayerLabelSpriteWithDepth 
+} from '../educational/layer_depth_profile.js';
 
 /**
  * Builds individual granular tensor nodes and adds them to the scene.
