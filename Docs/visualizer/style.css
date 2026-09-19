@@ -755,16 +755,22 @@ input[type="range"] {
     position: absolute;
     z-index: 12;
     left: clamp(16px, 2.5vw, 36px);
-    bottom: 22px;
+    bottom: 74px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    max-width: 360px;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 12px;
+    background: rgba(7, 14, 24, 0.82);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    max-width: 260px;
     color: var(--muted);
     font-size: 9px;
     pointer-events: none;
     font-family: var(--font-mono);
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .legend.hidden {
@@ -775,12 +781,14 @@ input[type="range"] {
     display: flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
 }
 
 .legend i {
     width: 14px;
     height: 3px;
     border-radius: 99px;
+    flex-shrink: 0;
 }
 
 .view-panels {
@@ -2215,11 +2223,12 @@ input[type="range"] {
 }
 
 @media (max-width: 900px) {
-    .mechanism-nav { top: 84px; width: calc(100vw - 24px); }
+    .mechanism-nav { top: 68px; width: calc(100vw - 24px); }
     .mechanism-button b { font-size: 11px; }
     .mechanism-button small { display: none; }
     .detail-card { display: none; }
     .compare-card { display: none; }
+    .legend { display: none !important; }
 }
 
 @media (max-width: 700px) {
@@ -2632,16 +2641,18 @@ kbd {
 /* Color Legend */
 #color-legend {
     position: fixed;
-    bottom: 100px;
-    right: 20px;
-    background: rgba(6,10,18,0.93);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 12px 14px;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6, 10, 18, 0.96);
+    border: 1px solid rgba(83, 236, 217, 0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
     z-index: 9997;
     display: none;
-    min-width: 210px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    min-width: 260px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(83, 236, 217, 0.1);
+    backdrop-filter: blur(20px);
 }
 .legend-title {
     font-size: 10px;

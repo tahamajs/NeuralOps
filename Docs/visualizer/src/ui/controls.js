@@ -267,11 +267,39 @@ export function setupControls(handlers = {}) {
             if (handlers.onResetCamera) handlers.onResetCamera();
         } else if (e.key === 'm' || e.key === 'M') {
             if (catalogBtn) catalogBtn.click();
+        } else if (e.key === 'u' || e.key === 'U') {
+            const btn = document.getElementById('btn-open-unfolding');
+            if (btn) btn.click();
+        } else if (e.key === 'h' || e.key === 'H') {
+            const btn = document.getElementById('btn-open-heatmap');
+            if (btn) btn.click();
+        } else if (e.key === 't' || e.key === 'T') {
+            const btn = document.getElementById('btn-open-prediction');
+            if (btn) btn.click();
+        } else if (e.key === 'c' || e.key === 'C') {
+            const btn = document.getElementById('btn-open-compression');
+            if (btn) btn.click();
+        } else if (e.key === 'g' || e.key === 'G') {
+            const btn = document.getElementById('btn-open-lessons');
+            if (btn) btn.click();
+        } else if (e.key === 'l' || e.key === 'L') {
+            const btn = document.getElementById('btn-open-learn');
+            if (btn) btn.click();
+        } else if (e.key === 'v' || e.key === 'V') {
+            const btn = document.getElementById('btn-record-video');
+            if (btn) btn.click();
+        } else if (e.key === 'p' || e.key === 'P') {
+            const btn = document.getElementById('btn-present-mode');
+            if (btn) btn.click();
         } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
             openKeyboardShortcutsModal();
         } else if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
-            if (inspector) inspector.classList.add('hidden');
+            if (inspector) {
+                inspector.classList.add('hidden');
+                if (document.body) document.body.classList.remove('inspector-open');
+                if (inspBtn) inspBtn.setAttribute('aria-expanded', 'false');
+            }
             if (colorLegend) colorLegend.style.display = 'none';
         }
     });
@@ -337,6 +365,10 @@ export function openKeyboardShortcutsModal() {
                     <div style="display:grid; grid-template-columns: 120px 1fr; gap:10px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
                         <kbd style="background:#080f1c; border:1px solid rgba(255,255,255,0.2); padding:3px 8px; border-radius:4px; font-family:monospace; color:#38bdf8; text-align:center;">H</kbd>
                         <span>Open Interactive Attention Heatmap Explorer</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 120px 1fr; gap:10px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+                        <kbd style="background:#080f1c; border:1px solid rgba(255,255,255,0.2); padding:3px 8px; border-radius:4px; font-family:monospace; color:#c084fc; text-align:center;">U</kbd>
+                        <span>Open Attention Square Deconstruction &amp; Matrix Unfolding Engine</span>
                     </div>
                     <div style="display:grid; grid-template-columns: 120px 1fr; gap:10px; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
                         <kbd style="background:#080f1c; border:1px solid rgba(255,255,255,0.2); padding:3px 8px; border-radius:4px; font-family:monospace; color:#38bdf8; text-align:center;">T</kbd>
