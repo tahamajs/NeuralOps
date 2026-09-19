@@ -130,7 +130,7 @@
             </button>
 
             <!-- Keyboard shortcuts hint button -->
-            <button class="round-button" title="Keyboard Shortcuts: Space=Play/Pause, R=Reset Camera, M=Module Library, 1-6=Layer nav, Esc=Close" aria-label="Keyboard shortcuts guide" style="opacity:0.65;font-size:11px;">
+            <button id="btn-keyboard-shortcuts" class="round-button" title="Keyboard Shortcuts: Space=Play/Pause, R=Reset Camera, M=Module Library, P=Present, H=Heatmap, Esc=Close" aria-label="Keyboard shortcuts guide" style="opacity:0.85;font-size:11px;">
                 ⌨ Keys
             </button>
         </div>
@@ -235,11 +235,11 @@
             <input type="range" id="timeline-scrubber" min="0" max="6" step="1" value="0" title="Scrub through token lifecycle" aria-label="Token lifecycle position scrubber">
             <span class="timecode" id="timeline-label">Input Embeddings</span>
         </div>
-        <!-- Tour / Legend / Pin -->
-        <button id="btn-auto-tour" class="secondary" title="Auto camera tour through all layers (8 stages × 3.2s)" aria-label="Start automated architecture camera tour" onclick="window.toggleTour && window.toggleTour()">▶ Tour</button>
-        <button id="btn-legend-toggle" class="secondary" title="Node color legend" aria-label="Toggle color legend" onclick="(function(){var l=document.getElementById('color-legend');if(l){l.style.display=l.style.display==='none'||!l.style.display?'block':'none';}})()">🎨</button>
-        <button id="btn-pin-module" class="secondary" title="Pin current module for comparison" aria-label="Pin module for comparison" onclick="window.pinCurrentModule && window.pinCurrentModule()">📌</button>
-        <button id="btn-reset-cam" class="secondary" title="Auto-Fit Camera to Active Model (R)" aria-label="Auto-fit camera view" onclick="window.smoothFlyCamera && window.smoothFlyCamera((window.maxGraphHeight || 16)*0.5, Math.max(18, (window.maxGraphHeight || 16)*1.35))">⊡ Fit</button>
+        <!-- Tour / Legend / Pin / Fit -->
+        <button id="btn-auto-tour" class="secondary" title="Auto camera tour through all layers (8 stages × 3.2s)" aria-label="Start automated architecture camera tour">▶ Tour</button>
+        <button id="btn-legend-toggle" class="secondary" title="Node color legend" aria-label="Toggle color legend">🎨</button>
+        <button id="btn-pin-module" class="secondary" title="Pin current module for comparison" aria-label="Pin module for comparison">📌</button>
+        <button id="btn-reset-cam" class="secondary" title="Auto-Fit Camera to Active Model (R)" aria-label="Auto-fit camera view">⊡ Fit</button>
     </div>
 
     <!-- Viewport Split-Screen Legends -->
