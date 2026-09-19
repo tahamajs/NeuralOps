@@ -300,6 +300,7 @@ A Triton kernel for Adaptive SVD Attention fuses the frozen SVD base GEMM tile a
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.07%** | -2.99% | 0.8857 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive-svd) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **68.90%** | -12.90% | 0.6856 | 1.15x | 6 | [svd-linear-attention-distilbert-mnli-full-adaptive-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adaptive-svd) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.30%** | -2.00% | 0.9192 | 1.15x | 6 | N/A | 2026-09-19 |
 
 
 > [!NOTE]
