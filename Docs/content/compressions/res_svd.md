@@ -669,6 +669,13 @@ __all__ = [
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **78.67%** | -12.39% | 0.8158 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-res-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-res-svd) | 2026-09-19 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Evaluation Suite | Base Model | Metric | Value | Latency Reduction | Peak Memory Delta | Status |
