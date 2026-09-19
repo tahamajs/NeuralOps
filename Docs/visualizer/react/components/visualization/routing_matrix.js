@@ -5708,27 +5708,23 @@ export const ROUTING_MATRIX = {
   "sparsegpt": {
     "id": "sparsegpt",
     "name": "SparseGPT: One-Shot Second-Order Hessian-Guided Weight Pruning fo",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "G",
+    "subcategory": "pruning_sparsity",
     "states": [
       "idle",
-      "show_W",
-      "decompose",
-      "singular_values",
-      "truncate",
-      "reconstruct",
-      "error_heatmap"
+      "importance_eval",
+      "mask_generation",
+      "pruned_projection",
+      "output"
     ],
     "substates": [
-      "no_weighting"
+      "hessian_update_visible"
     ],
-    "defaultState": "decompose",
+    "defaultState": "importance_eval",
     "forbidden": [
-      "qkv",
-      "softmax",
-      "attention_matrix",
-      "causal_mask",
-      "square_attention"
+      "dense_attention_matrix",
+      "svd_singular_values",
+      "softmax"
     ]
   },
   "spectraformer_attention": {
