@@ -228,6 +228,7 @@ Fuse `CompressedAttentionLayer` projections directly into Triton FlashAttention 
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **87.50%** | -3.56% | 0.8734 | 1.04x | 0 | [svd-linear-attention-distilbert-sst2-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adaptive) | 2026-09-19 |
 | **distilbert-base-uncased** | mnli | `PASS` | 34.40% | **47.20%** | +12.80% | 0.4407 | 1.04x | 0 | [svd-linear-attention-distilbert-base-uncased-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-adaptive) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **75.80%** | -6.00% | 0.7556 | 1.04x | 0 | [svd-linear-attention-distilbert-mnli-full-adaptive](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adaptive) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **92.80%** | -1.50% | 0.9242 | 1.04x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `adaptive_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
