@@ -220,6 +220,7 @@ Because NMF produces purely non-negative activation factors $H$, output activati
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.48%** | -0.58% | 0.9091 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-nmf](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nmf) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **82.30%** | +0.50% | 0.8222 | 1.00x | 0 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `nmf_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
