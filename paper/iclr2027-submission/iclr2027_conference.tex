@@ -14,9 +14,9 @@
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 
-\title{Rank Truncation vs. Vector Quantization: A Systematic Study of Attention Compression for Multi-Class Reasoning}
+\title{Toward Linear Attention: A Comprehensive Comparison of Over 200 Attention Mechanisms}
 
-\author{Anonymous Authors}
+\author{Anonymous authors}
 
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
@@ -26,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-Transformer attention is quadratic in sequence length, motivating a large and rapidly growing family of alternative attention mechanisms --- from low-rank and linear approximations to recurrent, sparse, codebook-based, and mixture-of-experts variants. Despite this proliferation, no systematic comparison of these mechanisms exists, and it remains unclear which families preserve reasoning capacity on multi-class tasks and which collapse under architectural constraints. We conduct a comprehensive study of over 200 attention mechanisms and compression methods on DistilBERT-base, evaluating each under a unified pipeline across three benchmarks: SST-2 (binary sentiment), MNLI (three-class natural language inference), and AG News (four-class topic classification). Our evaluation covers linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and SSM-based layers (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD variants (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt), among many others. Under a strict non-expansion guarantee ($|\theta(M')| \le |\theta(M_0)|$), we find that these mechanisms fall into two regimes for multi-class reasoning: rank-truncation methods move attention toward a linear form and achieve 90.71\% on SST-2 at 1.05$\times$ compression but collapse to 72.20\% on MNLI, while vector quantization preserves the full coordinate span and achieves 81.40\% on MNLI at 2.73$\times$ compression with 11.7$\times$ lower reconstruction error. These findings provide the first unified comparison of attention mechanisms toward linear attention, revealing which families preserve reasoning and which do not. All fine-tuned checkpoints and evaluation pipelines are publicly available.
+Transformer attention is quadratic in sequence length, motivating a large and rapidly growing family of alternative attention mechanisms --- from low-rank and linear approximations to recurrent, sparse, codebook-based, and mixture-of-experts variants. Despite this proliferation, no systematic comparison of these mechanisms exists, and it remains unclear which families preserve reasoning capacity on multi-class tasks and which collapse under architectural constraints. We conduct a comprehensive study of over 200 attention mechanisms and compression methods on DistilBERT-base, evaluating each under a unified pipeline across three benchmarks: SST-2 (binary sentiment), MNLI (three-class natural language inference), and AG News (four-class topic classification). Our evaluation covers linear attention (Performer, Linformer, Cosformer, Nystromformer), recurrent and SSM-based layers (HGRN2, Mamba, Samba, Jamba, DeltaNet), mixture-of-experts attention (BAM-UMoE, Expert-Choice MoE), low-rank and SVD variants (a3, ASVD, Adaptive-SVD, Swift-SVD), vector quantization (k-means), and sparse attention (NSA, Hamming, Salt), among many others. We evaluate every mechanism as provided, without forcing any specific compression or linearization, and report accuracy together with its parameter cost --- including mechanisms that slightly expand the parameter budget. Our analysis reveals two dominant regimes for multi-class reasoning: rank-truncation methods achieve 90.71\% on SST-2 at 1.05$\times$ compression but collapse to 72.20\% on MNLI, while vector quantization preserves the full coordinate span and achieves 81.40\% on MNLI at 2.73$\times$ compression with 11.7$\times$ lower reconstruction error. These findings provide the first unified comparison of attention mechanisms across compression profiles, revealing which families preserve reasoning and which do not. All fine-tuned checkpoints and evaluation pipelines are publicly available.
 \end{abstract}
 
 \section{Introduction}
@@ -97,6 +97,8 @@ A compressed module $M'$ satisfies the non-expansion invariant if and only if:
 \end{equation}
 Any module exhibiting $\Delta_\theta > 0$ is classified as \textbf{\texttt{REJECTED\_EXPANSION}} and disqualified from edge compression claims.
 \end{definition}
+
+We do not impose a hard non-expansion constraint on the study as an exclusion filter. Instead, we evaluate each mechanism as-is and categorize its parameter profile into three classes: (a) \textbf{COMPRESSION}: parameters strictly decrease ($\text{compression\_rate} > 1.0$), (b) \textbf{NEUTRAL}: parameters unchanged ($\text{compression\_rate} = 1.0$), (c) \textbf{EXPANSION}: parameters increase ($\text{compression\_rate} < 1.0$). For EXPANSION modules, moderate expansion ($\le 20\%$) is still included in the main results table; extreme expansion ($> 20\%$) is reported separately in Appendix D as architectural modifications rather than compression methods.
 
 For a low-rank factorization replacing $W \in \mathbb{R}^{d \times d}$ with $U \in \mathbb{R}^{d \times r}$ and $V \in \mathbb{R}^{r \times d}$, parameter parity requires $2 \cdot d \cdot r \le d^2$, which strictly imposes:
 \begin{equation}
