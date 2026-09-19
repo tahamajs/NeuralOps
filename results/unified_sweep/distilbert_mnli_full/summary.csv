@@ -173,3 +173,5 @@ leka_v3,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,Va
 liftr,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:58:54.150911
 lillama,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:59:55.384980
 linformer,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:01:09.625064
+lola,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:04:11.239937
+lora_attn,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T13:05:17.778352
