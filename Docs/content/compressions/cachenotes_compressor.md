@@ -185,6 +185,7 @@ def cachenotes_row_mask_kernel(
 | **roberta-base** | ag_news | `PASS` | 74.50% | **69.90%** | -4.60% | 0.6676 | 1.00x | 46 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **81.30%** | +1.60% | 0.8080 | 1.00x | 14 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9115 | 1.00x | 24 | [svd-linear-attention-distilbert-sst2-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cachenotes) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.30%** | -0.50% | 0.8120 | 1.00x | 24 | [svd-linear-attention-distilbert-mnli-full-cachenotes](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-cachenotes) | 2026-09-19 |
 
 
 The empirical evaluation of `cachenotes_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
