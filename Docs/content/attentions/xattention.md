@@ -162,6 +162,13 @@ print("Logits shape:", outputs.logits.shape)
 
 ## 7. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **84.52%** | -6.54% | 0.8610 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-xattention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-xattention) | 2026-09-19 |
+
+
 | Evaluation Suite | Model Architecture | Metric | XAttention | Full Dense MHA | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | GLUE (SST-2, MRPC, QNLI) | `bert-base-uncased` / `roberta-base` | Accuracy / F1 | Pending actual benchmark results | Baseline reference | Pending Sweep |
