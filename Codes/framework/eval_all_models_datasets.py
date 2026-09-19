@@ -502,7 +502,6 @@ def apply_module_to_model(
                 is_single_layer = isinstance(res, (BaseAttention, nn.Linear)) or ("Attention" in type(res).__name__ and not any(hasattr(res, a) for a in ("encoder", "transformer", "bert", "roberta", "distilbert", "gpt2", "qwen2")))
                 is_whole_model = (
                     res is not None
-                    and res is not model
                     and isinstance(res, nn.Module)
                     and sum(p.numel() for p in res.parameters()) > 1000
                 )

@@ -19,6 +19,7 @@ class Registry:
         self.name = name
         self._dict: Dict[str, Callable] = {}
         self._metadata: Dict[str, Dict[str, Any]] = {}
+        self._loaded: bool = False
 
     def register(
         self,
@@ -220,6 +221,8 @@ def is_helper_module(name: str) -> bool:
     if not name:
         return False
     n = name.lower()
+    if n.startswith("inject_"):
+        return True
     return any(n.endswith(suf) for suf in HELPER_SUFFIXES)
 
 

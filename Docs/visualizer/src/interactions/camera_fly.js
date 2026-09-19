@@ -43,3 +43,17 @@ export function updateCameraFlight(camera, controls) {
         targetLookAt = null;
     }
 }
+
+/**
+ * Smoothly zooms in or out by a multiplier factor.
+ * @param {THREE.PerspectiveCamera} camera - Active camera
+ * @param {object} controls - OrbitControls instance
+ * @param {number} factor - Scale factor (< 1 zooms in, > 1 zooms out)
+ */
+export function smoothZoomBy(camera, controls, factor = 0.8) {
+    if (!camera || !controls) return;
+    const currentDist = camera.position.distanceTo(controls.target);
+    const newDist = Math.max(3.5, Math.min(65.0, currentDist * factor));
+    smoothFlyCamera(camera, controls, controls.target.y, newDist, controls.target.x);
+}
+

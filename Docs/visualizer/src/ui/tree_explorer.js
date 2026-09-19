@@ -72,6 +72,9 @@ export function buildHierarchicalTree(modelKey, moduleKey, modelData, onSelectNo
         layerHeader.addEventListener('click', (e) => {
             e.stopPropagation();
             layerNode.classList.toggle('open');
+            if (window.navigateToLayer) {
+                window.navigateToLayer(layerGroup.index);
+            }
         });
 
         const layerContent = document.createElement('div');

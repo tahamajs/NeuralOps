@@ -180,14 +180,14 @@ body.view-2d .detail-kicker {
     position: absolute;
     z-index: 12;
     inset: 0 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 24px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    min-height: 82px;
-    padding: 16px clamp(18px, 3vw, 44px);
+    gap: 16px;
+    min-height: 64px;
+    padding: 10px clamp(16px, 2.5vw, 36px);
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(5, 10, 18, .96), rgba(5, 10, 18, .46), transparent);
+    background: linear-gradient(180deg, rgba(5, 10, 18, .96), rgba(5, 10, 18, .50), transparent);
 }
 
 .eyebrow {
@@ -211,7 +211,7 @@ body.view-2d .detail-kicker {
 
 h1 {
     margin: 0;
-    font-size: clamp(22px, 2.8vw, 38px);
+    font-size: clamp(20px, 2.4vw, 32px);
     line-height: 1;
     letter-spacing: -.04em;
     font-weight: 800;
@@ -225,8 +225,15 @@ h1 span {
 .top-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: calc(100vw - 380px);
+    gap: 6px;
     pointer-events: auto;
+    scrollbar-width: none;
+}
+.top-actions::-webkit-scrollbar {
+    display: none;
 }
 
 .view-toggle {
@@ -265,22 +272,22 @@ h1 span {
     border-color: rgba(151, 180, 181, .34);
     background: rgba(132, 163, 164, .20);
     box-shadow: inset 0 0 14px rgba(151, 180, 181, .08);
-}
-
 .status, .round-button {
-    min-height: 38px;
+    min-height: 32px;
+    height: 32px;
     border: 1px solid var(--line);
     border-radius: 999px;
     background: rgba(9, 20, 33, .72);
     backdrop-filter: blur(16px);
     color: var(--ink);
+    flex-shrink: 0;
 }
 
 .status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 13px;
+    gap: 7px;
+    padding: 0 10px;
     color: var(--muted);
     font: 700 9px/1 var(--font-mono);
     letter-spacing: .06em;
@@ -299,14 +306,15 @@ h1 span {
 }
 
 .round-button {
-    padding: 0 14px;
-    font-size: 11px;
-    font-weight: 780;
+    padding: 0 10px;
+    font-size: 10px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 .round-button:hover {
@@ -368,28 +376,28 @@ h1 span {
    ========================================================================== */
 .mechanism-nav {
     position: absolute;
-    z-index: 13;
-    top: 91px;
+    z-index: 11;
+    top: 68px;
     left: 50%;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    width: min(920px, calc(100vw - 40px));
-    padding: 5px;
+    width: min(780px, calc(100vw - 40px));
+    padding: 3px;
     transform: translateX(-50%);
     border: 1px solid var(--line);
-    border-radius: 18px;
-    background: rgba(8, 18, 30, .76);
+    border-radius: 14px;
+    background: rgba(8, 18, 30, .80);
     backdrop-filter: blur(22px);
-    box-shadow: 0 12px 50px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+    box-shadow: 0 10px 40px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 .mechanism-button {
     min-width: 0;
-    height: 43px;
-    padding: 0 10px;
+    height: 36px;
+    padding: 0 8px;
     overflow: hidden;
     border: 1px solid transparent;
-    border-radius: 13px;
+    border-radius: 10px;
     background: transparent;
     color: var(--muted);
     text-align: left;
@@ -400,13 +408,13 @@ h1 span {
 .mechanism-button b {
     display: block;
     color: var(--ink);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.15;
 }
 
 .mechanism-button small {
     display: block;
-    margin-top: 3px;
+    margin-top: 2px;
     overflow: hidden;
     font: 650 8px/1 var(--font-mono);
     white-space: nowrap;
@@ -434,16 +442,17 @@ h1 span {
 .detail-card {
     position: absolute;
     z-index: 9;
-    top: 162px;
-    left: clamp(16px, 2.7vw, 40px);
-    width: min(286px, 26vw);
-    padding: 18px 19px;
+    top: 118px;
+    left: clamp(16px, 2.5vw, 36px);
+    width: min(276px, 24vw);
+    padding: 16px 18px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: linear-gradient(145deg, rgba(15, 33, 53, .92), rgba(8, 18, 31, .75));
     backdrop-filter: blur(20px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
     pointer-events: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .detail-kicker {
@@ -527,9 +536,9 @@ h1 span {
 .compare-card {
     position: absolute;
     z-index: 9;
-    top: 162px;
-    right: clamp(16px, 2.7vw, 40px);
-    width: min(238px, 22vw);
+    top: 118px;
+    right: clamp(16px, 2.5vw, 36px);
+    width: min(238px, 20vw);
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -537,6 +546,14 @@ h1 span {
     backdrop-filter: blur(20px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
     pointer-events: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+body.inspector-open .compare-card,
+.inspector-drawer:not(.hidden) ~ .compare-card {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(50px) !important;
 }
 
 .compare-head {
@@ -580,42 +597,52 @@ h1 span {
 .control-dock {
     position: absolute;
     z-index: 14;
-    inset: auto 50% max(17px, env(safe-area-inset-bottom));
-    width: min(820px, calc(100vw - 38px));
-    display: grid;
-    grid-template-columns: auto auto minmax(180px, 1fr) auto;
-    gap: 11px;
-    align-items: center;
-    padding: 10px 14px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 50%;
     transform: translateX(-50%);
+    width: min(920px, calc(100vw - 32px));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
     border: 1px solid var(--line-strong);
-    border-radius: 19px;
-    background: rgba(8, 18, 30, .84);
+    border-radius: 18px;
+    background: rgba(8, 18, 30, .88);
     backdrop-filter: blur(24px);
     box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.07);
 }
 
+.dock-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .primary, .secondary {
-    height: 41px;
+    height: 36px;
     border: 1px solid var(--line);
-    border-radius: 12px;
-    font-weight: 820;
+    border-radius: 10px;
+    font-weight: 750;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .primary {
-    min-width: 78px;
+    min-width: 72px;
     border-color: transparent;
     background: var(--cyan);
     color: #03121a;
+    font-size: 11px;
 }
 
 .secondary {
-    min-width: 43px;
-    padding: 0 14px;
+    min-width: 36px;
+    padding: 0 10px;
     background: rgba(20, 39, 58, .74);
     color: var(--ink);
+    font-size: 11px;
 }
 
 .primary:hover {
@@ -629,10 +656,70 @@ h1 span {
 }
 
 .timeline {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 9px;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
     align-items: center;
+}
+
+.timeline input[type="range"] {
+    flex: 1;
+    min-width: 60px;
+}
+
+.layer-quick-pills {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    overflow-x: auto;
+    max-width: 260px;
+    flex-shrink: 0;
+    scrollbar-width: none;
+}
+.layer-quick-pills::-webkit-scrollbar {
+    display: none;
+}
+
+.layer-pill-btn {
+    padding: 2px 6px;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.layer-pill-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    border-color: #38bdf8;
+}
+.layer-pill-btn.active {
+    background: #38bdf8;
+    color: #040e1d;
+    border-color: #38bdf8;
+    font-weight: 800;
+}
+
+.layer-depth-card {
+    margin-top: 12px;
+    animation: fadeIn 0.25s ease;
+}
+
+.depth-step-btn {
+    user-select: none;
+}
+.depth-step-btn:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+.depth-step-btn.active {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
 .timecode {
@@ -666,17 +753,22 @@ input[type="range"] {
    ========================================================================== */
 .legend {
     position: absolute;
-    z-index: 8;
-    left: clamp(16px, 2.7vw, 40px);
-    bottom: 95px;
+    z-index: 12;
+    left: clamp(16px, 2.5vw, 36px);
+    bottom: 22px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px 14px;
-    max-width: 520px;
+    max-width: 360px;
     color: var(--muted);
     font-size: 9px;
     pointer-events: none;
     font-family: var(--font-mono);
+    transition: opacity 0.2s ease;
+}
+
+.legend.hidden {
+    display: none !important;
 }
 
 .legend span {
@@ -690,6 +782,8 @@ input[type="range"] {
     height: 3px;
     border-radius: 99px;
 }
+
+.view-panels {
     position: absolute;
     inset: 56px 0 0 0;
     display: grid;
@@ -2502,6 +2596,7 @@ kbd {
 }
 #tour-step-label.show {
     opacity: 1;
+    pointer-events: auto;
     transform: translateX(-50%) translateY(0);
 }
 #tour-step-label strong {
@@ -2883,4 +2978,232 @@ kbd {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     margin: 24px 0;
 }
+
+/* ==========================================================================
+   Attention Inspector & Educational Deep-Dive Enhancements
+   ========================================================================== */
+.attn-comp-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(6, 13, 24, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 7px 10px;
+    transition: all 0.15s ease;
+}
+
+.attn-comp-step:hover {
+    background: rgba(14, 28, 44, 0.85);
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateX(2px);
+}
+
+.attn-step-idx {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.attn-step-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.attn-step-title {
+    font-size: 11px;
+    color: #f1f5f9;
+    line-height: 1.35;
+}
+
+.attn-step-title strong {
+    color: #e2e8f0;
+}
+
+.attn-op-math {
+    background: rgba(15, 23, 42, 0.7);
+    color: #38bdf8;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+
+.attn-step-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+/* Attention Probability Heatmap */
+.attn-heatmap-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.attn-hm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attn-hm-label {
+    width: 48px;
+    text-align: right;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: #94a3b8;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attn-hm-cells {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.attn-hm-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    padding: 5px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.attn-hm-cell:hover {
+    transform: scale(1.15);
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   Presentation Mode (5-Minute Demo Minimalistic Cinema)
+   ========================================================================== */
+body.present-mode #top-bar {
+    opacity: 0.15;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+body.present-mode #top-bar:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.present-mode #catalog-modal,
+body.present-mode #filter-chips-bar {
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+body.present-mode #inspector-panel {
+    background: rgba(6, 12, 22, 0.72) !important;
+    backdrop-filter: blur(20px) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+.present-banner {
+    animation: presentSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes presentSlideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.present-progress-track {
+    animation: presentSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes presentSlideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.present-dot:hover {
+    transform: scale(1.35) !important;
+    box-shadow: 0 0 8px var(--cyan);
+}
+
+/* ==========================================================================
+   Learn Modal & Educational Atlas
+   ========================================================================== */
+.learn-topic-btn {
+    outline: none;
+}
+
+.learn-topic-btn:hover {
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.learn-topic-btn.active {
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2) inset;
+}
+
+/* ==========================================================================
+   Model Matrix Dashboard Modal
+   ========================================================================== */
+.mmd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: var(--font-mono);
+}
+
+.mmd-th {
+    background: rgba(15, 23, 42, 0.95);
+    color: #94a3b8;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mmd-td {
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+}
+
+.mmd-row {
+    transition: background 0.15s ease;
+}
+
+.mmd-row:hover {
+    background: rgba(56, 189, 248, 0.08);
+}
+
 

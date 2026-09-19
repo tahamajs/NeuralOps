@@ -1,12 +1,12 @@
 {
   "id": "leka_v3",
-  "name": "Leka V3",
+  "name": "LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks ",
   "file": "Codes/framework/attentions/leka_v3.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Hardened). Supports:",
+  "description": "LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Hardened).  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Exact causal masking for decoders - Nested encoder bypass - Frobenius norm verification (>= 1e-4) - Safe injection",
   "classes": [
     "LoRALinear",
     "LEKAV3Attention"
@@ -16,82 +16,57 @@
   "components": [
     {
       "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=64)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[64 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
       "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=64)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 64]",
-      "color": "#2dd4bf"
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
       "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
       "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 29142528,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 74317824,
-      "storage_saved_formatted": "70.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 49615872,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 148635648,
-      "storage_saved_formatted": "141.8 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 786432,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 48820992,
-      "savings_ratio": 9.0,
-      "storage_saved_bytes": 150994944,
-      "storage_saved_formatted": "144.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 1400832,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 169754624,
-      "savings_ratio": 10.64,
-      "storage_saved_bytes": 648413184,
-      "storage_saved_formatted": "618.4 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }
