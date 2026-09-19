@@ -315,7 +315,7 @@ export function renderLatexFormula(moduleMeta, formulaOverride = null, node = nu
     });
 
     // Render KaTeX for all math cards
-    if (window.katex) {
+    if (typeof window !== 'undefined' && window.katex) {
         bodyEl.querySelectorAll('.katex-math-render').forEach(el => {
             const raw = el.textContent.replace(/\$\$/g, '').trim();
             if (raw) {
