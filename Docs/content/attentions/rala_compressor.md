@@ -210,6 +210,13 @@ Finally, a promising structural convergence lies in the synthesis of hybrid RALA
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **77.98%** | -13.08% | 0.7600 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-rala](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-rala) | 2026-09-19 |
+
+
 The empirical evaluation of `rala_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -431,4 +438,3 @@ The `RALACompressorAttention` architecture incorporates telemetry hooks for trac
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
