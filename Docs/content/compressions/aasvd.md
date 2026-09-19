@@ -901,6 +901,7 @@ model, stats = compressor.compress()
 | **gpt2** | mnli | `PASS` | 41.70% | **46.20%** | +4.50% | 0.4437 | 1.03x | 4 | N/A | 2026-09-18 |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **81.08%** | +30.16% | 0.8345 | 1.08x | 19 | [svd-linear-attention-roberta-base-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-aasvd) | 2026-09-19 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **88.30%** | -2.76% | 0.8864 | 1.13x | 16 | [svd-linear-attention-distilbert-sst2-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aasvd) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **68.60%** | -13.20% | 0.6842 | 1.13x | 16 | [svd-linear-attention-distilbert-mnli-full-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aasvd) | 2026-09-19 |
 
 
 Evaluated across four distinct architectures on the Stanford Sentiment Treebank (SST-2) evaluation benchmark:
