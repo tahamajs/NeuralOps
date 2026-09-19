@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { VISUAL_CONFIG, MODEL_SPECS, TOUR_STEPS } from './constants.js';
+import { ATTENTION_TOUR_STEPS, renderTourStepHUD } from './educational/attention_tour.js';
 import { store } from './state/store.js';
 import { createRenderer, setupResizeHandler } from './core/renderer.js';
 import { createScene } from './core/scene.js';
@@ -416,21 +417,53 @@ export async function bootstrapApp() {
         if (!tourActive) {
             clearTimeout(tourTimer);
             if (tourBtn) tourBtn.innerHTML = '▶ Tour';
-            if (tourLabel) tourLabel.style.display = 'none';
+            if (tourLabel) {
+                tourLabel.style.display = 'none';
+                tourLabel.classList.remove('show');
+            }
             return;
         }
 
         if (tourBtn) tourBtn.innerHTML = '⏹ Stop';
         tourStep = 0;
+        let isPaused = false;
 
         function runStep() {
             if (!tourActive) return;
-            const s = TOUR_STEPS[tourStep % TOUR_STEPS.length];
+            const steps = (ATTENTION_TOUR_STEPS && ATTENTION_TOUR_STEPS.length) ? ATTENTION_TOUR_STEPS : TOUR_STEPS;
+            const currentIdx = tourStep % steps.length;
+            const s = steps[currentIdx];
+
             if (tourLabel) {
-                tourLabel.style.display = 'block';
-                tourLabel.classList.add('show');
-                tourLabel.innerHTML = `<strong>${s.label}</strong><div class="tour-desc">${s.desc || ''}</div>`;
+                renderTourStepHUD(s, currentIdx, steps.length, {
+                    isPaused,
+                    onPrev: () => {
+                        clearTimeout(tourTimer);
+                        tourStep = (currentIdx - 1 + steps.length) % steps.length;
+                        runStep();
+                    },
+                    onNext: () => {
+                        clearTimeout(tourTimer);
+                        tourStep = (currentIdx + 1) % steps.length;
+                        runStep();
+                    },
+                    onPlayPause: () => {
+                        isPaused = !isPaused;
+                        clearTimeout(tourTimer);
+                        if (!isPaused) {
+                            scheduleNext();
+                        }
+                        if (tourLabel) {
+                            const pauseBtn = tourLabel.querySelector('#btn-tour-hud-pause');
+                            if (pauseBtn) pauseBtn.textContent = isPaused ? '▶' : '⏸';
+                        }
+                    },
+                    onClose: () => {
+                        window.toggleTour();
+                    }
+                });
             }
+
             if (s.target) {
                 const mesh = selectPartIn3D(s.target, interactableMeshes);
                 if (mesh) {
@@ -439,9 +472,22 @@ export async function bootstrapApp() {
             } else if (s.fullFit) {
                 clearSelectionHighlight();
             }
+
             smoothFlyCamera(camera, controls, s.y, s.dist);
-            tourStep++;
-            tourTimer = setTimeout(runStep, VISUAL_CONFIG.ANIM.tourStepDuration);
+
+            function scheduleNext() {
+                if (!tourActive || isPaused) return;
+                const duration = s.durationMs || VISUAL_CONFIG.ANIM.tourStepDuration || 8000;
+                tourTimer = setTimeout(() => {
+                    tourStep++;
+                    runStep();
+                }, duration);
+            }
+
+            clearTimeout(tourTimer);
+            if (!isPaused) {
+                scheduleNext();
+            }
         }
         runStep();
     };
