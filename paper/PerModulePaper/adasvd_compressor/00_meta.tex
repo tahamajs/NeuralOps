@@ -1,11 +1,4 @@
-\section{00 Meta}
-
- Adaptive SVD Compressor with Spectral Importance Allocation (adasvd\_compressor)
-
-**Registry Keys**: `adasvd` 
-**Source**: `Codes/framework/compression\_engine/adasvd\_compressor.py` (488 lines)
-**Type**: Spectral Nuclear-Norm Guided SVD with Alternating Least Squares Refinement
-**Base Class**: `AdaSVDCompressor(BaseCompressor)` 
-
- Abstract
-`adasvd\_compressor` dynamically allocates low-rank factorization ranks across transformer projection layers proportionally to spectral importance (nuclear norm $\|W\|\_* = \sum\_i \sigma\_i$). It distributes singular values symmetrically ($A = U \sqrt{\Sigma}, B = \sqrt{\Sigma} V^	op$), applies iterative Alternating Least Squares (ALS) factor refinement, and replaces target dense projections with factorized `SVDLinear` modules. Across DistilBERT, RoBERTa, and GPT-2, it achieves verified parameter compression (up to 12.0% parameter reduction on RoBERTa) while maintaining high classification fidelity.
+\title{\textbf{Adasvd Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

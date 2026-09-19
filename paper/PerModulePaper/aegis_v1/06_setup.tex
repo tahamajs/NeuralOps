@@ -1,38 +1,28 @@
-\section{Experimental Setup}Standardized SST-2 benchmark suite across DistilBERT, RoBERTa, and GPT-2 backbones.
+\section{Experimental Setup and Evaluation Protocol}
 
+\subsection{Benchmark Datasets and Tasks}
+Empirical validations are executed across standard benchmarks:
+\begin{itemize}
+\item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
+\item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
+\item \textbf{Autoregressive Perplexity:} Validating causal generation stability on decoder backbones.
+\end{itemize}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{Split Size} & \textbf{Sequence Length} & \textbf{Metric} \\
+\midrule
+SST-2 & 67,349 / 872 & 128 & Accuracy (\%) \\
+MRPC & 3,668 / 408 & 128 & F1 Score / Acc \\
+Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark task specifications and evaluation splits.}
+\label{tab:task_specs}
+\end{table}
 
-\subsection{Configuration \& Hyperparameters}
-The \texttt{AegisAttentionV1} module (registered under \texttt{aegis\_v1}) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
-
-\begin{verbatim}
-| Class | Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `AegisAttentionV1` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `AegisAttentionV1`. |
-| `AegisAttentionV1` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
-| `AegisAttentionV1` | `aegis_cfg` | `Any` | `None` | Controls `aegis_cfg` configuration in `AegisAttentionV1`. |
-| `AegisAttentionV1` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttentionV1`. |
-| `AegisAttentionV1` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttentionV1`. |
-| `AegisConfigV1` | `svd_energy` | `float` | `0.95` | Controls `svd_energy` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `num_local_heads` | `int` | `8` | Controls `num_local_heads` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `num_global_heads` | `int` | `4` | Controls `num_global_heads` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `local_window` | `int` | `64` | Controls `local_window` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `temperature` | `float` | `1.0` | Controls `temperature` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `use_zero_sum_keys` | `bool` | `True` | Controls `use_zero_sum_keys` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `use_adaptive_gate` | `bool` | `True` | Controls `use_adaptive_gate` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `gate_init_bias` | `float` | `1.8` | Controls `gate_init_bias` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `AegisConfigV1`. |
-| `AegisConfigV1` | `is_decoder` | `bool` | `False` | Controls `is_decoder` configuration in `AegisConfigV1`. |
-| `FactorisedLinear` | `in_features_or_weight` | `Any` | **Required** | Controls `in_features_or_weight` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `out_features_or_bias` | `Any` | `None` | Controls `out_features_or_bias` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
-| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
-| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
-| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
-\end{verbatim}
+\subsection{Hardware and Profiling Configuration}
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).

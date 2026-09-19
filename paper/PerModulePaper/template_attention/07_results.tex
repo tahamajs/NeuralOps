@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for template_attention.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_templateattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & template\_attention & PASS & 89.91 & 0.9033 \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & template\_attention & PASS\_LOW & 51.26 & 0.6763 \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & template\_attention & PASS & 58.37 & 0.6857 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{templateattention}.}
+\label{tab:results_acc_templateattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_templateattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & template\_attention & 66955010 & 67692314 & 1181978 & 0.9891x \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & template\_attention & 124441344 & 125915952 & 1181232 & 0.9883x \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & template\_attention & 124647170 & 133208882 & 1771826 & 0.9357x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{templateattention}.}
+\label{tab:results_params_templateattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_templateattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & full & 138662.34 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_template\_attention/distilbert/summary.csv} & distilbert & template\_attention & 71449.72 & 329.61 MB & 0.0000 \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & full & 60153.38 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_template\_attention/gpt2/summary.csv} & gpt2 & template\_attention & 35032.52 & 569.83 MB & 0.0000 \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & full & 102308.54 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_template\_attention/roberta/summary.csv} & roberta & template\_attention & 41090.86 & 377.72 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{templateattention}.}
+\label{tab:results_vram_templateattention}
+\end{table*}

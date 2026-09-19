@@ -1,83 +1,26 @@
+\section{Related Work and Theoretical Foundations}
 
-\section{Related Work}
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
-\subsection{Window-Based Sparse Attention}
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+\]
 
-\textbf{Longformer} (Beltagy et al., 2020): Sliding window of size $w$ + global 
-tokens. Achieves $\mathcal{O}(L w)$ complexity with fixed $w$.
-
-\textbf{BigBird} (Zaheer et al., 2020): Sliding window + random + global. 
-Theoretical universality but still fixed patterns.
-
-\textbf{Mistral} (Jiang et al., 2023): Sliding window of 4096 tokens. Modern 
-decoder-only adoption.
-
-\textbf{Limitation.} All use fixed window size for all heads.
-
-\subsection{Learned Sparse Patterns}
-
-\textbf{Adaptive Span} (Sukhbaatar et al., 2019): \textbf{Our direct predecessor.} 
-Learns per-head span via continuous soft ramp. The original paper applied 
-it to language modeling (Wikitext-103) with a specific training procedure 
-(span penalty with alternating attention).
-
-\textbf{Learned Sparsity Patterns} (Tay et al., 2021): Differentiable stride 
-and dilation. Complements ASA-Span.
-
-\textbf{SparseBERT} (Xia et al., 2022): Learned sparsity via distillation.
-
-\textbf{Our work} generalizes Sukhbaatar et al. to modern architectures (BERT, 
-RoBERTa, GPT-2) with modern tools (RoPE, GQA, LoRA).
-
-\subsection{Content-Based Sparsity}
-
-\textbf{Routing Transformer} (Roy et al., 2021): K-means clustering of queries 
-and keys. Content-based but not distance-based.
-
-\textbf{Reformer} (Kitaev et al., 2020): LSH-based bucketing. Content-based.
-
-\textbf{Top-K Attention} (Gupta et al., 2021): Hard top-$k$ selection.
-
-\textbf{Our work} is \textbf{distance-based}, which is orthogonal to content-based 
-methods and can be combined.
-
-\subsection{Differentiable Masking}
-
-\textbf{Gumbel-Softmax} (Jang et al., 2017): Stochastic relaxation of discrete 
-sampling.
-
-\textbf{Sigmoid soft mask} (Our Adaptive Sparse Attention): Differentiable 
-top-$k$ approximation.
-
-\textbf{Soft ramp} (Our ASA-Span): Piecewise-linear differentiable window.
-
-\subsection{Position of Our Work}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Axis} & \textbf{Prior} & \textbf{ASA-Span} \\
-\midrule
-Window type \& Fixed & \textbf{Learned per-head} \\
-Differentiability & -- & \textbf{Soft ramp} \\
-Regularization & -- & \textbf{L1 span penalty} \\
-Distance-based \& Yes & \textbf{Yes} \\
-Modern architectures \& Limited & \textbf{BERT, RoBERTa, GPT-2, T5} \\
-RoPE support \& No & \textbf{Yes} \\
-GQA support \& No & \textbf{Yes} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Key distinction.} ASA-Span is the first \textbf{modern} implementation of 
-learned per-head spans with support for RoPE, GQA, and T5-style biases. It 
-generalizes Sukhbaatar et al. (2019) to the current transformer ecosystem.
-
-\subsection{Comparison Table}
-
-\begin{lstlisting}
-
----
-\end{lstlisting}
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{adaptivespanattention} module leverages these structural properties to optimize inference speed and VRAM overhead.

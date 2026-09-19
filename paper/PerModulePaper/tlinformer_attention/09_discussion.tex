@@ -1,7 +1,24 @@
 \section{Discussion}
 
-\subsection{Hardware Deployment Dynamics}
-Standard transformer serving is frequently bounded by memory bandwidth. By compressing linear projection operations, \texttt{tlinformer_attention} alleviates memory transfer latencies, accelerating inference throughput.
+\subsection{Theoretical Trade-Offs in Parameter Compression}
+The design of \texttt{tlinformerattention} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{tlinformerattention} prunes overparameterized redundancy.
 
-\subsection{Stability Under Parameter Constraints}
-The decoupling of base parameter projections from adaptive residual pathways ensures numerical resilience during deep layer adaptation.
+\subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{tlinformerattention} diminishes byte transfer volume, accelerating generation wall-clock latency.
+
+\subsection{Asymmetry Across Attention Projections}
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{tlinformerattention} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
+
+\subsection{Decoupled Adaptation Dynamics}
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{tlinformerattention} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
+
+\subsection{Scaling Behaviors with Modern Long-Context Sequences}
+As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
+
+\subsection{Deployment Implications for Cloud and Edge}
+Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
+
+\subsection{Energy Efficiency and Carbon Footprint Quantification}
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
+
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{tlinformerattention} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

@@ -101,3 +101,79 @@ $$O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}
 ### Equation (14): Multi-Head Projection Splitting
 For multi-head attention blocks, projection weights are partitioned across $H$ heads:
 $$W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}$$
+
+## 4.3 Detailed Algorithmic Execution Trace
+
+The complete structured execution of `ProxSparsePrunedLoRALinear` is carried out in four phases:
+
+```python
+# Phase 1: Conditioning and norm evaluation
+W_f = layer.weight.data.float()
+frob_norm = torch.linalg.norm(W_f)
+assert frob_norm >= 1e-4, 'Degenerate weight norm'
+
+# Phase 2: Core mathematical decomposition
+if is_svd_factorization:
+    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    r = torch.searchsorted(cum_energy, tau).item() + 1
+    r = max(min_rank, min(r, max_rank))
+    # Symmetric square-root distribution
+    U_r = U[:, :r] * torch.sqrt(S[:r])
+    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+elif is_proximal_sparsity:
+    W_curr = W_f.clone()
+    for step in range(num_steps):
+        # Soft-thresholding
+        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
+        # Structural 2:4 or block projection
+        W_proj = apply_structural_mask(W_soft, sparsity_target)
+        W_curr = W_curr - eta * (W_curr - W_proj)
+    W_r = W_proj
+
+# Phase 3: Adapter binding & zero-initialization
+lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
+
+# Phase 4: Fallback verification
+recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
+if recon_err > max_error_ceiling or torch.isnan(recon_err):
+    logger.warning('Triggering safety fallback to uncompressed layer')
+    layer = uncompressed_layer_backup
+```
+
+## 4.4 Complexity and FLOPs Analysis
+
+Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
+$$\text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})$$
+
+The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
+$$\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}$$
+
+For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
+$$\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}$$
+
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
+
+## 4.5 Theoretical Guarantees and Proofs
+
+**Theorem 1 (Energy Truncation Bound).** *Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k > 0$, where $k = \min(d_{\text{in}}, d_{\text{out}})$. If rank $r$ is selected such that:*
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \tau, \quad \tau \in (0, 1)$$
+*then the relative Frobenius reconstruction error satisfies:*
+$$\frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+
+*Proof.* By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation in the Frobenius norm satisfies $\|W - W_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2$. Total Frobenius energy satisfies $\|W\|_F^2 = \sum_{j=1}^k \sigma_j^2$. Expanding the energy ratio:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = \frac{\sum_{i=r+1}^k \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \mathcal{E}(r)$$
+Since $\mathcal{E}(r) \ge \tau$, we immediately obtain:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+This completes the proof. $\square$
+
+**Theorem 2 (Initial Inference Invariance under Zero Residual).** *Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.*
+
+*Proof.* At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
+$$B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+Consequently:
+$$W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r$$
+Hence, output activations satisfy:
+$$Y = X W_{\text{eff}}^\top + b = X W_r^\top + b$$
+The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$

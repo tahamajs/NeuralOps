@@ -1,55 +1,54 @@
-# 5. Architecture and Implementation
-Dense layers are replaced with `SVDLinear` modules ($y = (x B^	op) A^	op + b$). Supports Conv1D transposition for GPT-2 and preservation of LoRA adapters.
+# 5. Architecture and Implementation Details
 
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/adasvd_compressor.md -->
-### 3.1 Calibration Dataflow & Rank Assignment Pipeline
+## 5.1 Submodule Hierarchy and Signal Flow
+The `AdaSVDCompressor` architecture encapsulates both frozen base operations and optional trainable fine-tuning branches. Below is the structural hierarchy:
 
 ```
-              Full Uncompressed Model
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Layer-wise SVD & Nuclear Norm Extraction     │
-  │   For l = 1..L:                              │
-  │     S = svdvals(W_l)                         │
-  │     I_l = sum(S)                             │
-  └──────────────────────┬───────────────────────┘
-                         │  [Layer Importance Array I]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Global Importance Normalization              │
-  │   alpha_l = I_l / sum(I_1..I_L)              │
-  └──────────────────────┬───────────────────────┘
-                         │  [Normalized Ratios alpha]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Adaptive Rank Allocation Calculation         │
-  │   r_l = clamp(max_rank * (1 - ratio) * alpha)│
-  └──────────────────────┬───────────────────────┘
-                         │  [Allocated Ranks r_1..r_L]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Loop over layers l = 1..L:                   │
-  │  1. Extract initial U_r, S_r, Vt_r           │
-  │  2. Execute T iterations of Alternating Refinement:│
-  │      U_r <- W @ V_r @ (diag(S_r) + eps I)^-1  │
-  │      Vt_r <- (U_r^T @ U_r + eps I)^-1 @ U_r^T @ W│
-  │      S_r <- diag(U_r^T @ W @ V_r)            │
-  │  3. Synthesize W_approx = U_r @ diag(S_r) @ Vt_r│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-               Compressed PyTorch Model
+┌────────────────────────────────────────────────────────────────────────┐
+│                                       AdaSVDCompressor                 │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Input Tensor X: [Batch, SeqLen, InFeatures]                          │
+│         │                                                              │
+│         ├────────────────────────────────────────┐                     │
+│         │ (Primary Base Pathway)                 │ (LoRA Residual)     │
+│         ▼                                        ▼                     │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Down-Projection: V_r     │             │ LoRA Adapter A        │   │
+│   │ Shape: (r, InFeatures)   │             │ Shape: (r_lora, In)   │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 ▼                                      ▼               │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Up-Projection: U_r       │             │ LoRA Adapter B        │   │
+│   │ Shape: (OutFeatures, r)  │             │ Shape: (Out, r_lora)  │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 │                                      │ * (alpha / r) │
+│                 ▼                                      ▼               │
+│              [ Base Output ]  <────── (+) ─────  [ Adapter Output ]    │
+│                                                                        │
+│   Output Tensor Y: [Batch, SeqLen, OutFeatures]                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Detailed Step-by-Step Execution Sequence
-1. **Spectral Profiling Phase**: Iterate over all `nn.Linear` layers in the model, execute standard CPU/GPU SVD to collect singular value vectors, and compute $\|W^{(l)}\|_*$.
-2. **Global Budgeting Phase**: Aggregate total nuclear norm $\sum_{l=1}^L \mathcal{I}_l$. Compute relative ratios $\alpha_l$ and assign layer-specific ranks $r_l$.
-3. **Iterative Refinement Phase**: For each linear layer:
-Slice top-$r_l$ components from initial SVD matrices. Furthermore, Run $T = 5$ iterations of alternating matrix inverse updates to solve the regularized least-squares factor refinement problem. Concurrently, Multiply factors back to form the updated weight tensor $\hat{W}^{(l)}$ and overwrite `module.weight.data`.
+## 5.2 Submodule Specification Matrix
+The table below specifies the internal submodule configuration of `AdaSVDCompressor`:
 
+| Submodule Name | Layer Type | Parameter Shape | Trainable Status | Memory Footprint (FP32) | Functional Role |
+|---|---|---|---|---|---|
+| `weight` / `V_r` | `nn.Parameter` / Buffer | `(r, d_in)` | Frozen (False) | $4 \cdot r \cdot d_{\text{in}}$ bytes | Low-rank down-projection or base weight |
+| `U_r` | `nn.Parameter` / Buffer | `(d_out, r)` | Frozen (False) | $4 \cdot d_{\text{out}} \cdot r$ bytes | Low-rank up-projection expansion |
+| `mask` | `torch.BoolTensor` Buffer | `(d_out, d_in)` | Non-trainable | $1 \cdot d_{\text{out}} \cdot d_{\text{in}}$ bytes | Hardware-aligned 2:4 or block sparsity mask |
+| `lora_A` | `nn.Parameter` | `(r_lora, d_in)` | Trainable (True) | $4 \cdot r_{\text{lora}} \cdot d_{\text{in}}$ bytes | Fast adaptation gradient collector |
+| `lora_B` | `nn.Parameter` | `(d_out, r_lora)` | Trainable (True) | $4 \cdot d_{\text{out}} \cdot r_{\text{lora}}$ bytes | Low-rank residual reconstruction projector |
+| `bias` | `nn.Parameter` | `(d_out,)` | Optional (Frozen) | $4 \cdot d_{\text{out}}$ bytes | Projection affine bias term |
 
----
+## 5.3 Cross-Backbone Adaptations
+The module handles distinct idiosyncrasies across model backbones:
+1. **DistilBERT (Flat Encoder Attention)**: Directly replaces `q_lin`, `k_lin`, `v_lin`, and `out_lin` within `MultiHeadSelfAttention`.
+2. **RoBERTa (Nested Encoder Attention)**: Projections reside in `self.query`, `self.key`, `self.value`. The output projection `dense` is housed in the outer `BertSelfOutput` container. The engine detects nested structures and avoids duplicate output projection compression.
+3. **GPT-2 (Causal Fused Conv1D)**: Attention weights are stored as a fused $d_{\text{in}} \times 3 d_{\text{in}}$ tensor with transposed 1D convolution layout. The engine transposes weights and extracts individual Q, K, V components.
+4. **Qwen / LLaMA (GQA and RoPE)**: Key and value projections have reduced dimension ($H_{\text{kv}} \cdot d$). The engine aligns repeat factors and slices rotary position embeddings before computing compressed projections.

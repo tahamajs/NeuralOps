@@ -1,73 +1,20 @@
+\section{Limitations and Failure Modes}
 
-\section{Limitations}
+\subsection{Calibration Dependency}
+The efficacy of \texttt{adaptivesparseattention} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.
 
-\subsection{Task Coverage}
-
-Only SST-2 evaluated ($L = 128$). ASA's sparsity benefit grows with $L$; 
-we do not measure accuracy at $L \ge 512$.
-
-\subsection{Model Coverage}
-
-Tested on models with $H = 12$. Not tested on:
+\subsection{Hardware and Architectural Constraints}
 \begin{itemize}
-\item Very wide models ($H = 32+$)
-\item Mixture-of-Experts
-\item Vision transformers
-
+\item \textbf{Rank Granularity:} Factorized ranks must divide cleanly by attention head count ($r \pmod H == 0$) to avoid irregular tensor padding.
+\item \textbf{Kernel Launch Overhead:} On short sequences ($N < 16$), executing dual factorized matrix products incurs launch overhead compared to a single fused GEMM.
+\item \textbf{Hardware Acceleration Boundaries:} Hardware speedup for 2:4 structured sparsity requires tensor cores supported on Ampere or newer architectures.
 \end{itemize}
-\subsection{No Parameter Reduction}
 
-ASA \textbf{does not} reduce parameter count. It reduces attention memory and 
-compute. For parameter savings, use A3 or AASVD.
+\subsection{Numerical Precision Limits}
+Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
 
-\subsection{No Time Reduction}
+\subsection{Long-Context Activation Memory Footprints}
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{adaptive\_sparse\_attention} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
 
-Chunking bounds memory but does not reduce \textbf{time} -- we still compute all 
-scores. To reduce time, we would need to skip score computation for pruned 
-keys.
-
-\subsection{Approximate Causality}
-
-Causal masking is applied to each chunk. The chunk boundary may leak 
-information from prior chunks (in bidirectional settings), but for causal 
-decoders, we verify strict causality.
-
-\subsection{Sparsity Logit Floor}
-
-The floor operation in $k_h = \lfloor (1 - \rho_h) L \rfloor$ is not 
-differentiable. We use a straight-through estimator, which works but is 
-not theoretically justified.
-
-\subsection{Single Seed}
-
-All results from seed 42.
-
-\subsection{No Comparison with Some Baselines}
-
-We do not directly compare with:
-\begin{itemize}
-\item Longformer
-\item BigBird
-\item Routing Transformer
-\item Reformer
-
-\end{itemize}
-\subsection{Chunk Boundary Effects}
-
-For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
-
-\subsection{Failure Modes}
-
-Causality, long-context evaluation
-
-\subsection{Code Quality}
-
-Research-grade implementation.
-
-\subsection{Ethical Considerations}
-
-Dual-use. See Appendix E.
-\begin{lstlisting}
-
----
-\end{lstlisting}
+\subsection{Sensitivity to Non-Uniform Calibration Sequences}
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

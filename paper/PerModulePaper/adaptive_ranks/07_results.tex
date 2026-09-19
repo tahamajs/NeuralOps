@@ -1,21 +1,64 @@
-\section{Empirical Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-\subsection{Cross-Model Performance Summary}
-Table~\ref{tab:adaptive_ranks_results} presents quantitative results across standard test models.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_adaptiveranks} details empirical evaluation metrics across target backbones.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lcccccc}
+\begin{tabular}{llcccc}
 \toprule
-\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
 \midrule
-DistilBERT \& PASS & 88.07 & 66.95M & 58.11M & 1.152$\times$ & 382.7 \\
-RoBERTa    \& PASS & 77.87 & 124.65M & 106.95M & 1.165$\times$ & 679.5 \\
-GPT-2      \& PASS & 77.52 & 124.44M & 106.75M & 1.166$\times$ & 754.8 \\
-Qwen 3.5   \& PASS & 67.55 & 763.22M & 763.22M & 1.000$\times$ & 1810.6 \\
+\texttt{results/unified\_adaptive\_ranks/distilbert/summary.csv} & distilbert & adaptive\_ranks & PASS\_NO\_COMPRESSION & 90.94 & 0.9125 \\
+\texttt{results/unified\_adaptive\_ranks/gpt2/summary.csv} & gpt2 & adaptive\_ranks & PASS & 76.95 & 0.8016 \\
+\texttt{results/unified\_adaptive\_ranks/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_ranks & PASS & 81.88 & 0.798 \\
+\texttt{results/unified\_adaptive\_ranks/roberta/summary.csv} & roberta & adaptive\_ranks & PASS\_NO\_COMPRESSION & 78.56 & 0.8124 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & adaptive\_ranks & PASS & Comp 0.97x & Mem -0.0\% \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation from \texttt{results/unified\_adaptive\_ranks/*/summary.csv}.}
-\label{tab:adaptive_ranks_results}
-\end{table}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{adaptiveranks}.}
+\label{tab:results_acc_adaptiveranks}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_adaptiveranks} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_adaptive\_ranks/distilbert/summary.csv} & distilbert & adaptive\_ranks & 66955010 & 66955010 & 1538 & 1.0x \\
+\texttt{results/unified\_adaptive\_ranks/gpt2/summary.csv} & gpt2 & adaptive\_ranks & 124441344 & 124177153 & 326401 & 1.0021x \\
+\texttt{results/unified\_adaptive\_ranks/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_ranks & 763217728 & 763217728 & 10824704 & 1.0x \\
+\texttt{results/unified\_adaptive\_ranks/roberta/summary.csv} & roberta & adaptive\_ranks & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & adaptive\_ranks & Baseline FP32 & Reduced (0.97x) & 0 & 0.97x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{adaptiveranks}.}
+\label{tab:results_params_adaptiveranks}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_adaptiveranks} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_adaptive\_ranks/distilbert/summary.csv} & distilbert & adaptive\_ranks & 50959.72 & 182.45 MB & 0.0 \\
+\texttt{results/unified\_adaptive\_ranks/gpt2/summary.csv} & gpt2 & adaptive\_ranks & 23688.0 & 638.89 MB & 0.1982078150637553 \\
+\texttt{results/unified\_adaptive\_ranks/qwen3\_5/summary.csv} & qwen3\_5 & adaptive\_ranks & 4497.54 & 1877.96 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_ranks/roberta/summary.csv} & roberta & adaptive\_ranks & 23773.5 & 520.18 MB & 0.0 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & adaptive\_ranks & Elapsed 0.932s & 168.2 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{adaptiveranks}.}
+\label{tab:results_vram_adaptiveranks}
+\end{table*}

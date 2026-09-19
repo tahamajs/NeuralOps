@@ -1,4 +1,28 @@
-\section{06 Setup}
+\section{Experimental Setup and Evaluation Protocol}
 
- 6. Experimental Setup
-Evaluated across DistilBERT, RoBERTa, and GPT-2 on SST-2 with 50 recovery steps (`recovery\_steps=50`).
+\subsection{Benchmark Datasets and Tasks}
+Empirical validations are executed across standard benchmarks:
+\begin{itemize}
+\item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
+\item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
+\item \textbf{Autoregressive Perplexity:} Validating causal generation stability on decoder backbones.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{Split Size} & \textbf{Sequence Length} & \textbf{Metric} \\
+\midrule
+SST-2 & 67,349 / 872 & 128 & Accuracy (\%) \\
+MRPC & 3,668 / 408 & 128 & F1 Score / Acc \\
+Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark task specifications and evaluation splits.}
+\label{tab:task_specs}
+\end{table}
+
+\subsection{Hardware and Profiling Configuration}
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).

@@ -1,11 +1,4 @@
-\section{00 Meta}
-
- ADMM Joint Pruning and Quantization Compressor (admm\_compressor)
-
-**Registry Keys**: `admm`, `admm\_compressor` 
-**Source**: `Codes/framework/compression\_engine/admm\_compressor.py` (423 lines)
-**Type**: Alternating Direction Method of Multipliers for Structured Pruning and Quantization
-**Base Class**: `ADMMCompressor(BaseCompressor)` 
-
- Abstract
-`admm\_compressor` formulates weight compression as an optimization problem under non-convex sparsity and discrete quantization constraints using the Alternating Direction Method of Multipliers (ADMM). Operating in strict FP32 precision, it optimizes primal weight tensors $W$, auxiliary sparse/quantized projections $Z$ and $Q$, and dual multipliers $U\_1, U\_2$ with a monotonic error tracker that preserves the best iterate across optimization steps. Across DistilBERT, RoBERTa, GPT-2, and Qwen 3.5, it provides robust convergence, retaining 90.37% accuracy on DistilBERT and 88.42% on Qwen 3.5.
+\title{\textbf{Admm Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

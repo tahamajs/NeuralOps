@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for projection_factorized_attn.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_projectionfactorizedattn} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & projection\_factorized\_attn & PASS & 81.19 & 0.8229 \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & projection\_factorized\_attn & PASS\_LOW & 54.82 & 0.6893 \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & projection\_factorized\_attn & PASS & 62.73 & 0.7043 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{projectionfactorizedattn}.}
+\label{tab:results_acc_projectionfactorizedattn}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_projectionfactorizedattn} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & projection\_factorized\_attn & 66955010 & 54624074 & 645192 & 1.2257x \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & projection\_factorized\_attn & 124441344 & 99779472 & 1290384 & 1.2472x \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & projection\_factorized\_attn & 124647170 & 107072402 & 1290384 & 1.1641x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{projectionfactorizedattn}.}
+\label{tab:results_params_projectionfactorizedattn}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_projectionfactorizedattn} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & full & 54621.22 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & projection\_factorized\_attn & 22010.58 & 270.09 MB & 0.0000 \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & full & 22795.14 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & projection\_factorized\_attn & 10065.69 & 468.08 MB & 0.0000 \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & full & 23835.57 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & projection\_factorized\_attn & 10877.86 & 555.07 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{projectionfactorizedattn}.}
+\label{tab:results_vram_projectionfactorizedattn}
+\end{table*}

@@ -1,12 +1,26 @@
-\section{02 Related}
+\section{Related Work and Theoretical Foundations}
 
- 2. Related Work
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
- 2.1 Post-Training Matrix Factorization
-Weight-only post-training low-rank approximation (e.g., standard Truncated SVD, Tucker decomposition) has been widely explored for model compression. However, as demonstrated by ASVD (Yuan et al., 2023) and AWQ (Lin et al., 2023), language model weights cannot be compressed independently of their activation distributions.
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+\]
 
- 2.2 Activation-Aware Techniques
-ASVD and related methods weight the singular value decomposition by the diagonal scaling matrix derived from activation magnitudes or full covariance matrices. `aa\_svd\_compressor` builds on this paradigm by implementing streaming Exponential Moving Average (EMA) covariance estimation, symmetric square root whitening, and fallback safety guards.
-
- 2.3 Parameter-Efficient Recovery
-Following low-rank decomposition, models often undergo parameter-efficient fine-tuning (PEFT) using Low-Rank Adaptation (LoRA; Hu et al., 2021). `aa\_svd\_compressor` directly integrates auxiliary LoRA adapter matrices (`lora\_A` and `lora\_B`) into its `SVDLinear` module to enable rapid post-compression accuracy recovery.
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{aasvdcompressor} module leverages these structural properties to optimize inference speed and VRAM overhead.

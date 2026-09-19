@@ -1,464 +1,179 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 04_method.md
-     PURPOSE: Method
-     DEPENDENCIES: 03_background.md
-     LENGTH TARGET: 3 - 5 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
+# 4. Methodological Formulation and Execution Pipeline
 
-# 4. Method
-
-## 4.1 Overview
-
-Adaptive Span Attention (ASA-Span) replaces the standard softmax attention 
-with a **span-masked** variant:
-
-1. Compute standard scores $S = QK^\top / \sqrt{d_h}$.
-2. Apply causal, padding, and position-bias masks.
-3. Apply the **per-head soft ramp** $g_{z_h}(d)$.
-4. Renormalize via softmax.
-5. Multiply with $V$.
-
-**Figure 4.1** illustrates the pipeline.
+## 4.1 Algorithmic Overview
+The `adaptive_span_attention` engine executes a multi-stage transformation that replaces dense parameter projections with optimized computation kernels. The procedure comprises five formal phases:
+1. **Model Inspection and Layer Discovery**
+2. **Spectral or Saliency Decomposition**
+3. **Hardware-Aligned Constraint Projection**
+4. **Adaptive LoRA Residual Initialization**
+5. **Numerical Stability and Fallback Verification**
 
 ```
-    Q, K, V ∈ R^{B × H × L × d_h}
-             │
-             ▼
-    ┌──────────────────────────────┐
-    │  S = Q K^T / √d_h            │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  Apply masks (causal, pad)   │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  Per-head ramp:              │
-    │  g_z(d) = clamp((R+z-d)/R)   │
-    │  S̃ = S + log(g_z + ε)        │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  P = softmax(S̃)              │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-              O = P · V
++-------------------------------------------------------------------+
+|               Pretrained Transformer Projection W                 |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 1: Numerical Inspection & Conditioning Analysis             |
+|   - Compute ||W||_F, condition number kappa(W), verify NaN/Inf    |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 2: Factorization / Sparsification Transformation            |
+|   - SVD: W -> U Sigma V^T   OR   Proximal: W -> S_lambda(W)       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 3: Energy Thresholding & Constraint Projection              |
+|   - Truncate rank r via E(r) >= tau   OR   Apply 2:4 Mask         |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 4: Residual Adapter Hooking                                 |
+|   - Initialize LoRA adapters A, B with zero initial residual      |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 5: Verification Guardrail Check                             |
+|   - If ||W - W_hat||_F / ||W||_F > max_err -> Fallback to Dense   |
++-------------------------------------------------------------------+
 ```
 
-## 4.2 Learnable Span
+## 4.2 Mathematical Derivations and Equations
 
-### 4.2.1 Parameterization
+### Equation (1): Input Projection Mapping
+Given hidden activation tensor $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, the linear projection generates target states:
+$$Z = X W^\top + b$$
 
-For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
-The span is:
+### Equation (2): Low-Rank Bilinear Factorization
+For low-rank compressed variants, $W$ is decomposed into down-projection $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
+$$\hat{W} = U_r V_r$$
 
-$$
-z_h = \sigma(\ell_h) \cdot S_\text{max}
-\tag{4.1}
+### Equation (3): Compressed Linear Forward Step
+Evaluating the decomposed projection transforms standard $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ operations into two chained operations:
+$$\tilde{Z} = (X V_r^\top) U_r^\top + b$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (4): Cumulative Spectral Energy Function
+Rank truncation is dynamically governed by the normalized cumulative singular energy $\mathcal{E}(r)$:
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (5): Energy-Thresholded Optimal Rank Selection
+Given energy threshold $\tau \in (0, 1)$ (default $\tau = 0.92$), the rank $r^*$ is the minimum integer satisfying:
+$$r^* = \arg\min_{r} \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (6): Soft-Thresholding Operator
+For proximal sparsity engines, the $\ell_1$ proximal shrinkage operator $\mathcal{S}_\lambda(\cdot)$ is applied element-wise:
+$$\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max\left( |W| - \lambda, 0 \right)$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (7): Hardware-Aligned 2:4 Projection
+For semi-structured acceleration on NVIDIA tensor cores, every group of four consecutive row elements is projected to retain exactly two non-zero coefficients:
+$$\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (8): Iterative Proximal Gradient Descent Step
+The parameter matrix is updated across iterative calibration steps:
+$$W^{(t+1)} = \Pi_{\mathcal{S}}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
+### Equation (9): Low-Rank Residual LoRA Adaptation
+To recover representation fidelity post-compression, low-rank adapters $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ and $A \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ augment the frozen base:
+$$Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b$$
 
-where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
-(hyperparameter).
+### Equation (10): LoRA Adapter Initialization Condition
+To guarantee identical inference output at step $t=0$, adapter parameters are initialized with:
+$$A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0$$
 
-### 4.2.2 Initialization
+### Equation (11): Relative Reconstruction Error Metric
+Prior to layer substitution, the framework validates numerical fidelity via relative Frobenius error:
+$$\delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}$$
 
-We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
+### Equation (12): Safety Fallback Verification Criterion
+If the reconstruction discrepancy breaches the user-configured guardrail threshold $\delta_{\text{max}}$:
+$$\operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback triggered)} \end{cases}$$
 
-$$
-\ell_h^{(0)} = \log \frac{0.982}{1 - 0.982} \approx 4.0
-\tag{4.2}
+### Equation (13): Attention Kernel Normalization (for Attention Modules)
+For linear recurrent attention pathways, causal feature aggregation satisfies:
+$$O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+### Equation (14): Multi-Head Projection Splitting
+For multi-head attention blocks, projection weights are partitioned across $H$ heads:
+$$W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+## 4.3 Detailed Algorithmic Execution Trace
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}$. 
-The span starts **nearly fully open** and shrinks during training via the 
-L1 penalty.
-
-### 4.2.3 Why Start Open?
-
-Starting with a small span would immediately hurt accuracy. Starting open 
-lets the model decide which spans to shrink, based on task loss.
-
-## 4.3 Soft Ramp Mask
-
-### 4.3.1 Definition
-
-Given query position $i$ and key position $j$, define the distance:
-
-$$
-d_{ij} = \begin{cases} |i - j| & \text{if bidirectional} \\ \max(0, i - j) & \text{if causal} \end{cases}
-\tag{4.3}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-For causal models, keys after the query ($j > i$) are masked separately; 
-the ramp only applies to **past** keys.
-
-The ramp mask is:
-
-$$
-g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-\tag{4.4}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 631 -->
-$$
-
-### 4.3.2 Properties
-
-- **Continuous:** $g_z$ is continuous in $z$ and $d$.
-- **Piecewise-linear:** Three regimes (full, linear decay, zero).
-- **Differentiable in $z$:**
-  $$
-  \frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 & d < z \\ 1/R & z \le d \le z + R \\ 0 & d > z + R \end{cases}
-  \tag{4.5}
-  
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-- **Bounded:** $g_z \in [0, 1]$.
-
-### 4.3.3 Numerical Stability
-
-We compute the ramp in FP32 and apply in log space:
-
-$$
-\tilde{S}_{ij} = S_{ij} + \log(g_{z_h}(d_{ij}) + \epsilon)
-\tag{4.6}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-with $\epsilon = 10^{-8}$. Then standard softmax.
-
-## 4.4 Renormalization
-
-After masking, the attention row does not sum to 1. We renormalize:
-
-$$
-P_{ij} = \frac{\exp(\tilde{S}_{ij})}{\sum_j \exp(\tilde{S}_{ij})}
-\tag{4.7}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-This is equivalent to applying the ramp as a **multiplicative factor** before 
-softmax:
-
-$$
-P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
-\tag{4.8}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-## 4.5 Fast Path Optimization
-
-If the ramp has no effect (all heads have $z_h + R \geq L$), we skip ramp 
-computation:
+The complete structured execution of `LoRALinear` is carried out in four phases:
 
 ```python
-if not ((span + self.ramp_size) >= N_k).all():
-    # compute ramp
-    ...
+# Phase 1: Conditioning and norm evaluation
+W_f = layer.weight.data.float()
+frob_norm = torch.linalg.norm(W_f)
+assert frob_norm >= 1e-4, 'Degenerate weight norm'
+
+# Phase 2: Core mathematical decomposition
+if is_svd_factorization:
+    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    r = torch.searchsorted(cum_energy, tau).item() + 1
+    r = max(min_rank, min(r, max_rank))
+    # Symmetric square-root distribution
+    U_r = U[:, :r] * torch.sqrt(S[:r])
+    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+elif is_proximal_sparsity:
+    W_curr = W_f.clone()
+    for step in range(num_steps):
+        # Soft-thresholding
+        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
+        # Structural 2:4 or block projection
+        W_proj = apply_structural_mask(W_soft, sparsity_target)
+        W_curr = W_curr - eta * (W_curr - W_proj)
+    W_r = W_proj
+
+# Phase 3: Adapter binding & zero-initialization
+lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
+
+# Phase 4: Fallback verification
+recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
+if recon_err > max_error_ceiling or torch.isnan(recon_err):
+    logger.warning('Triggering safety fallback to uncompressed layer')
+    layer = uncompressed_layer_backup
 ```
 
-This avoids the $\mathcal{O}(H L^2)$ ramp allocation when unnecessary.
+## 4.4 Complexity and FLOPs Analysis
 
-## 4.6 L1 Span Penalty
+Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
+$$\text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})$$
 
-### 4.6.1 Formulation
+The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
+$$\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}$$
 
-We add to the loss:
+For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
+$$\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}$$
 
-$$
-\mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
-\tag{4.9}
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+## 4.5 Theoretical Guarantees and Proofs
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+**Theorem 1 (Energy Truncation Bound).** *Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k > 0$, where $k = \min(d_{\text{in}}, d_{\text{out}})$. If rank $r$ is selected such that:*
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \tau, \quad \tau \in (0, 1)$$
+*then the relative Frobenius reconstruction error satisfies:*
+$$\frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+*Proof.* By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation in the Frobenius norm satisfies $\|W - W_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2$. Total Frobenius energy satisfies $\|W\|_F^2 = \sum_{j=1}^k \sigma_j^2$. Expanding the energy ratio:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = \frac{\sum_{i=r+1}^k \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \mathcal{E}(r)$$
+Since $\mathcal{E}(r) \ge \tau$, we immediately obtain:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+This completes the proof. $\square$
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
+**Theorem 2 (Initial Inference Invariance under Zero Residual).** *Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.*
 
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-### 4.6.2 Effect
-
-The gradient w.r.t. $\ell_h$:
-
-$$
-\frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda \cdot S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
-\tag{4.10}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up 
-when the model needs long-range context. The equilibrium depends on 
-$\lambda$.
-
-### 4.6.3 Recommended Values
-
-| $\lambda$ | Effect |
-|---|---|
-| 0.0 | No compression; spans stay open |
-| 0.001 | Mild compression |
-| 0.01 | Balanced (recommended) |
-| 0.1 | Aggressive; likely accuracy drop |
-
-We use $\lambda = 0.01$ by default.
-
-## 4.7 Complete Forward Pass
-
-**Algorithm 1:** Adaptive Span Attention forward
-```
-Input:  Q, K, V ∈ R^{B × H × L × d_h}
-        span_logits ℓ ∈ R^H
-        max_span S_max, ramp_size R
-        attention_mask, is_causal
-Output: context ∈ R^{B × H × L × d_h}
-
-1:  span ← sigmoid(ℓ) * S_max                # (H,)
-2:
-3:  S ← Q @ K^T * scale                      # (B, H, L, L)
-4:
-5:  S ← apply_attention_mask(S, attention_mask)
-6:  if is_causal:
-7:      S ← S + causal_mask
-8:
-9:  # Apply ramp mask
-10: if (span + R).min() < L:
-11:     d_q ← arange(L)[:, None]
-12:     d_k ← arange(L)[None, :]
-13:     if is_causal:
-14:         dist ← clamp(d_q - d_k, min=0)
-15:     else:
-16:         dist ← abs(d_q - d_k)
-17:     span_b ← span.view(1, H, 1, 1)
-18:     ramp ← clamp((R + span_b - dist) / R, 0, 1)
-19:     S ← S + log(ramp + ε)
-20: end if
-21:
-22: P ← softmax(S)
-23: P ← dropout(P)
-24: O ← P @ V
-25: return O
-```
-
-## 4.8 Complexity Analysis
-
-| Component | Dense | ASA-Span |
-|---|---|---|
-| Score matrix | $\mathcal{O}(B H L^2)$ | $\mathcal{O}(B H L^2)$ |
-| Ramp mask | — | $\mathcal{O}(B H L^2)$ |
-| Softmax | $\mathcal{O}(B H L^2)$ | $\mathcal{O}(B H L^2)$ |
-
-**Note.** ASA-Span does **not reduce complexity**. The full score matrix is 
-still computed. Its benefit is **interpretability** and **pruning** — the 
-model learns which spans matter. To realize speedup, one would apply a hard 
-mask after training and use sparse kernels.
-
-## 4.9 Parameter Analysis
-
-| Component | Baseline | ASA-Span |
-|---|---|---|
-| $W_Q$ | $d H d_h$ | Same |
-| $W_K$ | $d H_{kv} d_h$ | Same |
-| $W_V$ | $d H_{kv} d_h$ | Same |
-| $W_O$ | $H d_h d$ | Same |
-| **Span logits** | 0 | **$H$** |
-| **LoRA** | 0 | $2 r_L (\cdots)$ |
-
-ASA-Span adds **$H$ parameters** (one logit per head). It does not reduce 
-parameter count.
-
-## 4.10 Theoretical Notes
-
-### 4.10.1 Approximation Quality
-
-For a head with span $z$ and ramp $R$, the approximation error is bounded by:
-
-$$
-\|P - \tilde{P}\|_1 \leq \sum_{(i,j) : |i-j| > z} P_{ij} + \epsilon_R
-\tag{4.11}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-where $\epsilon_R$ is the ramp-induced error:
-
-$$
-\epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
-\tag{4.12}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-### 4.10.2 Head Span Heterogeneity
-
-Empirically, spans converge to a bimodal distribution:
-
-$$
-z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
-\tag{4.13}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-### 4.10.3 Equilibrium of L1 Penalty
-
-The equilibrium span satisfies:
-
-$$
-\frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
-\tag{4.14}
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-
-<!-- source: Codes/framework/attentions/adaptive_span_attention.py line 148 -->
-$$
-
-The task loss derivative depends on the model, but in practice heads with 
-small gradients converge to small spans.
-
----
+*Proof.* At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
+$$B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+Consequently:
+$$W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r$$
+Hence, output activations satisfy:
+$$Y = X W_{\text{eff}}^\top + b = X W_r^\top + b$$
+The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$

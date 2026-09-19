@@ -1,6 +1,17 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor admm\_pruner \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_admm\_pruner
 
- 12. Reproducibility Guide
-```bash
-python -u Codes/framework/run\_compressor.py --model roberta-base --compressor admm\_pruner --sparsity 0.5
-```
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_admm\_pruner.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
+\end{lstlisting}

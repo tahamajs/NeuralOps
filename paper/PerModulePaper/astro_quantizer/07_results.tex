@@ -1,11 +1,79 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_astro/roberta/summary.csv} & astro & PASS & 74.77\% & 520.18 MB \\
-\texttt{results/unified\_astro/distilbert/summary.csv} & astro & PASS & 90.71\% & 183.07 MB \\
-\texttt{results/unified\_astro/qwen3\_5/summary.csv} & astro & PASS & 87.5\% & 1878.83 MB \\
-\texttt{results/unified\_astro/gpt2/summary.csv} & astro & PASS & 77.87\% & 627.28 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 43.45 ms & 571.8 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 25.25 ms & 571.8 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.74 ms & 581.7 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 27.31 ms & 581.7 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_astroquantizer} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & astro & PASS & 90.71 & 0.9095 \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & astro & PASS & 77.87 & 0.7814 \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.55 & 0.5501 \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & astro & PASS & 87.5 & 0.8659 \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & astro & PASS & 74.77 & 0.7936 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro & PASS & Comp 1.0x & Mem -0.0\% \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro\_quantizer & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{astroquantizer}.}
+\label{tab:results_acc_astroquantizer}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_astroquantizer} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & astro & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & astro & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & astro & 763217728 & 763217728 & 10824704 & 1.0x \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & astro & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro\_quantizer & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{astroquantizer}.}
+\label{tab:results_params_astroquantizer}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_astroquantizer} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & full & 51084.63 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_astro/distilbert/summary.csv} & distilbert & astro & 51415.84 & 183.07 MB & 0.0375307585199194 \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & full & 24305.76 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & gpt2 & astro & 24022.36 & 627.28 MB & 0.0586653749056332 \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & full & 1308.37 & 1809.78 MB & 0.0000 \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & qwen3\_5 & astro & 993.53 & 1878.83 MB & 0.0407704870055463 \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & full & 22842.3 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_astro/roberta/summary.csv} & roberta & astro & 22699.84 & 520.18 MB & 0.0295981263740079 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro & Elapsed 0.233s & 127.0 MB & Verified \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & astro\_quantizer & Elapsed 0.186s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{astroquantizer}.}
+\label{tab:results_vram_astroquantizer}
+\end{table*}

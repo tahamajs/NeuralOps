@@ -1,7 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 87.5\% & 360.79 MB \\
-\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 88.99\% & 339.84 MB \\
-\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} \& rotational\_slicegpt\_int4 \& PASS & 61.7\% & 636.04 MB \\
-all\_121\_gpu\_matrix \& rotational\_slicegpt\_int4 \& PASS & 1.0x (19.574s) & 254.5 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_rotationalslicegptint4} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & rotational\_slicegpt\_int4 & PASS & 88.99 & 0.8987 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & rotational\_slicegpt\_int4 & PASS & 61.7 & 0.6706 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & rotational\_slicegpt\_int4 & PASS & 87.5 & 0.8771 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & rotational\_slicegpt\_int4 & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{rotationalslicegptint4}.}
+\label{tab:results_acc_rotationalslicegptint4}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_rotationalslicegptint4} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & rotational\_slicegpt\_int4 & 66955010 & 66955010 & 4135682 & 1.0x \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & rotational\_slicegpt\_int4 & 124441344 & 124441344 & 1536 & 1.0x \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & rotational\_slicegpt\_int4 & 124647170 & 124647170 & 7679234 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & rotational\_slicegpt\_int4 & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{rotationalslicegptint4}.}
+\label{tab:results_params_rotationalslicegptint4}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_rotationalslicegptint4} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & full & 145427.48 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/distilbert/summary.csv} & distilbert & rotational\_slicegpt\_int4 & 143879.83 & 339.84 MB & 0.5124 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & full & 65816.29 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/gpt2/summary.csv} & gpt2 & rotational\_slicegpt\_int4 & 65800.77 & 636.04 MB & 0.5215 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & full & 91341.58 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_rotational\_slicegpt\_int4/roberta/summary.csv} & roberta & rotational\_slicegpt\_int4 & 97994.8 & 360.79 MB & 0.515 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & rotational\_slicegpt\_int4 & Elapsed 19.574s & 254.5 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{rotationalslicegptint4}.}
+\label{tab:results_vram_rotationalslicegptint4}
+\end{table*}

@@ -1,13 +1,85 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
- 7. Empirical Results
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_admmpruner} details empirical evaluation metrics across target backbones.
 
- 7.1 Unified Benchmark Results
-From `results/unified\_admm\_pruner/*/summary.csv`:
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & admm & PASS & 90.37 & 0.905 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & admm & PASS\_NO\_COMPRESSION & 79.36 & 0.7978 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.55 & 0.5501 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & admm & PASS & 88.42 & 0.8947 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & admm & PASS & 62.04 & 0.6505 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & admm\_pruner & PASS & 84.29 & 0.8603 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & admm\_pruner & PASS\_LOW & 51.49 & 0.1278 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{admmpruner}.}
+\label{tab:results_acc_admmpruner}
+\end{table*}
 
-| Model | Status | Accuracy (%) | F1 Score | Pruned Layers | Sparsity | Avg Recon Error | Peak VRAM (MB) |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | PASS | 84.29%  | 0.8603  | 36  | 50%  | 0.3571  | 551.24  |
-| RoBERTa | PASS | 80.62%  | 0.7966  | 72  | 50%  | 0.3513  | 336.39  |
-| GPT-2 | PASS\_LOW | 51.49%  | 0.1278  | 48  | 50%  | 0.3565  | 628.41  |
-| Qwen 3.5 | PASS | 78.21%  | 0.8201  | 48  | 50% | 0.3569  | 1879.76  |
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_admmpruner} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & admm & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & admm & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & admm & 763217728 & 763217728 & 5776384 & 1.0x \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & admm & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & admm\_pruner & 66955010 & 66955010 & 4135682 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & admm\_pruner & 124441344 & 124441344 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{admmpruner}.}
+\label{tab:results_params_admmpruner}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_admmpruner} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & full & 51199.68 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & admm & 50559.49 & 183.07 MB & 0.4087498231888554 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & full & 23706.62 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & admm & 19301.53 & 628.41 MB & 0.0 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & full & 1287.4 & 1810.59 MB & 0.0000 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & admm & 1099.69 & 1851.31 MB & 0.4157980064416287 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & full & 23915.43 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & admm & 21347.69 & 520.18 MB & 0.4280215595989844 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & full & 50442.71 & 390.7 MB & 0.0000 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & admm\_pruner & 43663.37 & 551.24 MB & 0.3571000224614524 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & full & 20559.85 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & admm\_pruner & 22893.93 & 628.41 MB & 0.3564965102455689 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{admmpruner}.}
+\label{tab:results_vram_admmpruner}
+\end{table*}

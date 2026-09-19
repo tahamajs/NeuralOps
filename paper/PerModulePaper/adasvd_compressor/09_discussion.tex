@@ -1,124 +1,24 @@
-\section{09 Discussion}
+\section{Discussion}
 
- 9. Discussion
-Iterative ALS refinement effectively mitigates truncation error, and the fallback check guarantees that factors never underperform truncated SVD.
+\subsection{Theoretical Trade-Offs in Parameter Compression}
+The design of \texttt{adasvdcompressor} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{adasvdcompressor} prunes overparameterized redundancy.
 
+\subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{adasvdcompressor} diminishes byte transfer volume, accelerating generation wall-clock latency.
 
- 6. Production CUDA / Triton Execution Blueprint
+\subsection{Asymmetry Across Attention Projections}
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{adasvdcompressor} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
 
+\subsection{Decoupled Adaptation Dynamics}
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{adasvdcompressor} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
 
-AdaSVD's adaptive rank allocation creates heterogeneous ranks across layers ($r\_l$). Below is a production Triton GPU kernel featuring dynamic rank parameters for accelerating AdaSVD layers.
+\subsection{Scaling Behaviors with Modern Long-Context Sequences}
+As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
 
-```python
-import torch
-import triton
-import triton.language as tl
+\subsection{Deployment Implications for Cloud and Edge}
+Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
-@triton.jit
-def adasvd\_adaptive\_gemm\_kernel(
-    X\_ptr, W\_approx\_ptr, Out\_ptr,
-    M\_size, N\_size, K\_size,
-    stride\_xm, stride\_xk,
-    stride\_wn, stride\_wk,
-    stride\_om, stride\_on,
-    BLOCK\_SIZE\_M: tl.constexpr,
-    BLOCK\_SIZE\_N: tl.constexpr,
-    BLOCK\_SIZE\_K: tl.constexpr,
-):
-    """
-    Triton kernel for executing reconstituted AdaSVD matrix multiplication W\_approx @ X^T.
-    Serves as an optimized block-level fallback when weights are synthesized in-place.
-    """
-    pid\_m = tl.program\_id(0)
-    pid\_n = tl.program\_id(1)
+\subsection{Energy Efficiency and Carbon Footprint Quantification}
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-    offs\_m = pid\_m * BLOCK\_SIZE\_M + tl.arange(0, BLOCK\_SIZE\_M)
-    offs\_n = pid\_n * BLOCK\_SIZE\_N + tl.arange(0, BLOCK\_SIZE\_N)
-
-    acc = tl.zeros((BLOCK\_SIZE\_M, BLOCK\_SIZE\_N), dtype=tl.float32)
-
-    for k in range(0, K\_size, BLOCK\_SIZE\_K):
-        offs\_k = k + tl.arange(0, BLOCK\_SIZE\_K)
-
-        x\_ptrs = X\_ptr + (offs\_m[:, None] * stride\_xm + offs\_k[None, :] * stride\_xk)
-        x\_tile = tl.load(x\_ptrs, mask=(offs\_m[:, None] < M\_size) & (offs\_k[None, :] < K\_size), other=0.0)
-
-        w\_ptrs = W\_approx\_ptr + (offs\_n[None, :] * stride\_wn + offs\_k[:, None] * stride\_wk)
-        w\_tile = tl.load(w\_ptrs, mask=(offs\_n[None, :] < N\_size) & (offs\_k[:, None] < K\_size), other=0.0)
-
-        acc += tl.dot(x\_tile, w\_tile)
-
-    out\_ptrs = Out\_ptr + (offs\_m[:, None] * stride\_om + offs\_n[None, :] * stride\_on)
-    tl.store(out\_ptrs, acc.to(tl.float16), mask=(offs\_m[:, None] < M\_size) & (offs\_n[None, :] < N\_size))
-```
-
----
-
-
- 7. Hybrid Synthesis \& Next-Generation Enhancements
-
-
- 7.1 Activation Hashing + Nuclear Norm Hybrid
-While Nuclear Norm $\|W\|\_*$ measures parameter magnitude, it ignores activation frequency. Weight importance can be upgraded to activation-weighted nuclear norm $\mathcal{I}\_l^* = \|W^{(l)} \operatorname{diag}(\mu\_X)\|\_1$, where $\mu\_X$ represents mean activation magnitudes over a calibration text corpus.
-
- 7.2 Post-Refinement Second-Order Fine-Tuning
-Following AdaSVD's $T$-iteration factor refinement, applying 100 steps of LoRA-style fine-tuning using Low-Rank Adaptation gradient steps on $U\_{r\_l}$ and $V\_{r\_l}^T$ recovers over 95% of lost task perplexity on language modelling benchmarks.
-
-
-
-\subsection{6. Production CUDA / Triton Execution Blueprint}
-AdaSVD's adaptive rank allocation creates heterogeneous ranks across layers ($r_l$). Below is a production Triton GPU kernel featuring dynamic rank parameters for accelerating AdaSVD layers.
-
-
-\begin{lstlisting}
-import torch
-import triton
-import triton.language as tl
-
-@triton.jit
-def adasvd_adaptive_gemm_kernel(
-    X_ptr, W_approx_ptr, Out_ptr,
-    M_size, N_size, K_size,
-    stride_xm, stride_xk,
-    stride_wn, stride_wk,
-    stride_om, stride_on,
-    BLOCK_SIZE_M: tl.constexpr,
-    BLOCK_SIZE_N: tl.constexpr,
-    BLOCK_SIZE_K: tl.constexpr,
-):
-    """
-    Triton kernel for executing reconstituted AdaSVD matrix multiplication W_approx @ X^T.
-    Serves as an optimized block-level fallback when weights are synthesized in-place.
-    """
-    pid_m = tl.program_id(0)
-    pid_n = tl.program_id(1)
-
-    offs_m = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
-    offs_n = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
-
-    acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
-
-    for k in range(0, K_size, BLOCK_SIZE_K):
-        offs_k = k + tl.arange(0, BLOCK_SIZE_K)
-
-        x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
-        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_size) & (offs_k[None, :] < K_size), other=0.0)
-
-        w_ptrs = W_approx_ptr + (offs_n[None, :] * stride_wn + offs_k[:, None] * stride_wk)
-        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_size) & (offs_k[:, None] < K_size), other=0.0)
-
-        acc += tl.dot(x_tile, w_tile)
-
-    out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
-    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_size) & (offs_n[None, :] < N_size))
-\end{lstlisting}
-
-
----
-
-\subsection{7. Hybrid Synthesis \& Next-Generation Enhancements}
-\subsubsection{7.1 Activation Hashing + Nuclear Norm Hybrid}
-While Nuclear Norm $\|W\|_*$ measures parameter magnitude, it ignores activation frequency. Weight importance can be upgraded to activation-weighted nuclear norm $\mathcal{I}_l^* = \|W^{(l)} \operatorname{diag}(\mu_X)\|_1$, where $\mu_X$ represents mean activation magnitudes over a calibration text corpus.
-
-\subsubsection{7.2 Post-Refinement Second-Order Fine-Tuning}
-Following AdaSVD's $T$-iteration factor refinement, applying 100 steps of LoRA-style fine-tuning using Low-Rank Adaptation gradient steps on $U_{r_l}$ and $V_{r_l}^T$ recovers over 95\% of lost task perplexity on language modelling benchmarks.
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{adasvdcompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

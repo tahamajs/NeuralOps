@@ -1,6 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_wgqa/roberta/summary.csv} \& wgqa \& PASS\_LOW & 52.64\% & 655.06 MB \\
-\texttt{results/unified\_wgqa/distilbert/summary.csv} \& wgqa \& PASS & 90.6\% & 326.42 MB \\
-\texttt{results/unified\_wgqa/gpt2/summary.csv} \& wgqa \& PASS & 87.16\% & 343.63 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_wgqa} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & wgqa & PASS & 90.6 & 0.9089 \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & wgqa & PASS & 87.16 & 0.879 \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & wgqa & PASS\_LOW & 52.64 & 0.1342 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{wgqa}.}
+\label{tab:results_acc_wgqa}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_wgqa} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & wgqa & 66955010 & 67545002 & 589992 & 0.9913x \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & wgqa & 126800640 & 127095888 & 2654544 & 0.9977x \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & wgqa & 124647170 & 132914258 & 1179984 & 0.9378x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{wgqa}.}
+\label{tab:results_params_wgqa}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_wgqa} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & full & 52577.79 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_wgqa/distilbert/summary.csv} & distilbert & wgqa & 24323.59 & 326.42 MB & 0.0000 \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & full & 26531.63 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_wgqa/gpt2/summary.csv} & gpt2 & wgqa & 8935.39 & 343.63 MB & 0.0000 \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & full & 26639.02 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_wgqa/roberta/summary.csv} & roberta & wgqa & 13334.1 & 655.06 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{wgqa}.}
+\label{tab:results_vram_wgqa}
+\end{table*}

@@ -1,149 +1,40 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 03_background.md
-     PURPOSE: Technical background
-     DEPENDENCIES: 02_related.md
-     LENGTH TARGET: 1 - 1.5 pages
-     ═══════════════════════════════════════════════════════════════════════════ -->
+# 3. Mathematical Background and Formal Notation
 
-# 3. Background
+## 3.1 Notation and Tensor Spaces
+Let $\mathcal{B}$ denote batch size, $N$ denote sequence length, and $d_{\text{in}}, d_{\text{out}}$ denote layer input and output channel dimensions. For multi-head attention modules, $H$ denotes the number of attention heads, $d$ denotes the head dimension ($d = d_{\text{in}} / H$), and $H_{\text{kv}}$ denotes the number of key/value heads in Grouped-Query Attention (GQA) settings.
 
-## 3.1 Softmax Attention
+The forward mapping of an uncompressed dense linear projection is formalized as:
+$$Y = X W^\top + b$$
+where $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, $b \in \mathbb{R}^{d_{\text{out}}}$, and $Y \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$.
 
-For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
+## 3.2 Spectral Analysis and Singular Value Decomposition
+For any linear transformation matrix $W \in \mathbb{R}^{m \times n}$ with rank $\rho = \min(m, n)$, its Singular Value Decomposition (SVD) is defined as:
+$$W = U \Sigma V^\top = \sum_{i=1}^{\rho} \sigma_i u_i v_i^\top$$
+where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ form orthonormal bases of left and right singular vectors, and $\Sigma = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_\rho)$ contains singular values ordered monotonically:
+$$\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$$
 
-$$
-S = \frac{Q K^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times L}
-\tag{3.1}
-$$
+## 3.3 Eckart-Young-Mirsky Theorem
+According to the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation ($r < \rho$) under both the Frobenius norm and spectral operator norm is obtained by truncating the summation at index $r$:
+$$W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top$$
+The approximation error is governed strictly by the discarded singular values:
+$$\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2, \quad \|W - W_r\|_2 = \sigma_{r+1}$$
 
-$$
-P = \text{softmax}(S) \in \mathbb{R}^{L \times L}
-\tag{3.2}
-$$
+## 3.4 Balanced Symmetric Square-Root Splitting
+In finite-precision deep learning architectures (e.g., IEEE FP16 or BF16), assigning singular values asymmetrically to either $U$ or $V$ causes numerical dynamic range imbalances. `adaptive_sparse_attention` adopts balanced symmetric square-root distribution:
+$$U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top$$
+which guarantees equalized Frobenius norms across both factorized projection matrices:
+$$\|U_r\|_F = \|V_r\|_F = \left( \sum_{i=1}^{r} \sigma_i \right)^{1/2}$$
 
-$$
-O = P V \in \mathbb{R}^{L \times d_h}
-\tag{3.3}
-$$
+## 3.5 Regularized Optimization and Saliency Pruning
+Under structural sparsity constraints, the optimization objective balances parameter fidelity against regularization penalties:
+$$\min_{W} \mathcal{L}_{\text{task}}(W) + \lambda \mathcal{R}(W) + \mathcal{I}_{\mathcal{S}}(W)$$
+where $\mathcal{R}(W)$ denotes a sparsity-inducing norm (such as $\ell_1$ or group Lasso) and $\mathcal{I}_{\mathcal{S}}(W)$ denotes the indicator function over the admissible hardware-aligned sparsity pattern $\mathcal{S}$:
+$$\mathcal{I}_{\mathcal{S}}(W) = \begin{cases} 0 & \text{if } W \in \mathcal{S} \\ \infty & \text{otherwise} \end{cases}$$
 
-**Complexity.** $S$ and $P$ require $\mathcal{O}(L^2)$ memory. The two 
-matmuls require $\mathcal{O}(L^2 d_h)$ time. For $L = 1024$, $d_h = 64$, 
-this is $\sim 67$M FLOPs per head per sequence.
+## 3.7 Condition Number Bounds under Truncation
+Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge \sigma_\rho > 0$. The condition number $\kappa(W) = \sigma_1 / \sigma_\rho$ measures numerical sensitivity to input perturbations. Under rank-$r$ truncation, the condition number of the factorized surrogate $W_r$ satisfies:
+$$\kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)$$
+Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
 
-## 3.2 Sparsity in Attention
-
-**Observation.** The softmax distribution $P$ is typically concentrated:
-
-$$
-\sum_{j \in \text{top-}k} P_{ij} \gg 1 - \epsilon, \quad k \ll L
-\tag{3.4}
-$$
-
-**Empirical evidence.** **Figure 3.1** shows the cumulative attention mass 
-vs ranked keys for a middle GPT-2 layer. Top 10% of keys capture 
-**85%** of mass; top 50% capture **97%**.
-
-**Implication.** Pruning to the top $k = (1 - \rho) L$ keys retains most 
-of the output quality, at fraction $1 - \rho$ of the compute.
-
-## 3.3 Top-$k$ Selection
-
-For a score vector $s \in \mathbb{R}^L$, the top-$k$ selection produces:
-
-$$
-\text{top-}k(s)_j = \begin{cases} s_j & \text{if } s_j \geq \tau \\ -\infty & \text{otherwise} \end{cases}
-\tag{3.5}
-$$
-
-where $\tau$ is the $k$-th largest value.
-
-**Non-differentiability.** The gradient $\partial \text{top-}k / \partial s$ 
-is zero almost everywhere. This is problematic for end-to-end training.
-
-## 3.4 Soft Top-$k$ Relaxations
-
-**Sigmoid mask.** Given $\tau$, we can define:
-
-$$
-m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right) \in (0, 1)
-\tag{3.6}
-$$
-
-so that $m_j \to 1$ for $s_j > \tau$ and $m_j \to 0$ for $s_j < \tau$. 
-As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$, recovering hard top-$k$.
-
-**Application in log space.** Instead of a multiplicative mask, we add a 
-log-mask to the scores:
-
-$$
-\tilde{s}_j = s_j + \log(m_j + \epsilon)
-\tag{3.7}
-$$
-
-This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) = 
-\text{softmax}(s) \cdot m / \sum m$.
-
-## 3.5 Per-Head Sparsity Budgets
-
-The retention budget $k_h$ for head $h$ is:
-
-$$
-k_h = \lfloor (1 - \rho_h) L \rfloor
-\tag{3.8}
-$$
-
-where $\rho_h \in [0, 1]$ is the head-specific sparsity ratio.
-
-**Learning $\rho_h$.** We parameterize via a scalar logit:
-
-$$
-\rho_h = \sigma(\ell_h), \qquad \ell_h \in \mathbb{R}
-\tag{3.9}
-$$
-
-This is differentiable w.r.t. $\ell_h$, allowing gradient-based learning of 
-the sparsity budget.
-
-## 3.6 Chunked Computation
-
-To bound peak memory, we process the query dimension in chunks of size $C$:
-
-$$
-O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right) V
-\tag{3.10}
-$$
-
-**Peak memory.** $\mathcal{O}(B H C L)$ instead of $\mathcal{O}(B H L^2)$.
-
-For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
-instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. **8× reduction.**
-
-## 3.7 LoRA Recovery
-
-LoRA (Hu et al., 2021) adds trainable adapters:
-
-$$
-W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\tag{3.11}
-$$
-
-with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity 
-injection.
-
-## 3.8 Notation Summary
-
-| Symbol | Meaning |
-|---|---|
-| $L$ | Sequence length |
-| $H$ | Number of heads |
-| $d_h$ | Per-head dimension |
-| $S$ | Score matrix |
-| $P$ | Attention probabilities |
-| $\rho_h$ | Sparsity ratio for head $h$ |
-| $\ell_h$ | Learnable logit for head $h$ |
-| $k_h$ | Retention budget |
-| $\tau_h$ | Threshold |
-| $T$ | Temperature |
-| $C$ | Chunk size |
-
----
+## 3.8 Energy Conservation and Error Manifolds
+The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}$ defines a monotonic mapping $\mathcal{E}: \{1, \dots, \rho\} \to [0, 1]$. The decay profile follows a power-law distribution $\sigma_i \propto i^{-\alpha}$ where $\alpha > 0$ denotes the spectral decay exponent. For transformer projection matrices, empirical measurements show $\alpha \in [0.8, 1.6]$, indicating that the first $10\%$ to $25\%$ of singular vectors capture upwards of $90\%$ of total operator variance.

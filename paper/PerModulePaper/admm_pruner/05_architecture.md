@@ -1,66 +1,54 @@
-# 5. Architecture and Implementation
+# 5. Architecture and Implementation Details
 
-
-```text
-  +-------------------------------------------------+
-  |                Input Activations                |
-  |                  X: (B, N, D)                   |
-  +------------------------+------------------------+
-                           |
-             +-------------+-------------+
-             |                           |
-             v                           v
-     +---------------+           +---------------+
-     |  Base Proj    |           | Residual/Spars|
-     |  Factorized   |           | Projection    |
-     +-------+-------+           +-------+-------+
-             |                           |
-             +-------------+-------------+
-                           |
-                           v
-                   Aggregated Context
-```
-
-Pruned layers are wrapped in `ADMMMaskedLinear` modules using `ADMMSTEPrune` autograd functions.
-
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/admm_pruner.md -->
-### 3.1 Dataflow & Transformation Trace
-
-1. **Initialization**:
-Extract weight tensor $W \in \mathbb{R}^{N \times M}$ from target `nn.Linear` module. Furthermore, Allocate auxiliary buffers $Z \leftarrow W$ and dual variable $U \leftarrow \mathbf{0}_{N \times M}$.
-
-2. **Iterative ADMM Loop ($k = 1 \dots K$)**:
-Compute candidate matrix $V = Z + U \in \mathbb{R}^{N \times M}$. Furthermore, Flatten $|V|$ to 1D tensor of length $N \cdot M$. Concurrently, Compute quantile threshold $\tau = \text{Percentile}(|V|, 100 \cdot S)$. In this setting, Generate sparse tensor $Z = \text{where}(|V| > \tau, V, 0)$. Additionally, Update dual accumulator $U = U + (W - Z)$.
-
-3. **Weight Overwrite**:
-Assign final $Z$ tensor back to `module.weight.data` with original precision and device attributes.
-
+## 5.1 Submodule Hierarchy and Signal Flow
+The `ADMMMaskedLinear` architecture encapsulates both frozen base operations and optional trainable fine-tuning branches. Below is the structural hierarchy:
 
 ```
-Input Weight W [N, M]
-       │
-       ├─────────────────────────────────┐
-       ▼                                 ▼
-Auxiliary Buffer Z [N, M]      Dual Multiplier U [N, M]
-       │                                 │
-       └──────────────┬──────────────────┘
-                      ▼
-            Candidate V = Z + U [N, M]
-                      │
-                      ▼
-           Quantile Threshold τ
-                      │
-                      ▼
-             Masking & Hard Cut
-                      │
-                      ▼
-           Updated Sparse Z [N, M]
-                      │
-                      ▼
-            Dual Update U += W - Z
+┌────────────────────────────────────────────────────────────────────────┐
+│                                       ADMMMaskedLinear                 │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Input Tensor X: [Batch, SeqLen, InFeatures]                          │
+│         │                                                              │
+│         ├────────────────────────────────────────┐                     │
+│         │ (Primary Base Pathway)                 │ (LoRA Residual)     │
+│         ▼                                        ▼                     │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Down-Projection: V_r     │             │ LoRA Adapter A        │   │
+│   │ Shape: (r, InFeatures)   │             │ Shape: (r_lora, In)   │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 ▼                                      ▼               │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Up-Projection: U_r       │             │ LoRA Adapter B        │   │
+│   │ Shape: (OutFeatures, r)  │             │ Shape: (Out, r_lora)  │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 │                                      │ * (alpha / r) │
+│                 ▼                                      ▼               │
+│              [ Base Output ]  <────── (+) ─────  [ Adapter Output ]    │
+│                                                                        │
+│   Output Tensor Y: [Batch, SeqLen, OutFeatures]                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+## 5.2 Submodule Specification Matrix
+The table below specifies the internal submodule configuration of `ADMMMaskedLinear`:
+
+| Submodule Name | Layer Type | Parameter Shape | Trainable Status | Memory Footprint (FP32) | Functional Role |
+|---|---|---|---|---|---|
+| `weight` / `V_r` | `nn.Parameter` / Buffer | `(r, d_in)` | Frozen (False) | $4 \cdot r \cdot d_{\text{in}}$ bytes | Low-rank down-projection or base weight |
+| `U_r` | `nn.Parameter` / Buffer | `(d_out, r)` | Frozen (False) | $4 \cdot d_{\text{out}} \cdot r$ bytes | Low-rank up-projection expansion |
+| `mask` | `torch.BoolTensor` Buffer | `(d_out, d_in)` | Non-trainable | $1 \cdot d_{\text{out}} \cdot d_{\text{in}}$ bytes | Hardware-aligned 2:4 or block sparsity mask |
+| `lora_A` | `nn.Parameter` | `(r_lora, d_in)` | Trainable (True) | $4 \cdot r_{\text{lora}} \cdot d_{\text{in}}$ bytes | Fast adaptation gradient collector |
+| `lora_B` | `nn.Parameter` | `(d_out, r_lora)` | Trainable (True) | $4 \cdot d_{\text{out}} \cdot r_{\text{lora}}$ bytes | Low-rank residual reconstruction projector |
+| `bias` | `nn.Parameter` | `(d_out,)` | Optional (Frozen) | $4 \cdot d_{\text{out}}$ bytes | Projection affine bias term |
+
+## 5.3 Cross-Backbone Adaptations
+The module handles distinct idiosyncrasies across model backbones:
+1. **DistilBERT (Flat Encoder Attention)**: Directly replaces `q_lin`, `k_lin`, `v_lin`, and `out_lin` within `MultiHeadSelfAttention`.
+2. **RoBERTa (Nested Encoder Attention)**: Projections reside in `self.query`, `self.key`, `self.value`. The output projection `dense` is housed in the outer `BertSelfOutput` container. The engine detects nested structures and avoids duplicate output projection compression.
+3. **GPT-2 (Causal Fused Conv1D)**: Attention weights are stored as a fused $d_{\text{in}} \times 3 d_{\text{in}}$ tensor with transposed 1D convolution layout. The engine transposes weights and extracts individual Q, K, V components.
+4. **Qwen / LLaMA (GQA and RoPE)**: Key and value projections have reduced dimension ($H_{\text{kv}} \cdot d$). The engine aligns repeat factors and slices rotary position embeddings before computing compressed projections.

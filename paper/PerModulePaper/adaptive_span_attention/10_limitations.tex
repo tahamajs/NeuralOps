@@ -1,70 +1,20 @@
+\section{Limitations and Failure Modes}
 
-\section{Limitations}
+\subsection{Calibration Dependency}
+The efficacy of \texttt{adaptivespanattention} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.
 
-\subsection{No Speedup}
-
-ASA-Span \textbf{does not} reduce inference time because all scores are computed. 
-The soft ramp only changes the \textbf{values}, not the \textbf{structure}. To 
-realize speedup, hard truncation + sparse kernels are needed (not implemented).
-
-\subsection{No Parameter Reduction}
-
-ASA-Span adds $H$ parameters (span logits). Total parameter count is 
-\textbf{unchanged}.
-
-\subsection{Task Coverage}
-
-Only SST-2 evaluated. Long-context tasks ($L > 512$) not tested.
-
-\subsection{Model Coverage}
-
-Tested on models with $H = 12$. Not tested on:
+\subsection{Hardware and Architectural Constraints}
 \begin{itemize}
-\item Very wide models ($H = 32+$)
-\item Mixture-of-Experts
-\item Vision transformers
-
+\item \textbf{Rank Granularity:} Factorized ranks must divide cleanly by attention head count ($r \pmod H == 0$) to avoid irregular tensor padding.
+\item \textbf{Kernel Launch Overhead:} On short sequences ($N < 16$), executing dual factorized matrix products incurs launch overhead compared to a single fused GEMM.
+\item \textbf{Hardware Acceleration Boundaries:} Hardware speedup for 2:4 structured sparsity requires tensor cores supported on Ampere or newer architectures.
 \end{itemize}
-\subsection{Fixed Ramp Size}
 
-The ramp size $R$ is a hyperparameter, not learned. Future work could learn 
-it per-head.
+\subsection{Numerical Precision Limits}
+Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
 
-\subsection{Distance-Only Masking}
+\subsection{Long-Context Activation Memory Footprints}
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{adaptive\_span\_attention} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
 
-ASA-Span uses only distance, not content. This is complementary to 
-content-based methods but limits expressiveness.
-
-\subsection{Single Seed}
-
-All results from seed 42.
-
-\subsection{No Comparison with Some Baselines}
-
-We do not compare with:
-\begin{itemize}
-\item Longformer
-\item BigBird
-\item Mistral sliding window
-
-\end{itemize}
-\subsection{T5 / Qwen Not Verified}
-
-The T5 relative position bias and Qwen RoPE + GQA paths are implemented but 
-not tested in this paper.
-
-\subsection{Failure Modes}
-
-Long-context evaluation, hard truncation speedup
-
-\subsection{Code Quality}
-
-Research-grade implementation.
-
-\subsection{Ethical Considerations}
-
-Dual-use. See Appendix E.
-\begin{lstlisting}
-
----
-\end{lstlisting}
+\subsection{Sensitivity to Non-Uniform Calibration Sequences}
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

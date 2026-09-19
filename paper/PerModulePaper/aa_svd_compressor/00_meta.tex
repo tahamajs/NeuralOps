@@ -1,11 +1,4 @@
-\section{00 Meta}
-
- Activation-Aware Singular Value Decomposition Compressor (aa\_svd\_compressor)
-
-**Registry Keys**: `aasvd`, `aa\_svd`, `aa\_svd\_compressor`, `aa\_svd\_factory`
-**Source**: `Codes/framework/compression\_engine/aa\_svd\_compressor.py` 
-**Type**: Structural Linear Compression via Low-Rank Factorization ($y = (x V^\top) U^\top$)
-**Base Class**: `AASVDCompressor(BaseCompressor)` 
-
- Abstract
-Standard Singular Value Decomposition (SVD) truncates weight matrices based solely on static parameter magnitudes, treating all spectral directions equally regardless of inference input distributions. This leads to catastrophic representation drift in transformer attention projections where hidden activations exhibit severe outlier dimensions. We present **Activation-Aware SVD (AASVD)** (`aa\_svd\_compressor`), a production-hardened compression engine that collects streaming Exponential Moving Average (EMA) activation covariances $C\_X$, preconditions weights via symmetric whitening $M = W C\_X^{1/2}$, and replaces dense linear layers with physical low-rank factorized `SVDLinear` modules.
+\title{\textbf{Aa Svd Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

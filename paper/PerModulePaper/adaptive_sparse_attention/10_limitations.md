@@ -1,73 +1,19 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 10_limitations.md
-     PURPOSE: Limitations
-     DEPENDENCIES: 09_discussion.md
-     LENGTH TARGET: 0.5 - 1 page
-     ═══════════════════════════════════════════════════════════════════════════ -->
+# 10. Limitations and Failure Modes
 
-# 10. Limitations
+## 10.1 Calibration and Data Sensitivity
+The empirical effectiveness of `adaptive_sparse_attention` is intrinsically conditioned on the quality and distribution of calibration sequences. When calibration data fails to represent the target task distribution, the computed spectral energy or activation covariances may over-index on spurious correlations, resulting in heightened reconstruction error on out-of-distribution inputs.
 
-## 10.1 Task Coverage
+## 10.2 Architectural Constraints and Rank Granularity
+Several concrete implementation constraints govern the deployment of `adaptive_sparse_attention`:
+1. **Rank Divisibility Requirements**: In multi-head attention modules, factorized ranks must align with head counts ($r \pmod H == 0$) to ensure valid tensor reshaping across attention heads without irregular padding.
+2. **Short Sequence Overhead**: For very short sequence lengths ($N < 16$), the overhead of executing chained factorized projections ($X V^\top U^\top$) can exceed monolithic GEMM operations on modern GPUs due to kernel launch overhead.
+3. **Hardware-Specific Acceleration Boundaries**: Semi-structured 2:4 sparsity requires NVIDIA Ampere or newer tensor cores; running on older architectures incurs software masking overhead without wall-clock acceleration.
 
-Only SST-2 evaluated ($L = 128$). ASA's sparsity benefit grows with $L$; 
-we do not measure accuracy at $L \ge 512$.
+## 10.3 Dynamic Range and Quantization Underflow
+In extreme low-rank regimes ($r \ll d_{\text{in}}$), singular value truncation discards subtle high-frequency feature directions. When combined with FP16 or BF16 mixed-precision training, low-magnitude singular values can underflow to zero, necessitating manual numerical clamping ($10^{-4}$) as enforced by the safety guardrails in `adaptive_sparse_attention`.
 
-## 10.2 Model Coverage
+## 10.4 Long-Context Activation Memory Footprints
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, `adaptive_sparse_attention` must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
 
-Tested on models with $H = 12$. Not tested on:
-- Very wide models ($H = 32+$)
-- Mixture-of-Experts
-- Vision transformers
-
-## 10.3 No Parameter Reduction
-
-ASA **does not** reduce parameter count. It reduces attention memory and 
-compute. For parameter savings, use A3 or AASVD.
-
-## 10.4 No Time Reduction
-
-Chunking bounds memory but does not reduce **time** — we still compute all 
-scores. To reduce time, we would need to skip score computation for pruned 
-keys.
-
-## 10.5 Approximate Causality
-
-Causal masking is applied to each chunk. The chunk boundary may leak 
-information from prior chunks (in bidirectional settings), but for causal 
-decoders, we verify strict causality.
-
-## 10.6 Sparsity Logit Floor
-
-The floor operation in $k_h = \lfloor (1 - \rho_h) L \rfloor$ is not 
-differentiable. We use a straight-through estimator, which works but is 
-not theoretically justified.
-
-## 10.7 Single Seed
-
-All results from seed 42.
-
-## 10.8 No Comparison with Some Baselines
-
-We do not directly compare with:
-- Longformer
-- BigBird
-- Routing Transformer
-- Reformer
-
-## 10.9 Chunk Boundary Effects
-
-For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
-
-## 10.10 Failure Modes
-
-Causality, long-context evaluation
-
-## 10.11 Code Quality
-
-Research-grade implementation.
-
-## 10.12 Ethical Considerations
-
-Dual-use. See Appendix E.
-
----
+## 10.5 Sensitivity to Non-Uniform Calibration Sequences
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

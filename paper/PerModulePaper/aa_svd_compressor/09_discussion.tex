@@ -1,213 +1,24 @@
-\section{09 Discussion}
+\section{Discussion}
 
- 9. Discussion
+\subsection{Theoretical Trade-Offs in Parameter Compression}
+The design of \texttt{aasvdcompressor} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{aasvdcompressor} prunes overparameterized redundancy.
 
- 9.1 Computational Trade-offs
-While factorized layers reduce parameter storage from $d\_{\text{in}} d\_{\text{out}}$ to $r(d\_{\text{in}} + d\_{\text{out}})$, execution requires two sequential matrix multiplications. On small batch sizes or wide matrices where memory bandwidth dominates, physical speedups are immediately realized. On compute-bound tensor cores with very low ranks, memory fragmentation can offset throughput gains unless fused matrix multiplication kernels are utilized.
+\subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{aasvdcompressor} diminishes byte transfer volume, accelerating generation wall-clock latency.
 
- 9.2 Interaction with Recovery LoRA
-Fine-tuning only the lightweight LoRA adapters (`lora\_A` and `lora\_B`) while keeping factorized base matrices ($U, V$) frozen provides rapid downstream recovery without modifying base compressed projections.
+\subsection{Asymmetry Across Attention Projections}
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{aasvdcompressor} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
 
+\subsection{Decoupled Adaptation Dynamics}
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{aasvdcompressor} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
 
- 6. Production CUDA / Triton Execution Blueprint
+\subsection{Scaling Behaviors with Modern Long-Context Sequences}
+As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
 
+\subsection{Deployment Implications for Cloud and Edge}
+Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
-Below is a production Triton GPU kernel implementing anchored low-rank activation transformation, fusing input activation projection with right anchor vectors.
+\subsection{Energy Efficiency and Carbon Footprint Quantification}
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-```python
-import torch
-import triton
-import triton.language as tl
-
-@triton.jit
-def aasvd\_anchored\_forward\_kernel(
-    X\_ptr, Anchor\_ptr, Ur\_ptr, Sr\_ptr, Vr\_ptr, Out\_ptr,
-    B\_N, d\_in, rank, d\_out,
-    stride\_xb, stride\_xn,
-    stride\_an, stride\_ar,
-    stride\_outb, stride\_outn,
-    BLOCK\_M: tl.constexpr,
-    BLOCK\_R: tl.constexpr,
-    BLOCK\_K: tl.constexpr,
-):
-    """
-    Fused AASVD forward pass:
-    Projects X directly onto activation anchor basis and factorized singular vectors:
-    Out = (X @ Anchor @ Vr^T * S) @ Ur^T
-    """
-    pid\_m = tl.program\_id(0)
-    pid\_out = tl.program\_id(1)
-
-    offs\_m = pid\_m * BLOCK\_M + tl.arange(0, BLOCK\_M)
-    offs\_r = tl.arange(0, BLOCK\_R)
-
-     Accumulate projected subspace in SRAM
-    acc\_r = tl.zeros((BLOCK\_M, BLOCK\_R), dtype=tl.float32)
-    
-    for k in range(0, d\_in, BLOCK\_K):
-        offs\_k = k + tl.arange(0, BLOCK\_K)
-
-        x\_ptrs = X\_ptr + (offs\_m[:, None] * stride\_xn + offs\_k[None, :] * stride\_xb)
-        x\_tile = tl.load(x\_ptrs, mask=(offs\_m[:, None] < B\_N) & (offs\_k[None, :] < d\_in), other=0.0)
-
-        anc\_ptrs = Anchor\_ptr + (offs\_k[:, None] * stride\_an + offs\_r[None, :] * stride\_ar)
-        anc\_tile = tl.load(anc\_ptrs, mask=(offs\_k[:, None] < d\_in) & (offs\_r[None, :] < rank), other=0.0)
-
-        acc\_r += tl.dot(x\_tile, anc\_tile)
-
-     Apply singular value scaling
-    s\_vals = tl.load(Sr\_ptr + offs\_r, mask=offs\_r < rank, other=1.0)
-    acc\_r\_scaled = acc\_r * s\_vals[None, :]
-
-     Store output tile
-    out\_ptrs = Out\_ptr + (offs\_m[:, None] * stride\_outn + pid\_out * stride\_outb)
-    tl.store(out\_ptrs, acc\_r\_scaled.to(tl.float16), mask=offs\_m[:, None] < B\_N)
-```
-
----
-
-
- 7. Hybrid Synthesis \& Next-Generation Enhancements
-
-
- 7.1 Cross-Covariance AASVD (Swift-AASVD Integration)
-Instead of extracting $A\_{\text{anchor}}$ purely from input activations $\bar{X}$, anchor vectors can be derived from the cross-covariance matrix $C\_{XY} = Y^T X$ between inputs and outputs, capturing both input variance and output projection targets.
-
- 7.2 Dynamic Calibration-Free Anchoring
-To eliminate reliance on pre-stored calibration texts, online streaming algorithms can accumulate activation covariance $C\_X$ during warm-up inference steps, updating $A\_{\text{anchor}}$ dynamically via randomized SVD.
-
-
- 6. Production CUDA / Triton Execution Blueprint
-
-
-Below is a production Triton GPU kernel implementing anchored low-rank activation transformation, fusing input activation projection with right anchor vectors.
-
-```python
-import torch
-import triton
-import triton.language as tl
-
-@triton.jit
-def aasvd\_anchored\_forward\_kernel(
-    X\_ptr, Anchor\_ptr, Ur\_ptr, Sr\_ptr, Vr\_ptr, Out\_ptr,
-    B\_N, d\_in, rank, d\_out,
-    stride\_xb, stride\_xn,
-    stride\_an, stride\_ar,
-    stride\_outb, stride\_outn,
-    BLOCK\_M: tl.constexpr,
-    BLOCK\_R: tl.constexpr,
-    BLOCK\_K: tl.constexpr,
-):
-    """
-    Fused AASVD forward pass:
-    Projects X directly onto activation anchor basis and factorized singular vectors:
-    Out = (X @ Anchor @ Vr^T * S) @ Ur^T
-    """
-    pid\_m = tl.program\_id(0)
-    pid\_out = tl.program\_id(1)
-
-    offs\_m = pid\_m * BLOCK\_M + tl.arange(0, BLOCK\_M)
-    offs\_r = tl.arange(0, BLOCK\_R)
-
-     Accumulate projected subspace in SRAM
-    acc\_r = tl.zeros((BLOCK\_M, BLOCK\_R), dtype=tl.float32)
-    
-    for k in range(0, d\_in, BLOCK\_K):
-        offs\_k = k + tl.arange(0, BLOCK\_K)
-
-        x\_ptrs = X\_ptr + (offs\_m[:, None] * stride\_xn + offs\_k[None, :] * stride\_xb)
-        x\_tile = tl.load(x\_ptrs, mask=(offs\_m[:, None] < B\_N) & (offs\_k[None, :] < d\_in), other=0.0)
-
-        anc\_ptrs = Anchor\_ptr + (offs\_k[:, None] * stride\_an + offs\_r[None, :] * stride\_ar)
-        anc\_tile = tl.load(anc\_ptrs, mask=(offs\_k[:, None] < d\_in) & (offs\_r[None, :] < rank), other=0.0)
-
-        acc\_r += tl.dot(x\_tile, anc\_tile)
-
-     Apply singular value scaling
-    s\_vals = tl.load(Sr\_ptr + offs\_r, mask=offs\_r < rank, other=1.0)
-    acc\_r\_scaled = acc\_r * s\_vals[None, :]
-
-     Store output tile
-    out\_ptrs = Out\_ptr + (offs\_m[:, None] * stride\_outn + pid\_out * stride\_outb)
-    tl.store(out\_ptrs, acc\_r\_scaled.to(tl.float16), mask=offs\_m[:, None] < B\_N)
-```
-
----
-
-
- 7. Hybrid Synthesis \& Next-Generation Enhancements
-
-
- 7.1 Cross-Covariance AASVD (Swift-AASVD Integration)
-Instead of extracting $A\_{\text{anchor}}$ purely from input activations $\bar{X}$, anchor vectors can be derived from the cross-covariance matrix $C\_{XY} = Y^T X$ between inputs and outputs, capturing both input variance and output projection targets.
-
- 7.2 Dynamic Calibration-Free Anchoring
-To eliminate reliance on pre-stored calibration texts, online streaming algorithms can accumulate activation covariance $C\_X$ during warm-up inference steps, updating $A\_{\text{anchor}}$ dynamically via randomized SVD.
-
-
- 6. Production CUDA / Triton Execution Blueprint
-
-
-Below is a production Triton GPU kernel implementing anchored low-rank activation transformation, fusing input activation projection with right anchor vectors.
-
-```python
-import torch
-import triton
-import triton.language as tl
-
-@triton.jit
-def aasvd\_anchored\_forward\_kernel(
-    X\_ptr, Anchor\_ptr, Ur\_ptr, Sr\_ptr, Vr\_ptr, Out\_ptr,
-    B\_N, d\_in, rank, d\_out,
-    stride\_xb, stride\_xn,
-    stride\_an, stride\_ar,
-    stride\_outb, stride\_outn,
-    BLOCK\_M: tl.constexpr,
-    BLOCK\_R: tl.constexpr,
-    BLOCK\_K: tl.constexpr,
-):
-    """
-    Fused AASVD forward pass:
-    Projects X directly onto activation anchor basis and factorized singular vectors:
-    Out = (X @ Anchor @ Vr^T * S) @ Ur^T
-    """
-    pid\_m = tl.program\_id(0)
-    pid\_out = tl.program\_id(1)
-
-    offs\_m = pid\_m * BLOCK\_M + tl.arange(0, BLOCK\_M)
-    offs\_r = tl.arange(0, BLOCK\_R)
-
-     Accumulate projected subspace in SRAM
-    acc\_r = tl.zeros((BLOCK\_M, BLOCK\_R), dtype=tl.float32)
-    
-    for k in range(0, d\_in, BLOCK\_K):
-        offs\_k = k + tl.arange(0, BLOCK\_K)
-
-        x\_ptrs = X\_ptr + (offs\_m[:, None] * stride\_xn + offs\_k[None, :] * stride\_xb)
-        x\_tile = tl.load(x\_ptrs, mask=(offs\_m[:, None] < B\_N) & (offs\_k[None, :] < d\_in), other=0.0)
-
-        anc\_ptrs = Anchor\_ptr + (offs\_k[:, None] * stride\_an + offs\_r[None, :] * stride\_ar)
-        anc\_tile = tl.load(anc\_ptrs, mask=(offs\_k[:, None] < d\_in) & (offs\_r[None, :] < rank), other=0.0)
-
-        acc\_r += tl.dot(x\_tile, anc\_tile)
-
-     Apply singular value scaling
-    s\_vals = tl.load(Sr\_ptr + offs\_r, mask=offs\_r < rank, other=1.0)
-    acc\_r\_scaled = acc\_r * s\_vals[None, :]
-
-     Store output tile
-    out\_ptrs = Out\_ptr + (offs\_m[:, None] * stride\_outn + pid\_out * stride\_outb)
-    tl.store(out\_ptrs, acc\_r\_scaled.to(tl.float16), mask=offs\_m[:, None] < B\_N)
-```
-
----
-
-
- 7. Hybrid Synthesis \& Next-Generation Enhancements
-
-
- 7.1 Cross-Covariance AASVD (Swift-AASVD Integration)
-Instead of extracting $A\_{\text{anchor}}$ purely from input activations $\bar{X}$, anchor vectors can be derived from the cross-covariance matrix $C\_{XY} = Y^T X$ between inputs and outputs, capturing both input variance and output projection targets.
-
- 7.2 Dynamic Calibration-Free Anchoring
-To eliminate reliance on pre-stored calibration texts, online streaming algorithms can accumulate activation covariance $C\_X$ during warm-up inference steps, updating $A\_{\text{anchor}}$ dynamically via randomized SVD.
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{aasvdcompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

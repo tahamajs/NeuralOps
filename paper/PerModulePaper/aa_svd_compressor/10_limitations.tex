@@ -1,6 +1,20 @@
-\section{10 Limitations}
+\section{Limitations and Failure Modes}
 
- 10. Limitations
+\subsection{Calibration Dependency}
+The efficacy of \texttt{aasvdcompressor} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.
 
-1. **Calibration Sensitivity**: Covariance estimation depends on the diversity of the calibration corpus. Extreme domain shifts between calibration and test distributions may degrade factor accuracy.
-2. **Fixed Rank Allocation**: In its default configuration, `aa\_svd\_compressor` applies a uniform rank $r$ across all factorized layers rather than dynamically adjusting ranks per layer based on individual singular value spectra.
+\subsection{Hardware and Architectural Constraints}
+\begin{itemize}
+\item \textbf{Rank Granularity:} Factorized ranks must divide cleanly by attention head count ($r \pmod H == 0$) to avoid irregular tensor padding.
+\item \textbf{Kernel Launch Overhead:} On short sequences ($N < 16$), executing dual factorized matrix products incurs launch overhead compared to a single fused GEMM.
+\item \textbf{Hardware Acceleration Boundaries:} Hardware speedup for 2:4 structured sparsity requires tensor cores supported on Ampere or newer architectures.
+\end{itemize}
+
+\subsection{Numerical Precision Limits}
+Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
+
+\subsection{Long-Context Activation Memory Footprints}
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{aa\_svd\_compressor} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
+
+\subsection{Sensitivity to Non-Uniform Calibration Sequences}
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

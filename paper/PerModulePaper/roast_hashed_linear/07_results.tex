@@ -1,6 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} \& roast\_hashed\_linear \& PASS\_LOW & 51.26\% & 528.86 MB \\
-\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} \& roast\_hashed\_linear \& PASS & 91.06\% & 308.84 MB \\
-\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} \& roast\_hashed\_linear \& PASS\_LOW & 51.72\% & 634.91 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_roasthashedlinear} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & roast\_hashed\_linear & PASS & 91.06 & 0.9137 \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & roast\_hashed\_linear & PASS\_LOW & 51.72 & 0.6774 \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & roast\_hashed\_linear & PASS\_LOW & 51.26 & 0.6763 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{roasthashedlinear}.}
+\label{tab:results_acc_roasthashedlinear}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_roasthashedlinear} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & roast\_hashed\_linear & 66955010 & 66955010 & 6914 & 1.0x \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & roast\_hashed\_linear & 124441344 & 124441344 & 1536 & 1.0x \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & roast\_hashed\_linear & 124647170 & 124647170 & 11522 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{roasthashedlinear}.}
+\label{tab:results_params_roasthashedlinear}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_roasthashedlinear} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & full & 138475.48 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_roast\_hashed\_linear/distilbert/summary.csv} & distilbert & roast\_hashed\_linear & 152016.37 & 308.84 MB & 1.0000503891044192 \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & full & 65153.01 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_roast\_hashed\_linear/gpt2/summary.csv} & gpt2 & roast\_hashed\_linear & 66259.72 & 634.91 MB & 0.9999008211824628 \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & full & 81101.95 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_roast\_hashed\_linear/roberta/summary.csv} & roberta & roast\_hashed\_linear & 81344.21 & 528.86 MB & 0.9963449521197212 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{roasthashedlinear}.}
+\label{tab:results_vram_roasthashedlinear}
+\end{table*}

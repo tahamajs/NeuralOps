@@ -1,35 +1,25 @@
-\section{01 Intro}
+\section{Introduction}
 
- 1. Introduction
-Full quadratic attention combines local syntactic processing with global context integration into a single expensive operation. `aegis\_hybrid` decouples this into two specialized branches: a local sliding window for high-resolution near-token interactions and a global low-rank projection for broad sequence aggregation.
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
+The \texttt{aegishybrid} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{aegishybrid} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
+\subsection{Arithmetic Intensity and the Memory Wall}
+During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
+\[
+\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
+\]
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{aegishybrid} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
-\subsection{1. Executive Abstract \& Architectural Motivation}
-Standard Multi-Head Attention (MHA) architectures suffer from two fundamental bottlenecks that constrain their scalability and parameter efficiency:
-1. **Quadratic Computational \& Memory Complexity ($\mathcal{O}(L^2)$)**: Dense token-to-token all-pairs dot-product attention computes an affinity matrix of size $L \times L$. For long document reasoning and agentic workflows, memory footprint scales quadratically, quickly exceeding hardware SRAM and high-bandwidth memory (HBM).
-2. \textbf{Homogeneous Interaction Density}: Standard Transformer self-attention treats all token pairs with the same mathematical formulation. In natural language, local syntactic interactions (such as compound words, immediate grammatical dependencies, and local phrase semantics) demand sharp, high-resolution focus, whereas document-level themes and long-range semantic coherence do not require individual pairwise precision, but rather smooth associative aggregation.
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{aegishybrid} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\item \textbf{Guaranteed Fallback Integrity:} Automated error monitoring that reverts to dense baseline projections if relative parameter deviation breaches safety tolerances.
+\end{itemize}
 
-\textbf{AEGIS-Hybrid Attention} introduces a unified, mathematically rigorous hybrid architecture designed to achieve high parameter efficiency, linear asymptotic computational scaling, and lossless knowledge transfer from pretrained models.
-
-\subsubsection{Key Architectural Pillars:}
-
-1. \textbf{Dual-Pathway Local/Global Decomposition}:
-   - \textbf{Local Sliding-Window Pathway}: Computes exact, high-resolution softmax attention over a local context window $W$ (default $W=128$), preserving critical local syntactic and n-gram dependencies.
-   - \textbf{Global Kernelized Linear Pathway}: Computes non-negative kernel attention via feature map $\phi(x) = \operatorname{ELU}(x) + 1.0 > 0$. Using the associative property of matrix multiplication, global context is computed in $\mathcal{O}(L \cdot d_h^2)$ time with zero quadratic memory overhead.
-2. \textbf{Token-Importance Pruning Gate}:
-   - Computes an input-conditioned scalar pruning weight $g_t = \sigma(\operatorname{PruneGate}(x_t)) \in (0, 1)$ per token.
-   - Keys and values entering the global linear state are modulated as $K_g = g \odot K$ and $V_g = g \odot V$, suppressing irrelevant padding and noise tokens before state accumulation.
-3. \textbf{Adaptive Learned Gated Fusion}:
-   - Rather than relying on static or heuristic weighting between local and global signals, a token-level fusion gate $\alpha_t = \sigma(\operatorname{FusionGate}(x_t) + 1.8)$ dynamically arbitrates the contribution of each pathway:
-     $$O_t = \alpha_t \odot O_t^{\text{local}} + (1 - \alpha_t) \odot O_t^{\text{global}}$$
-   - The $+1.8$ bias initialization initializes the module to favor the stable local window ($\alpha \approx 0.86$) before progressively adapting global features during fine-tuning.
-4. \textbf{Persistent \texttt{FactorizedLinear} Projections with Residual LoRA Adapters}:
-   - Replaces monolithic projection matrices ($W_Q, W_K, W_V, W_O$) with rank-$r$ SVD factorizations ($W \approx W_1 W_2$) initialized from pretrained weights.
-   - Crucially integrates trainable low-rank adapters ($W = W_1 W_2 + \frac{\alpha}{r} B A$) with zero-initialized $B \cdot A = 0$. This preserves pretrained representations upon injection while ensuring all projection layers remain fully trainable during downstream recovery fine-tuning.
-5. \textbf{Strict Causal Safety \& Pragmatic Decoder Handling}:
-   - Automatically detects autoregressive decoders vs. bidirectional encoders, enforcing lower-triangular causal masks on the local sliding window.
-   - For bidirectional encoders, global linear attention operates in true $\mathcal{O}(N)$ via associative matrix accumulation. For deep causal decoders where FP16 prefix sums (\texttt{cumsum}) suffer from numerical accumulation instability, Aegis-Hybrid gracefully degrades to pure causal local-window attention, unlocking immediate and stable convergence.
-   - Integrates Rotary Position Embeddings (RoPE) applied to query and key projections \textit{prior} to pathway splitting, ensuring both local and global attention remain spatially aware.
-
----
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows: Section 2 reviews foundational compression paradigms. Section 3 formalizes mathematical notation. Section 4 presents core derivations and algorithms. Section 5 describes architectural integration. Section 6 outlines experimental protocols. Section 7 presents empirical results. Section 8 provides detailed analytical breakdowns. Section 9 discusses implications. Section 10 outlines limitations. Section 11 concludes.

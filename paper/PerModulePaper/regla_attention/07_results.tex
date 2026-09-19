@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for regla_attention.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_reglaattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & regla & PASS\_NO\_COMPRESSION & 79.82 & 0.8108 \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & regla & PASS\_NO\_COMPRESSION & 57.45 & 0.6996 \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & regla & PASS\_NO\_COMPRESSION & 64.79 & 0.7149 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{reglaattention}.}
+\label{tab:results_acc_reglaattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_reglaattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & regla & 66955010 & 71254280 & 4280832 & 1.0x \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & regla & 124441344 & 133039884 & 8561664 & 1.0x \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & regla & 124647170 & 140332814 & 8561664 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{reglaattention}.}
+\label{tab:results_params_reglaattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_reglaattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & full & 50660.12 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & regla & 21570.51 & 374.65 MB & 0.0000 \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & full & 28366.76 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & regla & 5001.6 & 1060.01 MB & 0.0000 \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & full & 28714.19 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_regla/roberta/summary.csv} & roberta & regla & 11346.85 & 749.59 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{reglaattention}.}
+\label{tab:results_vram_reglaattention}
+\end{table*}

@@ -1,12 +1,52 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
-From `results/unified_admm/*/summary.csv`:
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-<!-- source: results/unified_admm/distilbert/summary.csv line 2 -->
-| Model | Status | Accuracy (%) | F1 Score | Params | Peak VRAM (MB) | Tokens/sec |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_admm/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> |
+| results/unified_admm/distilbert/summary.csv | distilbert | admm | PASS | 90.37% <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 0.905 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | admm | PASS_NO_COMPRESSION | 79.36% <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 0.7978 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | full | PASS | 67.55% <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 0.5501 <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | admm | PASS | 88.42% <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 0.8947 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> |
+| results/unified_admm/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_admm/roberta/summary.csv line 2 --> |
+| results/unified_admm/roberta/summary.csv | roberta | admm | PASS | 62.04% <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 0.6505 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm_compressor | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
 |---|---|---|---|---|---|---|
-| DistilBERT | PASS | 90.37% <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 0.9050 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 183.07 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 50,559.5 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> |
-| RoBERTa | PASS | 62.04% <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 0.6505 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 124,647,170 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 520.18 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 21,347.7 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> |
-| GPT-2 | PASS_NO_COMPRESSION | 79.36% <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 0.7978 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 124,441,344 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 628.41 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 19,301.5 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> |
-| Qwen 3.5 | PASS | 88.42% <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 0.8947 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 763,217,728 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 1851.31 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 1,099.7 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> |
+| results/unified_admm/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> |
+| results/unified_admm/distilbert/summary.csv | distilbert | admm | 66955010 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 66955010 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 0 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | admm | 124441344 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 124441344 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 0 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | full | 763217728 <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 763217728 <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 0 <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 1.0x <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | admm | 763217728 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 763217728 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 5776384 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 1.0x <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> |
+| results/unified_admm/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_admm/roberta/summary.csv line 2 --> |
+| results/unified_admm/roberta/summary.csv | roberta | admm | 124647170 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 124647170 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 0 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_admm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm_compressor | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_admm/distilbert/summary.csv | distilbert | full | 51199.68 tok/s <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 182.94 MB <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_admm/distilbert/summary.csv line 2 --> |
+| results/unified_admm/distilbert/summary.csv | distilbert | admm | 50559.49 tok/s <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 183.07 MB <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> | 0.4087498231888554 <!-- source: results/unified_admm/distilbert/summary.csv line 3 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | full | 23706.62 tok/s <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_admm/gpt2/summary.csv line 2 --> |
+| results/unified_admm/gpt2/summary.csv | gpt2 | admm | 19301.53 tok/s <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 628.41 MB <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> | 0.0 <!-- source: results/unified_admm/gpt2/summary.csv line 3 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | full | 1287.4 tok/s <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 1810.59 MB <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_admm/qwen3_5/summary.csv line 2 --> |
+| results/unified_admm/qwen3_5/summary.csv | qwen3_5 | admm | 1099.69 tok/s <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 1851.31 MB <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> | 0.4157980064416287 <!-- source: results/unified_admm/qwen3_5/summary.csv line 3 --> |
+| results/unified_admm/roberta/summary.csv | roberta | full | 23915.43 tok/s <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_admm/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_admm/roberta/summary.csv line 2 --> |
+| results/unified_admm/roberta/summary.csv | roberta | admm | 21347.69 tok/s <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 520.18 MB <!-- source: results/unified_admm/roberta/summary.csv line 3 --> | 0.4280215595989844 <!-- source: results/unified_admm/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm | Elapsed 0.557s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | 194.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 10 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | admm_compressor | Elapsed 0.469s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | 194.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 11 --> |

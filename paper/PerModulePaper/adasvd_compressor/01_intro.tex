@@ -1,13 +1,25 @@
-\section{01 Intro}
+\section{Introduction}
 
- 1. Introduction
-Uniform rank truncation wastes capacity on parameter-sensitive projections while insufficiently compressing redundant layers. `adasvd\_compressor` calculates the nuclear norm of each layer's singular spectrum, allocating higher ranks to projections with broad singular spectra and lower ranks to rapidly decaying matrices. Factors are initialized with symmetric square-root singular values and refined via Alternating Least Squares (ALS).
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
+The \texttt{adasvdcompressor} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{adasvdcompressor} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
+\subsection{Arithmetic Intensity and the Memory Wall}
+During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
+\[
+\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
+\]
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{adasvdcompressor} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
-\subsection{1. Executive Abstract \& Theoretical Motivation}
-Uniform low-rank truncation across all neural network layers causes non-uniform accuracy degradation because different layers exhibit distinct singular value decay rates and information capacities. Critical transformer projections---such as self-attention key/query matrices and MLP gate projections---suffer severe performance drops under rigid rank constraints, whereas redundant layers can withstand aggressive rank reduction.
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{adasvdcompressor} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\item \textbf{Guaranteed Fallback Integrity:} Automated error monitoring that reverts to dense baseline projections if relative parameter deviation breaches safety tolerances.
+\end{itemize}
 
-\texttt{AdaSVDCompressor} addresses this imbalance by implementing an adaptive global rank allocation framework driven by layer-wise Nuclear Norm ($\|W\|_*$) importance metrics, combined with alternating least-squares iterative factor refinement. By evaluating the spectral energy distribution across all linear operators in a model, \texttt{AdaSVDCompressor} dynamically assigns rank budgets proportional to each layer's information capacity. Following initial truncated SVD initialization, the engine executes alternating optimization steps to refine left- and right-singular factor matrices ($U_r$ and $V_r^T$), compensating for cross-layer rank truncation errors under a global parameter removal target (\texttt{target_param_ratio}).
-
----
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows: Section 2 reviews foundational compression paradigms. Section 3 formalizes mathematical notation. Section 4 presents core derivations and algorithms. Section 5 describes architectural integration. Section 6 outlines experimental protocols. Section 7 presents empirical results. Section 8 provides detailed analytical breakdowns. Section 9 discusses implications. Section 10 outlines limitations. Section 11 concludes.

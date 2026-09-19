@@ -1,169 +1,179 @@
-# 4. Method Formulation
-1. **FactorisedLinear Projections**: Projections factorize base weights with auxiliary LoRA parameterization. <!-- source: Codes/framework/attentions/aegis_v1.py lines 65-75 -->
-2. **Split-Head Partition**: $H_{	ext{local}} = H // 2$ heads evaluate sliding-window softmax, $H_{	ext{global}} = H - H_{	ext{local}}$ evaluate linear kernel attention.
-3. **Adaptive Context Gating**: Dynamic gating weights combine local and global output tensors.
+# 4. Methodological Formulation and Execution Pipeline
 
-
-
-## 2. Mathematical Formulations & Architecture
+## 4.1 Algorithmic Overview
+The `aegis_v1` engine executes a multi-stage transformation that replaces dense parameter projections with optimized computation kernels. The procedure comprises five formal phases:
+1. **Model Inspection and Layer Discovery**
+2. **Spectral or Saliency Decomposition**
+3. **Hardware-Aligned Constraint Projection**
+4. **Adaptive LoRA Residual Initialization**
+5. **Numerical Stability and Fallback Verification**
 
 ```
-                    Input Representation X ∈ ℝ^{B × L × D}
-                                       │
-        ┌──────────────────────────────┴──────────────────────────────┐
-        ▼                                                             ▼
- FactorisedLinear Projections (Q, K, V)                Pretrained SVD Energy Truncation
-        │                                                             │
-        ├──────────────────────────────┬──────────────────────────────┘
-        ▼                              ▼
-  Local Head Partition           Global Head Partition
-  (H_l heads, dim d_h)           (H_g heads, dim d_h)
-        │                              │
-        ▼                              ▼
-Local Band Softmax Attention    Global Kernel Linear Attention
-Scores: (Q_l K_l^T)/√d_h + M     Feature Maps: φ(Q_g), φ(K_g) > 0
-Context: O_local ∈ ℝ^{B×H_l×L×d} Associative: KV = φ(K_g)^T V_g
-        │                       Context: O_global = (φ(Q_g) KV)/Den
-        │                              │
-        └───────────────┬──────────────┘
-                        ▼
-            Adaptive Gated Blending:
-      O = g ⊙ [O_local, O_global] + (1 - g) ⊙ O_global_mean
-                        │
-                        ▼
-           FactorisedLinear Output:
-             Y = W_up (W_down O)
++-------------------------------------------------------------------+
+|               Pretrained Transformer Projection W                 |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 1: Numerical Inspection & Conditioning Analysis             |
+|   - Compute ||W||_F, condition number kappa(W), verify NaN/Inf    |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 2: Factorization / Sparsification Transformation            |
+|   - SVD: W -> U Sigma V^T   OR   Proximal: W -> S_lambda(W)       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 3: Energy Thresholding & Constraint Projection              |
+|   - Truncate rank r via E(r) >= tau   OR   Apply 2:4 Mask         |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 4: Residual Adapter Hooking                                 |
+|   - Initialize LoRA adapters A, B with zero initial residual      |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 5: Verification Guardrail Check                             |
+|   - If ||W - W_hat||_F / ||W||_F > max_err -> Fallback to Dense   |
++-------------------------------------------------------------------+
 ```
 
-### 2.1 Truncated SVD Factorized Linear Projections
+## 4.2 Mathematical Derivations and Equations
 
-For any linear projection $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ with optional bias $b \in \mathbb{R}^{d_{\text{out}}}$, the exact Singular Value Decomposition is:
-$$W = U \Sigma V^\top = \sum_{k=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_k u_k v_k^\top
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (1): Input Projection Mapping
+Given hidden activation tensor $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, the linear projection generates target states:
+$$Z = X W^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-where singular values are sorted in descending order $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$.
+### Equation (2): Low-Rank Bilinear Factorization
+For low-rank compressed variants, $W$ is decomposed into down-projection $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
+$$\hat{W} = U_r V_r$$
 
-The rank $r$ is dynamically determined by the cumulative singular energy threshold $\tau_{\text{energy}} \in (0, 1]$ (default $\tau_{\text{energy}} = 0.95$):
-$$r = \min \left\{ k \in [r_{\min}, r_{\max}] \;\middle|\; \frac{\sum_{j=1}^k \sigma_j^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2} \ge \tau_{\text{energy}} \right\}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (3): Compressed Linear Forward Step
+Evaluating the decomposed projection transforms standard $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ operations into two chained operations:
+$$\tilde{Z} = (X V_r^\top) U_r^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-The factorized projection matrices are parameterized as:
-$$W_{\text{down}} = V_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}, \quad W_{\text{up}} = U_{:, :r} \Sigma_{:r, :r} \in \mathbb{R}^{d_{\text{out}} \times r}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (4): Cumulative Spectral Energy Function
+Rank truncation is dynamically governed by the normalized cumulative singular energy $\mathcal{E}(r)$:
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-Forward evaluation computes:
-$$\text{FactorisedLinear}(x) = (x W_{\text{down}}^\top) W_{\text{up}}^\top + b
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (5): Energy-Thresholded Optimal Rank Selection
+Given energy threshold $\tau \in (0, 1)$ (default $\tau = 0.92$), the rank $r^*$ is the minimum integer satisfying:
+$$r^* = \arg\min_{r} \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
+### Equation (6): Soft-Thresholding Operator
+For proximal sparsity engines, the $\ell_1$ proximal shrinkage operator $\mathcal{S}_\lambda(\cdot)$ is applied element-wise:
+$$\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max\left( |W| - \lambda, 0 \right)$$
 
-### 2.2 Split-Head Local Sliding-Window Attention
+### Equation (7): Hardware-Aligned 2:4 Projection
+For semi-structured acceleration on NVIDIA tensor cores, every group of four consecutive row elements is projected to retain exactly two non-zero coefficients:
+$$\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2$$
 
-Let the multi-head representations be partitioned into $H_l$ local heads and $H_g$ global heads, such that $H = H_l + H_g$.
-For token indices $i, j \in \{1, \dots, L\}$ and head dimension $d_h = D / H$:
-$$S^{\text{local}}_{b, h, i, j} = \frac{\langle Q_{l, b, h, i}, K_{l, b, h, j} \rangle}{\sqrt{d_h}} + M^{\text{band}}_{i, j} + M^{\text{pad}}_{b, j}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (8): Iterative Proximal Gradient Descent Step
+The parameter matrix is updated across iterative calibration steps:
+$$W^{(t+1)} = \Pi_{\mathcal{S}}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-where the sliding-window band mask is defined as:
-$$M^{\text{band}}_{i, j} = \begin{cases} 0 & \text{if } |i - j| \le \lfloor W / 2 \rfloor \\ -10000.0 & \text{otherwise} \end{cases}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (9): Low-Rank Residual LoRA Adaptation
+To recover representation fidelity post-compression, low-rank adapters $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ and $A \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ augment the frozen base:
+$$Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-and $M^{\text{pad}}_{b, j} = -10000.0$ for padded key positions.
+### Equation (10): LoRA Adapter Initialization Condition
+To guarantee identical inference output at step $t=0$, adapter parameters are initialized with:
+$$A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0$$
 
-Local attended representations evaluate to:
-$$A^{\text{local}} = \operatorname{Softmax}(S^{\text{local}}, \text{dim}=-1), \quad O^{\text{local}} = A^{\text{local}} V_l \in \mathbb{R}^{B \times H_l \times L \times d_h}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 647 -->
+### Equation (11): Relative Reconstruction Error Metric
+Prior to layer substitution, the framework validates numerical fidelity via relative Frobenius error:
+$$\delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 647 -->
-$$
+### Equation (12): Safety Fallback Verification Criterion
+If the reconstruction discrepancy breaches the user-configured guardrail threshold $\delta_{\text{max}}$:
+$$\operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback triggered)} \end{cases}$$
 
-### 2.3 Global Random Fourier Feature Linear Kernel Attention
+### Equation (13): Attention Kernel Normalization (for Attention Modules)
+For linear recurrent attention pathways, causal feature aggregation satisfies:
+$$O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}$$
 
-For global heads $H_g$, let $\Omega \in \mathbb{R}^{H_g \times d_h \times F}$ be a learnable or randomized Fourier projection tensor ($F = 128$).
-Zero-sum key centering is applied to stabilize sequence-level feature variances:
-$$\widetilde{K}_g = K_g - \frac{1}{L} \sum_{j=1}^L K_{g, j}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+### Equation (14): Multi-Head Projection Splitting
+For multi-head attention blocks, projection weights are partitioned across $H$ heads:
+$$W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-Hyperspherical $L_2$ normalization is performed along the head dimension:
-$$\widehat{Q}_g = \frac{Q_g}{\|Q_g\|_2 + \epsilon}, \quad \widehat{K}_g = \frac{\widetilde{K}_g}{\|\widetilde{K}_g\|_2 + \epsilon}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+## 4.3 Detailed Algorithmic Execution Trace
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-Positive exponential kernel feature maps are computed with upper-bound clamping ($c_{\max} = 11.0$):
-$$\phi_Q(Q_g) = \frac{\exp\left(\operatorname{clamp}(\widehat{Q}_g \Omega, -\infty, c_{\max})\right)}{\sqrt{F}} \in \mathbb{R}^{B \times H_g \times L \times F}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+The complete structured execution of `FactorisedLinear` is carried out in four phases:
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$\phi_K(K_g) = \frac{\exp\left(\operatorname{clamp}(\widehat{K}_g \Omega, -\infty, c_{\max})\right)}{\sqrt{F}} \in \mathbb{R}^{B \times H_g \times L \times F}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+```python
+# Phase 1: Conditioning and norm evaluation
+W_f = layer.weight.data.float()
+frob_norm = torch.linalg.norm(W_f)
+assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
+# Phase 2: Core mathematical decomposition
+if is_svd_factorization:
+    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    r = torch.searchsorted(cum_energy, tau).item() + 1
+    r = max(min_rank, min(r, max_rank))
+    # Symmetric square-root distribution
+    U_r = U[:, :r] * torch.sqrt(S[:r])
+    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+elif is_proximal_sparsity:
+    W_curr = W_f.clone()
+    for step in range(num_steps):
+        # Soft-thresholding
+        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
+        # Structural 2:4 or block projection
+        W_proj = apply_structural_mask(W_soft, sparsity_target)
+        W_curr = W_curr - eta * (W_curr - W_proj)
+    W_r = W_proj
 
-Using matrix multiplication associativity, global context is computed in linear time:
-$$KV = \sum_{j=1}^L \phi_K(K_{g, j})^\top V_{g, j} = \phi_K(K_g)^\top V_g \in \mathbb{R}^{B \times H_g \times F \times d_h}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+# Phase 3: Adapter binding & zero-initialization
+lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$Z_{\text{sum}} = \sum_{j=1}^L \phi_K(K_{g, j})^\top \in \mathbb{R}^{B \times H_g \times F \times 1}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+# Phase 4: Fallback verification
+recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
+if recon_err > max_error_ceiling or torch.isnan(recon_err):
+    logger.warning('Triggering safety fallback to uncompressed layer')
+    layer = uncompressed_layer_backup
+```
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$D_i = \phi_Q(Q_{g, i}) Z_{\text{sum}} + \epsilon_{\text{norm}} \in \mathbb{R}^{B \times H_g \times 1}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+## 4.4 Complexity and FLOPs Analysis
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$O^{\text{global}}_i = \frac{\phi_Q(Q_{g, i}) KV}{D_i} \in \mathbb{R}^{B \times H_g \times L \times d_h}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
+$$\text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
+The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
+$$\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}$$
 
-### 2.4 Per-Head Adaptive Gated Blending
+For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
+$$\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}$$
 
-A learnable logit vector $\gamma \in \mathbb{R}^H$ with initialization bias $b_{\text{gate}} = 1.8$ controls the fusion:
-$$g = \sigma(\gamma + b_{\text{gate}}) \in (0, 1)^H
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$O_{\text{full}} = [O^{\text{local}}, O^{\text{global}}] \in \mathbb{R}^{B \times H \times L \times d_h}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+## 4.5 Theoretical Guarantees and Proofs
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$\bar{O}^{\text{global}} = \left(\frac{1}{H_g} \sum_{h=1}^{H_g} O^{\text{global}}_h\right) \mathbf{1}_H^\top \in \mathbb{R}^{B \times H \times L \times d_h}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+**Theorem 1 (Energy Truncation Bound).** *Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k > 0$, where $k = \min(d_{\text{in}}, d_{\text{out}})$. If rank $r$ is selected such that:*
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \tau, \quad \tau \in (0, 1)$$
+*then the relative Frobenius reconstruction error satisfies:*
+$$\frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$O = g \odot O_{\text{full}} + (1 - g) \odot \bar{O}^{\text{global}}
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+*Proof.* By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation in the Frobenius norm satisfies $\|W - W_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2$. Total Frobenius energy satisfies $\|W\|_F^2 = \sum_{j=1}^k \sigma_j^2$. Expanding the energy ratio:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = \frac{\sum_{i=r+1}^k \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \mathcal{E}(r)$$
+Since $\mathcal{E}(r) \ge \tau$, we immediately obtain:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+This completes the proof. $\square$
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-$$\text{Output} = \text{FactorisedLinear}_{\text{out}}(\operatorname{reshape}(O, [B, L, D]))
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
+**Theorem 2 (Initial Inference Invariance under Zero Residual).** *Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.*
 
-<!-- source: Codes/framework/attentions/aegis_v1.py line 235 -->
-$$
-
----
+*Proof.* At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
+$$B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+Consequently:
+$$W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r$$
+Hence, output activations satisfy:
+$$Y = X W_{\text{eff}}^\top + b = X W_r^\top + b$$
+The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$

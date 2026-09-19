@@ -1,12 +1,4 @@
-\section{00 Meta}
-
- ADMM Pruner with Distillation and Dynamic Rho (admm\_pruner)
-
-**Registry Keys**: `admm\_pruner`, `admm\_pruner\_distill`, `admm\_pruner\_factory` 
-**Source**: `Codes/framework/compression\_engine/admm\_pruner.py` (768 lines)
-**Type**: Structured and Semi-Structured Pruning with Layer-Wise Distillation and Dynamic Penalty Scheduling
-**Base Class**: `ADMMPruner(BaseCompressor)`
-
- Abstract
-`admm\_pruner` optimizes structured (2:4 and block) pruning masks using an augmented Lagrangian framework coupled with layer-wise feature reconstruction distillation, Straight-Through Estimators (STE), and dynamic penalty $
-ho$ scheduling based on primal and dual residual ratios. Across DistilBERT, RoBERTa, and Qwen 3.5, it prunes 36 to 72 layers with strict 50% sparsity while preserving high classification accuracy (84.29% on DistilBERT, 80.62% on RoBERTa, 78.21% on Qwen 3.5).
+\title{\textbf{Admm Pruner: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

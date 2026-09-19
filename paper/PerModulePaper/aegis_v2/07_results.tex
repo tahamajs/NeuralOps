@@ -1,1 +1,67 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\\midrule DistilBERT & PASS & 72.36 & 66.95M & 55.52M & 1.206$\times$ & 195.7 \\ RoBERTa & PASS & 62.39 & 124.65M & 108.87M & 1.145$\times$ & 591.2 \\ GPT-2 & PASS\_LOW & 52.98 & 124.44M & 101.58M & 1.225$\times$ & 476.0 \\\bottomrule\end{tabular}\caption{Benchmark results from \texttt{results/unified\_aegis\_v2/*/summary.csv}.}\label{tab:aegis_v2_results}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_aegisv2} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & aegis\_v2 & PASS & 72.36 & 0.7737 \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & aegis\_v2 & PASS\_LOW & 52.98 & 0.6782 \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & aegis\_v2 & PASS & 62.39 & 0.7163 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aegisv2}.}
+\label{tab:results_acc_aegisv2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_aegisv2} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & aegis\_v2 & 66955010 & 55523882 & 1545000 & 1.2059x \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & aegis\_v2 & 124441344 & 101579088 & 3090000 & 1.2251x \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & aegis\_v2 & 124647170 & 108872018 & 3090000 & 1.1449x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{aegisv2}.}
+\label{tab:results_params_aegisv2}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_aegisv2} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & full & 51105.1 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & aegis\_v2 & 14953.19 & 195.7 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & full & 23739.6 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & aegis\_v2 & 8738.48 & 476.0 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & full & 22993.16 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & aegis\_v2 & 7112.56 & 591.16 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{aegisv2}.}
+\label{tab:results_vram_aegisv2}
+\end{table*}

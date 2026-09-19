@@ -1,16 +1,43 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_liftr/roberta/summary.csv | liftr | PASS | 80.16% <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 585.62 MB <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
-| results/unified_liftr/distilbert/summary.csv | liftr | PASS | 90.14% <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> |
-| results/unified_liftr/gpt2/summary.csv | liftr | PASS | 61.01% <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 634.91 MB <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 27.04 ms <!-- source: results/benchmark_summary_v2.csv line 674 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 674 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 25.29 ms <!-- source: results/benchmark_summary_v2.csv line 675 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 675 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 27.23 ms <!-- source: results/benchmark_summary_v2.csv line 676 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 676 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 29.18 ms <!-- source: results/benchmark_summary_v2.csv line 677 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 677 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 17.91 ms <!-- source: results/benchmark_summary_v2.csv line 678 --> | 429.4 MB <!-- source: results/benchmark_summary_v2.csv line 678 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 18.19 ms <!-- source: results/benchmark_summary_v2.csv line 679 --> | 429.4 MB <!-- source: results/benchmark_summary_v2.csv line 679 --> |
-| results/all_121_compressors_gpu_matrix.csv | liftr | PASS | Comp Ratio: 1.0x, Time: 0.169s <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_liftr/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> |
+| results/unified_liftr/distilbert/summary.csv | distilbert | liftr | PASS | 90.14% <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 0.9029 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | liftr | PASS | 61.01% <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 0.6654 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | liftr | PASS | 80.16% <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 0.8309 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | liftr | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_liftr/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> |
+| results/unified_liftr/distilbert/summary.csv | distilbert | liftr | 66955010 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 66955010 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 4135682 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | liftr | 124441344 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 124441344 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 1536 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | liftr | 124647170 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 124647170 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 7679234 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | liftr | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_liftr/distilbert/summary.csv | distilbert | full | 182587.66 tok/s <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 389.51 MB <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_liftr/distilbert/summary.csv line 2 --> |
+| results/unified_liftr/distilbert/summary.csv | distilbert | liftr | 182296.25 tok/s <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 337.59 MB <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | full | 65239.58 tok/s <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> |
+| results/unified_liftr/gpt2/summary.csv | gpt2 | liftr | 68286.26 tok/s <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 634.91 MB <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | full | 83293.19 tok/s <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> |
+| results/unified_liftr/roberta/summary.csv | roberta | liftr | 92788.29 tok/s <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 585.62 MB <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | liftr | Elapsed 0.169s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |

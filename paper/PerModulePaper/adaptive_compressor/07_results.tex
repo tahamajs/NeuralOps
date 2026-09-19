@@ -1,20 +1,67 @@
-\section{Empirical Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-\subsection{Performance on Unified Evaluation Suite}
-Table~\ref{tab:adaptive_comp_results} summarizes empirical performance across DistilBERT, RoBERTa, and GPT-2.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_adaptivecompressor} details empirical evaluation metrics across target backbones.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lcccccc}
+\begin{tabular}{llcccc}
 \toprule
-\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
 \midrule
-DistilBERT \& PASS & 88.07 & 66.95M & 58.11M & 1.152$\times$ & 382.7 \\
-RoBERTa    \& PASS & 77.87 & 124.65M & 106.95M & 1.165$\times$ & 679.5 \\
-GPT-2      \& PASS & 77.52 & 124.44M & 106.75M & 1.166$\times$ & 754.8 \\
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & adaptive\_compressor & PASS\_NO\_COMPRESSION & 90.71 & 0.9099 \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & adaptive\_compressor & PASS & 76.95 & 0.8016 \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & PASS\_NO\_COMPRESSION & 85.32 & 0.8447 \\
 \bottomrule
 \end{tabular}
-\caption{Benchmark results from \texttt{results/unified\_adaptive\_compressor/*/summary.csv}.}
-\label{tab:adaptive_comp_results}
-\end{table}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{adaptivecompressor}.}
+\label{tab:results_acc_adaptivecompressor}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_adaptivecompressor} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & adaptive\_compressor & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & adaptive\_compressor & 124441344 & 124177153 & 326401 & 1.0021x \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & full & 127325954 & 127325954 & 0 & 1.0x \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & 127325954 & 127325954 & 1474560 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{adaptivecompressor}.}
+\label{tab:results_params_adaptivecompressor}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_adaptivecompressor} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & full & 50739.73 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_compressor/distilbert/summary.csv} & distilbert & adaptive\_compressor & 49536.87 & 183.07 MB & 0.0 \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & full & 23311.22 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_compressor/gpt2/summary.csv} & gpt2 & adaptive\_compressor & 22313.99 & 638.52 MB & 0.1982078150637553 \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & full & 25000.16 & 299.92 MB & 0.0000 \\
+\texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & 11130.61 & 326.48 MB & 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{adaptivecompressor}.}
+\label{tab:results_vram_adaptivecompressor}
+\end{table*}

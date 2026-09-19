@@ -1,1 +1,67 @@
-\section{Empirical Results}\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params} & \textbf{VRAM (MB)} \\\midrule DistilBERT \& PASS\_NO\_COMP & 61.81 & 67.74M & 329.5 \\ RoBERTa \& PASS\_NO\_COMP & 79.13 & 133.31M & 674.8 \\ GPT-2 \& PASS\_NO\_COMP & 70.99 & 126.01M & 589.4 \\\bottomrule\end{tabular}\caption{Empirical evaluation from \texttt{results/unified\_aegis\_v1/*/summary.csv}.}\label{tab:aegis_v1_results}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_aegisv1} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & aegis\_v1 & PASS\_NO\_COMPRESSION & 61.81 & 0.7209 \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & aegis\_v1 & PASS\_NO\_COMPRESSION & 70.99 & 0.7668 \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & aegis\_v1 & PASS\_NO\_COMPRESSION & 79.13 & 0.8131 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aegisv1}.}
+\label{tab:results_acc_aegisv1}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_aegisv1} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & aegis\_v1 & 66955010 & 67741538 & 786528 & 1.0x \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & aegis\_v1 & 124441344 & 126014400 & 1573056 & 1.0x \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & aegis\_v1 & 124647170 & 133307330 & 1573056 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{aegisv1}.}
+\label{tab:results_params_aegisv1}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_aegisv1} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & full & 39612.94 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v1/distilbert/summary.csv} & distilbert & aegis\_v1 & 12321.89 & 329.48 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & full & 23751.25 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v1/gpt2/summary.csv} & gpt2 & aegis\_v1 & 9887.94 & 589.37 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & full & 23473.61 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_v1/roberta/summary.csv} & roberta & aegis\_v1 & 6386.38 & 674.79 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{aegisv1}.}
+\label{tab:results_vram_aegisv1}
+\end{table*}

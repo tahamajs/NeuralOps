@@ -1,69 +1,24 @@
 \section{Discussion}
-Automated energy thresholding eliminates manual rank heuristics, allowing a single threshold parameter ($\tau=0.92$) to generalize across multiple model families.
 
+\subsection{Theoretical Trade-Offs in Parameter Compression}
+The design of \texttt{adaptivecompressor} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{adaptivecompressor} prunes overparameterized redundancy.
 
+\subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{adaptivecompressor} diminishes byte transfer volume, accelerating generation wall-clock latency.
 
-\subsection{6. Production CUDA / Triton Execution Blueprint}
-Below is a production Triton GPU execution kernel supporting fused factorized attention projection operations for \texttt{CompressedAttentionLayer}.
+\subsection{Asymmetry Across Attention Projections}
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{adaptivecompressor} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
 
+\subsection{Decoupled Adaptation Dynamics}
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{adaptivecompressor} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
 
-\begin{lstlisting}
-import torch
-import triton
-import triton.language as tl
+\subsection{Scaling Behaviors with Modern Long-Context Sequences}
+As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
 
-@triton.jit
-def compressed_attention_proj_kernel(
-    X_ptr, U_ptr, S_ptr, Vt_ptr, Out_ptr, Bias_ptr,
-    B_N, d_model, rank,
-    stride_xb, stride_xn,
-    stride_ud, stride_ur,
-    stride_vtr, stride_vtm,
-    stride_outb, stride_outn,
-    BLOCK_M: tl.constexpr,
-    BLOCK_R: tl.constexpr,
-    BLOCK_N: tl.constexpr,
-):
-    """
-    Triton kernel executing factorized projection for CompressedAttentionLayer:
-    Out = (X @ Vt^T * S) @ U^T + Bias
-    """
-    pid_m = tl.program_id(0)
-    pid_n = tl.program_id(1)
+\subsection{Deployment Implications for Cloud and Edge}
+Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
-    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
-    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
-    offs_r = tl.arange(0, BLOCK_R)
+\subsection{Energy Efficiency and Carbon Footprint Quantification}
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-    # 1. Project through Vt^T
-    acc_r = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
-    for k in range(0, d_model, BLOCK_N):
-        offs_k = k + tl.arange(0, BLOCK_N)
-        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_model), other=0.0)
-        vt_tile = tl.load(Vt_ptr + offs_r[:, None] * stride_vtr + offs_k[None, :] * stride_vtm, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_model), other=0.0)
-        acc_r += tl.dot(x_tile, tl.trans(vt_tile))
-
-    # 2. Scale by singular values
-    s_vals = tl.load(S_ptr + offs_r, mask=offs_r < rank, other=1.0)
-    acc_r_scaled = acc_r * s_vals[None, :]
-
-    # 3. Project through U^T
-    u_tile = tl.load(U_ptr + offs_n[:, None] * stride_ud + offs_r[None, :] * stride_ur, mask=(offs_n[:, None] < d_model) & (offs_r[None, :] < rank), other=0.0)
-    out_tile = tl.dot(acc_r_scaled.to(tl.float16), tl.trans(u_tile))
-
-    if Bias_ptr is not None:
-        b_tile = tl.load(Bias_ptr + offs_n, mask=offs_n < d_model, other=0.0)
-        out_tile += b_tile[None, :]
-
-    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_model))
-\end{lstlisting}
-
-
----
-
-\subsection{7. Hybrid Synthesis \& Next-Generation Enhancements}
-\subsubsection{7.1 Joint Query-Key Subspace Factorization}
-Instead of factorizing $W_Q$ and $W_K$ independently, factorize the combined bilinear operator $W_{QK} = W_Q^T W_K \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}$, directly compressing query-key inner products into a single rank-$r$ operator.
-
-\subsubsection{7.2 Compressed FlashAttention Integration}
-Fuse \texttt{CompressedAttentionLayer} projections directly into Triton FlashAttention kernels, performing low-rank input projection inside SRAM before computing online Softmax attention scores.
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{adaptivecompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

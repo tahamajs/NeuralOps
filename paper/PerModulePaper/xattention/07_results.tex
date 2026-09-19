@@ -1,3 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for xattention.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_xattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & xattention & PASS & 82.68 & 0.8492 \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & xattention & PASS & 86.24 & 0.8729 \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & xattention & PASS & 75.11 & 0.7737 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{xattention}.}
+\label{tab:results_acc_xattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_xattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & xattention & 66955010 & 67544840 & 589830 & 0.9913x \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & xattention & 126800640 & 127095564 & 1474572 & 0.9977x \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & xattention & 124647170 & 132913934 & 1179660 & 0.9378x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{xattention}.}
+\label{tab:results_params_xattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_xattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & full & 52812.7 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & xattention & 20082.63 & 325.64 MB & 0.0000 \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & full & 25052.91 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & xattention & 8079.92 & 336.93 MB & 0.0000 \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & full & 27944.4 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & xattention & 9791.96 & 656.41 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{xattention}.}
+\label{tab:results_vram_xattention}
+\end{table*}

@@ -1,16 +1,43 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_oats/roberta/summary.csv | oats | PASS | 69.38% <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 864.62 MB <!-- source: results/unified_oats/roberta/summary.csv line 3 --> |
-| results/unified_oats/distilbert/summary.csv | oats | PASS | 90.02% <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 226.48 MB <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> |
-| results/unified_oats/gpt2/summary.csv | oats | PASS | 76.03% <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 856.33 MB <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> |
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 25.64 ms <!-- source: results/benchmark_summary_v2.csv line 656 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 656 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 26.07 ms <!-- source: results/benchmark_summary_v2.csv line 657 --> | 571.8 MB <!-- source: results/benchmark_summary_v2.csv line 657 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 26.86 ms <!-- source: results/benchmark_summary_v2.csv line 658 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 658 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 27.32 ms <!-- source: results/benchmark_summary_v2.csv line 659 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 659 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 53.03 ms <!-- source: results/benchmark_summary_v2.csv line 660 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 660 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 51.94 ms <!-- source: results/benchmark_summary_v2.csv line 661 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 661 --> |
-| results/all_121_compressors_gpu_matrix.csv | oats | PASS | Comp Ratio: 1.0x, Time: 3.735s <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | 294.7 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_oats/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> |
+| results/unified_oats/distilbert/summary.csv | distilbert | oats | PASS | 90.02% <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 0.9019 <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | oats | PASS | 76.03% <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 0.7538 <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> |
+| results/unified_oats/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_oats/roberta/summary.csv line 2 --> |
+| results/unified_oats/roberta/summary.csv | roberta | oats | PASS | 69.38% <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 0.7652 <!-- source: results/unified_oats/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | oats | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_oats/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> |
+| results/unified_oats/distilbert/summary.csv | distilbert | oats | 66955010 <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 66955046 <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 36 <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 1.0x <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | oats | 124441344 <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 124441392 <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 48 <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 1.0x <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> |
+| results/unified_oats/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_oats/roberta/summary.csv line 2 --> |
+| results/unified_oats/roberta/summary.csv | roberta | oats | 124647170 <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 124647242 <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 72 <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 1.0x <!-- source: results/unified_oats/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | oats | Baseline FP32 <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | Reduced (1.0x) <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | 0 <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | 1.0x <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_oats/distilbert/summary.csv | distilbert | full | 58966.83 tok/s <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 182.94 MB <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_oats/distilbert/summary.csv line 2 --> |
+| results/unified_oats/distilbert/summary.csv | distilbert | oats | 48651.3 tok/s <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 226.48 MB <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> | 0.1780456701914469 <!-- source: results/unified_oats/distilbert/summary.csv line 3 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | full | 26794.54 tok/s <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_oats/gpt2/summary.csv line 2 --> |
+| results/unified_oats/gpt2/summary.csv | gpt2 | oats | 24247.27 tok/s <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 856.33 MB <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> | 0.1916344678029418 <!-- source: results/unified_oats/gpt2/summary.csv line 3 --> |
+| results/unified_oats/roberta/summary.csv | roberta | full | 26961.83 tok/s <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_oats/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_oats/roberta/summary.csv line 2 --> |
+| results/unified_oats/roberta/summary.csv | roberta | oats | 23332.35 tok/s <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 864.62 MB <!-- source: results/unified_oats/roberta/summary.csv line 3 --> | 0.1721547299789058 <!-- source: results/unified_oats/roberta/summary.csv line 3 --> |
+| results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | oats | Elapsed 3.735s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | 294.7 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 85 --> |
