@@ -812,3 +812,4 @@ TODO: Identify specific limitations and edge cases for this module.
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.93%** | -4.13% | 0.8792 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-spectron) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **60.50%** | -21.30% | 0.6002 | 1.15x | 6 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.90%** | -2.40% | 0.9158 | 1.15x | 6 | N/A | 2026-09-19 |
