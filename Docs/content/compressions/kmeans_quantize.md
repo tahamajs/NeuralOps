@@ -345,6 +345,7 @@ print('Compressed output logits:', outputs.logits.shape)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9089 | 2.73x | 36 | [svd-linear-attention-distilbert-sst2-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kmeans) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.40%** | -0.40% | 0.8129 | 2.73x | 36 | [svd-linear-attention-distilbert-mnli-full-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-kmeans) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.70%** | +0.40% | 0.9433 | 2.73x | 36 | [svd-linear-attention-distilbert-agnews-full-kmeans](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-kmeans) | 2026-09-19 |
 
 
 Evaluations across sequence lengths and model scales:
