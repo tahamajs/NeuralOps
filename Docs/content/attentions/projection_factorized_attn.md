@@ -23,3 +23,9 @@ from Codes.framework.attentions import ProjectionFactorizedAttention
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **84.52%** | -6.54% | 0.8525 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-projection-factorized-attn](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-projection-factorized-attn) | 2026-09-19 |
