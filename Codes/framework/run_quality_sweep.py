@@ -85,9 +85,16 @@ def _load_blocklist() -> dict:
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split("#", 1)
-            name = parts[0].strip()
-            reason = parts[1].strip() if len(parts) > 1 else "blocked"
+            # Support both comma-separated: module,REASON,"detail"
+            # and legacy space-separated: module # reason
+            if "," in line:
+                cparts = [c.strip().strip('"').strip("'") for c in line.split(",", 2)]
+                name = cparts[0]
+                reason = f"{cparts[1]}: {cparts[2]}" if len(cparts) > 2 else (cparts[1] if len(cparts) > 1 else "blocked")
+            else:
+                parts = line.split("#", 1)
+                name = parts[0].strip()
+                reason = parts[1].strip() if len(parts) > 1 else "blocked"
             if name:
                 blocked[name] = reason
     return blocked
@@ -1663,6 +1670,8 @@ def parse_args(argv=None):
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     ap.add_argument("--fresh", action="store_true",
                     help="Fresh clean sweep: do not resume or skip any modules")
+    ap.add_argument("--no_skip", action="store_true", default=False,
+                    help="Do not skip any requested modules even if already in summary.csv")
     ap.add_argument("--rank", type=int, default=None,
                     help="SVD/projection rank for attention modules")
     ap.add_argument("--lora_rank", type=int, default=32,
@@ -2421,8 +2430,7 @@ def run_single_module_main(args) -> dict:
     except Exception as e:
         LOG.warning("Could not write finetune_metadata.json: %s", e)
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
-    # Fast-path: load pre-tokenized batches from disk cache to skip dataset tokenization entirely
-    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else None
+    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else (out / "batch_cache")
     _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
     _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
     eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
@@ -2804,7 +2812,7 @@ def run_single_module_main(args) -> dict:
             elif (
                 name != "full"
                 and not injected
-                and not _name_injected
+                and not name.startswith("inject_")
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("num_injected_attention_layers", 0) == 0
                 and p_after >= p_before
@@ -3129,6 +3137,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--batch_size", str(args.batch_size),
         "--precision", str(args.precision),
         "--seed", str(args.seed),
+        "--cached_batches_dir", str(Path(args.output_dir or "results") / "batch_cache"),
     ]
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
@@ -3219,7 +3228,7 @@ def main():
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
                 
-    existing = set() if args.fresh else {
+    existing = set() if (args.fresh or getattr(args, "no_skip", False)) else {
         m for m, r in summary_dict.items()
         if r.get("status") in {"PASS", "PASS_LOW", "REJECTED_EXPANSION", "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED"}
     }
