@@ -296,6 +296,13 @@ print('Output logits shape:', outputs.logits.shape)
 
 ## Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **80.96%** | -10.10% | 0.8172 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-regla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-regla) | 2026-09-19 |
+
+
 Evaluations across sequence lengths and model scales:
 
 | Model | Dataset / Benchmark | Metric / Accuracy | Latency (ms) | Peak Memory (MB) |
@@ -336,4 +343,3 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
