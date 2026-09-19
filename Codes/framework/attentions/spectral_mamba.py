@@ -464,7 +464,7 @@ class SpectralMambaAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
@@ -477,6 +477,10 @@ class SpectralMambaAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if hidden_states is None:
+            hidden_states = kwargs.get("hidden_states") or (args[0] if args else None)
+        if hidden_states is None:
+            raise ValueError("SpectralMambaAttention forward requires hidden_states")
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
