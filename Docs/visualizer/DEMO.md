@@ -18,13 +18,19 @@ The visualizer provides real-time architectural telemetry across **13 attention 
 
 | Key / Control | Action | Visual Effect |
 | :--- | :--- | :--- |
-| **`P`** or **`▶ Present Mode`** | Toggle Cinematic Present Mode | Minimal HUD, 10-step progress scrubber, glassmorphic telemetry drawer |
-| **`L`** or **`📖 Learn Mode`** | Open Educational Atlas | Plain-English primers with KaTeX formulas for 8 core concepts |
-| **`M`** or **`📊 Matrix`** | Open Cross-Model Matrix | 6-model side-by-side comparison table with CSV export |
+| **`P`** or **`▶ Present`** | Toggle Presentation Mode | Minimal HUD, 10-step progress scrubber, glassmorphic telemetry drawer |
+| **`L`** or **`📖 Learn`** | Open Educational Atlas | Plain-English primers with KaTeX formulas for core concepts |
+| **`G`** or **`🎓 Lessons`** | Interactive Guided Lessons | 5 bite-sized architectural masterclasses with 3D camera guidance |
+| **`H`** or **`🔥 Heatmap`** | Attention Heatmap Explorer | Exact 4D attention weights tensor [layers, heads, seq, seq] with PNG export |
+| **`T`** or **`⚡ Predict`** | Token Prediction Playground | Autoregressive generation, temperature scaling, top-k logit distribution |
+| **`C`** or **`🎛️ Compress`** | SVD Compression Simulator | Live rank slider (8 to 384), weight matrix reconstruction, Apply to 3D |
+| **`🏁 Race`** | Side-by-Side Model Race | Dual-track real-time generation benchmark with live throughput & latency |
+| **`🔗 Share`** | Copy Shareable Permalink | Deep-linking URL hash `#model=roberta&module=svd&view=3d&layer=3` |
+| **`V`** or **`🎥 Record`** | 360° Orbit Video Exporter | 5s/10s cinematic showcase WebM/MP4 video recorder via MediaRecorder |
+| **`M`** or **`📊 Matrix`** | Cross-Architecture Matrix | 6-model side-by-side comparison table with CSV export |
 | **`+` / `=`** or **`➕`** | Zoom In | Smooth camera approach towards active layer (triggers LOD) |
 | **`-` / `_`** or **`➖`** | Zoom Out | Smooth camera retraction towards macro overview |
 | **`Space`** | Play / Pause Simulation | Halts or resumes 3D token particle physics |
-| **`[` / `]`** | Prev / Next Tour Step | Smooth camera flight to the next architectural milestone |
 | **`Esc`** | Exit Modal / Present Mode | Restores standard interactive exploration view |
 | **Mouse Left Drag** | Orbit Camera | Rotates view around the focused transformer layer |
 | **Mouse Right Drag** | Pan Camera | Lateral camera movement |
@@ -132,7 +138,7 @@ The visualizer provides real-time architectural telemetry across **13 attention 
 ---
 
 ## Deployment & Verification
-
+ 
 - **Hugging Face Space Repository:** `Hooshaai/3d-neural-architecture-visualizer`
 - **Upload Script:** `python3 upload_to_hf_spaces.py`
-- **Unit & Schema Test Suite:** `node --test Docs/visualizer/tests/*.test.js` (19 passing test suites)
+- **Unit & Schema Test Suite:** `node --test Docs/visualizer/tests/*.test.js` (40 passing unit tests across 15 suites, 100% pass rate)
