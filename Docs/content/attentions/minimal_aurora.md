@@ -162,7 +162,7 @@ Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **88.30%** | -2.30% | 0.8844 | 1.15x | 0 | [svd-linear-attention-distilbert-sst2-minimal-aurora](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-aurora) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.35%** | -4.71% | 0.8722 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-minimal-aurora](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-aurora) | 2026-09-19 |
 
 
 The empirical evaluation of `minimal_aurora` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
