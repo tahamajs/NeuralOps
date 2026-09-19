@@ -72,6 +72,45 @@ def extract_module_info(file_path):
         paradigm = 'sparse'
         icon = '🌟'
 
+    # Specific mathematical formulations dictionary for modules
+    EXPLICIT_MODULE_MATH = {
+        'aasvd': r"W \approx U_r \Sigma_r V_r^\top, \quad \min_{U, \Sigma, V} \left\| (W - U \Sigma V^\top) X^\top \right\|_F^2",
+        'cur_moe_compressor': r"W \approx C \cdot U \cdot R, \quad C = W_{[:, J]}, \; R = W_{[I, :]}, \; U = C^\dagger W R^\dagger",
+        'frandi_compressor': r"\Omega \sim \mathcal{N}(0, I), \; Y = (W W^\top)^q W \Omega, \; Q = \text{qr}(Y), \; W \approx Q (Q^\top W)",
+        'grecodec_compressor': r"\min_{u, v} \|W - u v^\top\|_F^2 \implies u = \frac{W v}{\|v\|^2}, \; v = \frac{W^\top u}{\|u\|^2}",
+        'hybrid_svd_layer': r"W = U_r \Sigma_r V_r^\top + M_{\text{sparse}}, \quad \|M_{\text{sparse}}\|_0 \le k",
+        'kvtc_compressor': r"K_{\text{comp}} = K V_K^\top, \; V_{\text{comp}} = V V_V^\top, \quad V_K, V_V \in \mathbb{R}^{r \times d_k}",
+        'lsc_compressor': r"\tilde{W}_{u,v} = \sum_{n=0}^{N-1} \sum_{m=0}^{M-1} W_{nm} \cos\left(\frac{\pi u (2n+1)}{2N}\right) \cos\left(\frac{\pi v (2m+1)}{2M}\right)",
+        'mlorq_compressor': r"W \approx \text{Quant}(A) \cdot B^\top + S \cdot \text{scale}, \quad A \in \mathbb{R}^{d_{out} \times r}",
+        'performer_attention': r"\text{Attn}(Q, K, V) = D^{-1} (\phi(Q) (\phi(K)^\top V)), \quad \phi(x) = \frac{h(x)}{\sqrt{m}} \exp\left(\omega^\top x - \frac{\|x\|^2}{2}\right)",
+        'proxsparse_pruner': r"W^{(t+1)} = \text{prox}_{\lambda \|\cdot\|_1}\left(W^{(t)} - \eta \nabla f(W^{(t)})\right) = \text{sign}(W) \max(0, |W| - \lambda \eta)",
+        'rpca_compressor': r"\min_{L, S} \|L\|_* + \lambda \|S\|_1 \quad \text{s.t.} \quad W = L + S, \quad \text{rank}(L) \le r",
+        'saes_svd_v2': r"W \approx U_r \Sigma_r V_r^\top + \text{SAE}(W - U_r \Sigma_r V_r^\top)",
+        'slicegpt_compressor': r"W_{\text{pruned}} = (Q^\top W Q)_{[:, \mathcal{I}]}, \quad Q = \text{eigh}(X X^\top), \; |\mathcal{I}| = (1 - 0.45) d_{in}",
+        'sparsegpt': r"\Delta W = -\frac{w_q}{[H^{-1}]_{qq}} H_{:, q}^{-1}, \quad H = 2 X X^\top",
+        'squeezing_heads_distiller': r"\mathcal{L} = \alpha D_{\text{KL}}(A_{\text{teacher}} \parallel A_{\text{student}}) + \beta \|V_{\text{teacher}} - V_{\text{student}} W_{\text{proj}}\|_F^2",
+        'svd_linear': r"W \approx U_r \Sigma_r V_r^\top = (U_r \sqrt{\Sigma_r}) (\sqrt{\Sigma_r} V_r^\top) = A B^\top",
+        'swift_svd_act': r"\min_{A, B} \left\|(W - A B) \Sigma_{XX}^{1/2}\right\|_F^2, \quad \Sigma_{XX} = \frac{1}{N} X X^\top"
+    }
+
+    if base_name in EXPLICIT_MODULE_MATH:
+        math_formula = EXPLICIT_MODULE_MATH[base_name]
+    elif not math_formula or len(math_formula) < 15:
+        if paradigm == 'svd':
+            math_formula = r"W \approx U_r \Sigma_r V_r^\top = A B^\top, \quad r \ll \min(d_{in}, d_{out})"
+        elif paradigm == 'moe':
+            math_formula = r"y = \sum_{i=1}^K G(x)_i \cdot E_i(x), \quad G(x) = \text{Softmax}(\text{TopK}(x W_g, K=2))"
+        elif paradigm == 'ssm':
+            math_formula = r"h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad y_t = C h_t + D x_t, \quad \bar{A} = \exp(\Delta A)"
+        elif paradigm == 'mla':
+            math_formula = r"c^{KV}_t = W^{DKV} x_t, \quad k^C_t = W^{UK} c^{KV}_t, \quad v^C_t = W^{UV} c^{KV}_t"
+        elif paradigm == 'pruning':
+            math_formula = r"W' = Q_2^\top W Q_1, \quad W_{sliced} = W'[:d'_1, :d'_2], \quad Q^\top Q = I"
+        elif paradigm == 'quant':
+            math_formula = r"W = S \odot (Q_W - Z), \quad Q_W \in \{-8, \dots, 7\}, \quad S = \text{scale}"
+        else:
+            math_formula = r"A_{ij} = \text{TopK}\left(\text{Softmax}\left(\frac{Q_i K_j^\top}{\sqrt{d}}\right)\right)"
+
     # Clean description
     clean_desc = raw_doc.replace('\n', ' ')[:350]
     if not clean_desc or len(clean_desc) < 20:
@@ -86,7 +125,7 @@ def extract_module_info(file_path):
         'paradigm': paradigm,
         'icon': icon,
         'description': clean_desc,
-        'math': math_formula[:250],
+        'math': math_formula[:350],
         'markdown_preview': doc_markdown
     }
 

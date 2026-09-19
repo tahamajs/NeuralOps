@@ -1,12 +1,12 @@
 {
   "id": "liftr",
-  "name": "Liftr",
+  "name": "LIFTR \u2013 Linearized Function Trick Compressor.",
   "file": "Codes/framework/compression_engine/liftr.py",
   "type": "Compression Engine",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
-  "description": "LIFTR \u2013 Linearized Function Trick Compressor. Registered in COMPRESSOR_REGISTRY as 'liftr' and 'liftr_compressor'. Mathematical Formulation:",
+  "category": "Structured Pruning & Channel Slicing",
+  "paradigm": "pruning",
+  "icon": "\u2702\ufe0f",
+  "description": "LIFTR \u2013 Linearized Function Trick Compressor. Registered in COMPRESSOR_REGISTRY as 'liftr' and 'liftr_compressor'.  Mathematical Formulation: 1. Activation Function Linearization:    - $\\operatorname{ReLU}(x) \\to \\operatorname{Identity}(x)$    - $\\operatorname{GELU}(x) \\approx \\alpha \\cdot x$ (default $\\alpha = 0.8$)    - $\\operatorname{SiLU}(x) \\approx \\alpha \\cdot x$ (default $\\alpha = 0.8$) 2.",
   "classes": [
     "_LinearizedGELU",
     "_LinearizedAttentionWrapper",
@@ -16,83 +16,58 @@
   "math_latex": "Y = W \\Omega, \\quad Q = \\text{qr}(Y)",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=64)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[64 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "id": "orthogonal_rot",
+      "name": "Orthogonal Transformation Matrix (Q)",
+      "role": "Energy Concentration",
+      "shape_transform": "[d_{in} \u00d7 d_{in}] Orthogonal",
+      "color": "#38bdf8",
+      "math_latex": "X' = X Q, \\quad Q^\\top Q = I"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=64)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 64]",
-      "color": "#2dd4bf"
+      "id": "sliced_linear",
+      "name": "Channel-Sliced Dense Linear Operator",
+      "role": "45% Channel Elimination",
+      "shape_transform": "[0.55 \\cdot d_{out} \u00d7 0.55 \\cdot d_{in}]",
+      "color": "#0ea5e9",
+      "math_latex": "W_{sliced} = (Q_2^\\top W Q_1)_{[:d'_1, :d'_2]}"
     },
     {
-      "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "id": "bias_correct",
+      "name": "Mean Bias Correction Vector",
+      "role": "Representation Recalibration",
+      "shape_transform": "[0.55 \\cdot d_{out}]",
+      "color": "#0284c7",
+      "math_latex": "\\mu_{err} = \\mathbb{E}[W X] - \\mathbb{E}[W_{sliced} X']"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 29142528,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 74317824,
-      "storage_saved_formatted": "70.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 49615872,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 148635648,
-      "storage_saved_formatted": "141.8 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 786432,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 48820992,
-      "savings_ratio": 9.0,
-      "storage_saved_bytes": 150994944,
-      "storage_saved_formatted": "144.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 1400832,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 169754624,
-      "savings_ratio": 10.64,
-      "storage_saved_bytes": 648413184,
-      "storage_saved_formatted": "618.4 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 3337420,
+      "savings_ratio": 3.33
     }
   }
 }
