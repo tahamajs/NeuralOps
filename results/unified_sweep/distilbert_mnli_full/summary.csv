@@ -166,3 +166,7 @@ kmeans,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,Val
 kronecker,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:49:59.444504
 kronecker_linear_class,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:51:08.380901
 kronecker_tt_lora,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:52:45.064818
+kvtc,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:53:41.205659
+leka_v1,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:55:14.272840
+leka_v2,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:56:18.450805
+leka_v3,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: could not convert string to float: '',,2026-09-19T12:58:02.185993
