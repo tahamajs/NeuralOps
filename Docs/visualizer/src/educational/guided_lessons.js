@@ -8,8 +8,54 @@
 
 export const GUIDED_LESSONS = [
     {
-        id: 'quadratic_attention',
+        id: 'attention_foundations',
         number: 1,
+        title: 'Foundations of Attention: Q, K, V & Softmax',
+        badge: 'CORE RETRIEVAL ENGINE',
+        color: '#38bdf8',
+        componentTarget: 'attention_matrix',
+        cameraTargetY: 2.2,
+        cameraDist: 12.5,
+        steps: [
+            {
+                title: 'Associative Information Retrieval: Q, K, and V',
+                explanation: 'Attention reimagines communication across sequence positions as an associative memory retrieval. Query (Q = X W_Q) specifies what each token is looking for. Key (K = X W_K) specifies what attributes each token represents. Value (V = X W_V) contains the substantive information payload to be routed. Pairwise inner products quantify query-key relevance.',
+                math: '\\text{Scores}_{ij} = \\frac{q_i \\cdot k_j^T}{\\sqrt{d_k}} = \\frac{\\sum_{m=1}^{d_k} q_{i,m} k_{j,m}}{\\sqrt{d_k}}',
+                widget: {
+                    type: 'softmax_scale_demo',
+                    defaultDk: 64
+                }
+            },
+            {
+                title: 'Variance Stabilization: Why Scale by 1/√d_k?',
+                explanation: 'If components of q and k are independent random variables with mean 0 and variance 1, their dot product has mean 0 and variance d_k (standard deviation √d_k). For large head dimension d_k = 64 or 128, unscaled logits grow huge, pushing softmax into extreme saturation regions where gradients vanish (∂softmax/∂z ≈ 0)! Dividing by √d_k enforces Var = 1, ensuring stable backpropagation gradients.',
+                math: '\\mathbb{E}[q \\cdot k] = 0, \\quad \\mathrm{Var}(q \\cdot k) = d_k \\implies \\mathrm{Var}\\left(\\frac{q \\cdot k}{\\sqrt{d_k}}\\right) = 1',
+                widget: {
+                    type: 'softmax_scale_demo',
+                    defaultDk: 64
+                }
+            },
+            {
+                title: 'Softmax Normalization & Convex Combination',
+                explanation: 'Softmax exponentiates scaled logits and normalizes them into non-negative probabilities summing to 1 across all keys. The final output is an exact convex combination (weighted average) of value vectors V, routing information dynamically across the context window.',
+                math: '\\alpha_{ij} = \\frac{\\exp\\left(\\frac{q_i k_j^T}{\\sqrt{d_k}}\\right)}{\\sum_{l=1}^N \\exp\\left(\\frac{q_i k_l^T}{\\sqrt{d_k}}\\right)}, \\quad \\text{Attn}(Q, K, V)_i = \\sum_{j=1}^N \\alpha_{ij} V_j',
+                widget: {
+                    type: 'none'
+                }
+            },
+            {
+                title: 'Multi-Head Subspace Specialization',
+                explanation: 'Instead of performing a single attention pooling over the entire d_model dimension, Multi-Head Attention projects Q, K, V into h independent subspaces of dimension d_k = d_model / h. This allows the model to simultaneously track syntactic dependencies, semantic coreference, and positional ordering in parallel.',
+                math: '\\text{MHA}(Q, K, V) = \\text{Concat}(\\text{head}_1, \\dots, \\text{head}_h) W^O, \\quad \\text{head}_i = \\text{Attn}(Q W_i^Q, K W_i^K, V W_i^V)',
+                widget: {
+                    type: 'none'
+                }
+            }
+        ]
+    },
+    {
+        id: 'quadratic_attention',
+        number: 2,
         title: 'Why Attention Is Quadratic',
         badge: 'O(N²) EXPLOSION',
         color: '#ef4444',
@@ -47,7 +93,7 @@ export const GUIDED_LESSONS = [
     },
     {
         id: 'svd_compression',
-        number: 2,
+        number: 3,
         title: 'How SVD Compresses Attention',
         badge: 'LOW-RANK BOTTLENECK',
         color: '#38bdf8',
@@ -85,7 +131,7 @@ export const GUIDED_LESSONS = [
     },
     {
         id: 'kv_cache_bottleneck',
-        number: 3,
+        number: 4,
         title: 'The KV Cache Bottleneck',
         badge: 'MEMORY BANDWIDTH BOUND',
         color: '#f59e0b',
@@ -115,7 +161,7 @@ export const GUIDED_LESSONS = [
     },
     {
         id: 'sparse_vs_lowrank_vs_linear',
-        number: 4,
+        number: 5,
         title: 'Sparse vs Low-Rank vs Linear Attention',
         badge: 'PARADIGM COMPARISON',
         color: '#10b981',
@@ -143,7 +189,7 @@ export const GUIDED_LESSONS = [
     },
     {
         id: 'flash_attention_hardware',
-        number: 5,
+        number: 6,
         title: 'Hardware-Aware Attention (FlashAttention)',
         badge: 'SRAM TILING & IO',
         color: '#ec4899',
@@ -198,6 +244,35 @@ export function computeQuadraticStats(seqLen = 2048, numHeads = 12, numLayers = 
 }
 
 /**
+ * Computes softmax attention logits and gradient health under scaled vs unscaled regimes.
+ * Demonstrates mathematically why dividing by sqrt(d_k) is mandatory.
+ * @param {number} dk - Head dimension (e.g. 64)
+ * @param {boolean} scaled - True if scaled by 1/sqrt(dk)
+ * @returns {object} { dk, scaled, scaleFactor, probs, gradMagnitude, vanishingRisk }
+ */
+export function computeAttentionScalingDemo(dk = 64, scaled = true) {
+    const scale = scaled ? 1.0 / Math.sqrt(dk) : 1.0;
+    const rawDotProducts = [1.8 * Math.sqrt(dk), 0.5 * Math.sqrt(dk), -0.7 * Math.sqrt(dk), -2.2 * Math.sqrt(dk)];
+    const logits = rawDotProducts.map(s => s * scale);
+    const maxL = Math.max(...logits);
+    const exps = logits.map(l => Math.exp(l - maxL));
+    const sumExps = exps.reduce((a, b) => a + b, 0);
+    const probs = exps.map(e => e / sumExps);
+    const maxProb = Math.max(...probs);
+    // Gradient magnitude indicator: p * (1 - p)
+    const gradMagnitude = maxProb * (1 - maxProb);
+    return {
+        dk,
+        scaled,
+        scaleFactor: scale,
+        logits,
+        probs,
+        gradMagnitude,
+        vanishingRisk: gradMagnitude < 0.05 ? 'CRITICAL VANISHING GRADIENTS (< 0.05)' : 'HEALTHY GRADIENTS (> 0.20)'
+    };
+}
+
+/**
  * Opens the Interactive Guided Lessons Modal.
  * @param {object} context - Engine context { camera, controls, smoothFlyCamera, selectPartIn3D }
  */
@@ -215,7 +290,7 @@ export function openGuidedLessonsModal(context = {}) {
                     <div>
                         <span class="hud-badge" style="background:#10b981; color:#fff;">FEATURE 1.7 · GUIDED LESSONS</span>
                         <h2>Interactive Transformer Masterclass &amp; Guided Lessons</h2>
-                        <p class="modal-subtitle">5 bite-sized architectural lessons with real-time 3D camera guidance, micro-calculators, and interactive proofs.</p>
+                        <p class="modal-subtitle">6 bite-sized architectural masterclasses with real-time 3D camera guidance, micro-calculators, and interactive proofs.</p>
                     </div>
                     <button id="btn-close-lessons-modal" class="btn-icon-only modal-close">✕</button>
                 </div>
@@ -320,7 +395,45 @@ export function openGuidedLessonsModal(context = {}) {
 
         // Render Step HTML
         let widgetHtml = '';
-        if (step.widget && step.widget.type === 'quadratic_calc') {
+        if (step.widget && step.widget.type === 'softmax_scale_demo') {
+            const initialDk = step.widget.defaultDk || 64;
+            const stats = computeAttentionScalingDemo(initialDk, true);
+            widgetHtml = `
+                <div style="background:#080f1c; border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:16px; margin-top:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                        <span style="font-weight:700; color:#38bdf8; font-size:12px;">INTERACTIVE SOFTMAX VARIANCE &amp; GRADIENT PROVING GROUND</span>
+                        <div style="display:flex; gap:6px;">
+                            <button id="btn-scale-toggle" class="round-button" style="font-size:10px; padding:3px 10px; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid #38bdf8; cursor:pointer;">
+                                ✔ Scaled (1/√dₖ)
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8; margin-bottom:4px;">
+                        <span>Head Dimension (d_k)</span>
+                        <span id="lesson-scale-badge" style="font-family:monospace; color:#38bdf8; font-weight:700;">d_k = ${initialDk} · Scaled by 1/√d_k</span>
+                    </div>
+                    <input id="lesson-dk-slider" type="range" min="16" max="128" step="16" value="${initialDk}" style="width:100%; accent-color:#38bdf8; cursor:pointer;">
+
+                    <div style="margin-top:14px; background:#091224; border-radius:6px; padding:12px; border:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:11px; color:#94a3b8;">Attended Probability Distribution</span>
+                            <span id="lesson-grad-health" style="font-size:11px; color:#34d399; font-weight:700;">${stats.vanishingRisk} (Grad: ${stats.gradMagnitude.toFixed(4)})</span>
+                        </div>
+                        <div id="lesson-prob-bars" style="display:flex; gap:12px; height:90px; align-items:flex-end;">
+                            ${stats.probs.map((p, idx) => `
+                                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end;">
+                                    <div style="font-size:9px; color:#94a3b8;">Key ${idx + 1}</div>
+                                    <div style="width:100%; height:60px; background:#0e1726; border-radius:3px; display:flex; align-items:flex-end; padding:2px;">
+                                        <div style="width:100%; height:${Math.max(4, Math.round(p * 100))}%; background:#38bdf8; border-radius:2px; transition:all 0.2s ease;"></div>
+                                    </div>
+                                    <div style="font-size:10px; font-weight:700; color:#fff;">${(p * 100).toFixed(1)}%</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (step.widget && step.widget.type === 'quadratic_calc') {
             const initialSeq = step.widget.defaultSeq || 2048;
             const stats = computeQuadraticStats(initialSeq);
             widgetHtml = `
@@ -362,12 +475,63 @@ export function openGuidedLessonsModal(context = {}) {
 
             ${step.math ? `
                 <div style="background:#050914; padding:12px 18px; border-radius:6px; font-family:monospace; color:#38bdf8; font-size:13px; border-left:3px solid ${lesson.color}; overflow-x:auto;">
-                    ${step.math}
+                    <div class="katex-math-render">$$ ${step.math} $$</div>
                 </div>
             ` : ''}
 
             ${widgetHtml}
         `;
+
+        // Render KaTeX in lesson content
+        if (typeof window !== 'undefined' && window.katex) {
+            contentArea.querySelectorAll('.katex-math-render').forEach(el => {
+                const raw = el.textContent.replace(/\$\$/g, '').trim();
+                if (raw) {
+                    try {
+                        window.katex.render(raw, el, { displayMode: true, throwOnError: false });
+                    } catch (e) {}
+                }
+            });
+        }
+
+        // Wire Softmax scale proving ground widget if present
+        const dkSlider = document.getElementById('lesson-dk-slider');
+        const scaleBtn = document.getElementById('btn-scale-toggle');
+        if (dkSlider && scaleBtn) {
+            let isScaled = true;
+            const refreshSoftmaxWidget = () => {
+                const curDk = parseInt(dkSlider.value, 10);
+                const res = computeAttentionScalingDemo(curDk, isScaled);
+                const badge = document.getElementById('lesson-scale-badge');
+                if (badge) badge.textContent = `d_k = ${curDk} · ${isScaled ? 'Scaled by 1/√d_k' : 'UNSCALED'}`;
+                const health = document.getElementById('lesson-grad-health');
+                if (health) {
+                    health.innerHTML = `<span style="color:${isScaled ? '#34d399' : '#ef4444'}; font-weight:700;">${res.vanishingRisk}</span> (Grad: ${res.gradMagnitude.toFixed(4)})`;
+                }
+                const bars = document.getElementById('lesson-prob-bars');
+                if (bars) {
+                    bars.innerHTML = res.probs.map((p, idx) => `
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end;">
+                            <div style="font-size:9px; color:#94a3b8;">Key ${idx + 1}</div>
+                            <div style="width:100%; height:60px; background:#0e1726; border-radius:3px; display:flex; align-items:flex-end; padding:2px;">
+                                <div style="width:100%; height:${Math.max(4, Math.round(p * 100))}%; background:${isScaled ? '#38bdf8' : '#ef4444'}; border-radius:2px; transition:all 0.2s ease;"></div>
+                            </div>
+                            <div style="font-size:10px; font-weight:700; color:#fff;">${(p * 100).toFixed(1)}%</div>
+                        </div>
+                    `).join('');
+                }
+            };
+
+            dkSlider.oninput = refreshSoftmaxWidget;
+            scaleBtn.onclick = () => {
+                isScaled = !isScaled;
+                scaleBtn.textContent = isScaled ? '✔ Scaled (1/√dₖ)' : '✖ Unscaled';
+                scaleBtn.style.background = isScaled ? 'rgba(56,189,248,0.2)' : 'rgba(239,68,68,0.2)';
+                scaleBtn.style.color = isScaled ? '#38bdf8' : '#f87171';
+                scaleBtn.style.borderColor = isScaled ? '#38bdf8' : '#ef4444';
+                refreshSoftmaxWidget();
+            };
+        }
 
         // Wire in-lesson interactive slider if present
         const seqSlider = document.getElementById('lesson-seq-slider');
