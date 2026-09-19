@@ -115,16 +115,7 @@
             </button>
 
             <!-- Share/Permalink Button -->
-            <button id="btn-share" class="round-button" title="Copy permalink to current module" aria-label="Copy permalink" onclick="(function(){
-                const url = window.location.href;
-                navigator.clipboard.writeText(url).then(()=>{
-                    const t = document.createElement('div');
-                    t.className='permalink-copied';
-                    t.textContent='🔗 Link copied!';
-                    document.body.appendChild(t);
-                    setTimeout(()=>t.remove(), 2500);
-                }).catch(()=>{});
-            })()">
+            <button id="btn-share" class="round-button" title="Copy shareable permalink to current state" aria-label="Copy shareable permalink">
                 🔗 Share
             </button>
 
