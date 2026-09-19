@@ -1,102 +1,231 @@
-# Per-Module Publication Library (Conference-Grade)
+# Per-Module Paper Collection
 
-All **86 attention and compression modules** have been typeset into publication-grade two-column conference manuscripts and compiled to PDF.
+This directory contains standalone, self-contained workshop/short-paper manuscripts for all **217** attention and compression mechanisms evaluated in our large-scale empirical study on DistilBERT-base across SST-2, MNLI, and AG News.
 
-## 📚 Module Papers Index
+Each directory adheres to a modular LaTeX structure:
+- `main.tex`: Master entry document
+- `00_meta.tex` - `13_references.tex`: Core paper sections
+- `appendix_A.tex` - `appendix_E.tex`: Extended derivations, ablation grids, and hyperparameter tables
+- `main.pdf`: Fully compiled PDF artifact
 
-| # | Module | TeX Source | Compiled PDF | Sections (.tex) | Local Figures |
-|---|---|---|---|:---:|:---:|
-| 1 | **AdaptiveSVD** | [`main.tex`](AdaptiveSVD/main.tex) | [`main.pdf (498 KB)`](AdaptiveSVD/main.pdf) | 21 files | 1 figures |
-| 2 | **AdaptiveSpanAttention** | [`main.tex`](AdaptiveSpanAttention/main.tex) | [`main.pdf (419 KB)`](AdaptiveSpanAttention/main.pdf) | 21 files | 1 figures |
-| 3 | **AdaptiveSparseAttention** | [`main.tex`](AdaptiveSparseAttention/main.tex) | [`main.pdf (409 KB)`](AdaptiveSparseAttention/main.pdf) | 21 files | 1 figures |
-| 4 | **Galerkin** | [`main.tex`](Galerkin/main.tex) | [`main.pdf (389 KB)`](Galerkin/main.pdf) | 21 files | 4 figures |
-| 5 | **HALO** | [`main.tex`](HALO/main.tex) | [`main.pdf (386 KB)`](HALO/main.pdf) | 21 files | 4 figures |
-| 6 | **OH** | [`main.tex`](OH/main.tex) | [`main.pdf (414 KB)`](OH/main.pdf) | 20 files | 0 figures |
-| 7 | **Primal** | [`main.tex`](Primal/main.tex) | [`main.pdf (436 KB)`](Primal/main.pdf) | 21 files | 4 figures |
-| 8 | **SOAFusedAttention** | [`main.tex`](SOAFusedAttention/main.tex) | [`main.pdf (98 KB)`](SOAFusedAttention/main.pdf) | 20 files | 4 figures |
-| 9 | **SqueezingHeadsAttentionDistillationLayer** | [`main.tex`](SqueezingHeadsAttentionDistillationLayer/main.tex) | [`main.pdf (396 KB)`](SqueezingHeadsAttentionDistillationLayer/main.pdf) | 20 files | 1 figures |
-| 10 | **a3** | [`main.tex`](a3/main.tex) | [`main.pdf (506 KB)`](a3/main.pdf) | 21 files | 0 figures |
-| 11 | **aasvd** | [`main.tex`](aasvd/main.tex) | [`main.pdf (480 KB)`](aasvd/main.pdf) | 21 files | 0 figures |
-| 12 | **adasplash** | [`main.tex`](adasplash/main.tex) | [`main.pdf (494 KB)`](adasplash/main.pdf) | 21 files | 4 figures |
-| 13 | **aegis_v5** | [`main.tex`](aegis_v5/main.tex) | [`main.pdf (2419 KB)`](aegis_v5/main.pdf) | 20 files | 4 figures |
-| 14 | **asvd** | [`main.tex`](asvd/main.tex) | [`main.pdf (86 KB)`](asvd/main.pdf) | 20 files | 4 figures |
-| 15 | **bam_umoe** | [`main.tex`](bam_umoe/main.tex) | [`main.pdf (386 KB)`](bam_umoe/main.pdf) | 21 files | 4 figures |
-| 16 | **block_transformer_hiba** | [`main.tex`](block_transformer_hiba/main.tex) | [`main.pdf (2203 KB)`](block_transformer_hiba/main.pdf) | 20 files | 4 figures |
-| 17 | **chela_slay** | [`main.tex`](chela_slay/main.tex) | [`main.pdf (101 KB)`](chela_slay/main.pdf) | 20 files | 4 figures |
-| 18 | **cluster** | [`main.tex`](cluster/main.tex) | [`main.pdf (426 KB)`](cluster/main.pdf) | 21 files | 4 figures |
-| 19 | **compressed_mha** | [`main.tex`](compressed_mha/main.tex) | [`main.pdf (2188 KB)`](compressed_mha/main.pdf) | 20 files | 4 figures |
-| 20 | **cosformer** | [`main.tex`](cosformer/main.tex) | [`main.pdf (85 KB)`](cosformer/main.pdf) | 20 files | 4 figures |
-| 21 | **decay_linear_attention** | [`main.tex`](decay_linear_attention/main.tex) | [`main.pdf (2198 KB)`](decay_linear_attention/main.pdf) | 20 files | 4 figures |
-| 22 | **dobi_attention** | [`main.tex`](dobi_attention/main.tex) | [`main.pdf (2197 KB)`](dobi_attention/main.pdf) | 20 files | 4 figures |
-| 23 | **eat** | [`main.tex`](eat/main.tex) | [`main.pdf (425 KB)`](eat/main.pdf) | 20 files | 4 figures |
-| 24 | **expert_choice_moe** | [`main.tex`](expert_choice_moe/main.tex) | [`main.pdf (2386 KB)`](expert_choice_moe/main.pdf) | 20 files | 4 figures |
-| 25 | **flash3** | [`main.tex`](flash3/main.tex) | [`main.pdf (401 KB)`](flash3/main.pdf) | 21 files | 4 figures |
-| 26 | **flash_attention3_fp8** | [`main.tex`](flash_attention3_fp8/main.tex) | [`main.pdf (2421 KB)`](flash_attention3_fp8/main.pdf) | 20 files | 4 figures |
-| 27 | **fusion** | [`main.tex`](fusion/main.tex) | [`main.pdf (404 KB)`](fusion/main.pdf) | 21 files | 4 figures |
-| 28 | **gated_delta_net** | [`main.tex`](gated_delta_net/main.tex) | [`main.pdf (2117 KB)`](gated_delta_net/main.pdf) | 20 files | 4 figures |
-| 29 | **gated_deltanet_block** | [`main.tex`](gated_deltanet_block/main.tex) | [`main.pdf (2319 KB)`](gated_deltanet_block/main.pdf) | 20 files | 4 figures |
-| 30 | **goldfinch_ahn** | [`main.tex`](goldfinch_ahn/main.tex) | [`main.pdf (101 KB)`](goldfinch_ahn/main.pdf) | 20 files | 4 figures |
-| 31 | **gqa** | [`main.tex`](gqa/main.tex) | [`main.pdf (413 KB)`](gqa/main.pdf) | 21 files | 4 figures |
-| 32 | **griffin_ssd** | [`main.tex`](griffin_ssd/main.tex) | [`main.pdf (100 KB)`](griffin_ssd/main.pdf) | 20 files | 4 figures |
-| 33 | **hgrn2_gated_deltanet** | [`main.tex`](hgrn2_gated_deltanet/main.tex) | [`main.pdf (2377 KB)`](hgrn2_gated_deltanet/main.pdf) | 20 files | 4 figures |
-| 34 | **hgrn2_layer** | [`main.tex`](hgrn2_layer/main.tex) | [`main.pdf (2117 KB)`](hgrn2_layer/main.pdf) | 20 files | 4 figures |
-| 35 | **hymba_transx** | [`main.tex`](hymba_transx/main.tex) | [`main.pdf (540 KB)`](hymba_transx/main.pdf) | 20 files | 4 figures |
-| 36 | **infini** | [`main.tex`](infini/main.tex) | [`main.pdf (419 KB)`](infini/main.pdf) | 20 files | 4 figures |
-| 37 | **jamba_info** | [`main.tex`](jamba_info/main.tex) | [`main.pdf (2150 KB)`](jamba_info/main.pdf) | 20 files | 4 figures |
-| 38 | **leka_v1** | [`main.tex`](leka_v1/main.tex) | [`main.pdf (2508 KB)`](leka_v1/main.pdf) | 20 files | 4 figures |
-| 39 | **leka_v2** | [`main.tex`](leka_v2/main.tex) | [`main.pdf (2508 KB)`](leka_v2/main.pdf) | 20 files | 4 figures |
-| 40 | **leka_v3** | [`main.tex`](leka_v3/main.tex) | [`main.pdf (2508 KB)`](leka_v3/main.pdf) | 20 files | 4 figures |
-| 41 | **linformer_attention** | [`main.tex`](linformer_attention/main.tex) | [`main.pdf (2197 KB)`](linformer_attention/main.pdf) | 20 files | 4 figures |
-| 42 | **lora_attention** | [`main.tex`](lora_attention/main.tex) | [`main.pdf (2197 KB)`](lora_attention/main.pdf) | 20 files | 4 figures |
-| 43 | **mamba** | [`main.tex`](mamba/main.tex) | [`main.pdf (2203 KB)`](mamba/main.pdf) | 20 files | 4 figures |
-| 44 | **minimal_aurora** | [`main.tex`](minimal_aurora/main.tex) | [`main.pdf (2300 KB)`](minimal_aurora/main.pdf) | 20 files | 4 figures |
-| 45 | **minimal_nova** | [`main.tex`](minimal_nova/main.tex) | [`main.pdf (2300 KB)`](minimal_nova/main.pdf) | 20 files | 4 figures |
-| 46 | **minimal_prism** | [`main.tex`](minimal_prism/main.tex) | [`main.pdf (2300 KB)`](minimal_prism/main.pdf) | 20 files | 4 figures |
-| 47 | **minimal_svd** | [`main.tex`](minimal_svd/main.tex) | [`main.pdf (2213 KB)`](minimal_svd/main.pdf) | 20 files | 4 figures |
-| 48 | **mixattention_moska** | [`main.tex`](mixattention_moska/main.tex) | [`main.pdf (104 KB)`](mixattention_moska/main.pdf) | 20 files | 4 figures |
-| 49 | **mla_attention** | [`main.tex`](mla_attention/main.tex) | [`main.pdf (2197 KB)`](mla_attention/main.pdf) | 20 files | 4 figures |
-| 50 | **moba** | [`main.tex`](moba/main.tex) | [`main.pdf (84 KB)`](moba/main.pdf) | 20 files | 4 figures |
-| 51 | **moe_deltakv_paged** | [`main.tex`](moe_deltakv_paged/main.tex) | [`main.pdf (2386 KB)`](moe_deltakv_paged/main.pdf) | 20 files | 4 figures |
-| 52 | **nasc_attention** | [`main.tex`](nasc_attention/main.tex) | [`main.pdf (2197 KB)`](nasc_attention/main.pdf) | 20 files | 4 figures |
-| 53 | **nexus** | [`main.tex`](nexus/main.tex) | [`main.pdf (84 KB)`](nexus/main.pdf) | 20 files | 4 figures |
-| 54 | **nha** | [`main.tex`](nha/main.tex) | [`main.pdf (391 KB)`](nha/main.pdf) | 21 files | 4 figures |
-| 55 | **nsa** | [`main.tex`](nsa/main.tex) | [`main.pdf (387 KB)`](nsa/main.pdf) | 21 files | 4 figures |
-| 56 | **nystrom_attention** | [`main.tex`](nystrom_attention/main.tex) | [`main.pdf (2197 KB)`](nystrom_attention/main.pdf) | 20 files | 4 figures |
-| 57 | **orion** | [`main.tex`](orion/main.tex) | [`main.pdf (92 KB)`](orion/main.pdf) | 20 files | 4 figures |
-| 58 | **padre** | [`main.tex`](padre/main.tex) | [`main.pdf (92 KB)`](padre/main.pdf) | 20 files | 4 figures |
-| 59 | **performer_attention** | [`main.tex`](performer_attention/main.tex) | [`main.pdf (2197 KB)`](performer_attention/main.pdf) | 20 files | 4 figures |
-| 60 | **phantom** | [`main.tex`](phantom/main.tex) | [`main.pdf (94 KB)`](phantom/main.pdf) | 20 files | 4 figures |
-| 61 | **projection_factorized_attn** | [`main.tex`](projection_factorized_attn/main.tex) | [`main.pdf (1660 KB)`](projection_factorized_attn/main.pdf) | 20 files | 4 figures |
-| 62 | **ptp** | [`main.tex`](ptp/main.tex) | [`main.pdf (44 KB)`](ptp/main.pdf) | 20 files | 0 figures |
-| 63 | **rala_attention** | [`main.tex`](rala_attention/main.tex) | [`main.pdf (2156 KB)`](rala_attention/main.pdf) | 20 files | 4 figures |
-| 64 | **reap_moe** | [`main.tex`](reap_moe/main.tex) | [`main.pdf (2344 KB)`](reap_moe/main.pdf) | 20 files | 4 figures |
-| 65 | **regla_attention** | [`main.tex`](regla_attention/main.tex) | [`main.pdf (2156 KB)`](regla_attention/main.pdf) | 20 files | 4 figures |
-| 66 | **res_svd** | [`main.tex`](res_svd/main.tex) | [`main.pdf (2172 KB)`](res_svd/main.pdf) | 20 files | 4 figures |
-| 67 | **routing_attention** | [`main.tex`](routing_attention/main.tex) | [`main.pdf (2156 KB)`](routing_attention/main.pdf) | 20 files | 4 figures |
-| 68 | **rpc** | [`main.tex`](rpc/main.tex) | [`main.pdf (41 KB)`](rpc/main.pdf) | 20 files | 4 figures |
-| 69 | **salt** | [`main.tex`](salt/main.tex) | [`main.pdf (41 KB)`](salt/main.pdf) | 20 files | 4 figures |
-| 70 | **simple_ssm** | [`main.tex`](simple_ssm/main.tex) | [`main.pdf (68 KB)`](simple_ssm/main.pdf) | 20 files | 4 figures |
-| 71 | **soa_module** | [`main.tex`](soa_module/main.tex) | [`main.pdf (2190 KB)`](soa_module/main.pdf) | 20 files | 4 figures |
-| 72 | **span_expanded_attention** | [`main.tex`](span_expanded_attention/main.tex) | [`main.pdf (2158 KB)`](span_expanded_attention/main.pdf) | 20 files | 4 figures |
-| 73 | **spectra_v2** | [`main.tex`](spectra_v2/main.tex) | [`main.pdf (443 KB)`](spectra_v2/main.pdf) | 20 files | 4 figures |
-| 74 | **spectron** | [`main.tex`](spectron/main.tex) | [`main.pdf (45 KB)`](spectron/main.pdf) | 20 files | 4 figures |
-| 75 | **svd_compressed** | [`main.tex`](svd_compressed/main.tex) | [`main.pdf (2173 KB)`](svd_compressed/main.pdf) | 20 files | 4 figures |
-| 76 | **svd_linear_attention** | [`main.tex`](svd_linear_attention/main.tex) | [`main.pdf (2157 KB)`](svd_linear_attention/main.pdf) | 20 files | 4 figures |
-| 77 | **svd_llm_v2_attention** | [`main.tex`](svd_llm_v2_attention/main.tex) | [`main.pdf (2166 KB)`](svd_llm_v2_attention/main.pdf) | 20 files | 4 figures |
-| 78 | **svd_mamba** | [`main.tex`](svd_mamba/main.tex) | [`main.pdf (2172 KB)`](svd_mamba/main.pdf) | 20 files | 4 figures |
-| 79 | **svd_projection_attention** | [`main.tex`](svd_projection_attention/main.tex) | [`main.pdf (2157 KB)`](svd_projection_attention/main.pdf) | 20 files | 4 figures |
-| 80 | **template_attention** | [`main.tex`](template_attention/main.tex) | [`main.pdf (2156 KB)`](template_attention/main.pdf) | 20 files | 4 figures |
-| 81 | **token_compressed_attention** | [`main.tex`](token_compressed_attention/main.tex) | [`main.pdf (2158 KB)`](token_compressed_attention/main.pdf) | 20 files | 4 figures |
-| 82 | **tpa_attention** | [`main.tex`](tpa_attention/main.tex) | [`main.pdf (2156 KB)`](tpa_attention/main.pdf) | 20 files | 4 figures |
-| 83 | **tt** | [`main.tex`](tt/main.tex) | [`main.pdf (32 KB)`](tt/main.pdf) | 20 files | 0 figures |
-| 84 | **unified_rope** | [`main.tex`](unified_rope/main.tex) | [`main.pdf (70 KB)`](unified_rope/main.pdf) | 20 files | 4 figures |
-| 85 | **vspec** | [`main.tex`](vspec/main.tex) | [`main.pdf (51 KB)`](vspec/main.pdf) | 20 files | 4 figures |
-| 86 | **xattention** | [`main.tex`](xattention/main.tex) | [`main.pdf (43 KB)`](xattention/main.pdf) | 20 files | 4 figures |
+## Master Inventory Table
 
-## 🛠 Formatting & Architecture Standards Applied
-
-1. **Conference Typography**: Two-column layout, standard margins, Microtype optical kerning, custom-colored hyperlinks.
-2. **Standard Abstract Block**: Abstract and keyword environments positioned under the title header before column splitting.
-3. **Publication-Ready Figures**: Matched architecture diagrams and experimental evaluation curves linked from `thesis_final/img` into `05_architecture.tex` and `07_results.tex`.
-4. **Structured Tables**: Styled using `booktabs` (`\toprule`, `\midrule`, `\bottomrule`) with centered tabular environments.
-5. **Syntax Highlighted Listings**: Python/pseudocode blocks styled with custom palettes, single border framing, and overflow wrap.
+| # | Module Directory | LaTeX Source | Compiled PDF | Key Files Status |
+|---|---|:---:|:---:|:---:|
+| 1 | `AdaptiveSVD` | [AdaptiveSVD/main.tex](AdaptiveSVD/main.tex) | [AdaptiveSVD/main.pdf (529 KB)](AdaptiveSVD/main.pdf) | 21 .tex files |
+| 2 | `AdaptiveSpanAttention` | [AdaptiveSpanAttention/main.tex](AdaptiveSpanAttention/main.tex) | [AdaptiveSpanAttention/main.pdf (2084 KB)](AdaptiveSpanAttention/main.pdf) | 21 .tex files |
+| 3 | `AdaptiveSparseAttention` | [AdaptiveSparseAttention/main.tex](AdaptiveSparseAttention/main.tex) | [AdaptiveSparseAttention/main.pdf (2021 KB)](AdaptiveSparseAttention/main.pdf) | 21 .tex files |
+| 4 | `Galerkin` | [Galerkin/main.tex](Galerkin/main.tex) | [Galerkin/main.pdf (2614 KB)](Galerkin/main.pdf) | 21 .tex files |
+| 5 | `HALO` | [HALO/main.tex](HALO/main.tex) | [HALO/main.pdf (2624 KB)](HALO/main.pdf) | 21 .tex files |
+| 6 | `OH` | [OH/main.tex](OH/main.tex) | [OH/main.pdf (452 KB)](OH/main.pdf) | 20 .tex files |
+| 7 | `Primal` | [Primal/main.tex](Primal/main.tex) | [Primal/main.pdf (2142 KB)](Primal/main.pdf) | 21 .tex files |
+| 8 | `SOAFusedAttention` | [SOAFusedAttention/main.tex](SOAFusedAttention/main.tex) | [SOAFusedAttention/main.pdf (439 KB)](SOAFusedAttention/main.pdf) | 20 .tex files |
+| 9 | `SqueezingHeadsAttentionDistillationLayer` | [SqueezingHeadsAttentionDistillationLayer/main.tex](SqueezingHeadsAttentionDistillationLayer/main.tex) | [SqueezingHeadsAttentionDistillationLayer/main.pdf (2621 KB)](SqueezingHeadsAttentionDistillationLayer/main.pdf) | 20 .tex files |
+| 10 | `a3` | [a3/main.tex](a3/main.tex) | [a3/main.pdf (774 KB)](a3/main.pdf) | 21 .tex files |
+| 11 | `aa_svd_compressor` | [aa_svd_compressor/main.tex](aa_svd_compressor/main.tex) | [aa_svd_compressor/main.pdf (234 KB)](aa_svd_compressor/main.pdf) | 21 .tex files |
+| 12 | `aasvd` | [aasvd/main.tex](aasvd/main.tex) | [aasvd/main.pdf (503 KB)](aasvd/main.pdf) | 21 .tex files |
+| 13 | `adaptive_compressor` | [adaptive_compressor/main.tex](adaptive_compressor/main.tex) | [adaptive_compressor/main.pdf (442 KB)](adaptive_compressor/main.pdf) | 21 .tex files |
+| 14 | `adaptive_ranks` | [adaptive_ranks/main.tex](adaptive_ranks/main.tex) | [adaptive_ranks/main.pdf (409 KB)](adaptive_ranks/main.pdf) | 21 .tex files |
+| 15 | `adaptive_span_attention` | [adaptive_span_attention/main.tex](adaptive_span_attention/main.tex) | [adaptive_span_attention/main.pdf (440 KB)](adaptive_span_attention/main.pdf) | 21 .tex files |
+| 16 | `adaptive_sparse_attention` | [adaptive_sparse_attention/main.tex](adaptive_sparse_attention/main.tex) | [adaptive_sparse_attention/main.pdf (438 KB)](adaptive_sparse_attention/main.pdf) | 21 .tex files |
+| 17 | `adaptive_svd_attention` | [adaptive_svd_attention/main.tex](adaptive_svd_attention/main.tex) | [adaptive_svd_attention/main.pdf (529 KB)](adaptive_svd_attention/main.pdf) | 21 .tex files |
+| 18 | `adasplash` | [adasplash/main.tex](adasplash/main.tex) | [adasplash/main.pdf (539 KB)](adasplash/main.pdf) | 21 .tex files |
+| 19 | `adasvd_compressor` | [adasvd_compressor/main.tex](adasvd_compressor/main.tex) | [adasvd_compressor/main.pdf (479 KB)](adasvd_compressor/main.pdf) | 21 .tex files |
+| 20 | `admm_compressor` | [admm_compressor/main.tex](admm_compressor/main.tex) | [admm_compressor/main.pdf (479 KB)](admm_compressor/main.pdf) | 21 .tex files |
+| 21 | `admm_pruner` | [admm_pruner/main.tex](admm_pruner/main.tex) | [admm_pruner/main.pdf (322 KB)](admm_pruner/main.pdf) | 21 .tex files |
+| 22 | `aegis_hybrid` | [aegis_hybrid/main.tex](aegis_hybrid/main.tex) | [aegis_hybrid/main.pdf (432 KB)](aegis_hybrid/main.pdf) | 21 .tex files |
+| 23 | `aegis_spectron_fp8` | [aegis_spectron_fp8/main.tex](aegis_spectron_fp8/main.tex) | [aegis_spectron_fp8/main.pdf (275 KB)](aegis_spectron_fp8/main.pdf) | 21 .tex files |
+| 24 | `aegis_v1` | [aegis_v1/main.tex](aegis_v1/main.tex) | [aegis_v1/main.pdf (416 KB)](aegis_v1/main.pdf) | 21 .tex files |
+| 25 | `aegis_v2` | [aegis_v2/main.tex](aegis_v2/main.tex) | [aegis_v2/main.pdf (166 KB)](aegis_v2/main.pdf) | 21 .tex files |
+| 26 | `aegis_v3` | [aegis_v3/main.tex](aegis_v3/main.tex) | [aegis_v3/main.pdf (156 KB)](aegis_v3/main.pdf) | 21 .tex files |
+| 27 | `aegis_v4` | [aegis_v4/main.tex](aegis_v4/main.tex) | [aegis_v4/main.pdf (199 KB)](aegis_v4/main.pdf) | 21 .tex files |
+| 28 | `aegis_v5` | [aegis_v5/main.tex](aegis_v5/main.tex) | [aegis_v5/main.pdf (477 KB)](aegis_v5/main.pdf) | 20 .tex files |
+| 29 | `aegis_v6` | [aegis_v6/main.tex](aegis_v6/main.tex) | [aegis_v6/main.pdf (483 KB)](aegis_v6/main.pdf) | 21 .tex files |
+| 30 | `armor_pruner` | [armor_pruner/main.tex](armor_pruner/main.tex) | [armor_pruner/main.pdf (481 KB)](armor_pruner/main.pdf) | 21 .tex files |
+| 31 | `ast_pruner` | [ast_pruner/main.tex](ast_pruner/main.tex) | [ast_pruner/main.pdf (481 KB)](ast_pruner/main.pdf) | 21 .tex files |
+| 32 | `astro_quantizer` | [astro_quantizer/main.tex](astro_quantizer/main.tex) | [astro_quantizer/main.pdf (481 KB)](astro_quantizer/main.pdf) | 21 .tex files |
+| 33 | `asvd` | [asvd/main.tex](asvd/main.tex) | [asvd/main.pdf (2867 KB)](asvd/main.pdf) | 20 .tex files |
+| 34 | `bam_umoe` | [bam_umoe/main.tex](bam_umoe/main.tex) | [bam_umoe/main.pdf (2608 KB)](bam_umoe/main.pdf) | 21 .tex files |
+| 35 | `block_transformer_hiba` | [block_transformer_hiba/main.tex](block_transformer_hiba/main.tex) | [block_transformer_hiba/main.pdf (484 KB)](block_transformer_hiba/main.pdf) | 21 .tex files |
+| 36 | `bonsai_pruner` | [bonsai_pruner/main.tex](bonsai_pruner/main.tex) | [bonsai_pruner/main.pdf (481 KB)](bonsai_pruner/main.pdf) | 21 .tex files |
+| 37 | `cachenotes_compressor` | [cachenotes_compressor/main.tex](cachenotes_compressor/main.tex) | [cachenotes_compressor/main.pdf (482 KB)](cachenotes_compressor/main.pdf) | 21 .tex files |
+| 38 | `chela_slay` | [chela_slay/main.tex](chela_slay/main.tex) | [chela_slay/main.pdf (2679 KB)](chela_slay/main.pdf) | 20 .tex files |
+| 39 | `cluster` | [cluster/main.tex](cluster/main.tex) | [cluster/main.pdf (2578 KB)](cluster/main.pdf) | 21 .tex files |
+| 40 | `come` | [come/main.tex](come/main.tex) | [come/main.pdf (481 KB)](come/main.pdf) | 21 .tex files |
+| 41 | `compot_compressor` | [compot_compressor/main.tex](compot_compressor/main.tex) | [compot_compressor/main.pdf (481 KB)](compot_compressor/main.pdf) | 21 .tex files |
+| 42 | `compressed_attention` | [compressed_attention/main.tex](compressed_attention/main.tex) | [compressed_attention/main.pdf (483 KB)](compressed_attention/main.pdf) | 21 .tex files |
+| 43 | `compressed_mha` | [compressed_mha/main.tex](compressed_mha/main.tex) | [compressed_mha/main.pdf (2478 KB)](compressed_mha/main.pdf) | 20 .tex files |
+| 44 | `coopq_quantizer` | [coopq_quantizer/main.tex](coopq_quantizer/main.tex) | [coopq_quantizer/main.pdf (482 KB)](coopq_quantizer/main.pdf) | 21 .tex files |
+| 45 | `cosformer` | [cosformer/main.tex](cosformer/main.tex) | [cosformer/main.pdf (2786 KB)](cosformer/main.pdf) | 20 .tex files |
+| 46 | `cr_compressor` | [cr_compressor/main.tex](cr_compressor/main.tex) | [cr_compressor/main.pdf (481 KB)](cr_compressor/main.pdf) | 21 .tex files |
+| 47 | `cur_compressor` | [cur_compressor/main.tex](cur_compressor/main.tex) | [cur_compressor/main.pdf (481 KB)](cur_compressor/main.pdf) | 21 .tex files |
+| 48 | `cur_linear` | [cur_linear/main.tex](cur_linear/main.tex) | [cur_linear/main.pdf (484 KB)](cur_linear/main.pdf) | 21 .tex files |
+| 49 | `cur_moe` | [cur_moe/main.tex](cur_moe/main.tex) | [cur_moe/main.pdf (481 KB)](cur_moe/main.pdf) | 21 .tex files |
+| 50 | `cure` | [cure/main.tex](cure/main.tex) | [cure/main.pdf (483 KB)](cure/main.pdf) | 21 .tex files |
+| 51 | `decay_linear_attention` | [decay_linear_attention/main.tex](decay_linear_attention/main.tex) | [decay_linear_attention/main.pdf (485 KB)](decay_linear_attention/main.pdf) | 21 .tex files |
+| 52 | `delta_kv` | [delta_kv/main.tex](delta_kv/main.tex) | [delta_kv/main.pdf (482 KB)](delta_kv/main.pdf) | 21 .tex files |
+| 53 | `direct_svd` | [direct_svd/main.tex](direct_svd/main.tex) | [direct_svd/main.pdf (481 KB)](direct_svd/main.pdf) | 21 .tex files |
+| 54 | `dobi` | [dobi/main.tex](dobi/main.tex) | [dobi/main.pdf (481 KB)](dobi/main.pdf) | 21 .tex files |
+| 55 | `dobi_svd` | [dobi_svd/main.tex](dobi_svd/main.tex) | [dobi_svd/main.pdf (2635 KB)](dobi_svd/main.pdf) | 20 .tex files |
+| 56 | `dynamic_entropy` | [dynamic_entropy/main.tex](dynamic_entropy/main.tex) | [dynamic_entropy/main.pdf (485 KB)](dynamic_entropy/main.pdf) | 21 .tex files |
+| 57 | `dynamic_rank` | [dynamic_rank/main.tex](dynamic_rank/main.tex) | [dynamic_rank/main.pdf (481 KB)](dynamic_rank/main.pdf) | 21 .tex files |
+| 58 | `eat` | [eat/main.tex](eat/main.tex) | [eat/main.pdf (2171 KB)](eat/main.pdf) | 20 .tex files |
+| 59 | `enlighten_compressor` | [enlighten_compressor/main.tex](enlighten_compressor/main.tex) | [enlighten_compressor/main.pdf (482 KB)](enlighten_compressor/main.pdf) | 21 .tex files |
+| 60 | `entropy_budget_allocation` | [entropy_budget_allocation/main.tex](entropy_budget_allocation/main.tex) | [entropy_budget_allocation/main.pdf (485 KB)](entropy_budget_allocation/main.pdf) | 21 .tex files |
+| 61 | `erc_svd` | [erc_svd/main.tex](erc_svd/main.tex) | [erc_svd/main.pdf (484 KB)](erc_svd/main.pdf) | 21 .tex files |
+| 62 | `expert_choice_moe` | [expert_choice_moe/main.tex](expert_choice_moe/main.tex) | [expert_choice_moe/main.pdf (2725 KB)](expert_choice_moe/main.pdf) | 20 .tex files |
+| 63 | `factorised_matrix_state` | [factorised_matrix_state/main.tex](factorised_matrix_state/main.tex) | [factorised_matrix_state/main.pdf (484 KB)](factorised_matrix_state/main.pdf) | 21 .tex files |
+| 64 | `faq_quantizer` | [faq_quantizer/main.tex](faq_quantizer/main.tex) | [faq_quantizer/main.pdf (483 KB)](faq_quantizer/main.pdf) | 21 .tex files |
+| 65 | `flap` | [flap/main.tex](flap/main.tex) | [flap/main.pdf (481 KB)](flap/main.pdf) | 21 .tex files |
+| 66 | `flash3` | [flash3/main.tex](flash3/main.tex) | [flash3/main.pdf (442 KB)](flash3/main.pdf) | 21 .tex files |
+| 67 | `flash_attention3` | [flash_attention3/main.tex](flash_attention3/main.tex) | [flash_attention3/main.pdf (2543 KB)](flash_attention3/main.pdf) | 20 .tex files |
+| 68 | `flash_attention3_fp8` | [flash_attention3_fp8/main.tex](flash_attention3_fp8/main.tex) | [flash_attention3_fp8/main.pdf (2584 KB)](flash_attention3_fp8/main.pdf) | 20 .tex files |
+| 69 | `flat_llm` | [flat_llm/main.tex](flat_llm/main.tex) | [flat_llm/main.pdf (482 KB)](flat_llm/main.pdf) | 21 .tex files |
+| 70 | `frandi` | [frandi/main.tex](frandi/main.tex) | [frandi/main.pdf (481 KB)](frandi/main.pdf) | 21 .tex files |
+| 71 | `full_attention` | [full_attention/main.tex](full_attention/main.tex) | [full_attention/main.pdf (482 KB)](full_attention/main.pdf) | 21 .tex files |
+| 72 | `fused_svd_kernel` | [fused_svd_kernel/main.tex](fused_svd_kernel/main.tex) | [fused_svd_kernel/main.pdf (484 KB)](fused_svd_kernel/main.pdf) | 21 .tex files |
+| 73 | `fusion` | [fusion/main.tex](fusion/main.tex) | [fusion/main.pdf (1991 KB)](fusion/main.pdf) | 21 .tex files |
+| 74 | `fusion_attn` | [fusion_attn/main.tex](fusion_attn/main.tex) | [fusion_attn/main.pdf (483 KB)](fusion_attn/main.pdf) | 21 .tex files |
+| 75 | `galerkin_attention` | [galerkin_attention/main.tex](galerkin_attention/main.tex) | [galerkin_attention/main.pdf (484 KB)](galerkin_attention/main.pdf) | 21 .tex files |
+| 76 | `gated_delta_net` | [gated_delta_net/main.tex](gated_delta_net/main.tex) | [gated_delta_net/main.pdf (2625 KB)](gated_delta_net/main.pdf) | 20 .tex files |
+| 77 | `gated_deltanet_block` | [gated_deltanet_block/main.tex](gated_deltanet_block/main.tex) | [gated_deltanet_block/main.pdf (2124 KB)](gated_deltanet_block/main.pdf) | 20 .tex files |
+| 78 | `gated_linear_attention` | [gated_linear_attention/main.tex](gated_linear_attention/main.tex) | [gated_linear_attention/main.pdf (484 KB)](gated_linear_attention/main.pdf) | 21 .tex files |
+| 79 | `gfws_d_compressor` | [gfws_d_compressor/main.tex](gfws_d_compressor/main.tex) | [gfws_d_compressor/main.pdf (482 KB)](gfws_d_compressor/main.pdf) | 21 .tex files |
+| 80 | `goldfinch_ahn` | [goldfinch_ahn/main.tex](goldfinch_ahn/main.tex) | [goldfinch_ahn/main.pdf (1889 KB)](goldfinch_ahn/main.pdf) | 20 .tex files |
+| 81 | `gqa` | [gqa/main.tex](gqa/main.tex) | [gqa/main.pdf (451 KB)](gqa/main.pdf) | 21 .tex files |
+| 82 | `granite_hybrid` | [granite_hybrid/main.tex](granite_hybrid/main.tex) | [granite_hybrid/main.pdf (483 KB)](granite_hybrid/main.pdf) | 21 .tex files |
+| 83 | `grecodec` | [grecodec/main.tex](grecodec/main.tex) | [grecodec/main.pdf (481 KB)](grecodec/main.pdf) | 21 .tex files |
+| 84 | `griffin_ssd` | [griffin_ssd/main.tex](griffin_ssd/main.tex) | [griffin_ssd/main.pdf (484 KB)](griffin_ssd/main.pdf) | 21 .tex files |
+| 85 | `halo_regla` | [halo_regla/main.tex](halo_regla/main.tex) | [halo_regla/main.pdf (483 KB)](halo_regla/main.pdf) | 21 .tex files |
+| 86 | `hamming_attention` | [hamming_attention/main.tex](hamming_attention/main.tex) | [hamming_attention/main.pdf (483 KB)](hamming_attention/main.pdf) | 21 .tex files |
+| 87 | `hashed_linear` | [hashed_linear/main.tex](hashed_linear/main.tex) | [hashed_linear/main.pdf (484 KB)](hashed_linear/main.pdf) | 21 .tex files |
+| 88 | `hashed_net_compressor` | [hashed_net_compressor/main.tex](hashed_net_compressor/main.tex) | [hashed_net_compressor/main.pdf (482 KB)](hashed_net_compressor/main.pdf) | 21 .tex files |
+| 89 | `hgrn2_gated_deltanet` | [hgrn2_gated_deltanet/main.tex](hgrn2_gated_deltanet/main.tex) | [hgrn2_gated_deltanet/main.pdf (2440 KB)](hgrn2_gated_deltanet/main.pdf) | 20 .tex files |
+| 90 | `hgrn2_layer` | [hgrn2_layer/main.tex](hgrn2_layer/main.tex) | [hgrn2_layer/main.pdf (2652 KB)](hgrn2_layer/main.pdf) | 20 .tex files |
+| 91 | `hgrn2_outer` | [hgrn2_outer/main.tex](hgrn2_outer/main.tex) | [hgrn2_outer/main.pdf (483 KB)](hgrn2_outer/main.pdf) | 21 .tex files |
+| 92 | `hla_attention` | [hla_attention/main.tex](hla_attention/main.tex) | [hla_attention/main.pdf (484 KB)](hla_attention/main.pdf) | 21 .tex files |
+| 93 | `huffman_coder` | [huffman_coder/main.tex](huffman_coder/main.tex) | [huffman_coder/main.pdf (485 KB)](huffman_coder/main.pdf) | 21 .tex files |
+| 94 | `hybrid_svd_layer` | [hybrid_svd_layer/main.tex](hybrid_svd_layer/main.tex) | [hybrid_svd_layer/main.pdf (485 KB)](hybrid_svd_layer/main.pdf) | 21 .tex files |
+| 95 | `hybridkv` | [hybridkv/main.tex](hybridkv/main.tex) | [hybridkv/main.pdf (481 KB)](hybridkv/main.pdf) | 21 .tex files |
+| 96 | `hymba_transx` | [hymba_transx/main.tex](hymba_transx/main.tex) | [hymba_transx/main.pdf (2535 KB)](hymba_transx/main.pdf) | 20 .tex files |
+| 97 | `infini` | [infini/main.tex](infini/main.tex) | [infini/main.pdf (2470 KB)](infini/main.pdf) | 20 .tex files |
+| 98 | `jamba` | [jamba/main.tex](jamba/main.tex) | [jamba/main.pdf (483 KB)](jamba/main.pdf) | 21 .tex files |
+| 99 | `jamba_info` | [jamba_info/main.tex](jamba_info/main.tex) | [jamba_info/main.pdf (2454 KB)](jamba_info/main.pdf) | 20 .tex files |
+| 100 | `kda_attention` | [kda_attention/main.tex](kda_attention/main.tex) | [kda_attention/main.pdf (483 KB)](kda_attention/main.pdf) | 21 .tex files |
+| 101 | `kmeans_quantize` | [kmeans_quantize/main.tex](kmeans_quantize/main.tex) | [kmeans_quantize/main.pdf (482 KB)](kmeans_quantize/main.pdf) | 21 .tex files |
+| 102 | `kronecker_compressor` | [kronecker_compressor/main.tex](kronecker_compressor/main.tex) | [kronecker_compressor/main.pdf (482 KB)](kronecker_compressor/main.pdf) | 21 .tex files |
+| 103 | `kronecker_linear` | [kronecker_linear/main.tex](kronecker_linear/main.tex) | [kronecker_linear/main.pdf (485 KB)](kronecker_linear/main.pdf) | 21 .tex files |
+| 104 | `kronecker_tt_lora` | [kronecker_tt_lora/main.tex](kronecker_tt_lora/main.tex) | [kronecker_tt_lora/main.pdf (484 KB)](kronecker_tt_lora/main.pdf) | 21 .tex files |
+| 105 | `kvtc` | [kvtc/main.tex](kvtc/main.tex) | [kvtc/main.pdf (482 KB)](kvtc/main.pdf) | 21 .tex files |
+| 106 | `leka_v1` | [leka_v1/main.tex](leka_v1/main.tex) | [leka_v1/main.pdf (2756 KB)](leka_v1/main.pdf) | 20 .tex files |
+| 107 | `leka_v2` | [leka_v2/main.tex](leka_v2/main.tex) | [leka_v2/main.pdf (2915 KB)](leka_v2/main.pdf) | 20 .tex files |
+| 108 | `leka_v3` | [leka_v3/main.tex](leka_v3/main.tex) | [leka_v3/main.pdf (2879 KB)](leka_v3/main.pdf) | 20 .tex files |
+| 109 | `liftr` | [liftr/main.tex](liftr/main.tex) | [liftr/main.pdf (481 KB)](liftr/main.pdf) | 21 .tex files |
+| 110 | `lillama_compressor` | [lillama_compressor/main.tex](lillama_compressor/main.tex) | [lillama_compressor/main.pdf (481 KB)](lillama_compressor/main.pdf) | 21 .tex files |
+| 111 | `linformer_attention` | [linformer_attention/main.tex](linformer_attention/main.tex) | [linformer_attention/main.pdf (458 KB)](linformer_attention/main.pdf) | 20 .tex files |
+| 112 | `lola_attention` | [lola_attention/main.tex](lola_attention/main.tex) | [lola_attention/main.pdf (483 KB)](lola_attention/main.pdf) | 21 .tex files |
+| 113 | `lora_attention` | [lora_attention/main.tex](lora_attention/main.tex) | [lora_attention/main.pdf (454 KB)](lora_attention/main.pdf) | 20 .tex files |
+| 114 | `lsc_compressor` | [lsc_compressor/main.tex](lsc_compressor/main.tex) | [lsc_compressor/main.pdf (481 KB)](lsc_compressor/main.pdf) | 21 .tex files |
+| 115 | `lsh_attention` | [lsh_attention/main.tex](lsh_attention/main.tex) | [lsh_attention/main.pdf (484 KB)](lsh_attention/main.pdf) | 21 .tex files |
+| 116 | `mamba` | [mamba/main.tex](mamba/main.tex) | [mamba/main.pdf (482 KB)](mamba/main.pdf) | 21 .tex files |
+| 117 | `mamba_inject` | [mamba_inject/main.tex](mamba_inject/main.tex) | [mamba_inject/main.pdf (484 KB)](mamba_inject/main.pdf) | 21 .tex files |
+| 118 | `mamba_shedder` | [mamba_shedder/main.tex](mamba_shedder/main.tex) | [mamba_shedder/main.pdf (481 KB)](mamba_shedder/main.pdf) | 21 .tex files |
+| 119 | `mamba_svd_flash` | [mamba_svd_flash/main.tex](mamba_svd_flash/main.tex) | [mamba_svd_flash/main.pdf (484 KB)](mamba_svd_flash/main.pdf) | 21 .tex files |
+| 120 | `mgie_svd` | [mgie_svd/main.tex](mgie_svd/main.tex) | [mgie_svd/main.pdf (483 KB)](mgie_svd/main.pdf) | 21 .tex files |
+| 121 | `minimal_aurora` | [minimal_aurora/main.tex](minimal_aurora/main.tex) | [minimal_aurora/main.pdf (2756 KB)](minimal_aurora/main.pdf) | 20 .tex files |
+| 122 | `minimal_nova` | [minimal_nova/main.tex](minimal_nova/main.tex) | [minimal_nova/main.pdf (2880 KB)](minimal_nova/main.pdf) | 20 .tex files |
+| 123 | `minimal_prism` | [minimal_prism/main.tex](minimal_prism/main.tex) | [minimal_prism/main.pdf (2806 KB)](minimal_prism/main.pdf) | 20 .tex files |
+| 124 | `minimal_svd` | [minimal_svd/main.tex](minimal_svd/main.tex) | [minimal_svd/main.pdf (2736 KB)](minimal_svd/main.pdf) | 20 .tex files |
+| 125 | `minimal_svd_v2` | [minimal_svd_v2/main.tex](minimal_svd_v2/main.tex) | [minimal_svd_v2/main.pdf (483 KB)](minimal_svd_v2/main.pdf) | 21 .tex files |
+| 126 | `mixattention_moska` | [mixattention_moska/main.tex](mixattention_moska/main.tex) | [mixattention_moska/main.pdf (447 KB)](mixattention_moska/main.pdf) | 20 .tex files |
+| 127 | `mla_attention` | [mla_attention/main.tex](mla_attention/main.tex) | [mla_attention/main.pdf (2506 KB)](mla_attention/main.pdf) | 20 .tex files |
+| 128 | `mlorq_compressor` | [mlorq_compressor/main.tex](mlorq_compressor/main.tex) | [mlorq_compressor/main.pdf (482 KB)](mlorq_compressor/main.pdf) | 21 .tex files |
+| 129 | `moba` | [moba/main.tex](moba/main.tex) | [moba/main.pdf (444 KB)](moba/main.pdf) | 20 .tex files |
+| 130 | `modegpt` | [modegpt/main.tex](modegpt/main.tex) | [modegpt/main.pdf (481 KB)](modegpt/main.pdf) | 21 .tex files |
+| 131 | `moe_deltakv_paged` | [moe_deltakv_paged/main.tex](moe_deltakv_paged/main.tex) | [moe_deltakv_paged/main.pdf (474 KB)](moe_deltakv_paged/main.pdf) | 20 .tex files |
+| 132 | `nasc_attention` | [nasc_attention/main.tex](nasc_attention/main.tex) | [nasc_attention/main.pdf (441 KB)](nasc_attention/main.pdf) | 20 .tex files |
+| 133 | `nexus` | [nexus/main.tex](nexus/main.tex) | [nexus/main.pdf (438 KB)](nexus/main.pdf) | 20 .tex files |
+| 134 | `nha` | [nha/main.tex](nha/main.tex) | [nha/main.pdf (2298 KB)](nha/main.pdf) | 21 .tex files |
+| 135 | `nli_softmax` | [nli_softmax/main.tex](nli_softmax/main.tex) | [nli_softmax/main.pdf (483 KB)](nli_softmax/main.pdf) | 21 .tex files |
+| 136 | `nmf_compressor` | [nmf_compressor/main.tex](nmf_compressor/main.tex) | [nmf_compressor/main.pdf (481 KB)](nmf_compressor/main.pdf) | 21 .tex files |
+| 137 | `nsa` | [nsa/main.tex](nsa/main.tex) | [nsa/main.pdf (1956 KB)](nsa/main.pdf) | 21 .tex files |
+| 138 | `nystrom_attention` | [nystrom_attention/main.tex](nystrom_attention/main.tex) | [nystrom_attention/main.pdf (1953 KB)](nystrom_attention/main.pdf) | 20 .tex files |
+| 139 | `oats` | [oats/main.tex](oats/main.tex) | [oats/main.pdf (481 KB)](oats/main.pdf) | 21 .tex files |
+| 140 | `optimal_subspace_projection` | [optimal_subspace_projection/main.tex](optimal_subspace_projection/main.tex) | [optimal_subspace_projection/main.pdf (482 KB)](optimal_subspace_projection/main.pdf) | 21 .tex files |
+| 141 | `optimized_hybrid_attention` | [optimized_hybrid_attention/main.tex](optimized_hybrid_attention/main.tex) | [optimized_hybrid_attention/main.pdf (486 KB)](optimized_hybrid_attention/main.pdf) | 21 .tex files |
+| 142 | `orion` | [orion/main.tex](orion/main.tex) | [orion/main.pdf (451 KB)](orion/main.pdf) | 20 .tex files |
+| 143 | `padre_attention` | [padre_attention/main.tex](padre_attention/main.tex) | [padre_attention/main.pdf (416 KB)](padre_attention/main.pdf) | 20 .tex files |
+| 144 | `performer_attention` | [performer_attention/main.tex](performer_attention/main.tex) | [performer_attention/main.pdf (458 KB)](performer_attention/main.pdf) | 20 .tex files |
+| 145 | `phantom` | [phantom/main.tex](phantom/main.tex) | [phantom/main.pdf (505 KB)](phantom/main.pdf) | 20 .tex files |
+| 146 | `progressive_token_pruning` | [progressive_token_pruning/main.tex](progressive_token_pruning/main.tex) | [progressive_token_pruning/main.pdf (484 KB)](progressive_token_pruning/main.pdf) | 21 .tex files |
+| 147 | `projection_factorized_attn` | [projection_factorized_attn/main.tex](projection_factorized_attn/main.tex) | [projection_factorized_attn/main.pdf (484 KB)](projection_factorized_attn/main.pdf) | 21 .tex files |
+| 148 | `proxsparse` | [proxsparse/main.tex](proxsparse/main.tex) | [proxsparse/main.pdf (481 KB)](proxsparse/main.pdf) | 21 .tex files |
+| 149 | `proxsparse_pruner` | [proxsparse_pruner/main.tex](proxsparse_pruner/main.tex) | [proxsparse_pruner/main.pdf (482 KB)](proxsparse_pruner/main.pdf) | 21 .tex files |
+| 150 | `pruning_utils` | [pruning_utils/main.tex](pruning_utils/main.tex) | [pruning_utils/main.pdf (483 KB)](pruning_utils/main.pdf) | 21 .tex files |
+| 151 | `ptp` | [ptp/main.tex](ptp/main.tex) | [ptp/main.pdf (432 KB)](ptp/main.pdf) | 20 .tex files |
+| 152 | `qcqa_attention` | [qcqa_attention/main.tex](qcqa_attention/main.tex) | [qcqa_attention/main.pdf (483 KB)](qcqa_attention/main.pdf) | 21 .tex files |
+| 153 | `rala_attention` | [rala_attention/main.tex](rala_attention/main.tex) | [rala_attention/main.pdf (462 KB)](rala_attention/main.pdf) | 20 .tex files |
+| 154 | `reap_moe` | [reap_moe/main.tex](reap_moe/main.tex) | [reap_moe/main.pdf (452 KB)](reap_moe/main.pdf) | 20 .tex files |
+| 155 | `regla_attention` | [regla_attention/main.tex](regla_attention/main.tex) | [regla_attention/main.pdf (483 KB)](regla_attention/main.pdf) | 21 .tex files |
+| 156 | `replace` | [replace/main.tex](replace/main.tex) | [replace/main.pdf (482 KB)](replace/main.pdf) | 21 .tex files |
+| 157 | `replaceme_compressor` | [replaceme_compressor/main.tex](replaceme_compressor/main.tex) | [replaceme_compressor/main.pdf (482 KB)](replaceme_compressor/main.pdf) | 21 .tex files |
+| 158 | `res_svd` | [res_svd/main.tex](res_svd/main.tex) | [res_svd/main.pdf (2648 KB)](res_svd/main.pdf) | 20 .tex files |
+| 159 | `roast_hashed_linear` | [roast_hashed_linear/main.tex](roast_hashed_linear/main.tex) | [roast_hashed_linear/main.pdf (484 KB)](roast_hashed_linear/main.pdf) | 21 .tex files |
+| 160 | `rotational_slicegpt_int4` | [rotational_slicegpt_int4/main.tex](rotational_slicegpt_int4/main.tex) | [rotational_slicegpt_int4/main.pdf (485 KB)](rotational_slicegpt_int4/main.pdf) | 21 .tex files |
+| 161 | `routing_attention` | [routing_attention/main.tex](routing_attention/main.tex) | [routing_attention/main.pdf (481 KB)](routing_attention/main.pdf) | 20 .tex files |
+| 162 | `rpc` | [rpc/main.tex](rpc/main.tex) | [rpc/main.pdf (2547 KB)](rpc/main.pdf) | 20 .tex files |
+| 163 | `rpca` | [rpca/main.tex](rpca/main.tex) | [rpca/main.pdf (481 KB)](rpca/main.pdf) | 21 .tex files |
+| 164 | `saes_svd` | [saes_svd/main.tex](saes_svd/main.tex) | [saes_svd/main.pdf (482 KB)](saes_svd/main.pdf) | 21 .tex files |
+| 165 | `saes_svd_v2` | [saes_svd_v2/main.tex](saes_svd_v2/main.tex) | [saes_svd_v2/main.pdf (484 KB)](saes_svd_v2/main.pdf) | 21 .tex files |
+| 166 | `salr` | [salr/main.tex](salr/main.tex) | [salr/main.pdf (481 KB)](salr/main.pdf) | 21 .tex files |
+| 167 | `salt` | [salt/main.tex](salt/main.tex) | [salt/main.pdf (450 KB)](salt/main.pdf) | 20 .tex files |
+| 168 | `samba_m3` | [samba_m3/main.tex](samba_m3/main.tex) | [samba_m3/main.pdf (482 KB)](samba_m3/main.pdf) | 21 .tex files |
+| 169 | `samba_moe` | [samba_moe/main.tex](samba_moe/main.tex) | [samba_moe/main.pdf (483 KB)](samba_moe/main.pdf) | 21 .tex files |
+| 170 | `sdrm` | [sdrm/main.tex](sdrm/main.tex) | [sdrm/main.pdf (481 KB)](sdrm/main.pdf) | 21 .tex files |
+| 171 | `simple_ssm` | [simple_ssm/main.tex](simple_ssm/main.tex) | [simple_ssm/main.pdf (483 KB)](simple_ssm/main.pdf) | 21 .tex files |
+| 172 | `slicegpt` | [slicegpt/main.tex](slicegpt/main.tex) | [slicegpt/main.pdf (481 KB)](slicegpt/main.pdf) | 21 .tex files |
+| 173 | `slicegpt_pca` | [slicegpt_pca/main.tex](slicegpt_pca/main.tex) | [slicegpt_pca/main.pdf (481 KB)](slicegpt_pca/main.pdf) | 21 .tex files |
+| 174 | `slim_compressor` | [slim_compressor/main.tex](slim_compressor/main.tex) | [slim_compressor/main.pdf (481 KB)](slim_compressor/main.pdf) | 21 .tex files |
+| 175 | `smart_weighted_ensemble` | [smart_weighted_ensemble/main.tex](smart_weighted_ensemble/main.tex) | [smart_weighted_ensemble/main.pdf (484 KB)](smart_weighted_ensemble/main.pdf) | 21 .tex files |
+| 176 | `soa_attn` | [soa_attn/main.tex](soa_attn/main.tex) | [soa_attn/main.pdf (483 KB)](soa_attn/main.pdf) | 21 .tex files |
+| 177 | `soa_fused_module` | [soa_fused_module/main.tex](soa_fused_module/main.tex) | [soa_fused_module/main.pdf (484 KB)](soa_fused_module/main.pdf) | 21 .tex files |
+| 178 | `soa_module` | [soa_module/main.tex](soa_module/main.tex) | [soa_module/main.pdf (483 KB)](soa_module/main.pdf) | 21 .tex files |
+| 179 | `soka` | [soka/main.tex](soka/main.tex) | [soka/main.pdf (481 KB)](soka/main.pdf) | 21 .tex files |
+| 180 | `span_expanded_attention` | [span_expanded_attention/main.tex](span_expanded_attention/main.tex) | [span_expanded_attention/main.pdf (484 KB)](span_expanded_attention/main.pdf) | 21 .tex files |
+| 181 | `sparsegpt` | [sparsegpt/main.tex](sparsegpt/main.tex) | [sparsegpt/main.pdf (481 KB)](sparsegpt/main.pdf) | 21 .tex files |
+| 182 | `spectra_v2` | [spectra_v2/main.tex](spectra_v2/main.tex) | [spectra_v2/main.pdf (483 KB)](spectra_v2/main.pdf) | 21 .tex files |
+| 183 | `spectraformer_attention` | [spectraformer_attention/main.tex](spectraformer_attention/main.tex) | [spectraformer_attention/main.pdf (484 KB)](spectraformer_attention/main.pdf) | 21 .tex files |
+| 184 | `spectral_mamba` | [spectral_mamba/main.tex](spectral_mamba/main.tex) | [spectral_mamba/main.pdf (483 KB)](spectral_mamba/main.pdf) | 21 .tex files |
+| 185 | `spectron` | [spectron/main.tex](spectron/main.tex) | [spectron/main.pdf (483 KB)](spectron/main.pdf) | 21 .tex files |
+| 186 | `squeezing_heads` | [squeezing_heads/main.tex](squeezing_heads/main.tex) | [squeezing_heads/main.pdf (484 KB)](squeezing_heads/main.pdf) | 21 .tex files |
+| 187 | `squeezing_heads_distill` | [squeezing_heads_distill/main.tex](squeezing_heads_distill/main.tex) | [squeezing_heads_distill/main.pdf (484 KB)](squeezing_heads_distill/main.pdf) | 21 .tex files |
+| 188 | `squeezing_heads_distiller` | [squeezing_heads_distiller/main.tex](squeezing_heads_distiller/main.tex) | [squeezing_heads_distiller/main.pdf (485 KB)](squeezing_heads_distiller/main.pdf) | 21 .tex files |
+| 189 | `subspace_projection` | [subspace_projection/main.tex](subspace_projection/main.tex) | [subspace_projection/main.pdf (481 KB)](subspace_projection/main.pdf) | 21 .tex files |
+| 190 | `svd_attention` | [svd_attention/main.tex](svd_attention/main.tex) | [svd_attention/main.pdf (483 KB)](svd_attention/main.pdf) | 21 .tex files |
+| 191 | `svd_compressed` | [svd_compressed/main.tex](svd_compressed/main.tex) | [svd_compressed/main.pdf (483 KB)](svd_compressed/main.pdf) | 21 .tex files |
+| 192 | `svd_linear_attention` | [svd_linear_attention/main.tex](svd_linear_attention/main.tex) | [svd_linear_attention/main.pdf (1432 KB)](svd_linear_attention/main.pdf) | 20 .tex files |
+| 193 | `svd_linear_decay` | [svd_linear_decay/main.tex](svd_linear_decay/main.tex) | [svd_linear_decay/main.pdf (484 KB)](svd_linear_decay/main.pdf) | 21 .tex files |
+| 194 | `svd_llm_v2_attention` | [svd_llm_v2_attention/main.tex](svd_llm_v2_attention/main.tex) | [svd_llm_v2_attention/main.pdf (2779 KB)](svd_llm_v2_attention/main.pdf) | 20 .tex files |
+| 195 | `svd_mamba` | [svd_mamba/main.tex](svd_mamba/main.tex) | [svd_mamba/main.pdf (2608 KB)](svd_mamba/main.pdf) | 20 .tex files |
+| 196 | `svd_proj_attn` | [svd_proj_attn/main.tex](svd_proj_attn/main.tex) | [svd_proj_attn/main.pdf (484 KB)](svd_proj_attn/main.pdf) | 21 .tex files |
+| 197 | `svd_projection_attention` | [svd_projection_attention/main.tex](svd_projection_attention/main.tex) | [svd_projection_attention/main.pdf (483 KB)](svd_projection_attention/main.pdf) | 21 .tex files |
+| 198 | `svd_sequence_attention` | [svd_sequence_attention/main.tex](svd_sequence_attention/main.tex) | [svd_sequence_attention/main.pdf (485 KB)](svd_sequence_attention/main.pdf) | 21 .tex files |
+| 199 | `swift_svd` | [swift_svd/main.tex](swift_svd/main.tex) | [swift_svd/main.pdf (481 KB)](swift_svd/main.pdf) | 21 .tex files |
+| 200 | `swift_svd_act` | [swift_svd_act/main.tex](swift_svd_act/main.tex) | [swift_svd_act/main.pdf (482 KB)](swift_svd_act/main.pdf) | 21 .tex files |
+| 201 | `template_attention` | [template_attention/main.tex](template_attention/main.tex) | [template_attention/main.pdf (483 KB)](template_attention/main.pdf) | 21 .tex files |
+| 202 | `tlinformer_attention` | [tlinformer_attention/main.tex](tlinformer_attention/main.tex) | [tlinformer_attention/main.pdf (484 KB)](tlinformer_attention/main.pdf) | 21 .tex files |
+| 203 | `token_compressed_attention` | [token_compressed_attention/main.tex](token_compressed_attention/main.tex) | [token_compressed_attention/main.pdf (454 KB)](token_compressed_attention/main.pdf) | 20 .tex files |
+| 204 | `tomoe` | [tomoe/main.tex](tomoe/main.tex) | [tomoe/main.pdf (484 KB)](tomoe/main.pdf) | 21 .tex files |
+| 205 | `tpa_attention` | [tpa_attention/main.tex](tpa_attention/main.tex) | [tpa_attention/main.pdf (483 KB)](tpa_attention/main.pdf) | 21 .tex files |
+| 206 | `tt` | [tt/main.tex](tt/main.tex) | [tt/main.pdf (481 KB)](tt/main.pdf) | 21 .tex files |
+| 207 | `unified_rope` | [unified_rope/main.tex](unified_rope/main.tex) | [unified_rope/main.pdf (459 KB)](unified_rope/main.pdf) | 20 .tex files |
+| 208 | `uniql_compressor` | [uniql_compressor/main.tex](uniql_compressor/main.tex) | [uniql_compressor/main.pdf (482 KB)](uniql_compressor/main.pdf) | 21 .tex files |
+| 209 | `upi_mamba` | [upi_mamba/main.tex](upi_mamba/main.tex) | [upi_mamba/main.pdf (482 KB)](upi_mamba/main.pdf) | 21 .tex files |
+| 210 | `upi_stuffed_mamba` | [upi_stuffed_mamba/main.tex](upi_stuffed_mamba/main.tex) | [upi_stuffed_mamba/main.pdf (484 KB)](upi_stuffed_mamba/main.pdf) | 21 .tex files |
+| 211 | `vig_attention` | [vig_attention/main.tex](vig_attention/main.tex) | [vig_attention/main.pdf (483 KB)](vig_attention/main.pdf) | 21 .tex files |
+| 212 | `vspec` | [vspec/main.tex](vspec/main.tex) | [vspec/main.pdf (429 KB)](vspec/main.pdf) | 20 .tex files |
+| 213 | `weighted_ensemble` | [weighted_ensemble/main.tex](weighted_ensemble/main.tex) | [weighted_ensemble/main.pdf (483 KB)](weighted_ensemble/main.pdf) | 21 .tex files |
+| 214 | `wgqa` | [wgqa/main.tex](wgqa/main.tex) | [wgqa/main.pdf (483 KB)](wgqa/main.pdf) | 21 .tex files |
+| 215 | `xattention` | [xattention/main.tex](xattention/main.tex) | [xattention/main.pdf (483 KB)](xattention/main.pdf) | 21 .tex files |
+| 216 | `zerokv_neo` | [zerokv_neo/main.tex](zerokv_neo/main.tex) | [zerokv_neo/main.pdf (485 KB)](zerokv_neo/main.pdf) | 21 .tex files |
+| 217 | `zeros_attention` | [zeros_attention/main.tex](zeros_attention/main.tex) | [zeros_attention/main.pdf (483 KB)](zeros_attention/main.pdf) | 21 .tex files |
