@@ -43,6 +43,7 @@ import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { openCompressionSimulator } from './interactive/compression_simulator.js';
 import { openModelRaceModal } from './interactive/model_race.js';
+import { openVideoExportModal } from './export/video_exporter.js';
 import { copyShareablePermalink, syncUrlHash, parseHashToState, applyHashStateToVisualizer } from './interactions/permalink.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
@@ -323,6 +324,17 @@ export async function bootstrapApp() {
         });
     }
 
+    const videoBtn = document.getElementById('btn-record-video');
+    if (videoBtn) {
+        videoBtn.addEventListener('click', () => {
+            openVideoExportModal({
+                canvas: renderer.domElement,
+                camera,
+                controls
+            });
+        });
+    }
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
@@ -339,6 +351,8 @@ export async function bootstrapApp() {
             openTokenPredictionPlayground();
         } else if (e.key === 'c' || e.key === 'C') {
             if (compressionBtn) compressionBtn.click();
+        } else if (e.key === 'v' || e.key === 'V') {
+            if (videoBtn) videoBtn.click();
         }
     });
 
