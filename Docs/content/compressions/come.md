@@ -794,3 +794,4 @@ Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable
 | **roberta-base** | ag_news | `PASS` | 74.50% | **76.80%** | +2.30% | 0.7589 | 1.26x | 1 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **61.40%** | -18.30% | 0.5908 | 1.26x | 1 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **84.52%** | -6.54% | 0.8475 | 1.24x | 1 | [svd-linear-attention-distilbert-sst2-come](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-come) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **56.80%** | -25.00% | 0.5379 | 1.24x | 1 | N/A | 2026-09-19 |
