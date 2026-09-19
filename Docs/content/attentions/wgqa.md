@@ -161,6 +161,13 @@ print("Logits shape:", outputs.logits.shape)
 
 ## 7. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9089 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-wgqa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-wgqa) | 2026-09-19 |
+
+
 | Model | Baseline Acc | WGQA Acc | Δ Acc | F1 | Peak VRAM |
 |-------|--------------|----------|-------|----|-----------|
 | pending | pending | pending | pending | pending | pending |
