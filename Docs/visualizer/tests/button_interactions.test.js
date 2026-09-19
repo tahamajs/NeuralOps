@@ -79,6 +79,25 @@ describe('Visualizer UI Buttons & Controls Audit', () => {
         assert.ok(htmlContent.includes('class="btn-speed"'));
         assert.ok(htmlContent.includes('class="btn-lod"'));
     });
+
+    it('verifies anti-overlap UI layout structure in index.html and style.css', () => {
+        // Assert dock-actions wrapper wraps secondary dock buttons
+        assert.ok(htmlContent.includes('class="dock-actions"'), 'index.html must group dock action buttons in .dock-actions');
+        
+        const cssPath = path.resolve(__dirname, '../style.css');
+        const cssContent = fs.readFileSync(cssPath, 'utf-8');
+
+        // Assert no unclosed braces / syntax errors around .view-panels
+        assert.ok(cssContent.includes('.view-panels {'), 'style.css must have valid .view-panels selector');
+
+        // Assert body.inspector-open hides compare-card to prevent overlap
+        assert.ok(cssContent.includes('body.inspector-open .compare-card'), 'style.css must hide .compare-card when inspector is open');
+
+        // Assert .mechanism-nav does not overlap cards
+        assert.ok(cssContent.includes('.mechanism-nav {'), 'style.css must style .mechanism-nav');
+        assert.ok(cssContent.includes('top: 68px;'), 'mechanism-nav top position must be aligned below topbar');
+        assert.ok(cssContent.includes('top: 118px;'), 'stage cards top position must be below mechanism nav');
+    });
 });
 
 describe('UI Controls Logic & Mock DOM Binding', () => {
@@ -210,6 +229,12 @@ describe('UI Controls Logic & Mock DOM Binding', () => {
         // Test inspector toggle
         elementsById['btn-toggle-inspector'].click();
         assert.strictEqual(elementsById['inspector'].classList.contains('hidden'), false);
+        assert.strictEqual(global.document.body.classList.contains('inspector-open'), true, 'body must receive inspector-open class');
+
+        // Test inspector toggle off
+        elementsById['btn-toggle-inspector'].click();
+        assert.strictEqual(elementsById['inspector'].classList.contains('hidden'), true);
+        assert.strictEqual(global.document.body.classList.contains('inspector-open'), false, 'body must remove inspector-open class');
 
         // Restore globals
         global.document = originalDoc;
