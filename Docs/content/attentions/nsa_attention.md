@@ -300,6 +300,7 @@ The structural flexibility of Native Sparse Attention suggests several promising
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9127 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-nsa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-nsa) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.60%** | -0.20% | 0.8157 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-nsa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-nsa) | 2026-09-19 |
 
 
 The empirical evaluation of `nsa_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
