@@ -43,6 +43,7 @@ import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { openCompressionSimulator } from './interactive/compression_simulator.js';
 import { openModelRaceModal } from './interactive/model_race.js';
+import { copyShareablePermalink, syncUrlHash, parseHashToState, applyHashStateToVisualizer } from './interactions/permalink.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -305,6 +306,23 @@ export async function bootstrapApp() {
     const raceBtn = document.getElementById('btn-open-race');
     if (raceBtn) raceBtn.addEventListener('click', () => openModelRaceModal());
 
+    const shareBtn = document.getElementById('btn-share');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            const curMod = store.get('activeResearchModule');
+            const inspectorEl = document.getElementById('inspector');
+            const state = {
+                model: store.get('currentModel'),
+                module: curMod ? (curMod.id || curMod.name) : undefined,
+                view: controls.enableRotate === false ? '2d' : '3d',
+                rank: curMod && curMod.rank ? curMod.rank : undefined,
+                inspector: inspectorEl ? !inspectorEl.classList.contains('hidden') : false
+            };
+            copyShareablePermalink(state);
+            syncUrlHash(state);
+        });
+    }
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
@@ -392,6 +410,19 @@ export async function bootstrapApp() {
 
     rebuildSceneForModel(store.get('currentModel'), store.get('currentCompression'));
     smoothFlyCamera(camera, controls, maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35));
+
+    // Restore deep-linked state from URL hash if present
+    if (typeof window !== 'undefined' && window.location.hash) {
+        const parsed = parseHashToState(window.location.hash);
+        applyHashStateToVisualizer(parsed, {
+            store,
+            catalogModules,
+            rebuildSceneForModel,
+            smoothFlyCamera: (cam, ctrl, y, d, x) => smoothFlyCamera(cam, ctrl, y, d, x),
+            camera,
+            controls
+        });
+    }
 
     // 9. Main Animation / Simulation Frame Loop
     function animate(timestamp) {
