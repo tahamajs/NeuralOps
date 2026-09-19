@@ -447,3 +447,9 @@ You have exceeded the rate limit for repository creation (300 per day). You can 
 
 429 Too Many Requests for url: https://huggingface.co/api/repos/create.
 You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.71%** | -0.35% | 0.9109 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-subspace-projection](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-subspace-projection) | 2026-09-19 |
