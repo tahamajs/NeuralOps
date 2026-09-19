@@ -572,3 +572,4 @@ The `AegisAttention` architecture incorporates telemetry hooks for tracking sing
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **81.65%** | -9.41% | 0.8298 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-aegis-v3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v3) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **38.90%** | -42.90% | 0.3381 | 1.20x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-v3](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-v3) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **90.10%** | -4.20% | 0.8976 | 1.20x | 0 | N/A | 2026-09-19 |
