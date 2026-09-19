@@ -1,70 +1,72 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-mla_attention,CRASH_NO_OUTPUT,0.0,0.0,,,,,18.160791899999822,0.0,,0,0,,1.0,,,,,,,,,Child produced no result file after 18.2s,,1789768044.084234
-moe_deltakv_paged,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:25:44.906742
-nasc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:04.017387
-nexus,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:23.437809
-nha_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:43.878421
-nli_softmax,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:02.725518
-nsa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:21.758164
-nystrom_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:42.605938
-optimized_hybrid_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:03.433177
-orion_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:23.928857
-padre_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:44.380949
-performer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:02.812739
-primal_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:23.271178
-projection_factorized_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:43.479546
-qcqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:03.783629
-rala_linear_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:23.519277
-reap_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:43.082220
-replace_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:02.946272
-res_svd_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:23.118561
-routing_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:43.957897
-rpc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:04.166149
-salt,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:25.514370
-samba_m3,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:46.509518
-samba_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:07.676490
-simple_ssm,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:28.692788
-smart_weighted_ensemble,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:48.725020
-soa_fused_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:08.937226
-span_expanded_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:28.533480
-spectraformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:48.016151
-spectron_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:07.673534
-squeezing_heads_module,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:27.068588
-svd_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:46.493591
-svd_linear,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:06.122170
-svd_llm_v2_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:26.876733
-svd_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:47.398291
-svd_sequence_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:08.096075
-tlinformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:28.424370
-token_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:48.014703
-tp_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:08.073807
-upi_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:28.517680
-vig_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:48.023449
-wgqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:08.066274
-zeros_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:27.424135
-primal,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: CUBLAS_STATUS_NOT_SUPPORTED when calling `cublasLtMatmulAlgoGetHeuristic( ltHandle, computeDesc.descriptor(), Adesc.descriptor(), Bdesc.descriptor(), Cdesc.descriptor(), Cdesc.descriptor(), preference.descriptor(), 1, &heuristicResult, &returnedResult)`",,2026-09-19T14:36:07.529002
-inject_cosformer,REJECTED_EXPANSION,36.6,0.3525,0.3525,0.3683,0.3626,nan,15.33,223.86,20022.82,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; NON_EXPANSION VIOLATION: before=66955779 after=67545609 delta=589830 (+0.9%),legacy_bert,2026-09-19T14:37:37.314474
-inject_hymba_transx,REJECTED_EXPANSION,47.1,0.4349,0.4349,0.5014,0.4742,1.0745,50.32,492.18,6162.44,66955779,89687049,1400838,1.0,0.0,0.0,0,0,,,12,1400832,NON_EXPANSION VIOLATION: before=66955779 after=89687049 delta=22731270 (+33.9%),legacy_bert,2026-09-19T14:38:53.834346
-inject_infini,REJECTED_EXPANSION,42.6,0.3537,0.3537,0.5566,0.4288,1.0675,16.45,330.65,15991.31,66955779,68135433,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68135433 delta=1179654 (+1.8%),legacy_bert,2026-09-19T14:39:37.897446
-inject_lsh,REJECTED_EXPANSION,39.4,0.3311,0.3311,0.4606,0.3933,1.0969,20.59,323.75,12352.18,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:40:32.498429
-inject_minimal_aurora,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.11,269.14,25414.23,66955779,58108431,589830,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:42:28.838960
-inject_minimal_svd,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.04,269.13,27429.17,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:44:25.409722
-inject_minimal_svd_v2,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.55,269.13,25880.28,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:46:33.679728
-inject_nsa,REJECTED_EXPANSION,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,13.25,324.79,21158.47,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:11.219531
-inject_nystrom,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.41,312.33,23122.54,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:48.270883
-adaptive_span,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5955,12.15,312.77,24200.17,66955779,67545675,589896,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545675 delta=589896 (+0.9%),legacy_bert,2026-09-19T14:49:03.661333
-asvd,REJECTED_EXPANSION,82.2,0.8217,0.8217,0.8219,0.8217,0.603,16.79,333.52,21452.09,66955779,68942730,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68942730 delta=1986951 (+3.0%),legacy_bert,2026-09-19T14:49:46.444838
-inject_replace,PASS,76.1,0.7621,0.7621,0.772,0.7623,0.809,7.04,329.61,43820.46,66955779,66955779,4136451,1.0,0.0,0.0,0,0,,,6,0,,legacy_bert,2026-09-19T14:49:58.339590
-block_transformer_hiba,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.8,314.38,23953.92,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:50:29.801707
-inject_spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.65,0.0,0.0,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,ValueError: SpectralMambaAttention forward requires hidden_states,legacy_bert,2026-09-19T14:50:30.036167
-faq,REJECTED_EXPANSION,81.9,0.8184,0.8184,0.8185,0.8183,0.6015,23.58,408.22,10094.84,66955779,68282883,1327104,0.9806,-1.98,0.0,0,0,,,0,1327104,NON_EXPANSION VIOLATION: before=66955779 after=68282883 delta=1327104 (+2.0%),legacy_bert,2026-09-19T14:51:18.114365
-fasa,REJECTED_EXPANSION,79.7,0.7961,0.7961,0.7965,0.7959,0.6166,15.48,310.07,16280.97,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:52:00.341661
-goldfinch,REJECTED_EXPANSION,79.1,0.791,0.791,0.7925,0.791,0.5568,14.7,336.02,20239.24,66955779,71144535,645204,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=71144535 delta=4188756 (+6.3%),legacy_bert,2026-09-19T14:52:42.458098
-halo_regla,REJECTED_EXPANSION,81.3,0.812,0.812,0.8138,0.8118,0.5411,16.1,323.42,17328.77,66955779,67600971,645192,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67600971 delta=645192 (+1.0%),legacy_bert,2026-09-19T14:53:22.853573
-inject_aegis_v1,REJECTED_EXPANSION,69.3,0.6925,0.6925,0.699,0.6932,0.6941,24.7,322.8,12554.25,66955779,67742283,589824,1.0,0.0,0.0,0,0,,,30,589824,NON_EXPANSION VIOLATION: before=66955779 after=67742283 delta=786504 (+1.2%),legacy_bert,2026-09-19T14:54:12.151953
-inject_aegis_v2,REJECTED_EXPANSION,35.2,0.2878,0.2878,0.3364,0.357,1.111,22.53,336.96,15977.85,66955779,68500755,1544976,1.0,0.0,0.0,0,0,,,30,589824,note: evaluated accuracy (35.20%) below chance threshold (36.90%); NON_EXPANSION VIOLATION: before=66955779 after=68500755 delta=1544976 (+2.3%),legacy_bert,2026-09-19T14:55:05.201747
-kronecker_tt_lora,REJECTED_EXPANSION,81.6,0.8157,0.8157,0.816,0.8157,0.595,18.29,333.95,14073.59,66955779,68461059,331776,0.978,-2.25,0.0,0,0,,,36,331776,NON_EXPANSION VIOLATION: before=66955779 after=68461059 delta=1505280 (+2.2%),legacy_bert,2026-09-19T14:55:47.389523
-leka_v2,REJECTED_EXPANSION,79.9,0.7986,0.7986,0.7999,0.7983,0.584,22.08,364.16,12469.73,66955779,67993425,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67993425 delta=1037646 (+1.5%),legacy_bert,2026-09-19T14:56:34.616882
-linformer,REJECTED_EXPANSION,75.6,0.7572,0.7572,0.7629,0.7563,0.6829,12.66,315.53,22779.07,66955779,67938825,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67938825 delta=983046 (+1.5%),legacy_bert,2026-09-19T14:57:18.596333
-ptp,REJECTED_EXPANSION,81.8,0.8177,0.8177,0.818,0.8176,0.5975,13.45,315.54,20884.64,66955779,67841289,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67841289 delta=885510 (+1.3%),legacy_bert,2026-09-19T14:57:56.250652
-cosformer,REJECTED_EXPANSION,36.5,0.3514,0.3514,0.3669,0.3616,nan,14.19,324.1,21003.68,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; NON_EXPANSION VIOLATION: before=66955779 after=67545609 delta=589830 (+0.9%),legacy_bert,2026-09-19T17:22:28.436586
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,latency_ms_per_token,throughput_tok_per_sec,perplexity,long_context_accuracy,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+mla_attention,CRASH_NO_OUTPUT,0.0,0.0,,,,,18.160791899999822,0.0,,,,,,0,0,,1.0,,,,,,,,,Child produced no result file after 18.2s,,1789768044.084234
+moe_deltakv_paged,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:25:44.906742
+nasc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:04.017387
+nexus,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:23.437809
+nha_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:43.878421
+nli_softmax,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:02.725518
+nsa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:21.758164
+nystrom_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:42.605938
+optimized_hybrid_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:03.433177
+orion_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:23.928857
+padre_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:44.380949
+performer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:02.812739
+primal_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:23.271178
+projection_factorized_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:43.479546
+qcqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:03.783629
+rala_linear_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:23.519277
+reap_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:43.082220
+replace_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:02.946272
+res_svd_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:23.118561
+routing_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:43.957897
+rpc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:04.166149
+salt,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:25.514370
+samba_m3,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:46.509518
+samba_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:07.676490
+simple_ssm,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:28.692788
+smart_weighted_ensemble,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:48.725020
+soa_fused_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:08.937226
+span_expanded_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:28.533480
+spectraformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:48.016151
+spectron_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:07.673534
+squeezing_heads_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:27.068588
+svd_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:46.493591
+svd_linear,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:06.122170
+svd_llm_v2_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:26.876733
+svd_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:47.398291
+svd_sequence_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:08.096075
+tlinformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:28.424370
+token_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:48.014703
+tp_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:08.073807
+upi_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:28.517680
+vig_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:48.023449
+wgqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:08.066274
+zeros_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:27.424135
+primal,PASS,81.1,0.8107,0.8107,0.8113,0.8106,0.5856,456.7,327.83,434.17,294.82,434.17,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T23:22:14.613325
+inject_cosformer,REJECTED_EXPANSION,36.6,0.3525,0.3525,0.3683,0.3626,nan,15.33,223.86,20022.82,,,,,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; NON_EXPANSION VIOLATION: before=66955779 after=67545609 delta=589830 (+0.9%),legacy_bert,2026-09-19T14:37:37.314474
+inject_hymba_transx,REJECTED_EXPANSION,47.1,0.4349,0.4349,0.5014,0.4742,1.0745,50.32,492.18,6162.44,,,,,66955779,89687049,1400838,1.0,0.0,0.0,0,0,,,12,1400832,NON_EXPANSION VIOLATION: before=66955779 after=89687049 delta=22731270 (+33.9%),legacy_bert,2026-09-19T14:38:53.834346
+inject_infini,REJECTED_EXPANSION,42.6,0.3537,0.3537,0.5566,0.4288,1.0675,16.45,330.65,15991.31,,,,,66955779,68135433,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68135433 delta=1179654 (+1.8%),legacy_bert,2026-09-19T14:39:37.897446
+inject_lsh,REJECTED_EXPANSION,39.4,0.3311,0.3311,0.4606,0.3933,1.0969,20.59,323.75,12352.18,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:40:32.498429
+inject_minimal_aurora,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.11,269.14,25414.23,,,,,66955779,58108431,589830,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:42:28.838960
+inject_minimal_svd,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.04,269.13,27429.17,,,,,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:44:25.409722
+inject_minimal_svd_v2,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.55,269.13,25880.28,,,,,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:46:33.679728
+inject_nsa,REJECTED_EXPANSION,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,13.25,324.79,21158.47,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:11.219531
+inject_nystrom,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.41,312.33,23122.54,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:48.270883
+adaptive_span,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5955,12.15,312.77,24200.17,,,,,66955779,67545675,589896,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545675 delta=589896 (+0.9%),legacy_bert,2026-09-19T14:49:03.661333
+asvd,REJECTED_EXPANSION,82.2,0.8217,0.8217,0.8219,0.8217,0.603,16.79,333.52,21452.09,,,,,66955779,68942730,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68942730 delta=1986951 (+3.0%),legacy_bert,2026-09-19T14:49:46.444838
+inject_replace,PASS,76.1,0.7621,0.7621,0.772,0.7623,0.809,7.04,329.61,43820.46,,,,,66955779,66955779,4136451,1.0,0.0,0.0,0,0,,,6,0,,legacy_bert,2026-09-19T14:49:58.339590
+block_transformer_hiba,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.8,314.38,23953.92,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:50:29.801707
+inject_spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.59,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:24:12.006954
+faq,REJECTED_EXPANSION,81.9,0.8184,0.8184,0.8185,0.8183,0.6015,23.58,408.22,10094.84,,,,,66955779,68282883,1327104,0.9806,-1.98,0.0,0,0,,,0,1327104,NON_EXPANSION VIOLATION: before=66955779 after=68282883 delta=1327104 (+2.0%),legacy_bert,2026-09-19T14:51:18.114365
+fasa,REJECTED_EXPANSION,79.7,0.7961,0.7961,0.7965,0.7959,0.6166,15.48,310.07,16280.97,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:52:00.341661
+goldfinch,REJECTED_EXPANSION,79.1,0.791,0.791,0.7925,0.791,0.5568,14.7,336.02,20239.24,,,,,66955779,71144535,645204,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=71144535 delta=4188756 (+6.3%),legacy_bert,2026-09-19T14:52:42.458098
+halo_regla,REJECTED_EXPANSION,81.3,0.812,0.812,0.8138,0.8118,0.5411,16.1,323.42,17328.77,,,,,66955779,67600971,645192,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67600971 delta=645192 (+1.0%),legacy_bert,2026-09-19T14:53:22.853573
+inject_aegis_v1,REJECTED_EXPANSION,69.3,0.6925,0.6925,0.699,0.6932,0.6941,24.7,322.8,12554.25,,,,,66955779,67742283,589824,1.0,0.0,0.0,0,0,,,30,589824,NON_EXPANSION VIOLATION: before=66955779 after=67742283 delta=786504 (+1.2%),legacy_bert,2026-09-19T14:54:12.151953
+inject_aegis_v2,REJECTED_EXPANSION,35.2,0.2878,0.2878,0.3364,0.357,1.111,22.53,336.96,15977.85,,,,,66955779,68500755,1544976,1.0,0.0,0.0,0,0,,,30,589824,note: evaluated accuracy (35.20%) below chance threshold (36.90%); NON_EXPANSION VIOLATION: before=66955779 after=68500755 delta=1544976 (+2.3%),legacy_bert,2026-09-19T14:55:05.201747
+kronecker_tt_lora,REJECTED_EXPANSION,81.6,0.8157,0.8157,0.816,0.8157,0.595,18.29,333.95,14073.59,,,,,66955779,68461059,331776,0.978,-2.25,0.0,0,0,,,36,331776,NON_EXPANSION VIOLATION: before=66955779 after=68461059 delta=1505280 (+2.2%),legacy_bert,2026-09-19T14:55:47.389523
+leka_v2,REJECTED_EXPANSION,79.9,0.7986,0.7986,0.7999,0.7983,0.584,22.08,364.16,12469.73,,,,,66955779,67993425,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67993425 delta=1037646 (+1.5%),legacy_bert,2026-09-19T14:56:34.616882
+linformer,REJECTED_EXPANSION,75.6,0.7572,0.7572,0.7629,0.7563,0.6829,12.66,315.53,22779.07,,,,,66955779,67938825,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67938825 delta=983046 (+1.5%),legacy_bert,2026-09-19T14:57:18.596333
+ptp,REJECTED_EXPANSION,81.8,0.8177,0.8177,0.818,0.8176,0.5975,13.45,315.54,20884.64,,,,,66955779,67841289,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67841289 delta=885510 (+1.3%),legacy_bert,2026-09-19T14:57:56.250652
+cosformer,REJECTED_EXPANSION,36.5,0.3514,0.3514,0.3669,0.3616,nan,14.19,324.1,21003.68,,,,,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; NON_EXPANSION VIOLATION: before=66955779 after=67545609 delta=589830 (+0.9%),legacy_bert,2026-09-19T17:22:28.436586
+spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.64,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:13.846395
+spectraformer,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:42.919182
