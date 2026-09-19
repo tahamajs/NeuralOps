@@ -446,3 +446,4 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **89.56%** | -1.50% | 0.8994 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-spectra-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-spectra-v2) | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.20%** | -0.10% | 0.9379 | 1.00x | 0 | N/A | 2026-09-19 |
