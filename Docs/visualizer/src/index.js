@@ -41,6 +41,7 @@ import { openLearnModal } from './educational/learn_modal.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
+import { openCompressionSimulator } from './interactive/compression_simulator.js';
 import { setupControls } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
@@ -280,6 +281,26 @@ export async function bootstrapApp() {
     const predictionBtn = document.getElementById('btn-open-prediction');
     if (predictionBtn) predictionBtn.addEventListener('click', () => openTokenPredictionPlayground());
 
+    const compressionBtn = document.getElementById('btn-open-compression');
+    if (compressionBtn) compressionBtn.addEventListener('click', () => {
+        const curMod = store.get('activeResearchModule');
+        const initRank = (curMod && curMod.rank) || 64;
+        openCompressionSimulator({
+            initialRank: initRank,
+            hiddenDim: 768,
+            numLayers: 12,
+            onApplyTo3D: (newRank) => {
+                const scaleFactor = Math.max(0.25, Math.min(2.2, newRank / 64));
+                interactableMeshes.forEach(mesh => {
+                    if (mesh.userData && (mesh.userData.type === 'svd' || mesh.userData.sub_type === 'v_factor' || mesh.userData.sub_type === 'u_factor')) {
+                        mesh.scale.set(scaleFactor, 1.0, scaleFactor);
+                    }
+                });
+                updateComparisonHUD(store.get('currentModel'), store.get('activeResearchModule') || { paradigm: 'svd', rank: newRank });
+            }
+        });
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (e.key === '+' || e.key === '=') {
@@ -294,6 +315,8 @@ export async function bootstrapApp() {
             openAttentionHeatmapExplorer();
         } else if (e.key === 't' || e.key === 'T') {
             openTokenPredictionPlayground();
+        } else if (e.key === 'c' || e.key === 'C') {
+            if (compressionBtn) compressionBtn.click();
         }
     });
 
