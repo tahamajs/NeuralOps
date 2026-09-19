@@ -414,7 +414,7 @@ def inject_attention(
     copy_weights: bool = True,
     **kwargs: Any,
 ) -> nn.Module:
-    """
+    """Universal attention layer replacement engine for HuggingFace Transformers."""
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     if callable(attn_class) and not isinstance(attn_class, type):
         try:
