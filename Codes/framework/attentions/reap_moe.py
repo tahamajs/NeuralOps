@@ -171,8 +171,8 @@ class REAPMoE(nn.Module):
     def __init__(
         self,
         d_model: int = 768,
-        n_experts: int = 8,
-        top_k: int = 2,
+        n_experts: int = 2,
+        top_k: int = 1,
         noise_std: float = 0.05,
         use_svd: bool = True,
         config: Optional[Any] = None,
@@ -199,15 +199,15 @@ class REAPMoE(nn.Module):
 
         if use_svd:
             expert_layer = lambda: nn.Sequential(
-                SVDLinear(d_model, d_model * 2, rank=max(1, min(d_model, d_model * 2) // 4), **factory_kwargs),
+                SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
                 nn.GELU(),
-                SVDLinear(d_model * 2, d_model, rank=max(1, min(d_model * 2, d_model) // 4), **factory_kwargs),
+                SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
             )
         else:
             expert_layer = lambda: nn.Sequential(
-                nn.Linear(d_model, d_model * 2, **factory_kwargs),
+                nn.Linear(d_model, d_model, **factory_kwargs),
                 nn.GELU(),
-                nn.Linear(d_model * 2, d_model, **factory_kwargs),
+                nn.Linear(d_model, d_model, **factory_kwargs),
             )
 
         self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
@@ -259,8 +259,8 @@ class REAPMoEAttention(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = 64,
-        n_experts: int = 8,
-        top_k: int = 2,
+        n_experts: int = 2,
+        top_k: int = 1,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
