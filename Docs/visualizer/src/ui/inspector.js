@@ -27,6 +27,9 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
     const drawer = document.getElementById('inspector');
     if (drawer && drawer.classList.contains('hidden')) {
         drawer.classList.remove('hidden');
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.classList.add('inspector-open');
+        }
     }
 
     const meta = node.metadata || {};

@@ -107,18 +107,21 @@ export function setupControls(handlers = {}) {
             const isHidden = inspector.classList.contains('hidden');
             inspector.classList.toggle('hidden');
             inspBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            if (document.body) document.body.classList.toggle('inspector-open', isHidden);
         });
     }
     if (detailInspectBtn && inspector) {
         detailInspectBtn.addEventListener('click', () => {
             inspector.classList.remove('hidden');
             if (inspBtn) inspBtn.setAttribute('aria-expanded', 'true');
+            if (document.body) document.body.classList.add('inspector-open');
         });
     }
     if (closeInspBtn && inspector) {
         closeInspBtn.addEventListener('click', () => {
             inspector.classList.add('hidden');
             if (inspBtn) inspBtn.setAttribute('aria-expanded', 'false');
+            if (document.body) document.body.classList.remove('inspector-open');
         });
     }
 
