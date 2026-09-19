@@ -1,101 +1,69 @@
 {
   "id": "slicegpt_compressor",
-  "name": "Slicegpt Compressor",
+  "name": "SliceGPT PCA-based slicing compressor. Registered as 'slicegpt_pca'.",
   "file": "Codes/framework/compression_engine/slicegpt_compressor.py",
   "type": "Compression Engine",
   "category": "Structured Pruning & Channel Slicing",
-  "paradigm": "slicegpt",
+  "paradigm": "pruning",
   "icon": "\u2702\ufe0f",
   "description": "SliceGPT PCA-based slicing compressor. Registered as 'slicegpt_pca'.",
   "classes": [],
   "methods_count": 0,
-  "math_latex": "W_{pruned} = (Q^\\top W Q)_{[:, \\mathcal{I}]}, \\quad |\\mathcal{I}| = (1 - 0.45) d_{in}",
+  "math_latex": "W_{\\text{pruned}} = (Q^\\top W Q)_{[:, \\mathcal{I}]}, \\quad Q = \\text{eigh}(X X^\\top), \\; |\\mathcal{I}| = (1 - 0.45) d_{in}",
   "components": [
     {
-      "id": "q_slice",
-      "name": "Sliced Query Projection (-45%)",
-      "role": "Orthogonally Concentrated Projection",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#f59e0b"
+      "id": "orthogonal_rot",
+      "name": "Orthogonal Transformation Matrix (Q)",
+      "role": "Energy Concentration",
+      "shape_transform": "[d_{in} \u00d7 d_{in}] Orthogonal",
+      "color": "#38bdf8",
+      "math_latex": "X' = X Q, \\quad Q^\\top Q = I"
     },
     {
-      "id": "k_slice",
-      "name": "Sliced Key Projection (-45%)",
-      "role": "Compressed Dimensional Key Map",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#d97706"
+      "id": "sliced_linear",
+      "name": "Channel-Sliced Dense Linear Operator",
+      "role": "45% Channel Elimination",
+      "shape_transform": "[0.55 \\cdot d_{out} \u00d7 0.55 \\cdot d_{in}]",
+      "color": "#0ea5e9",
+      "math_latex": "W_{sliced} = (Q_2^\\top W Q_1)_{[:d'_1, :d'_2]}"
     },
     {
-      "id": "v_slice",
-      "name": "Sliced Value Projection (-45%)",
-      "role": "Compressed Value Manifold",
-      "shape_transform": "[55% d_out \u00d7 d_in]",
-      "color": "#b45309"
-    },
-    {
-      "id": "out_slice",
-      "name": "Sliced Output Transform",
-      "role": "Channel Pruned Output Reconstruction",
-      "shape_transform": "[d_out \u00d7 55% d_in]",
-      "color": "#f59e0b"
+      "id": "bias_correct",
+      "name": "Mean Bias Correction Vector",
+      "role": "Representation Recalibration",
+      "shape_transform": "[0.55 \\cdot d_{out}]",
+      "color": "#0284c7",
+      "math_latex": "\\mu_{err} = \\mathbb{E}[W X] - \\mathbb{E}[W_{sliced} X']"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 43687584,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 45227712,
-      "storage_saved_formatted": "43.1 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 78705984,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 90455424,
-      "storage_saved_formatted": "86.3 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 3308912,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 79090752,
-      "savings_ratio": 2.14,
-      "storage_saved_bytes": 90455424,
-      "storage_saved_formatted": "86.3 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 8200191,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 332939240,
-      "savings_ratio": 1.82,
-      "storage_saved_bytes": 322043952,
-      "storage_saved_formatted": "307.1 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 3337420,
+      "savings_ratio": 3.33
     }
   }
 }

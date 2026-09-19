@@ -1,6 +1,6 @@
 {
   "id": "cur_moe_compressor",
-  "name": "Cur MOE Compressor",
+  "name": "CUR-MoE Compressor: apply CUR cross-approximation to Mixture of Experts (Mo",
   "file": "Codes/framework/compression_engine/cur_moe_compressor.py",
   "type": "Compression Engine",
   "category": "Mixture of Experts & Routing",
@@ -11,107 +11,77 @@
     "CURMoECompressor"
   ],
   "methods_count": 7,
-  "math_latex": "\\mathcal{E}(r) = \\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)",
+  "math_latex": "W \\approx C \\cdot U \\cdot R, \\quad C = W_{[:, J]}, \\; R = W_{[I, :]}, \\; U = C^\\dagger W R^\\dagger",
   "components": [
     {
-      "id": "router_gate",
-      "name": "Dynamic Routing Gating (4 Experts)",
-      "role": "Top-2 Expert Token Dispatcher",
-      "shape_transform": "[4 \u00d7 d_in]",
-      "color": "#ec4899"
+      "id": "router",
+      "name": "Top-K Gating Router",
+      "role": "Sparse Token Dispatch",
+      "shape_transform": "[K \u00d7 d_in] Softmax",
+      "color": "#b57ee0",
+      "math_latex": "G(x) = \\text{Softmax}(\\text{TopK}(x W_g, K=2))"
     },
     {
       "id": "expert_0",
-      "name": "Sparse Expert Module 0",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
+      "name": "Specialized Feed-Forward Expert 0",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#c084fc",
+      "math_latex": "E_0(x) = \\text{GELU}(x W_{0,1} + b_{0,1}) W_{0,2} + b_{0,2}"
     },
     {
       "id": "expert_1",
-      "name": "Sparse Expert Module 1",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
+      "name": "Specialized Feed-Forward Expert 1",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#a855f7",
+      "math_latex": "E_1(x) = \\text{GELU}(x W_{1,1} + b_{1,1}) W_{1,2} + b_{1,2}"
     },
     {
       "id": "expert_2",
-      "name": "Sparse Expert Module 2",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
+      "name": "Specialized Feed-Forward Expert 2",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#9333ea",
+      "math_latex": "E_2(x) = \\text{GELU}(x W_{2,1} + b_{2,1}) W_{2,2} + b_{2,2}"
     },
     {
       "id": "expert_3",
-      "name": "Sparse Expert Module 3",
-      "role": "Specialized Sub-Network",
-      "shape_transform": "[d_ffn \u00d7 d_in]",
-      "color": "#8b5cf6"
-    },
-    {
-      "id": "aggregator",
-      "name": "Softmax Weighted Combiner",
-      "role": "Weighted Token Reconstruction",
-      "shape_transform": "[d_out \u00d7 d_in]",
-      "color": "#a855f7"
+      "name": "Specialized Feed-Forward Expert 3",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#7e22ce",
+      "math_latex": "E_3(x) = \\text{GELU}(x W_{3,1} + b_{3,1}) W_{3,2} + b_{3,2}"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 151254528,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 293839872,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 21236736,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 294224640,
-      "savings_ratio": 0.6,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 54136320,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 1435406336,
-      "savings_ratio": 0.53,
-      "storage_saved_bytes": 0,
-      "storage_saved_formatted": "0.0 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 19841024,
+      "savings_ratio": 0.56
     }
   }
 }

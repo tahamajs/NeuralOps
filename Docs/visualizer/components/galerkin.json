@@ -1,94 +1,69 @@
 {
   "id": "galerkin",
-  "name": "Galerkin",
+  "name": "Galerkin Attention alias module.",
   "file": "Codes/framework/attentions/galerkin.py",
   "type": "Attention Module",
   "category": "Dynamic & Efficient Attention",
-  "paradigm": "linear",
+  "paradigm": "sparse",
   "icon": "\ud83c\udf1f",
   "description": "Galerkin Attention alias module.",
   "classes": [],
   "methods_count": 0,
-  "math_latex": "\\text{Attn}(Q, K, V) = \\phi(Q) \\left( \\phi(K)^\\top V \\right)",
+  "math_latex": "A_{ij} = \\text{TopK}\\left(\\text{Softmax}\\left(\\frac{Q_i K_j^\\top}{\\sqrt{d}}\\right)\\right)",
   "components": [
     {
-      "id": "kernel_phi",
-      "name": "Random Feature Map Projection phi(x)",
-      "role": "Kernel Linearization Space",
-      "shape_transform": "[r \u00d7 d_in]",
-      "color": "#f43f5e"
+      "id": "sparse_mask",
+      "name": "Dynamic Top-K Attention Sparsity Mask",
+      "role": "O(N sqrt{N}) Token Filtering",
+      "shape_transform": "[Seq \u00d7 Seq] Sparse",
+      "color": "#38bdf8",
+      "math_latex": "M_{ij} = \\mathbb{I}(|S_{ij}| \\ge \\tau), \\quad S_{ij} = \\frac{q_i k_j^\\top}{\\sqrt{d}}"
     },
     {
-      "id": "kv_accum",
-      "name": "Linear KV Buffer Accumulator",
-      "role": "O(N) Recurrent Sequence State",
-      "shape_transform": "[d_in \u00d7 d_out]",
-      "color": "#fb7185"
+      "id": "kernel_attn",
+      "name": "Linearized Positive Kernel Projection",
+      "role": "Softmax Approximation",
+      "shape_transform": "[\\phi(Q) \\cdot \\phi(K)^T]",
+      "color": "#7dd3fc",
+      "math_latex": "\\text{Attn}(Q,K,V) = \\frac{\\phi(Q) (\\phi(K)^\\top V)}{\\phi(Q) \\sum_j \\phi(K_j)^\\top}"
     },
     {
-      "id": "out_linear",
-      "name": "Output Linear Projection",
-      "role": "Output Context Reconstruction",
-      "shape_transform": "[d_out \u00d7 d_in]",
-      "color": "#e11d48"
+      "id": "out_norm",
+      "name": "Output Layer Normalization",
+      "role": "Attention Scale Stabilization",
+      "shape_transform": "[d_{in}]",
+      "color": "#bae6fd",
+      "math_latex": "\\text{LN}(y) = \\frac{y - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\odot \\gamma + \\beta"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 5780275,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 58515762,
-      "savings_ratio": 1.22,
-      "storage_saved_bytes": 15571356,
-      "storage_saved_formatted": "14.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 5780275,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 108362340,
-      "savings_ratio": 1.22,
-      "storage_saved_bytes": 31142712,
-      "storage_saved_formatted": "29.7 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 5780275,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 108747108,
-      "savings_ratio": 1.22,
-      "storage_saved_bytes": 31142712,
-      "storage_saved_formatted": "29.7 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 13900185,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 469739096,
-      "savings_ratio": 1.07,
-      "storage_saved_bytes": 48444240,
-      "storage_saved_formatted": "46.2 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 6118604,
+      "savings_ratio": 1.82
     }
   }
 }
