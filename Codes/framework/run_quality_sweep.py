@@ -50,6 +50,8 @@ FIELDS = [
     "total_params_after",
     "trainable_recovery_params",
     "compression_rate",
+    "compression_rate_raw",
+    "compression_rate_net",
     "compression_ratio_pct",
     "flops_reduction_pct",
     "num_compressed_layers",
@@ -69,6 +71,28 @@ DEPRECATED_MODULES = {
     "hgrn2_gated_deltanet": "same as gated_delta_net",
 }
 
+# ---------------------------------------------------------------------------
+# Blocklist: modules that violate the non-expansion guarantee or are hardware-
+# incompatible. Loaded from Codes/framework/config/blocklist.txt.
+# These are recorded as SKIP_BLOCKED and never retried.
+# ---------------------------------------------------------------------------
+def _load_blocklist() -> dict:
+    """Return {module_name: reason_comment} from blocklist.txt."""
+    bl_path = Path(__file__).resolve().parent / "config" / "blocklist.txt"
+    blocked = {}
+    if bl_path.exists():
+        for raw in bl_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("#", 1)
+            name = parts[0].strip()
+            reason = parts[1].strip() if len(parts) > 1 else "blocked"
+            if name:
+                blocked[name] = reason
+    return blocked
+
+BLOCKED_MODULES: dict = _load_blocklist()
 
 
 
@@ -1021,17 +1045,22 @@ def compute_compression_metrics(
             if hasattr(m, "is_custom_attention") or hasattr(m, "span_logits")
         )
     lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
+    raw_params_after = total_params_after - lora_params
 
     is_compression = (
         module_type == "compressor"
         or (total_params_after < total_params_before and module_name != "full")
     )
 
-    if is_compression and total_params_after > 0:
-        compression_rate = round(total_params_before / max(1, total_params_after), 4)
-        compression_ratio_pct = round((1.0 - total_params_after / max(1, total_params_before)) * 100.0, 2)
+    if total_params_after > 0:
+        compression_rate_net = round(total_params_before / max(1, total_params_after), 4)
+        compression_rate_raw = round(total_params_before / max(1, raw_params_after), 4)
+        compression_rate = compression_rate_net if is_compression else 1.0
+        compression_ratio_pct = round((1.0 - total_params_after / max(1, total_params_before)) * 100.0, 2) if is_compression else 0.0
     else:
         compression_rate = 1.0
+        compression_rate_raw = 1.0
+        compression_rate_net = 1.0
         compression_ratio_pct = 0.0
 
     num_compressed_layers = comp_stats.get("num_compressed", 0)
@@ -1057,30 +1086,32 @@ def compute_compression_metrics(
             except (ValueError, TypeError):
                 pass
 
-    avg_reconstruction_error = comp_stats.get("avg_reconstruction_error", None)
-    if avg_reconstruction_error is None and layer_errors:
-        avg_reconstruction_error = round(float(sum(layer_errors.values()) / max(1, len(layer_errors))), 4)
+    err_values = list(layer_errors.values())
+    avg_reconstruction_error = (
+        round(sum(err_values) / len(err_values), 4) if err_values else None
+    )
 
-    weighted_reconstruction_error = comp_stats.get("weighted_reconstruction_error", None)
-    if weighted_reconstruction_error is None and layer_errors:
-        total_w_err, total_w_params = 0.0, 0
-        named_mods = dict(model.named_modules())
-        for mod_name, err_val in layer_errors.items():
-            sub_mod = named_mods.get(mod_name)
-            n_params = sum(p.numel() for p in sub_mod.parameters()) if sub_mod is not None else 1
-            total_w_err += err_val * n_params
-            total_w_params += n_params
-        if total_w_params > 0:
-            weighted_reconstruction_error = round(float(total_w_err / total_w_params), 4)
-        else:
-            weighted_reconstruction_error = avg_reconstruction_error
+    if err_values and layer_ranks:
+        weighted_sum = sum(
+            layer_errors[k] * layer_ranks.get(k, 1)
+            for k in layer_errors
+            if k in layer_ranks
+        )
+        total_rank = sum(layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks)
+        weighted_reconstruction_error = (
+            round(weighted_sum / max(1, total_rank), 4) if total_rank > 0 else avg_reconstruction_error
+        )
+    else:
+        weighted_reconstruction_error = avg_reconstruction_error
 
+    # FLOPs reduction estimation for factorized linear modules
     flops_reduction_pct = comp_stats.get("flops_reduction_percent", comp_stats.get("flops_reduction_pct", None))
     if flops_reduction_pct is None:
-        if num_svd_layers > 0:
-            orig_flops, fact_flops = 0, 0
+        if is_compression:
+            orig_flops = 0
+            fact_flops = 0
             for m in model.modules():
-                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"):
+                if m.__class__.__name__ in ("SVDLinear", "FactorisedLinear"):
                     in_f = getattr(m, "in_features", None)
                     out_f = getattr(m, "out_features", None)
                     r = getattr(m, "rank", None)
@@ -1101,6 +1132,8 @@ def compute_compression_metrics(
         "total_params_after": total_params_after,
         "trainable_recovery_params": trainable_recovery_params,
         "compression_rate": compression_rate,
+        "compression_rate_raw": compression_rate_raw,
+        "compression_rate_net": compression_rate_net,
         "compression_ratio_pct": compression_ratio_pct,
         "flops_reduction_pct": flops_reduction_pct,
         "num_compressed_layers": num_compressed_layers,
@@ -1489,8 +1522,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     # Adaptively maximize GPU utilization based on free VRAM (RTX 4070 8GB allows micro_bs 16 or 32 for BERT/RoBERTa/GPT2)
     if device.type == "cuda":
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        if "qwen" in str(name).lower():
-            target_micro = 8
+        if "qwen" in str(name).lower() or total_vram_gb <= 8.5:
+            target_micro = min(2, curr_batch_size)
         else:
             target_micro = curr_batch_size
         micro_bs = min(curr_batch_size, target_micro)
@@ -2465,8 +2498,20 @@ def run_single_module_main(args) -> dict:
     p0 = majority_baseline_ratio
     se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
     z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
-    stat_margin_pct = round(z_score * se * 100.0, 2)
-    pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+    # Dataset-aware chance and threshold calibration
+    stat_margin_pct = 5.08  # fallback default
+    if getattr(args, "dataset", "") == "sst2":
+        stat_margin_pct = 5.08
+        pass_threshold_pct = 56.00   # binary, chance = 50%
+    elif getattr(args, "dataset", "") == "mnli":
+        stat_margin_pct = 1.45       # 3 * 0.483%
+        pass_threshold_pct = 36.90   # 3-class (majority=35.45% + 1.45% 3-sigma margin)
+    elif getattr(args, "dataset", "") == "ag_news":
+        stat_margin_pct = 2.50
+        pass_threshold_pct = 30.00   # 4-class, chance = 25%
+    else:
+        stat_margin_pct = round(z_score * se * 100.0, 2)
+        pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
 
     LOG.info("=" * 80)
     LOG.info("STATISTICAL BENCHMARK THRESHOLDS (Validation N=%d):", total_val_samples)
@@ -2497,8 +2542,10 @@ def run_single_module_main(args) -> dict:
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
-    # In fresh mode, evaluate everything; otherwise only skip legitimate PASS results
-    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
+    # In fresh mode, evaluate everything; otherwise only skip modules that genuinely PASSED.
+    # PASS_LOW is NOT skipped — it gets re-evaluated on new datasets where thresholds differ.
+    # CRASH/FAIL/REJECTED_EXPANSION are always re-tried unless in BLOCKED_MODULES.
+    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") == "PASS"}
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
@@ -2506,10 +2553,34 @@ def run_single_module_main(args) -> dict:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
             continue
-        if name in existing:
-            LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (%s, %.2f%%)",
-                     n, len(names), name, summary_dict[name].get("status"), float(summary_dict[name].get("accuracy_pct", 0.0)))
+        if name in BLOCKED_MODULES:
+            bl_reason = BLOCKED_MODULES[name]
+            LOG.warning(">>> Skipping BLOCKED module [%d/%d]: %s (%s)", n, len(names), name, bl_reason)
+            row = {
+                "module_name": name, "status": "SKIP_BLOCKED",
+                "accuracy_pct": 0.0, "elapsed_s": 0.0,
+                "error": f"BLOCKED: {bl_reason}",
+                "path": "blocked", "timestamp": datetime.now().isoformat(),
+            }
+            summary_dict[name] = row
+            # Atomic write to CSV so blocklist entries appear in live summary.csv
+            _tmp = path.with_suffix(".tmp")
+            with _tmp.open("w", newline="", encoding="utf8") as _f:
+                _w = csv.DictWriter(_f, fieldnames=FIELDS, extrasaction="ignore")
+                _w.writeheader()
+                for _m in summary_dict:
+                    _w.writerow(summary_dict[_m])
+            if _tmp.exists():
+                if path.exists():
+                    try: path.unlink()
+                    except Exception: pass
+                _tmp.rename(path)
             continue
+        if name in existing:
+            LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (PASS, %.2f%%)",
+                     n, len(names), name, float(summary_dict[name].get("accuracy_pct", 0.0)))
+            continue
+
         LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
                  n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
         t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
@@ -2698,6 +2769,8 @@ def run_single_module_main(args) -> dict:
                 "total_params_after": total_params_before,
                 "trainable_recovery_params": 0,
                 "compression_rate": 1.0,
+                "compression_rate_raw": 1.0,
+                "compression_rate_net": 1.0,
                 "compression_ratio_pct": 0.0,
                 "flops_reduction_pct": 0.0,
                 "num_compressed_layers": 0,
@@ -2718,21 +2791,21 @@ def run_single_module_main(args) -> dict:
                 err = "note: recovery_loss_nan"
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
-            # Module claimed compression but did not compress anything.
-            # Also check: was ANY module in the model injected by class-name match?
-            # This catches attention modules that forgot to set is_custom_attention=True.
-            _name_injected = any(
-                name.lower().replace("_", "") in m.__class__.__name__.lower().replace("_", "")
-                for m in model.modules()
-                if m.__class__.__name__ not in ("Module", "Linear", "LayerNorm", "Dropout", "ReLU", "GELU")
-            ) if model is not None else False
-            if (
+
+            # Check parameter expansion
+            p_before = comp_metrics.get("total_params_before", total_params_before)
+            p_after = comp_metrics.get("total_params_after", total_params_before)
+            if p_before > 0 and p_after > p_before and name != "full":
+                status = "REJECTED_EXPANSION"
+                expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
+                err = f"{err}; {expansion_err}".strip("; ")
+            elif (
                 name != "full"
                 and not injected
                 and not _name_injected
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("num_injected_attention_layers", 0) == 0
-                and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
+                and p_after >= p_before
             ):
                 status = "PASS_NO_COMPRESSION"
                 err = "note: zero compressed layers, model grew (LoRA only)"
@@ -2768,6 +2841,8 @@ def run_single_module_main(args) -> dict:
             "total_params_after": comp_metrics.get("total_params_after", total_params_before),
             "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
             "compression_rate": comp_metrics.get("compression_rate", 1.0),
+            "compression_rate_raw": comp_metrics.get("compression_rate_raw", 1.0),
+            "compression_rate_net": comp_metrics.get("compression_rate_net", 1.0),
             "compression_ratio_pct": comp_metrics.get("compression_ratio_pct", 0.0),
             "flops_reduction_pct": comp_metrics.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp_metrics.get("num_compressed_layers", 0),
@@ -3127,7 +3202,10 @@ def main():
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
                 
-    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
+    existing = set() if args.fresh else {
+        m for m, r in summary_dict.items()
+        if r.get("status") in {"PASS", "PASS_LOW", "REJECTED_EXPANSION", "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED"}
+    }
     
     FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
               "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "total_params_before",
@@ -3198,10 +3276,13 @@ def main():
         clear_vram_between_modules()
         return row
 
-    pending_names = [n for n in names if n not in existing]
+    pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
+
     for n in names:
         if n in existing:
             print(f">>> Skipping {n} (already PASS)")
+        elif n in BLOCKED_MODULES:
+            print(f">>> Skipping BLOCKED {n}")
 
     workers = max(1, getattr(args, "parallel", 1))
     if workers > 1:
