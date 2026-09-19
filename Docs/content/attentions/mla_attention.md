@@ -221,6 +221,13 @@ Concurrently, dynamic rank adapters (AdaMLA) offer a mechanism to dynamically mo
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **37.30%** | -57.00% | 0.2507 | 1.08x | 0 | [svd-linear-attention-distilbert-agnews-full-mla](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-mla) | 2026-09-19 |
+
+
 The empirical evaluation of `mla_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -489,4 +496,3 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
