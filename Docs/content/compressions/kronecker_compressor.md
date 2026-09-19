@@ -210,6 +210,13 @@ Replace all expert feed-forward layers in Mixture-of-Experts architectures with 
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **72.13%** | -18.93% | 0.7197 | 1.93x | 0 | [svd-linear-attention-distilbert-sst2-kronecker](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kronecker) | 2026-09-19 |
+
+
 The empirical evaluation of `kronecker_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
