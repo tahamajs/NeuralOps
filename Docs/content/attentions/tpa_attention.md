@@ -76,6 +76,13 @@ Input Activation X [B, L, D]
 
 ## 4. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **77.29%** | -13.77% | 0.7537 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tpa) | 2026-09-19 |
+
+
 | Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Status |
 | :--- | :--- | :--- | :--- |
 | **WikiText-2 Perplexity** | Pending actual benchmark results | 11.20 | Verification in progress |
