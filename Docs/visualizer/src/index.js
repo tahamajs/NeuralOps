@@ -42,6 +42,7 @@ import { openLearnModal } from './educational/learn_modal.js';
 import { openGuidedLessonsModal } from './educational/guided_lessons.js';
 import { openModelMatrixDashboard } from './educational/model_matrix_dashboard.js';
 import { openAttentionHeatmapExplorer } from './interactive/attention_heatmap.js';
+import { openMatrixUnfoldingModal } from './educational/matrix_unfolding.js';
 import { openTokenPredictionPlayground } from './interactive/token_prediction.js';
 import { openCompressionSimulator } from './interactive/compression_simulator.js';
 import { openModelRaceModal } from './interactive/model_race.js';
@@ -322,6 +323,9 @@ export async function bootstrapApp() {
     const heatmapBtn = document.getElementById('btn-open-heatmap');
     if (heatmapBtn) heatmapBtn.addEventListener('click', () => openAttentionHeatmapExplorer());
 
+    const unfoldingBtn = document.getElementById('btn-open-unfolding');
+    if (unfoldingBtn) unfoldingBtn.addEventListener('click', () => openMatrixUnfoldingModal());
+
     const predictionBtn = document.getElementById('btn-open-prediction');
     if (predictionBtn) predictionBtn.addEventListener('click', () => openTokenPredictionPlayground());
 
@@ -396,6 +400,8 @@ export async function bootstrapApp() {
             if (videoBtn) videoBtn.click();
         } else if (e.key === 'g' || e.key === 'G') {
             if (lessonsBtn) lessonsBtn.click();
+        } else if (e.key === 'u' || e.key === 'U') {
+            openMatrixUnfoldingModal();
         }
     });
 
