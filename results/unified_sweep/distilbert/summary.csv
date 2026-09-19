@@ -211,3 +211,13 @@ span_expanded,PASS,90.94,0.9127,0.9093,0.9102,0.909,0.3149,10.68,313.43,25242.83
 spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.54,0.0,0.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,TypeError: SpectralMambaAttention.forward() missing 1 required positional argument: 'hidden_states',legacy_bert,2026-09-19T02:01:51.437301
 sparsegpt,PASS,88.65,0.8884,0.8864,0.8864,0.8865,0.3509,29.68,303.69,54798.53,66955010,66955010,592130,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-19T02:02:14.258237
 spectra_v2,PASS,89.56,0.8994,0.8955,0.8964,0.8952,0.2637,9.4,305.68,30249.9,66955010,67544834,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T02:02:57.570104
+spectral_residual_lora,PASS,60.67,0.7144,0.5414,0.7181,0.5999,0.6237,15.09,235.28,21214.37,66955010,30459650,663552,2.1982,54.51,0.0,0,0,,,36,663552,,legacy_bert,2026-09-19T02:03:45.558566
+svd,PASS_LOW,50.92,0.6733,0.3436,0.5046,0.5001,0.722,13.94,313.13,18006.88,66955010,67544834,589824,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),legacy_bert,2026-09-19T02:04:22.110012
+squeezing_heads,PASS,90.71,0.9091,0.9071,0.9071,0.907,0.3342,10.37,317.18,27588.22,66955010,67544834,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T02:04:22.713734
+spectron,PASS,86.93,0.8792,0.8684,0.876,0.868,0.3902,15.61,280.93,20997.7,66955010,58107650,589824,1.1523,13.21,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T02:04:26.494826
+subspace_projection,PASS,90.71,0.9109,0.9069,0.9083,0.9066,0.7726,6.31,303.69,55412.17,66955010,66955010,592130,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-19T02:04:34.509379
+svd_compressed,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,38.73,0.0,0.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",legacy_bert,2026-09-19T02:05:29.445162
