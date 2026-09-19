@@ -478,7 +478,14 @@ class SpectralMambaAttention(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         if hidden_states is None:
-            hidden_states = kwargs.get("hidden_states") or kwargs.get("input_ids") or (args[0] if args else None)
+            if "hidden_states" in kwargs and kwargs["hidden_states"] is not None:
+                hidden_states = kwargs["hidden_states"]
+            elif "x" in kwargs and kwargs["x"] is not None:
+                hidden_states = kwargs["x"]
+            elif "input_ids" in kwargs and kwargs["input_ids"] is not None:
+                hidden_states = kwargs["input_ids"]
+            elif len(args) > 0 and args[0] is not None:
+                hidden_states = args[0]
         if hidden_states is None:
             raise ValueError(
                 "SpectralMambaAttention forward requires hidden_states "
