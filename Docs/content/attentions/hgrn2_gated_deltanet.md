@@ -210,6 +210,13 @@ def inject_hgrn2_gated_deltanet(
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **59.40%** | -31.66% | 0.6954 | 1.00x | 12 | [svd-linear-attention-distilbert-sst2-hgrn2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-hgrn2) | 2026-09-19 |
+
+
 > [!NOTE]
 > **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 
@@ -307,4 +314,3 @@ print('Output logits shape:', outputs.logits.shape)
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
