@@ -86,14 +86,18 @@ def apply_rotary_pos_emb(
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
     orig_dtype = x.dtype
     x = x.float()
+    # Clamp logits to prevent FP16 overflow / NaN loss explosions
+    x = torch.clamp(x, min=-50.0, max=10.0)
+    temp = max(temperature, 1e-4)
     m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / max(temperature, 1e-4))
-    m_scaled = torch.clamp(-m / max(temperature, 1e-4), max=80.0)
+    e = torch.exp((x - m) / temp)
+    m_scaled = torch.clamp(-m / temp, min=-50.0, max=10.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
     p_sum = p.sum(dim=dim, keepdim=True)
-    fallback = F.softmax(x / max(temperature, 1e-4), dim=dim)
+    fallback = F.softmax(x / temp, dim=dim)
     res = torch.where(p_sum > 1e-5, p / torch.clamp(p_sum, min=1e-5), fallback)
+    res = torch.nan_to_num(res, nan=0.0)
     return res.to(orig_dtype)
 
 
