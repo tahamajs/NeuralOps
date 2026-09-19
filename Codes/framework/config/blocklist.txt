@@ -17,3 +17,9 @@ compressed_mha,ARCHITECTURAL_INCOMPATIBLE,"Aggressive multi-head SVD projection 
 inject_mamba,ARCHITECTURAL_INCOMPATIBLE,"Causal State Space Model (SSM) breaks bidirectional token visibility required for encoder sentence pair classification (34.1%)"
 mamba,ARCHITECTURAL_INCOMPATIBLE,"Unidirectional causal SSM architecture is fundamentally incompatible with bidirectional DistilBERT representations (34.1%)"
 kronecker_linear_class,ARCHITECTURAL_INCOMPATIBLE,"Kronecker product factorization combined with classification layer collapses to single-class prediction (34.0%)"
+
+# Causal SSM modules — architecturally incompatible with bidirectional encoders
+inject_jamba,CAUSAL_INCOMPATIBLE,"decoder-only SSM, cannot run on bidirectional DistilBERT"
+inject_kda,CAUSAL_INCOMPATIBLE,"causal state-space attention, incompatible with bidirectional encoder"
+inject_samba_m3,CAUSAL_INCOMPATIBLE,"causal Mamba S3, incompatible with bidirectional encoder"
+inject_samba_moe,CAUSAL_INCOMPATIBLE,"causal Mamba MoE, incompatible with bidirectional encoder"
