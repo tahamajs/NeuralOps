@@ -2423,8 +2423,7 @@ def run_single_module_main(args) -> dict:
     except Exception as e:
         LOG.warning("Could not write finetune_metadata.json: %s", e)
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
-    # Fast-path: load pre-tokenized batches from disk cache to skip dataset tokenization entirely
-    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else None
+    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else (out / "batch_cache")
     _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
     _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
     eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
@@ -3131,6 +3130,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--batch_size", str(args.batch_size),
         "--precision", str(args.precision),
         "--seed", str(args.seed),
+        "--cached_batches_dir", str(Path(args.output_dir or "results") / "batch_cache"),
     ]
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
