@@ -2298,26 +2298,7 @@ input[type="range"] {
 
 
 /* Pipeline Connectors */
-.component-pipeline-list {
-    position: relative;
-    padding-left: 20px;
-}
-
-.component-pipeline-list::before {
-    content: '';
-    position: absolute;
-    top: 15px;
-    bottom: 25px;
-    left: 8px;
-    width: 2px;
-    background: linear-gradient(to bottom, #10b981, #38bdf8, #8b5cf6, #f43f5e);
-    opacity: 0.5;
-    z-index: 1;
-}
-
 .component-pipe-item {
-    position: relative;
-    z-index: 2;
     margin-left: 15px;
 }
 
