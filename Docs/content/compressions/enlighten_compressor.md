@@ -208,6 +208,7 @@ ENLighten (registered as `"enlighten"`) provides a specialised compression recip
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **89.11%** | -1.95% | 0.8957 | 1.00x | 36 | [svd-linear-attention-distilbert-sst2-enlighten](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-enlighten) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **78.10%** | -3.70% | 0.7796 | 1.00x | 36 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **93.80%** | -0.50% | 0.9354 | 1.00x | 36 | N/A | 2026-09-19 |
 
 
 The empirical evaluation of `enlighten_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
