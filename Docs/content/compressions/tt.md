@@ -155,3 +155,4 @@ TT will **not** be selected by `run_all_benchmarks_queue.py`.
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.94%** | -0.12% | 0.9127 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-tt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tt) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **81.10%** | -0.70% | 0.8106 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.70%** | +0.40% | 0.9432 | 1.00x | 0 | [svd-linear-attention-distilbert-agnews-full-tt](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-tt) | 2026-09-19 |
