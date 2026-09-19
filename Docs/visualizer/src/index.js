@@ -46,7 +46,7 @@ import { openCompressionSimulator } from './interactive/compression_simulator.js
 import { openModelRaceModal } from './interactive/model_race.js';
 import { openVideoExportModal } from './export/video_exporter.js';
 import { copyShareablePermalink, syncUrlHash, parseHashToState, applyHashStateToVisualizer } from './interactions/permalink.js';
-import { setupControls } from './ui/controls.js';
+import { setupControls, openKeyboardShortcutsModal } from './ui/controls.js';
 import { perfMonitor } from './performance/monitor.js';
 
 // Application Registry Collections
@@ -229,6 +229,31 @@ export async function bootstrapApp() {
         },
         onResetCamera: () => {
             smoothFlyCamera(camera, controls, maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35), 0);
+        },
+        onSwitchModel: (modelKey) => {
+            store.set({ currentModel: modelKey });
+            const curMod = store.get('activeResearchModule');
+            const paradigm = (curMod && curMod.paradigm) || store.get('currentCompression') || 'svd';
+            rebuildSceneForModel(modelKey, paradigm);
+        },
+        onSwitchCompression: (compKey) => {
+            store.set({ currentCompression: compKey });
+            rebuildSceneForModel(store.get('currentModel'), compKey);
+        },
+        onSwitchLOD: (lod) => {
+            if (lod === 'macro') {
+                macroGroup.visible = true;
+                granularGroup.visible = false;
+                dimensionBadgesGroup.visible = false;
+            } else if (lod === 'granular') {
+                macroGroup.visible = false;
+                granularGroup.visible = true;
+                dimensionBadgesGroup.visible = true;
+            } else {
+                macroGroup.visible = true;
+                granularGroup.visible = true;
+                dimensionBadgesGroup.visible = false;
+            }
         }
     });
 
@@ -261,6 +286,12 @@ export async function bootstrapApp() {
     // 8. Global Window Exports for Inline HTML Handlers
     window.smoothFlyCamera = (y, dist, x = 0) => smoothFlyCamera(camera, controls, y, dist, x);
     window.smoothZoomBy = (factor) => smoothZoomBy(camera, controls, factor);
+    window.maxGraphHeight = maxGraphHeight;
+    window.openKeyboardShortcutsModal = openKeyboardShortcutsModal;
+    window.pinCurrentModule = () => {
+        const pinBtn = document.getElementById('btn-pin-module');
+        if (pinBtn) pinBtn.click();
+    };
 
     const zoomInBtn = document.getElementById('btn-zoom-in');
     const zoomOutBtn = document.getElementById('btn-zoom-out');
@@ -414,6 +445,9 @@ export async function bootstrapApp() {
         }
         runStep();
     };
+
+    const autoTourBtn = document.getElementById('btn-auto-tour');
+    if (autoTourBtn) autoTourBtn.addEventListener('click', () => window.toggleTour());
 
     // Initial Scene Build & URL Query Parameters Auto-Loader (?module=...&model=...)
     const urlParams = new URLSearchParams(window.location.search);
