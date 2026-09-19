@@ -508,4 +508,4 @@ The `LEKAV2Attention` architecture incorporates telemetry hooks for tracking sin
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.48%** | -0.12% | 0.9079 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-leka-v2-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v2-attention) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.37%** | -0.69% | 0.9058 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-leka-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-leka-v2) | 2026-09-19 |
