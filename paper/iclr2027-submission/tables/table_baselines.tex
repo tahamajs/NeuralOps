@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Baseline comparison across three benchmark datasets (SST-2, MNLI, AG News) at decomposition rank $r=64$.}
+\label{tab:baselines}
+\begin{tabular}{lccc|cc}
+\toprule
+\textbf{Method} & \textbf{SST-2 Acc (\%)} & \textbf{MNLI Acc (\%)} & \textbf{AG News Acc (\%)} & \textbf{Comp. Rate} & \textbf{Peak VRAM (MB)} \\
+\midrule
+Dense (baseline)          & -- & -- & -- & 1.00$\times$ & -- \\
+Naive SVD                 & -- & -- & -- & -- & -- \\
+ASVD \citep{asvd2023}     & -- & -- & -- & -- & -- \\
+FWSVD \citep{fwsvd2022}   & -- & -- & -- & -- & -- \\
+SVD-LLM \citep{svdllm2024}& -- & -- & -- & -- & -- \\
+\midrule
+\textbf{Ours (A3)}        & -- & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}

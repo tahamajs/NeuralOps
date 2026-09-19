@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Ablation study: incremental performance and efficiency effect of each pipeline stage on MNLI at rank $r=64$.}
+\label{tab:ablation}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Configuration / Stage} & \textbf{Accuracy (\%)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} \\
+\midrule
+1. Naive SVD (Uncalibrated)             & -- & -- & -- \\
+2. + Cholesky Activation Whitening     & -- & -- & -- \\
+3. + Dynamic Entropy Rank Budgeting    & -- & -- & -- \\
+4. + Fusion Linear Attention Kernel    & -- & -- & -- \\
+5. + ResSVD Residual Recovery (Full)   & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
