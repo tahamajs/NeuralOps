@@ -101,3 +101,8 @@ inject_cosformer,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,1.06,0.0,0.0,66955010,66955010,0,1
 inject_aegis_v6,PASS,90.71,0.9111,0.9069,0.9085,0.9066,0.3034,40.24,333.18,11657.32,66955010,53455184,1266512,1.2525,20.16,0.0,6,0,,,6,0,,legacy_bert,2026-09-19T00:56:56.275504
 inject_dobi,PASS,91.06,0.9137,0.9104,0.9113,0.9102,0.3144,4.72,291.93,54600.86,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-19T00:58:53.831300
 inject_decay_linear_attention,PASS,79.01,0.8017,0.7894,0.7921,0.7893,0.5385,85.01,330.11,6036.3,66955010,67600274,645264,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T00:59:04.197795
+inject_dynamic_rank,PASS,90.48,0.9093,0.9046,0.9067,0.9042,0.4995,8.55,303.69,53144.66,66955010,66955010,592130,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-19T00:59:55.260005
+inject_fasa,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,0.79,0.0,0.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_mixattention_moska),legacy_bert,2026-09-19T01:00:33.847908
+inject_dynamic_entropy,PASS,90.48,0.9093,0.9046,0.9067,0.9042,0.4995,8.93,303.69,53377.19,66955010,66955010,592130,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-19T01:01:08.324242
+inject_fused_svd_kernel,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,3.83,0.0,0.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_fused_svd_kernel),legacy_bert,2026-09-19T01:01:16.119063
+inject_gated_delta_net,SKIP_BERT_ARCHITECTURAL,0.0,0.0,0.0,0.0,0.0,0.0,0.79,0.0,0.0,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_gated_delta_net),legacy_bert,2026-09-19T01:01:48.642407
