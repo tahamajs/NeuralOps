@@ -18,8 +18,7 @@ python -u Codes\framework\run_quality_sweep.py ^
   --finetune_steps 200 ^
   --recovery_steps 100 ^
   --learning_rate 2e-5 ^
-  --precision fp16 ^
-  --fresh >> logs\distilbert_mnli_full_sweep.log 2>&1
+  --precision fp16 >> logs\distilbert_mnli_full_sweep.log 2>&1
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] MNLI full sweep failed with code %ERRORLEVEL%
