@@ -611,3 +611,4 @@ The `FusedSVDLinear` architecture incorporates telemetry hooks for tracking sing
 | **gpt2** | sst2 | `PASS` | 79.36% | **60.32%** | -19.04% | 0.6608 | 1.23x | 0 | [svd-linear-attention-gpt2-fused-svd-kernel](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-fused-svd-kernel) | 2026-09-15 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **80.39%** | -10.67% | 0.8295 | 1.21x | 6 | [svd-linear-attention-distilbert-sst2-fused-svd-kernel](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-fused-svd-kernel) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **50.50%** | -31.30% | 0.4219 | 1.21x | 6 | N/A | 2026-09-19 |
+| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **90.30%** | -4.00% | 0.8990 | 1.21x | 0 | N/A | 2026-09-19 |
