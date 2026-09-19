@@ -257,6 +257,7 @@ Following AdaSVD's $T$-iteration factor refinement, applying 100 steps of LoRA-s
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **69.27%** | +18.35% | 0.7624 | 1.14x | 40 | [svd-linear-attention-roberta-base-adasvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-adasvd) | 2026-09-19 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **85.32%** | -5.74% | 0.8672 | 1.16x | 24 | [svd-linear-attention-distilbert-sst2-adasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adasvd) | 2026-09-19 |
+| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **61.00%** | -20.80% | 0.6064 | 1.16x | 24 | [svd-linear-attention-distilbert-mnli-full-adasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adasvd) | 2026-09-19 |
 
 
 The empirical evaluation of `adasvd_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
