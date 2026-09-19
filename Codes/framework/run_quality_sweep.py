@@ -85,9 +85,16 @@ def _load_blocklist() -> dict:
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split("#", 1)
-            name = parts[0].strip()
-            reason = parts[1].strip() if len(parts) > 1 else "blocked"
+            # Support both comma-separated: module,REASON,"detail"
+            # and legacy space-separated: module # reason
+            if "," in line:
+                cparts = [c.strip().strip('"').strip("'") for c in line.split(",", 2)]
+                name = cparts[0]
+                reason = f"{cparts[1]}: {cparts[2]}" if len(cparts) > 2 else (cparts[1] if len(cparts) > 1 else "blocked")
+            else:
+                parts = line.split("#", 1)
+                name = parts[0].strip()
+                reason = parts[1].strip() if len(parts) > 1 else "blocked"
             if name:
                 blocked[name] = reason
     return blocked
