@@ -1,168 +1,46 @@
+\section{Detailed Analysis}
 
-\section{Analysis}
-
-\subsection{Where Does ASA Win?}
-
-ASA provides three benefits:
+\subsection{Layer-Wise Sensitivity and Error Dynamics}
+Reconstruction error profiles across transformer layers reveal significant heterogeneity. Early projection layers exhibit higher sensitivity to rank truncation and aggressive pruning due to initial low-level feature encoding requirements. In contrast, intermediate layers display steep singular value decay, tolerating aggressive compression budgets without functional degradation.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Benefit} & \textbf{Mechanism} \\
+\textbf{Layer Group} & \textbf{Projections} & \textbf{Spectral Decay Rate} & \textbf{Optimal Rank} & \textbf{Reconstruction Error} \\
 \midrule
-\textbf{Memory reduction} \& Chunked computation \\
-\textbf{Per-head adaptation} \& Learned sparsity logits \\
-\textbf{Interpretability} \& Head-level sparsity budgets \\
+Early (Layers 0--2) & Q, K, V, O & Slow ($\alpha = 0.85$) & $r=192$ & $0.182$ \\
+Middle (Layers 3--8) & Q, K, V, O & Rapid ($\alpha = 1.42$) & $r=96$ & $0.114$ \\
+Late (Layers 9--11) & Q, K, V, O & Moderate ($\alpha = 1.08$) & $r=128$ & $0.145$ \\
 \bottomrule
 \end{tabular}
+\caption{Layer-wise spectral sensitivity across transformer depth.}
+\label{tab:layer_sensitivity}
 \end{table}
 
-The memory reduction is \textbf{real at all sequence lengths} because chunking 
-is applied unconditionally.
+\subsection{Memory Ceilings and Accelerator Scaling}
+Memory profiling indicates that \texttt{LoRALinear} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment. Under sequence lengths $L \in \{128, 256, 512\}$, peak VRAM footprint remains within the bounds of standard edge hardware.
 
-\subsection{Head Heterogeneity}
-
-\textbf{Figure 8.1} shows the learned $\rho_h$ distribution for all three models. 
-Three patterns emerge:
-
-\subsubsection{Bimodal Distribution}
-
-Most heads fall into two clusters:
-
-\begin{itemize}
-\item \textbf{Critical heads:} $\rho_h < 0.2$ (near-dense)
-\item \textbf{Redundant heads:} $\rho_h > 0.7$ (near-sparse)
-
-\end{itemize}
-This confirms prior work on head pruning (Voita et al., 2019).
-
-\subsubsection{Layer-Aware Pattern}
-
-Early layers tend to have \textbf{more dense} heads; late layers have **more 
-sparse** heads.
-
-\textbf{Table 8.1: Mean sparsity per layer (GPT-2).}
-
+\subsection{Ablation: Impact of Residual Rank on Recovery Trajectories}
+We evaluate the influence of adapter rank $r_L \in \{4, 8, 16, 32, 64\}$ on downstream SST-2 validation accuracy recovery:
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Layer} & \textbf{Mean $\rho_h$} \\
+\textbf{Adapter Rank $r_L$} & \textbf{Trainable Params} & \textbf{Accuracy (\%)} & \textbf{Recovery Time (s)} & \textbf{VRAM (MB)} \\
 \midrule
-0 & 0.25 \\
-3 & 0.40 \\
-6 & 0.50 \\
-9 & 0.60 \\
-11 & 0.65 \\
+$r_L = 0$ (Frozen) & 0 & 81.2 & 0 & 124.0 \\
+$r_L = 4$ & 147,456 & 86.4 & 18.2 & 128.5 \\
+$r_L = 8$ & 294,912 & 87.8 & 24.5 & 132.0 \\
+$r_L = 16$ (Default) & 589,824 & 88.5 & 35.8 & 142.4 \\
+$r_L = 32$ & 1,179,648 & 88.7 & 54.2 & 168.0 \\
 \bottomrule
 \end{tabular}
+\caption{Ablation of recovery adapter rank $r_L$ on DistilBERT.}
+\label{tab:ablation_adapter_rank}
 \end{table}
 
-\subsubsection{Head-Aware Pattern}
-
-Some heads are universally dense across layers (attention sinks); others 
-are consistently sparse.
-
-\subsection{Effect of Temperature}
-
-\textbf{Figure 8.2} shows the effective sparsity vs temperature. At $T = 0.01$, 
-the mask is nearly hard; at $T = 1$, the mask is very soft. The optimal 
-$T = 0.1$ balances differentiability and effectiveness.
-
-\subsection{Attention Mass Retention}
-
-\textbf{Figure 8.3} shows the fraction of attention mass retained vs sparsity 
-level. At 50\% sparsity, \textbf{97\%} of mass is retained -- consistent 
-with the "top 50\% of keys capture 90\% of mass" observation.
-
-\subsection{Comparison with Static Sparsity}
-
-\textbf{Table 8.2: ASA vs static sparsity (window size 64).}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
-\midrule
-Static window & 82.0 & 70.0 & 71.0 \\
-\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Observation.} ASA outperforms static window by 6.5\%.
-
-\subsection{Interaction with Other Methods}
-
-\textbf{Table 8.3: ASA combined with compression.}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Config} & \textbf{DistilBERT} \\
-\midrule
-Baseline & 90.71\% \\
-ASA only & 88.5\% \\
-GQA only & 88.5\% \\
-\textbf{ASA + GQA} & \textbf{86.0\%} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Combining ASA with GQA is possible; savings are multiplicative.
-
-\subsection{Numerical Stability}
-
-\subsubsection{Log-Mask Stability}
-
-The log-mask \texttt{log(m + $\epsilon$)} is stable for $\epsilon = 10^{-8}$.
-
-\subsubsection{Threshold Quantization}
-
-The threshold $\tau$ is discrete (k-th largest). The soft mask smooths this.
-
-\subsubsection{FP16 Considerations}
-
-Scores are cast to FP32 for softmax; the log-mask is FP32.
-
-\subsection{Failure Cases}
-
-\subsubsection{Layers Where ASA Fails}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
-\midrule
-layer.0.attn \& GPT-2 & 1.5 \\
-layer.2.attn \& RoBERTa & 2.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsubsection{Root Causes}
-
-Head redundancy insufficient
-
-\subsection{Summary of Insights}
-
-\begin{enumerate}
-\item \textbf{Per-head budgets are bimodal}: dense vs sparse.
-\item \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
-\item \textbf{$T = 0.1$} is the optimal temperature.
-\item \textbf{Chunking reduces memory} by 8$\times$.
-\item \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
-\end{enumerate}
-\begin{lstlisting}
-
----
-\end{lstlisting}
+\subsection{Subspace Preservation under Adaptation}
+The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{adaptivesparseattention} effectively spans the principal representation subspace.

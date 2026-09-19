@@ -1,11 +1,4 @@
-\section{00 Meta}
-
- Aegis-Hybrid Attention Mechanism (aegis\_hybrid)
-
-**Registry Keys**: `aegis\_hybrid`, `aegis\_hybrid\_inject`, `inject\_aegis\_hybrid`, `aegis\_hybrid\_attn`, `aegis\_hybrid\_attention` 
-**Source**: `Codes/framework/attentions/aegis\_hybrid.py` (1037 lines)
-**Type**: Multi-Branch Hybrid Attention with Sliding Window, Global Factorization, and Learned Gating
-**Base Class**: `AegisHybridAttention(BaseAttention)`
-
- Abstract
-`aegis\_hybrid` fuses local sliding-window dense attention with global low-rank factorized attention and learned gating fusion. Projections are parameterized via `FactorizedLinear` layers ($x 	o 	ext{lin}\_2(	ext{lin}\_1(x))$ with rank $r=128$) combined with trainable residual LoRA adapters ($r\_{	ext{lora}}=32$). Across DistilBERT, RoBERTa, and GPT-2, it achieves verified parameter reduction (10.9% on DistilBERT, 12.7% on RoBERTa, 18.4% on GPT-2) while delivering 84.98% SST-2 accuracy on DistilBERT.
+\title{\textbf{Aegis Hybrid: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

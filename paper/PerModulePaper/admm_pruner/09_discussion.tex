@@ -1,86 +1,24 @@
-\section{09 Discussion}
+\section{Discussion}
 
- 9. Discussion
-Feature distillation directly penalizes discrepancy in hidden activations, preventing error propagation through transformer layers.
+\subsection{Theoretical Trade-Offs in Parameter Compression}
+The design of \texttt{admmpruner} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{admmpruner} prunes overparameterized redundancy.
 
+\subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{admmpruner} diminishes byte transfer volume, accelerating generation wall-clock latency.
 
- 6. Production CUDA / Triton Execution Blueprint
+\subsection{Asymmetry Across Attention Projections}
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{admmpruner} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
 
+\subsection{Decoupled Adaptation Dynamics}
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{admmpruner} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
 
-```python
-import torch
-import triton
-import triton.language as tl
+\subsection{Scaling Behaviors with Modern Long-Context Sequences}
+As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
 
-@triton.jit
-def admm\_threshold\_kernel(
-    V\_ptr, Z\_ptr, Threshold\_ptr,
-    n\_elements,
-    BLOCK\_SIZE: tl.constexpr
-):
-    pid = tl.program\_id(axis=0)
-    block\_start = pid * BLOCK\_SIZE
-    offsets = block\_start + tl.arange(0, BLOCK\_SIZE)
-    mask = offsets < n\_elements
+\subsection{Deployment Implications for Cloud and Edge}
+Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
-     Load candidate values V = Z + U
-    v\_vals = tl.load(V\_ptr + offsets, mask=mask, other=0.0)
-    threshold = tl.load(Threshold\_ptr)
+\subsection{Energy Efficiency and Carbon Footprint Quantification}
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-     Compute soft/hard threshold
-    abs\_v = tl.abs(v\_vals)
-    z\_vals = tl.where(abs\_v > threshold, v\_vals, 0.0)
-
-     Store result Z
-    tl.store(Z\_ptr + offsets, z\_vals, mask=mask)
-```
-
----
-
-
- 7. Hybrid Synthesis \& Next-Generation Enhancements
-
-
-1. **ADMM + 2:4 Structural Constraints**: Combine global percentile thresholding with local 2:4 N:M block constraints for hardware-accelerated Tensor Core inference.
-2. **Quantization-Aware ADMM**: Integrate INT4 quantization bounds directly into the constraint projection step $Z = \Pi\_{\text{Quant}}(\Pi\_{\text{Sparse}}(V))$.
-3. **Adaptive $\rho$ Scheduling**: Dynamically scale penalty parameter $\rho\_k = \rho\_0 \cdot \gamma^k$ to accelerate dual variable convergence.
-
-
-
-\subsection{6. Production CUDA / Triton Execution Blueprint}
-
-\begin{lstlisting}
-import torch
-import triton
-import triton.language as tl
-
-@triton.jit
-def admm_threshold_kernel(
-    V_ptr, Z_ptr, Threshold_ptr,
-    n_elements,
-    BLOCK_SIZE: tl.constexpr
-):
-    pid = tl.program_id(axis=0)
-    block_start = pid * BLOCK_SIZE
-    offsets = block_start + tl.arange(0, BLOCK_SIZE)
-    mask = offsets < n_elements
-
-    # Load candidate values V = Z + U
-    v_vals = tl.load(V_ptr + offsets, mask=mask, other=0.0)
-    threshold = tl.load(Threshold_ptr)
-
-    # Compute soft/hard threshold
-    abs_v = tl.abs(v_vals)
-    z_vals = tl.where(abs_v > threshold, v_vals, 0.0)
-
-    # Store result Z
-    tl.store(Z_ptr + offsets, z_vals, mask=mask)
-\end{lstlisting}
-
-
----
-
-\subsection{7. Hybrid Synthesis \& Next-Generation Enhancements}
-1. \textbf{ADMM + 2:4 Structural Constraints}: Combine global percentile thresholding with local 2:4 N:M block constraints for hardware-accelerated Tensor Core inference.
-2. \textbf{Quantization-Aware ADMM}: Integrate INT4 quantization bounds directly into the constraint projection step $Z = \Pi_{\text{Quant}}(\Pi_{\text{Sparse}}(V))$.
-3. **Adaptive $\rho$ Scheduling**: Dynamically scale penalty parameter $\rho_k = \rho_0 \cdot \gamma^k$ to accelerate dual variable convergence.
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{admmpruner} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

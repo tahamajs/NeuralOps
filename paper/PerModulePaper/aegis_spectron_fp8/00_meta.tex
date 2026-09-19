@@ -1,11 +1,4 @@
-\section{00 Meta}
-
- Aegis-Spectron-FP8 Hybrid Attention Module (aegis\_spectron\_fp8)
-
-**Registry Keys**: `inject\_aegis\_spectron\_fp8`, `aegis\_spectron\_fp8\_attn`, `aegis\_spectron\_fp8\_inject`, `aegis\_spectron\_fp8` 
-**Source**: `Codes/framework/attentions/aegis\_spectron\_fp8.py` (1023 lines)
-**Type**: Multi-Branch Hybrid Attention with FP8 Simulation and Spectral Entropy Routing
-**Base Class**: `AegisSpectronFP8Attention(BaseAttention)`
-
- Abstract
-`aegis\_spectron\_fp8` integrates multi-branch local/global attention with Spectron spectral entropy routing and simulated FP8 quantization (E4M3 and E5M2) with dynamic scaling. Projections utilize `FactorizedLinear` layers to enforce true physical parameter reductions. Evaluated on SST-2, it achieves 79.59% accuracy on DistilBERT with an 18.22% parameter reduction (saving 12.2M parameters) and peak VRAM of only 290.3 MB.
+\title{\textbf{Aegis Spectron Fp8: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+\author{\textbf{Taha Majs}\thanks{Corresponding author: tahamajs@uni.edu} \quad \textbf{Research Team} \\
+\textit{Department of Computer Science, Advanced Machine Learning \& Efficiency Laboratory}}
+\date{\today}

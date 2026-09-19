@@ -1,7 +1,26 @@
-\section{Related Work}
+\section{Related Work and Theoretical Foundations}
 
-\subsection{Transformer Model Compression}
-Structured pruning, dynamic mixed-precision quantization, and low-rank decomposition represent vital paradigms for scalable model deployment. While unstructured pruning introduces indexing overhead on tensor cores, structured and semi-structured formulations yield tangible runtime speedups.
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
-\subsection{Sensitivity-Aware Saliency}
-Weight magnitude alone often fails to reflect functional channel importance. Modern compression frameworks utilize first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to retain high-energy representational subspaces under aggressive parameter budgets.
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+\]
+
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{astpruner} module leverages these structural properties to optimize inference speed and VRAM overhead.

@@ -1,7 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_replaceme/roberta/summary.csv} \& replaceme \& PASS & 80.62\% & 325.0 MB \\
-\texttt{results/unified\_replaceme/distilbert/summary.csv} \& replaceme \& PASS & 82.0\% & 280.53 MB \\
-\texttt{results/unified\_replaceme/gpt2/summary.csv} \& replaceme \& PASS & 56.77\% & 573.61 MB \\
-all\_121\_gpu\_matrix \& replaceme\_compressor \& PASS & 1.0x (0.161s) & 127.0 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_replacemecompressor} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & replaceme & PASS & 82.0 & 0.8363 \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & replaceme & PASS & 56.77 & 0.6808 \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & replaceme & PASS & 80.62 & 0.8302 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & replaceme\_compressor & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{replacemecompressor}.}
+\label{tab:results_acc_replacemecompressor}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_replacemecompressor} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & replaceme & 66955010 & 53963524 & 2954500 & 1.2407x \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & replaceme & 124441344 & 111449858 & 1538 & 1.1166x \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & replaceme & 124647170 & 111655684 & 6498052 & 1.1164x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & replaceme\_compressor & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{replacemecompressor}.}
+\label{tab:results_params_replacemecompressor}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_replacemecompressor} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & full & 136577.72 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_replaceme/distilbert/summary.csv} & distilbert & replaceme & 174328.74 & 280.53 MB & 0.0000 \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & full & 65579.86 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_replaceme/gpt2/summary.csv} & gpt2 & replaceme & 77041.49 & 573.61 MB & 0.0000 \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & full & 101984.15 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_replaceme/roberta/summary.csv} & roberta & replaceme & 100713.97 & 325.0 MB & 0.0000 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & replaceme\_compressor & Elapsed 0.161s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{replacemecompressor}.}
+\label{tab:results_vram_replacemecompressor}
+\end{table*}

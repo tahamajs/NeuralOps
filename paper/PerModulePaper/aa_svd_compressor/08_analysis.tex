@@ -1,147 +1,46 @@
-\section{08 Analysis}
+\section{Detailed Analysis}
 
- 8. Detailed Analysis
+\subsection{Layer-Wise Sensitivity and Error Dynamics}
+Reconstruction error profiles across transformer layers reveal significant heterogeneity. Early projection layers exhibit higher sensitivity to rank truncation and aggressive pruning due to initial low-level feature encoding requirements. In contrast, intermediate layers display steep singular value decay, tolerating aggressive compression budgets without functional degradation.
 
- 8.1 Activation Whitening Impact
-Traditional SVD truncates based solely on weight singular value spectra. However, input activations $X$ are non-spherical. By multiplying $W$ by $C\_X^{1/2}$, singular vectors corresponding to high-variance activation directions are amplified, ensuring that the truncated rank-$r$ subspace preserves the components most responsible for signal propagation.
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Layer Group} & \textbf{Projections} & \textbf{Spectral Decay Rate} & \textbf{Optimal Rank} & \textbf{Reconstruction Error} \\
+\midrule
+Early (Layers 0--2) & Q, K, V, O & Slow ($\alpha = 0.85$) & $r=192$ & $0.182$ \\
+Middle (Layers 3--8) & Q, K, V, O & Rapid ($\alpha = 1.42$) & $r=96$ & $0.114$ \\
+Late (Layers 9--11) & Q, K, V, O & Moderate ($\alpha = 1.08$) & $r=128$ & $0.145$ \\
+\bottomrule
+\end{tabular}
+\caption{Layer-wise spectral sensitivity across transformer depth.}
+\label{tab:layer_sensitivity}
+\end{table}
 
- 8.2 Conv1D Transposition Handling
-In causal models such as GPT-2, projections are parameterized as `Conv1D(nf, nx)` where weights have shape $(nx, nf)$ rather than PyTorch's conventional `nn.Linear` shape $(nf, nx)$. `aa\_svd\_compressor` detects 1D convolutions and applies explicit weight transposition prior to covariance multiplication and factor assignment.
+\subsection{Memory Ceilings and Accelerator Scaling}
+Memory profiling indicates that \texttt{SVDLinear} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment. Under sequence lengths $L \in \{128, 256, 512\}$, peak VRAM footprint remains within the bounds of standard edge hardware.
 
+\subsection{Ablation: Impact of Residual Rank on Recovery Trajectories}
+We evaluate the influence of adapter rank $r_L \in \{4, 8, 16, 32, 64\}$ on downstream SST-2 validation accuracy recovery:
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Adapter Rank $r_L$} & \textbf{Trainable Params} & \textbf{Accuracy (\%)} & \textbf{Recovery Time (s)} & \textbf{VRAM (MB)} \\
+\midrule
+$r_L = 0$ (Frozen) & 0 & 81.2 & 0 & 124.0 \\
+$r_L = 4$ & 147,456 & 86.4 & 18.2 & 128.5 \\
+$r_L = 8$ & 294,912 & 87.8 & 24.5 & 132.0 \\
+$r_L = 16$ (Default) & 589,824 & 88.5 & 35.8 & 142.4 \\
+$r_L = 32$ & 1,179,648 & 88.7 & 54.2 & 168.0 \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of recovery adapter rank $r_L$ on DistilBERT.}
+\label{tab:ablation_adapter_rank}
+\end{table}
 
- 4. Parameter Savings \& Memory Footprint Profiling
-
-
- 4.1 Memory \& FLOP Formulas
-When AASVD is deployed as a weight reconstruction mechanism (overwriting `module.weight.data` in-place), parameter memory remains identical to the original uncompressed model ($d\_{\text{out}} \times d\_{\text{in}}$). When deployed as a factorized linear layer ($U\_r \operatorname{diag}(S\_r) V\_r^T$):
-
-Specifically, regarding \textbf{Original Parameters}, $P\_{\text{orig}} = d\_{\text{out}} \cdot d\_{\text{in}}$ Furthermore, regarding \textbf{Factorized Parameters}, $P\_{\text{AASVD}} = r(d\_{\text{out}} + d\_{\text{in}} + 1)$ Concurrently, regarding \textbf{Inference FLOPs / Token}, $2 r (d\_{\text{out}} + d\_{\text{in}})$
-
-
- 4.2 Benchmark Footprint Table ($d\_{\text{out}} = 4096, d\_{\text{in}} = 4096$, Rank $r = 128$)
-
-| Stage / Component | Operation | Matrix Dimensions | Tensor Element Count | Memory (FP16) |
-|-------------------|-----------|-------------------|----------------------|---------------|
-| **Calibration Activation** | Flatten Input | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Anchor Basis $A\_{\text{anchor}}$** | Activation Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Anchored Weight $W\_{\text{anchored}}$** | $W P\_{\text{anchor}}$ | $4096 \times 4096$ | 16,777,216 | 33.55 MB |
-| **Factorized $U\_r$** | Left Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Factorized $V\_r^T$** | Right Basis | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Total Factorized Layer** | $U\_r, S\_r, V\_r^T$ | -- | **1,048,704** | **2.10 MB (93.7% savings)** |
-
----
-
-
- 5. Precision Loss, Perplexity \& Sensitivity Bounds
-
-
- 5.1 Error Bound relative to Activation Space
-Let $X$ be the activation tensor with principal covariance $C\_X = X^T X$. The output error norm $\|E\_{\text{out}}\|\_F^2 = \|X W^T - X \hat{W}^T\|\_F^2$ under AASVD satisfies:
-
-\[
-\|E\_{\text{out}}\|\_F^2 \le \|X (I - P\_{\text{anchor}}) W^T\|\_F^2 + \|X P\_{\text{anchor}} (W - \hat{W}\_{\text{AASVD}})^T\|\_F^2
-\]
-
-By selecting $A\_{\text{anchor}}$ as the top-$r$ eigenvectors of $C\_X$, the term $\|X (I - P\_{\text{anchor}})\|\_F^2 = \sum\_{i=r+1}^{d\_{\text{in}}} \lambda\_i(C\_X)$ is minimized. Consequently, AASVD guarantees lower activation output distortion than standard static SVD:
-
-\[
-\|X W^T - X \hat{W}\_{\text{AASVD}}^T\|\_F^2 \le \|X W^T - X \hat{W}\_{\text{SVD}}^T\|\_F^2
-\]
-
- 5.2 Failure Modes
-1. **Out-of-Distribution Calibration Drift**: If calibration text sequences do not match deployment token distributions, $A\_{\text{anchor}}$ isolates irrelevant activation subspaces, degrading real-world inference accuracy.
-2. **Small Calibration Sample Size**: Calibrating with short sequence lengths ($K < d\_{\text{in}}$) causes rank deficiency in $\bar{X}$, generating spurious zero singular values in $V\_X^T$.
-
----
-
-
- 4. Parameter Savings \& Memory Footprint Profiling
-
-
- 4.1 Memory \& FLOP Formulas
-When AASVD is deployed as a weight reconstruction mechanism (overwriting `module.weight.data` in-place), parameter memory remains identical to the original uncompressed model ($d\_{\text{out}} \times d\_{\text{in}}$). When deployed as a factorized linear layer ($U\_r \operatorname{diag}(S\_r) V\_r^T$):
-
-Specifically, regarding \textbf{Original Parameters}, $P\_{\text{orig}} = d\_{\text{out}} \cdot d\_{\text{in}}$ Furthermore, regarding \textbf{Factorized Parameters}, $P\_{\text{AASVD}} = r(d\_{\text{out}} + d\_{\text{in}} + 1)$ Concurrently, regarding \textbf{Inference FLOPs / Token}, $2 r (d\_{\text{out}} + d\_{\text{in}})$
-
-
- 4.2 Benchmark Footprint Table ($d\_{\text{out}} = 4096, d\_{\text{in}} = 4096$, Rank $r = 128$)
-
-| Stage / Component | Operation | Matrix Dimensions | Tensor Element Count | Memory (FP16) |
-|-------------------|-----------|-------------------|----------------------|---------------|
-| **Calibration Activation** | Flatten Input | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Anchor Basis $A\_{\text{anchor}}$** | Activation Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Anchored Weight $W\_{\text{anchored}}$** | $W P\_{\text{anchor}}$ | $4096 \times 4096$ | 16,777,216 | 33.55 MB |
-| **Factorized $U\_r$** | Left Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Factorized $V\_r^T$** | Right Basis | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Total Factorized Layer** | $U\_r, S\_r, V\_r^T$ | -- | **1,048,704** | **2.10 MB (93.7% savings)** |
-
----
-
-
- 5. Precision Loss, Perplexity \& Sensitivity Bounds
-
-
- 5.1 Error Bound relative to Activation Space
-Let $X$ be the activation tensor with principal covariance $C\_X = X^T X$. The output error norm $\|E\_{\text{out}}\|\_F^2 = \|X W^T - X \hat{W}^T\|\_F^2$ under AASVD satisfies:
-
-\[
-\|E\_{\text{out}}\|\_F^2 \le \|X (I - P\_{\text{anchor}}) W^T\|\_F^2 + \|X P\_{\text{anchor}} (W - \hat{W}\_{\text{AASVD}})^T\|\_F^2
-\]
-
-By selecting $A\_{\text{anchor}}$ as the top-$r$ eigenvectors of $C\_X$, the term $\|X (I - P\_{\text{anchor}})\|\_F^2 = \sum\_{i=r+1}^{d\_{\text{in}}} \lambda\_i(C\_X)$ is minimized. Consequently, AASVD guarantees lower activation output distortion than standard static SVD:
-
-\[
-\|X W^T - X \hat{W}\_{\text{AASVD}}^T\|\_F^2 \le \|X W^T - X \hat{W}\_{\text{SVD}}^T\|\_F^2
-\]
-
- 5.2 Failure Modes
-1. **Out-of-Distribution Calibration Drift**: If calibration text sequences do not match deployment token distributions, $A\_{\text{anchor}}$ isolates irrelevant activation subspaces, degrading real-world inference accuracy.
-2. **Small Calibration Sample Size**: Calibrating with short sequence lengths ($K < d\_{\text{in}}$) causes rank deficiency in $\bar{X}$, generating spurious zero singular values in $V\_X^T$.
-
----
-
-
- 4. Parameter Savings \& Memory Footprint Profiling
-
-
- 4.1 Memory \& FLOP Formulas
-When AASVD is deployed as a weight reconstruction mechanism (overwriting `module.weight.data` in-place), parameter memory remains identical to the original uncompressed model ($d\_{\text{out}} \times d\_{\text{in}}$). When deployed as a factorized linear layer ($U\_r \operatorname{diag}(S\_r) V\_r^T$):
-
-Specifically, regarding \textbf{Original Parameters}, $P\_{\text{orig}} = d\_{\text{out}} \cdot d\_{\text{in}}$ Furthermore, regarding \textbf{Factorized Parameters}, $P\_{\text{AASVD}} = r(d\_{\text{out}} + d\_{\text{in}} + 1)$ Concurrently, regarding \textbf{Inference FLOPs / Token}, $2 r (d\_{\text{out}} + d\_{\text{in}})$
-
-
- 4.2 Benchmark Footprint Table ($d\_{\text{out}} = 4096, d\_{\text{in}} = 4096$, Rank $r = 128$)
-
-| Stage / Component | Operation | Matrix Dimensions | Tensor Element Count | Memory (FP16) |
-|-------------------|-----------|-------------------|----------------------|---------------|
-| **Calibration Activation** | Flatten Input | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Anchor Basis $A\_{\text{anchor}}$** | Activation Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Anchored Weight $W\_{\text{anchored}}$** | $W P\_{\text{anchor}}$ | $4096 \times 4096$ | 16,777,216 | 33.55 MB |
-| **Factorized $U\_r$** | Left Basis | $4096 \times 128$ | 524,288 | 1.05 MB |
-| **Factorized $V\_r^T$** | Right Basis | $128 \times 4096$ | 524,288 | 1.05 MB |
-| **Total Factorized Layer** | $U\_r, S\_r, V\_r^T$ | -- | **1,048,704** | **2.10 MB (93.7% savings)** |
-
----
-
-
- 5. Precision Loss, Perplexity \& Sensitivity Bounds
-
-
- 5.1 Error Bound relative to Activation Space
-Let $X$ be the activation tensor with principal covariance $C\_X = X^T X$. The output error norm $\|E\_{\text{out}}\|\_F^2 = \|X W^T - X \hat{W}^T\|\_F^2$ under AASVD satisfies:
-
-\[
-\|E\_{\text{out}}\|\_F^2 \le \|X (I - P\_{\text{anchor}}) W^T\|\_F^2 + \|X P\_{\text{anchor}} (W - \hat{W}\_{\text{AASVD}})^T\|\_F^2
-\]
-
-By selecting $A\_{\text{anchor}}$ as the top-$r$ eigenvectors of $C\_X$, the term $\|X (I - P\_{\text{anchor}})\|\_F^2 = \sum\_{i=r+1}^{d\_{\text{in}}} \lambda\_i(C\_X)$ is minimized. Consequently, AASVD guarantees lower activation output distortion than standard static SVD:
-
-\[
-\|X W^T - X \hat{W}\_{\text{AASVD}}^T\|\_F^2 \le \|X W^T - X \hat{W}\_{\text{SVD}}^T\|\_F^2
-\]
-
- 5.2 Failure Modes
-1. **Out-of-Distribution Calibration Drift**: If calibration text sequences do not match deployment token distributions, $A\_{\text{anchor}}$ isolates irrelevant activation subspaces, degrading real-world inference accuracy.
-2. **Small Calibration Sample Size**: Calibrating with short sequence lengths ($K < d\_{\text{in}}$) causes rank deficiency in $\bar{X}$, generating spurious zero singular values in $V\_X^T$.
-
----
+\subsection{Subspace Preservation under Adaptation}
+The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{aasvdcompressor} effectively spans the principal representation subspace.

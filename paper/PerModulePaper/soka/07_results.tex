@@ -1,11 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_soka/roberta/summary.csv} \& soka \& PASS & 84.06\% & 359.04 MB \\
-\texttt{results/unified\_soka/distilbert/summary.csv} \& soka \& PASS & 89.91\% & 339.22 MB \\
-\texttt{results/unified\_soka/gpt2/summary.csv} \& soka \& PASS & 60.78\% & 637.1 MB \\
-benchmark\_summary\_v2 \& bert-sst2 \& PASS & 34.47 ms & 711.7 MB \\
-benchmark\_summary\_v2 \& bert-mrpc \& PASS & 33.71 ms & 711.7 MB \\
-benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 36.18 ms & 721.6 MB \\
-benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 36.11 ms & 721.6 MB \\
-benchmark\_summary\_v2 \& t5-sst2 \& PASS & 49.91 ms & 1077.4 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_soka} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & soka & PASS & 89.91 & 0.8993 \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & soka & PASS & 60.78 & 0.6559 \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & soka & PASS & 84.06 & 0.8494 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & soka & PASS & Comp 59.91x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{soka}.}
+\label{tab:results_acc_soka}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_soka} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & soka & 66955010 & 66955010 & 4135682 & 1.0x \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & soka & 124441344 & 124048129 & 198145 & 1.0032x \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & soka & 124647170 & 124647170 & 7679234 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & soka & Baseline FP32 & Reduced (59.91x) & 0 & 59.91x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{soka}.}
+\label{tab:results_params_soka}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_soka} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & full & 129792.67 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_soka/distilbert/summary.csv} & distilbert & soka & 139635.41 & 339.22 MB & 0.0000 \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & full & 65001.96 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_soka/gpt2/summary.csv} & gpt2 & soka & 63849.53 & 637.1 MB & 0.0000 \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & full & 93934.25 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_soka/roberta/summary.csv} & roberta & soka & 85290.05 & 359.04 MB & 0.0000 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & soka & Elapsed 0.756s & 136.1 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{soka}.}
+\label{tab:results_vram_soka}
+\end{table*}

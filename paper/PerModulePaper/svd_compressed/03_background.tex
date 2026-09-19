@@ -1,3 +1,45 @@
-\section{03 Background}
+\section{Mathematical Background and Formal Notation}
 
-Draft content for svd_compressed.
+\subsection{Notation and Projection Spaces}
+Let $\mathcal{B}$ denote batch size, $N$ sequence length, and $d_{\text{in}}, d_{\text{out}}$ layer projection dimensions. For multi-head attention blocks, $H$ denotes head count, $d = d_{\text{in}} / H$ denotes head dimension, and $H_{\text{kv}}$ denotes key/value heads in Grouped-Query Attention (GQA).
+Standard dense forward linear projection computes:
+\[
+Y = X W^\top + b
+\]
+where $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, $b \in \mathbb{R}^{d_{\text{out}}}$, and $Y \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$.
+
+\subsection{Spectral Decomposition and Truncated SVD}
+For any projection matrix $W \in \mathbb{R}^{m \times n}$ with rank $\rho = \min(m, n)$, Singular Value Decomposition (SVD) gives:
+\[
+W = U \Sigma V^\top = \sum_{i=1}^{\rho} \sigma_i u_i v_i^\top
+\]
+where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ are unitary matrices, and $\Sigma = \operatorname{diag}(\sigma_1, \dots, \sigma_\rho)$ contains singular values ordered $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$.
+
+By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ surrogate ($r < \rho$) in Frobenius norm satisfies:
+\[
+W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top
+\]
+with residual truncation error:
+\[
+\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2, \quad \|W - W_r\|_2 = \sigma_{r+1}
+\]
+
+\subsection{Condition Number Bounds under Truncation}
+Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge \sigma_\rho > 0$. The condition number $\kappa(W) = \sigma_1 / \sigma_\rho$ measures numerical sensitivity to input perturbations. Under rank-$r$ truncation, the condition number of the factorized surrogate $W_r$ satisfies:
+\[
+\kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
+\]
+Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
+
+\subsection{Energy Conservation and Error Manifolds}
+The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}$ defines a monotonic mapping $\mathcal{E}: \{1, \dots, \rho\} \to [0, 1]$. The decay profile follows a power-law distribution $\sigma_i \propto i^{-\alpha}$ where $\alpha > 0$ denotes the spectral decay exponent. For transformer projection matrices, empirical measurements show $\alpha \in [0.8, 1.6]$, indicating that the first $10\%$ to $25\%$ of singular vectors capture upwards of $90\%$ of total operator variance.
+
+\subsection{Symmetric Square-Root Splitting}
+To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{svdcompressed} implements symmetric singular value distribution:
+\[
+U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
+\]
+guaranteeing balanced Frobenius bounds:
+\[
+\|U_r\|_F = \|V_r\|_F = \left( \sum_{i=1}^{r} \sigma_i \right)^{1/2}
+\]

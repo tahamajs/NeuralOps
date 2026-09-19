@@ -1,149 +1,28 @@
+\section{Experimental Setup and Evaluation Protocol}
 
-\section{Experimental Setup}
-
-\subsection{Models}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllll}
-\toprule
-\textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
-\midrule
-DistilBERT-base & 6 & 12 & 64 & 66.9M \& Flat \\
-RoBERTa-base & 12 & 12 & 64 & 124.6M \& Nested \\
-GPT-2 & 12 & 12 & 64 & 124.4M \& Causal \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
-
-\subsection{Dataset}
-
-\textbf{SST-2} (Socher et al., 2013):
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Split} & \textbf{Size} \\
-\midrule
-Train & 67,349 \\
-Validation & 872 \\
-Test & 1,821 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Majority baseline: 50.92\%. Sequence length: 128.
-
-\subsection{ASA Configuration}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Parameter} & \textbf{Value} \\
-\midrule
-Default sparsity (encoders) & 0.1 \\
-Default sparsity (decoders) & 0.5 \\
-Temperature $T$ & 0.1 \\
-Chunk size $C$ & 64 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Recovery Fine-Tuning}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Hyperparameter} & \textbf{Value} \\
-\midrule
-Optimizer \& AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
-Steps & 50 \\
-Batch size & 8 \\
-Precision \& FP16 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Evaluation}
-
-\subsubsection{Quality}
+\subsection{Benchmark Datasets and Tasks}
+Empirical validations are executed across standard benchmarks:
 \begin{itemize}
-\item Accuracy, F1, Precision, Recall
-
+\item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
+\item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
+\item \textbf{Autoregressive Perplexity:} Validating causal generation stability on decoder backbones.
 \end{itemize}
-\subsubsection{Efficiency}
-\begin{itemize}
-\item Peak VRAM during forward
-\item Inference time (median of 20 runs)
-\item Effective sparsity per head
-
-\end{itemize}
-\subsubsection{Sparsity Analysis}
-\begin{itemize}
-\item Learned $\rho_h$ distribution
-\item Head budget histogram
-\item Attention mass retention
-
-\end{itemize}
-\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Status} & \textbf{Accuracy} \\
+\textbf{Dataset} & \textbf{Split Size} & \textbf{Sequence Length} & \textbf{Metric} \\
 \midrule
-PASS & $\ge$ 56.0\% \\
-PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+SST-2 & 67,349 / 872 & 128 & Accuracy (\%) \\
+MRPC & 3,668 / 408 & 128 & F1 Score / Acc \\
+Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
 \bottomrule
 \end{tabular}
+\caption{Benchmark task specifications and evaluation splits.}
+\label{tab:task_specs}
 \end{table}
 
-\subsection{Hardware}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Component} & \textbf{Spec} \\
-\midrule
-GPU \& NVIDIA RTX 4070 Laptop \\
-VRAM & 8 GB \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Reproduction}
-
-\begin{lstlisting}
-python run_all_4_adaptive_sparse.py \
-    --models distilbert,roberta,gpt2 \
-    --sparsity_ratio 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 16
-\end{lstlisting}
-
-\subsection{Ablations}
-
-\begin{lstlisting}
-
----
-\end{lstlisting}
+\subsection{Hardware and Profiling Configuration}
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).

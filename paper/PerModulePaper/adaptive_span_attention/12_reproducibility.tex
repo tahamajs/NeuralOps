@@ -1,97 +1,17 @@
-
 \section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor adaptive\_span\_attention \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_adaptive\_span\_attention
 
-\subsection{Environment}
-
-\begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-\end{lstlisting}
-
-\subsection{Running}
-
-\begin{lstlisting}
-python run_all_4_adaptive_span.py \
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_adaptive\_span\_attention.py \
     --models distilbert,roberta,gpt2 \
-    --max_span 128 \
-    --ramp_size 32 \
     --recovery_steps 50
-\end{lstlisting}
-
-\subsection{Reproducing Tables}
-
-\subsubsection{Main (Table 7.1)}
-\begin{lstlisting}
-python run_all_4_adaptive_span.py --max_span 128
-\end{lstlisting}
-
-\subsubsection{Max Span Ablation (Table 7.5)}
-\begin{lstlisting}
-for S in 32 64 128 256; do
-    python run_all_4_adaptive_span.py --max_span $S --output_suffix S$S
-done
-\end{lstlisting}
-
-\subsubsection{Ramp Size Ablation (Table 7.6)}
-\begin{lstlisting}
-for R in 1 8 16 32 64; do
-    python run_all_4_adaptive_span.py --ramp_size $R --output_suffix R$R
-done
-\end{lstlisting}
-
-\subsubsection{L1 Penalty Ablation (Table 7.7)}
-\begin{lstlisting}
-for L in 0 0.001 0.01 0.1; do
-    python run_all_4_adaptive_span.py --lambda_span $L --output_suffix L$L
-done
-\end{lstlisting}
-
-\subsection{Seeds}
-
-\begin{lstlisting}
-import random, numpy as np, torch
-seed = 42
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-\end{lstlisting}
-
-\subsection{Expected Results}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Model} & \textbf{Acc} & \textbf{Mean span} \\
-\midrule
-DistilBERT & 89.5\% $\pm$ 1\% & ~68 \\
-RoBERTa & 76.5\% $\pm$ 1\% & ~72 \\
-GPT-2 & 77.5\% $\pm$ 1\% & ~75 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Data Availability}
-
-\begin{itemize}
-\item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_span}
-\item \textbf{Metrics:} \texttt{results/unified\_adaptive\_span/*/summary.csv}
-
-\end{itemize}
-\subsection{Known Issues}
-
-\begin{itemize}
-\item Slow training due to ramp allocation
-\item Fast path optimization needed for short sequences
-\item No hard truncation for actual speedup
-\end{itemize}
-\begin{lstlisting}
-
----
 \end{lstlisting}

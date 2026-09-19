@@ -1,97 +1,72 @@
 {
   "id": "frandi_compressor",
-  "name": "Frandi Compressor",
+  "name": "FRanDI: Feature-Regression Aligned Singular Value Decomposition Compressor.",
   "file": "Codes/framework/compression_engine/frandi_compressor.py",
   "type": "Compression Engine",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
+  "category": "Dynamic & Efficient Attention",
+  "paradigm": "sparse",
+  "icon": "\ud83c\udf1f",
   "description": "FRanDI: Feature-Regression Aligned Singular Value Decomposition Compressor. Registered in COMPRESSOR_REGISTRY as 'frandi' and 'frandi_compressor'.",
   "classes": [
     "FRanDILinear",
     "FRanDICompressor"
   ],
   "methods_count": 15,
-  "math_latex": "\\mathcal{E}(r) = \\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)",
+  "math_latex": "\\Omega \\sim \\mathcal{N}(0, I), \\; Y = (W W^\\top)^q W \\Omega, \\; Q = \\text{qr}(Y), \\; W \\approx Q (Q^\\top W)",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=64)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[64 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "id": "sparse_mask",
+      "name": "Dynamic Top-K Attention Sparsity Mask",
+      "role": "O(N sqrt{N}) Token Filtering",
+      "shape_transform": "[Seq \u00d7 Seq] Sparse",
+      "color": "#38bdf8",
+      "math_latex": "M_{ij} = \\mathbb{I}(|S_{ij}| \\ge \\tau), \\quad S_{ij} = \\frac{q_i k_j^\\top}{\\sqrt{d}}"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=64)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 64]",
-      "color": "#2dd4bf"
+      "id": "kernel_attn",
+      "name": "Linearized Positive Kernel Projection",
+      "role": "Softmax Approximation",
+      "shape_transform": "[\\phi(Q) \\cdot \\phi(K)^T]",
+      "color": "#7dd3fc",
+      "math_latex": "\\text{Attn}(Q,K,V) = \\frac{\\phi(Q) (\\phi(K)^\\top V)}{\\phi(Q) \\sum_j \\phi(K_j)^\\top}"
     },
     {
-      "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "id": "out_norm",
+      "name": "Output Layer Normalization",
+      "role": "Attention Scale Stabilization",
+      "shape_transform": "[d_{in}]",
+      "color": "#bae6fd",
+      "math_latex": "\\text{LN}(y) = \\frac{y - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\odot \\gamma + \\beta"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 29142528,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 74317824,
-      "storage_saved_formatted": "70.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 49615872,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 148635648,
-      "storage_saved_formatted": "141.8 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 786432,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 48820992,
-      "savings_ratio": 9.0,
-      "storage_saved_bytes": 150994944,
-      "storage_saved_formatted": "144.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 1400832,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 169754624,
-      "savings_ratio": 10.64,
-      "storage_saved_bytes": 648413184,
-      "storage_saved_formatted": "618.4 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 6118604,
+      "savings_ratio": 1.82
     }
   }
 }

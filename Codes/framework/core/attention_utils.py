@@ -414,10 +414,16 @@ def inject_attention(
     copy_weights: bool = True,
     **kwargs: Any,
 ) -> nn.Module:
-    """
-    Universal attention layer replacement engine for HuggingFace Transformers.
-    """
+    """Universal attention layer replacement engine for HuggingFace Transformers."""
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
+    if callable(attn_class) and not isinstance(attn_class, type):
+        try:
+            res = attn_class(model=model, rank=rank, copy_weights=copy_weights, **kwargs)
+            if res is not None:
+                return res
+        except Exception as inj_err:
+            logger.debug("Dedicated injector %s failed, falling back to layer replacement: %s", attention_type, inj_err)
+
     config = getattr(model, "config", None)
     if config is not None:
         cfg_source = getattr(config, "text_config", config)

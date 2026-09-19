@@ -1,11 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} \& zerokv\_neo \& PASS\_LOW & 50.92\% & 531.69 MB \\
-\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} \& zerokv\_neo \& PASS & 75.92\% & 312.19 MB \\
-\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} \& zerokv\_neo \& PASS\_LOW & 51.15\% & 413.5 MB \\
-benchmark\_summary\_v2 \& bert-sst2 \& PASS & 43.31 ms & 571.8 MB \\
-benchmark\_summary\_v2 \& bert-mrpc \& PASS & 22.97 ms & 571.8 MB \\
-benchmark\_summary\_v2 \& roberta-sst2 \& PASS & 22.55 ms & 581.7 MB \\
-benchmark\_summary\_v2 \& roberta-mrpc \& PASS & 24.82 ms & 581.7 MB \\
-benchmark\_summary\_v2 \& t5-sst2 \& PASS & 51.97 ms & 1107.2 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_zerokvneo} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & zerokv\_neo & PASS & 75.92 & 0.7925 \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & zerokv\_neo & PASS\_LOW & 51.15 & 0.6758 \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & zerokv\_neo & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & zerokv\_neo & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{zerokvneo}.}
+\label{tab:results_acc_zerokvneo}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_zerokvneo} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & zerokv\_neo & 66955010 & 66955010 & 592130 & 1.0x \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & zerokv\_neo & 126800640 & 126800640 & 2359296 & 1.0x \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & zerokv\_neo & 124647170 & 124647170 & 592130 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & zerokv\_neo & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{zerokvneo}.}
+\label{tab:results_params_zerokvneo}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_zerokvneo} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & full & 51116.73 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_zerokv\_neo/distilbert/summary.csv} & distilbert & zerokv\_neo & 52122.59 & 312.19 MB & 0.7781301700299946 \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & full & 25032.32 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_zerokv\_neo/gpt2/summary.csv} & gpt2 & zerokv\_neo & 14040.51 & 413.5 MB & 0.539870709905243 \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & full & 23372.01 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_zerokv\_neo/roberta/summary.csv} & roberta & zerokv\_neo & 23289.24 & 531.69 MB & 0.7596934036492637 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & zerokv\_neo & Elapsed 0.177s & 127.0 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{zerokvneo}.}
+\label{tab:results_vram_zerokvneo}
+\end{table*}

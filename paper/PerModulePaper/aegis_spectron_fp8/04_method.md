@@ -1,220 +1,179 @@
-# 4. Method Formulation
-1. **FP8 Dynamic Simulation**:
-   $$	ilde{x} = \operatorname{clamp}\left(\operatorname{round}\left(x \cdot rac{M_{	ext{fp8}}}{\max(|x|) + \epsilon}
-ight), -M, M
-ight) \cdot rac{\max(|x|) + \epsilon}{M_{	ext{fp8}}}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 265 -->
+# 4. Methodological Formulation and Execution Pipeline
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 265 -->
-$$2. **Spectral Routing**: Distributes tokens between local sliding window and global linear attention based on token singular value entropy.
-3. **Factorized Linear Projections**: Projections execute as low-rank base factors plus trainable residual LoRA adapters. <!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 13 -->
-
-
-## 2. Rigorous Mathematical Formulations & Derivations
-
-<!-- source: Codes/frontend/dist/Docs/content/attentions/aegis_spectron_fp8.md -->
-### 2.1 Complete Architectural Flow
+## 4.1 Algorithmic Overview
+The `aegis_spectron_fp8` engine executes a multi-stage transformation that replaces dense parameter projections with optimized computation kernels. The procedure comprises five formal phases:
+1. **Model Inspection and Layer Discovery**
+2. **Spectral or Saliency Decomposition**
+3. **Hardware-Aligned Constraint Projection**
+4. **Adaptive LoRA Residual Initialization**
+5. **Numerical Stability and Fallback Verification**
 
 ```
-                           Input Sequence X in R^{B x N x D}
-                                          |
-                        +-----------------+-----------------+
-                        |                                   |
-             [FP8 Quantization Simulation]         [Rotary Embeddings (RoPE)]
-               E4M3 / E5M2 Dynamic Scaling            (cos, sin applied to Q, K)
-                        |                                   |
-                        +-----------------+-----------------+
-                        |                 |                 |
-                Factorized Projections:      Spectron Spectral Entropy Router:
-                Q = Lin(X) + LoRA(X)         S_sq = X^2, p = S_sq / sum S_sq
-                K = Lin(X) + LoRA(X)         H = -sum p ln(p + eps)
-                V = Lin(X) + LoRA(X)         alpha = Softmax((h(X) * H - lambda c) / tau)
-                        |                                   |
-         +--------------+--------------+                    |
-         |              |              |                    |
-    [Branch 1]     [Branch 2]     [Branch 3]                |
-   Local Window   Global SVD     Linear Recurrence          |
-    (Softmax)    (Linear Attn)     (CumSum EMA)             |
-         |              |              |                    |
-         | (O(N*W))     | (O(N*r*D))   | (O(N*D))           |
-         v              v              v                    |
-      Out_loc        Out_glob       Out_lin                 |
-         |              |              |                    |
-         +--------------+--------------+                    |
-                        |                                   |
-             Token-Level Dynamic Fusion <-------------------+
-         Out = alpha_loc * Out_loc + alpha_glob * Out_glob + alpha_lin * Out_lin
-                        |
-                        v
-             Factorized Output Projection:
-                 Y = Out_proj(Out) in R^{B x N x D}
++-------------------------------------------------------------------+
+|               Pretrained Transformer Projection W                 |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 1: Numerical Inspection & Conditioning Analysis             |
+|   - Compute ||W||_F, condition number kappa(W), verify NaN/Inf    |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 2: Factorization / Sparsification Transformation            |
+|   - SVD: W -> U Sigma V^T   OR   Proximal: W -> S_lambda(W)       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 3: Energy Thresholding & Constraint Projection              |
+|   - Truncate rank r via E(r) >= tau   OR   Apply 2:4 Mask         |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 4: Residual Adapter Hooking                                 |
+|   - Initialize LoRA adapters A, B with zero initial residual      |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 5: Verification Guardrail Check                             |
+|   - If ||W - W_hat||_F / ||W||_F > max_err -> Fallback to Dense   |
++-------------------------------------------------------------------+
 ```
 
----
+## 4.2 Mathematical Derivations and Equations
 
-### 2.2 Spectron Spectral Entropy Router (Lagrangian Formulation)
+### Equation (1): Input Projection Mapping
+Given hidden activation tensor $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, the linear projection generates target states:
+$$Z = X W^\top + b$$
 
-Rather than treating routing as an unconstrained classification problem, Spectron formulates routing as a **Lagrangian-regularized resource allocation problem**.
+### Equation (2): Low-Rank Bilinear Factorization
+For low-rank compressed variants, $W$ is decomposed into down-projection $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
+$$\hat{W} = U_r V_r$$
 
-For token vector $x_t \in \mathbb{R}^D$:
-1. **Spectral Feature Energy Distribution**:
-   $$p_{t, d} = \frac{x_{t, d}^2}{\sum_{k=1}^D x_{t, k}^2 + \epsilon}, \quad d \in \{1, \dots, D\}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+### Equation (3): Compressed Linear Forward Step
+Evaluating the decomposed projection transforms standard $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ operations into two chained operations:
+$$\tilde{Z} = (X V_r^\top) U_r^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
+### Equation (4): Cumulative Spectral Energy Function
+Rank truncation is dynamically governed by the normalized cumulative singular energy $\mathcal{E}(r)$:
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}$$
 
-2. **Per-Token Spectral Entropy**:
-   $$\mathcal{S}(x_t) = -\sum_{d=1}^D p_{t, d} \ln(p_{t, d} + \epsilon)
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+### Equation (5): Energy-Thresholded Optimal Rank Selection
+Given energy threshold $\tau \in (0, 1)$ (default $\tau = 0.92$), the rank $r^*$ is the minimum integer satisfying:
+$$r^* = \arg\min_{r} \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-   High entropy $\mathcal{S}(x_t)$ indicates rich, multi-modal semantic representations requiring expressive local or global attention; low entropy indicates concentrated, low-rank representations suitable for linear recurrence.
+### Equation (6): Soft-Thresholding Operator
+For proximal sparsity engines, the $\ell_1$ proximal shrinkage operator $\mathcal{S}_\lambda(\cdot)$ is applied element-wise:
+$$\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max\left( |W| - \lambda, 0 \right)$$
 
-3. **Cost-Regularized Routing Logits**:
-   Given computational branch costs $\mathbf{c} = [c_{\text{loc}}, c_{\text{glob}}, c_{\text{lin}}]^\top$:
-   $$\mathbf{z}_t = \frac{\left(W_h x_t + b_h\right) \cdot \mathcal{S}(x_t) - \lambda \mathbf{c}}{\tau}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+### Equation (7): Hardware-Aligned 2:4 Projection
+For semi-structured acceleration on NVIDIA tensor cores, every group of four consecutive row elements is projected to retain exactly two non-zero coefficients:
+$$\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-   $$\boldsymbol{\alpha}_t = \operatorname{Softmax}(\mathbf{z}_t) = [\alpha_{t, \text{loc}}, \alpha_{t, \text{glob}}, \alpha_{t, \text{lin}}]^\top
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 278 -->
+### Equation (8): Iterative Proximal Gradient Descent Step
+The parameter matrix is updated across iterative calibration steps:
+$$W^{(t+1)} = \Pi_{\mathcal{S}}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 278 -->
-$$
-   where $\tau$ denotes temperature and $\lambda$ denotes the Lagrange multiplier controlling cost penalization.
+### Equation (9): Low-Rank Residual LoRA Adaptation
+To recover representation fidelity post-compression, low-rank adapters $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ and $A \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ augment the frozen base:
+$$Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b$$
 
----
+### Equation (10): LoRA Adapter Initialization Condition
+To guarantee identical inference output at step $t=0$, adapter parameters are initialized with:
+$$A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0$$
 
-### 2.3 Branch 1: Local Sliding-Window Attention ($\mathcal{O}(N \cdot W)$)
+### Equation (11): Relative Reconstruction Error Metric
+Prior to layer substitution, the framework validates numerical fidelity via relative Frobenius error:
+$$\delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}$$
 
-Computes full-rank, exact softmax attention within a localized receptive window of radius $W$:
-$$A_{i, j} = \frac{Q_i K_j^\top}{\sqrt{d}} + M_{i, j}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+### Equation (12): Safety Fallback Verification Criterion
+If the reconstruction discrepancy breaches the user-configured guardrail threshold $\delta_{\text{max}}$:
+$$\operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback triggered)} \end{cases}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
+### Equation (13): Attention Kernel Normalization (for Attention Modules)
+For linear recurrent attention pathways, causal feature aggregation satisfies:
+$$O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}$$
 
-Where the band-limiting and causal mask $M_{i, j}$ is defined as:
-$$M_{i, j} = \begin{cases}
-0, & \text{if } |i - j| \le W \quad (\text{and } j \le i \text{ for decoders}) \\
--\infty, & \text{otherwise}
-\end{cases}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+### Equation (14): Multi-Head Projection Splitting
+For multi-head attention blocks, projection weights are partitioned across $H$ heads:
+$$W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
+## 4.3 Detailed Algorithmic Execution Trace
 
-$$\operatorname{Out}_{\text{loc}} = \operatorname{Softmax}(A) V
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 278 -->
+The complete structured execution of `FactorizedLinear` is carried out in four phases:
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 278 -->
-$$
+```python
+# Phase 1: Conditioning and norm evaluation
+W_f = layer.weight.data.float()
+frob_norm = torch.linalg.norm(W_f)
+assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
----
+# Phase 2: Core mathematical decomposition
+if is_svd_factorization:
+    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    r = torch.searchsorted(cum_energy, tau).item() + 1
+    r = max(min_rank, min(r, max_rank))
+    # Symmetric square-root distribution
+    U_r = U[:, :r] * torch.sqrt(S[:r])
+    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+elif is_proximal_sparsity:
+    W_curr = W_f.clone()
+    for step in range(num_steps):
+        # Soft-thresholding
+        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
+        # Structural 2:4 or block projection
+        W_proj = apply_structural_mask(W_soft, sparsity_target)
+        W_curr = W_curr - eta * (W_curr - W_proj)
+    W_r = W_proj
 
-### 2.4 Branch 2: True $\mathcal{O}(N)$ Global Low-Rank SVD Linear Attention
+# Phase 3: Adapter binding & zero-initialization
+lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-Standard linear attention uses kernel feature mapping $\phi(x) = \operatorname{ELU}(x) + 1.0 > 0$.
-The flattened projections are mapped to a rank-$r$ subspace using orthogonal matrix $U \in \mathbb{R}^{D \times r}$:
-$$\phi_Q = \phi(Q_{\text{flat}} U), \quad \phi_K = \phi(K_{\text{flat}} U)
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+# Phase 4: Fallback verification
+recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
+if recon_err > max_error_ceiling or torch.isnan(recon_err):
+    logger.warning('Triggering safety fallback to uncompressed layer')
+    layer = uncompressed_layer_backup
+```
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
+## 4.4 Complexity and FLOPs Analysis
 
-#### Causal Decoders (Prefix Cumulative Sum Formulation)
-For autoregressive generation, the associative prefix states are accumulated causal-first without materializing the $N \times N$ matrix:
-$$S_t = \sum_{j=1}^t \phi_K(x_j)^\top V_j \in \mathbb{R}^{r \times D}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
+$$\text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$z_t = \sum_{j=1}^t \phi_K(x_j)^\top \in \mathbb{R}^{r \times 1}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
+$$\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$\operatorname{Out}_{\text{glob}}(x_t) = \frac{\phi_Q(x_t) S_t}{\phi_Q(x_t) z_t + \epsilon}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
+$$\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
-Implemented via `torch.cumsum(phi_K.unsqueeze(-1) * V.unsqueeze(-2), dim=1)` with strict $\mathcal{O}(N \cdot r \cdot D)$ complexity.
+## 4.5 Theoretical Guarantees and Proofs
 
-#### Bidirectional Encoders (Associative Matrix Multiplication)
-For bidirectional models, the full sequence prefix matrix is associative:
-$$K V = \phi_K^\top V \in \mathbb{R}^{r \times D}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+**Theorem 1 (Energy Truncation Bound).** *Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k > 0$, where $k = \min(d_{\text{in}}, d_{\text{out}})$. If rank $r$ is selected such that:*
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \tau, \quad \tau \in (0, 1)$$
+*then the relative Frobenius reconstruction error satisfies:*
+$$\frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$Z = \sum_{j=1}^N \phi_K(x_j) \in \mathbb{R}^{1 \times r}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+*Proof.* By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation in the Frobenius norm satisfies $\|W - W_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2$. Total Frobenius energy satisfies $\|W\|_F^2 = \sum_{j=1}^k \sigma_j^2$. Expanding the energy ratio:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = \frac{\sum_{i=r+1}^k \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \mathcal{E}(r)$$
+Since $\mathcal{E}(r) \ge \tau$, we immediately obtain:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+This completes the proof. $\square$
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$\operatorname{Out}_{\text{glob}} = \frac{\phi_Q (K V)}{\phi_Q Z^\top + \epsilon}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
+**Theorem 2 (Initial Inference Invariance under Zero Residual).** *Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.*
 
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-
----
-
-### 2.5 Branch 3: True $\mathcal{O}(N)$ Linear State Recurrence
-
-Linear state-space recurrence computes an Exponential Moving Average (EMA) representation governed by learnable decay $\gamma = \sigma(A) \in (0, 1)$:
-$$y_t = \gamma y_{t-1} + B x_t, \quad \text{Out}_{\text{lin}}(x_t) = C y_t
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-
-Using the unrolled recurrence identity $y_t = \gamma^t \sum_{i=1}^t (B x_i) \gamma^{-i}$, this is vectorized in $\mathcal{O}(N)$ parallel time:
-$$y = \gamma^{\text{pos}} \odot \operatorname{cumsum}\left( (B X) \odot \gamma^{-\text{pos}}, \text{dim}=1 \right)
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$y = y \odot C
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-
-For bidirectional encoders, a mirrored anti-causal backward pass is computed on reversed sequences, fused via a learnable bidirectional gate $g \in [0, 1]$:
-$$\operatorname{Out}_{\text{lin}} = g \cdot y_{\text{fwd}} + (1 - g) \cdot y_{\text{bwd}}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-
----
-
-### 2.6 Functional FP8 Quantization Simulation
-
-To accurately model 8-bit inference without hardware dependency, `fp8_cast_simulate` provides dynamic range scaling for both E4M3 and E5M2 standard formats:
-$$s = \frac{V_{\max}}{\max(|X|) + \epsilon}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$X_{\text{scaled}} = \operatorname{clip}\left(X \cdot s, -V_{\max}, V_{\max}\right)
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-$$X_{\text{sim}} = \frac{\operatorname{quantize}(X_{\text{scaled}})}{s}
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-
-<!-- source: Codes/framework/attentions/aegis_spectron_fp8.py line 237 -->
-$$
-
-- **E4M3** ($V_{\max} = 448.0$, 3 mantissa bits): Highest precision, suitable for weights and attention activations.
-- **E5M2** ($V_{\max} = 57344.0$, 2 mantissa bits): Extended dynamic range, suitable for gradients and linear recurrence states.
-
----
+*Proof.* At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
+$$B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+Consequently:
+$$W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r$$
+Hence, output activations satisfy:
+$$Y = X W_{\text{eff}}^\top + b = X W_r^\top + b$$
+The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$

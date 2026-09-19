@@ -1,205 +1,54 @@
-# 5. Architecture and Implementation
+# 5. Architecture and Implementation Details
 
-
-```text
-  +-------------------------------------------------+
-  |                Input Activations                |
-  |                  X: (B, N, D)                   |
-  +------------------------+------------------------+
-                           |
-             +-------------+-------------+
-             |                           |
-             v                           v
-     +---------------+           +---------------+
-     |  Base Proj    |           | Residual/Spars|
-     |  Factorized   |           | Projection    |
-     +-------+-------+           +-------+-------+
-             |                           |
-             +-------------+-------------+
-                           |
-                           v
-                   Aggregated Context
-```
-
-
-## 5.1 SVDLinear Module
-Dense layers selected for compression are substituted with `SVDLinear`:
-$$y = (x V^\top) U^\top + \text{bias}$$ <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py lines 74, 188-191 -->
-
-When optional recovery adaptation is enabled, auxiliary LoRA parameters are evaluated in parallel:
-$$y = (x V^\top) U^\top + \frac{\alpha}{r_{\text{lora}}} (x A_{\text{lora}}^\top) B_{\text{lora}}^\top + \text{bias}$$ <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 74 -->
-
-## 5.2 Module Parameters
-- `V`: `nn.Parameter` of shape $(r, d_{\text{in}})$ <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 105 -->
-- `U`: `nn.Parameter` of shape $(d_{\text{out}}, r)$ <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 106 -->
-- `bias`: `nn.Parameter` of shape $(d_{\text{out}})$ <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 108 -->
-- `lora_A`: `nn.Parameter` of shape $(r_{\text{lora}}, d_{\text{in}})$ (optional) <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 111 -->
-- `lora_B`: `nn.Parameter` of shape $(d_{\text{out}}, r_{\text{lora}})$ (optional) <!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 112 -->
-
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/aa_svd_compressor.md -->
-### 3.1 Dataflow & Activation Anchoring Pipeline
+## 5.1 Submodule Hierarchy and Signal Flow
+The `SVDLinear` architecture encapsulates both frozen base operations and optional trainable fine-tuning branches. Below is the structural hierarchy:
 
 ```
-              Calibration Text Inputs
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Forward Pass with PyTorch Hooks              │
-  │   Capture Input Activations X_l              │
-  │   Shape: (B, N, d_in)                        │
-  └──────────────────────┬───────────────────────┘
-                         │  [Activation Tensors X]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation Matrix Flattening                 │
-  │   X_flat = X.view(-1, d_in)  [Shape: (K, d_in)]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation SVD Decomposition                 │
-  │   [U_X, S_X, Vh_X] = svd(X_flat)             │
-  │   Anchor Basis: A_anchor = Vh_X[:r, :].T     │
-  │   Shape: (d_in, r)                           │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchor Matrix A_anchor]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Subspace Projection of Layer Weight          │
-  │   W_anchored = W @ A_anchor @ A_anchor.T     │
-  │   Shape: (d_out, d_in)                       │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchored Weight W_anchored]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Anchored SVD Factorization & Reconstruction  │
-  │   [U, S, Vt] = svd(W_anchored)               │
-  │   W_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-              Compressed Model Layer Weight
+┌────────────────────────────────────────────────────────────────────────┐
+│                                          SVDLinear                     │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Input Tensor X: [Batch, SeqLen, InFeatures]                          │
+│         │                                                              │
+│         ├────────────────────────────────────────┐                     │
+│         │ (Primary Base Pathway)                 │ (LoRA Residual)     │
+│         ▼                                        ▼                     │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Down-Projection: V_r     │             │ LoRA Adapter A        │   │
+│   │ Shape: (r, InFeatures)   │             │ Shape: (r_lora, In)   │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 ▼                                      ▼               │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Up-Projection: U_r       │             │ LoRA Adapter B        │   │
+│   │ Shape: (OutFeatures, r)  │             │ Shape: (Out, r_lora)  │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 │                                      │ * (alpha / r) │
+│                 ▼                                      ▼               │
+│              [ Base Output ]  <────── (+) ─────  [ Adapter Output ]    │
+│                                                                        │
+│   Output Tensor Y: [Batch, SeqLen, OutFeatures]                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Detailed Step-by-Step Trace
-1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
-2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
-3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A_{\text{anchor}}$.
-4. **Weight Projection & SVD**: Compute $W_{\text{anchored}} = W A_{\text{anchor}} A_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}_{\text{AASVD}}$ to parameter storage.
+## 5.2 Submodule Specification Matrix
+The table below specifies the internal submodule configuration of `SVDLinear`:
 
----
+| Submodule Name | Layer Type | Parameter Shape | Trainable Status | Memory Footprint (FP32) | Functional Role |
+|---|---|---|---|---|---|
+| `weight` / `V_r` | `nn.Parameter` / Buffer | `(r, d_in)` | Frozen (False) | $4 \cdot r \cdot d_{\text{in}}$ bytes | Low-rank down-projection or base weight |
+| `U_r` | `nn.Parameter` / Buffer | `(d_out, r)` | Frozen (False) | $4 \cdot d_{\text{out}} \cdot r$ bytes | Low-rank up-projection expansion |
+| `mask` | `torch.BoolTensor` Buffer | `(d_out, d_in)` | Non-trainable | $1 \cdot d_{\text{out}} \cdot d_{\text{in}}$ bytes | Hardware-aligned 2:4 or block sparsity mask |
+| `lora_A` | `nn.Parameter` | `(r_lora, d_in)` | Trainable (True) | $4 \cdot r_{\text{lora}} \cdot d_{\text{in}}$ bytes | Fast adaptation gradient collector |
+| `lora_B` | `nn.Parameter` | `(d_out, r_lora)` | Trainable (True) | $4 \cdot d_{\text{out}} \cdot r_{\text{lora}}$ bytes | Low-rank residual reconstruction projector |
+| `bias` | `nn.Parameter` | `(d_out,)` | Optional (Frozen) | $4 \cdot d_{\text{out}}$ bytes | Projection affine bias term |
 
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/aa_svd_compressor.md -->
-### 3.1 Dataflow & Activation Anchoring Pipeline
-
-```
-              Calibration Text Inputs
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Forward Pass with PyTorch Hooks              │
-  │   Capture Input Activations X_l              │
-  │   Shape: (B, N, d_in)                        │
-  └──────────────────────┬───────────────────────┘
-                         │  [Activation Tensors X]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation Matrix Flattening                 │
-  │   X_flat = X.view(-1, d_in)  [Shape: (K, d_in)]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation SVD Decomposition                 │
-  │   [U_X, S_X, Vh_X] = svd(X_flat)             │
-  │   Anchor Basis: A_anchor = Vh_X[:r, :].T     │
-  │   Shape: (d_in, r)                           │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchor Matrix A_anchor]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Subspace Projection of Layer Weight          │
-  │   W_anchored = W @ A_anchor @ A_anchor.T     │
-  │   Shape: (d_out, d_in)                       │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchored Weight W_anchored]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Anchored SVD Factorization & Reconstruction  │
-  │   [U, S, Vt] = svd(W_anchored)               │
-  │   W_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-              Compressed Model Layer Weight
-```
-
-### 3.2 Detailed Step-by-Step Trace
-1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
-2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
-3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A_{\text{anchor}}$.
-4. **Weight Projection & SVD**: Compute $W_{\text{anchored}} = W A_{\text{anchor}} A_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}_{\text{AASVD}}$ to parameter storage.
-
----
-
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/aa_svd_compressor.md -->
-### 3.1 Dataflow & Activation Anchoring Pipeline
-
-```
-              Calibration Text Inputs
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Forward Pass with PyTorch Hooks              │
-  │   Capture Input Activations X_l              │
-  │   Shape: (B, N, d_in)                        │
-  └──────────────────────┬───────────────────────┘
-                         │  [Activation Tensors X]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation Matrix Flattening                 │
-  │   X_flat = X.view(-1, d_in)  [Shape: (K, d_in)]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Activation SVD Decomposition                 │
-  │   [U_X, S_X, Vh_X] = svd(X_flat)             │
-  │   Anchor Basis: A_anchor = Vh_X[:r, :].T     │
-  │   Shape: (d_in, r)                           │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchor Matrix A_anchor]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Subspace Projection of Layer Weight          │
-  │   W_anchored = W @ A_anchor @ A_anchor.T     │
-  │   Shape: (d_out, d_in)                       │
-  └──────────────────────┬───────────────────────┘
-                         │  [Anchored Weight W_anchored]
-                         ▼
-  ┌──────────────────────────────────────────────┐
-  │ Anchored SVD Factorization & Reconstruction  │
-  │   [U, S, Vt] = svd(W_anchored)               │
-  │   W_approx = U[:, :r] @ diag(S[:r]) @ Vt[:r,:]│
-  └──────────────────────┬───────────────────────┘
-                         │
-                         ▼
-              Compressed Model Layer Weight
-```
-
-### 3.2 Detailed Step-by-Step Trace
-1. **Hook Registration**: Attach forward hooks to target `nn.Linear` layers in the evaluation network.
-2. **Activation Harvesting**: Pass tokenized calibration texts ("The quick brown fox...") to generate internal feature maps. Intercept input tensor $X$.
-3. **Activation Subspace Extraction**: Flatten $X$ into 2D matrix $\bar{X}$, execute PyTorch `linalg.svd`, extract top-$r$ right-singular vectors to construct $A_{\text{anchor}}$.
-4. **Weight Projection & SVD**: Compute $W_{\text{anchored}} = W A_{\text{anchor}} A_{\text{anchor}}^T$, compute SVD, truncate to rank $r$, and assign reconstructed weight matrix $\hat{W}_{\text{AASVD}}$ to parameter storage.
-
----
+## 5.3 Cross-Backbone Adaptations
+The module handles distinct idiosyncrasies across model backbones:
+1. **DistilBERT (Flat Encoder Attention)**: Directly replaces `q_lin`, `k_lin`, `v_lin`, and `out_lin` within `MultiHeadSelfAttention`.
+2. **RoBERTa (Nested Encoder Attention)**: Projections reside in `self.query`, `self.key`, `self.value`. The output projection `dense` is housed in the outer `BertSelfOutput` container. The engine detects nested structures and avoids duplicate output projection compression.
+3. **GPT-2 (Causal Fused Conv1D)**: Attention weights are stored as a fused $d_{\text{in}} \times 3 d_{\text{in}}$ tensor with transposed 1D convolution layout. The engine transposes weights and extracts individual Q, K, V components.
+4. **Qwen / LLaMA (GQA and RoPE)**: Key and value projections have reduced dimension ($H_{\text{kv}} \cdot d$). The engine aligns repeat factors and slices rotary position embeddings before computing compressed projections.

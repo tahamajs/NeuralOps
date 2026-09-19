@@ -1,49 +1,22 @@
 # 9. Discussion
-Monotonic tracking prevents divergence when dual variables fluctuate near constraint boundaries.
 
+## 9.1 Theoretical Trade-Offs in Parameter Compression
+The design of `admm_compressor` balances parameter compactness against functional expressivity. In standard dense linear projections, every parameter participates uniformly in the affine transformation. However, empirical weight distributions exhibit heavy-tailed spectral energy, meaning the vast majority of projection variance is captured by a small fraction of singular directions. By explicitly constraining the parameter space to these dominant directions, `admm_compressor` eliminates redundant degrees of freedom that contribute negligibly to task discriminability.
 
-## 6. Production CUDA / Triton Execution Blueprint
+## 9.2 Memory Bandwidth vs. Compute Bound Serving Dynamics
+In production transformer serving, the operational bottleneck shifts between compute-bound execution (during large-batch prefill) and memory-bandwidth-bound execution (during single-sequence autoregressive decoding). Under memory-bound regimes, latency is determined primarily by the byte-transfer time required to move weights from High Bandwidth Memory (HBM) into on-chip SRAM caches. By compressing projection weights, `admm_compressor` directly reduces byte transfer volume, delivering acceleration even when floating-point operations remain comparable.
 
-<!-- source: Codes/frontend/dist/Docs/content/compressions/admm_compressor.md -->
-```python
-import torch
-import triton
-import triton.language as tl
+## 9.3 Architectural Interplay with Multi-Head Projections
+In multi-head attention mechanisms, query, key, value, and output projections exhibit distinct functional roles. Key and value projections typically demonstrate faster spectral decay than query projections, reflecting the asymmetric information density of contextual retrieval. `admm_compressor` accommodates these asymmetries by permitting dynamic, per-projection rank allocations rather than imposing rigid global constraints.
 
-@triton.jit
-def admm_joint_prune_quant_kernel(
-    W_ptr, Out_ptr,
-    Threshold, Scale,
-    n_elements,
-    BLOCK_SIZE: tl.constexpr
-):
-    pid = tl.program_id(axis=0)
-    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
-    mask = offsets < n_elements
+## 9.4 Mitigating Representation Drift via Decoupled Adapters
+Direct post-training truncation without fine-tuning often induces severe perplexity degradation in deep language models. `admm_compressor` addresses this vulnerability through architectural decoupling: the base projection is frozen post-compression, while lightweight, zero-initialized adapter branches (LoRA) capture non-linear parameter shifts during brief calibration sweeps. This architecture prevents catastrophic representation collapse while preserving the underlying compressed representation.
 
-    # Load dense weight
-    w = tl.load(W_ptr + offsets, mask=mask, other=0.0)
-    abs_w = tl.abs(w)
+## 9.5 Scaling Behaviors with Modern Long-Context Sequences
+As foundation architectures extend sequence context windows from 2,048 to 128,000 tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
 
-    # Prune
-    is_kept = abs_w >= Threshold
-    w_pruned = tl.where(is_kept, w, 0.0)
+## 9.6 Broader Implications for Edge and Cloud Deployments
+The ability to run compressed models across heterogeneous architectures (DistilBERT, RoBERTa, GPT-2, Qwen) provides practical versatility. For edge deployment, reduced parameter storage allows multi-gigabyte models to reside within constrained on-device SRAM. In cloud datacenters, lower memory footprints allow serving engines to pack more concurrent requests per GPU instance, directly reducing serving costs and carbon footprint.
 
-    # Quantize: Clamp, Round, Scale
-    scaled = w_pruned * Scale
-    clamped = tl.clamp(scaled, -Scale, Scale)
-    rounded = tl.extra.cuda.libdevice.rint(clamped)
-    quantized = rounded / Scale
-
-    tl.store(Out_ptr + offsets, quantized, mask=mask)
-```
-
----
-
-
-## 7. Hybrid Synthesis & Next-Generation Enhancements
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/admm_compressor.md -->
-1. **Channel-Wise Adaptive Scaling**: Replace global scalar quantizer scale with vector scales $s \in \mathbb{R}^N$ calculated per out-channel.
-2. **Hessian-Weighted Top-K Masking**: Use diagonal curvature $H_{i,i}$ instead of magnitude $|W_{i,j}|$ for selecting retained weights.
-3. **Bit-Packed Sparse Storage**: Pack 4-bit quantized values into 32-bit integer containers combined with Bitmaps for zero-overhead GPU memory streaming.
+## 9.7 Energy Efficiency and Carbon Footprint Quantification
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy (~20 pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation (~2 pJ per FP16 MAC). By reducing parameter storage by $2.5\times$ to $3.0\times$, `admm_compressor` directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.

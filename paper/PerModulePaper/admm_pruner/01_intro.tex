@@ -1,38 +1,25 @@
-\section{01 Intro}
+\section{Introduction}
 
- 1. Introduction
-Structured pruning enforces hardware-efficient patterns (such as NVIDIA 2:4 sparsity) but can severely disrupt intermediate representations. `admm\_pruner` introduces dynamic $
-ho$ adjustment and layer-wise feature distillation to steer weight updates towards sparse projection manifolds without sacrificing task accuracy.
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
+The \texttt{admmpruner} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{admmpruner} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
+\subsection{Arithmetic Intensity and the Memory Wall}
+During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
+\[
+\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
+\]
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{admmpruner} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
-\subsection{1. Executive Abstract \& Theoretical Motivation}
-Pruning neural network weight tensors without sacrificing performance is a fundamental challenge in model compression. Standard magnitude pruning suffers from greedy decisions that create unrecoverable optimization bottlenecks. \textbf{ADMM Pruner} addresses this problem by formulating model pruning as a constrained non-convex optimization problem solved via the \textbf{Alternating Direction Method of Multipliers (ADMM)} with dynamic penalty parameter ($\rho$) scheduling and Straight-Through Estimator (STE) gradient backpropagation.
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{admmpruner} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\item \textbf{Guaranteed Fallback Integrity:} Automated error monitoring that reverts to dense baseline projections if relative parameter deviation breaches safety tolerances.
+\end{itemize}
 
-By decomposing the hard structural sparsity constraint into a sequence of tractable subproblems, ADMM decouples continuous parameter optimization from discrete combinatorial structural pruning. The algorithm alternates between updating continuous weights $W$, projecting onto the sparse constraint set $Z$ (unstructured, block, or 2:4 semi-structured), and updating a dual multiplier tensor $U$ that tracks constraint residual drift.
-
-
-\begin{lstlisting}
-                    {[} Original Uncompressed Weight W_0 ∈ ℝ^{N \times  M} ]
-                                          |
-                                          v
-            +-----------------------------------------------------------+
-            | ADMM Alternating Iteration Loop (t = 1 ... T)             |
-            | 1. Sparse Projection: Z^(t+1) = Π_S(W^(t) + U^(t))        |
-            | 2. Proximal Weight Update:                                |
-            |    W^(t+1) = (W_0 + ρ^(t) (Z^(t+1) - U^(t))) / (1 + ρ^(t))|
-            | 3. Dual Accumulator Update:                               |
-            |    U^(t+1) = U^(t) + W^(t+1) - Z^(t+1)                    |
-            | 4. Residual Evaluation \& Dynamic Rho Scheduling:          |
-            |    Primal r^(t+1) = ||W^(t+1) - Z^(t+1)||_F               |
-            |    Dual s^(t+1) = ρ^(t) ||Z^(t+1) - Z^(t)||_F             |
-            |    Adapt ρ^(t+1) to balance ||r|| and ||s||               |
-            +-----------------------------+-----------------------------+
-                                          |
-                                          v
-            {[} Convert to ADMMMaskedLinear with STE Autograd Function ]
-            {[} Post-Pruning LayerNorm / RMSNorm Variance Recalibration ]
-\end{lstlisting}
-
-
----
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows: Section 2 reviews foundational compression paradigms. Section 3 formalizes mathematical notation. Section 4 presents core derivations and algorithms. Section 5 describes architectural integration. Section 6 outlines experimental protocols. Section 7 presents empirical results. Section 8 provides detailed analytical breakdowns. Section 9 discusses implications. Section 10 outlines limitations. Section 11 concludes.

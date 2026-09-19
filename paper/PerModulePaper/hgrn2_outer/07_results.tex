@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & hgrn2\_outer & PASS\_LOW & 50.34\% & 685.64 MB \\
-\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & hgrn2\_outer & PASS & 68.46\% & 329.98 MB \\
-\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & hgrn2\_outer & PASS\_LOW & 48.62\% & 569.81 MB \\
-benchmark\_summary\_v2 & bert-sst2 & PASS & 8683.27 ms & 4895.3 MB \\
-benchmark\_summary\_v2 & bert-mrpc & PASS & 8748.24 ms & 4895.3 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & PASS & 8833.76 ms & 4905.2 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & PASS & 8761.72 ms & 4905.2 MB \\
-benchmark\_summary\_v2 & t5-sst2 & PASS & 8791.15 ms & 4970.8 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_hgrn2outer} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & hgrn2\_outer & PASS & 68.46 & 0.7114 \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & hgrn2\_outer & PASS\_LOW & 48.62 & 0.6203 \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & hgrn2\_outer & PASS\_LOW & 50.34 & 0.4355 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{hgrn2outer}.}
+\label{tab:results_acc_hgrn2outer}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_hgrn2outer} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & hgrn2\_outer & 66955010 & 67587176 & 1181984 & 0.9906x \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & hgrn2\_outer & 124441344 & 125705676 & 1181244 & 0.9899x \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & hgrn2\_outer & 124647170 & 132998606 & 1771838 & 0.9372x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{hgrn2outer}.}
+\label{tab:results_params_hgrn2outer}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_hgrn2outer} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & full & 172375.58 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & hgrn2\_outer & 2168.02 & 329.98 MB & 0.0000 \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & full & 27716.2 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & hgrn2\_outer & 9386.81 & 569.81 MB & 0.0000 \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & full & 92775.9 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & hgrn2\_outer & 8864.8 & 685.64 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{hgrn2outer}.}
+\label{tab:results_vram_hgrn2outer}
+\end{table*}

@@ -1,8 +1,26 @@
-\section{Related Work}AEGIS-V1 integrates sliding-window sparse attention with kernelized linear attention and factorized projections.
+\section{Related Work and Theoretical Foundations}
 
+\subsection{Model Compression Paradigms}
+Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+\begin{enumerate}
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\end{enumerate}
 
+\subsection{Sensitivity-Aware Saliency Metrics}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\[
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+\]
 
-\subsection{9. Seminal Literature \& Academic References}
-1. \textbf{Gu, A., \& Dao, T. (2023)}. *Mamba: Linear-Time Sequence Modeling with Selective State Spaces*. arXiv preprint [arXiv:2312.00752](https://arxiv.org/abs/2312.00752).
-2. \textbf{Yang, S., Wang, B., Shen, Y., Panda, R., \& Kim, Y. (2023)}. *Gated Linear Attention Transformers with Hardware-Efficient Training*. In ICML 2024. [arXiv:2312.06635](https://arxiv.org/abs/2312.06635).
-3. \textbf{Beltagy, I., Peters, M. E., \& Cohan, A. (2020)}. *Longformer: The Long-Document Transformer*. arXiv preprint [arXiv:2004.05150](https://arxiv.org/abs/2004.05150).
+\subsection{Efficient Attention Formulations}
+Standard softmax attention requires computing an $N \times N$ dense matrix:
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\]
+Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+\[
+(Q K^\top) V = Q (K^\top V)
+\]
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{aegisv1} module leverages these structural properties to optimize inference speed and VRAM overhead.

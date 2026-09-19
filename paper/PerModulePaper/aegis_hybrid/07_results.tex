@@ -1,19 +1,67 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
- 7. Empirical Results
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_aegishybrid} details empirical evaluation metrics across target backbones.
 
- 7.1 Unified Benchmark Results
-From `results/unified\_aegis\_hybrid/*/summary.csv`:
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & aegis\_hybrid & PASS & 84.98 & 0.8634 \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & aegis\_hybrid & PASS & 59.52 & 0.6735 \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & aegis\_hybrid & PASS\_LOW & 51.26 & 0.6698 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aegishybrid}.}
+\label{tab:results_acc_aegishybrid}
+\end{table*}
 
-| Model | Status | Accuracy (%) | Params Before | Params After | Compression Rate | Peak VRAM (MB) | Tokens/sec |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | PASS | 84.98%  | 66,955,010  | 59,652,626  | 1.1224x  | 319.22  | 3,803.0  |
-| RoBERTa | PASS\_LOW | 51.26%  | 124,647,170  | 108,872,018  | 1.1449x  | 596.29  | 7,060.8  |
-| GPT-2 | PASS | 59.52%  | 124,441,344  | 101,579,088  | 1.2251x  | 476.00  | 8,474.5  |
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_aegishybrid} documents parameter compression factors and adapter overhead.
 
- 7.2 Matrix Benchmark Latency
-From `results/matrix\_test\_summary.csv`:
-- DistilBERT: Latency 3.532 ms, Peak VRAM 809.0 MB 
-- RoBERTa: Latency 4.520 ms, Peak VRAM 1587.8 MB 
-- GPT-2: Latency 5.286 ms, Peak VRAM 1442.0 MB 
-- Qwen 3.5: Latency 14.619 ms, Peak VRAM 4255.0 MB 
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & aegis\_hybrid & 66955010 & 59652626 & 2134800 & 1.1224x \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & aegis\_hybrid & 124441344 & 101579088 & 3090000 & 1.2251x \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & aegis\_hybrid & 124647170 & 108872018 & 3090000 & 1.1449x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{aegishybrid}.}
+\label{tab:results_params_aegishybrid}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_aegishybrid} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & full & 10631.82 & 388.55 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_hybrid/distilbert/summary.csv} & distilbert & aegis\_hybrid & 3802.96 & 319.22 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & full & 21011.47 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_hybrid/gpt2/summary.csv} & gpt2 & aegis\_hybrid & 8474.53 & 476.0 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & full & 23951.82 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_aegis\_hybrid/roberta/summary.csv} & roberta & aegis\_hybrid & 7060.79 & 596.29 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{aegishybrid}.}
+\label{tab:results_vram_aegishybrid}
+\end{table*}

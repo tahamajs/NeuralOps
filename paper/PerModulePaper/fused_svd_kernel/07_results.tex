@@ -1,11 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & fused\_svd\_kernel & PASS\_LOW & 50.92\% & 558.41 MB \\
-\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & fused\_svd\_kernel & PASS & 79.93\% & 280.27 MB \\
-\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & fused\_svd\_kernel & PASS & 70.07\% & 464.46 MB \\
-benchmark\_summary\_v2 & bert-sst2 & FAIL & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & bert-mrpc & FAIL & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & roberta-sst2 & FAIL & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & roberta-mrpc & FAIL & 0.0 ms & 0.0 MB \\
-benchmark\_summary\_v2 & t5-sst2 & FAIL & 0.0 ms & 0.0 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_fusedsvdkernel} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & fused\_svd\_kernel & PASS & 79.93 & 0.8201 \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & fused\_svd\_kernel & PASS & 70.07 & 0.754 \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & fused\_svd\_kernel & PASS\_LOW & 50.92 & 0.6748 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{fusedsvdkernel}.}
+\label{tab:results_acc_fusedsvdkernel}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_fusedsvdkernel} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & fused\_svd\_kernel & 66955010 & 53978882 & 1184256 & 1.2404x \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & fused\_svd\_kernel & 124441344 & 98489088 & 1778688 & 1.2635x \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & fused\_svd\_kernel & 124647170 & 105782018 & 2368512 & 1.1783x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{fusedsvdkernel}.}
+\label{tab:results_params_fusedsvdkernel}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_fusedsvdkernel} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & full & 53310.16 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & distilbert & fused\_svd\_kernel & 3888.43 & 280.27 MB & 0.0000 \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & full & 27584.57 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & gpt2 & fused\_svd\_kernel & 1955.65 & 464.46 MB & 0.0000 \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & full & 28038.54 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & roberta & fused\_svd\_kernel & 17791.54 & 558.41 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{fusedsvdkernel}.}
+\label{tab:results_vram_fusedsvdkernel}
+\end{table*}

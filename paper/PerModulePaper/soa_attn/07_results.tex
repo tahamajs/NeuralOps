@@ -1,6 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_soa\_attn/roberta/summary.csv} \& soa\_attn \& FAIL & 0.0\% & 712.34 MB \\
-\texttt{results/unified\_soa\_attn/distilbert/summary.csv} \& soa\_attn \& PASS & 83.49\% & 279.93 MB \\
-\texttt{results/unified\_soa\_attn/gpt2/summary.csv} \& soa\_attn \& PASS\_LOW & 50.92\% & 301.23 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_soaattn} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & soa\_attn & PASS & 83.49 & 0.8389 \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & soa\_attn & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & soa\_attn & FAIL & 0.0 & 0.7277 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{soaattn}.}
+\label{tab:results_acc_soaattn}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_soaattn} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & soa\_attn & 66955010 & 57370376 & 147462 & 1.1671x \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & soa\_attn & 126800640 & 106746636 & 1769484 & 1.1879x \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & soa\_attn & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{soaattn}.}
+\label{tab:results_params_soaattn}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_soaattn} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & full & 41917.05 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_soa\_attn/distilbert/summary.csv} & distilbert & soa\_attn & 31012.9 & 279.93 MB & 0.0000 \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & full & 9411.5 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_soa\_attn/gpt2/summary.csv} & gpt2 & soa\_attn & 12419.29 & 301.23 MB & 0.0000 \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & full & 26620.13 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_soa\_attn/roberta/summary.csv} & roberta & soa\_attn & 26620.13 & 712.34 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{soaattn}.}
+\label{tab:results_vram_soaattn}
+\end{table*}

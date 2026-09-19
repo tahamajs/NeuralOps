@@ -1,12 +1,12 @@
 {
   "id": "delta_kv",
-  "name": "Delta Kv",
+  "name": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.",
   "file": "Codes/framework/compression_engine/delta_kv.py",
   "type": "Compression Engine",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
-  "description": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity. Encodes semantic residuals relative to retrieved historical references, preserving attention fidelity while drastically compressing dynamic KV caches.",
+  "category": "Latent & KV-Cache Compression",
+  "paradigm": "mla",
+  "icon": "\ud83e\udde0",
+  "description": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.  Encodes semantic residuals relative to retrieved historical references, preserving attention fidelity while drastically compressing dynamic KV caches.  Paper: \"DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity\"        Hao et al., arXiv:2602.08005. Registered as 'delta_kv'.",
   "classes": [
     "DeltaKVStore",
     "DeltaKVCompressor"
@@ -15,83 +15,66 @@
   "math_latex": "R_K \\in \\mathbb{R}^{B \\times H \\times 1 \\times M \\times D}, \\quad R_V \\in \\mathbb{R}^{B \\times H \\times 1 \\times M \\times D}",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection, r=64)",
-      "role": "Projection to Rank-r Eigenspace",
-      "shape_transform": "[64 \u00d7 d_in]",
-      "color": "#3acbb8"
+      "id": "down_proj_kv",
+      "name": "Latent KV Compression Projection",
+      "role": "KV Cache Reduction",
+      "shape_transform": "[d_c \u00d7 d_{in}]",
+      "color": "#f59e0b",
+      "math_latex": "c^{KV}_t = W^{DKV} x_t, \\quad c^{KV}_t \\in \\mathbb{R}^{d_c}, \\; d_c \\ll d_{in}"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion, r=64)",
-      "role": "Reconstruction to Output Space",
-      "shape_transform": "[d_out \u00d7 64]",
-      "color": "#2dd4bf"
+      "id": "up_proj_k",
+      "name": "Key Dequantize / Unpack",
+      "role": "Head Expansion",
+      "shape_transform": "[n_h \\cdot d_h \u00d7 d_c]",
+      "color": "#d97706",
+      "math_latex": "k^C_t = W^{UK} c^{KV}_t, \\quad W^{UK} \\in \\mathbb{R}^{n_h d_h \\times d_c}"
     },
     {
-      "id": "adapter",
-      "name": "Residual Adapter / Norm Calibration",
-      "role": "High-Frequency Spectral Recovery",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4"
+      "id": "up_proj_v",
+      "name": "Value Dequantize / Unpack",
+      "role": "Head Expansion",
+      "shape_transform": "[n_h \\cdot d_h \u00d7 d_c]",
+      "color": "#b45309",
+      "math_latex": "v^C_t = W^{UV} c^{KV}_t, \\quad W^{UV} \\in \\mathbb{R}^{n_h d_h \\times d_c}"
+    },
+    {
+      "id": "q_rope",
+      "name": "Decoupled RoPE Position Matrix",
+      "role": "Rotary Geometry Injection",
+      "shape_transform": "[d_R \u00d7 d_{in}]",
+      "color": "#fbbf24",
+      "math_latex": "q^{rot}_t = \\mathcal{R}_{\\Theta}(q^{pe}_t), \\quad k^{rot}_t = \\mathcal{R}_{\\Theta}(k^{pe}_t)"
     }
   ],
   "model_projections": {
     "distilbert": {
-      "model_name": "DistilBERT-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 6,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 66301440,
-      "total_compressed_params": 29142528,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 74317824,
-      "storage_saved_formatted": "70.9 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 5505024,
+      "savings_ratio": 1.18
     },
     "roberta": {
-      "model_name": "RoBERTa-Base",
-      "family": "Encoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 884736,
-      "total_baseline_params": 123933696,
-      "total_compressed_params": 49615872,
-      "savings_ratio": 8.0,
-      "storage_saved_bytes": 148635648,
-      "storage_saved_formatted": "141.8 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 5505024,
+      "savings_ratio": 1.18
     },
     "gpt2": {
-      "model_name": "GPT-2-Small",
-      "family": "Causal Decoder",
       "hidden_size": 768,
       "intermediate_size": 3072,
-      "num_layers": 12,
-      "baseline_layer_params": 7077888,
-      "compressed_layer_p": 786432,
-      "total_baseline_params": 124318464,
-      "total_compressed_params": 48820992,
-      "savings_ratio": 9.0,
-      "storage_saved_bytes": 150994944,
-      "storage_saved_formatted": "144.0 MB"
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 5505024,
+      "savings_ratio": 1.18
     },
     "qwen": {
-      "model_name": "Qwen2.5-0.5B",
-      "family": "GQA Decoder (SLM)",
       "hidden_size": 896,
       "intermediate_size": 4864,
-      "num_layers": 24,
-      "baseline_layer_params": 14909440,
-      "compressed_layer_p": 1400832,
-      "total_baseline_params": 493961216,
-      "total_compressed_params": 169754624,
-      "savings_ratio": 10.64,
-      "storage_saved_bytes": 648413184,
-      "storage_saved_formatted": "618.4 MB"
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 9748480,
+      "savings_ratio": 1.14
     }
   }
 }

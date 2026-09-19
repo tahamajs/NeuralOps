@@ -1,6 +1,85 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} \& svd\_sequence\_attention \& PASS\_LOW & 50.0\% & 655.77 MB \\
-\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} \& svd\_sequence\_attention \& PASS\_LOW & 51.26\% & 329.37 MB \\
-\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} \& svd\_sequence\_attention \& PASS\_LOW & 53.1\% & 569.83 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_svdsequenceattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & svd\_sequence & PASS\_LOW & 51.26 & 0.5737 \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & svd\_sequence & PASS\_LOW & 53.1 & 0.6832 \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & svd\_sequence & PASS\_LOW & 50.0 & 0.6572 \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & svd\_sequence\_attention & PASS\_LOW & 51.26 & 0.5737 \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & svd\_sequence\_attention & PASS\_LOW & 53.1 & 0.6832 \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & svd\_sequence\_attention & PASS\_LOW & 50.0 & 0.6572 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{svdsequenceattention}.}
+\label{tab:results_acc_svdsequenceattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_svdsequenceattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & svd\_sequence & 66955010 & 67544858 & 1181978 & 0.9913x \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & svd\_sequence & 124441344 & 125621040 & 1181232 & 0.9906x \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & svd\_sequence & 124647170 & 132913970 & 1771826 & 0.9378x \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & svd\_sequence\_attention & 66955010 & 67544858 & 1181978 & 0.9913x \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & svd\_sequence\_attention & 124441344 & 125621040 & 1181232 & 0.9906x \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & svd\_sequence\_attention & 124647170 & 132913970 & 1771826 & 0.9378x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{svdsequenceattention}.}
+\label{tab:results_params_svdsequenceattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_svdsequenceattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & full & 149945.87 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence/distilbert/summary.csv} & distilbert & svd\_sequence & 43289.28 & 329.37 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & full & 64344.52 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence/gpt2/summary.csv} & gpt2 & svd\_sequence & 32157.89 & 569.83 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & full & 81335.45 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence/roberta/summary.csv} & roberta & svd\_sequence & 23394.65 & 655.77 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & full & 144662.78 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/distilbert/summary.csv} & distilbert & svd\_sequence\_attention & 42624.42 & 329.37 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & full & 63999.6 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/gpt2/summary.csv} & gpt2 & svd\_sequence\_attention & 35808.87 & 569.83 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & full & 81675.38 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_svd\_sequence\_attention/roberta/summary.csv} & roberta & svd\_sequence\_attention & 23073.3 & 655.77 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{svdsequenceattention}.}
+\label{tab:results_vram_svdsequenceattention}
+\end{table*}

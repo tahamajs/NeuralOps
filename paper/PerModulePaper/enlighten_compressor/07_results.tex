@@ -1,7 +1,70 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_enlighten/roberta/summary.csv} & enlighten & PASS\_LOW & 51.03\% & 520.68 MB \\
-\texttt{results/unified\_enlighten/distilbert/summary.csv} & enlighten & PASS & 89.22\% & 301.18 MB \\
-\texttt{results/unified\_enlighten/gpt2/summary.csv} & enlighten & PASS & 61.12\% & 628.28 MB \\
-all\_121\_gpu\_matrix & enlighten & PASS & 1.0x (2.36s) & 152.7 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_enlightencompressor} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & enlighten & PASS & 89.22 & 0.8937 \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & enlighten & PASS & 61.12 & 0.3936 \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & enlighten & PASS\_LOW & 51.03 & 0.6748 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & enlighten & PASS & Comp 1.0x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{enlightencompressor}.}
+\label{tab:results_acc_enlightencompressor}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_enlightencompressor} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & enlighten & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & enlighten & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & enlighten & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & enlighten & Baseline FP32 & Reduced (1.0x) & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{enlightencompressor}.}
+\label{tab:results_params_enlightencompressor}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_enlightencompressor} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & full & 52725.06 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_enlighten/distilbert/summary.csv} & distilbert & enlighten & 53181.36 & 301.18 MB & 0.2407765909407657 \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & full & 26923.15 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_enlighten/gpt2/summary.csv} & gpt2 & enlighten & 25776.19 & 628.28 MB & 0.2547934372152875 \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & full & 27357.52 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_enlighten/roberta/summary.csv} & roberta & enlighten & 26019.95 & 520.68 MB & 0.2388048979619952 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & enlighten & Elapsed 2.36s & 152.7 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{enlightencompressor}.}
+\label{tab:results_vram_enlightencompressor}
+\end{table*}

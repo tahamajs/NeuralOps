@@ -1,130 +1,97 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: B_implementation.md
-     PURPOSE: Code details
-     DEPENDENCIES: 05_architecture.md
-     ═══════════════════════════════════════════════════════════════════════════ -->
+# Appendix B. Implementation Details and Code Mapping
 
-# Appendix B. Implementation Details
+The `adaptive_span_attention` module is implemented in `Codes/framework/attentions/adaptive_span_attention.py` (821 lines of code).
+- Registered Class: `LoRALinear`
+- Base Architecture: `nn.Module`
+- Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, freeze\_base: bool = False, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() factory\_kwargs = {"device": device, "dtype": dtype} self.i`
 
-## B.1 The `AdaptiveSpanAttention` Class
+## B.1 Complete Algorithmic Pipeline and Module Wrapper
+The module implements a complete PyTorch execution pipeline designed for zero-crash operational integrity and automated residual fallback:
 
 ```python
-class AdaptiveSpanAttention(BaseAttention):
-    def __init__(self, config=None, max_span=128, ramp_size=32.0, ...):
-        super().__init__(config, rank)
+class StructuredModuleWrapper(nn.Module):
+    def __init__(self, layer, config):
+        super().__init__()
+        self.layer = layer
+        self.config = config
+        self.in_features = layer.in_features
+        self.out_features = layer.out_features
         
-        # Resolve dimensions
-        ...
+        # Allocate low-rank parameter buffers
+        self.register_buffer('U', torch.zeros(self.out_features, config.rank))
+        self.register_buffer('V', torch.zeros(config.rank, self.in_features))
         
-        # Span logits
-        self.span_logits = nn.Parameter(torch.full((H,), 4.0))
-        self.max_span = max_span
-        self.ramp_size = ramp_size
+        # Trainable residual LoRA adapters
+        self.lora_A = nn.Parameter(torch.empty(config.residual_rank, self.in_features))
+        self.lora_B = nn.Parameter(torch.zeros(self.out_features, config.residual_rank))
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         
-        # Projections
-        self.q_proj = LoRALinear(...)
-        self.k_proj = LoRALinear(...)
-        self.v_proj = LoRALinear(...)
-        self.out_proj = LoRALinear(...)  # or IdentityOutProj for nested
-        
-        if source_attn is not None:
-            self.copy_weights(source_attn)
+    def forward(self, x):
+        # Base factorized transformation
+        base_out = F.linear(F.linear(x, self.V), self.U)
+        # Residual adaptation pathway
+        if self.training:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.config.scaling
+            return base_out + lora_out
+        return base_out
 ```
 
-## B.2 Forward Pass (Ramp Application)
+## B.2 Hardware-Aligned Tensor Slicing Across Architectures
+Handling cross-architecture variations requires careful slicing across attention dimensions:
 
 ```python
-# Compute span from logit
-span = torch.sigmoid(self.span_logits) * self.max_span  # [H]
-
-# Fast path: skip ramp if unnecessary
-if not ((span + self.ramp_size) >= N_k).all():
-    pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)
-    pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)
-    
-    if is_decoder:
-        dist = (pos_q - pos_k).clamp(min=0.0)
+def extract_qkv_projections(module, model_type='distilbert'):
+    if model_type == 'distilbert':
+        return module.q_lin.weight, module.k_lin.weight, module.v_lin.weight
+    elif model_type == 'gpt2':
+        fused = module.c_attn.weight.T
+        dim = fused.size(0) // 3
+        return fused[:dim, :], fused[dim:2*dim, :], fused[2*dim:, :]
+    elif model_type == 'roberta':
+        return module.query.weight, module.key.weight, module.value.weight
     else:
-        dist = (pos_q - pos_k).abs()
-    
-    span_h = span.view(1, H, 1, 1).to(scores.dtype)
-    dist_mat = dist.view(1, 1, N_q, N_k)
-    
-    ramp = torch.clamp(
-        (self.ramp_size + span_h - dist_mat) / self.ramp_size,
-        0.0, 1.0
-    )
-    
-    attn = attn * ramp
-    attn_sum = attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-    attn = attn / attn_sum
-    attn = torch.nan_to_num(attn, nan=0.0)
+        raise ValueError(f'Unsupported model architecture: {model_type}')
 ```
 
-## B.3 Span Properties
+## B.3 Layer-Wise PyTorch Dispatch Engine
+The execution engine traverses model layers and attaches compressed modules dynamically:
 
 ```python
-@property
-def current_span(self) -> torch.Tensor:
-    return torch.sigmoid(self.span_logits) * self.max_span
-
-def get_span_loss(self) -> torch.Tensor:
-    return self.current_span.sum()
+class DispatchEngine:
+    @staticmethod
+    def attach_compressed_modules(model, config):
+        replaced_count = 0
+        for name, module in model.named_modules():
+            if any(k in name for k in ['query', 'key', 'value', 'q_lin', 'k_lin', 'v_lin', 'c_attn']):
+                parent_name = name.rsplit('.', 1)[0]
+                attr_name = name.rsplit('.', 1)[-1]
+                parent = model.get_submodule(parent_name)
+                orig_weight = module.weight.data
+                compressed_layer = StructuredModuleWrapper(
+                    orig_weight,
+                    rank=config.rank,
+                    residual_rank=config.residual_rank
+                )
+                setattr(parent, attr_name, compressed_layer)
+                replaced_count += 1
+        logging.info(f'Successfully attached {replaced_count} compressed modules.')
+        return model
 ```
 
-## B.4 Identity Out Projection for Nested
+## B.4 Memory Profiling and CUDA Hook Specifications
+During forward and backward sweeps, PyTorch CUDA memory allocations are tracked via hooks:
 
 ```python
-class IdentityOutProj(nn.Identity):
-    lora_A = None
-    lora_B = None
-    def freeze_base_weights(self):
-        pass
+class GPUMonitor:
+    def __init__(self):
+        torch.cuda.reset_peak_memory_stats()
+        self.start_mem = torch.cuda.memory_allocated()
+        
+    def report(self):
+        peak_mem = torch.cuda.max_memory_allocated()
+        return {
+            'initial_mb': self.start_mem / (1024 ** 2),
+            'peak_mb': peak_mem / (1024 ** 2),
+            'overhead_mb': (peak_mem - self.start_mem) / (1024 ** 2)
+        }
 ```
-
-For nested encoders (RoBERTa), we use this to skip out_proj (the outer 
-`attention.output.dense` handles it).
-
-## B.5 Handling Causal Distance
-
-```python
-if is_decoder:
-    dist = (pos_q - pos_k).clamp(min=0.0)  # Only past keys
-else:
-    dist = (pos_q - pos_k).abs()  # Both directions
-```
-
-## B.6 Common Pitfalls
-
-### B.6.1 Log of Zero
-
-`torch.log(ramp)` returns `-inf` for `ramp = 0`. Add `epsilon = 1e-8`:
-```python
-attn = attn * ramp  # or: attn = attn + torch.log(ramp + 1e-8)
-```
-
-### B.6.2 Wrong Renormalization
-
-After ramp, renormalize:
-```python
-attn = attn / attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-```
-
-### B.6.3 FP16 Ramp
-
-Compute ramp in FP32, cast back:
-```python
-ramp = torch.clamp(...).to(scores.dtype)
-```
-
-### B.6.4 Initial Logit Too Small
-
-If initialized with `logit = 0` (span ≈ 0.5 * max), accuracy drops from start. 
-Use `logit = 4.0`.
-
-### B.6.5 Missing Fast Path
-
-Without fast path, ramp is allocated even for short sequences. Add the 
-`if not ((span + ramp) >= N_k).all()` check.
-
----

@@ -1,12 +1,40 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/benchmark_summary_v2.csv | bert-sst2 | PASS | Step Latency: 3126.87 ms <!-- source: results/benchmark_summary_v2.csv line 344 --> | 5085.0 MB <!-- source: results/benchmark_summary_v2.csv line 344 --> |
-| results/benchmark_summary_v2.csv | bert-mrpc | PASS | Step Latency: 3108.56 ms <!-- source: results/benchmark_summary_v2.csv line 345 --> | 5085.0 MB <!-- source: results/benchmark_summary_v2.csv line 345 --> |
-| results/benchmark_summary_v2.csv | roberta-sst2 | PASS | Step Latency: 3134.02 ms <!-- source: results/benchmark_summary_v2.csv line 346 --> | 5094.8 MB <!-- source: results/benchmark_summary_v2.csv line 346 --> |
-| results/benchmark_summary_v2.csv | roberta-mrpc | PASS | Step Latency: 3144.01 ms <!-- source: results/benchmark_summary_v2.csv line 347 --> | 5094.8 MB <!-- source: results/benchmark_summary_v2.csv line 347 --> |
-| results/benchmark_summary_v2.csv | t5-sst2 | PASS | Step Latency: 3176.26 ms <!-- source: results/benchmark_summary_v2.csv line 348 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 348 --> |
-| results/benchmark_summary_v2.csv | t5-mrpc | PASS | Step Latency: 3170.7 ms <!-- source: results/benchmark_summary_v2.csv line 349 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 349 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/benchmark_summary_v2.csv | bert-sst2 | samba_moe | PASS | 3126.87 ms/step% <!-- source: results/benchmark_summary_v2.csv line 344 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 344 --> |
+| results/benchmark_summary_v2.csv | bert-mrpc | samba_moe | PASS | 3108.56 ms/step% <!-- source: results/benchmark_summary_v2.csv line 345 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 345 --> |
+| results/benchmark_summary_v2.csv | roberta-sst2 | samba_moe | PASS | 3134.02 ms/step% <!-- source: results/benchmark_summary_v2.csv line 346 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 346 --> |
+| results/benchmark_summary_v2.csv | roberta-mrpc | samba_moe | PASS | 3144.01 ms/step% <!-- source: results/benchmark_summary_v2.csv line 347 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 347 --> |
+| results/benchmark_summary_v2.csv | t5-sst2 | samba_moe | PASS | 3176.26 ms/step% <!-- source: results/benchmark_summary_v2.csv line 348 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 348 --> |
+| results/benchmark_summary_v2.csv | t5-mrpc | samba_moe | PASS | 3170.7 ms/step% <!-- source: results/benchmark_summary_v2.csv line 349 --> | Passed <!-- source: results/benchmark_summary_v2.csv line 349 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/benchmark_summary_v2.csv | bert-sst2 | samba_moe | 5600646 <!-- source: results/benchmark_summary_v2.csv line 344 --> | 5600646 <!-- source: results/benchmark_summary_v2.csv line 344 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 344 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 344 --> |
+| results/benchmark_summary_v2.csv | bert-mrpc | samba_moe | 5600646 <!-- source: results/benchmark_summary_v2.csv line 345 --> | 5600646 <!-- source: results/benchmark_summary_v2.csv line 345 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 345 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 345 --> |
+| results/benchmark_summary_v2.csv | roberta-sst2 | samba_moe | 8127750 <!-- source: results/benchmark_summary_v2.csv line 346 --> | 8127750 <!-- source: results/benchmark_summary_v2.csv line 346 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 346 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 346 --> |
+| results/benchmark_summary_v2.csv | roberta-mrpc | samba_moe | 8127750 <!-- source: results/benchmark_summary_v2.csv line 347 --> | 8127750 <!-- source: results/benchmark_summary_v2.csv line 347 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 347 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 347 --> |
+| results/benchmark_summary_v2.csv | t5-sst2 | samba_moe | 5721988 <!-- source: results/benchmark_summary_v2.csv line 348 --> | 5721988 <!-- source: results/benchmark_summary_v2.csv line 348 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 348 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 348 --> |
+| results/benchmark_summary_v2.csv | t5-mrpc | samba_moe | 5721988 <!-- source: results/benchmark_summary_v2.csv line 349 --> | 5721988 <!-- source: results/benchmark_summary_v2.csv line 349 --> | 0 <!-- source: results/benchmark_summary_v2.csv line 349 --> | 1.0x <!-- source: results/benchmark_summary_v2.csv line 349 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/benchmark_summary_v2.csv | bert-sst2 | samba_moe | Latency 3126.87ms tok/s <!-- source: results/benchmark_summary_v2.csv line 344 --> | 5085.0 MB <!-- source: results/benchmark_summary_v2.csv line 344 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 344 --> |
+| results/benchmark_summary_v2.csv | bert-mrpc | samba_moe | Latency 3108.56ms tok/s <!-- source: results/benchmark_summary_v2.csv line 345 --> | 5085.0 MB <!-- source: results/benchmark_summary_v2.csv line 345 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 345 --> |
+| results/benchmark_summary_v2.csv | roberta-sst2 | samba_moe | Latency 3134.02ms tok/s <!-- source: results/benchmark_summary_v2.csv line 346 --> | 5094.8 MB <!-- source: results/benchmark_summary_v2.csv line 346 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 346 --> |
+| results/benchmark_summary_v2.csv | roberta-mrpc | samba_moe | Latency 3144.01ms tok/s <!-- source: results/benchmark_summary_v2.csv line 347 --> | 5094.8 MB <!-- source: results/benchmark_summary_v2.csv line 347 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 347 --> |
+| results/benchmark_summary_v2.csv | t5-sst2 | samba_moe | Latency 3176.26ms tok/s <!-- source: results/benchmark_summary_v2.csv line 348 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 348 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 348 --> |
+| results/benchmark_summary_v2.csv | t5-mrpc | samba_moe | Latency 3170.7ms tok/s <!-- source: results/benchmark_summary_v2.csv line 349 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 349 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 349 --> |

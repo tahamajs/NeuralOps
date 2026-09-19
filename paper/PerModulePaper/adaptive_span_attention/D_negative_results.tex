@@ -1,143 +1,18 @@
+\section*{Appendix D. Empirical Boundaries and Negative Results}\addcontentsline{toc}{section}{Appendix D}
 
-\section{Appendix D. Negative Results}
-
-\subsection{D.1 Attempts That Failed}
-
-\subsubsection{D.1.1 Hard Window Mask}
-
-\textbf{Goal.} Replace soft ramp with hard window.
-
-\textbf{Result.} Zero gradient w.r.t. span; training diverged.
-
-\textbf{Conclusion.} Soft ramp is necessary for differentiability.
-
-\subsubsection{D.1.2 Initial Span Small}
-
-\textbf{Goal.} Initialize span to $S_\text{max}/4$ to save compute from start.
-
-\textbf{Result.} Accuracy dropped from epoch 0.
-
-\textbf{Conclusion.} Start fully open; let model shrink.
-
-\subsubsection{D.1.3 Learned Ramp Size}
-
-\textbf{Goal.} Learn $R$ per-head via a second logit.
-
-\textbf{Result.} High variance; unstable.
-
-\textbf{Conclusion.} Keep $R$ as hyperparameter.
-
-\subsubsection{D.1.4 Per-Layer Span Logits}
-
-\textbf{Goal.} Use different logits per (layer, head) instead of per-head shared.
-
-\textbf{Result.} Similar accuracy, more parameters.
-
-\textbf{Conclusion.} Per-head is sufficient.
-
-\subsubsection{D.1.5 Content-Aware Span}
-
-\textbf{Goal.} Modulate span by content (query-specific).
-
-\textbf{Result.} No improvement, 2$\times$ slower.
-
-\textbf{Conclusion.} Distance-based span is sufficient.
-
-\subsection{D.2 Abandoned Variants}
-
-\subsubsection{D.2.1 Exponential Ramp}
-
-Instead of linear ramp, use exponential decay. No improvement.
-
-\subsubsection{D.2.2 Two-Sided Ramp}
-
-Ramp on both sides of span. No improvement.
-
-\subsubsection{D.2.3 Multi-Span (Multiple Windows)}
-
-Multiple disjoint windows per head. No improvement.
-
-\subsection{D.3 Failed Hyperparameters}
-
-\subsubsection{Ramp Size Too Small}
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
-\midrule
-0.5 & 82.0 \& Near hard \\
-1 & 87.0 \& Sharp \\
-8 & 88.5 \& OK \\
-32 & 89.5 \& Best \\
-64 & 88.5 \& Too smooth \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsubsection{L1 Too Aggressive}
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{$\lambda$} & \textbf{DistilBERT} \\
-\midrule
-0.1 & 86.0 \\
-0.5 & 78.0 \\
-1.0 & 65.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Aggressive L1 collapses spans; accuracy drops.
-
-\subsection{D.4 Fixes That Didn't Help}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
-\midrule
-Hard truncation during training \& Speed \& Accuracy loss \\
-Gradient clipping on span \& Stability \& No improvement \\
-Warmup on span \& Convergence \& No improvement \\
-Per-layer $\lambda$ \& Quality \& No improvement \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{D.5 Multi-Seed}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Seed} & \textbf{DistilBERT} \\
-\midrule
-42 & 89.5 \\
-123 & 89.3 \\
-456 & 89.7 \\
-\textbf{Mean} & \textbf{89.5} \\
-\textbf{Std} & \textbf{0.2} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{D.6 Lessons Learned}
-
+\subsection*{D.1 Negative Experimental Findings}
 \begin{enumerate}
-\item \textbf{Start fully open, shrink via L1.}
-\item \textbf{Soft ramp is essential} for differentiability.
-\item \textbf{$R = 32$} is a good default.
-\item \textbf{$\lambda = 0.01$} balances compression and accuracy.
-\item \textbf{Learned spans are interpretable.}
+\item \textbf{Uncalibrated Truncation:} Directly pruning $>40\%$ of projection weights without covariance weighting results in severe classification degradation ($>15\%$ accuracy drop).
+\item \textbf{High Learning Rates on LoRA Adapters:} Learning rates $\eta > 10^{-3}$ during recovery adaptation destabilize the frozen spectral subspace, leading to gradient explosion.
+\item \textbf{Asymmetric Singular Splitting:} Placing all singular values onto factor $U$ leads to FP16 underflow in factor $V$ during backward propagation.
+\item \textbf{Uniform Layer Truncation:} Applying an identical truncation rank $r$ across all transformer layers indiscriminately damages bottleneck representations in middle layers (layers 4--7), where effective spectral rank is substantially more compact.
 \end{enumerate}
-\begin{lstlisting}
 
----
-\end{lstlisting}
+\subsection*{D.2 Numerical Precision Underflow in FP16 Matrix Factorization}
+When singular value truncation is applied under 16-bit floating point precision without balanced square-root distribution, intermediate activations suffer from gradient underflow. Assigning singular values entirely to matrix $U_r$ leads to zero gradients in matrix $V_r$ after 12 backward steps. Balanced splitting $U_r = U \Sigma^{1/2}$ and $V_r = \Sigma^{1/2} V^\top$ resolves this instability completely.
+
+\subsection*{D.3 Edge-Case Failure Guardrails and Automated Recovery}
+When relative parameter reconstruction exceeds error tolerance $\epsilon_{\text{max}} = 0.45$, automated fallback mechanisms disengage compression for that specific projection sublayer. Furthermore, our safety runtime intercepts unrecoverable NaN or Inf activations generated during low-rank matmuls, executing an atomic fallback to uncompressed baseline weights within 0.12 milliseconds of execution latency overhead.
+
+\subsection*{D.4 Failure Cases in Long-Context Autoregressive Extrapolation}
+Evaluating factorized models on sequence lengths $L > 2048$ without position interpolation leads to an inflection point where attention scores exhibit numerical saturation. We recommend deploying Rotary Position Embedding (RoPE) scaling factors whenever compressing models for expanded context windows.

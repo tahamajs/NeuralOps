@@ -1,3 +1,17 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor spectra\_v2 \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_spectra\_v2
 
-Draft content for spectra_v2.
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_spectra\_v2.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
+\end{lstlisting}

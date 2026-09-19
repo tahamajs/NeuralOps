@@ -36,7 +36,17 @@ def main():
 
     try:
         # Late import so the process can be killed if imports take too long
-        from framework.run_quality_sweep import run_single_module_main
+        from framework.run_quality_sweep import run_single_module_main, DEPRECATED_MODULES
+
+        if args.module in DEPRECATED_MODULES:
+            result.update({
+                "status": "SKIP_DEPRECATED",
+                "error": f"Deprecated module: {DEPRECATED_MODULES[args.module]}",
+                "finished_at": datetime.utcnow().isoformat(),
+            })
+            Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.output_json).write_text(json.dumps(result, indent=2), encoding="utf-8")
+            sys.exit(0)
 
         # CRITICAL: force parallel=1 so run_single_module_main uses the inline
         # evaluation path (_execute_single directly), NOT the ThreadPoolExecutor
@@ -48,10 +58,21 @@ def main():
         if isinstance(metrics, dict) and args.module in metrics:
             metrics = metrics[args.module]
 
+        # Check parameter expansion
+        p_before = int(metrics.get("total_params_before", 0) or 0)
+        p_after = int(metrics.get("total_params_after", 0) or 0)
+        status = metrics.get("status", "PASS")
+        error_msg = metrics.get("error", "") or ""
+
+        if p_before > 0 and p_after > p_before and status in ("PASS", "PASS_LOW"):
+            status = "REJECTED_EXPANSION"
+            expansion_err = f"NON_EXPANSION VIOLATION: before={p_before} after={p_after} delta={p_after - p_before} (+{((p_after - p_before)/p_before)*100:.1f}%)"
+            error_msg = f"{error_msg}; {expansion_err}".strip("; ")
+
         # metrics is the row dict for this module with all fields populated
         result.update({
             # Status and accuracy
-            "status":                       metrics.get("status", "PASS"),
+            "status":                       status,
             "accuracy":                     float(metrics.get("accuracy_pct", 0.0) or 0.0),
             "accuracy_pct":                 float(metrics.get("accuracy_pct", 0.0) or 0.0),
             # F1 / classification metrics
@@ -66,13 +87,15 @@ def main():
             "tokens_per_sec":               float(metrics.get("tokens_per_sec", 0.0) or 0.0),
             "elapsed_s":                    float(metrics.get("elapsed_s", 0.0) or 0.0),
             # Compression / param counts
-            "params_before":                int(metrics.get("total_params_before", 0) or 0),
-            "params_after":                 int(metrics.get("total_params_after", 0) or 0),
-            "total_params_before":          int(metrics.get("total_params_before", 0) or 0),
-            "total_params_after":           int(metrics.get("total_params_after", 0) or 0),
+            "params_before":                p_before,
+            "params_after":                 p_after,
+            "total_params_before":          p_before,
+            "total_params_after":           p_after,
             "trainable_recovery_params":    int(metrics.get("trainable_recovery_params", 0) or 0),
             "compression_ratio":            float(metrics.get("compression_rate", 1.0) or 1.0),
             "compression_rate":             float(metrics.get("compression_rate", 1.0) or 1.0),
+            "compression_rate_raw":         float(metrics.get("compression_rate_raw", 1.0) or 1.0),
+            "compression_rate_net":         float(metrics.get("compression_rate_net", 1.0) or 1.0),
             "compression_ratio_pct":        float(metrics.get("compression_ratio_pct", 0.0) or 0.0),
             "flops_reduction_pct":          float(metrics.get("flops_reduction_pct", 0.0) or 0.0),
             "num_compressed_layers":        int(metrics.get("num_compressed_layers", 0) or 0),
@@ -83,7 +106,7 @@ def main():
             "lora_params":                  int(metrics.get("lora_params", 0) or 0),
             # Path
             "path":                         metrics.get("path", "") or "",
-            "error":                        metrics.get("error", "") or "",
+            "error":                        error_msg,
         })
         exit_code = 0
     except Exception as e:

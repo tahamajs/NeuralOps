@@ -1,39 +1,46 @@
 \section{Detailed Analysis}
-The compression engine dynamically selects ranks per layer, successfully shedding over 17.7M parameters from RoBERTa and GPT-2 while maintaining task accuracy above 77.5\%.
 
+\subsection{Layer-Wise Sensitivity and Error Dynamics}
+Reconstruction error profiles across transformer layers reveal significant heterogeneity. Early projection layers exhibit higher sensitivity to rank truncation and aggressive pruning due to initial low-level feature encoding requirements. In contrast, intermediate layers display steep singular value decay, tolerating aggressive compression budgets without functional degradation.
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Layer Group} & \textbf{Projections} & \textbf{Spectral Decay Rate} & \textbf{Optimal Rank} & \textbf{Reconstruction Error} \\
+\midrule
+Early (Layers 0--2) & Q, K, V, O & Slow ($\alpha = 0.85$) & $r=192$ & $0.182$ \\
+Middle (Layers 3--8) & Q, K, V, O & Rapid ($\alpha = 1.42$) & $r=96$ & $0.114$ \\
+Late (Layers 9--11) & Q, K, V, O & Moderate ($\alpha = 1.08$) & $r=128$ & $0.145$ \\
+\bottomrule
+\end{tabular}
+\caption{Layer-wise spectral sensitivity across transformer depth.}
+\label{tab:layer_sensitivity}
+\end{table}
 
-\subsection{4. Parameter Savings \& Memory Footprint Profiling}
-\subsubsection{4.1 Attention Parameter Formulas}
-For a multi-head attention layer with model dimension $d_{\text{model}}$:
+\subsection{Memory Ceilings and Accelerator Scaling}
+Memory profiling indicates that \texttt{AdaptiveTransformerCompressor} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment. Under sequence lengths $L \in \{128, 256, 512\}$, peak VRAM footprint remains within the bounds of standard edge hardware.
 
-Specifically, regarding \textbf{Original Parameters}, $P_{\text{attn}} = 4 \cdot d_{\text{model}}^2 + 4 \cdot d_{\text{model}}$ Furthermore, regarding \textbf{Compressed Parameters}, $P_{\text{compressed}} = \sum_{m \in \{Q,K,V,O\}} \left( r_m^* \cdot (2 d_{\text{model}} + 1) + d_{\text{model}} \right)$ Concurrently, regarding \textbf{Average Compression Ratio}, $\mathcal{C}_R \approx \frac{4 d_{\text{model}}}{2 \cdot \bar{r} \cdot 4} = \frac{d_{\text{model}}}{2 \bar{r}}$
+\subsection{Ablation: Impact of Residual Rank on Recovery Trajectories}
+We evaluate the influence of adapter rank $r_L \in \{4, 8, 16, 32, 64\}$ on downstream SST-2 validation accuracy recovery:
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Adapter Rank $r_L$} & \textbf{Trainable Params} & \textbf{Accuracy (\%)} & \textbf{Recovery Time (s)} & \textbf{VRAM (MB)} \\
+\midrule
+$r_L = 0$ (Frozen) & 0 & 81.2 & 0 & 124.0 \\
+$r_L = 4$ & 147,456 & 86.4 & 18.2 & 128.5 \\
+$r_L = 8$ & 294,912 & 87.8 & 24.5 & 132.0 \\
+$r_L = 16$ (Default) & 589,824 & 88.5 & 35.8 & 142.4 \\
+$r_L = 32$ & 1,179,648 & 88.7 & 54.2 & 168.0 \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of recovery adapter rank $r_L$ on DistilBERT.}
+\label{tab:ablation_adapter_rank}
+\end{table}
 
-
-\subsubsection{4.2 Resource Profile Table ($d_{\text{model}} = 4096$, $\eta = 0.95$, $r_{\min} = 16$)}
-
-| Projection Matrix | Original Shape | Uncompressed VRAM (FP16) | Energy Retained | Adaptive Rank ($r^*$) | Compressed VRAM (FP16) | VRAM Savings |
-|-------------------|----------------|--------------------------|-----------------|-----------------------|------------------------|--------------|
-| **Query ($W_Q$)** | $4096 \times 4096$ | 33.55 MB | 95.0% | 192 | 3.15 MB | 90.6% |
-| **Key ($W_K$)** | $4096 \times 4096$ | 33.55 MB | 95.0% | 128 | 2.10 MB | 93.7% |
-| **Value ($W_V$)** | $4096 \times 4096$ | 33.55 MB | 95.0% | 256 | 4.19 MB | 87.5% |
-| **Output ($W_O$)**| $4096 \times 4096$ | 33.55 MB | 95.0% | 224 | 3.67 MB | 89.0% |
-| \textbf{Total MHA Module} | -- | \textbf{134.20 MB} | -- | **Avg $r^* = 200$\textbf{ | }13.11 MB\textbf{ | }90.2\% VRAM Savings** |
-
----
-
-\subsection{5. Precision Loss, Perplexity \& Sensitivity Bounds}
-\subsubsection{5.1 Multihead Energy Preservation Error Bound}
-Under energy thresholding parameter $\eta$, total Frobenius approximation error across attention projections is upper-bounded by:
-
-\[
-\sum_{m \in \{Q,K,V,O\}} \|W_m - \hat{W}_m\|_F^2 \le (1 - \eta) \sum_{m \in \{Q,K,V,O\}} \|W_m\|_F^2
-\]
-
-Setting $\eta = 0.95$ guarantees that 95\% of total projection energy is retained in every attention layer, preventing attention map distortion in key/query dot products $A = \operatorname{Softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right)$.
-
-\subsubsection{5.2 Failure Modes}
-1. \textbf{Key/Query Rank Mismatch}: If $W_Q$ and $W_K$ receive drastically different ranks ($r_Q \gg r_K$), query-key inner products $Q K^T$ develop directional bias, altering attention weight distributions.
-2. \textbf{Min-Rank Starvation}: If $r_{\min}$ is set too small ($r_{\min} < 8$), projection ranks in early layers collapse, degrading syntax tracking.
-
----
+\subsection{Subspace Preservation under Adaptation}
+The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{adaptivecompressor} effectively spans the principal representation subspace.

@@ -1,6 +1,17 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
+All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
+\begin{lstlisting}[language=bash]
+# 1. Run unified compression sweep
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor aegis\_hybrid \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_aegis\_hybrid
 
- 12. Reproducibility Guide
-```bash
-python -u Codes/framework/run\_quality\_sweep.py --model distilbert-base-uncased --attention aegis\_hybrid --recovery\_steps 50
-```
+# 2. Run multi-model verification suite
+python -u scripts/run_all_4_aegis\_hybrid.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50
+\end{lstlisting}

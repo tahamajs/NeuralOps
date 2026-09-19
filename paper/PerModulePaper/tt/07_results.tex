@@ -1,3 +1,70 @@
-\section{07 Results}
+\section{Empirical Results and Benchmark Evaluations}
 
-Draft content for tt.
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_tt} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & tt & PASS\_NO\_COMPRESSION & 49.77 & 0.1673 \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & tt & PASS & 87.61 & 0.8741 \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & tt & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & tt & PASS & Comp 0.86x & Mem -0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{tt}.}
+\label{tab:results_acc_tt}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_tt} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & tt & 66955010 & 74072834 & 0 & 0.9039x \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & full & 126800640 & 126800640 & 0 & 1.0x \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & tt & 126800640 & 131244303 & 0 & 0.9661x \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & tt & 124647170 & 138882866 & 592178 & 0.8975x \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & tt & Baseline FP32 & Reduced (0.86x) & 0 & 0.86x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{tt}.}
+\label{tab:results_params_tt}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_tt} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & full & 47311.85 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_tt/distilbert/summary.csv} & distilbert & tt & 36770.94 & 391.17 MB & 0.056152360718346 \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & full & 12105.44 & 391.24 MB & 0.0000 \\
+\texttt{results/unified\_tt/gpt2/summary.csv} & gpt2 & tt & 13802.49 & 426.32 MB & 0.0735220684046739 \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & full & 22068.8 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_tt/roberta/summary.csv} & roberta & tt & 14153.29 & 715.58 MB & 0.0546217006105861 \\
+\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & tt & Elapsed 2.367s & 226.9 MB & Verified \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{tt}.}
+\label{tab:results_vram_tt}
+\end{table*}

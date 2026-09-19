@@ -9,7 +9,10 @@ import { renderStructuralTransformation } from '../educational/transformation.js
 import { renderTokenLifecycle } from '../educational/token_lifecycle.js';
 import { renderComponentPipeline } from '../educational/component_pipeline.js';
 import { renderLatexFormula } from '../educational/formula_renderer.js';
+import { renderAttentionInspector } from '../educational/attention_inspector.js';
+import { renderLayerDepthProfile } from '../educational/layer_depth_profile.js';
 import { formatParamCount } from '../utils/format.js';
+import { store } from '../state/store.js';
 
 /**
  * Updates the slide-out inspector drawer with full telemetry for a selected node.
@@ -24,6 +27,9 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
     const drawer = document.getElementById('inspector');
     if (drawer && drawer.classList.contains('hidden')) {
         drawer.classList.remove('hidden');
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.classList.add('inspector-open');
+        }
     }
 
     const meta = node.metadata || {};
@@ -116,32 +122,49 @@ export function updateInspectorWithNode(node, isLeft, activeModule, currentModel
     if (factSubspace) factSubspace.innerText = meta.rank ? `Rank r=${meta.rank}` : (meta.heads ? `${meta.heads} Heads` : `Dim d=${dIn}`);
     if (factDelta) factDelta.innerText = meta.storage || (meta.compression || (isLeft ? '1.0x Base' : 'Compressed'));
 
-    // Sub-renderers
-    if (activeModule) {
-        renderStructuralTransformation(activeModule, currentModel);
-        renderTokenLifecycle(activeModule, currentModel);
-        renderComponentPipeline(activeModule, currentModel);
-        renderLatexFormula(activeModule);
+    // Resolve active research module or synthesize default from node & model
+    const curMod = activeModule || store.get('activeResearchModule') || {
+        id: 'svd_linear',
+        name: 'SVD Linear Factorization',
+        file: 'Codes/framework/compression_engine/svd_linear.py',
+        type: 'Compression Engine',
+        category: 'Low-Rank SVD & Factorization',
+        paradigm: 'svd',
+        icon: '⚡',
+        rank: (meta && meta.rank) || 64,
+        math_latex: 'W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{\\text{in}}, d_{\\text{out}})',
+        components: [
+            { id: "v_factor", name: "Factor V (Low-Rank Subspace Projection)", role: "Projection to Rank r=64", shape_transform: "[64 × d_in]", color: "#3acbb8", math_latex: "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{64 \\times d_{\\text{in}}}" },
+            { id: "u_factor", name: "Factor U (Full-Rank Expansion Projection)", role: "Expansion to Output Space", shape_transform: "[d_out × 64]", color: "#2dd4bf", math_latex: "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{\\text{out}} \\times 64}" }
+        ]
+    };
 
-        // Render Python Implementation & Paper Citation Box
-        const descSection = document.getElementById('insp-desc');
-        if (descSection) {
-            const fileRef = activeModule.file ? `<code>${activeModule.file}</code>` : '—';
-            const classesRef = activeModule.classes && activeModule.classes.length ? activeModule.classes.map(c => `<span class="badge" style="background:rgba(56,189,248,0.15);color:#7dd3fc;border:1px solid rgba(56,189,248,0.3);margin-right:4px;">${c}</span>`).join('') : '—';
-            descSection.innerHTML = `
-                <div style="margin-bottom:8px;font-size:11px;line-height:1.6;color:var(--text-main);">
-                    ${descHtml}
+    // Sub-renderers: Always executed with complete data
+    renderAttentionInspector(curMod || node, currentModel);
+    renderLayerDepthProfile(node, currentModel);
+    renderStructuralTransformation(curMod, currentModel);
+    renderTokenLifecycle(curMod, currentModel);
+    renderComponentPipeline(curMod, currentModel);
+    renderLatexFormula(curMod, null, node, isLeft, currentModel);
+
+    // Render Python Implementation & Paper Citation Box
+    const descSection = document.getElementById('insp-desc');
+    if (descSection) {
+        const fileRef = curMod.file ? `<code>${curMod.file}</code>` : '—';
+        const classesRef = curMod.classes && curMod.classes.length ? curMod.classes.map(c => `<span class="badge" style="background:rgba(56,189,248,0.15);color:#7dd3fc;border:1px solid rgba(56,189,248,0.3);margin-right:4px;">${c}</span>`).join('') : '<span class="badge" style="background:rgba(56,189,248,0.15);color:#7dd3fc;border:1px solid rgba(56,189,248,0.3);">Linear / Attention Layer</span>';
+        descSection.innerHTML = `
+            <div style="margin-bottom:8px;font-size:11px;line-height:1.6;color:var(--text-main);">
+                ${descHtml}
+            </div>
+            <div style="background:rgba(6,13,24,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;margin-top:8px;font-size:11px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">📄 Code Implementation &amp; Paper Spec</span>
+                    <button class="round-button btn-doc-read" onclick="window.openModuleDoc && window.openModuleDoc(window._activeResearchModule)" style="font-size:9px;padding:2px 8px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.4);cursor:pointer;border-radius:4px;">📖 Read Full Paper Doc</button>
                 </div>
-                <div style="background:rgba(6,13,24,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;margin-top:8px;font-size:11px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                        <span style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">📄 Code Implementation &amp; Paper Spec</span>
-                        <button class="round-button btn-doc-read" onclick="window.openModuleDoc && window.openModuleDoc(window._activeResearchModule)" style="font-size:9px;padding:2px 8px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.4);cursor:pointer;border-radius:4px;">📖 Read Full Paper Doc</button>
-                    </div>
-                    <div style="margin-bottom:4px;word-break:break-all;"><strong style="color:var(--cyan);">Source:</strong> ${fileRef}</div>
-                    <div style="margin-top:4px;"><strong style="color:var(--cyan);">PyTorch Classes:</strong> ${classesRef}</div>
-                </div>
-            `;
-            window._activeResearchModule = activeModule;
-        }
+                <div style="margin-bottom:4px;word-break:break-all;"><strong style="color:var(--cyan);">Source:</strong> ${fileRef}</div>
+                <div style="margin-top:4px;"><strong style="color:var(--cyan);">PyTorch Classes:</strong> ${classesRef}</div>
+            </div>
+        `;
+        window._activeResearchModule = curMod;
     }
 }

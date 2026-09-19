@@ -1,6 +1,67 @@
-\section{Empirical Results}
-\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
-\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} \& svd\_proj\_attn \& PASS\_LOW & 50.92\% & 328.38 MB \\
-\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} \& svd\_proj\_attn \& PASS & 76.15\% & 283.77 MB \\
-\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} \& svd\_proj\_attn \& PASS\_LOW & 50.92\% & 468.71 MB \\
-\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_svdprojattn} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & svd\_proj\_attn & PASS & 76.15 & 0.7873 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & svd\_proj\_attn & PASS\_LOW & 50.92 & 0.6748 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & svd\_proj\_attn & PASS\_LOW & 50.92 & 0.6748 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{svdprojattn}.}
+\label{tab:results_acc_svdprojattn}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_svdprojattn} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & svd\_proj\_attn & 66955010 & 54568730 & 1181978 & 1.227x \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & svd\_proj\_attn & 124441344 & 99668784 & 1181232 & 1.2485x \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & svd\_proj\_attn & 124647170 & 106961714 & 1771826 & 1.1653x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{svdprojattn}.}
+\label{tab:results_params_svdprojattn}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_svdprojattn} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & full & 141839.0 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & svd\_proj\_attn & 69162.08 & 283.77 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & full & 62971.65 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & svd\_proj\_attn & 31070.56 & 468.71 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & full & 96632.08 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & svd\_proj\_attn & 42386.76 & 328.38 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{svdprojattn}.}
+\label{tab:results_vram_svdprojattn}
+\end{table*}

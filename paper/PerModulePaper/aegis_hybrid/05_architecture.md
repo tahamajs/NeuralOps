@@ -1,71 +1,54 @@
-# 5. Architecture and Implementation
+# 5. Architecture and Implementation Details
 
+## 5.1 Submodule Hierarchy and Signal Flow
+The `FactorizedLinear` architecture encapsulates both frozen base operations and optional trainable fine-tuning branches. Below is the structural hierarchy:
 
-```text
-  +-------------------------------------------------+
-  |                Input Activations                |
-  |                  X: (B, N, D)                   |
-  +------------------------+------------------------+
-                           |
-             +-------------+-------------+
-             |                           |
-             v                           v
-     +---------------+           +---------------+
-     |  Base Proj    |           | Residual/Spars|
-     |  Factorized   |           | Projection    |
-     +-------+-------+           +-------+-------+
-             |                           |
-             +-------------+-------------+
-                           |
-                           v
-                   Aggregated Context
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                                       FactorizedLinear                 │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Input Tensor X: [Batch, SeqLen, InFeatures]                          │
+│         │                                                              │
+│         ├────────────────────────────────────────┐                     │
+│         │ (Primary Base Pathway)                 │ (LoRA Residual)     │
+│         ▼                                        ▼                     │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Down-Projection: V_r     │             │ LoRA Adapter A        │   │
+│   │ Shape: (r, InFeatures)   │             │ Shape: (r_lora, In)   │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 ▼                                      ▼               │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Up-Projection: U_r       │             │ LoRA Adapter B        │   │
+│   │ Shape: (OutFeatures, r)  │             │ Shape: (Out, r_lora)  │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 │                                      │ * (alpha / r) │
+│                 ▼                                      ▼               │
+│              [ Base Output ]  <────── (+) ─────  [ Adapter Output ]    │
+│                                                                        │
+│   Output Tensor Y: [Batch, SeqLen, OutFeatures]                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-Projections use `FactorizedLinear` ($r=128, r_{	ext{lora}}=32$). The gating network dynamically arbitrates between local and global representations.
+## 5.2 Submodule Specification Matrix
+The table below specifies the internal submodule configuration of `FactorizedLinear`:
 
+| Submodule Name | Layer Type | Parameter Shape | Trainable Status | Memory Footprint (FP32) | Functional Role |
+|---|---|---|---|---|---|
+| `weight` / `V_r` | `nn.Parameter` / Buffer | `(r, d_in)` | Frozen (False) | $4 \cdot r \cdot d_{\text{in}}$ bytes | Low-rank down-projection or base weight |
+| `U_r` | `nn.Parameter` / Buffer | `(d_out, r)` | Frozen (False) | $4 \cdot d_{\text{out}} \cdot r$ bytes | Low-rank up-projection expansion |
+| `mask` | `torch.BoolTensor` Buffer | `(d_out, d_in)` | Non-trainable | $1 \cdot d_{\text{out}} \cdot d_{\text{in}}$ bytes | Hardware-aligned 2:4 or block sparsity mask |
+| `lora_A` | `nn.Parameter` | `(r_lora, d_in)` | Trainable (True) | $4 \cdot r_{\text{lora}} \cdot d_{\text{in}}$ bytes | Fast adaptation gradient collector |
+| `lora_B` | `nn.Parameter` | `(d_out, r_lora)` | Trainable (True) | $4 \cdot d_{\text{out}} \cdot r_{\text{lora}}$ bytes | Low-rank residual reconstruction projector |
+| `bias` | `nn.Parameter` | `(d_out,)` | Optional (Frozen) | $4 \cdot d_{\text{out}}$ bytes | Projection affine bias term |
 
-## 4. Step-by-Step Tensor Execution Trace & Dimensions
-
-<!-- source: Codes/frontend/dist/Docs/content/attentions/aegis_hybrid.md -->
-```
-Given: Batch Size B=8, Sequence Length L=128, Hidden Dim D=768, Heads H=12, Head Dim d_h=64, Window W=128
-
-1. Input Tensor:
-   X ∈ ℝ^{8 × 128 × 768}
-
-2. Projection Stage (FactorizedLinear with LoRA):
-   q = X W_Q1 W_Q2 + (α/r) X A_Q B_Q + b_Q    ──>  [8, 128, 768]
-   k = X W_K1 W_K2 + (α/r) X A_K B_K + b_K    ──>  [8, 128, 768]
-   v = X W_V1 W_V2 + (α/r) X A_V B_V + b_V    ──>  [8, 128, 768]
-
-3. Head Splitting & Reshaping:
-   Q: [8, 12, 128, 64]
-   K: [8, 12, 128, 64]
-   V: [8, 12, 128, 64]
-
-4. Positional Embedding Application:
-   Q_rope, K_rope = apply_rotary_emb(Q, K, position_ids)  ──>  [8, 12, 128, 64]
-
-5. Local Window Attention Pathway:
-   scores = (Q_rope @ K_rope^T) / √64                      ──>  [8, 12, 128, 128]
-   scores = scores.masked_fill(~band_mask, -10000.0)      ──>  [8, 12, 128, 128]
-   attn_local = softmax(scores, dim=-1)                   ──>  [8, 12, 128, 128]
-   out_local = attn_local @ V                             ──>  [8, 128, 12, 64]
-
-6. Global Linear Pathway (Bidirectional Encoders):
-   phi_Q = ELU(Q_rope) + 1.0                              ──>  [8, 12, 128, 64]
-   phi_K = ELU(K_rope) + 1.0                              ──>  [8, 12, 128, 64]
-   KV = phi_K^T @ V                                       ──>  [8, 12, 64, 64]
-   K_sum = phi_K.sum(dim=2)                               ──>  [8, 12, 64]
-   out_global = (phi_Q @ KV) / (phi_Q @ K_sum + ε)        ──>  [8, 128, 12, 64]
-
-7. Gated Convex Fusion:
-   α = σ(X @ W_fusion + 1.8)                              ──>  [8, 128, 12, 1]
-   fused = α * out_local + (1 - α) * out_global           ──>  [8, 128, 12, 64]
-
-8. Concatenation & Output Factorized Projection:
-   fused = fused.reshape(8, 128, 768)
-   Output = fused W_O1 W_O2 + (α/r) fused A_O B_O + b_O   ──>  [8, 128, 768]
-```
-
----
+## 5.3 Cross-Backbone Adaptations
+The module handles distinct idiosyncrasies across model backbones:
+1. **DistilBERT (Flat Encoder Attention)**: Directly replaces `q_lin`, `k_lin`, `v_lin`, and `out_lin` within `MultiHeadSelfAttention`.
+2. **RoBERTa (Nested Encoder Attention)**: Projections reside in `self.query`, `self.key`, `self.value`. The output projection `dense` is housed in the outer `BertSelfOutput` container. The engine detects nested structures and avoids duplicate output projection compression.
+3. **GPT-2 (Causal Fused Conv1D)**: Attention weights are stored as a fused $d_{\text{in}} \times 3 d_{\text{in}}$ tensor with transposed 1D convolution layout. The engine transposes weights and extracts individual Q, K, V components.
+4. **Qwen / LLaMA (GQA and RoPE)**: Key and value projections have reduced dimension ($H_{\text{kv}} \cdot d$). The engine aligns repeat factors and slices rotary position embeddings before computing compressed projections.

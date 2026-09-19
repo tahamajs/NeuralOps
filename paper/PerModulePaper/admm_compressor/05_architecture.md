@@ -1,52 +1,54 @@
-# 5. Architecture and Implementation
+# 5. Architecture and Implementation Details
 
-
-```text
-  +-------------------------------------------------+
-  |                Input Activations                |
-  |                  X: (B, N, D)                   |
-  +------------------------+------------------------+
-                           |
-             +-------------+-------------+
-             |                           |
-             v                           v
-     +---------------+           +---------------+
-     |  Base Proj    |           | Residual/Spars|
-     |  Factorized   |           | Projection    |
-     +-------+-------+           +-------+-------+
-             |                           |
-             +-------------+-------------+
-                           |
-                           v
-                   Aggregated Context
-```
-
-Operates directly on `base_layer.weight` in `LoRALinear` layers, preserving LoRA adapters for recovery fine-tuning.
-
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-<!-- source: Codes/frontend/dist/Docs/content/compressions/admm_compressor.md -->
-### 3.1 Dataflow & Transformation Trace
-
-1. **Tensor Preparation**:
-Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 precision.
-
-2. **Flat Top-K Thresholding**:
-Reshape $|W|$ into a 1D tensor of size $N \cdot M$. Furthermore, Retrieve top $k = \lfloor (1 - S) \cdot N \cdot M \rfloor$ values. Concurrently, Construct binary mask matrix $M = (|W| \ge \tau)$.
-
-3. **Quantization Grid Mapping**:
-Scale factor $S_q = 2^{b-1} - 1$. Furthermore, Multiply $W_{\text{pruned}}$ by $S_q$ and clamp within $[-S_q, S_q]$. Concurrently, Apply element-wise rounding $\lfloor \cdot \rceil$ and divide by $S_q$.
-
-4. **Precision Conversion**:
-Cast resulting matrix back to original module dtype (FP16/BF16) and device.
-
+## 5.1 Submodule Hierarchy and Signal Flow
+The `ADMMCompressor` architecture encapsulates both frozen base operations and optional trainable fine-tuning branches. Below is the structural hierarchy:
 
 ```
-Input Weight W [N, M] ──► $|W|$ [N*M] ──► Top-K Selection ──► Mask M [N, M]
-                                                                  │
-                                                                  ▼
-Output Weight W_q [N, M] ◄── Round & De-scale ◄── Scale & Clamp ◄─ W * M
+┌────────────────────────────────────────────────────────────────────────┐
+│                                        ADMMCompressor                  │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   Input Tensor X: [Batch, SeqLen, InFeatures]                          │
+│         │                                                              │
+│         ├────────────────────────────────────────┐                     │
+│         │ (Primary Base Pathway)                 │ (LoRA Residual)     │
+│         ▼                                        ▼                     │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Down-Projection: V_r     │             │ LoRA Adapter A        │   │
+│   │ Shape: (r, InFeatures)   │             │ Shape: (r_lora, In)   │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 ▼                                      ▼               │
+│   ┌──────────────────────────┐             ┌───────────────────────┐   │
+│   │ Up-Projection: U_r       │             │ LoRA Adapter B        │   │
+│   │ Shape: (OutFeatures, r)  │             │ Shape: (Out, r_lora)  │   │
+│   │ Status: Frozen           │             │ Trainable: True       │   │
+│   └─────────────┬────────────┘             └───────────┬───────────┘   │
+│                 │                                      │               │
+│                 │                                      │ * (alpha / r) │
+│                 ▼                                      ▼               │
+│              [ Base Output ]  <────── (+) ─────  [ Adapter Output ]    │
+│                                                                        │
+│   Output Tensor Y: [Batch, SeqLen, OutFeatures]                        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+## 5.2 Submodule Specification Matrix
+The table below specifies the internal submodule configuration of `ADMMCompressor`:
+
+| Submodule Name | Layer Type | Parameter Shape | Trainable Status | Memory Footprint (FP32) | Functional Role |
+|---|---|---|---|---|---|
+| `weight` / `V_r` | `nn.Parameter` / Buffer | `(r, d_in)` | Frozen (False) | $4 \cdot r \cdot d_{\text{in}}$ bytes | Low-rank down-projection or base weight |
+| `U_r` | `nn.Parameter` / Buffer | `(d_out, r)` | Frozen (False) | $4 \cdot d_{\text{out}} \cdot r$ bytes | Low-rank up-projection expansion |
+| `mask` | `torch.BoolTensor` Buffer | `(d_out, d_in)` | Non-trainable | $1 \cdot d_{\text{out}} \cdot d_{\text{in}}$ bytes | Hardware-aligned 2:4 or block sparsity mask |
+| `lora_A` | `nn.Parameter` | `(r_lora, d_in)` | Trainable (True) | $4 \cdot r_{\text{lora}} \cdot d_{\text{in}}$ bytes | Fast adaptation gradient collector |
+| `lora_B` | `nn.Parameter` | `(d_out, r_lora)` | Trainable (True) | $4 \cdot d_{\text{out}} \cdot r_{\text{lora}}$ bytes | Low-rank residual reconstruction projector |
+| `bias` | `nn.Parameter` | `(d_out,)` | Optional (Frozen) | $4 \cdot d_{\text{out}}$ bytes | Projection affine bias term |
+
+## 5.3 Cross-Backbone Adaptations
+The module handles distinct idiosyncrasies across model backbones:
+1. **DistilBERT (Flat Encoder Attention)**: Directly replaces `q_lin`, `k_lin`, `v_lin`, and `out_lin` within `MultiHeadSelfAttention`.
+2. **RoBERTa (Nested Encoder Attention)**: Projections reside in `self.query`, `self.key`, `self.value`. The output projection `dense` is housed in the outer `BertSelfOutput` container. The engine detects nested structures and avoids duplicate output projection compression.
+3. **GPT-2 (Causal Fused Conv1D)**: Attention weights are stored as a fused $d_{\text{in}} \times 3 d_{\text{in}}$ tensor with transposed 1D convolution layout. The engine transposes weights and extracts individual Q, K, V components.
+4. **Qwen / LLaMA (GQA and RoPE)**: Key and value projections have reduced dimension ($H_{\text{kv}} \cdot d$). The engine aligns repeat factors and slices rotary position embeddings before computing compressed projections.

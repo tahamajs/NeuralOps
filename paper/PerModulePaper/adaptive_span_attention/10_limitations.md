@@ -1,70 +1,19 @@
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 10_limitations.md
-     PURPOSE: Limitations
-     DEPENDENCIES: 09_discussion.md
-     LENGTH TARGET: 0.5 - 1 page
-     ═══════════════════════════════════════════════════════════════════════════ -->
+# 10. Limitations and Failure Modes
 
-# 10. Limitations
+## 10.1 Calibration and Data Sensitivity
+The empirical effectiveness of `adaptive_span_attention` is intrinsically conditioned on the quality and distribution of calibration sequences. When calibration data fails to represent the target task distribution, the computed spectral energy or activation covariances may over-index on spurious correlations, resulting in heightened reconstruction error on out-of-distribution inputs.
 
-## 10.1 No Speedup
+## 10.2 Architectural Constraints and Rank Granularity
+Several concrete implementation constraints govern the deployment of `adaptive_span_attention`:
+1. **Rank Divisibility Requirements**: In multi-head attention modules, factorized ranks must align with head counts ($r \pmod H == 0$) to ensure valid tensor reshaping across attention heads without irregular padding.
+2. **Short Sequence Overhead**: For very short sequence lengths ($N < 16$), the overhead of executing chained factorized projections ($X V^\top U^\top$) can exceed monolithic GEMM operations on modern GPUs due to kernel launch overhead.
+3. **Hardware-Specific Acceleration Boundaries**: Semi-structured 2:4 sparsity requires NVIDIA Ampere or newer tensor cores; running on older architectures incurs software masking overhead without wall-clock acceleration.
 
-ASA-Span **does not** reduce inference time because all scores are computed. 
-The soft ramp only changes the **values**, not the **structure**. To 
-realize speedup, hard truncation + sparse kernels are needed (not implemented).
+## 10.3 Dynamic Range and Quantization Underflow
+In extreme low-rank regimes ($r \ll d_{\text{in}}$), singular value truncation discards subtle high-frequency feature directions. When combined with FP16 or BF16 mixed-precision training, low-magnitude singular values can underflow to zero, necessitating manual numerical clamping ($10^{-4}$) as enforced by the safety guardrails in `adaptive_span_attention`.
 
-## 10.2 No Parameter Reduction
+## 10.4 Long-Context Activation Memory Footprints
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, `adaptive_span_attention` must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
 
-ASA-Span adds $H$ parameters (span logits). Total parameter count is 
-**unchanged**.
-
-## 10.3 Task Coverage
-
-Only SST-2 evaluated. Long-context tasks ($L > 512$) not tested.
-
-## 10.4 Model Coverage
-
-Tested on models with $H = 12$. Not tested on:
-- Very wide models ($H = 32+$)
-- Mixture-of-Experts
-- Vision transformers
-
-## 10.5 Fixed Ramp Size
-
-The ramp size $R$ is a hyperparameter, not learned. Future work could learn 
-it per-head.
-
-## 10.6 Distance-Only Masking
-
-ASA-Span uses only distance, not content. This is complementary to 
-content-based methods but limits expressiveness.
-
-## 10.7 Single Seed
-
-All results from seed 42.
-
-## 10.8 No Comparison with Some Baselines
-
-We do not compare with:
-- Longformer
-- BigBird
-- Mistral sliding window
-
-## 10.9 T5 / Qwen Not Verified
-
-The T5 relative position bias and Qwen RoPE + GQA paths are implemented but 
-not tested in this paper.
-
-## 10.10 Failure Modes
-
-Long-context evaluation, hard truncation speedup
-
-## 10.11 Code Quality
-
-Research-grade implementation.
-
-## 10.12 Ethical Considerations
-
-Dual-use. See Appendix E.
-
----
+## 10.5 Sensitivity to Non-Uniform Calibration Sequences
+Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.

@@ -7,10 +7,63 @@
  */
 
 import * as THREE from 'three';
-import { materials, edgeMatDense, edgeMatSvd, edgeMatMoe, edgeMatMla, getOrCreateCustomMaterial, getOrCreateCustomEdgeMaterial } from '../core/materials.js';
-import { createLayerLabelSprite, createTensorBadgeSprite } from './label_builder.js';
-import { buildResidualBypass } from './conduit_builder.js';
+import { 
+    materials, 
+    edgeMatDense, 
+    edgeMatSvd, 
+    edgeMatMoe, 
+    edgeMatMla, 
+    getOrCreateCustomMaterial, 
+    getOrCreateCustomEdgeMaterial,
+    getLayerDepthMaterial,
+    getLayerDepthEdgeMaterial
+} from '../core/materials.js';
+import { createLayerLabelSprite, createTensorBadgeSprite, createLayerLabelSpriteWithDepth } from './label_builder.js';
+import { buildResidualBypass, buildLayerConduits, buildInterLayerConduits } from './conduit_builder.js';
 import { anyKey } from '../utils/math.js';
+import { MODEL_SPECS } from '../constants.js';
+import { getLayerDepthProfile } from '../educational/layer_depth_profile.js';
+
+/**
+ * Builds an interactive 3D layer stage platform ring in world space.
+ */
+export function createLayerStageRing(layerIdx, totalLayers, bounds, offsetX, isCompressedSide, targetGroup, visualObjects) {
+    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
+    const ringY = bounds.minY - 0.25;
+    const ringRadiusX = 2.4;
+    const ringRadiusZ = 1.3;
+
+    const curve = new THREE.EllipseCurve(
+        0, 0,
+        ringRadiusX, ringRadiusZ,
+        0, 2 * Math.PI,
+        false,
+        0
+    );
+    const points = curve.getPoints(48);
+    const ringPoints = points.map(p => new THREE.Vector3(p.x, 0, p.y));
+    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+
+    const ringMat = new THREE.LineBasicMaterial({
+        color: profile.ringColor,
+        transparent: true,
+        opacity: 0.35,
+        linewidth: 1
+    });
+
+    const ringLine = new THREE.LineLoop(ringGeo, ringMat);
+    ringLine.position.set(offsetX, ringY, 0);
+    ringLine.userData = {
+        isLayerStageRing: true,
+        parent_layer_index: layerIdx,
+        side: isCompressedSide ? 'compressed' : 'baseline'
+    };
+
+    if (targetGroup) targetGroup.add(ringLine);
+    if (visualObjects) visualObjects.push(ringLine);
+
+    return ringLine;
+}
 
 /**
  * Builds individual granular tensor nodes and adds them to the scene.
@@ -34,6 +87,8 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
     let topY = 0;
     const layerTracker = new Set();
     const layerMinMax = new Map();
+    const modelKey = context.modelKey || 'distilbert';
+    const totalLayers = (MODEL_SPECS[modelKey] && MODEL_SPECS[modelKey].num_layers) || 6;
 
     // SVD bottleneck pairing
     for (let i = 0; i < nodes.length; i++) {
@@ -54,6 +109,7 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
     }
 
     nodes.forEach(node => {
+        const lIdx = node.parent_layer_index ?? (node.parent_layer_idx ?? 0);
         let mat = materials.dense;
         let edgeMat = edgeMatDense;
 
@@ -61,8 +117,11 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
             mat = getOrCreateCustomMaterial(node.custom_color);
             edgeMat = getOrCreateCustomEdgeMaterial(node.custom_color);
         } else if (node.type === 'svd') {
-            mat = materials.svd;
-            edgeMat = edgeMatSvd;
+            mat = getLayerDepthMaterial(lIdx, totalLayers, 'svd', isCompressedSide);
+            edgeMat = getLayerDepthEdgeMaterial(lIdx, totalLayers);
+        } else if (node.type === 'dense' && (node.parent_layer_index !== undefined || node.parent_layer_idx !== undefined)) {
+            mat = getLayerDepthMaterial(lIdx, totalLayers, 'dense', isCompressedSide);
+            edgeMat = getLayerDepthEdgeMaterial(lIdx, totalLayers);
         } else if (node.type === 'moe' && node.sub_type === 'router') {
             mat = materials.moe_router;
             edgeMat = edgeMatMoe;
@@ -148,11 +207,11 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
             bounds.maxY = Math.max(bounds.maxY, node.y);
         }
 
-        // Layer Billboard Tag
+        // Layer Billboard Tag with Rich Depth Specialization Profile
         if (node.parent_layer_name && !layerTracker.has(node.parent_layer_name)) {
             layerTracker.add(node.parent_layer_name);
-            const labelX = offsetX + (isCompressedSide ? 3.4 : -3.4);
-            createLayerLabelSprite(node.parent_layer_name, labelX, node.y, false, granularGroup, visualObjects);
+            const labelX = offsetX + (isCompressedSide ? 3.6 : -3.6);
+            createLayerLabelSpriteWithDepth(node.parent_layer_name, lIdx, totalLayers, labelX, node.y, false, granularGroup, visualObjects);
         }
 
         // MoE connector branching lines
@@ -174,12 +233,39 @@ export function buildMeshNodes(nodes, offsetX, isCompressedSide, context) {
         }
     });
 
-    // Build Residual Bypass Conduits per Layer
-    layerMinMax.forEach(bounds => {
-        if (bounds.maxY - bounds.minY > 1.5) {
-            buildResidualBypass(bounds.minY - 0.2, bounds.maxY + 0.2, offsetX, granularGroup, visualObjects);
+    // Build 3D Layer Stage Platform Rings
+    layerMinMax.forEach((bounds, lIdx) => {
+        if (typeof lIdx === 'number' && lIdx !== 999) {
+            createLayerStageRing(lIdx, totalLayers, bounds, offsetX, isCompressedSide, granularGroup, visualObjects);
         }
     });
+
+    // Group nodes by layer for structured computational conduits
+    const nodesByLayer = new Map();
+    nodes.forEach(node => {
+        const lIdx = node.parent_layer_index ?? (node.parent_layer_idx ?? 0);
+        if (!nodesByLayer.has(lIdx)) nodesByLayer.set(lIdx, []);
+        nodesByLayer.get(lIdx).push(node);
+    });
+
+    // Build comprehensive intra-layer conduits, port rings, and residual junctions (+)
+    nodesByLayer.forEach(layerNodes => {
+        buildLayerConduits(
+            layerNodes,
+            offsetX,
+            isCompressedSide,
+            context.modelKey || 'distilbert',
+            context.paradigm || 'svd',
+            granularGroup,
+            visualObjects
+        );
+    });
+
+    // Build inter-layer vertical trunk conduits connecting layers in sequence
+    const layerBoundsArray = Array.from(layerMinMax.entries())
+        .map(([lIdx, b]) => ({ lIdx, minY: b.minY, maxY: b.maxY }))
+        .sort((a, b) => a.lIdx - b.lIdx);
+    buildInterLayerConduits(layerBoundsArray, offsetX, isCompressedSide, granularGroup, visualObjects);
 
     return topY;
 }

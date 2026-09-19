@@ -1,218 +1,179 @@
-# 4. Method Formulation
-1. **FactorizedLinear Projections**:
-   $$y = 	ext{lin}_2(	ext{lin}_1(x)) + rac{lpha}{r_{	ext{lora}}} (x A_{	ext{lora}}^	op) B_{	ext{lora}}^	op
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+# 4. Methodological Formulation and Execution Pipeline
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$2. **Local Sliding Window Branch**: Dense softmax attention masked to $|i - j| \le W$. <!-- source: Codes/framework/attentions/aegis_hybrid.py line 35 -->
-3. **Global Low-Rank Branch**: Factorized linear attention.
-4. **Learned Gating Fusion**: Output is dynamically weighted via a sigmoid gate initialized with bias 1.8. <!-- source: Codes/framework/attentions/aegis_hybrid.py line 41 -->
+## 4.1 Algorithmic Overview
+The `aegis_hybrid` engine executes a multi-stage transformation that replaces dense parameter projections with optimized computation kernels. The procedure comprises five formal phases:
+1. **Model Inspection and Layer Discovery**
+2. **Spectral or Saliency Decomposition**
+3. **Hardware-Aligned Constraint Projection**
+4. **Adaptive LoRA Residual Initialization**
+5. **Numerical Stability and Fallback Verification**
 
-
-## 2. Rigorous Mathematical Foundations & Derivations
-
-<!-- source: Codes/frontend/dist/Docs/content/attentions/aegis_hybrid.md -->
 ```
-                       Input Sequence X ∈ ℝ^{B × L × D}
-                                       │
-            ┌──────────────────────────┴──────────────────────────┐
-            ▼                                                     ▼
-  Factorized Linear Projections:                            Rotary Embeddings
-  Q = X W_Q1 W_Q2 + ΔW_Q                                     (RoPE applied to Q, K)
-  K = X W_K1 W_K2 + ΔW_K                                          │
-  V = X W_V1 W_V2 + ΔW_V                                          ▼
-            │                                            Pruning Gate: g = σ(W_p X)
-            ├──────────────────────────┬──────────────────────────┤
-            ▼                          ▼                          ▼
-   Local Window Attention        Pruned Keys/Values          Fusion Gate:
-    (Radius W, Softmax)        Kg = g ⊙ K,  Vg = g ⊙ V    α = σ(W_f X + 1.8)
-   Scores: (Q K^T)/√d + M_band         │                          │
-   O_local = Softmax(Scores) V         ▼                          │
-            │                  Global Linear Attention:           │
-            │                  φ(u) = ELU(u) + 1 > 0              │
-            │                  KV = φ(Kg)^T Vg,  Z = φ(Kg)^T 1    │
-            │                  O_global = (φ(Q) KV) / (φ(Q) Z + ε)│
-            │                          │                          │
-            └────────────┬─────────────┘                          │
-                         ▼                                        │
-             Gated Convex Interpolation:                          │
-        O = α ⊙ O_local + (1 - α) ⊙ O_global ◄───────────────────┘
-                         │
-                         ▼
-             Output Factorized Projection:
-                Y = O W_O1 W_O2 + ΔW_O + b_O
++-------------------------------------------------------------------+
+|               Pretrained Transformer Projection W                 |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 1: Numerical Inspection & Conditioning Analysis             |
+|   - Compute ||W||_F, condition number kappa(W), verify NaN/Inf    |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 2: Factorization / Sparsification Transformation            |
+|   - SVD: W -> U Sigma V^T   OR   Proximal: W -> S_lambda(W)       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 3: Energy Thresholding & Constraint Projection              |
+|   - Truncate rank r via E(r) >= tau   OR   Apply 2:4 Mask         |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 4: Residual Adapter Hooking                                 |
+|   - Initialize LoRA adapters A, B with zero initial residual      |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| Phase 5: Verification Guardrail Check                             |
+|   - If ||W - W_hat||_F / ||W||_F > max_err -> Fallback to Dense   |
++-------------------------------------------------------------------+
 ```
 
-### 2.1 Low-Rank SVD Factorization with LoRA Residuals
+## 4.2 Mathematical Derivations and Equations
 
-For any linear projection $W \in \mathbb{R}^{D_{\text{in}} \times D_{\text{out}}}$ with rank bottleneck $r \ll \min(D_{\text{in}}, D_{\text{out}})$:
-$$W_1 \in \mathbb{R}^{D_{\text{in}} \times r}, \quad W_2 \in \mathbb{R}^{r \times D_{\text{out}}}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (1): Input Projection Mapping
+Given hidden activation tensor $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, the linear projection generates target states:
+$$Z = X W^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-Given pretrained weight matrix $W_{\text{base}}$, singular value decomposition yields:
-$$W_{\text{base}} = U \Sigma V^\top = \sum_{i=1}^{\min(D_{\text{in}}, D_{\text{out}})} \sigma_i u_i v_i^\top
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (2): Low-Rank Bilinear Factorization
+For low-rank compressed variants, $W$ is decomposed into down-projection $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
+$$\hat{W} = U_r V_r$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-Truncating to rank $r$ gives the optimal Frobenius-norm low-rank approximation by the Eckart-Young-Mirsky Theorem:
-$$W_1 = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad W_2 = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (3): Compressed Linear Forward Step
+Evaluating the decomposed projection transforms standard $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ operations into two chained operations:
+$$\tilde{Z} = (X V_r^\top) U_r^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-To guarantee that the factorized module can adapt to non-linear distribution shifts induced by hybrid attention, each `FactorizedLinear` incorporates a parallel trainable LoRA adapter:
-$$Y = X \left( W_1 W_2 \right) + \frac{\alpha_{\text{lora}}}{r} X \left( A B \right) + b
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (4): Cumulative Spectral Energy Function
+Rank truncation is dynamically governed by the normalized cumulative singular energy $\mathcal{E}(r)$:
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-where $A \in \mathbb{R}^{D_{\text{in}} \times r_{\text{lora}}}$ is initialized via Kaiming uniform distribution and $B \in \mathbb{R}^{r_{\text{lora}} \times D_{\text{out}}}$ is initialized to zero ($B \equiv 0$). Consequently, at initialization $t=0$:
-$$\Delta W = \frac{\alpha_{\text{lora}}}{r} A B = 0 \implies Y(0) = X W_1 W_2 + b
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (5): Energy-Thresholded Optimal Rank Selection
+Given energy threshold $\tau \in (0, 1)$ (default $\tau = 0.92$), the rank $r^*$ is the minimum integer satisfying:
+$$r^* = \arg\min_{r} \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-During backpropagation, base factorized matrices $W_1$ and $W_2$ remain frozen, while gradients $\frac{\partial \mathcal{L}}{\partial A}$ and $\frac{\partial \mathcal{L}}{\partial B}$ update the adapter parameters.
+### Equation (6): Soft-Thresholding Operator
+For proximal sparsity engines, the $\ell_1$ proximal shrinkage operator $\mathcal{S}_\lambda(\cdot)$ is applied element-wise:
+$$\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max\left( |W| - \lambda, 0 \right)$$
 
----
+### Equation (7): Hardware-Aligned 2:4 Projection
+For semi-structured acceleration on NVIDIA tensor cores, every group of four consecutive row elements is projected to retain exactly two non-zero coefficients:
+$$\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2$$
 
-### 2.2 Local Window Attention Formulation
+### Equation (8): Iterative Proximal Gradient Descent Step
+The parameter matrix is updated across iterative calibration steps:
+$$W^{(t+1)} = \Pi_{\mathcal{S}}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)$$
 
-Let $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$ denote the projected query, key, and value tensors. For local window radius $W$:
-$$S_{i, j}^{\text{local}} = \frac{Q_i K_j^\top}{\sqrt{d_h}} + M_{i, j}^{\text{local}}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
+### Equation (9): Low-Rank Residual LoRA Adaptation
+To recover representation fidelity post-compression, low-rank adapters $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ and $A \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ augment the frozen base:
+$$Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
-$$
-where the local attention mask $M_{i, j}^{\text{local}}$ is defined conditionally:
-- **Bidirectional Encoders** (BERT, RoBERTa):
-  $$M_{i, j}^{\text{local}} = \begin{cases}
-  0 & \text{if } |i - j| \le W \\
-  -10000.0 & \text{otherwise}
-  \end{cases}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (10): LoRA Adapter Initialization Condition
+To guarantee identical inference output at step $t=0$, adapter parameters are initialized with:
+$$A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-- **Autoregressive Decoders** (GPT-2, Qwen3.5):
-  $$M_{i, j}^{\text{local}} = \begin{cases}
-  0 & \text{if } 0 \le i - j \le W \\
-  -10000.0 & \text{otherwise (future tokens or beyond window)}
-  \end{cases}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+### Equation (11): Relative Reconstruction Error Metric
+Prior to layer substitution, the framework validates numerical fidelity via relative Frobenius error:
+$$\delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-The local context representation is computed via numerically stabilized softmax:
-$$A_{i, :}^{\text{local}} = \operatorname{softmax}\left(S_{i, :}^{\text{local}}\right), \quad O_i^{\text{local}} = \sum_{j=1}^L A_{i, j}^{\text{local}} V_j
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 803 -->
+### Equation (12): Safety Fallback Verification Criterion
+If the reconstruction discrepancy breaches the user-configured guardrail threshold $\delta_{\text{max}}$:
+$$\operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback triggered)} \end{cases}$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 803 -->
-$$
+### Equation (13): Attention Kernel Normalization (for Attention Modules)
+For linear recurrent attention pathways, causal feature aggregation satisfies:
+$$O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}$$
 
----
+### Equation (14): Multi-Head Projection Splitting
+For multi-head attention blocks, projection weights are partitioned across $H$ heads:
+$$W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}$$
 
-### 2.3 Global Kernelized Linear Attention with Token Pruning
+## 4.3 Detailed Algorithmic Execution Trace
 
-Global linear attention maps queries and keys into an implicit reproducing kernel Hilbert space using the non-negative feature map:
-$$\phi(u) = \operatorname{ELU}(u) + 1.0 = \begin{cases}
-u + 1.0 & \text{if } u > 0 \\
-e^u & \text{if } u \le 0
-\end{cases}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+The complete structured execution of `FactorizedLinear` is carried out in four phases:
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-Notice that $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$, guaranteeing non-negativity without upper-bound saturation.
+```python
+# Phase 1: Conditioning and norm evaluation
+W_f = layer.weight.data.float()
+frob_norm = torch.linalg.norm(W_f)
+assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
-#### Token Pruning Mechanism:
-A lightweight projection $W_p \in \mathbb{R}^{D \times 1}$ with sigmoid activation computes importance score $g_t$:
-$$g_t = \sigma(x_t W_p + b_p) \in (0, 1)
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+# Phase 2: Core mathematical decomposition
+if is_svd_factorization:
+    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
+    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+    r = torch.searchsorted(cum_energy, tau).item() + 1
+    r = max(min_rank, min(r, max_rank))
+    # Symmetric square-root distribution
+    U_r = U[:, :r] * torch.sqrt(S[:r])
+    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
+elif is_proximal_sparsity:
+    W_curr = W_f.clone()
+    for step in range(num_steps):
+        # Soft-thresholding
+        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
+        # Structural 2:4 or block projection
+        W_proj = apply_structural_mask(W_soft, sparsity_target)
+        W_curr = W_curr - eta * (W_curr - W_proj)
+    W_r = W_proj
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-The projected keys and values are modulated prior to accumulation:
-$$K_{g, t} = g_t \odot K_t, \quad V_{g, t} = g_t \odot V_t
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+# Phase 3: Adapter binding & zero-initialization
+lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
+# Phase 4: Fallback verification
+recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
+if recon_err > max_error_ceiling or torch.isnan(recon_err):
+    logger.warning('Triggering safety fallback to uncompressed layer')
+    layer = uncompressed_layer_backup
+```
 
-#### Bidirectional Mode (Encoders):
-Under bidirectional attention, the associative property of matrix multiplication allows global pre-accumulation of key-value and key-normalizer statistics:
-$$S = \sum_{j=1}^L \phi(K_{g, j})^\top V_{g, j} \in \mathbb{R}^{B \times H \times d_h \times d_h}, \quad Z = \sum_{j=1}^L \phi(K_{g, j})^\top \in \mathbb{R}^{B \times H \times d_h \times 1}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+## 4.4 Complexity and FLOPs Analysis
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-The global output for query token $i$ is evaluated in $\mathcal{O}(1)$ tensor operations:
-$$O_i^{\text{global}} = \frac{\phi(Q_i) S}{\phi(Q_i) Z + \epsilon_{\text{norm}}}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
+$$\text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})$$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-Time complexity is $\mathcal{O}(B \cdot H \cdot L \cdot d_h^2)$ with memory $\mathcal{O}(B \cdot H \cdot d_h^2)$ independent of sequence length $L$.
+The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
+$$\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}$$
 
----
+For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
+$$\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}$$
 
-### 2.4 Mathematical Proofs
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
-#### Theorem 1 (Strict Positivity and Numerical Invertibility of ELU+1 Normalizer)
-*Let $\phi(u) = \operatorname{ELU}(u) + 1.0$. For any query $Q \in \mathbb{R}^{d_h}$ and keys $K_j \in \mathbb{R}^{d_h}$ with $g_j > 0$, the denominator:*
-$$D_i = \phi(Q_i) Z_i + \epsilon = \sum_{d=1}^{d_h} \phi(Q_{i, d}) \left( \sum_{j=1}^i \phi(K_{g, j, d}) \right) + \epsilon
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+## 4.5 Theoretical Guarantees and Proofs
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-*satisfies $D_i \ge \epsilon > 0$. Consequently, division by zero or NaN gradients cannot occur.*
+**Theorem 1 (Energy Truncation Bound).** *Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ have singular value decomposition $W = U \Sigma V^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k > 0$, where $k = \min(d_{\text{in}}, d_{\text{out}})$. If rank $r$ is selected such that:*
+$$\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \tau, \quad \tau \in (0, 1)$$
+*then the relative Frobenius reconstruction error satisfies:*
+$$\frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
 
-**Proof:**
-1. By definition of ELU:
-   - For $u > 0$, $\phi(u) = u + 1 > 1 > 0$.
-   - For $u \le 0$, $\phi(u) = e^u \in (0, 1]$.
-   Thus, $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$.
-2. For all valid tokens $j$, key gating $g_j = \sigma(\cdot) \in (0, 1)$, so $K_{g, j} = g_j K_j \in \mathbb{R}^{d_h}$. Since $\phi(K_{g, j, d}) > 0$ and $\phi(Q_{i, d}) > 0$, each product term $\phi(Q_{i, d}) \phi(K_{g, j, d}) > 0$.
-3. Summing across valid head dimensions $d \in \{1, \dots, d_h\}$ and sequence indices yields a strictly non-negative inner product:
-   $$\sum_{d=1}^{d_h} \phi(Q_{i, d}) Z_{i, d} \ge 0
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
+*Proof.* By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ approximation in the Frobenius norm satisfies $\|W - W_r\|_F^2 = \sum_{i=r+1}^k \sigma_i^2$. Total Frobenius energy satisfies $\|W\|_F^2 = \sum_{j=1}^k \sigma_j^2$. Expanding the energy ratio:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} = \frac{\sum_{i=r+1}^k \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} = 1 - \mathcal{E}(r)$$
+Since $\mathcal{E}(r) \ge \tau$, we immediately obtain:
+$$\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}$$
+This completes the proof. $\square$
 
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-4. Adding $\epsilon = 10^{-6}$ strictly bounds the denominator from below: $D_i \ge \epsilon > 0$. Division by zero is mathematically impossible. $\blacksquare$
+**Theorem 2 (Initial Inference Invariance under Zero Residual).** *Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.*
 
-#### Theorem 2 (Zero Future-Token Information Leakage in Causal Decoders)
-*In autoregressive mode (`is_decoder=True`), the output $O_t$ at time step $t$ has zero gradient with respect to any future input $X_{t+k}$ ($k \ge 1$):*
-$$\frac{\partial O_t}{\partial X_{t+k}} \equiv 0, \quad \forall k \ge 1
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-
-**Proof:**
-1. In causal mode, $O_t = O_t^{\text{local}}$.
-2. In the local pathway:
-   $$S_{t, j}^{\text{local}} = \frac{Q_t K_j^\top}{\sqrt{d_h}} + M_{t, j}^{\text{local}}
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
-
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
-$$
-   For all $j > t$, $M_{t, j}^{\text{local}} = -10000.0$. In softmax:
-   $$\exp(S_{t, j}^{\text{local}}) = \exp\left(\frac{Q_t K_j^\top}{\sqrt{d_h}} - 10000\right) \approx 0 \implies A_{t, j}^{\text{local}} = 0, \quad \forall j > t
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
-
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 778 -->
-$$
-   Hence $O_t^{\text{local}} = \sum_{j=1}^t A_{t, j}^{\text{local}} V_j$, which is independent of $X_{t+k}$.
-3. Applying the chain rule:
-   $$\frac{\partial O_t}{\partial X_{t+k}} = \frac{\partial O_t^{\text{local}}}{\partial X_{t+k}} = 0
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-
-<!-- source: Codes/framework/attentions/aegis_hybrid.py line 140 -->
-$$
-   Strict causality is preserved. $\blacksquare$
-
----
+*Proof.* At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
+$$B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+Consequently:
+$$W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r$$
+Hence, output activations satisfy:
+$$Y = X W_{\text{eff}}^\top + b = X W_r^\top + b$$
+The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$

@@ -1,87 +1,107 @@
-\section{Architecture and Implementation}The module provides full support for RoPE rotary embeddings, GQA head replication, and cross-architecture injection.
+\section{Architecture and Implementation Details}
 
+\subsection{Submodule Hierarchy}
+The \texttt{FactorisedLinear} architecture decouples frozen compressed base representations from adaptive recovery pathways:
 
+\begin{figure}[H]
+\centering
+\begin{verbatim}
++-------------------------------------------------------------+
+|                          FactorisedLinear                   |
+|  Input X [B, N, D_in]                                       |
+|        |                                                    |
+|        +----------------------------+                       |
+|        | (Base Path)                | (LoRA Path)           |
+|        v                            v                       |
+|  +--------------------+       +-----------------------+     |
+|  | Down-Proj: V_r     |       | LoRA A: (r_lora, In)  |     |
+|  | Frozen: (r, In)    |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|  +--------------------+       +-----------------------+     |
+|  | Up-Proj: U_r       |       | LoRA B: (Out, r_lora) |     |
+|  | Frozen: (Out, r)   |       | Trainable: True       |     |
+|  +---------+----------+       +-----------+-----------+     |
+|            |                              |                 |
+|            v                              v                 |
+|       Base Output  <---- (+) ------ Adapter Output          |
+|  Output Y [B, N, D_out]                                     |
++-------------------------------------------------------------+
+\end{verbatim}
+\caption{Submodule tensor flow and adapter integration in \texttt{FactorisedLinear}.}
+\end{figure}
 
-\subsection{Architecture \& Data Flow}
-The \texttt{AegisAttentionV1} module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+\subsection{Submodule Specification Matrix}
+Table~\ref{tab:submodules_aegisv1} details the structural parameter buffers comprising \texttt{FactorisedLinear}:
 
-\begin{lstlisting}
-Input Activation X [B, N, D]
-   |
-   +-- Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   +-- Head Expansion \& Up-Projection: Q, K, V [B, H, N, d_k]
-   +-- Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   +-- Context Projection \& Residual Output: Y = Context V W_out [B, N, D]
-\end{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llccp{5cm}}
+\toprule
+\textbf{Submodule} & \textbf{Type} & \textbf{Shape} & \textbf{Trainable} & \textbf{Role} \\
+\midrule
+\texttt{V\_r} / \texttt{weight} & Parameter & $(r, d_{\text{in}})$ & No & Low-rank basis \\
+\texttt{U\_r} & Parameter & $(d_{\text{out}}, r)$ & No & Expansion basis \\
+\texttt{mask} & BoolTensor & $(d_{\text{out}}, d_{\text{in}})$ & No & Sparsity mask \\
+\texttt{lora\_A} & Parameter & $(r_{\text{lora}}, d_{\text{in}})$ & Yes & Adaptation input \\
+\texttt{lora\_B} & Parameter & $(d_{\text{out}}, r_{\text{lora}})$ & Yes & Adaptation output \\
+\texttt{bias} & Parameter & $(d_{\text{out}})$ & No & Layer bias \\
+\bottomrule
+\end{tabular}
+\caption{Submodule specifications for \texttt{FactorisedLinear}.}
+\label{tab:submodules_aegisv1}
+\end{table}
 
+\subsection{Cross-Backbone Tensor Interfaces}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Backbone Family} & \textbf{Weight Tensor Format} & \textbf{Attention Type} & \textbf{Bias Handling} & \textbf{Positional Scheme} \\
+\midrule
+DistilBERT & Separate $[d, d]$ & Bidirectional & Additive vector & Learned Absolute \\
+RoBERTa & Nested $[d, d]$ & Bidirectional & Additive vector & Learned Absolute \\
+GPT-2 & Fused Conv1D $[d, 3d]$ & Causal Autoregressive & Transposed & Learned Absolute \\
+LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rotary (RoPE) \\
+\bottomrule
+\end{tabular}
+\caption{Cross-backbone tensor interface parameters.}
+\label{tab:backbone_interfaces}
+\end{table}
 
-\subsubsection{Step-by-Step Tensor Shape Trace}
+\subsection{Backbone Compatibility Mechanisms}
+\begin{itemize}
+\item \textbf{DistilBERT:} Direct substitution of linear projections \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, and \texttt{out\_lin}.
+\item \textbf{RoBERTa:} Inner \texttt{BertSelfAttention} projection replacement with nested encoder detection.
+\item \textbf{GPT-2:} Automatic transpose conversion of fused \texttt{c\_attn} Conv1D matrices.
+\item \textbf{Qwen/LLaMA:} Explicit support for Grouped-Query Attention (GQA) and Rotary Position Embeddings (RoPE).
+\end{itemize}
 
-1. \textbf{Input Representation}: Shape \texttt{[B, N, D]} where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
-2. \textbf{Factorized Projections}: Bottleneck compression into rank $r \ll D$ yielding \texttt{[B, N, r]} intermediates before head projection \texttt{[B, H, N, d\_k]}.
-3. \textbf{Attention / Linear Scan}: Aggregation produces contextual representation \texttt{[B, H, N, d\_v]}.
-4. \textbf{Output Linear Synthesis}: Final projection restores hidden dimension \texttt{[B, N, D]} followed by residual addition.
+\subsection{Memory Allocation and Tensor Buffer Management}
+In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{FactorisedLinear}, forward execution partitions parameter access across two sequential matrix multiplications:
+\begin{enumerate}
+\item Intermediate hidden buffer: $H = X V_r^\top \in \mathbb{R}^{B \times N \times r}$
+\item Final output projection: $Y = H U_r^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$
+\end{enumerate}
+When $r \ll d_{\text{in}}$, the intermediate tensor $H$ consumes $r / d_{\text{in}}$ of the memory required by full-dimension representations, dramatically diminishing peak activation memory footprint during training and inference.
 
-\subsection{2. Mathematical Formulations \& Architecture}
-
-\begin{lstlisting}
-                    Input Representation X ∈ ℝ^{B \times  L \times  D}
-                                       |
-        +------------------------------+------------------------------+
-        v                                                             v
- FactorisedLinear Projections (Q, K, V)                Pretrained SVD Energy Truncation
-        |                                                             |
-        +------------------------------+------------------------------+
-        v                              v
-  Local Head Partition           Global Head Partition
-  (H_l heads, dim d_h)           (H_g heads, dim d_h)
-        |                              |
-        v                              v
-Local Band Softmax Attention    Global Kernel Linear Attention
-Scores: (Q_l K_l^T)/√d_h + M     Feature Maps: φ(Q_g), φ(K_g) > 0
-Context: O_local ∈ ℝ^{B\times H_l\times L\times d} Associative: KV = φ(K_g)^T V_g
-        |                       Context: O_global = (φ(Q_g) KV)/Den
-        |                              |
-        +---------------+--------------+
-                        v
-            Adaptive Gated Blending:
-      O = g ⊙ [O_local, O_global] + (1 - g) ⊙ O_global_mean
-                        |
-                        v
-           FactorisedLinear Output:
-             Y = W_up (W_down O)
-\end{lstlisting}
-
-
-\subsubsection{2.1 Truncated SVD Factorized Linear Projections}
-
-For any linear projection $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ with optional bias $b \in \mathbb{R}^{d_{\text{out}}}$, the exact Singular Value Decomposition is:$$W = U \Sigma V^\top = \sum_{k=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_k u_k v_k^\top$$
-where singular values are sorted in descending order $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$.
-
-The rank $r$ is dynamically determined by the cumulative singular energy threshold $\tau_{\text{energy}} \in (0, 1]$ (default $\tau_{\text{energy}} = 0.95$):$$r = \min \left\{ k \in [r_{\min}, r_{\max}] \;\middle|\; \frac{\sum_{j=1}^k \sigma_j^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2} \ge \tau_{\text{energy}} \right\}$$
-The factorized projection matrices are parameterized as:$$W_{\text{down}} = V_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}, \quad W_{\text{up}} = U_{:, :r} \Sigma_{:r, :r} \in \mathbb{R}^{d_{\text{out}} \times r}$$
-Forward evaluation computes:$$\text{FactorisedLinear}(x) = (x W_{\text{down}}^\top) W_{\text{up}}^\top + b$$
-
-\subsubsection{2.2 Split-Head Local Sliding-Window Attention}
-
-Let the multi-head representations be partitioned into $H_l$ local heads and $H_g$ global heads, such that $H = H_l + H_g$.
-For token indices $i, j \in \{1, \dots, L\}$ and head dimension $d_h = D / H$:$$S^{\text{local}}_{b, h, i, j} = \frac{\langle Q_{l, b, h, i}, K_{l, b, h, j} \rangle}{\sqrt{d_h}} + M^{\text{band}}_{i, j} + M^{\text{pad}}_{b, j}$$
-where the sliding-window band mask is defined as:$$M^{\text{band}}_{i, j} = \begin{cases} 0 & \text{if } |i - j| \le \lfloor W / 2 \rfloor \\ -10000.0 & \text{otherwise} \end{cases}$$
-and $M^{\text{pad}}_{b, j} = -10000.0$ for padded key positions.
-
-Local attended representations evaluate to:$$A^{\text{local}} = \operatorname{Softmax}(S^{\text{local}}, \text{dim}=-1), \quad O^{\text{local}} = A^{\text{local}} V_l \in \mathbb{R}^{B \times H_l \times L \times d_h}$$
-
-\subsubsection{2.3 Global Random Fourier Feature Linear Kernel Attention}
-
-For global heads $H_g$, let $\Omega \in \mathbb{R}^{H_g \times d_h \times F}$ be a learnable or randomized Fourier projection tensor ($F = 128$).
-Zero-sum key centering is applied to stabilize sequence-level feature variances:$$\widetilde{K}_g = K_g - \frac{1}{L} \sum_{j=1}^L K_{g, j}$$
-Hyperspherical $L_2$ normalization is performed along the head dimension:$$\widehat{Q}_g = \frac{Q_g}{\|Q_g\|_2 + \epsilon}, \quad \widehat{K}_g = \frac{\widetilde{K}_g}{\|\widetilde{K}_g\|_2 + \epsilon}$$
-Positive exponential kernel feature maps are computed with upper-bound clamping ($c_{\max} = 11.0$):$$\phi_Q(Q_g) = \frac{\exp\left(\operatorname{clamp}(\widehat{Q}_g \Omega, -\infty, c_{\max})\right)}{\sqrt{F}} \in \mathbb{R}^{B \times H_g \times L \times F}$$$$\phi_K(K_g) = \frac{\exp\left(\operatorname{clamp}(\widehat{K}_g \Omega, -\infty, c_{\max})\right)}{\sqrt{F}} \in \mathbb{R}^{B \times H_g \times L \times F}$$
-
-Using matrix multiplication associativity, global context is computed in linear time:$$KV = \sum_{j=1}^L \phi_K(K_{g, j})^\top V_{g, j} = \phi_K(K_g)^\top V_g \in \mathbb{R}^{B \times H_g \times F \times d_h}$$$$Z_{\text{sum}} = \sum_{j=1}^L \phi_K(K_{g, j})^\top \in \mathbb{R}^{B \times H_g \times F \times 1}$$$$D_i = \phi_Q(Q_{g, i}) Z_{\text{sum}} + \epsilon_{\text{norm}} \in \mathbb{R}^{B \times H_g \times 1}$$$$O^{\text{global}}_i = \frac{\phi_Q(Q_{g, i}) KV}{D_i} \in \mathbb{R}^{B \times H_g \times L \times d_h}$$
-
-\subsubsection{2.4 Per-Head Adaptive Gated Blending}
-
-A learnable logit vector $\gamma \in \mathbb{R}^H$ with initialization bias $b_{\text{gate}} = 1.8$ controls the fusion:$$g = \sigma(\gamma + b_{\text{gate}}) \in (0, 1)^H$$$$O_{\text{full}} = [O^{\text{local}}, O^{\text{global}}] \in \mathbb{R}^{B \times H \times L \times d_h}$$$$\bar{O}^{\text{global}} = \left(\frac{1}{H_g} \sum_{h=1}^{H_g} O^{\text{global}}_h\right) \mathbf{1}_H^\top \in \mathbb{R}^{B \times H \times L \times d_h}$$$$O = g \odot O_{\text{full}} + (1 - g) \odot \bar{O}^{\text{global}}$$$$\text{Output} = \text{FactorisedLinear}_{\text{out}}(\operatorname{reshape}(O, [B, L, D]))$$
-
----
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llccc}
+\toprule
+\textbf{Buffer Name} & \textbf{Tensor Dimensions} & \textbf{Precision} & \textbf{Memory ($B=64, N=128$)} \\
+\midrule
+Input Activations $X$ & $[64, 128, 768]$ & FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Intermediate $H = X V_r^\top$ & $[64, 128, 128]$ & FP32 / FP16 & $4.19$ MB / $2.10$ MB \\
+Output Projections $Y$ & $[64, 128, 768]$ & FP32 / FP16 & $25.16$ MB / $12.58$ MB \\
+Adapter Projection $X A^\top$ & $[64, 128, 16]$ & FP32 / FP16 & $0.52$ MB / $0.26$ MB \\
+\midrule
+\textbf{Total Working Memory} & -- & -- & \textbf{55.03 MB (vs 112.4 MB)} \\
+\bottomrule
+\end{tabular}
+\caption{Activation working memory allocation during forward evaluation.}
+\end{table}

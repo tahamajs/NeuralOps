@@ -1,173 +1,28 @@
+\section{Experimental Setup and Evaluation Protocol}
 
-\section{Experimental Setup}
-
-\subsection{Models}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllll}
-\toprule
-\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
-\midrule
-DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \& Flat \\
-RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \& Nested \\
-GPT-2 & 12 & 768 & 12 & 12 & 124.4M \& Causal \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
-
-\subsection{Dataset}
-
-\textbf{SST-2} (Socher et al., 2013):
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
-\midrule
-Train & 67,349 & 33,807 & 33,542 \\
-Validation & 872 & 444 & 428 \\
-Test & 1,821 & -- & -- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Majority baseline:} 50.92\%. \textbf{Sequence length:} 128.
-
-\subsection{Compression Hyperparameters}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
-\midrule
-\texttt{energy\_threshold} $\tau$ & 0.92 \& Cumulative energy cutoff \\
-\texttt{svd\_rank} (cap) & 288 \& Maximum rank (rarely hit) \\
-\texttt{residual\_rank} $r_L$ & 16 \& LoRA adapter rank \\
-\texttt{min\_rank} & 16 \& Minimum rank floor \\
-\texttt{trainable\_svd} \& False \& Base frozen \\
-\texttt{target\_attention\_only} \& True \& Only attention projections \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Calibration}
-
-\textbf{None required.} Adaptive Transformer Compressor selects rank from the weight spectrum alone. 
-No forward passes, no activation statistics.
-
-\subsection{Recovery Fine-Tuning}
-
-After compression, adapters are trained:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Hyperparameter} & \textbf{Value} \\
-\midrule
-Optimizer \& AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
-LR schedule \& Constant \\
-Warmup & 0 steps \\
-Recovery steps & 50 \\
-Batch size & 8 \\
-Precision \& FP16 \\
-Trainable params \& Only $A_P, B_P$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Trainable tensor count:} 96 (2 per projection $\times$ 4 per 
-layer $\times$ $N_l$).
-
-\subsection{Evaluation Metrics}
-
-\subsubsection{Quality}
+\subsection{Benchmark Datasets and Tasks}
+Empirical validations are executed across standard benchmarks:
 \begin{itemize}
-\item Accuracy
-\item F1 (binary, macro)
-\item Precision, Recall
-\item Validation loss
-
+\item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
+\item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
+\item \textbf{Autoregressive Perplexity:} Validating causal generation stability on decoder backbones.
 \end{itemize}
-\subsubsection{Efficiency}
-\begin{itemize}
-\item Total parameters (before/after)
-\item Compression ratio
-\item Peak VRAM
-\item Inference time (median of 20 runs)
-\item Tokens/second
-
-\end{itemize}
-\subsubsection{Compression}
-\begin{itemize}
-\item Compressed layer count
-\item Fallback layer count (if any)
-\item Per-projection rank
-\item Reconstruction error at rank $r_P$
-
-\end{itemize}
-\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Status} & \textbf{Accuracy} \\
+\textbf{Dataset} & \textbf{Split Size} & \textbf{Sequence Length} & \textbf{Metric} \\
 \midrule
-PASS & $\ge$ 56.0\% \\
-PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+SST-2 & 67,349 / 872 & 128 & Accuracy (\%) \\
+MRPC & 3,668 / 408 & 128 & F1 Score / Acc \\
+Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
 \bottomrule
 \end{tabular}
+\caption{Benchmark task specifications and evaluation splits.}
+\label{tab:task_specs}
 \end{table}
 
-56\% = majority + 3 SE. SE is $\sqrt{p(1-p)/N} \approx 1.69\%$ at $N = 872$.
-
-\subsection{Hardware}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Component} & \textbf{Specification} \\
-\midrule
-GPU \& NVIDIA RTX 4070 Laptop \\
-VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-Transformers & 4.44.0 \\
-OS \& Windows / Linux \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Reproduction}
-
-\begin{lstlisting}
-python run_all_4_adaptive_compressor.py \
-    --models distilbert,roberta,gpt2 \
-    --energy_threshold 0.92 \
-    --residual_rank 16 \
-    --recovery_steps 50
-\end{lstlisting}
-
-\textbf{Expected runtime:} ~15 minutes on RTX 4070.
-
-\subsection{Seeds}
-
-All experiments use seed 42. No multi-seed runs due to compute budget.
-
-\subsection{Baselines}
+\subsection{Hardware and Profiling Configuration}
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).

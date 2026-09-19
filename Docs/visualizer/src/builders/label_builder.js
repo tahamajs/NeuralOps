@@ -8,6 +8,7 @@
 
 import * as THREE from 'three';
 import { anyKey } from '../utils/math.js';
+import { getLayerDepthProfile } from '../educational/layer_depth_profile.js';
 
 /**
  * Creates a canvas sprite for layer headers.
@@ -143,3 +144,67 @@ export function createTensorBadgeSprite(node, offsetX, targetGroup, visualObject
     if (visualObjects) visualObjects.push(sprite);
     return sprite;
 }
+
+/**
+ * Creates an upgraded 3D Billboard Sprite displaying complete layer depth metadata.
+ * @param {string} text - Title text
+ * @param {number} layerIdx - Layer index
+ * @param {number} totalLayers - Total layers
+ * @param {number} worldX - World X position
+ * @param {number} worldY - World Y position
+ * @param {boolean} isMacro - Macro mode
+ * @param {THREE.Group} targetGroup - Scene group
+ * @param {Array<THREE.Object3D>} visualObjects - Disposal registry
+ * @returns {THREE.Sprite}
+ */
+export function createLayerLabelSpriteWithDepth(text, layerIdx, totalLayers, worldX, worldY, isMacro = false, targetGroup, visualObjects) {
+    const profile = getLayerDepthProfile(layerIdx, null, totalLayers);
+    const canvas = document.createElement('canvas');
+    canvas.width = 340;
+    canvas.height = 92;
+    const ctx = canvas.getContext('2d');
+
+    // Background Card
+    ctx.fillStyle = isMacro ? 'rgba(8, 18, 36, 0.94)' : 'rgba(5, 12, 22, 0.90)';
+    ctx.strokeStyle = profile.themeColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(4, 4, 332, 84, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Stage Pip & Header
+    ctx.fillStyle = profile.themeColor;
+    ctx.beginPath();
+    ctx.arc(22, 28, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = 'bold 20px ui-monospace, Consolas, monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 36, 28);
+
+    // Subtitle Tag
+    ctx.font = 'bold 12px ui-monospace, Consolas, monospace';
+    ctx.fillStyle = profile.themeColor;
+    ctx.fillText(profile.shortTag.toUpperCase(), 36, 50);
+
+    // Telemetry Footnote
+    ctx.font = '11px ui-monospace, Consolas, monospace';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.fillText(`Ent: ${profile.attentionEntropy} nats  |  Rec: r=${profile.optimalSvdRank}  |  Res: ${profile.residualPercent}%`, 18, 72);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.94 });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.set(worldX, worldY, 0);
+    sprite.scale.set(3.8, 1.03, 1.0);
+    sprite.raycast = () => {};
+
+    if (targetGroup) targetGroup.add(sprite);
+    if (visualObjects) visualObjects.push(sprite);
+    return sprite;
+}
+

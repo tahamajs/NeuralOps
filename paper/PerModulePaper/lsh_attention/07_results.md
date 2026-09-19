@@ -1,9 +1,58 @@
-# 7. Empirical Results
+# 7. Empirical Results and Benchmark Evaluations
 
-## 7.1 Unified Benchmark Results
+## 7.1 Downstream Accuracy and Classification Performance
+Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
 
-| Source File | Configuration | Status | Accuracy / Latency | Peak VRAM |
-|---|---|---|---|---|
-| results/unified_lsh_attention/roberta/summary.csv | lsh_attention | PASS_LOW | 50.92% <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 666.82 MB <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> |
-| results/unified_lsh_attention/distilbert/summary.csv | lsh_attention | PASS | 74.89% <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 211.22 MB <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> |
-| results/unified_lsh_attention/gpt2/summary.csv | lsh_attention | PASS | 80.62% <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 569.05 MB <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> |
+### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
+| Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
+|---|---|---|---|---|---|
+| results/unified_lsh/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> |
+| results/unified_lsh/distilbert/summary.csv | distilbert | lsh | PASS | 74.89% <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 0.7932 <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | lsh | PASS | 80.62% <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 0.8298 <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | lsh | PASS_LOW | 50.92% <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 0.6661 <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | lsh_attention | PASS | 74.89% <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 0.7932 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | lsh_attention | PASS | 80.62% <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 0.8298 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | full | PASS | 78.56% <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 0.8124 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | lsh_attention | PASS_LOW | 50.92% <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 0.6661 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> |
+
+## 7.2 Parameter Reduction and Model Efficiency
+Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
+
+### Table 7.2: Parameter Counts and Compression Metrics
+| Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
+|---|---|---|---|---|---|---|
+| results/unified_lsh/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> |
+| results/unified_lsh/distilbert/summary.csv | distilbert | lsh | 66955010 <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 67544858 <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 589848 <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 0.9913x <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | lsh | 124441344 <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 125621040 <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 1179696 <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 0.9906x <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | lsh | 124647170 <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 132913970 <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 1179696 <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 0.9378x <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | full | 66955010 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 66955010 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | lsh_attention | 66955010 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 67544858 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 589848 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 0.9913x <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | full | 124441344 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 124441344 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | lsh_attention | 124441344 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 125621040 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 1179696 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 0.9906x <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | full | 124647170 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 124647170 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 0 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 1.0x <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | lsh_attention | 124647170 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 132913970 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 1179696 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 0.9378x <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> |
+
+## 7.3 Latency, Throughput, and VRAM Utilization
+Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
+
+### Table 7.3: Hardware Throughput and Memory Profiling
+| Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
+|---|---|---|---|---|---|
+| results/unified_lsh/distilbert/summary.csv | distilbert | full | 58798.36 tok/s <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 182.94 MB <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh/distilbert/summary.csv line 2 --> |
+| results/unified_lsh/distilbert/summary.csv | distilbert | lsh | 11836.03 tok/s <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 211.22 MB <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh/distilbert/summary.csv line 3 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | full | 25703.49 tok/s <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh/gpt2/summary.csv line 2 --> |
+| results/unified_lsh/gpt2/summary.csv | gpt2 | lsh | 12244.75 tok/s <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 569.05 MB <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh/gpt2/summary.csv line 3 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | full | 26260.68 tok/s <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh/roberta/summary.csv line 2 --> |
+| results/unified_lsh/roberta/summary.csv | roberta | lsh | 6004.49 tok/s <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 666.82 MB <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh/roberta/summary.csv line 3 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | full | 59452.43 tok/s <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 182.94 MB <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 2 --> |
+| results/unified_lsh_attention/distilbert/summary.csv | distilbert | lsh_attention | 11865.49 tok/s <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 211.22 MB <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh_attention/distilbert/summary.csv line 3 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | full | 27310.27 tok/s <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 793.19 MB <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 2 --> |
+| results/unified_lsh_attention/gpt2/summary.csv | gpt2 | lsh_attention | 12107.01 tok/s <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 569.05 MB <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | full | 27482.84 tok/s <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> |
+| results/unified_lsh_attention/roberta/summary.csv | roberta | lsh_attention | 5986.65 tok/s <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 666.82 MB <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> |
