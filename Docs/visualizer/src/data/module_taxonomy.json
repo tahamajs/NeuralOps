@@ -82,8 +82,8 @@
   "aegis_spectron_fp8": {
     "id": "aegis_spectron_fp8",
     "name": "AEGIS-Spectron-FP8: Tri-Branch Hybrid Attention with Token-Level ",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "H",
+    "subcategory": "quantization",
     "paradigm": "svd",
     "file": "Codes/framework/attentions/aegis_spectron_fp8.py"
   },
@@ -354,8 +354,8 @@
   "gqa": {
     "id": "gqa",
     "name": "Grouped-Query Attention (GQA): Memory-Efficient Shared Key-Value ",
-    "category": "B",
-    "subcategory": "sparse_approximate",
+    "category": "A",
+    "subcategory": "grouped_query",
     "paradigm": "sparse",
     "file": "Codes/framework/attentions/gqa.py"
   },
@@ -538,8 +538,8 @@
   "linformer_attention": {
     "id": "linformer_attention",
     "name": "Linformer Attention: Linear-Complexity Sequence Projection via Lo",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "B",
+    "subcategory": "linformer",
     "paradigm": "mla",
     "file": "Codes/framework/attentions/linformer_attention.py"
   },
@@ -689,7 +689,7 @@
   },
   "nha_attention": {
     "id": "nha_attention",
-    "name": "Native Hybrid Attention (NHA) \u2013 Production-Hardened.",
+    "name": "Native Hybrid Attention (NHA) – Production-Hardened.",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "mla",
@@ -713,9 +713,9 @@
   },
   "nystrom_attention": {
     "id": "nystrom_attention",
-    "name": "Nystr\u00f6m Attention: Low-Rank Landmark Approximation via Matrix Pse",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "name": "Nyström Attention: Low-Rank Landmark Approximation via Matrix Pse",
+    "category": "B",
+    "subcategory": "nystrom",
     "paradigm": "svd",
     "file": "Codes/framework/attentions/nystrom_attention.py"
   },
@@ -737,9 +737,9 @@
   },
   "performer_attention": {
     "id": "performer_attention",
-    "name": "Performer Attention \u2013 Fast Attention via Positive Orthogonal Rand",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "name": "Performer Attention – Fast Attention via Positive Orthogonal Rand",
+    "category": "B",
+    "subcategory": "performer",
     "paradigm": "mla",
     "file": "Codes/framework/attentions/performer_attention.py"
   },
@@ -761,7 +761,7 @@
   },
   "progressive_token_pruning": {
     "id": "progressive_token_pruning",
-    "name": "Progressive Token Pruning (PTP) \u2013 Production-Hardened.",
+    "name": "Progressive Token Pruning (PTP) – Production-Hardened.",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "mla",
@@ -825,7 +825,7 @@
   },
   "res_svd": {
     "id": "res_svd",
-    "name": "Spectral Residual Low-Rank SVD Attention (Res-SVD Attention) \u2013 Pr",
+    "name": "Spectral Residual Low-Rank SVD Attention (Res-SVD Attention) – Pr",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "svd",
@@ -1129,7 +1129,7 @@
   },
   "tt": {
     "id": "tt",
-    "name": "TokenCompressedAttention: A No\u2011Compression Baseline Wrapper for A",
+    "name": "TokenCompressedAttention: A No‑Compression Baseline Wrapper for A",
     "category": "B",
     "subcategory": "sparse_approximate",
     "paradigm": "sparse",
@@ -1545,7 +1545,7 @@
   },
   "hybrid_svd_layer": {
     "id": "hybrid_svd_layer",
-    "name": "Hybrid SVD Layer: Single\u2011Head SVD Approximation with Positional E",
+    "name": "Hybrid SVD Layer: Single‑Head SVD Approximation with Positional E",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "svd",
@@ -1689,7 +1689,7 @@
   },
   "nli_softmax": {
     "id": "nli_softmax",
-    "name": "NLI Softmax approximation \u2013 a fast, quantisation\u2011friendly softmax",
+    "name": "NLI Softmax approximation – a fast, quantisation‑friendly softmax",
     "category": "H",
     "subcategory": "quantization",
     "paradigm": "pruning",
@@ -1898,8 +1898,8 @@
   "sparsegpt": {
     "id": "sparsegpt",
     "name": "SparseGPT: One-Shot Second-Order Hessian-Guided Weight Pruning fo",
-    "category": "E",
-    "subcategory": "svd_low_rank",
+    "category": "G",
+    "subcategory": "pruning_sparsity",
     "paradigm": "svd",
     "file": "Codes/framework/compression_engine/sparsegpt.py"
   },
@@ -1953,7 +1953,7 @@
   },
   "tlinformer_attention": {
     "id": "tlinformer_attention",
-    "name": "TLinFormer: Exact linear\u2011time attention via low\u2011rank sequence pro",
+    "name": "TLinFormer: Exact linear‑time attention via low‑rank sequence pro",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "svd",
@@ -1993,7 +1993,7 @@
   },
   "uniql_compressor": {
     "id": "uniql_compressor",
-    "name": "UniQL: Joint low\u2011rank + quantisation using SVD and uniform quant.",
+    "name": "UniQL: Joint low‑rank + quantisation using SVD and uniform quant.",
     "category": "E",
     "subcategory": "svd_low_rank",
     "paradigm": "svd",
