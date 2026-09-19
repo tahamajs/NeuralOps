@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_a3",
     "performance": {
-        "accuracy_pct": 72.2,
-        "f1_score": 0.7192,
-        "f1_macro": 0.7192,
-        "precision": 0.7245,
-        "recall": 0.7197,
-        "val_loss": 0.7652,
+        "accuracy_pct": 72.3,
+        "f1_score": 0.7224,
+        "f1_macro": 0.7224,
+        "precision": 0.7235,
+        "recall": 0.7222,
+        "val_loss": 0.665,
         "status": "PASS",
-        "elapsed_s": 35.74
+        "elapsed_s": 19.83
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -71,8 +71,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 390.65,
-        "tokens_per_sec": 42676.31
+        "peak_vram_mb": 391.15,
+        "tokens_per_sec": 35109.56
     },
     "architecture": {
         "span_distribution": {},
@@ -85,5 +85,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T08:11:24.539250"
+    "timestamp": "2026-09-19T18:05:29.424751"
 }
