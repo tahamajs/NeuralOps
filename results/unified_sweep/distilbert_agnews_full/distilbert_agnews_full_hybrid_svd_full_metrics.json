@@ -2,13 +2,13 @@
     "model": "distilbert_agnews_full_hybrid_svd",
     "performance": {
         "accuracy_pct": 72.5,
-        "f1_score": 0.7168,
-        "f1_macro": 0.7168,
-        "precision": 0.7283,
-        "recall": 0.7164,
-        "val_loss": 0.716,
+        "f1_score": 0.7166,
+        "f1_macro": 0.7166,
+        "precision": 0.7286,
+        "recall": 0.7162,
+        "val_loss": 0.7163,
         "status": "PASS",
-        "elapsed_s": 47.49
+        "elapsed_s": 25.98
     },
     "efficiency": {
         "total_params_before": 66956548,
@@ -102,7 +102,7 @@
     },
     "hardware": {
         "peak_vram_mb": 287.07,
-        "tokens_per_sec": 12592.95
+        "tokens_per_sec": 45245.5
     },
     "architecture": {
         "span_distribution": {},
@@ -115,5 +115,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T20:01:46.090096"
+    "timestamp": "2026-09-19T20:29:21.161661"
 }
