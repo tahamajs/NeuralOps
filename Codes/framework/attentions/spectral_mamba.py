@@ -493,6 +493,8 @@ class SpectralMambaAttention(BaseAttention):
             )
         if attention_mask is None:
             attention_mask = kwargs.get("attention_mask")
+        if hidden_states.dim() == 2:
+            hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
@@ -596,6 +598,7 @@ class SpectralMambaAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("spectraformer_inject")
 def inject_spectral_mamba(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -604,6 +607,9 @@ def inject_spectral_mamba(
     **kwargs: Any,
 ) -> Optional[Any]:
     """Safely replace attention in model or layer with SpectralMambaAttention."""
+    # Support both `layer=` and `model=` call conventions
+    if layer is None and model is not None:
+        layer = model
     cfg = model_config or getattr(layer, "config", None)
 
     # 1. Whole model traversal support

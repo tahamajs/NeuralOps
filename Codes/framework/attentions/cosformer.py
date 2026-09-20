@@ -263,7 +263,8 @@ class CosformerAttention(BaseAttention):
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
         # Temperature scaling parameter (fixed to 1.0 to preserve ELU+1 kernel expressivity)
-        self.tau = nn.Parameter(torch.tensor(1.0), requires_grad=False)
+        # Registered as a buffer (not a parameter) so it does not inflate the parameter count.
+        self.register_buffer("tau", torch.tensor(1.0))
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
