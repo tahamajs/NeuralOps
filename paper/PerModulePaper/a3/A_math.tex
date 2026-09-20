@@ -89,28 +89,21 @@ Standard LayerNorm computes for an activation vector $x \in \mathbb{R}^d$:
 
 Let $\sigma_{\mathrm{pre}}^2$ denote the empirical per-channel activation variance before compression, and $\sigma_{\mathrm{post}}^2$ denote the empirical activation variance after low-rank factorization and projection. Because low-rank projection truncates energy along non-dominant singular directions, activations typically experience an attenuation of total scale, such that $\sigma_{\mathrm{post}} < \sigma_{\mathrm{pre}}$.
 
-To preserve the dynamic range and gradient magnitude received by subsequent sub-layers, the transformed representation must satisfy $\mathrm{LN}_{\mathrm{post}}(x_{\mathrm{post}}) \approx \mathrm{LN}_{\mathrm{pre}}(x_{\mathrm{pre}})$. Expanding the scale scaling factor:
+To preserve the dynamic range and gradient magnitude received by subsequent sub-layers, the effective gain after normalization should restore pre-compression representation variance: $\mathrm{LN}_{\mathrm{post}}(x_{\mathrm{post}}) \approx \mathrm{LN}_{\mathrm{pre}}(x_{\mathrm{pre}})$. Taking the ratio of scaling factors across normalized representations:
 
 \[
-\frac{\gamma_{\mathrm{new}}}{\sqrt{\sigma_{\mathrm{post}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma_{\mathrm{pre}}^2 + \epsilon}}
+\frac{\gamma_{\mathrm{new}}}{\sqrt{\sigma_{\mathrm{current}}^2 + \epsilon}} \approx \frac{\gamma}{\sqrt{\sigma_{\mathrm{target}}^2 + \epsilon}}
 \tag{A.10}
 \]
 
-Neglecting $\epsilon \ll \sigma^2$ for normalized transformer activations yields the exact closed-form update rule:
+Neglecting $\epsilon \ll \sigma^2$ for active transformer channels yields the closed-form gain compensation rule:
 
 \[
-\gamma_{\mathrm{new}} = \gamma \odot \frac{\sigma_{\mathrm{post}}}{\sigma_{\mathrm{pre}}}
+\gamma_{\mathrm{new}} = \gamma \odot \frac{\sigma_{\mathrm{target}}}{\sigma_{\mathrm{current}}}
 \tag{A.11}
 \]
 
-Similarly, when centering shifts occur, equating the constant terms $\beta_{\mathrm{new}} - \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{post}}}{\sigma_{\mathrm{post}}} = \beta - \gamma \odot \frac{\mu_{\mathrm{pre}}}{\sigma_{\mathrm{pre}}}$ gives the exact bias adjustment:
-
-\[
-\beta_{\mathrm{new}} = \beta + \gamma_{\mathrm{new}} \odot \frac{\mu_{\mathrm{post}} - \mu_{\mathrm{pre}}}{\sigma_{\mathrm{post}}} = \beta + \gamma \odot \frac{\mu_{\mathrm{post}} - \mu_{\mathrm{pre}}}{\sigma_{\mathrm{pre}}}
-\tag{A.12}
-\]
-
-In practice, applying this diagonal affine correction before fine-tuning prevents activation variance collapse and reduces post-factorization perplexity degradation by over 60\%.
+To prevent numerical runaway on outlier or near-dead channels, the implementation clamps the empirical correction factor $\mathrm{clamp}(\sigma_{\mathrm{target}}/\sigma_{\mathrm{current}}, 0.5, 2.0)$. In practice, applying this bounded diagonal affine correction before fine-tuning prevents activation variance collapse and reduces post-factorization perplexity degradation by over 60\%.
 
 \subsection{A.5 Streaming Covariance Correctness}
 
@@ -173,7 +166,7 @@ For a linear projection matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in
 Original Dense Projection & $d_\text{out} d_\text{in}$ & 589,824 & 589,824 & 589,824 \\
 A3 Low-Rank Factorization & $r(d_\text{out} + d_\text{in})$ & 98,304 & 196,608 & 196,608 \\
 A3 + LoRA Adapter ($r_L=16$) & $(r + r_L)(d_\text{out} + d_\text{in})$ & 122,880 & 221,184 & 221,184 \\
-Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ & \textbf{6.00$$\times$} (4.80$$\times$ w/ LoRA) & \textbf{3.00$$\times$} (2.67$$\times$ w/ LoRA) & \textbf{3.00$$\times$} (2.67$$\times$ w/ LoRA) \\
+Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ & \textbf{6.00$\times$} (4.80$\times$ w/ LoRA) & \textbf{3.00$\times$} (2.67$\times$ w/ LoRA) & \textbf{3.00$\times$} (2.67$\times$ w/ LoRA) \\
 \bottomrule
 \end{tabular}
 \caption{Parameter counting formulation and representative numerical values across benchmark transformer dimensions.}
@@ -204,8 +197,8 @@ $U$ & Left factor low-rank matrix & $d_\text{out} \times r$ \\
 $V$ & Right factor low-rank matrix & $r \times d_\text{in}$ \\
 $\Sigma$ & Singular value diagonal matrix & $r \times r$ \\
 $r$ & Low-rank compression target & scalar integer \\
-$r_{\mathrm{ceiling}}$ & Enforced parameter rank ceiling & scalar integer ($\le 256$) \\
-$\tau$ & Frobenius error acceptance threshold & scalar float ($0.40$) \\
+$r_{\mathrm{ceiling}}$ & Enforced parameter rank ceiling & scalar integer ($\min(\lfloor 0.9 r_{\mathrm{break\_even}}\rfloor, 320)$) \\
+$\tau$ & Frobenius error acceptance threshold & scalar float ($0.50$ default, $0.40$ baseline) \\
 $F$ & Empirical Fisher diagonal vector & $d_\text{in}$ \\
 $C_X$ & Outer-product activation covariance & $d_\text{in} \times d_\text{in}$ \\
 $x$ & Layer input activation vector & $d_\text{in}$ \\
@@ -216,7 +209,7 @@ $\gamma$ & LayerNorm affine scale vector & $d_\text{model}$ \\
 $\beta$ & LayerNorm affine bias vector & $d_\text{model}$ \\
 $\sigma_\text{target}$ & Pre-compression token standard deviation & scalar float \\
 $\sigma_\text{current}$ & Post-compression token standard deviation & scalar float \\
-$N$ & Number of calibration sequences & scalar integer ($1000$) \\
+$N$ & Number of calibration sequences & scalar integer ($500$) \\
 $L$ & Maximum token sequence length & scalar integer ($128$) \\
 $B$ & Forward evaluation batch size & scalar integer \\
 \bottomrule

@@ -27,6 +27,8 @@ numpy & 1.26.4 \\
 pandas & 2.2.2 \\
 \bottomrule
 \end{tabular}
+\caption{Production software packages and pinned runtime versions for experimental replication.}
+\label{tab:repro_dependencies}
 \end{table}
 
 \subsection{Running A3}
@@ -125,23 +127,7 @@ torch.backends.cudnn.benchmark = False
 
 \subsection{Expected Results}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Model} & \textbf{Validation Accuracy} & \textbf{Compression Status} \\
-\midrule
-DistilBERT & 90.02\% $\pm$ 0.5\% & PASS (+1.25M params saved) \\
-RoBERTa    & 83.26\% $\pm$ 0.5\% & PASS (+0.59M params saved) \\
-GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) \\
-\bottomrule
-\end{tabular}
-\caption{Expected benchmark results under the production configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$).}
-\label{tab:repro_expected}
-\end{table}
-
-Deviations $>$2\% suggest environmental differences.
+Replication of the production benchmark configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$) is expected to reproduce the primary findings detailed in Table~\ref{tab:main_sst2} and Appendix~\ref{sec:app_full_reproduction} (Table~\ref{tab:app_repro_expected}): DistilBERT attains 90.02\% $\pm$ 0.5\% validation accuracy with +1.25M parameters saved (PASS); RoBERTa achieves 83.26\% $\pm$ 0.5\% with +0.59M parameters saved (PASS); and GPT-2 exhibits causal degradation to 63.19\% $\pm$ 1.0\% with +0.53M parameters saved (FAIL). Observed deviations $>2.0\%$ typically indicate underlying differences in CUDA runtime floating-point environments or divergent tokenization lengths.
 
 \subsection{Data Availability}
 

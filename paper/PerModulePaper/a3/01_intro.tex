@@ -17,7 +17,7 @@ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times
 $r \ll \min(d_\text{in}, d_\text{out})$. The parameter count decreases from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
 compression ratio $\frac{r(d_\text{in} + d_\text{out})}{d_\text{in} d_\text{out}}$. 
-For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9$$\times$ reduction 
+For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9$\times$ reduction 
 (589,824 $\to$ 98,304 parameters).
 
 Classical SVD is optimal in an unweighted Frobenius norm sense:
@@ -71,3 +71,6 @@ Section 10 lists limitations. Section 11 concludes.
 
 
 \subsection{Notation}
+\label{sec:notation}
+
+Throughout this paper, bold uppercase letters (e.g., $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$) represent two-dimensional weight matrices and linear transformations. Bold lowercase letters (e.g., $x \in \mathbb{R}^{d_{\mathrm{in}}}$) denote input feature and activation vectors. The symbol $\odot$ denotes element-wise (Hadamard) product, while $\mathrm{diag}(v)$ constructs a diagonal matrix whose non-zero entries are given by vector $v$. The Frobenius matrix norm is denoted by $\|\cdot\|_F$, and the Euclidean vector norm is denoted by $\|\cdot\|_2$. For low-rank approximations, $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$ represent the left and right factor matrices corresponding to allocated rank $r \ll \min(d_{\mathrm{in}}, d_{\mathrm{out}})$. A consolidated catalog of all mathematical symbols, operator dimensions, and system parameters is summarized in Section~\ref{sec:notation_summary} and detailed in Appendix~\ref{sec:app_notation} (Table~\ref{tab:app_notation_summary}).

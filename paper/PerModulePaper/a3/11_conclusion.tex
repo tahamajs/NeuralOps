@@ -3,5 +3,10 @@
 
 We presented \textbf{A3} (Activation-Aware Adaptive factorization), a post-training low-rank compression framework that couples empirical Fisher sensitivity weighting, streaming covariance accumulation, enforced parameter rank ceilings ($r_{\mathrm{ceiling}} \le 256 < 384$), and closed-form LayerNorm affine recalibration. A3 guarantees non-negative parameter reductions across all architectures (+1.25M parameters saved on DistilBERT, +0.59M on RoBERTa, +0.53M on GPT-2) while sustaining downstream task representations. On SST-2 validation, DistilBERT preserves 90.02\% accuracy ($\Delta -0.69\%$) and RoBERTa attains 83.26\% (+4.70\%), while GPT-2 reveals the acute sensitivity of causal decoders (63.19\%, $\Delta -16.17\%$). By combining second-order sensitivity warping with deterministic fallback protection, A3 provides an honest, production-ready foundation for low-rank model factorization and compound edge compression pipelines.
 
+\subsection{Author Contributions}
+\label{sec:author_contributions}
+
+Taha Majs designed the A3 compression algorithms, implemented the PyTorch framework and streaming statistics collection engine, conducted empirical benchmark sweeps across transformer architectures, and authored the manuscript. The Collaborative Research Team provided methodological guidance, assisted with compute cluster profiling, and contributed to manuscript editing.
+
 \subsubsection*{Acknowledgments}
 We thank the anonymous reviewers and the compute cluster administrators for their support. This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.

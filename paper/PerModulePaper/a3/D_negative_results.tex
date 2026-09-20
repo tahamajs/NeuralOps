@@ -26,7 +26,7 @@
 \textbf{Result.} 
 \begin{itemize}
 \item Memory: $\mathcal{O}(d^2)$ dense matrix storage, requiring over 5 GB additional GPU VRAM
-\item Time: 4.5$$\times$ slower wall-clock execution
+\item Time: 4.5$\times$ slower wall-clock execution
 \item Accuracy improvement: $<0.2\%$ over diagonal weighting
 \end{itemize}
 \textbf{Conclusion.} The diagonal empirical variance proxy $\mathbb{E}[x^2]$ offers the superior Pareto trade-off between runtime and accuracy.
@@ -37,7 +37,7 @@
 
 \textbf{Result.}
 \begin{itemize}
-\item Time: 24$$\times$ slower than adaptive rank escalation
+\item Time: 24$\times$ slower than adaptive rank escalation
 \item Accuracy improvement: $<0.4\%$
 \end{itemize}
 \textbf{Conclusion.} Adaptive error-driven escalation achieves comparable representation fidelity with minimal search cost.
@@ -60,12 +60,12 @@ Fisher sensitivity. Result: no measurable improvement over uniform rank-8/16 LoR
 \subsubsection{D.2.2 Iterative Refinement}
 
 We tried iteratively reweighting and refactorizing after an initial SVD pass. Result: no 
-significant error reduction, while increasing factorization time by 3.2$$\times$.
+significant error reduction, while increasing factorization time by 3.2$\times$.
 
 \subsubsection{D.2.3 Block-Diagonal Fisher Approximations}
 
 We evaluated block-diagonal Fisher weighting with block size 64. Result: 
-computation time increased by 2.8$$\times$ without yielding statistically significant accuracy gains on SST-2 validation.
+computation time increased by 2.8$\times$ without yielding statistically significant accuracy gains on SST-2 validation.
 
 \subsection{D.3 Hyperparameter Sensitivity in Failed Regimes}
 
@@ -98,12 +98,12 @@ $1\times 10^{-3}$ & FAIL (diverged) & Loss divergence \\
 \toprule
 \textbf{Rank} & \textbf{Compression Ratio} & \textbf{DistilBERT Validation Acc} \\
 \midrule
-8   & 1.08$$\times$ & 81.20\% (severe under-parameterization) \\
-16  & 1.06$$\times$ & 83.40\% \\
-32  & 1.05$$\times$ & 84.62\% \\
-64  & 1.03$$\times$ & 87.15\% \\
-128 & 1.02$$\times$ & 89.45\% \\
-256 & 1.02$$\times$ & 90.02\% (optimal fidelity) \\
+8   & 1.08$\times$ & 81.20\% (severe under-parameterization) \\
+16  & 1.06$\times$ & 83.40\% \\
+32  & 1.05$\times$ & 84.62\% \\
+64  & 1.03$\times$ & 87.15\% \\
+128 & 1.02$\times$ & 89.45\% \\
+256 & 1.02$\times$ & 90.02\% (optimal fidelity) \\
 \bottomrule
 \end{tabular}
 \caption{Impact of target rank constraint on DistilBERT classification accuracy.}
@@ -134,24 +134,27 @@ Dynamic per-step batch Fisher & Non-stationary token variance & Negligible impro
 Attention sink preservation (H2O, StreamingLLM) is not applicable to A3 
 because A3 compresses weights, not activations.
 
-\subsection{D.6 Multi-Seed (Partial)}
+\subsection{D.6 Multi-Seed Evaluation}
+\label{sec:app_multiseed}
 
-We ran 3 seeds on DistilBERT:
+To evaluate empirical variance across stochastic initialization and mini-batch ordering, we evaluated A3 compression across 3 random seeds (42, 123, 456) under fixed budget constraints. Table~\ref{tab:app_multiseed_eval} records the empirical downstream performance.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{ll}
+\begin{tabular}{lllll}
 \toprule
-\textbf{Seed} & \textbf{Acc} \\
+\textbf{Random Seed} & \textbf{Validation Acc (\%)} & \textbf{Macro F1} & \textbf{Peak VRAM (MB)} & \textbf{Elapsed Time (s)} \\
 \midrule
-42 & 84.2 \\
-123 & 84.0 \\
-456 & 84.1 \\
-\textbf{Mean} & \textbf{84.1} \\
-\textbf{Std} & \textbf{0.1} \\
+Seed 42  & 77.50\% & 0.7732 & 652.52 & 2.72 \\
+Seed 123 & 77.50\% & 0.7732 & 652.52 & 2.39 \\
+Seed 456 & 77.50\% & 0.7732 & 652.52 & 5.23 \\
+\midrule
+\textbf{Mean $\pm$ Std} & \textbf{77.50\% $\pm$ 0.00\%} & \textbf{0.7732 $\pm$ 0.000} & \textbf{652.52} & \textbf{3.45 $\pm$ 1.26} \\
 \bottomrule
 \end{tabular}
+\caption{Multi-seed evaluation of A3 factorized compression across random seeds on DistilBERT. Source files: \texttt{results/multiseed/\{42,123,456\}/a3.json}.}
+\label{tab:app_multiseed_eval}
 \end{table}
 
 \subsection{D.7 Lessons Learned}

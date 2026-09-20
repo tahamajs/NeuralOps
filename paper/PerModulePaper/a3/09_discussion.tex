@@ -6,7 +6,7 @@
 
 Our extensive benchmarking across DistilBERT, RoBERTa-base, and GPT-2 yields three foundational insights for the post-training compression literature:
 
-\textbf{Empirical Realism Versus Nominal Ratios.} A common pathology in efficient deep learning is reporting isolated operator compression ratios (e.g., $4$\times$ or $8$\times$ reduction on individual attention projections) while ignoring the non-compressible footprint of embeddings, normalization layers, and classifier heads. At the full-model level, A3 demonstrates that genuine, verified parameter reduction without retraining is inherently modest under tight accuracy preservation budgets: we achieve a 1.02$$\times$ parameter reduction (+1,245,696 parameters removed on DistilBERT, +589,824 on RoBERTa, +525,312 on GPT-2) while sustaining less than 1\% accuracy degradation on encoder architectures. Crucially, enforcing a strict rank ceiling below the break-even threshold ($r_{\mathrm{ceiling}} \le 256 < 384$) prevents parameter expansion, ensuring every factorized layer contributes non-negative parameter savings.
+\textbf{Empirical Realism Versus Nominal Ratios.} A common pathology in efficient deep learning is reporting isolated operator compression ratios (e.g., $4\times$ or $8\times$ reduction on individual attention projections) while ignoring the non-compressible footprint of embeddings, normalization layers, and classifier heads. At the full-model level, A3 demonstrates that genuine, verified parameter reduction without retraining is inherently modest under tight accuracy preservation budgets: we achieve a 1.02$\times$ parameter reduction (+1,245,696 parameters removed on DistilBERT, +589,824 on RoBERTa, +525,312 on GPT-2) while sustaining less than 1\% accuracy degradation on encoder architectures. Crucially, enforcing a strict rank ceiling below the break-even threshold ($r_{\mathrm{ceiling}} \le 256 < 384$) prevents parameter expansion, ensuring every factorized layer contributes non-negative parameter savings.
 
 \textbf{Decisive Role of Activation Manifolds.} Standard SVD assumes isotropic activation coordinates, wasting capacity on dormant features. By incorporating the empirical Fisher diagonal, A3 rescales the singular value spectrum to prioritize high-energy feature outliers, reducing relative reconstruction error by over 30\% and securing a $+3.60\%$ to $+8.04\%$ accuracy preservation margin over unweighted SVD.
 
@@ -36,12 +36,12 @@ Table~\ref{tab:published_comparison} benchmarks A3 against published compression
 \toprule
 \textbf{Compression Method} & \textbf{Underlying Mechanism} & \textbf{Ratio} & \textbf{SST-2 Acc} & \textbf{Retraining Cost} & \textbf{Data Requirement} \\
 \midrule
-ALBERT-base & Cross-layer parameter sharing & 3.5$$\times$ & 89.40\% & Full pre-training & Pre-training corpus (16GB) \\
-DistilBERT & Sequence-level distillation & 1.6$$\times$ & 90.70\% & 90 GPU-hours & Full corpus + teacher \\
-TinyBERT & Task-specific transformer distill & 7.5$$\times$ & 87.50\% & 35 GPU-hours & Extensive task augmentation \\
-FWSVD (Fisher SVD) & Second-order matrix factorization & 2.0$$\times$ & 88.20\% & Zero retraining & Unlabeled calibration set \\
-DRONE & Data-aware singular projection & 1.92$$\times$ & 89.10\% & Zero retraining & Unlabeled calibration set \\
-\textbf{A3 (Ours, $r=128$)} & \textbf{Adaptive Fisher SVD + LN Recal} & \textbf{1.02$$\times$} & \textbf{90.02\%} & \textbf{28 s (LoRA only)} & \textbf{500 unlabeled samples} \\
+ALBERT-base & Cross-layer parameter sharing & 3.5$\times$ & 89.40\% & Full pre-training & Pre-training corpus (16GB) \\
+DistilBERT & Sequence-level distillation & 1.6$\times$ & 90.70\% & 90 GPU-hours & Full corpus + teacher \\
+TinyBERT & Task-specific transformer distill & 7.5$\times$ & 87.50\% & 35 GPU-hours & Extensive task augmentation \\
+FWSVD (Fisher SVD) & Second-order matrix factorization & 2.0$\times$ & 88.20\% & Zero retraining & Unlabeled calibration set \\
+DRONE & Data-aware singular projection & 1.92$\times$ & 89.10\% & Zero retraining & Unlabeled calibration set \\
+\textbf{A3 (Ours, $r=128$)} & \textbf{Adaptive Fisher SVD + LN Recal} & \textbf{1.02$\times$} & \textbf{90.02\%} & \textbf{28 s (LoRA only)} & \textbf{500 unlabeled samples} \\
 \bottomrule
 \end{tabular}
 \caption{Comparison of A3 against published compression paradigms on SST-2. Sources: Published literature baselines and \texttt{results/a3\_tests/fixed\_v4/distilbert\_sst2\_a3\_full\_metrics.json}.}
@@ -52,7 +52,7 @@ While knowledge distillation paradigms achieve higher nominal ratios, they deman
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_9_1.pdf}
+\includegraphics[width=\columnwidth]{figures/accuracy_vs_compression.pdf}
 \caption{Downstream accuracy versus whole-model parameter compression ratio trade-off for A3 versus published compression paradigms.}
 \label{fig:comparison_methods}
 \end{figure}

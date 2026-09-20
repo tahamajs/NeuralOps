@@ -97,16 +97,16 @@ V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\left(\frac{1}{\sqrt{F + \ep
 \end{equation}
 Finally, singular values are symmetrically distributed across factors via $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$, yielding the factorized operator $y = (x V^\top) U^\top + b$.
 
-\subsubsection{Scale Normalization}
-
-To prevent extreme weighting values, we optionally normalize $F$:
-
 \[
-F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
-\tag{4.9}
+\mathbf{s} = \sqrt{\mathrm{clamp}(F, \min=10^{-8}) + \epsilon}, \qquad \epsilon = 10^{-6}
+\tag{4.8}
 \]
-
-where dividing by the RMS energy prevents artificial condition number inflation.
+When scale normalization is enabled (\texttt{normalize\_scale=True}), the scale vector is normalized by its root-mean-square magnitude and dynamically clamped to avoid conditioning degradation:
+\begin{equation}
+\mathbf{s}_{\mathrm{norm}} = \mathrm{clamp}\!\left(\frac{\mathbf{s}}{\|\mathbf{s}\|_2 / \sqrt{d_{\mathrm{in}}} + 10^{-8}},\, 10^{-3},\, 10^{3}\right)
+\tag{4.9}
+\end{equation}
+and the weighted weight matrix is constructed via $W_{\mathrm{weighted}} = W \cdot \mathrm{diag}(\mathbf{s}_{\mathrm{norm}})$.
 
 \subsubsection{Safety Fallback}
 
@@ -122,14 +122,21 @@ Validation computes the relative reconstruction error:
 \mathrm{Err}(W, U, V) = \frac{\|W - U V\|_F}{\|W\|_F}
 \tag{4.10}
 \end{equation}
-A factorized layer is accepted if $\mathrm{Err} \le \tau = 0.40$.
+A factorized layer is accepted if $\mathrm{Err} \le \tau$, where $\tau = 0.50$ is the operational default (with conservative baseline $\tau = 0.40$).
 
-If the error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}} = 256$, recomputing the SVD until convergence or fallback:
+To prevent parameter expansion ($r(d_{\mathrm{in}} + d_{\mathrm{out}}) \ge d_{\mathrm{in}} d_{\mathrm{out}}$), A3 calculates the theoretical break-even rank $r_{\mathrm{break\_even}} = \frac{d_{\mathrm{in}} d_{\mathrm{out}}}{d_{\mathrm{in}} + d_{\mathrm{out}}}$ (384 for $768 \times 768$ projections) and enforces a strict ceiling:
 \begin{equation}
-r_{k+1} = \min\!\left(r_{\mathrm{ceiling}},\, r_k + \max\!\left(8,\, \left\lfloor\frac{\min(d_{\mathrm{in}}, d_{\mathrm{out}}) - r_k}{K - k}\right\rfloor\right)\right)
+r_{\mathrm{ceiling}} = \min\!\left(\lfloor 0.90 \cdot r_{\mathrm{break\_even}} \rfloor,\, 320\right)
+\tag{4.10a}
+\end{equation}
+guaranteeing a minimum 10\% parameter savings over dense weights on factorized layers (e.g., $r_{\mathrm{ceiling}} = 320$ for standard 768-dimensional projections; bounded by 256 in conservative configurations).
+
+If the initial factorization error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}}$, recomputing the SVD until convergence or fallback:
+\begin{equation}
+r_{k+1} = \min\!\left(r_{\mathrm{ceiling}},\, r_k + \max\!\left(16,\, \left\lfloor\frac{r_{\mathrm{ceiling}} - r_k}{\max(1, K - k)}\right\rfloor\right)\right)
 \tag{4.11}
 \end{equation}
-where $K$ denotes the maximum retry count. Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
+where $K$ denotes the maximum retry count (default $K=5$). Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
 
 \subsection{Phase 5: LayerNorm Recalibration}
 \label{sec:layernorm_recalibration}
@@ -145,16 +152,12 @@ non-unit variance even after normalization. The LayerNorm computes:
 \tag{4.12}
 \]
 
-If the input variance changed from $\sigma_\text{old}$ to $\sigma_\text{new}$, the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\text{old}$. We compensate by adjusting $\gamma$:
-
-\[
-\gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{current}}{\sigma_\text{target}}
+If the input feature standard deviation shifts from the pre-compression target $\sigma_{\mathrm{target}}$ to post-factorization $\sigma_{\mathrm{current}}$, the unadjusted affine scale vector $\gamma$ miscalibrates downstream feature dynamic ranges. When pre-compression target statistics are recorded, A3 updates the affine parameter $\gamma$ in closed form via bounded ratio scaling:
+\begin{equation}
+\gamma_{\mathrm{new}} = \gamma \odot \mathrm{clamp}\!\left(\frac{\sigma_{\mathrm{target}}}{\sigma_{\mathrm{current}}},\, 0.5,\, 2.0\right)
 \tag{4.13}
-\]
-
-where $\sigma_\text{target}$ is the pre-compression standard deviation and $\sigma_\text{current}$ is the post-compression standard deviation. The recalibration protocol records $\sigma_\text{target}^{(\ell)}$ across all normalization modules during initial calibration, evaluates $\sigma_\text{current}^{(\ell)}$ immediately post-factorization, and updates affine scales in closed form according to (4.13).
-This is applied only if \texttt{recalibrate\_ln = True} and calibration sources are 
-available.
+\end{equation}
+When target standard deviations are not pre-cached, the update adopts a dampened inverse-variance scaling $\gamma_{\mathrm{new}} = \gamma \cdot (0.8 + 0.2 \cdot \mathrm{clamp}(1.0/\sigma_{\mathrm{current}}, 0.5, 2.0))$. Normalization modules in classification heads, poolers, and embeddings are strictly protected from modification to prevent task drift. Recalibration is executed whenever \texttt{recalibrate\_ln = True} and calibration sources are present.
 
 \subsection{Algorithm and Complexity Summary}
 
