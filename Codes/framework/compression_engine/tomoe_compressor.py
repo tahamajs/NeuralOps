@@ -497,6 +497,8 @@ class ToMoECompressor(BaseCompressor):
         skipped_layers = []
         layer_details = {}
 
+        seen_weight_ptrs: Set[int] = set()
+
         for name, module in list(self.model.named_modules()):
             if not self._is_target(name):
                 continue
@@ -511,6 +513,15 @@ class ToMoECompressor(BaseCompressor):
                 logger.warning("ToMoE: Skipping unsupported layer type %s for %s", type(base_mod).__name__, name)
                 skipped_layers.append((name, f"unsupported_type_{type(base_mod).__name__}"))
                 continue
+
+            # H20: Detect and protect tied weights (e.g. wte and lm_head sharing same storage)
+            if hasattr(base_mod, "weight") and base_mod.weight is not None:
+                w_ptr = base_mod.weight.data_ptr()
+                if w_ptr in seen_weight_ptrs:
+                    logger.warning("ToMoE: Skipping tied module %s with shared weight storage (H20)", name)
+                    skipped_layers.append((name, "tied_weight_shared_storage"))
+                    continue
+                seen_weight_ptrs.add(w_ptr)
 
             # Determine weights and feature shapes ensuring orientation is (out_features, in_features)
             if is_conv1d:

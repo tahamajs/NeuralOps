@@ -264,7 +264,7 @@ class SliceGPTCompressor(BaseCompressor):
                     total_channels_pruned += (d_in - r)
 
                 final_w = W_pruned.t() if is_conv1d else W_pruned
-                base_mod.weight.data = final_w.to(dtype=dtype, device=device)
+                base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
                 compressed_layer = base_mod
                 # Preserve existing LoRA adapter weights if the source module has them
                 if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
@@ -290,12 +290,13 @@ class SliceGPTCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        # Fix 5: Store max_error and fallback_to_original in stats
+        # Fix 5: Store max_error and fallback_to_original in stats (B13: explicit components_zeroed)
         stats.update({
             "sliced_layers": sliced_layers_count,
             "sparsity_target": self.sparsity,
             "non_uniform": self.non_uniform,
-            "total_channels_pruned": total_channels_pruned,
+            "components_zeroed": total_channels_pruned,
+            "total_channels_pruned": total_channels_pruned,  # Backwards compatibility alias
             "layer_errors": self.layer_errors,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,

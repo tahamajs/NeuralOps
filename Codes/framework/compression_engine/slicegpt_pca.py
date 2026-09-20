@@ -264,18 +264,29 @@ class SliceGPTPCACompressor(BaseCompressor):
         return True
 
     def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
-        """Capture activations across target layers using forward hooks with safe fallback."""
+        """Capture streaming empirical covariance across target layers to eliminate memory spikes (H21)."""
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        sum_x: Dict[str, torch.Tensor] = {}
+        sum_xx: Dict[str, torch.Tensor] = {}
+        counts: Dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
             def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
-                    if layer_name not in activations:
-                        activations[layer_name] = []
-                    activations[layer_name].append(inp.cpu())
+                    x_flat = inp.reshape(-1, inp.shape[-1]).float()
+                    n = x_flat.shape[0]
+                    s_x = x_flat.sum(dim=0, keepdim=True).cpu()
+                    s_xx = torch.matmul(x_flat.T, x_flat).cpu()
+                    if layer_name not in sum_x:
+                        sum_x[layer_name] = s_x
+                        sum_xx[layer_name] = s_xx
+                        counts[layer_name] = n
+                    else:
+                        sum_x[layer_name] += s_x
+                        sum_xx[layer_name] += s_xx
+                        counts[layer_name] += n
             return hook
 
         try:
@@ -312,14 +323,13 @@ class SliceGPTPCACompressor(BaseCompressor):
                 except Exception as e:
                     logger.warning(f"copy_weights failed: {e}")
 
-        aggregated: Dict[str, torch.Tensor] = {}
-        for name, act_list in activations.items():
-            if act_list:
-                try:
-                    aggregated[name] = torch.cat(act_list, dim=0)
-                except Exception as e_cat:
-                    logger.debug('Failed to concatenate activations for %s: %s', name, e_cat)
-        return aggregated
+        cov_map: Dict[str, torch.Tensor] = {}
+        for name, n in counts.items():
+            if n > 1:
+                mu = sum_x[name] / float(n)
+                cov = (sum_xx[name] - float(n) * torch.matmul(mu.T, mu)) / float(max(1, n - 1))
+                cov_map[name] = cov
+        return cov_map
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """
@@ -364,28 +374,19 @@ class SliceGPTPCACompressor(BaseCompressor):
                     W = raw_w.contiguous().float()
                 d_out, d_in = W.shape
 
-                act = activations_map.get(name, None)
-                if act is not None and act.numel() > 0:
-                    act_flat = act.reshape(-1, act.shape[-1]).float()
-                    if act_flat.shape[-1] == d_in and act_flat.shape[0] > 1:
-                        mean = torch.mean(act_flat, dim=0, keepdim=True)
-                        centered = act_flat - mean
-                        cov = torch.matmul(centered.T, centered) / max(centered.shape[0] - 1, 1)
-                        cov = cov + 1e-5 * torch.eye(d_in)
-                        try:
-                            eigvals, V = torch.linalg.eigh(cov)
-                            idx = torch.argsort(eigvals, descending=True)
-                            eigvals = eigvals[idx]
-                            V = V[:, idx]
-                            eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in), p='fro').item()
-                            if eye_diff > 1e-2 or torch.isnan(V).any():
-                                raise ValueError(f'Eigh basis non-orthogonal (diff={eye_diff:.4f})')
-                        except Exception as e_eigh:
-                            logger.debug('SliceGPTPCA: eigh failed on %s (%s); fallback to QR.', name, e_eigh)
-                            H = torch.randn(d_in, d_in)
-                            V, _ = torch.linalg.qr(H)
-                            eigvals = torch.ones(d_in)
-                    else:
+                cov_mat = activations_map.get(name, None)
+                if cov_mat is not None and cov_mat.shape[0] == d_in and cov_mat.shape[1] == d_in:
+                    cov = cov_mat.to(device=device, dtype=torch.float32) + 1e-5 * torch.eye(d_in, device=device)
+                    try:
+                        eigvals, V = torch.linalg.eigh(cov)
+                        idx = torch.argsort(eigvals, descending=True)
+                        eigvals = eigvals[idx]
+                        V = V[:, idx]
+                        eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in), p='fro').item()
+                        if eye_diff > 1e-2 or torch.isnan(V).any():
+                            raise ValueError(f'Eigh basis non-orthogonal (diff={eye_diff:.4f})')
+                    except Exception as e_eigh:
+                        logger.debug('SliceGPTPCA: eigh failed on %s (%s); fallback to QR.', name, e_eigh)
                         H = torch.randn(d_in, d_in)
                         V, _ = torch.linalg.qr(H)
                         eigvals = torch.ones(d_in)
