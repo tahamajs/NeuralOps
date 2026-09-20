@@ -1,13 +1,13 @@
 \section{Methodological Formulation and Execution Pipeline}
 
 \subsection{Algorithmic Overview}
-The \texttt{adaptivecompressor} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:
+The \texttt{AdaptiveRanks} module executes a structured transformation replacing monolithic dense projections with mathematically optimized low-rank submodules. The pipeline operates in five consecutive phases:
 \begin{enumerate}
-\item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
-\item \textbf{Decomposition / Sparsification:} Apply SVD spectral factoring or proximal shrinkage.
-\item \textbf{Constraint Projection:} Enforce rank truncation via cumulative energy $\tau$ or 2:4 tensor-core masks.
-\item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches.
-\item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches safety limits.
+  \item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
+  \item \textbf{Decomposition:} Apply SVD spectral factoring under activation covariance whitening.
+  \item \textbf{Constraint Projection:} Enforce dynamic rank truncation via cumulative energy threshold $\tau = 0.92$.
+  \item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches for parameter-efficient recovery.
+  \item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches limits.
 \end{enumerate}
 
 \begin{figure*}[t]
@@ -19,17 +19,63 @@ The \texttt{adaptivecompressor} module executes a structured transformation repl
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|  Phase 1: SVD / Proximal Factorization: W = U Sigma V^T OR S_lambda(W)        |
-|  Phase 2: Energy Rank / Structured Mask: E(r) >= tau OR Pi_{2:4}(W)           |
-|  Phase 3: Symmetric Splitting: U_r = U Sigma^{1/2}, V_r = Sigma^{1/2} V^T     |
+|  Phase 1: Activation Covariance Whitening: M = W * Cov(X)^{1/2}               |
+|  Phase 2: Energy-Thresholded SVD: SVD(M) = U Sigma V^T, E(r) >= tau (0.92)    |
+|  Phase 3: Symmetrical Splitting: U_r = U Sigma^{1/2},                         |
+|                                  V_r = (Sigma^{1/2} V^T) * Cov(X)^{-1/2}      |
 |  Phase 4: Adapter Binding: W_eff = U_r V_r + (alpha / r) B A (B init to 0)    |
 |  Phase 5: Fallback Guardrail: If ||W - W_eff||_F / ||W||_F > max_err -> Dense |
 +-------------------------------------------------------------------------------+
 \end{verbatim}
-\caption{End-to-end execution and safety verification pipeline of \texttt{adaptivecompressor}.}
+\caption{End-to-end execution and safety verification pipeline of \texttt{AdaptiveRanks}.}
 \end{figure*}
 
 \subsection{Formal Mathematical Derivations}
+
+\subsubsection{Activation Covariance Whitening}
+\label{sec:covariance_whitening}
+The core algorithmic feature of \texttt{AdaptiveRanks} is preconditioning projection matrices by the empirical activation covariance $\operatorname{Cov}(X)$ collected over calibration tokens:
+\begin{equation}
+\operatorname{Cov}(X) = \frac{1}{N} \sum_{i=1}^N X_i^\top X_i
+\end{equation}
+To ensure numerical stability across layers with ill-conditioned activation distributions, we regularize the covariance matrix:
+\begin{equation}
+\operatorname{Cov}_{\text{reg}}(X) = \operatorname{Cov}(X) + \lambda_{\text{reg}} I, \quad \lambda_{\text{reg}} = \max(10^{-4} \cdot \bar{\sigma}_{\text{diag}}, 10^{-6})
+\end{equation}
+We compute the symmetric square-root and inverse square-root via symmetric eigendecomposition ($\operatorname{eigh}$):
+\begin{align}
+\operatorname{Cov}_{\text{reg}}(X) &= Q \Lambda Q^\top, \quad \tilde{\lambda}_i = \max(\lambda_i, 10^{-6}) \\
+\operatorname{Cov}(X)^{1/2} &= Q \operatorname{diag}\left(\sqrt{\tilde{\lambda}_1}, \dots, \sqrt{\tilde{\lambda}_d}\right) Q^\top \\
+\operatorname{Cov}(X)^{-1/2} &= Q \operatorname{diag}\left(\frac{1}{\sqrt{\tilde{\lambda}_1}}, \dots, \frac{1}{\sqrt{\tilde{\lambda}_d}}\right) Q^\top
+\end{align}
+The weight matrix is whitened before singular value decomposition:
+\begin{equation}
+M = W \cdot \operatorname{Cov}(X)^{1/2}
+\end{equation}
+where $M$ concentrates representational energy along principal activation directions.
+
+\subsubsection{Energy-Thresholded Adaptive Rank Selection}
+\label{sec:adaptive_rank_selection}
+Following singular value decomposition $\operatorname{SVD}(M) = U \Sigma V^\top$, \texttt{AdaptiveRanks} dynamically determines the target rank $r^*$ according to cumulative singular value energy thresholding at $\tau = 0.92$:
+\begin{equation}
+\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}
+\end{equation}
+The optimal target rank satisfies:
+\begin{equation}
+r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge 0.92 \right\}
+\end{equation}
+subject to an architectural minimum rank floor:
+\begin{equation}
+r_{\min} = \max\left(16, \lfloor 0.15 \cdot \min(d_{\text{in}}, d_{\text{out}})\rfloor, \lfloor 0.10 \cdot d_{\text{out}}\rfloor\right)
+\end{equation}
+and bounded by non-expansion constraints:
+\begin{equation}
+r_{\max} = \min\left(\min(d_{\text{in}}, d_{\text{out}}) - 1, \left\lfloor 0.75 \cdot \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}\right\rfloor\right)
+\end{equation}
+The factor matrices are obtained through symmetric square-root splitting and coordinate restoration:
+\begin{equation}
+U_r = U_{:, :r^*} \Sigma_{:r^*}^{1/2}, \quad V_r = \left(\Sigma_{:r^*}^{1/2} V_{:, :r^*}^\top\right) \cdot \operatorname{Cov}(X)^{-1/2}
+\end{equation}
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
@@ -49,46 +95,16 @@ The forward evaluation transforms from monolithic matrix multiplication into two
 \tilde{Z} = (X V_r^\top) U_r^\top + b
 \end{equation}
 
-\subsubsection{Cumulative Spectral Energy}
-Rank selection is governed by cumulative squared singular values:
-\begin{equation}
-\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}
-\end{equation}
-
-\subsubsection{Energy-Thresholded Optimal Rank}
-For target energy threshold $\tau \in (0, 1)$, the optimal rank $r^*$ satisfies:
-\begin{equation}
-r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}
-\end{equation}
-
-\subsubsection{Soft-Thresholding Shrinkage}
-In proximal sparsity modes, the $\ell_1$ proximal operator executes element-wise:
-\begin{equation}
-\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max(|W| - \lambda, 0)
-\end{equation}
-
-\subsubsection{Hardware-Aligned 2:4 Structured Sparsity}
-For NVIDIA tensor core execution, each contiguous 4-element block is projected to 50\% sparsity:
-\begin{equation}
-\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2
-\end{equation}
-
-\subsubsection{Iterative Proximal Update}
-Calibration updates parameters via projected gradient steps:
-\begin{equation}
-W^{(t+1)} = \Pi_{\Omega}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)
-\end{equation}
-
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
 \begin{equation}
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
 \end{equation}
 
-\subsubsection{Zero-Residual Initialization}
-Initial equivalence with unadapted weights is guaranteed by zero initialization:
+\subsubsection{Residual Adapter Initialization}
+Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
 \begin{equation}
-A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0
+A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
 \end{equation}
 
 \subsubsection{Relative Frobenius Reconstruction Error}
@@ -98,7 +114,7 @@ Post-compression parameter distortion is evaluated against the uncompressed matr
 \end{equation}
 
 \subsubsection{Automated Guardrail Decision Rule}
-Should the relative error breach pre-specified threshold $\delta_{\text{max}}$:
+Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
 \begin{equation}
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
 \end{equation}
@@ -117,37 +133,43 @@ W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{
 
 \subsection{Detailed Algorithmic Execution Trace}
 
-\textbf{Algorithm 1:} Complete Structured Execution of \texttt{AdaptiveTransformerCompressor}
+\textbf{Algorithm 1:} Complete Structured Execution of \texttt{AdaptiveRanks}
 \begin{lstlisting}[language=Python]
 # Phase 1: Conditioning and norm evaluation
 W_f = layer.weight.data.float()
 frob_norm = torch.linalg.norm(W_f)
 assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
-# Phase 2: Core mathematical decomposition
-if is_svd_factorization:
-    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
-    r = torch.searchsorted(cum_energy, tau).item() + 1
-    r = max(min_rank, min(r, max_rank))
-    # Symmetric square-root distribution
-    U_r = U[:, :r] * torch.sqrt(S[:r])
-    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-elif is_proximal_sparsity:
-    W_curr = W_f.clone()
-    for step in range(num_steps):
-        # Soft-thresholding
-        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
-        # Structural 2:4 or block projection
-        W_proj = apply_structural_mask(W_soft, sparsity_target)
-        W_curr = W_curr - eta * (W_curr - W_proj)
-    W_r = W_proj
+# Phase 2: Activation covariance whitening
+if cov is not None:
+    cov_reg = cov + lambda_reg * torch.eye(d_in)
+    eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(torch.clamp(eigvals, min=1e-6))) @ eigvecs.T
+    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(torch.clamp(eigvals, min=1e-6))) @ eigvecs.T
+    M = torch.matmul(W_f, cov_sqrt)
+else:
+    M = W_f
+    cov_inv_sqrt = torch.eye(d_in)
 
-# Phase 3: Adapter binding & zero-initialization
-lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+# Phase 3: Energy-thresholded SVD (tau = 0.92)
+U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+idx = torch.where(cum_energy >= 0.92)[0]
+r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
+r = max(r_floor, min(r, max_allowed_rank))
+
+# Symmetric square-root distribution & coordinate restoration
+sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+
+# Phase 4: LoRA adapter binding & Kaiming uniform init
+k = 1.0 / math.sqrt(d_in)
+lora_A = nn.Parameter(torch.empty(lora_r, d_in).uniform_(-k, k))
 lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-# Phase 4: Fallback verification
+# Phase 5: Fallback verification
+W_reconstructed = torch.matmul(U_r, V_r)
 recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
 if recon_err > max_error_ceiling or torch.isnan(recon_err):
     logger.warning('Triggering safety fallback to uncompressed layer')
@@ -161,21 +183,18 @@ Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
 \end{equation}
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}
-\end{equation}
-For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}
-\end{equation}
-When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0$\times$.
+\begin{align}
+\rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\
+\rho_{\text{FLOPs}}^{\text{sym}} &= \frac{d}{2(r)} \quad \text{when } d_{\text{in}} = d_{\text{out}} = d
+\end{align}
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Operation} & \textbf{Standard} & \textbf{adaptive\_compressor} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
+\textbf{Operation} & \textbf{Standard} & \textbf{AdaptiveRanks} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
 \midrule
 Q Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
 K Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
@@ -190,11 +209,11 @@ LoRA Residual & None & $2 \times (d \times r_L)$ & $\mathcal{O}(2r_L d)$ & $0.02
 \end{table}
 
 \subsection{Gradient Propagation and Backpropagation Dynamics}
-Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$ and $V_r$ are derived as:
+Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$, $V_r$, and activation inputs $X$ are derived as:
 \begin{align}
 \frac{\partial \mathcal{L}}{\partial U_r} &= \sum_{b=1}^{\mathcal{B}} (\delta Y_b)^\top (X_b V_r^\top) \in \mathbb{R}^{d_{\text{out}} \times r} \\
 \frac{\partial \mathcal{L}}{\partial V_r} &= \sum_{b=1}^{\mathcal{B}} ((\delta Y_b) U_r)^\top X_b \in \mathbb{R}^{r \times d_{\text{in}}} \\
-\frac{\partial \mathcal{L}}{\partial p{5cm}} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
+\frac{\partial \mathcal{L}}{\partial X} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
 \end{align}
 When factor matrices are kept frozen during inference recovery, computing gradient caches for base factors is bypassed entirely, cutting backward memory by up to $65\%$.
 
@@ -250,27 +269,9 @@ Dividing both sides by $\|W\|_F^2$:
 \[
 \frac{\|W - W_r\|_F^2}{\|W\|_F^2} = 1 - \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{i=1}^{\rho} \sigma_i^2} = 1 - \mathcal{E}(r)
 \]
-Since $r$ is chosen such that $\mathcal{E}(r) \ge \tau$, we have:
+Since rank $r$ satisfies $\mathcal{E}(r) \ge \tau$, we obtain:
 \[
-\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}
+\frac{\|W - W_r\|_F}{\|W\|_F} = \sqrt{1 - \mathcal{E}(r)} \le \sqrt{1 - \tau}
 \]
-This completes the proof. $\square$
-\end{proof}
-
-\textbf{Theorem 2 (Initial Inference Invariance under Zero Residual).} \textit{Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.}
-
-\begin{proof}
-At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
-\[
-B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
-\]
-Consequently:
-\[
-W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r
-\]
-Hence, output activations satisfy:
-\[
-Y = X W_{\text{eff}}^\top + b = X W_r^\top + b
-\]
-The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$
+which completes the proof.
 \end{proof}

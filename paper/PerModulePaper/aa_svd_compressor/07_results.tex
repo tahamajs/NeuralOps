@@ -1,55 +1,64 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_aasvdcompressor} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_aasvdcompressor} details empirical evaluation metrics across target backbones on SST-2, MNLI, and AG News benchmarks.
 
 \begin{table*}[t]
 \centering
 \small
 \begin{tabular}{llcccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Task / Benchmark} & \textbf{Backbone Architecture} & \textbf{Baseline Acc} & \textbf{AASVD Acc} & \textbf{$\Delta$ Acc} & \textbf{F1 Score} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & PASS & Comp 30.96x & Mem -0.0\% \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & PASS & Comp 30.96x & Mem -0.0\% \\
+SST-2 (Binary Sentiment) & DistilBERT-base & 90.71\% & 88.30\% & -2.41\% & 0.8864 \\
+SST-2 (Binary Sentiment) & RoBERTa-base & 78.56\% & 81.08\% & +2.52\% & 0.8345 \\
+SST-2 (Binary Sentiment) & GPT-2 Small & 79.36\% & 65.71\% & -13.65\% & 0.7433 \\
+MNLI (Matched 3-Class NLI) & DistilBERT-base & 81.80\% & 68.60\% & -13.20\% & 0.6842 \\
+AG News (4-Way Topic) & DistilBERT-base & 94.26\% & 92.10\% & -2.16\% & 0.9181 \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aasvdcompressor}.}
+\caption{Empirical validation accuracy and classification metrics for \texttt{AASVD} across diverse model families and reasoning tasks. Sources: \texttt{results/unified\_sweep/distilbert/distilbert\_sst2\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/roberta/roberta-base\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/gpt2/gpt2\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/distilbert\_mnli\_full/distilbert\_mnli\_full\_aasvd\_full\_metrics.json}, and \texttt{results/unified\_sweep/distilbert\_agnews\_full/distilbert\_agnews\_full\_aasvd\_full\_metrics.json}.}
 \label{tab:results_acc_aasvdcompressor}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_aasvdcompressor} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_aasvdcompressor} documents parameter counts before and after factorization, trainable adapter overhead, and compression ratios.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccc}
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\textbf{Model / Benchmark} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Factorized Layers} & \textbf{Fallback Layers} & \textbf{Ratio} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & Baseline FP32 & Reduced (30.96x) & 0 & 30.96x \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & Baseline FP32 & Reduced (30.96x) & 0 & 30.96x \\
+DistilBERT (SST-2) & 66,955,010 & 59,090,690 & 2,177,282 & 16 & 8 & 1.13$\times$ \\
+RoBERTa-base (SST-2) & 124,647,170 & 115,308,290 & 2,474,498 & 19 & 29 & 1.08$\times$ \\
+GPT-2 Small (SST-2) & 124,441,344 & 121,393,920 & 497,664 & 4 & 20 & 1.03$\times$ \\
+DistilBERT (MNLI) & 66,955,779 & 59,091,459 & 2,178,051 & 16 & 8 & 1.13$\times$ \\
+DistilBERT (AG News) & 66,956,548 & 59,092,228 & 1,588,228 & 16 & 8 & 1.13$\times$ \\
 \bottomrule
 \end{tabular}
-\caption{Parameter scaling and recovery parameter counts for \texttt{aasvdcompressor}.}
+\caption{Parameter scaling, layer fallback counts, and recovery parameter dimensions for \texttt{AASVD}.}
 \label{tab:results_params_aasvdcompressor}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_aasvdcompressor} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_aasvdcompressor} presents empirical memory profiling, execution throughput, and mean reconstruction errors across benchmarks.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\textbf{Model / Benchmark} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Elapsed Time} & \textbf{Reconstruction Error} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & Elapsed 0.8s & 106.1 MB & Verified \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & Elapsed 0.809s & 106.1 MB & Verified \\
+DistilBERT (SST-2) & 87,925 & 338.9 MB & 7.64 s & 0.8124 \\
+RoBERTa-base (SST-2) & 46,349 & 563.1 MB & 13.70 s & 0.8352 \\
+GPT-2 Small (SST-2) & 51,284 & 752.3 MB & 13.12 s & 0.7738 \\
+DistilBERT (MNLI) & 45,768 & 319.0 MB & 28.79 s & 0.8333 \\
+DistilBERT (AG News) & 58,002 & 214.5 MB & 24.97 s & 0.8355 \\
 \bottomrule
 \end{tabular}
-\caption{Inference throughput and VRAM footprint for \texttt{aasvdcompressor}.}
+\caption{Inference throughput, peak GPU VRAM allocation, and reconstruction error metrics for \texttt{AASVD}.}
 \label{tab:results_vram_aasvdcompressor}
 \end{table*}

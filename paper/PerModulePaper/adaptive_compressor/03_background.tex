@@ -29,13 +29,13 @@ Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge
 \[
 \kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
 \]
-Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
+The truncated operator has condition number $\kappa(W_r) = \sigma_1/\sigma_r$, which is bounded above by $\sigma_1/\sigma_\rho = \kappa(W)$. Truncation removes the smallest singular values, which are the least important for reconstruction error but also the source of numerical instability during backpropagation.
 
 \subsection{Energy Conservation and Error Manifolds}
 The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}$ defines a monotonic mapping $\mathcal{E}: \{1, \dots, \rho\} \to [0, 1]$. The decay profile follows a power-law distribution $\sigma_i \propto i^{-\alpha}$ where $\alpha > 0$ denotes the spectral decay exponent. For transformer projection matrices, empirical measurements show $\alpha \in [0.8, 1.6]$, indicating that the first $10\%$ to $25\%$ of singular vectors capture upwards of $90\%$ of total operator variance.
 
 \subsection{Symmetric Square-Root Splitting}
-To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{adaptivecompressor} implements symmetric singular value distribution:
+To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{AdaptiveRanks} implements symmetric singular value distribution:
 \[
 U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
 \]
