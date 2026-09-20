@@ -3279,9 +3279,10 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     tmp_dir.mkdir(parents=True, exist_ok=True)
     result_json = tmp_dir / f"{module_name}_{int(time.time())}.json"
 
+    child_script = (HERE / "run_one_module_isolated.py").resolve()
     cmd = [
         sys.executable, "-u",
-        "Codes/framework/run_one_module_isolated.py",
+        str(child_script),
         "--module", module_name,
         "--model", str(args.model),
         "--model_family", str(args.model_family),
@@ -3307,9 +3308,11 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     print(f"[ISOLATED] Launching {module_name} (timeout={timeout_s}s) -> {log_path}")
     t0 = time.monotonic()
 
+    base_dir = Path("D:/svd_project") if Path("D:/svd_project").exists() else HERE.parent.parent
+
     with open(log_path, "w", encoding="utf-8") as log_file:
         proc = subprocess.Popen(
-            cmd, stdout=log_file, stderr=subprocess.STDOUT,
+            cmd, stdout=log_file, stderr=subprocess.STDOUT, cwd=str(base_dir),
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
         )
 
