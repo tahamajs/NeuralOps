@@ -278,10 +278,12 @@ class CacheNotesKVCache:
         self,
         new_k: torch.Tensor,
         new_v: torch.Tensor,
+        is_new_sequence: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Append new KV tokens and apply task-aware retention when exceeding capacity.
         Shapes: (B, H, N, D).
+        Automatically resets cache on new multi-token prompt prefill (N > 1) or when is_new_sequence=True (H6).
         """
         k_4d = new_k
         v_4d = new_v
@@ -293,6 +295,10 @@ class CacheNotesKVCache:
             v_4d = new_v.unsqueeze(1)
 
         B, H, N, D = k_4d.shape
+
+        # H6: Prevent cross-sequence cache pollution on prompt prefill (N > 1) or explicit flag
+        if is_new_sequence or N > 1:
+            self.reset()
 
         if self.k_cache is None:
             self.k_cache = k_4d

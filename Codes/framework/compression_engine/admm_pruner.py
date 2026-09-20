@@ -507,9 +507,10 @@ class ADMMPruner(BaseCompressor):
 
                             grad_norm = torch.norm(grad_W)
                             if grad_norm > 1e-8:
-                                # Proportional adaptive step scaled by weight norm
-                                step_size = self.distill_lr * self.lambda_distill
-                                step = step_size * (grad_W / (grad_norm + 1e-6)) * torch.norm(W) * 0.1
+                                # B17: Standard bounded gradient descent step without artificial scale distortion
+                                lr_eff = self.distill_lr * self.lambda_distill
+                                clip_coef = min(1.0, 1.0 / (grad_norm.item() + 1e-6))
+                                step = lr_eff * (grad_W * clip_coef)
                                 W = W - step
                             else:
                                 break
