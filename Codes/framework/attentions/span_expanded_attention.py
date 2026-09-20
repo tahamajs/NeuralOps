@@ -465,6 +465,7 @@ def inject_span_expanded(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model

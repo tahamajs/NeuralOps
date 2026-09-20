@@ -290,6 +290,8 @@ class SOAFusedAttention(BaseAttention):
         self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.num_queries_per_kv = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.kv_repeat = self.num_queries_per_kv
 
         # Adaptive k_rank: at least 128 (min 128, dim // 4)
         if k_rank is None or k_rank == 64:
