@@ -468,23 +468,19 @@ class EATBlock(BaseAttention):
         # Memory-efficient: use SDPA to avoid OOM on large seqs
 
         try:
-
             _qs = q.half() if q.dtype == torch.float32 else q
-
             _ks = k.half() if k.dtype == torch.float32 else k
-
             _vs = v.half() if v.dtype == torch.float32 else v
-
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=getattr(self, 'is_decoder', False) and N > 1, dropout_p=self.dropout.p if self.training else 0.0)
-
-            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross_attention and L > 1
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                _qs, _ks, _vs,
+                is_causal=_is_causal,
+                dropout_p=self.dropout.p if self.training else 0.0,
+            )
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
             return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
-
         except Exception:
-
             pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
