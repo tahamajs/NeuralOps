@@ -354,24 +354,13 @@ We identify the following scope constraints and negative findings:
 \label{sec:conclusion}
 We presented the first comprehensive, systematic empirical comparison of over 200 attention mechanisms and compression techniques evaluated on DistilBERT-base across SST-2, MNLI, and AG News. We proved that low-rank truncation enforces a severe dimensional bottleneck ($r \le 320$) that degrades multi-class cross-sequence reasoning by up to 9.6 points on MNLI, despite achieving competitive accuracy on binary sentiment tasks. In contrast, vector quantization preserves the full 768-dimensional coordinate span, maintaining 81.40\% accuracy on MNLI at $2.73\times$ compression with $11.7\times$ lower reconstruction error. Furthermore, our parameter accounting identified 80 architectures that silently inflate parameter count while claiming compression. We urge the community to adopt multi-sentence reasoning benchmarks and strict non-expansion accounting when reporting efficient attention architectures.
 
-\subsubsection*{Reproducibility Statement}
-All checkpoints, evaluation scripts, and logs are publicly available to ensure complete reproducibility:
-\begin{itemize}
-    \item Base Checkpoints: \url{https://huggingface.co/Hooshaai/distilbert-sst2}, \url{https://huggingface.co/Hooshaai/distilbert-mnli}, \url{https://huggingface.co/Hooshaai/distilbert-agnews}.
-    \item Code Repository: \url{https://github.com/Hooshaai/paper-a3}.
-    \item Random Seed: 42 across all data loaders, model initializations, and recovery sweeps. Exact replication commands are provided in Appendix F.
-\end{itemize}
-
-\subsubsection*{AI Use Statement}
-Large language models were used solely for assistance in drafting LaTeX code structure, proofreading typography, and minor formatting refactoring. All experimental designs, mathematical proofs, empirical sweep executions, and scientific analyses were conceived, performed, and validated entirely by the authors.
-
-\subsubsection*{Acknowledgments}
-We acknowledge computational support from the local laboratory GPU clusters.
+\paragraph{Ethics, Reproducibility, and Acknowledgments:}
+Checkpoints: \url{https://huggingface.co/Hooshaai/distilbert-sst2}, \url{https://huggingface.co/Hooshaai/distilbert-mnli}, \url{https://huggingface.co/Hooshaai/distilbert-agnews}. Code: \url{https://github.com/Hooshaai/paper-a3} (seed 42, see Appendix~\ref{app:reproducibility}). LLMs were used strictly for LaTeX proofreading and formatting; all experiments and theoretical formulations are entirely the authors' work. We thank the compute cluster administrators for GPU support.
 
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 
-\newpage
+\clearpage
 \appendix
 \section{Complete Methodological Details}
 \label{app:methodology}
