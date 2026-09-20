@@ -525,7 +525,7 @@ class PerformerAttention(BaseAttention):
 
         if self.is_decoder:
             M = Q_feat.shape[-1]
-            chunk_size = min(64, N)
+            chunk_size = max(16, min(64, N // 4))
             num_chunks = (N + chunk_size - 1) // chunk_size
             S = torch.zeros(B, H, M, d, dtype=torch.float32, device=device)
             z = torch.zeros(B, H, M, dtype=torch.float32, device=device)
@@ -586,6 +586,9 @@ class PerformerAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
+        if output_attentions:
+            pass
+
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
                 out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
@@ -593,6 +596,38 @@ class PerformerAttention(BaseAttention):
                 out = out[..., : hidden_states.shape[-1]]
 
         return out.to(dtype), None
+
+
+def _is_single_layer(obj: Any) -> bool:
+    """Return True if obj is a transformer layer, not a full model."""
+    if obj is None:
+        return False
+    single_layer_classes = (
+        "TransformerBlock", "BertLayer", "RobertaLayer",
+        "GPT2Block", "Qwen2DecoderLayer", "LlamaDecoderLayer",
+    )
+    cls_name = getattr(obj, "__class__", type(obj)).__name__
+    if cls_name in single_layer_classes:
+        return True
+    if (
+        hasattr(obj, "attention")
+        or hasattr(obj, "attn")
+        or hasattr(obj, "self_attn")
+        or hasattr(obj, "self")
+    ) and not (
+        hasattr(obj, "transformer")
+        or hasattr(obj, "distilbert")
+        or hasattr(obj, "roberta")
+        or hasattr(obj, "bert")
+        or hasattr(obj, "encoder")
+        or hasattr(obj, "model")
+    ):
+        return True
+    return False
+
+
+_INJECT_DEPTH = 0
+_MAX_DEPTH = 4
 
 
 @ATTENTION_REGISTRY.register("performer_inject")
@@ -609,95 +644,104 @@ def inject_performer(
     **kwargs: Any,
 ) -> Optional[Any]:
     r"""Injection hook for PerformerAttention supporting single layers and whole models."""
-    target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    global _INJECT_DEPTH
+    if _INJECT_DEPTH >= _MAX_DEPTH:
+        logger.error("Max injection depth reached in inject_performer - possible recursion")
+        return None
+    _INJECT_DEPTH += 1
+    try:
+        target = layer if layer is not None else model
+        cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-    # 1. Whole model traversal support
-    if target is not None and (
-        hasattr(target, "transformer")
-        or hasattr(target, "distilbert")
-        or hasattr(target, "roberta")
-        or hasattr(target, "bert")
-        or (hasattr(target, "model") and hasattr(target.model, "layers"))
-        or hasattr(target, "layers")
-    ):
-        layer_list = None
-        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        if _is_single_layer(target):
+            pass
+        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             layer_list = target.distilbert.transformer.layer
+            num_injected = 0
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
+            return target if num_injected > 0 else None
         elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
             layer_list = target.roberta.encoder.layer
+            num_injected = 0
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
+            return target if num_injected > 0 else None
         elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
             layer_list = target.bert.encoder.layer
+            num_injected = 0
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
+            return target if num_injected > 0 else None
         elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
             layer_list = target.transformer.h
+            num_injected = 0
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
+            return target if num_injected > 0 else None
         elif hasattr(target, "model") and hasattr(target.model, "layers"):
             layer_list = target.model.layers
+            num_injected = 0
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
+            return target if num_injected > 0 else None
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers"):
-            layer_list = target.layers
-
-        if layer_list is not None:
             num_injected = 0
-            tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
-                res = inject_performer(
-                    layer=lyr,
-                    model_config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=idx,
-                    total_layers=tot,
-                    lora_rank=lora_rank,
-                    **kwargs,
-                )
-                if res is not None:
-                    num_injected += 1
+                res = inject_performer(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), lora_rank=lora_rank, **kwargs)
+                if res is not None: num_injected += 1
             return target if num_injected > 0 else None
 
-    # 2. Single layer injection
-    src_attn = old_attn
-    if src_attn is None and target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                src_attn = target.attention.self
-            else:
-                src_attn = target.attention
-        elif hasattr(target, "self"):
-            src_attn = target.self
-        elif hasattr(target, "attn"):
-            src_attn = target.attn
-        elif hasattr(target, "self_attn"):
-            src_attn = target.self_attn
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    src_attn = target.attention.self
+                else:
+                    src_attn = target.attention
+            elif hasattr(target, "self"):
+                src_attn = target.self
+            elif hasattr(target, "self_attn"):
+                src_attn = target.self_attn
+            elif hasattr(target, "attn"):
+                src_attn = target.attn
+            elif hasattr(target, "forward"):
+                src_attn = target
 
-    if src_attn is None and target is not None and hasattr(target, "forward"):
-        src_attn = target
+        if src_attn is None and cfg is None:
+            return None
 
-    if src_attn is None and cfg is None:
-        return None
+        try:
+            new_attn = PerformerAttention(
+                config=cfg,
+                comp_config=comp_config,
+                old_attn=src_attn,
+                lora_rank=lora_rank,
+                **kwargs,
+            )
+        except Exception as e:
+            logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+            return None
 
-    try:
-        new_attn = PerformerAttention(
-            config=cfg,
-            comp_config=comp_config,
-            old_attn=src_attn,
-            lora_rank=lora_rank,
-            **kwargs,
-        )
-    except Exception as e:
-        logger.warning("PerformerAttention construction/weight copying failed: %s", e)
-        return None
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                else:
+                    target.attention = new_attn
+            elif hasattr(target, "self"):
+                target.self = new_attn
+            elif hasattr(target, "attn"):
+                target.attn = new_attn
+            elif hasattr(target, "self_attn"):
+                target.self_attn = new_attn
 
-    if target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                target.attention.self = new_attn
-            else:
-                target.attention = new_attn
-        elif hasattr(target, "self"):
-            target.self = new_attn
-        elif hasattr(target, "attn"):
-            target.attn = new_attn
-        elif hasattr(target, "self_attn"):
-            target.self_attn = new_attn
-
-    return new_attn
+        return new_attn
+    finally:
+        _INJECT_DEPTH -= 1

@@ -207,7 +207,10 @@ class LinformerAttention(BaseAttention):
         self.supports_gqa = True
 
         self.k_proj_dim = getattr(config, "linformer_k", k if k is not None else getattr(config, "k", 64))
-        self.max_seq_len = getattr(config, "max_position_embeddings", max_seq_len if max_seq_len is not None else 512)
+        pos_emb = getattr(config, "max_position_embeddings", None)
+        if pos_emb is None:
+            pos_emb = max_seq_len if max_seq_len is not None else 512
+        self.max_seq_len = max(512, int(pos_emb))
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
@@ -543,6 +546,38 @@ class LinformerAttention(BaseAttention):
         return out.to(dtype), (attn if output_attentions else None)
 
 
+def _is_single_layer(obj: Any) -> bool:
+    """Return True if obj is a transformer layer, not a full model."""
+    if obj is None:
+        return False
+    single_layer_classes = (
+        "TransformerBlock", "BertLayer", "RobertaLayer",
+        "GPT2Block", "Qwen2DecoderLayer", "LlamaDecoderLayer",
+    )
+    cls_name = getattr(obj, "__class__", type(obj)).__name__
+    if cls_name in single_layer_classes:
+        return True
+    if (
+        hasattr(obj, "attention")
+        or hasattr(obj, "attn")
+        or hasattr(obj, "self_attn")
+        or hasattr(obj, "self")
+    ) and not (
+        hasattr(obj, "transformer")
+        or hasattr(obj, "distilbert")
+        or hasattr(obj, "roberta")
+        or hasattr(obj, "bert")
+        or hasattr(obj, "encoder")
+        or hasattr(obj, "model")
+    ):
+        return True
+    return False
+
+
+_INJECT_DEPTH = 0
+_MAX_DEPTH = 4
+
+
 @ATTENTION_REGISTRY.register("linformer_inject")
 @ATTENTION_REGISTRY.register("inject_linformer")
 def inject_linformer(
@@ -556,99 +591,109 @@ def inject_linformer(
     **kwargs: Any,
 ) -> Optional[LinformerAttention]:
     """Safe injection hook for LinformerAttention — handles full-model traversal and all architectures."""
-    target = layer if layer is not None else model
-    if target is None:
+    global _INJECT_DEPTH
+    if _INJECT_DEPTH >= _MAX_DEPTH:
+        logger.error("Max injection depth reached in inject_linformer - possible recursion")
         return None
-
-    cfg = model_config
-    if cfg is None and hasattr(target, "config"):
-        cfg = target.config
-
-    # 1. Whole-model traversal
-    layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
-        layer_list = target.layers
-
-    if layer_list is not None:
-        num_injected = 0
-        tot = len(layer_list)
-        for idx, lyr in enumerate(layer_list):
-            res = inject_linformer(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, **kwargs,
-            )
-            if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
-
-    # 2. Single-layer injection
-    src_attn = old_attn
-    if src_attn is None and target is not None:
-        for attr in ("attention", "self_attn", "attn", "self"):
-            if hasattr(target, attr):
-                cand = getattr(target, attr)
-                if hasattr(cand, "self"):
-                    src_attn = cand.self
-                else:
-                    src_attn = cand
-                break
-
-    if src_attn is None and cfg is None:
-        return None
-
-    hidden_size = (
-        getattr(src_attn, "hidden_size", None) if src_attn else None
-        or getattr(src_attn, "embed_dim", None) if src_attn else None
-        or (src_attn.q_proj.in_features if src_attn and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
-        or (src_attn.q_lin.in_features if src_attn and hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
-        or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64) if cfg else 64)
-    )
-    num_heads = (
-        getattr(src_attn, "num_heads", None) if src_attn else None
-        or getattr(src_attn, "num_attention_heads", None) if src_attn else None
-        or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4) if cfg else 4)
-    )
-
+    _INJECT_DEPTH += 1
     try:
-        k = getattr(comp_config, "linformer_k", getattr(comp_config, "k", 64)) if comp_config else kwargs.get("linformer_k", 64)
-        max_seq_len = getattr(cfg, "max_position_embeddings", 512) if cfg else 512
-        new_attn = LinformerAttention(
-            cfg,
-            k=k,
-            max_seq_len=max_seq_len,
-            comp_config=comp_config,
-            old_attn=src_attn,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            num_attention_heads=num_heads,
-            **kwargs,
-        )
-    except Exception as e:
-        logger.error("Failed to inject LinformerAttention: %s", e)
-        return None
+        target = layer if layer is not None else model
+        if target is None:
+            return None
 
-    if target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                target.attention.self = new_attn
-            else:
-                target.attention = new_attn
-        elif hasattr(target, "self_attn"):
-            target.self_attn = new_attn
-        elif hasattr(target, "attn"):
-            target.attn = new_attn
-        elif hasattr(target, "self"):
-            target.self = new_attn
-    return new_attn
+        cfg = model_config
+        if cfg is None and hasattr(target, "config"):
+            cfg = target.config
+
+        # 1. Whole-model traversal
+        layer_list = None
+        if _is_single_layer(target):
+            pass
+        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_linformer(
+                    layer=lyr, model_config=cfg, comp_config=comp_config,
+                    layer_idx=idx, total_layers=tot, **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+        # 2. Single-layer injection
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and cfg is None:
+            return None
+
+        hidden_size = (
+            getattr(src_attn, "hidden_size", None) if src_attn else None
+            or getattr(src_attn, "embed_dim", None) if src_attn else None
+            or (src_attn.q_proj.in_features if src_attn and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
+            or (src_attn.q_lin.in_features if src_attn and hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
+            or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64) if cfg else 64)
+        )
+        num_heads = (
+            getattr(src_attn, "num_heads", None) if src_attn else None
+            or getattr(src_attn, "num_attention_heads", None) if src_attn else None
+            or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4) if cfg else 4)
+        )
+
+        try:
+            k = getattr(comp_config, "linformer_k", getattr(comp_config, "k", 64)) if comp_config else kwargs.get("linformer_k", 64)
+            max_seq_len = max(512, getattr(cfg, "max_position_embeddings", 512)) if cfg else 512
+            new_attn = LinformerAttention(
+                cfg,
+                k=k,
+                max_seq_len=max_seq_len,
+                comp_config=comp_config,
+                old_attn=src_attn,
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                num_attention_heads=num_heads,
+                **kwargs,
+            )
+        except Exception as e:
+            logger.error("Failed to inject LinformerAttention: %s", e)
+            return None
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                else:
+                    target.attention = new_attn
+            elif hasattr(target, "self_attn"):
+                target.self_attn = new_attn
+            elif hasattr(target, "attn"):
+                target.attn = new_attn
+            elif hasattr(target, "self"):
+                target.self = new_attn
+        return new_attn
+    finally:
+        _INJECT_DEPTH -= 1

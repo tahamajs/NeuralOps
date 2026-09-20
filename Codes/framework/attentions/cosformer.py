@@ -555,7 +555,7 @@ class CosformerAttention(BaseAttention):
         # 7. Linear attention computation (Causal Chunked-Prefix-Sum vs Bidirectional Associative)
         if self.is_decoder and not is_cross_attention and N == kv_len:
             # Strictly causal linear attention via chunked associative recurrence (eliminating [B, H, N, d, d] allocations)
-            chunk_size = 32
+            chunk_size = max(16, min(64, N // 8))
             if N <= chunk_size:
                 causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
                 score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2).contiguous()).masked_fill(~causal_mask, 0.0)
@@ -664,6 +664,38 @@ class CosformerAttention(BaseAttention):
         return final_out.to(dtype), None
 
 
+def _is_single_layer(obj: Any) -> bool:
+    """Return True if obj is a transformer layer, not a full model."""
+    if obj is None:
+        return False
+    single_layer_classes = (
+        "TransformerBlock", "BertLayer", "RobertaLayer",
+        "GPT2Block", "Qwen2DecoderLayer", "LlamaDecoderLayer",
+    )
+    cls_name = getattr(obj, "__class__", type(obj)).__name__
+    if cls_name in single_layer_classes:
+        return True
+    if (
+        hasattr(obj, "attention")
+        or hasattr(obj, "attn")
+        or hasattr(obj, "self_attn")
+        or hasattr(obj, "self")
+    ) and not (
+        hasattr(obj, "transformer")
+        or hasattr(obj, "distilbert")
+        or hasattr(obj, "roberta")
+        or hasattr(obj, "bert")
+        or hasattr(obj, "encoder")
+        or hasattr(obj, "model")
+    ):
+        return True
+    return False
+
+
+_INJECT_DEPTH = 0
+_MAX_DEPTH = 4
+
+
 @ATTENTION_REGISTRY.register("cosformer_inject")
 @ATTENTION_REGISTRY.register("inject_cosformer")
 def inject_cosformer(
@@ -676,106 +708,115 @@ def inject_cosformer(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ):
-    target = layer if layer is not None else model
-    if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
-    if target is None:
+    global _INJECT_DEPTH
+    if _INJECT_DEPTH >= _MAX_DEPTH:
+        logger.error("Max injection depth reached in inject_cosformer - possible recursion")
         return None
+    _INJECT_DEPTH += 1
+    try:
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get("model", kwargs.get("layer", None))
+        if target is None:
+            return None
 
-    cfg = model_config if model_config is not None else getattr(target, "config", None)
+        cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
-    layer_list = None
-    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-        layer_list = target.distilbert.transformer.layer
-    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-        layer_list = target.roberta.encoder.layer
-    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-        layer_list = target.transformer.h
-    elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
-        layer_list = target.h
-    elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
-    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-        layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
-        layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
-        layer_list = target.layers
+        # Whole-model traversal
+        layer_list = None
+        if _is_single_layer(target):
+            pass
+        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
+            layer_list = target.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+            layer_list = target.layers
 
-    if layer_list is not None:
-        num_injected = 0
-        tot = len(layer_list)
-        for idx, lyr in enumerate(layer_list):
-            res = inject_cosformer(
-                layer=lyr,
-                model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
-                layer_idx=idx,
-                total_layers=tot,
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_cosformer(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+        layer = target
+
+        r"""Safe injection factory for CosformerAttention."""
+        src_attn = old_attn
+        if src_attn is None and layer is not None:
+            if hasattr(layer, "attention"):
+                src_attn = layer.attention
+            elif hasattr(layer, "attn"):
+                src_attn = layer.attn
+            elif hasattr(layer, "self_attn"):
+                src_attn = layer.self_attn
+            elif hasattr(layer, "self"):
+                src_attn = layer.self
+
+        hidden_size = (
+            getattr(src_attn, 'hidden_size', None) or
+            getattr(src_attn, 'embed_dim', None) or
+            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+            (layer.in_features if hasattr(layer, 'in_features') else None) or
+            getattr(model_config, 'hidden_size', 64)
+        )
+        num_heads = (
+            getattr(src_attn, 'num_heads', None) or
+            getattr(src_attn, 'num_attention_heads', None) or
+            getattr(model_config, 'num_attention_heads', 4)
+        )
+
+        try:
+            new_attn = CosformerAttention(
+                config=model_config,
+                comp_config=comp_config,
+                layer_id=layer_idx,
+                layer_idx=layer_idx,
+                old_attn=src_attn,
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                num_attention_heads=num_heads,
                 **kwargs,
             )
-            if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
-
-    layer = target
-
-    r"""Safe injection factory for CosformerAttention."""
-    src_attn = old_attn
-    if src_attn is None and layer is not None:
-        if hasattr(layer, "attention"):
-            src_attn = layer.attention
-        elif hasattr(layer, "attn"):
-            src_attn = layer.attn
-        elif hasattr(layer, "self_attn"):
-            src_attn = layer.self_attn
-        elif hasattr(layer, "self"):
-            src_attn = layer.self
-
-    hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', 64)
-    )
-    num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', 4)
-    )
-
-    try:
-        new_attn = CosformerAttention(
-            config=model_config,
-            comp_config=comp_config,
-            layer_id=layer_idx,
-            layer_idx=layer_idx,
-            old_attn=src_attn,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            num_attention_heads=num_heads,
-            **kwargs,
-        )
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-                new_attn.is_nested_encoder = True
-            else:
-                layer.attention = new_attn
+            if hasattr(layer, "attention"):
+                if hasattr(layer.attention, "self"):
+                    layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    layer.attention = new_attn
+                    new_attn.is_nested_encoder = False
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
                 new_attn.is_nested_encoder = False
-        elif hasattr(layer, "attn"):
-            layer.attn = new_attn
-            new_attn.is_nested_encoder = False
-        elif hasattr(layer, "self_attn"):
-            layer.self_attn = new_attn
-            new_attn.is_nested_encoder = False
-        elif hasattr(layer, "self"):
-            layer.self = new_attn
-            new_attn.is_nested_encoder = True
-        return new_attn
-    except Exception as e:
-        logger.error(f"Cosformer copy_weights failed: {e}")
-        return None
-
+            elif hasattr(layer, "self_attn"):
+                layer.self_attn = new_attn
+                new_attn.is_nested_encoder = False
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+                new_attn.is_nested_encoder = True
+            return new_attn
+        except Exception as e:
+            logger.error(f"Cosformer copy_weights failed: {e}")
+            return None
+    finally:
+        _INJECT_DEPTH -= 1
