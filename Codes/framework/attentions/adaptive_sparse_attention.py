@@ -301,7 +301,7 @@ class AdaptiveSparseAttention(BaseAttention):
             ),
         ) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
-        self.source_attn = source_attn
+        self.source_attn = None
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         self.has_relative_attention_bias: bool = False
@@ -557,8 +557,8 @@ class AdaptiveSparseAttention(BaseAttention):
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
-        elif self.rotary_emb is not None or (hasattr(self, "source_attn") and getattr(self.source_attn, "rotary_emb", None) is not None):
-            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
             pos_ids = kwargs.get("position_ids", None)
             if pos_ids is None:
                 pos_ids = torch.arange(N_q, device=device).unsqueeze(0).expand(B, -1)

@@ -8,7 +8,6 @@ granite_hybrid,REJECTED_EXPANSION,"Alias of inject_granite_hybrid; adds full Mam
 bam_umoe,REJECTED_EXPANSION,"8-expert MoE adds 114M parameters across 6 layers (66.9M -> 180.9M, 2.70x); cannot satisfy parameter reduction"
 expert_choice_moe,REJECTED_EXPANSION,"8-expert MoE architecture adds 114M parameters; routing capacity requires large parameter overhead"
 hgrn2,REJECTED_EXPANSION,"HGRN2 gated recurrent replacement increases parameter count by 44% over baseline DistilBERT attention"
-adaptive_sparse,REJECTED_EXPANSION,"Learned sparse routing structures increase layer parameter count by 44% over baseline"
 
 # Category B — ARCHITECTURAL_INCOMPATIBLE (Mode collapse / causal break / task mismatch)
 inject_mamba,ARCHITECTURAL_INCOMPATIBLE,"Causal State Space Model (SSM) breaks bidirectional token visibility required for encoder sentence pair classification (34.1%)"
