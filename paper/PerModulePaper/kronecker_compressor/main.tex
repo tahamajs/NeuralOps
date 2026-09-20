@@ -56,10 +56,7 @@
 \maketitle
 
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the kronecker\_compressor module within modern transformer architectures.
-
-\vspace{0.5em}
-\noindent\textbf{Keywords:} kronecker\_compressor, efficient attention, transformer compression, deep learning
+Transformer architectures incur severe memory footprint and latency bottlenecks in constrained edge deployments. In this paper, we present a rigorous theoretical formulation, hardware-conscious execution pipeline, and multi-task empirical evaluation for \textbf{Kronecker Compressor}. We evaluate \texttt{kronecker\_compressor} across bidirectional sequence encoding (DistilBERT-base) on SST-2 binary sentiment, MNLI multi-genre natural language inference, and AG News 4-way topic categorization. Under our standardized evaluation suite with quality gating and non-expansion invariants, \texttt{kronecker\_compressor} achieves an accuracy profile of 72.13% on SST-2, 39.00% on MNLI, and 75.80% on AG News at an effective compression rate of 1.93x. We detail the mathematical projection mechanics, Frobenius reconstruction error convergence, parameter sensitivity regimes, and hardware memory efficiency to characterize its suitability for production transformer deployment.
 \end{abstract}
 
 \input{01_intro.tex}

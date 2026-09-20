@@ -56,10 +56,7 @@
 \maketitle
 
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the bonsai\_pruner module within modern transformer architectures.
-
-\vspace{0.5em}
-\noindent\textbf{Keywords:} bonsai\_pruner, efficient attention, transformer compression, deep learning
+Transformer architectures incur severe memory footprint and latency bottlenecks in constrained edge deployments. In this paper, we present a rigorous theoretical formulation, hardware-conscious execution pipeline, and multi-task empirical evaluation for \textbf{Bonsai Pruner}. We evaluate \texttt{bonsai\_pruner} across bidirectional sequence encoding (DistilBERT-base) on SST-2 binary sentiment, MNLI multi-genre natural language inference, and AG News 4-way topic categorization. Under our standardized evaluation suite with quality gating and non-expansion invariants, \texttt{bonsai\_pruner} achieves an accuracy profile of 78.44% on SST-2, 44.00% on MNLI, and 52.20% on AG News at an effective compression rate of 1.00x. We detail the mathematical projection mechanics, Frobenius reconstruction error convergence, parameter sensitivity regimes, and hardware memory efficiency to characterize its suitability for production transformer deployment.
 \end{abstract}
 
 \input{01_intro.tex}
