@@ -66,17 +66,29 @@ def parse_args():
                         help="Path to MNLI dataset directory")
     parser.add_argument("--output_dir", type=str, default="results/multiseed",
                         help="Directory to save multi-seed results")
-    parser.add_argument("--seeds", type=int, nargs="*", default=SEEDS,
-                        help="List of random seeds")
-    parser.add_argument("--modules", type=str, nargs="*", default=TARGET_MODULES,
-                        help="List of modules to evaluate across seeds")
+    parser.add_argument("--seeds", type=str, default="42,123,456",
+                        help="List or comma-separated string of random seeds")
+    parser.add_argument("--modules", type=str, default="dense,a3,kmeans,aasvd,adaptive_svd,adaptive",
+                        help="List or comma-separated string of modules to evaluate")
     parser.add_argument("--rank", type=int, default=64,
                         help="Target rank for low-rank decomposition")
     parser.add_argument("--batch_size", type=int, default=None,
                         help="Batch size for validation (auto-sizes to 32/16/8 based on VRAM if not specified)")
+    parser.add_argument("--dataset", type=str, default="mnli",
+                        help="Target dataset (default: mnli)")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of parallel evaluations (1 for deterministic single GPU)")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print planned evaluation matrix without running")
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if isinstance(args.seeds, str):
+        args.seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
+    if isinstance(args.modules, str):
+        args.modules = [m.strip() for m in args.modules.split(",") if m.strip()]
+    # Map full to dense if passed
+    args.modules = ["dense" if m == "full" else m for m in args.modules]
+    return args
 
 
 def main():
@@ -167,6 +179,7 @@ def main():
                     "module": mod,
                     "accuracy_pct": round(acc, 2),
                     "f1_score": round(f1, 4),
+                    "peak_vram_mb": eval_res.get("peak_vram_mb", 0.0),
                     "elapsed_s": round(time.time() - t0, 2),
                 }
 
@@ -179,6 +192,30 @@ def main():
                 res = {"seed": seed, "module": mod, "error": str(e)}
 
             res_file.write_text(json.dumps(res, indent=2), encoding="utf-8")
+
+    # Record detailed trial rows as expected by user prompt: module_name, seed, accuracy_pct, f1_score, peak_vram_mb
+    trial_rows = []
+    for seed in args.seeds:
+        for mod in args.modules:
+            fpath = out_dir / str(seed) / f"{mod}.json"
+            if fpath.exists():
+                try:
+                    d = json.loads(fpath.read_text(encoding="utf-8"))
+                    trial_rows.append({
+                        "module_name": mod,
+                        "seed": seed,
+                        "accuracy_pct": d.get("accuracy_pct", 0.0),
+                        "f1_score": d.get("f1_score", 0.0),
+                        "peak_vram_mb": d.get("peak_vram_mb", 0.0),
+                    })
+                except Exception:
+                    pass
+
+    with open(out_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["module_name", "seed", "accuracy_pct", "f1_score", "peak_vram_mb"])
+        writer.writeheader()
+        for r in trial_rows:
+            writer.writerow(r)
 
     # Compute aggregate mean and standard deviation
     summary_rows = []
@@ -200,13 +237,6 @@ def main():
         })
 
     with open(summary_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["module", "mean_acc", "std_acc", "mean_f1", "std_f1", "num_seeds"])
-        writer.writeheader()
-        for r in summary_rows:
-            writer.writerow(r)
-
-    # Also duplicate to summary.csv
-    with open(out_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["module", "mean_acc", "std_acc", "mean_f1", "std_f1", "num_seeds"])
         writer.writeheader()
         for r in summary_rows:
