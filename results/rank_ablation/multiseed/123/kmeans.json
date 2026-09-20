@@ -1,0 +1,7 @@
+{
+  "seed": 123,
+  "module": "kmeans",
+  "accuracy_pct": 81.9,
+  "f1_score": 0.817,
+  "elapsed_s": 3.02
+}
