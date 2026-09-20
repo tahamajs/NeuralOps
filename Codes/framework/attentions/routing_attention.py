@@ -428,20 +428,7 @@ class RoutingAttention(BaseAttention):
             mask_k = (cluster_ids == k) | (torch.arange(L, device=device).view(1, 1, -1) == 0)
             mask_k = mask_k & valid_mask_2d.unsqueeze(1)
 
-            # Memory-efficient attention (FlashAttention backend when available)
-            # Avoids OOM on GPT-2/long seqs from full B×H×N×N matrix
-            try:
-                _q_s = Q.half() if Q.dtype == torch.float32 else Q
-                _k_s = K.half() if K.dtype == torch.float32 else K
-                _v_s = V.half() if V.dtype == torch.float32 else V
-                out = torch.nn.functional.scaled_dot_product_attention(
-                    _q_s, _k_s, _v_s,
-                    attn_mask=None,
-                    dropout_p=0.0,
-                    is_causal=getattr(self, "is_decoder", False) and N > 1,
-                ).to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, -1)
-            except Exception:
-                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             # Mask non-cluster keys
             scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
