@@ -52,25 +52,13 @@ inject_minimal_svd,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.04,269.13,274
 inject_minimal_svd_v2,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.55,269.13,25880.28,,,,,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:46:33.679728
 inject_nsa,PASS,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,12.25,324.79,23069.44,5.55,23069.44,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:02:58.068365
 inject_nystrom,PASS,81.9,0.8187,0.8187,0.819,0.8186,0.5952,11.23,312.33,26720.17,4.79,26720.17,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:03:41.541209
-adaptive_span,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:20:56.311602
+adaptive_span,MODERATE_EXPANSION,94.6,0.9423,0.9423,0.9436,0.9413,0.1912,13.25,188.75,22660.82,5.65,22660.82,,,66956548,67546444,589896,1.0,0.0,0.0,6,0,,,6,589824,MODERATE_EXPANSION: base_before=66956548 base_after=66956620 base_delta=72 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:23:58.867576
 asvd,REJECTED_EXPANSION,82.2,0.8217,0.8217,0.8219,0.8217,0.603,16.79,333.52,21452.09,,,,,66955779,68942730,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68942730 delta=1986951 (+3.0%),legacy_bert,2026-09-19T14:49:46.444838
 inject_replace,PASS,76.1,0.7621,0.7621,0.772,0.7623,0.809,7.04,329.61,43820.46,,,,,66955779,66955779,4136451,1.0,0.0,0.0,0,0,,,6,0,,legacy_bert,2026-09-19T14:49:58.339590
-block_transformer_hiba,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:20:55.123154
+block_transformer_hiba,PASS,94.6,0.9423,0.9423,0.9436,0.9413,0.1912,13.2,213.71,23043.49,5.55,23043.49,,,66956548,67546372,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:23:58.695217
 inject_spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.59,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:24:12.006954
 faq,REJECTED_EXPANSION,81.9,0.8184,0.8184,0.8185,0.8183,0.6015,23.58,408.22,10094.84,,,,,66955779,68282883,1327104,0.9806,-1.98,0.0,0,0,,,0,1327104,NON_EXPANSION VIOLATION: before=66955779 after=68282883 delta=1327104 (+2.0%),legacy_bert,2026-09-19T14:51:18.114365
-fasa,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:21:53.570076
+fasa,PASS,92.2,0.919,0.919,0.9267,0.9177,0.3083,14.99,310.07,19382.18,6.6,19382.18,,,66956548,67546372,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:26:12.238969
 goldfinch,REJECTED_EXPANSION,79.1,0.791,0.791,0.7925,0.791,0.5568,14.7,336.02,20239.24,,,,,66955779,71144535,645204,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=71144535 delta=4188756 (+6.3%),legacy_bert,2026-09-19T14:52:42.458098
 halo_regla,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
 CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
@@ -83,34 +71,14 @@ kronecker_tt_lora,REJECTED_EXPANSION,81.6,0.8157,0.8157,0.816,0.8157,0.595,18.29
 leka_v2,REJECTED_EXPANSION,79.9,0.7986,0.7986,0.7999,0.7983,0.584,22.08,364.16,12469.73,,,,,66955779,67993425,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67993425 delta=1037646 (+1.5%),legacy_bert,2026-09-19T14:56:34.616882
 linformer,REJECTED_EXPANSION,75.6,0.7572,0.7572,0.7629,0.7563,0.6829,12.66,315.53,22779.07,,,,,66955779,67938825,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67938825 delta=983046 (+1.5%),legacy_bert,2026-09-19T14:57:18.596333
 ptp,REJECTED_EXPANSION,81.8,0.8177,0.8177,0.818,0.8176,0.5975,13.45,315.54,20884.64,,,,,66955779,67841289,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67841289 delta=885510 (+1.3%),legacy_bert,2026-09-19T14:57:56.250652
-cosformer,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:21:26.260521
+cosformer,MODERATE_EXPANSION,83.5,0.83,0.83,0.84,0.8303,0.6813,17.96,324.1,16118.95,7.94,16118.95,,,66956548,67546378,589824,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66956548 base_after=66956554 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:25:22.474121
 spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.64,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:13.846395
 spectraformer,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:42.919182
 hgrn2_outer,MODERATE_EXPANSION,32.9,0.2805,0.2805,0.3263,0.3264,1.1826,864.46,323.08,450.43,284.17,450.43,,,66955779,67587915,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (32.90%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66998091 base_delta=42312 (+0.06%) lora_excluded=589824,legacy_bert,2026-09-20T01:12:10.582934
-adasplash,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:20:57.735730
-chela_slay,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:21:22.487430
-cluster,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:21:24.021208
-eat,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",,2026-09-20T01:21:50.639573
+adasplash,PASS,93.0,0.9254,0.9254,0.9316,0.9235,0.2342,46.98,217.05,5330.55,24.01,5330.55,,,66956548,67546372,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:24:32.474517
+chela_slay,MODERATE_EXPANSION,91.1,0.9075,0.9075,0.9229,0.9039,0.3064,18.55,359.32,15915.63,8.04,15915.63,,,66956548,67601740,645192,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66956548 base_after=67011916 base_delta=55368 (+0.08%) lora_excluded=589824,legacy_bert,2026-09-20T01:24:46.904464
+cluster,MODERATE_EXPANSION,93.3,0.9295,0.9295,0.9298,0.9295,0.2549,28.96,324.82,8303.85,15.41,8303.85,,,66956548,67546384,589824,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66956548 base_after=66956560 base_delta=12 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:24:57.773683
+eat,PASS,91.1,0.9075,0.9075,0.9229,0.9039,0.3086,13.85,317.57,21426.12,5.97,21426.12,,,66956548,67546372,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:25:44.472421
 decay_linear_attn,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
 CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
 For debugging consider passing CUDA_LAUNCH_BLOCKING=1
