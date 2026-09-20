@@ -24,9 +24,38 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
+try:
+    from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
+except ImportError:
+    def get_token_valid_mask(attention_mask: Optional[torch.Tensor], B: int, N: int, device: torch.device) -> torch.Tensor:
+        if attention_mask is None:
+            return torch.ones(B, N, device=device, dtype=torch.bool)
+        if attention_mask.dim() == 2:
+            return attention_mask.bool()
+        return torch.ones(B, N, device=device, dtype=torch.bool)
+
+    def apply_attention_mask(scores: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
+        if mask is None:
+            return scores
+        if mask.dim() == 2:
+            mask = mask.unsqueeze(1).unsqueeze(2)
+        return scores.masked_fill(~mask.bool(), -1e4)
+
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import repeat_kv
+
+try:
+    from framework.core.gqa_utils import repeat_kv
+except ImportError:
+    def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+        if n_rep == 1:
+            return hidden_states
+        B, num_kv_heads, slen, head_dim = hidden_states.shape
+        return (
+            hidden_states[:, :, None, :, :]
+            .expand(B, num_kv_heads, n_rep, slen, head_dim)
+            .reshape(B, num_kv_heads * n_rep, slen, head_dim)
+        )
+
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -554,15 +583,21 @@ class TLinFormerAttention(BaseAttention):
         V_proj = torch.matmul(P_v, v_masked)
 
         # If decoder model with causal attention, standard LinFormer projection breaks causality.
-        # Preserve causality by falling back to standard causal scaled dot-product attention
+        # Enforce causality: for L <= rank, use strictly causal (lower-triangular) projection matrices;
+        # for L > rank, fall back to standard causal attention to eliminate cross-temporal leakage (B8).
         if self.is_decoder:
             scale = 1.0 / math.sqrt(self.head_dim)
             if L <= self.rank:
-                scores = torch.matmul(q, K_proj.transpose(-2, -1).contiguous()) * scale
+                P_k_causal = torch.tril(P_k)
+                P_v_causal = torch.tril(P_v)
+                K_proj_c = torch.matmul(P_k_causal, k_masked)
+                V_proj_c = torch.matmul(P_v_causal, v_masked)
+                scores = torch.matmul(q, K_proj_c.transpose(-2, -1).contiguous()) * scale
                 causal_mask = torch.tril(torch.ones(L, L, device=scores.device, dtype=torch.bool))
                 scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
                 if attention_mask is not None:
                     scores = apply_attention_mask(scores, attention_mask)
+                V_proj = V_proj_c
             else:
                 scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
                 causal_mask = torch.triu(
