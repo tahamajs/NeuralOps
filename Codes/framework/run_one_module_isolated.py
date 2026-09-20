@@ -90,6 +90,13 @@ def main():
                 )
                 error_msg = f"{error_msg}; {expansion_err}".strip("; ")
 
+        acc_val = float(metrics.get("accuracy_pct", 0.0) or 0.0)
+        elapsed_val = float(metrics.get("elapsed_s", 0.0) or 0.0)
+        if status in ("PASS", "PASS_LOW") and (acc_val <= 0.0 or elapsed_val < 0.5):
+            status = "EVAL_FAILED"
+            fail_err = f"EVAL_FAILED: invalid evaluation results (acc={acc_val:.2f}%, elapsed={elapsed_val:.2f}s)"
+            error_msg = f"{error_msg}; {fail_err}".strip("; ")
+
         # metrics is the row dict for this module with all fields populated
         result.update({
             # Status and accuracy
