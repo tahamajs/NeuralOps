@@ -474,6 +474,38 @@ class GroupedQueryAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
+def _is_single_layer(obj: Any) -> bool:
+    """Return True if obj is a transformer layer, not a full model."""
+    if obj is None:
+        return False
+    single_layer_classes = (
+        "TransformerBlock", "BertLayer", "RobertaLayer",
+        "GPT2Block", "Qwen2DecoderLayer", "LlamaDecoderLayer",
+    )
+    cls_name = getattr(obj, "__class__", type(obj)).__name__
+    if cls_name in single_layer_classes:
+        return True
+    if (
+        hasattr(obj, "attention")
+        or hasattr(obj, "attn")
+        or hasattr(obj, "self_attn")
+        or hasattr(obj, "self")
+    ) and not (
+        hasattr(obj, "transformer")
+        or hasattr(obj, "distilbert")
+        or hasattr(obj, "roberta")
+        or hasattr(obj, "bert")
+        or hasattr(obj, "encoder")
+        or hasattr(obj, "model")
+    ):
+        return True
+    return False
+
+
+_INJECT_DEPTH = 0
+_MAX_DEPTH = 4
+
+
 @ATTENTION_REGISTRY.register("gqa_inject")
 @ATTENTION_REGISTRY.register("gqa")
 @ATTENTION_REGISTRY.register("grouped_query_attention")
@@ -489,91 +521,101 @@ def inject_gqa(
     **kwargs: Any,
 ) -> Optional[Any]:
     r"""Injection hook for GroupedQueryAttention supporting single layers and whole models."""
-    target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
-
-    # 1. Whole model traversal support
-    if target is not None and (
-        hasattr(target, "transformer")
-        or hasattr(target, "distilbert")
-        or hasattr(target, "roberta")
-        or hasattr(target, "bert")
-        or (hasattr(target, "model") and not hasattr(target, "forward"))
-    ):
-        layer_list = None
-        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-            layer_list = target.distilbert.transformer.layer
-        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-            layer_list = target.roberta.encoder.layer
-        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
-            layer_list = target.bert.encoder.layer
-        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-            layer_list = target.transformer.h
-        elif hasattr(target, "model") and hasattr(target.model, "layers"):
-            layer_list = target.model.layers
-        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
-            layer_list = target.encoder.layer
-
-        if layer_list is not None:
-            num_injected = 0
-            tot = len(layer_list)
-            for idx, lyr in enumerate(layer_list):
-                res = inject_gqa(
-                    layer=lyr,
-                    model_config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=idx,
-                    total_layers=tot,
-                    lora_rank=lora_rank,
-                    **kwargs,
-                )
-                if res is not None:
-                    num_injected += 1
-            return target if num_injected > 0 else None
-
-    # 2. Single layer injection
-    curr_attn = old_attn
-    if curr_attn is None and target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                curr_attn = target.attention.self
-            else:
-                curr_attn = target.attention
-        elif hasattr(target, "self"):
-            curr_attn = target.self
-        elif hasattr(target, "attn"):
-            curr_attn = target.attn
-        elif hasattr(target, "self_attn"):
-            curr_attn = target.self_attn
-
-    if curr_attn is None and target is not None and hasattr(target, "forward"):
-        curr_attn = target
-
-    if curr_attn is None and cfg is None:
+    global _INJECT_DEPTH
+    if _INJECT_DEPTH >= _MAX_DEPTH:
+        logger.error("Max injection depth reached in inject_gqa - possible recursion")
         return None
-
+    _INJECT_DEPTH += 1
     try:
-        new_layer = GroupedQueryAttention(
-            config=cfg,
-            old_attn=curr_attn,
-            lora_rank=lora_rank,
-            **kwargs,
-        )
-    except Exception as ex:
-        logger.warning("Failed to instantiate GroupedQueryAttention: %s", ex)
-        return None
+        target = layer if layer is not None else model
+        cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-    if target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                target.attention.self = new_layer
-            else:
-                target.attention = new_layer
-        elif hasattr(target, "self"):
-            target.self = new_layer
-        elif hasattr(target, "attn"):
-            target.attn = new_layer
-        elif hasattr(target, "self_attn"):
-            target.self_attn = new_layer
+        # 1. Whole model traversal support
+        if _is_single_layer(target):
+            pass
+        elif target is not None and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+            or (hasattr(target, "model") and not hasattr(target, "forward"))
+        ):
+            layer_list = None
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layer_list = target.distilbert.transformer.layer
+            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layer_list = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layer_list = target.bert.encoder.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layer_list = target.transformer.h
+            elif hasattr(target, "model") and hasattr(target.model, "layers"):
+                layer_list = target.model.layers
+            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+                layer_list = target.encoder.layer
 
-    return new_layer
+            if layer_list is not None:
+                num_injected = 0
+                tot = len(layer_list)
+                for idx, lyr in enumerate(layer_list):
+                    res = inject_gqa(
+                        layer=lyr,
+                        model_config=cfg,
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=tot,
+                        lora_rank=lora_rank,
+                        **kwargs,
+                    )
+                    if res is not None:
+                        num_injected += 1
+                return target if num_injected > 0 else None
+
+        # 2. Single layer injection
+        curr_attn = old_attn
+        if curr_attn is None and target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    curr_attn = target.attention.self
+                else:
+                    curr_attn = target.attention
+            elif hasattr(target, "self"):
+                curr_attn = target.self
+            elif hasattr(target, "attn"):
+                curr_attn = target.attn
+            elif hasattr(target, "self_attn"):
+                curr_attn = target.self_attn
+
+        if curr_attn is None and target is not None and hasattr(target, "forward"):
+            curr_attn = target
+
+        if curr_attn is None and cfg is None:
+            return None
+
+        try:
+            new_layer = GroupedQueryAttention(
+                config=cfg,
+                old_attn=curr_attn,
+                lora_rank=lora_rank,
+                **kwargs,
+            )
+        except Exception as ex:
+            logger.warning("Failed to instantiate GroupedQueryAttention: %s", ex)
+            return None
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_layer
+                else:
+                    target.attention = new_layer
+            elif hasattr(target, "self"):
+                target.self = new_layer
+            elif hasattr(target, "attn"):
+                target.attn = new_layer
+            elif hasattr(target, "self_attn"):
+                target.self_attn = new_layer
+
+        return new_layer
+    finally:
+        _INJECT_DEPTH -= 1
