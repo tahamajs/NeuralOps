@@ -120,7 +120,7 @@ class AegisSpectronFP8Config:
     c_glob: float = 0.8
     c_lin: float = 1.0
     dropout: float = 0.1
-    router_init_bias: Tuple[float, float, float] = (2.0, 0.0, -1.0)
+    router_init_bias: Tuple[float, float, float] = (0.0, 2.0, 0.0)
     is_decoder: bool = False
     fp8_format: str = "e4m3"
 
@@ -138,7 +138,7 @@ class AegisSpectronFP8Config:
         self.c_glob = kwargs.get("c_glob", 0.8)
         self.c_lin = kwargs.get("c_lin", 1.0)
         self.dropout = kwargs.get("dropout", 0.1)
-        self.router_init_bias = kwargs.get("router_init_bias", (2.0, 0.0, -1.0))
+        self.router_init_bias = kwargs.get("router_init_bias", (0.0, 2.0, 0.0))
         self.is_decoder = kwargs.get("is_decoder", False)
         self.fp8_format = kwargs.get("fp8_format", "e4m3")
 
