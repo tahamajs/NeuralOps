@@ -1,0 +1,8 @@
+module,local_acc,local_status,audit_acc,collapse_confirmed,dominant_class,dominant_frac,pred_count_0,pred_count_1,pred_count_2,class0_precision,class0_recall,class0_f1,class0_support,class1_precision,class1_recall,class1_f1,class1_support,class2_precision,class2_recall,class2_f1,class2_support,error
+galerkin,33.6,PASS_LOW,33.3,False,0,0.354,354,314,332,0.3333,0.346,0.3396,341,0.3121,0.3072,0.3096,319,0.3524,0.3441,0.3482,340,
+kda_attention,34.0,MODERATE_EXPANSION,34.7,False,0,0.763,763,9,228,0.3408,0.7625,0.471,341,0.3333,0.0094,0.0183,319,0.3684,0.2471,0.2958,340,
+simple_ssm,34.2,MODERATE_EXPANSION,31.9,True,1,1.0,0,1000,0,0.0,0.0,0.0,341,0.319,1.0,0.4837,319,0.0,0.0,0.0,340,
+mla_attention,34.7,PASS_LOW,31.9,True,1,1.0,0,1000,0,0.0,0.0,0.0,341,0.319,1.0,0.4837,319,0.0,0.0,0.0,340,
+hgrn2_layer,34.4,MODERATE_EXPANSION,33.5,False,0,0.834,834,3,163,0.3405,0.8328,0.4834,341,0.0,0.0,0.0,319,0.3129,0.15,0.2028,340,
+aegis_spectron_fp8,32.8,MODERATE_EXPANSION,31.9,True,1,1.0,0,1000,0,0.0,0.0,0.0,341,0.319,1.0,0.4837,319,0.0,0.0,0.0,340,
+mamba,34.1,PASS_LOW,31.9,True,1,1.0,0,1000,0,0.0,0.0,0.0,341,0.319,1.0,0.4837,319,0.0,0.0,0.0,340,
