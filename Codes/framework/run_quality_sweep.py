@@ -1612,8 +1612,49 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 
 
 
+def _auto_parallel_and_batch(requested_parallel=None, requested_batch=None, explicit_parallel=False, explicit_batch=False):
+    """
+    GPU-aware auto-sizing:
+    Selects batch size and parallel workers based on available GPU VRAM.
+    Limits parallel workers to 4 on Windows/CUDA to avoid memory pressure.
+    """
+    if not torch.cuda.is_available():
+        p = requested_parallel if explicit_parallel else 1
+        b = requested_batch if explicit_batch else 8
+        return p, b
+
+    try:
+        free_bytes, total_bytes = torch.cuda.mem_get_info()
+        free_gb = free_bytes / (1024 ** 3)
+    except Exception:
+        free_gb = 4.0
+
+    if explicit_batch and requested_batch is not None:
+        batch = requested_batch
+    else:
+        if free_gb >= 6.0:
+            batch = 32
+        elif free_gb >= 4.0:
+            batch = 16
+        else:
+            batch = 8
+
+    if explicit_parallel and requested_parallel is not None:
+        parallel = requested_parallel
+    else:
+        per_worker_gb = 1.5 if batch >= 16 else 1.0
+        n = int(free_gb // per_worker_gb)
+        parallel = max(2, min(n, 4))
+
+    return parallel, batch
+
+
 def parse_args(argv=None):
     import argparse, sys
+
+    raw_argv = sys.argv[1:] if argv is None else argv
+    has_explicit_batch = any(arg == "--batch_size" or arg.startswith("--batch_size=") for arg in raw_argv)
+    has_explicit_parallel = any(arg == "--parallel" or arg.startswith("--parallel=") for arg in raw_argv)
 
     import os
     if torch.cuda.is_available():
@@ -1629,7 +1670,7 @@ def parse_args(argv=None):
                          "loading and tokenization entirely for this run.")
     ap.add_argument("--num_labels", type=int, default=None, help="Number of classification labels (auto-detected if None)")
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
-    ap.add_argument("--parallel", type=int, default=1, help="Number of modules to evaluate concurrently across isolated processes")
+    ap.add_argument("--parallel", type=int, default=None, help="Number of modules to evaluate concurrently across isolated processes")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
     ap.add_argument("--finetune_mode", choices=("head", "lora", "full"), default="head",
@@ -1650,7 +1691,7 @@ def parse_args(argv=None):
     ap.add_argument("--muon_lr", type=float, default=0.02, help="Learning rate for Muon optimizer")
     ap.add_argument("--adam_lr", type=float, default=5e-5, help="Learning rate for AdamW optimizer")
     ap.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
-    ap.add_argument("--batch_size", type=int, default=32)
+    ap.add_argument("--batch_size", type=int, default=None)
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
     ap.add_argument("--freeze_clf", action="store_true", help="Freeze classifier head during recovery")
@@ -2130,6 +2171,17 @@ def parse_args(argv=None):
             LOG.info("GPU VRAM: %.2f GB free / %.2f GB total on %s", free_gb, total_gb, torch.cuda.get_device_name())
         except Exception:
             pass
+
+    auto_p, auto_b = _auto_parallel_and_batch(
+        requested_parallel=args.parallel,
+        requested_batch=args.batch_size,
+        explicit_parallel=has_explicit_parallel,
+        explicit_batch=has_explicit_batch,
+    )
+    args.parallel = auto_p
+    args.batch_size = auto_b
+    LOG.info("Configured execution sizing: parallel=%d, batch_size=%d (explicit_parallel=%s, explicit_batch=%s)",
+             args.parallel, args.batch_size, has_explicit_parallel, has_explicit_batch)
 
     return args
 
@@ -3184,7 +3236,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--batch_size", str(args.batch_size),
         "--precision", str(args.precision),
         "--seed", str(args.seed),
-        "--cached_batches_dir", str(Path(args.output_dir or "results") / "batch_cache"),
+        "--cached_batches_dir", str(Path(args.output_dir or "results") / f"batch_cache_{args.dataset}"),
         "--defer_export",
     ]
     if args.dataset_dir is None:
