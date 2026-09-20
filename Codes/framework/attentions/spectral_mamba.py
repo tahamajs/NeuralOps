@@ -541,38 +541,39 @@ class SpectralMambaAttention(BaseAttention):
         except Exception:
             attn_out = None
 
+        attn_weights = None
         if attn_out is None:
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal masking
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            # Causal masking
+            is_causal = self.is_decoder or kwargs.get("is_causal", False)
+            if is_causal:
+                causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # Attention mask
-        if attention_mask is not None:
-            scores = apply_attention_mask(scores, attention_mask)
+            # Attention mask
+            if attention_mask is not None:
+                scores = apply_attention_mask(scores, attention_mask)
 
-        attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights)
+            attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+            attn_weights = self.dropout(attn_weights)
 
-        # head_mask handling
-        if head_mask is not None:
-            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn_weights.dtype)
-            elif head_mask.dim() == 4:
-                attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+            # head_mask handling
+            if head_mask is not None:
+                if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
+                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
+                elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                    attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn_weights.dtype)
+                elif head_mask.dim() == 4:
+                    attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
-        attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+            attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
-        if self.is_nested_encoder:
-            attn_out = attn_ctx
-        else:
-            attn_out = self.out_lin(attn_ctx)
+            if self.is_nested_encoder:
+                attn_out = attn_ctx
+            else:
+                attn_out = self.out_lin(attn_ctx)
 
         # Spectral Mamba stream
         mamba_out = self.spectral_mamba(hidden_states)
