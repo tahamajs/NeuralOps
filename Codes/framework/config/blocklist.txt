@@ -10,6 +10,7 @@ expert_choice_moe,REJECTED_EXPANSION,"8-expert MoE architecture adds 114M parame
 hgrn2,REJECTED_EXPANSION,"HGRN2 gated recurrent replacement increases parameter count by 44% over baseline DistilBERT attention"
 
 # Category B — ARCHITECTURAL_INCOMPATIBLE (Mode collapse / causal break / task mismatch)
+aegis_spectron_fp8,ARCHITECTURAL_INCOMPATIBLE,"Hybrid 3-branch routing collapses to chance on MNLI sentence pairs (acc=32.80%, threshold=36.90%); sliding-window W=64 severs cross-sentence visibility between premise and hypothesis"
 inject_mamba,ARCHITECTURAL_INCOMPATIBLE,"Causal State Space Model (SSM) breaks bidirectional token visibility required for encoder sentence pair classification (34.1%)"
 mamba,ARCHITECTURAL_INCOMPATIBLE,"Unidirectional causal SSM architecture is fundamentally incompatible with bidirectional DistilBERT representations (34.1%)"
 kronecker_linear_class,ARCHITECTURAL_INCOMPATIBLE,"Kronecker product factorization combined with classification layer collapses to single-class prediction (34.0%)"

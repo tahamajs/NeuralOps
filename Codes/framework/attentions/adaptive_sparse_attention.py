@@ -786,7 +786,7 @@ def inject_adaptive_sparse(
         getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
     )
 
-    sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio", 0.5))
+    sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio", None))
     dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
 
     try:
