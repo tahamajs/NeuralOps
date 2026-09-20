@@ -263,7 +263,8 @@ class CosformerAttention(BaseAttention):
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
         # Temperature scaling parameter (fixed to 1.0 to preserve ELU+1 kernel expressivity)
-        self.tau = nn.Parameter(torch.tensor(1.0), requires_grad=False)
+        # Registered as a buffer (not a parameter) so it does not inflate the parameter count.
+        self.register_buffer("tau", torch.tensor(1.0))
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -635,9 +636,11 @@ class CosformerAttention(BaseAttention):
             Z_sin = K_sin.sum(dim=2, keepdim=True)  # [B, H, 1, d]
 
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
-            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous()) + self.eps
+            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
+            denom = denom.abs().clamp(min=self.eps)
 
-            context = (num / denom.clamp(min=self.eps)).to(dtype)
+            context = (num / denom).to(dtype)
+            context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # 8. Head mask handling
         if head_mask is not None:
