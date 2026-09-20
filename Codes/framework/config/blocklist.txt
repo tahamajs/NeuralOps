@@ -11,8 +11,6 @@ hgrn2,REJECTED_EXPANSION,"HGRN2 gated recurrent replacement increases parameter 
 adaptive_sparse,REJECTED_EXPANSION,"Learned sparse routing structures increase layer parameter count by 44% over baseline"
 
 # Category B — ARCHITECTURAL_INCOMPATIBLE (Mode collapse / causal break / task mismatch)
-compressed_attention,ARCHITECTURAL_INCOMPATIBLE,"Joint QKV SVD rank truncation (rank 128) is too aggressive for 3-class sentence pair entailment; results in 36.1% near-chance accuracy"
-compressed_mha,ARCHITECTURAL_INCOMPATIBLE,"Aggressive multi-head SVD projection collapse yields single-class prediction (34.1% accuracy) on MNLI"
 inject_mamba,ARCHITECTURAL_INCOMPATIBLE,"Causal State Space Model (SSM) breaks bidirectional token visibility required for encoder sentence pair classification (34.1%)"
 mamba,ARCHITECTURAL_INCOMPATIBLE,"Unidirectional causal SSM architecture is fundamentally incompatible with bidirectional DistilBERT representations (34.1%)"
 kronecker_linear_class,ARCHITECTURAL_INCOMPATIBLE,"Kronecker product factorization combined with classification layer collapses to single-class prediction (34.0%)"

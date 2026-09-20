@@ -87,8 +87,8 @@ class CompressedAttentionLayer(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
-        rank_qkv: int = 384,
-        rank_out: int = 384,
+        rank_qkv: int = 256,
+        rank_out: int = 256,
         lora_rank: int = 16,
         original_layer: Any = None,
         pretrained_attn: Optional[nn.Module] = None,
@@ -536,7 +536,7 @@ def inject_compressed_attention(
 
     try:
         h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
-        default_rank = min(64, h_sz // 4)
+        default_rank = min(256, h_sz // 2)
         rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", default_rank)) if comp_config is not None else default_rank
         rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", default_rank)) if comp_config is not None else default_rank
         new_attn = CompressedAttentionLayer(
