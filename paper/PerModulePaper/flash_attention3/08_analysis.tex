@@ -23,7 +23,7 @@ On our RTX 4070 (Ampere), FA3 is unavailable, so the SDPA path is used.
 This is functionally identical to standard attention, so accuracy matches 
 baseline.
 
-\textbf{On Hopper (H100), FA3 is used and gives 2--6$\times$ speedup.}
+\textbf{On Hopper (H100), FA3 is used and gives 2--6$$\times$ speedup.}
 
 \subsection{Memory Advantage}
 
@@ -36,10 +36,10 @@ baseline.
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{FA3} \\
 \midrule
-128 & 1$\times$ & 1$\times$ \\
-512 & 4$\times$ & 1.2$\times$ \\
-2048 & 16$\times$ & 1.5$\times$ \\
-8192 & 64$\times$ & 2$\times$ \\
+128 & 1$$\times$ & 1$$\times$ \\
+512 & 4$$\times$ & 1.2$$\times$ \\
+2048 & 16$$\times$ & 1.5$$\times$ \\
+8192 & 64$$\times$ & 2$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,9 +115,9 @@ Since both paths are exact, no accuracy difference.
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{FA3} & \textbf{FA3 FP8} \\
 \midrule
-512 & 1$\times$ & 3$\times$ & 5$\times$ \\
-2048 & 1$\times$ & 4$\times$ & 6$\times$ \\
-8192 & 1$\times$ & 4$\times$ & 6$\times$ \\
+512 & 1$$\times$ & 3$$\times$ & 5$$\times$ \\
+2048 & 1$$\times$ & 4$$\times$ & 6$$\times$ \\
+8192 & 1$$\times$ & 4$$\times$ & 6$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,7 +126,7 @@ Since both paths are exact, no accuracy difference.
 
 \begin{enumerate}
 \item \textbf{Exact attention -- no approximation.}
-\item \textbf{Speedup depends on hardware.} Hopper sees 3-6$\times$.
+\item \textbf{Speedup depends on hardware.} Hopper sees 3-6$$\times$.
 \item \textbf{Fallback preserves semantics.}
 \item \textbf{No parameter reduction.}
 \item \textbf{Cross-attention supported.}

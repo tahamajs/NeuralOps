@@ -15,7 +15,7 @@ LEKAv1 replaces standard attention with a kernel approximation pipeline:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$\times$L$\times$d}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
               |
                
       Q/K/V Projection
@@ -193,8 +193,8 @@ This provides a per-layer gain that can be adjusted during recovery.
 
 \textbf{Algorithm 1:} LEKAv1 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
  2: reshape to (B, H, L, d_h)

@@ -10,7 +10,7 @@ challenges are architectural portability, not algorithmic.
 
 \subsubsection{Takeaway 2: Real KV Compression}
 
-MLA reduces KV-cache size by \textbf{2.1\times$\times$--2.1\times$\times$}. This is 
+MLA reduces KV-cache size by \textbf{2.1$$\times$--2.1$$\times$}. This is 
 unique among the compression methods we compared.
 
 \subsubsection{Takeaway 3: Complementary to Parameter Compression}
@@ -24,7 +24,7 @@ They can be combined.
 
 \begin{itemize}
 \item \textbf{Long-context inference} (KV cache is the bottleneck)
-\item \textbf{High batch size} (KV cache scales with B $\times$ L)
+\item \textbf{High batch size} (KV cache scales with B $$\times$ L)
 \item \textbf{Models with concentrated K/V spectra}
 \item \textbf{Combined with quantization}
 
@@ -66,9 +66,9 @@ For DistilBERT inference, batch 8, seq 128:
 \textbf{Metric} & \textbf{Baseline} & \textbf{MLA} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
-KV cache (MB) & 84.5 & 0.85 & \textbf{2.1\times$\times$} \\
-Total VRAM (MB) & 183 & 298 MB & 2.1\times$\times$ \\
-Latency & 1.90 s & 1.42x s & 2.1\times$\times$ \\
+KV cache (MB) & 84.5 & 0.85 & \textbf{2.1$$\times$} \\
+Total VRAM (MB) & 183 & 298 MB & 2.1$$\times$ \\
+Latency & 1.90 s & 1.42x s & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,7 +82,7 @@ For long context, seq 2048:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{MLA} & \textbf{Change} \\
 \midrule
-KV cache (MB) & 84.5 & 0.85 & \textbf{2.1\times$\times$} \\
+KV cache (MB) & 84.5 & 0.85 & \textbf{2.1$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,11 +98,11 @@ KV cache (MB) & 84.5 & 0.85 & \textbf{2.1\times$\times$} \\
 \toprule
 \textbf{Method} & \textbf{KV reduction} & \textbf{Params} & \textbf{Accuracy} \\
 \midrule
-Standard MHA & 1$\times$ & 100\% & Baseline \\
-MQA & 12$\times$ & 100\% & Lower \\
-GQA (2 groups) & 6$\times$ & 100\% & Similar \\
+Standard MHA & 1$$\times$ & 100\% & Baseline \\
+MQA & 12$$\times$ & 100\% & Lower \\
+GQA (2 groups) & 6$$\times$ & 100\% & Similar \\
 H2O & Variable & 100\% & Lossy \\
-\textbf{MLA (ours)} & \textbf{2.1\times$\times$} & 100\% & 50.92\% \\
+\textbf{MLA (ours)} & \textbf{2.1$$\times$} & 100\% & 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}

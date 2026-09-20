@@ -51,7 +51,7 @@ The MoE operates on \texttt{all\_head\_size = num\_heads * head\_dim}. This equa
 hidden dimension for standard attention.
 
 \textbf{For GQA models}, \texttt{kv\_head\_size < all\_head\_size}. But the attention output 
-is always \texttt{all\_head\_size} (Q heads $\times$ head dim). So the MoE input dimension 
+is always \texttt{all\_head\_size} (Q heads $$\times$ head dim). So the MoE input dimension 
 is always \texttt{all\_head\_size = d}.
 
 \subsection{Dynamic Dimension Adaptation}

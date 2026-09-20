@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography \& Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math \& Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables \& Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics \& Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title \& Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract \& Keywords Block ---
 \begin{abstract}
 Low-rank factorization is a widely used primitive for compressing transformer 
 attention, but the standard approach -- truncated SVD at a fixed global rank -- 
@@ -96,7 +88,7 @@ starting point for LoRA recovery.
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
 50 LoRA recovery steps at residual rank 16. 
-Adaptive SVD achieves parameter reductions of \textbf{3.0$\times$--2.5$\times$} 
+Adaptive SVD achieves parameter reductions of \textbf{3.0$$\times$--2.5$$\times$} 
 with accuracy drops of only \textbf{-2.7\%---3.9\%}. The method 
 additionally supports \textbf{T5 relative attention bias}, \textbf{GQA}, and \textbf{RoPE}, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 
@@ -112,9 +104,6 @@ attention, residual adapters, transformer compression
 \noindent\textbf{Keywords:} adaptive rank selection, cumulative energy thresholding, low-rank
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -129,12 +118,10 @@ attention, residual adapters, transformer compression
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

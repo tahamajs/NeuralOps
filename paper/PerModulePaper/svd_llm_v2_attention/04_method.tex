@@ -25,7 +25,7 @@ recovery.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
+   |  Input weight W $\in$ R^{d_out $$\times$ d_in}           |
    +--------------------+-------------------------+
                         |
                          
@@ -38,9 +38,9 @@ recovery.
                          
    +----------------------------------------------+
    |  Store explicitly:                            |
-   |  U  $\in$ R^{d_out $\times$ r}                           |
+   |  U  $\in$ R^{d_out $$\times$ r}                           |
    |  $\Sigma$  $\in$ R^r (diagonal)                          |
-   |  V^H $\in$ R^{r $\times$ d_in}                           |
+   |  V^H $\in$ R^{r $$\times$ d_in}                           |
    +--------------------+-------------------------+
                         |
                          
@@ -81,12 +81,12 @@ Where \texttt{*} is one of \texttt{query}, \texttt{key}, \texttt{value}, \texttt
 \midrule
 Original & 589,824 \\
 Explicit (U + $\Sigma$ + V\^{}H) & $768 \times 128 + 128 + 128 \times 768 = 196{,}736$ \\
-Ratio & \textbf{3.0$\times$} \\
+Ratio & \textbf{3.0$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-With rank 64: \textbf{6.0$\times$} reduction.
+With rank 64: \textbf{6.0$$\times$} reduction.
 
 \subsection{The `\_project` Helper}
 

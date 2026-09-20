@@ -168,7 +168,7 @@ The output for chunk $c$:
 
 \textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
 Each iteration does a small matmul. Total wall-clock: dominated by 4 kernel 
-launches per chunk $\times$ 2 chunks.
+launches per chunk $$\times$ 2 chunks.
 
 \subsection{Weight Transfer}
 
@@ -243,9 +243,9 @@ Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
 
 \textbf{For $L = 128$, $d = 64$:}
 \begin{itemize}
-\item Cosformer: ~128 $\times$ 64  = 524K operations per head.
-\item Baseline: ~128  $\times$ 64 = 1M operations per head.
-\item \textbf{Cosformer has ~2$\times$ fewer FLOPs.}
+\item Cosformer: ~128 $$\times$ 64  = 524K operations per head.
+\item Baseline: ~128  $$\times$ 64 = 1M operations per head.
+\item \textbf{Cosformer has ~2$$\times$ fewer FLOPs.}
 
 \end{itemize}
 \textbf{Wall-clock:} Cosformer has overhead from:
@@ -259,8 +259,8 @@ Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
 
 \textbf{Algorithm 1:} CosformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)

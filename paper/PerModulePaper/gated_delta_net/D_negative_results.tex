@@ -3,7 +3,7 @@
 
 \subsection{D.1 Slow Implementation}
 
-\textbf{The primary negative result.} Gated DeltaNet is ~84.5$\times$ slower 
+\textbf{The primary negative result.} Gated DeltaNet is ~84.5$$\times$ slower 
 than baseline on DistilBERT despite having fewer FLOPs.
 
 \subsubsection{D.1.1 Attempted Fixes}
@@ -16,7 +16,7 @@ than baseline on DistilBERT despite having fewer FLOPs.
 \textbf{Fix} & \textbf{Result} \\
 \midrule
 Larger chunk size & Marginal improvement \\
-Disable gradient checkpointing & 2$\times$ faster but OOM \\
+Disable gradient checkpointing & 2$$\times$ faster but OOM \\
 Reduce batch size & Slower per epoch \\
 FP16 state & Numerical instability \\
 Prune chunks & No speedup \\
@@ -153,7 +153,7 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \item \textbf{Python loops kill performance.} Even $\mathcal{O}(L)$ algorithms can
   be slower than $\mathcal{O}(L^2)$ with poor implementation.
 \item \textbf{Gradient checkpointing is expensive.} It doubles compute.
-\item \textbf{State memory is a real constraint.} $d^2$ per head $\times$ $H$ heads $\times$ $B$
+\item \textbf{State memory is a real constraint.} $d^2$ per head $$\times$ $H$ heads $$\times$ $B$
   batch = large.
 \item \textbf{Fused kernels are not optional.} They are required for deployment.
 
@@ -161,8 +161,8 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \subsection{D.8 What Would Make This Work?}
 
 \begin{enumerate}
-\item \textbf{Triton kernel} for the recurrence (expected 20-50$\times$ speedup).
-\item \textbf{Custom CUDA kernel} for further 2-3$\times$ speedup.
+\item \textbf{Triton kernel} for the recurrence (expected 20-50$$\times$ speedup).
+\item \textbf{Custom CUDA kernel} for further 2-3$$\times$ speedup.
 \item \textbf{Memory-efficient checkpointing} (recompute only the state, not the
   full activations).
 \item \textbf{Mixed precision} (FP32 state, FP16 elsewhere).
@@ -177,13 +177,13 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \toprule
 \textbf{Implementation} & \textbf{Speed} & \textbf{Reference} \\
 \midrule
-Yang et al. (2024), Triton & ~3$\times$ faster than attention & Published \\
-\textbf{Ours, PyTorch} & \textbf{~45$\times$ slower} & This paper \\
+Yang et al. (2024), Triton & ~3$$\times$ faster than attention & Published \\
+\textbf{Ours, PyTorch} & \textbf{~45$$\times$ slower} & This paper \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{The 135$\times$ gap is entirely implementation overhead.}
+\textbf{The 135$$\times$ gap is entirely implementation overhead.}
 
 \subsection{D.10 Recommendations for Future Work}
 

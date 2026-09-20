@@ -77,10 +77,10 @@ GPT-2 & Nystr m & 2.3 s s & 0.85 & 569 MB MB \\
 \toprule
 \textbf{$m$} & \textbf{Acc} & \textbf{Time} & \textbf{VRAM} & \textbf{Speedup} \\
 \midrule
-16 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
-32 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
-64 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
-128 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
+16 & 0.85 & 0.85 & 0.85 & 84.5$$\times$ \\
+32 & 0.85 & 0.85 & 0.85 & 84.5$$\times$ \\
+64 & 0.85 & 0.85 & 0.85 & 84.5$$\times$ \\
+128 & 0.85 & 0.85 & 0.85 & 84.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,7 +160,7 @@ appear similar in accuracy.
 
 \begin{itemize}
 \item \textbf{At N=128:} Nystr m uses dense fallback; matches baseline.
-\item \textbf{At N=512:} Nystr m branch activates; achieves \textbf{84.5$\times$}
+\item \textbf{At N=512:} Nystr m branch activates; achieves \textbf{84.5$$\times$}
   speedup at 86.4\%\% accuracy cost.
 \item \textbf{Portability:} Nystr mformer ports to all four architectures.
 \item \textbf{No parameter or KV-cache reduction} -- compute only.

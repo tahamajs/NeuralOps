@@ -37,7 +37,7 @@ is worse.
 \subsubsection{Asymmetry Overhead}
 
 The asymmetric formulation computes three factors ($F_1, F_2, F_3$) instead 
-of one. This is $3 \times$ the matmul count, offsetting the memory savings 
+of one. This is $3 $\times$ the matmul count, offsetting the memory savings 
 at short $L$.
 
 \subsubsection{Softmax Over Approximate Scores}
@@ -67,9 +67,9 @@ We compare three methods for computing $F_2^{-1}$:
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-SVD pinv (exact) & 86.5 & 1.0$\times$ \\
-Schulz from zero & 82.0 & 0.8$\times$ \\
-Schulz from SVD pinv & \textbf{90.14} & 1.2$\times$ \\
+SVD pinv (exact) & 86.5 & 1.0$$\times$ \\
+Schulz from zero & 82.0 & 0.8$$\times$ \\
+Schulz from SVD pinv & \textbf{90.14} & 1.2$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

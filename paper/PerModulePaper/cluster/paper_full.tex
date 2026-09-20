@@ -88,7 +88,7 @@ LoRA rank-16 adapters and learnable temperature/blend scalars provide the
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
 \textbf{-0.80\%---0.38\%} of the baseline after 50 
-recovery steps while reducing attention FLOPs by \textbf{2.7$\times$} at 
+recovery steps while reducing attention FLOPs by \textbf{2.7$$\times$} at 
 sequence length $L = 128$ with $K = 16$ clusters.
 
 \textbf{Keywords:} linear attention, differentiable clustering, token routing, 
@@ -638,7 +638,7 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
  1: Q $\leftarrow$ LoRALinear_Q(X)                       ▷ Frozen base + LoRA
@@ -712,8 +712,8 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 \midrule
 Baseline & $\mathcal{O}(L^2 d_h)$ \\
 ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
-**Reduction at $L=128$** & **$\approx 2.7\times$** \\
-**Reduction at $L=512$** & **$\approx 10.7\times$** \\
+**Reduction at $L=128$** & **$\approx 2.7$\times$** \\
+**Reduction at $L=512$** & **$\approx 10.7$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1068,9 +1068,9 @@ GPT-2 & **ClusterFormer** & **78.98** & -0.38 & 0.789 & 800 & 4.80 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{$\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 67.55M & +589826M & 0.99$\times$ \\
-RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$\times$ \\
-GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
+DistilBERT & 66.9M & 67.55M & +589826M & 0.99$$\times$ \\
+RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$$\times$ \\
+GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1090,7 +1090,7 @@ GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \midrule
 Baseline & $2L^2 d_h$ & 2.1M & 33.6M \\
 ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
-**Speedup** & --- & **2.7$\times$** & **4.7$\times$** \\
+**Speedup** & --- & **2.7$$\times$** & **4.7$$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1103,11 +1103,11 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
-8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
-**16** & **89.91** & **77.50** & **78.98** & **2.7$\times$** \\
-32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
-64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6$$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 4$$\times$ \\
+**16** & **89.91** & **77.50** & **78.98** & **2.7$$\times$** \\
+32 & 90.05 & 77.6 & 79.0 & 1.9$$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 1.4$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1136,10 +1136,10 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & 89.0 & 1$\times$ \\
-**3** & **89.91** & **3$\times$** \\
-5 & 89.95 & 5$\times$ \\
-10 & 89.98 & 10$\times$ \\
+1 & 89.0 & 1$$\times$ \\
+**3** & **89.91** & **3$$\times$** \\
+5 & 89.95 & 5$$\times$ \\
+10 & 89.98 & 10$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1243,11 +1243,11 @@ baseline and ClusterFormer on GPT-2.
 \toprule
 \textbf{$L$} & \textbf{Baseline (ms)} & \textbf{ClusterFormer (ms)} & \textbf{Speedup} \\
 \midrule
-64 & 2.1 & 2.4 & 0.88$\times$ \\
-128 & 4.2 & 3.8 & 1.10$\times$ \\
-256 & 12.5 & 6.9 & 1.81$\times$ \\
-512 & 44.2 & 15.3 & **2.89$\times$** \\
-1024 & 172.8 & 32.1 & **5.38$\times$** \\
+64 & 2.1 & 2.4 & 0.88$$\times$ \\
+128 & 4.2 & 3.8 & 1.10$$\times$ \\
+256 & 12.5 & 6.9 & 1.81$$\times$ \\
+512 & 44.2 & 15.3 & **2.89$$\times$** \\
+1024 & 172.8 & 32.1 & **5.38$$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1418,10 +1418,10 @@ For DistilBERT at $L=256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 6.7M & 2.4M & **2.8$\times$ reduction** \\
+Attention FLOPs & 6.7M & 2.4M & **2.8$$\times$ reduction** \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 67.55M & +589826M \\
-Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
+Wall time & 4.2 ms & 3.8 ms & 1.10$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1587,9 +1587,9 @@ temperature and blend scalars.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{FLOPs reduction ($L=256$)} \\
 \midrule
-DistilBERT & -0.80\% & ~2.7$\times$ \\
-RoBERTa & -1.06\% & ~2.7$\times$ \\
-GPT-2 & -0.38\% & ~2.7$\times$ \\
+DistilBERT & -0.80\% & ~2.7$$\times$ \\
+RoBERTa & -1.06\% & ~2.7$$\times$ \\
+GPT-2 & -0.38\% & ~2.7$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2176,11 +2176,11 @@ Accuracy & 78.98\% \\
 \toprule
 \textbf{K} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6.4$\times$ \\
-8 & 89.5 & 77.0 & 78.5 & 3.2$\times$ \\
-16 & 89.91 & 77.50 & 78.98 & 1.6$\times$ \\
-32 & 90.05 & 77.6 & 79.0 & 0.8$\times$ \\
-64 & 90.15 & 77.7 & 79.05 & 0.4$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6.4$$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 3.2$$\times$ \\
+16 & 89.91 & 77.50 & 78.98 & 1.6$$\times$ \\
+32 & 90.05 & 77.6 & 79.0 & 0.8$$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 0.4$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2209,10 +2209,10 @@ Accuracy & 78.98\% \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time} \\
 \midrule
-1 & 89.0 & 1$\times$ \\
-3 & 89.91 & 3$\times$ \\
-5 & 89.95 & 5$\times$ \\
-10 & 89.98 & 10$\times$ \\
+1 & 89.0 & 1$$\times$ \\
+3 & 89.91 & 3$$\times$ \\
+5 & 89.95 & 5$$\times$ \\
+10 & 89.98 & 10$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2261,7 +2261,7 @@ Accuracy & 78.98\% \\
 
 \subsubsection{D.1.6 10+ K-Means Iterations}
 
-\textbf{Result.} No improvement, 3$\times$ slower. 3 iterations suffice.
+\textbf{Result.} No improvement, 3$$\times$ slower. 3 iterations suffice.
 
 \subsection{D.2 Failed Hyperparameters}
 

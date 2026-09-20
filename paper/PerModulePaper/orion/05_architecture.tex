@@ -109,8 +109,8 @@ def weight(self):
     return torch.matmul(self.up.weight, self.down.weight)
 \end{lstlisting}
 
-For 768$\times$768 this is fine. For 3072$\times$768 with rank 64: \texttt{64 $\times$ 3072 + 64 $\times$ 768} 
-= 245K params, materializing to 2.36M -- a 10$\times$ overhead. Used in Frobenius 
+For 768$$\times$768 this is fine. For 3072$$\times$768 with rank 64: \texttt{64 $$\times$ 3072 + 64 $$\times$ 768} 
+= 245K params, materializing to 2.36M -- a 10$$\times$ overhead. Used in Frobenius 
 check inside \texttt{copy\_weights}.
 
 \subsubsection{The `raise` Bug}

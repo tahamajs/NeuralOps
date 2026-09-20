@@ -632,7 +632,7 @@ For $L = 512, B = 64, K = 4$:
 \item Long: $4 \times 512 \times 64 = 131$K
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 2$\times$}
+\item \textbf{Reduction: 2$$\times$}
 \end{itemize}
 
 For $L = 4096, B = 64, K = 4$:
@@ -644,7 +644,7 @@ For $L = 4096, B = 64, K = 4$:
 \item Long: $1.05$M
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 16$\times$}
+\item \textbf{Reduction: 16$$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -1086,12 +1086,12 @@ $L = 128$, the module's sparsity machinery is silent.
 \toprule
 \textbf{$L$} & \textbf{Softmax (FLOPs)} & \textbf{FUSIONATTN (FLOPs)} & \textbf{Speedup} \\
 \midrule
-64 & 4096 & 4096 (short) & 1$\times$ \\
-128 & 16384 & 16384 (short) & 1$\times$ \\
-256 & 65536 & 32768 & 2$\times$ \\
-512 & 262144 & 65536 & 4$\times$ \\
-1024 & 1.05M & 131K & 8$\times$ \\
-4096 & 16.8M & 1.05M & **16$\times$** \\
+64 & 4096 & 4096 (short) & 1$$\times$ \\
+128 & 16384 & 16384 (short) & 1$$\times$ \\
+256 & 65536 & 32768 & 2$$\times$ \\
+512 & 262144 & 65536 & 4$$\times$ \\
+1024 & 1.05M & 131K & 8$$\times$ \\
+4096 & 16.8M & 1.05M & **16$$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1234,7 +1234,7 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 65K & **4$\times$ reduction** \\
+Attention FLOPs & 262K & 65K & **4$$\times$ reduction** \\
 Accuracy & 90.71\% & 90.48\% & -0.23\% \\
 Params & 66.9M & 67.74M & +786864M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
@@ -1265,7 +1265,7 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \item Short path: same as baseline.
 \end{itemize}
 \begin{itemize}
-\item Long path: $K/B \times$ faster.
+\item Long path: $K/B $\times$ faster.
 \end{itemize}
 
 \subsubsection{Memory}
@@ -2011,9 +2011,9 @@ Accuracy & 78.90\% \\
 \toprule
 \textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-32 & 90.10 & 0.5$\times$ \\
-64 & 90.48 & 1.0$\times$ \\
-128 & 90.30 & 2.0$\times$ \\
+32 & 90.10 & 0.5$$\times$ \\
+64 & 90.48 & 1.0$$\times$ \\
+128 & 90.30 & 2.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2026,9 +2026,9 @@ Accuracy & 78.90\% \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-2 & 89.5 & 0.5$\times$ \\
-4 & 90.48 & 1.0$\times$ \\
-8 & 90.60 & 2.0$\times$ \\
+2 & 89.5 & 0.5$$\times$ \\
+4 & 90.48 & 1.0$$\times$ \\
+8 & 90.60 & 2.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

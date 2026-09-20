@@ -73,7 +73,7 @@ We present a production-hardened implementation of GQA with three key features:
   query weights are copied verbatim; KV weights are grouped and repeated.
 
 \item \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The
-  default is $G = H / 2$, giving a 2$\times$ KV cache reduction.
+  default is $G = H / 2$, giving a 2$$\times$ KV cache reduction.
 
 \item \textbf{LoRA recovery.} After injection, the base weights are frozen and
   only LoRA adapters are trainable. This preserves pretrained knowledge

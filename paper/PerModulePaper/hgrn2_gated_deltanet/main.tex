@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 Transformer self-attention scales quadratically with sequence length, making 
 long-context inference prohibitively expensive. Recent work has explored 
@@ -93,7 +85,7 @@ RoBERTa (baseline 32\%), and \textbf{51.03\%} on GPT-2 (baseline
 \textbf{Crucially, we are explicit about the trade-offs:} the module **does not 
 reduce parameter count*\textit{ -- in fact, it }increases* parameters by 
 \textbf{48.5\%\%} due to LoRA and the gate. Additionally, the current 
-implementation \textbf{runs 1.0x$\times$ slower than baseline} on short 
+implementation \textbf{runs 1.0x$$\times$ slower than baseline} on short 
 sequences (L = 128) due to a Python-level sequential recurrence. The 
 advantage of HGRN2-GatedDeltaNet appears only at long sequence lengths 
 ($L \geq 128$), where the $\mathcal{O}(L)$ scaling dominates.
@@ -107,9 +99,6 @@ long-context efficiency, state-space models
 \noindent\textbf{Keywords:} linear attention, recurrent neural networks, HGRN, DeltaNet,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -124,12 +113,10 @@ long-context efficiency, state-space models
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

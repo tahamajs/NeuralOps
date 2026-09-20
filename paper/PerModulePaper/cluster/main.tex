@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 Standard self-attention has quadratic complexity in sequence length, 
 $\mathcal{O}(L^2 d)$, which dominates the cost of transformer inference 
@@ -95,7 +87,7 @@ LoRA rank-16 adapters and learnable temperature/blend scalars provide the
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
 \textbf{-0.69\%--+8.60\%} of the baseline after 50 
-recovery steps while reducing attention FLOPs by \textbf{2.7$\times$} at 
+recovery steps while reducing attention FLOPs by \textbf{2.7$$\times$} at 
 sequence length $L = 128$ with $K = 16$ clusters.
 
 \textbf{Keywords:} linear attention, differentiable clustering, token routing, 
@@ -107,9 +99,6 @@ sliding window, efficient transformers
 \noindent\textbf{Keywords:} linear attention, differentiable clustering, token routing,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -124,12 +113,10 @@ sliding window, efficient transformers
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

@@ -16,7 +16,7 @@ attention with a pruned $L \times k$ attention:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    X $\in$ R^{B $\times$ L $\times$ d}
+    X $\in$ R^{B $$\times$ L $$\times$ d}
           |
           +------------------+
                               
@@ -242,10 +242,10 @@ For nested encoders (RoBERTa/BERT), we skip $W_O$:
 
 \textbf{Algorithm 1:} PTP forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
+Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
         attention_mask, position_embeddings, is_causal
         keep_ratio  
-Output: output $\in$ R^{B $\times$ L $\times$ d}
+Output: output $\in$ R^{B $$\times$ L $$\times$ d}
 
  1: # 1. Score tokens
  2: s $\leftarrow$ sigmoid(MLP(hidden_states))          # (B, L)

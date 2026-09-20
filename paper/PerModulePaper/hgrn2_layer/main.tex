@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 Standard transformer self-attention scales quadratically with sequence 
 length, motivating a search for linear-time alternatives. We present 
@@ -90,8 +82,8 @@ evaluate on DistilBERT, RoBERTa-base, and GPT-2 with SST-2.
 it \textbf{adds} approximately 66.4M\% more parameters per layer due 
 to the gate networks and LoRA adapters. Its benefit is **linear-time 
 inference** at long sequence lengths. On the SST-2 benchmark (L = 128), 
-HGRN2Layer is \textbf{1.0x$\times$ slower than baseline}; on longer sequences 
-($L \geq 128$), it is \textbf{SPEEDUP$\times$ faster}. We report both 
+HGRN2Layer is \textbf{1.0x$$\times$ slower than baseline}; on longer sequences 
+($L \geq 128$), it is \textbf{SPEEDUP$$\times$ faster}. We report both 
 regimes honestly.
 
 \textbf{Keywords:} linear recurrence, element-wise RNN, HGRN-2, parallel scan, 
@@ -103,9 +95,6 @@ attention replacement
 \noindent\textbf{Keywords:} linear recurrence, element-wise RNN, HGRN-2, parallel scan,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -120,12 +109,10 @@ attention replacement
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

@@ -47,7 +47,7 @@ Is the model a flat encoder? -- Yes -- Use Cosformer
   |
   No
    
-Is the model a decoder? -- Yes -- Consider but expect 3-5$\times$ slowdown
+Is the model a decoder? -- Yes -- Consider but expect 3-5$$\times$ slowdown
   |
   No
    
@@ -71,8 +71,8 @@ For DistilBERT on RTX 4070:
 \midrule
 Accuracy & 90.71\% & 77.75\% & -12.96\% \\
 Params & 66.9M & 70791394M & +5.73\% \\
-Time & 1.9 s & 3.5 s & 1.84$\times$ \\
-VRAM & 183 MB & 335 MB MB & 1.31$\times$ \\
+Time & 1.9 s & 3.5 s & 1.84$$\times$ \\
+VRAM & 183 MB & 335 MB MB & 1.31$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,10 +88,10 @@ VRAM & 183 MB & 335 MB MB & 1.31$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Params} \\
 \midrule
-FlashAttention-2 & ~90\% & 1.1$\times$ & 0 \\
-A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
-NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
-\textbf{Cosformer} & \textbf{77.75\%} & \textbf{1.84$\times$} & \textbf{+5.73\%} \\
+FlashAttention-2 & ~90\% & 1.1$$\times$ & 0 \\
+A3 (SVD) & 88.5\% & 0.8$$\times$ & \textbf{-60\%} \\
+NHA & 90.25\% & 0.6$$\times$ & +0.88\% \\
+\textbf{Cosformer} & \textbf{77.75\%} & \textbf{1.84$$\times$} & \textbf{+5.73\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,7 +127,7 @@ NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
 \begin{itemize}
 \item For flat encoders: likely fine.
 \item For nested encoders: tune first.
-\item For decoders: expect 3-5$\times$ slowdown.
+\item For decoders: expect 3-5$$\times$ slowdown.
 \end{itemize}
 \begin{lstlisting}
 

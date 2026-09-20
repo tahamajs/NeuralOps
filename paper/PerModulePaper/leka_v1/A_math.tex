@@ -85,7 +85,7 @@ For decoders, we need cumulative sums:
 This is computed in $\mathcal{O}(L)$ via \texttt{torch.cumsum} on the outer product.
 
 \textbf{Memory.} The outer product has shape $(B, H, L, 2F, d_h)$. For 
-$L = 128$, this is ~1.6$\times$10  elements at FP32 = 640 MB.
+$L = 128$, this is ~1.6$$\times$10  elements at FP32 = 640 MB.
 
 \subsection{A.6 Preservation Gate}
 
@@ -114,7 +114,7 @@ decrease when $x$ is more important.
 \textbf{Component} & \textbf{Params} \\
 \midrule
 Q/K/V/O (frozen) & $4 d^2$ \\
-LoRA ($\times$4) & $4 \cdot 2 r_L d$ \\
+LoRA ($$\times$4) & $4 \cdot 2 r_L d$ \\
 Random projection (per head) & $H d_h F$ \\
 LayerNorm & $2 d_h$ \\
 Gates & 2 \\

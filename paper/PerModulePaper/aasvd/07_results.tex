@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & \textbf{AASVD} & \textbf{85.0} & -5.7 & 0.850 & 24 & \textbf{4.0$\times$} & 120 MB \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & \textbf{AASVD} & \textbf{72.0} & -6.6 & 0.720 & 48 & \textbf{3.5$\times$} & 500 MB \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & \textbf{AASVD} & \textbf{73.0} & -6.4 & 0.730 & 48 & \textbf{3.5$\times$} & 550 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
+DistilBERT & \textbf{AASVD} & \textbf{85.0} & -5.7 & 0.850 & 24 & \textbf{4.0$$\times$} & 120 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
+RoBERTa & \textbf{AASVD} & \textbf{72.0} & -6.6 & 0.720 & 48 & \textbf{3.5$$\times$} & 500 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
+GPT-2 & \textbf{AASVD} & \textbf{73.0} & -6.4 & 0.730 & 48 & \textbf{3.5$$\times$} & 550 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,7 +25,7 @@ GPT-2 & \textbf{AASVD} & \textbf{73.0} & -6.4 & 0.730 & 48 & \textbf{3.5$\times$
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} \textbf{4.0$\times$} on DistilBERT.
+\item \textbf{Parameter reduction:} \textbf{4.0$$\times$} on DistilBERT.
 \item \textbf{Accuracy:} drops only \textbf{-5.7\%} on DistilBERT.
 \item \textbf{VRAM:} reduces by \textbf{40\%}.
 
@@ -41,9 +41,9 @@ GPT-2 & \textbf{AASVD} & \textbf{73.0} & -6.4 & 0.730 & 48 & \textbf{3.5$\times$
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 16000000 & \textbf{4.0$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 35000000 & \textbf{3.5$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 35000000 & \textbf{3.5$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 16000000 & \textbf{4.0$$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 35000000 & \textbf{3.5$$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 35000000 & \textbf{3.5$$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,10 +57,10 @@ GPT-2 & 124,441,344 & 35000000 & \textbf{3.5$\times$} & 0.85 \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{AASVD r=288} & \textbf{Ratio} \\
 \midrule
-\texttt{q\_lin} (768$\times$768) & 589,824 & 98304 & 6.0$\times$ \\
-\texttt{k\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
-\texttt{v\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
-\texttt{out\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+\texttt{q\_lin} (768$$\times$768) & 589,824 & 98304 & 6.0$$\times$ \\
+\texttt{k\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
+\texttt{v\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
+\texttt{out\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,10 +137,10 @@ GPT-2 \& AASVD & 5.8 s & 19000 & 550 MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-32 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-64 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-128 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-256 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+32 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+64 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+128 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+256 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -235,10 +235,10 @@ No calibration & 80.0 & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
-a3 (r=64) & 0.85 & 32$\times$ & 32 & 32$\times$ \\
-sdrm & 0.85 & 32$\times$ & 32 & 32$\times$ \\
-\textbf{AASVD} & \textbf{85.0} & \textbf{4.0$\times$} & \textbf{72.0} & \textbf{3.5$\times$} \\
+full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
+a3 (r=64) & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
+sdrm & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
+\textbf{AASVD} & \textbf{85.0} & \textbf{4.0$$\times$} & \textbf{72.0} & \textbf{3.5$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -264,7 +264,7 @@ GPT-2 & 0.85 s & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} 4.0$\times$--3.5$\times$
+\item \textbf{Compression ratio:} 4.0$$\times$--3.5$$\times$
 \item \textbf{Accuracy drop:} -5.7\%---6.4\%
 \item \textbf{VRAM reduction:} 40\%
 \item \textbf{All models pass quality gate.}

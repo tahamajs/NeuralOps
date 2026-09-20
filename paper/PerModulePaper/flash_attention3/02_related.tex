@@ -49,7 +49,7 @@ Attention** (Ainslie et al., 2023) generalizes this. We support GQA.
 \subsection{FP8 Attention}
 
 \textbf{FP8 in transformers} (Nvidia, 2022; Micikevicius et al., 2022) enables 
-$2\times$ throughput on Hopper Tensor Cores. \textbf{FP8 attention} requires 
+$2$\times$ throughput on Hopper Tensor Cores. \textbf{FP8 attention} requires 
 careful scaling to avoid overflow. We use \texttt{e4m3fn} with implicit scaling 
 by the FA3 kernel.
 
@@ -86,11 +86,11 @@ and multi-architecture support, not a new attention algorithm.
 \toprule
 \textbf{Method} & \textbf{Speed (Hopper)} & \textbf{Speed (Ampere)} & \textbf{FP8} & \textbf{Fallback} \\
 \midrule
-Standard attention & 1$\times$ & 1$\times$ &  & -- \\
-FlashAttention-2 & 3$\times$ & 3$\times$ &  & -- \\
-FlashAttention-3 & \textbf{6$\times$} & N/A &  & -- \\
-SDPA (builtin) & 3$\times$ & 3$\times$ & Partial &  \\
-\textbf{Ours} & \textbf{6$\times$} & \textbf{3$\times$} &  &  \\
+Standard attention & 1$$\times$ & 1$$\times$ &  & -- \\
+FlashAttention-2 & 3$$\times$ & 3$$\times$ &  & -- \\
+FlashAttention-3 & \textbf{6$$\times$} & N/A &  & -- \\
+SDPA (builtin) & 3$$\times$ & 3$$\times$ & Partial &  \\
+\textbf{Ours} & \textbf{6$$\times$} & \textbf{3$$\times$} &  &  \\
 \bottomrule
 \end{tabular}
 \end{table}

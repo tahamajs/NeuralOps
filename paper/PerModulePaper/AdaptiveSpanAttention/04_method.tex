@@ -17,7 +17,7 @@ with a \textbf{span-masked} variant:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+    Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
              |
               
     +------------------------------+
@@ -190,11 +190,11 @@ We use $\lambda = 0.01$ by default.
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
         span_logits   $\in$ R^H
         max_span S_max, ramp_size R
         attention_mask, is_causal
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
 1:  span $\leftarrow$ sigmoid( ) * S_max                # (H,)
 2:

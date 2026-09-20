@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 Low-rank factorization of transformer weight matrices reduces inference cost 
 by replacing each $d_\text{out} \times d_\text{in}$ weight matrix with two 
@@ -87,7 +79,7 @@ y = ((x V^\top) \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
 achieving genuine parameter reduction from $d_\text{in} d_\text{out}$ to 
 $r(d_\text{in} + d_\text{out}) + r(d_\text{in} + d_\text{out})_\text{LoRA}$. 
 On DistilBERT, RoBERTa-base, and GPT-2 with dynamic rank (energy threshold 
-$= 0.95$), ASVD achieves \textbf{5.5$\times$--5.0$\times$} 
+$= 0.95$), ASVD achieves \textbf{5.5$$\times$--5.0$$\times$} 
 parameter reduction at accuracy drops of \textbf{-0.34\%--+6.42\%} on 
 SST-2 after 50 LoRA recovery steps. Peak VRAM decreases 
 by \textbf{45\%}.
@@ -106,9 +98,6 @@ attention, transformer efficiency
 \noindent\textbf{Keywords:} activation-aware compression, low-rank factorization, SVD,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -123,12 +112,10 @@ attention, transformer efficiency
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

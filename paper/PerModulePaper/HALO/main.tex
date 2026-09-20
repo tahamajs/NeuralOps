@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography \& Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math \& Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables \& Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics \& Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title \& Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract \& Keywords Block ---
 \begin{abstract}
 Transformer attention at inference is bound by two opposing constraints: dense 
 softmax attention delivers high-quality attention patterns but scales 
@@ -84,8 +76,8 @@ We evaluate HALO-ReGLA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. With
 LoRA recovery at rank 16, HALO-ReGLA achieves \textbf{89.5\%}, 
 \textbf{76.5\%}, and \textbf{77.5\%} accuracy, within \textbf{-1.2\%}, 
 \textbf{-2.1\%}, and \textbf{-1.9\%} of the dense baselines. Inference 
-latency is 1.5$\times$--1.3$\times$ relative to dense attention, 
-with attention memory reduced by \textbf{2$\times$} at long sequences. 
+latency is 1.5$$\times$--1.3$$\times$ relative to dense attention, 
+with attention memory reduced by \textbf{2$$\times$} at long sequences. 
 We provide a production-hardened PyTorch implementation supporting flat, 
 nested, and causal architectures with RoPE, GQA, and safe fallback.
 
@@ -98,9 +90,6 @@ kernel, efficient transformer
 \noindent\textbf{Keywords:} hybrid attention, linear attention, learnable gating, rectified
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -115,12 +104,10 @@ kernel, efficient transformer
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

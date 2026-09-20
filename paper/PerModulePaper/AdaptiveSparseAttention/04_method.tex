@@ -15,7 +15,7 @@ sparse variant that:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-   Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+   Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
             |
              
    +------------------------------+
@@ -133,10 +133,10 @@ to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
         sparsity_logits   $\in$ R^H
         T (temperature), C (chunk size)
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
 1:    $\leftarrow$ sigmoid( )                        # (H,)
 2:  k $\leftarrow$ floor((1 -  ) * L)                # (H,)
@@ -189,7 +189,7 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \end{table}
 
 For $C = 64$ and $L = 512$, memory is reduced by 
-\textbf{8$\times$}. Time is unchanged (we still compute all scores); 
+\textbf{8$$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys -- this is a possible future extension.
 

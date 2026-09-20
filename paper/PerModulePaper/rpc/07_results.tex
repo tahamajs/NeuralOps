@@ -75,10 +75,10 @@ GPT-2 & RPC & 2.3 s s & 0.85 & 571 MB MB \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Theoretical speedup} \\
 \midrule
-8 & 32 & 32 & 32 & 8$\times$ \\
-16 & 32 & 32 & 32 & 4$\times$ \\
-32 & 32 & 32 & 32 & 2$\times$ \\
-64 & 32 & 32 & 32 & 1$\times$ \\
+8 & 32 & 32 & 32 & 8$$\times$ \\
+16 & 32 & 32 & 32 & 4$$\times$ \\
+32 & 32 & 32 & 32 & 2$$\times$ \\
+64 & 32 & 32 & 32 & 1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,10 +116,10 @@ sketching occurs.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
-nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
-asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$\times$ \\
-\textbf{rpc (r=32)} & \textbf{87.84} & \textbf{66.97} & \textbf{57.34} & \textbf{1.01$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$$\times$ \\
+asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$$\times$ \\
+\textbf{rpc (r=32)} & \textbf{87.84} & \textbf{66.97} & \textbf{57.34} & \textbf{1.01$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,10 +135,10 @@ asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$\times$ \\
 \toprule
 \textbf{Config} & \textbf{Theoretical} & \textbf{Measured} & \textbf{Gap} \\
 \midrule
-r=8 & 8$\times$ & 0.85$\times$ & 0.85$\times$ \\
-r=16 & 4$\times$ & 0.85$\times$ & 0.85$\times$ \\
-r=32 & 2$\times$ & 0.85$\times$ & 0.85$\times$ \\
-r=64 & 1$\times$ & 1$\times$ & 0 \\
+r=8 & 8$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
+r=16 & 4$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
+r=32 & 2$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
+r=64 & 1$$\times$ & 1$$\times$ & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}

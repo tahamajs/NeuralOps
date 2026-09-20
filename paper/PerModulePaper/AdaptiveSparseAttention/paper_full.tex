@@ -81,7 +81,7 @@ We evaluate ASA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At default
 sparsity 0.5 on decoders and 0.1 on encoders, ASA 
 achieves \textbf{88.5\%}, \textbf{76.0\%}, and \textbf{76.5\%} accuracy, within 
 \textbf{-2.2\%}, \textbf{-2.6\%}, and \textbf{-2.9\%} of the respective 
-dense baselines. Attention FLOPs are reduced by up to \textbf{2$\times$}. 
+dense baselines. Attention FLOPs are reduced by up to \textbf{2$$\times$}. 
 The learned per-head budgets show systematic structure: some heads converge 
 to near-dense (sparsity $\approx$ 0) and others to near-sparse (sparsity $\approx$ 0.9), 
 demonstrating head heterogeneity.
@@ -500,7 +500,7 @@ O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right)
 \textbf{Peak memory.} $\mathcal{O}(B H C L)$ instead of $\mathcal{O}(B H L^2)$.
 
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
-instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$\times$ reduction.}
+instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$$\times$ reduction.}
 
 \subsection{3.7 LoRA Recovery}
 
@@ -533,7 +533,7 @@ sparse variant that:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-   Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+   Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
             │
             ▼
    ┌──────────────────────────────┐
@@ -655,10 +655,10 @@ to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
         sparsity_logits ℓ $\in$ R^H
         T (temperature), C (chunk size)
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
 1:  ρ $\leftarrow$ sigmoid(ℓ)                        # (H,)
 2:  k $\leftarrow$ floor((1 - ρ) * L)                # (H,)
@@ -710,7 +710,7 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \end{table}
 
 For $C = 64$ and $L = 512$, memory is reduced by 
-\textbf{8$\times$}. Time is unchanged (we still compute all scores); 
+\textbf{8$$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys --- this is a possible future extension.
 
@@ -1247,10 +1247,10 @@ larger is too soft.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & **2$\times$** \\
-**ASA** & **88.5** & **76.0** & **76.5** \& Sparse & 1.00$\times$ & **2$\times$** \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & **2$$\times$** \\
+**ASA** & **88.5** & **76.0** & **76.5** \& Sparse & 1.00$$\times$ & **2$$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1285,7 +1285,7 @@ Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & **2$\times$** \\
 \item \textbf{Sparsity:} learned per-head budgets are heterogeneous.
 \end{itemize}
 \begin{itemize}
-\item \textbf{VRAM:} reduced by 8$\times$ via chunking.
+\item \textbf{VRAM:} reduced by 8$$\times$ via chunking.
 \end{itemize}
 \begin{itemize}
 \item \textbf{No parameter reduction} --- sparsity is compute-only.
@@ -1453,7 +1453,7 @@ Head redundancy insufficient
 1. \textbf{Per-head budgets are bimodal}: dense vs sparse.
 2. \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
 3. \textbf{$T = 0.1$} is the optimal temperature.
-4. \textbf{Chunking reduces memory} by 8$\times$.
+4. \textbf{Chunking reduces memory} by 8$$\times$.
 5. \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
 
 \clearpage
@@ -1675,9 +1675,9 @@ peak memory.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & 0.42 & -8$\times$ \\
-RoBERTa & -2.6\% & 0.45 & -8$\times$ \\
-GPT-2 & -2.9\% & 0.48 & -8$\times$ \\
+DistilBERT & -2.2\% & 0.42 & -8$$\times$ \\
+RoBERTa & -2.6\% & 0.45 & -8$$\times$ \\
+GPT-2 & -2.9\% & 0.48 & -8$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 We introduce \textbf{SVD-Linear Attention}, a compression-and-efficiency module that 
 simultaneously (i) reduces attention projection parameters via SVD-factorization 
@@ -72,7 +64,7 @@ mechanisms within a single drop-in replacement for multi-head self-attention:
 
 \begin{enumerate}
 \item \textbf{SVD-factorized projections:} $W_Q, W_K, W_V, W_O$ stored as $U V^\top$
-  with rank $r$, reducing projection parameters by factor ~50\%$\times$ at
+  with rank $r$, reducing projection parameters by factor ~50\%$$\times$ at
   $r = 32$.
 \item \textbf{Kernelized linear attention:} $\phi(x) = \text{ELU}(x) + 1$ feature map,
   enabling the identity
@@ -98,7 +90,7 @@ with peak VRAM reductions of \textbf{380 MB\%}.
 
 Unlike attention-replacement methods that add parameters (NHA, EAT, OHA, 
 Infini-Attention, SVD-Mamba), SVD-Linear Attention \textbf{reduces} parameter count 
-by factor 50\%$\times$--2.1\times$\times$. LoRA adapters add a small number of 
+by factor 50\%$$\times$--2.1$$\times$. LoRA adapters add a small number of 
 recovery parameters on top.
 
 \textbf{Keywords:} linear attention, SVD factorization, exponential decay, 
@@ -110,9 +102,6 @@ associative memory, streaming inference
 \noindent\textbf{Keywords:} linear attention, SVD factorization, exponential decay,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -127,12 +116,10 @@ associative memory, streaming inference
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

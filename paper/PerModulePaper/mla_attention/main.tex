@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 \textbf{Multi-Head Latent Attention (MLA)} was introduced by DeepSeek-AI (2024) as 
 a key component of the DeepSeek-V2 architecture. MLA compresses the K and V 
@@ -87,7 +79,7 @@ On SST-2, MLA achieves \textbf{50.92\%} on DistilBERT (baseline
 32\%, $\Delta$ = -27.64), and \textbf{57.22\%} on GPT-2 (baseline 
 0.85\%, $\Delta$ = -22.14). The KV-cache latent dimension is 
 32, reducing per-token KV memory by a factor of 
-\textbf{32$\times$} compared to standard attention.
+\textbf{32$$\times$} compared to standard attention.
 
 We release all code, weights, and evaluation scripts. This is a 
 \textbf{reproduction and portability study}, not a novel architecture.
@@ -102,9 +94,6 @@ transformers
 \noindent\textbf{Keywords:} Multi-Head Latent Attention, MLA, DeepSeek-V2, KV-cache
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -119,12 +108,10 @@ transformers
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

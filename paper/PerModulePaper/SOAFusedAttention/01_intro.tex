@@ -23,7 +23,7 @@ $W_O$ & $768 \times 768$ & 589,824 \\
 \end{table}
 
 Compare to the FFN, which contributes $2 \times 768 \times 3072 = 4.72M$ for 
-a 4$\times$ expansion. In models with smaller FFN expansion (e.g., DistilBERT's 4$\times$), 
+a 4$$\times$ expansion. In models with smaller FFN expansion (e.g., DistilBERT's 4$$\times$), 
 attention is the majority of the parameter count.
 
 \textbf{Low-rank factorization} is a natural compression primitive. For a weight 
@@ -34,7 +34,7 @@ W \approx U V, \quad U \in \mathbb{R}^{d \times k}, \quad V \in \mathbb{R}^{k \t
 \end{equation}
 
 with $k \ll d$. The parameter count drops from $d^2$ to $kd + dk = 2kd$. For 
-$k = 128$ and $d = 768$, this is a 3$\times$ reduction.
+$k = 128$ and $d = 768$, this is a 3$$\times$ reduction.
 
 \textbf{The standard approach} is to compute the truncated SVD of $W$:
 

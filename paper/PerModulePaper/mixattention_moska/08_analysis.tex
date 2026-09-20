@@ -88,7 +88,7 @@ token is critical for classification.
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} 2.1\times
+\textbf{Observation.} 2.1$\times$
 
 \subsection{Decoder Path is a No-Op}
 
@@ -132,19 +132,19 @@ For DistilBERT on L=128:
 \textbf{Operation} & \textbf{Baseline} & \textbf{FASA (keep=0.5)} \\
 \midrule
 Q/K/V proj & 3 & 3 \\
-Score matrix & L$\times$L = 16K & L$\times$k = 8K \\
-Softmax & L$\times$L & L$\times$k \\
-Value matmul & L$\times$L$\times$d & L$\times$k$\times$d \\
+Score matrix & L$$\times$L = 16K & L$$\times$k = 8K \\
+Softmax & L$$\times$L & L$$\times$k \\
+Value matmul & L$$\times$L$$\times$d & L$$\times$k$$\times$d \\
 Output proj & 1 & 1 \\
 \textbf{Attention FLOPs} & \textbf{~2M} & \textbf{~1M} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Expected speedup} for the attention kernel: 2$\times$. But other costs 
+\textbf{Expected speedup} for the attention kernel: 2$$\times$. But other costs 
 (projections, gate computations, gather operations) dilute this.
 
-\textbf{Observed}: 2.3 s$\times$ slowdown overall -- the pruning adds gather + 
+\textbf{Observed}: 2.3 s$$\times$ slowdown overall -- the pruning adds gather + 
 topk overhead that outweighs the FLOP savings at short sequences.
 
 \subsection{Failure Mode Taxonomy}
@@ -158,7 +158,7 @@ topk overhead that outweighs the FLOP savings at short sequences.
 \midrule
 \textbf{No sparsification on GPT-2} & $\Delta$ $\approx$ 0\% & Causal path skips pruning \\
 \textbf{Accuracy drop on encoders} & -3 to -10\% & Variance misses important tokens \\
-\textbf{Slower than baseline} & ~2$\times$ & Topk + gather overhead \\
+\textbf{Slower than baseline} & ~2$$\times$ & Topk + gather overhead \\
 \textbf{Parameter increase} & +0.9-6\% & LoRA \\
 \bottomrule
 \end{tabular}

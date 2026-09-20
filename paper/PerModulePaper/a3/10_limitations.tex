@@ -3,7 +3,7 @@
 
 While A3 provides an efficient and guaranteed non-expanding post-training factorization pipeline, several empirical and operational limitations warrant explicit delineation.
 
-\textbf{Modest Whole-Model Compression.} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256 < 384$), A3 achieves modest full-model parameter reductions (1.02$\times$ on DistilBERT, 1.005$\times$ on RoBERTa and GPT-2), removing between 0.53M and 1.25M parameters. Because non-factorized embeddings, LayerNorm vectors, and classifier heads constitute a substantial fraction of compact transformers, compressing attention projections alone naturally limits aggregate compression ratios.
+\textbf{Modest Whole-Model Compression.} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256 < 384$), A3 achieves modest full-model parameter reductions (1.02$$\times$ on DistilBERT, 1.005$$\times$ on RoBERTa and GPT-2), removing between 0.53M and 1.25M parameters. Because non-factorized embeddings, LayerNorm vectors, and classifier heads constitute a substantial fraction of compact transformers, compressing attention projections alone naturally limits aggregate compression ratios.
 
 \textbf{Degradation on Autoregressive Causal Decoders.} While bidirectional encoder architectures (DistilBERT and RoBERTa) demonstrate high resilience, GPT-2 experiences severe downstream degradation (-16.17\% accuracy drop, from 79.36\% to 63.19\%). Causal attention masking, non-symmetric activation dynamics, and transposed \texttt{Conv1D} structures make autoregressive decoders substantially more vulnerable to low-rank subspace projection.
 

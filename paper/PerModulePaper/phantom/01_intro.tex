@@ -6,7 +6,7 @@
 Transformer attention is expensive in two orthogonal ways. First, the 
 projection matrices $W_Q, W_K, W_V, W_O$ are dense and consume the majority 
 of model parameters. For DistilBERT, these four matrices contain 
-\textbf{4 $\times$ 768  = 2.36M parameters per layer}, or 14.2M across six layers. Second, 
+\textbf{4 $$\times$ 768  = 2.36M parameters per layer}, or 14.2M across six layers. Second, 
 the attention matrix $Q K^\top$ scales quadratically with sequence length 
 $L$, requiring $\mathcal{O}(L^2)$ memory and time.
 

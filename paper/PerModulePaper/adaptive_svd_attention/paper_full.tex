@@ -92,7 +92,7 @@ starting point for LoRA recovery.
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
 50 LoRA recovery steps at residual rank 16. 
-Adaptive SVD achieves parameter reductions of \textbf{3.0$\times$--2.5$\times$} 
+Adaptive SVD achieves parameter reductions of \textbf{3.0$$\times$--2.5$$\times$} 
 with accuracy drops of only \textbf{-2.7\%---3.9\%}. The method 
 additionally supports \textbf{T5 relative attention bias}, \textbf{GQA}, and \textbf{RoPE}, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 
@@ -169,7 +169,7 @@ the four together contain ~2.36M parameters per layer.
 with the product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and 
 $V \in \mathbb{R}^{r \times d_\text{in}}$. Parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r (d_\text{in} + d_\text{out})$. For 
-$768 \times 768$ at $r = 128$, this is a \textbf{3$\times$ reduction} in attention 
+$768 \times 768$ at $r = 128$, this is a \textbf{3$$\times$ reduction} in attention 
 parameters.
 
 The \textbf{rank choice} is the central design decision. Truncated SVD gives the 
@@ -307,7 +307,7 @@ singular values under noise (Gavish \& Donoho, 2014). Our criterion is a
 \textbf{cumulative energy threshold}, distinct from per-singular-value thresholds.
 
 \textbf{Randomized SVD.} Halko et al. (2011) provide a randomized algorithm with 
-$\mathcal{O}(d r \log k)$ complexity. For our layer sizes ($\le$3072$\times$768), exact 
+$\mathcal{O}(d r \log k)$ complexity. For our layer sizes ($\le$3072$$\times$768), exact 
 SVD is faster and simpler.
 
 \subsection{2.2 Activation-Aware Compression}
@@ -853,9 +853,9 @@ Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
 \toprule
 \textbf{Configuration} & \textbf{Parameters} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$\times$ \\
-Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
-+ Adapter & 221,184 & 2.67$\times$ \\
+Original & 589,824 & 1.00$$\times$ \\
+Adaptive SVD (base) & 196,608 & 3.00$$\times$ \\
++ Adapter & 221,184 & 2.67$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -907,7 +907,7 @@ The parameter ratio per projection is:
 \tag{4.13}
 \]
 
-At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\times$ reduction).
+At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$$\times$ reduction).
 
 \subsection{4.10 Hyperparameter Guidance}
 
@@ -1320,8 +1320,8 @@ Trainable params \& Only $A_P, B_P$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 96 (2 per projection $\times$ 4 per 
-layer $\times$ $N_l$).
+\textbf{Trainable tensor count:} 96 (2 per projection $$\times$ 4 per 
+layer $$\times$ $N_l$).
 
 \subsection{6.6 Evaluation Metrics}
 
@@ -1439,20 +1439,20 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$\times$** & 130 MB \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$\times$** & 550 MB \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 MB \\
+DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
+DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$$\times$** & 130 MB \\
+RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
+RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$$\times$** & 550 MB \\
+GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
+GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$$\times$** & 600 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa, 
-   2.5$\times$ on GPT-2.
+1. \textbf{Parameter reduction:} 3.0$$\times$ on DistilBERT, 2.5$$\times$ on RoBERTa, 
+   2.5$$\times$ on GPT-2.
 2. \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
 3. \textbf{VRAM:} reduces by 30\% on all models.
 4. \textbf{No calibration:} compression time is only 15--30 seconds.
@@ -1467,9 +1467,9 @@ GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 22000000 & **3.0$\times$** \\
-RoBERTa & 124,647,170 & 50000000 & **2.5$\times$** \\
-GPT-2 & 124,441,344 & 50000000 & **2.5$\times$** \\
+DistilBERT & 66,955,010 & 22000000 & **3.0$$\times$** \\
+RoBERTa & 124,647,170 & 50000000 & **2.5$$\times$** \\
+GPT-2 & 124,441,344 & 50000000 & **2.5$$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1482,10 +1482,10 @@ GPT-2 & 124,441,344 & 50000000 & **2.5$\times$** \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{Compressed} & \textbf{Rank $r_P$} & \textbf{Reduction} \\
 \midrule
-$W_Q$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
-$W_K$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
-$W_V$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
-$W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
+$W_Q$ & 589,824 & 196608 & 128 & 3.0$$\times$ \\
+$W_K$ & 589,824 & 196608 & 128 & 3.0$$\times$ \\
+$W_V$ & 589,824 & 98304 & 64 & 6.0$$\times$ \\
+$W_O$ & 589,824 & 98304 & 64 & 6.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1564,11 +1564,11 @@ GPT-2 \& Adaptive SVD & 5.3 & 21000 & 600 \\
 \toprule
 \textbf{$\tau$} & \textbf{Avg rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.85 & 64 & 85 & 5.0$\times$ & 70 & 71 \\
-0.90 & 90 & 87 & 3.5$\times$ & 72 & 74 \\
-**0.92** & **105** & **88** & **3.0$\times$** & **74** & **75.5** \\
-0.95 & 160 & 89 & 2.0$\times$ & 75.5 & 77 \\
-0.99 & 350 & 90 & 1.2$\times$ & 77 & 78.5 \\
+0.85 & 64 & 85 & 5.0$$\times$ & 70 & 71 \\
+0.90 & 90 & 87 & 3.5$$\times$ & 72 & 74 \\
+**0.92** & **105** & **88** & **3.0$$\times$** & **74** & **75.5** \\
+0.95 & 160 & 89 & 2.0$$\times$ & 75.5 & 77 \\
+0.99 & 350 & 90 & 1.2$$\times$ & 77 & 78.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1649,11 +1649,11 @@ that $\tau$ is the primary driver of rank selection.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
-`svd\_linear` (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
-`a3` & 85.5 & 2.8$\times$ & 72 & 74 \\
-`aasvd` & 85.0 & 3.0$\times$ & 72 & 73 \\
-**Adaptive SVD** & **88.0** & **3.0$\times$** & **74.0** & **75.5** \\
+full & 90.71\% & 1.00$$\times$ & 78.56\% & 79.36\% \\
+`svd\_linear` (r=128) & 84 & 3.0$$\times$ & 70 & 72 \\
+`a3` & 85.5 & 2.8$$\times$ & 72 & 74 \\
+`aasvd` & 85.0 & 3.0$$\times$ & 72 & 73 \\
+**Adaptive SVD** & **88.0** & **3.0$$\times$** & **74.0** & **75.5** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1675,13 +1675,13 @@ GPT-2 & 20 s & 4 s & 6 s & **30 s** \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} No calibration, so compression is 5--10$\times$ faster than 
+\textbf{Observation.} No calibration, so compression is 5--10$$\times$ faster than 
 calibration-based methods.
 
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} 3.0$\times$--2.5$\times$
+\item \textbf{Compression ratio:} 3.0$$\times$--2.5$$\times$
 \end{itemize}
 \begin{itemize}
 \item \textbf{Accuracy drop:} -2.7\%---3.9\%
@@ -1761,10 +1761,10 @@ be more compressed without losing critical information.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-Fixed rank 64 & 86 & 5.0$\times$ \& Over-compress slow-decaying layers \\
-Fixed rank 128 & 87.5 & 3.5$\times$ \& Moderate \\
-Fixed rank 192 & 88.5 & 1.7$\times$ \& Under-compress fast-decaying \\
-**Adaptive ($\tau$=0.92)** & **88.0** & **3.0$\times$** & **Best** \\
+Fixed rank 64 & 86 & 5.0$$\times$ \& Over-compress slow-decaying layers \\
+Fixed rank 128 & 87.5 & 3.5$$\times$ \& Moderate \\
+Fixed rank 192 & 88.5 & 1.7$$\times$ \& Under-compress fast-decaying \\
+**Adaptive ($\tau$=0.92)** & **88.0** & **3.0$$\times$** & **Best** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1802,11 +1802,11 @@ drops by \textbf{8\%}.
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-0.85 & 85 & 5.0$\times$ \& Aggressive, loses accuracy \\
-0.90 & 87 & 3.5$\times$ \& Good balance \\
-0.92 & 88 & 3.0$\times$ \& Default \\
-0.95 & 89 & 2.0$\times$ \& Conservative \\
-0.99 & 90 & 1.2$\times$ \& Near-lossless \\
+0.85 & 85 & 5.0$$\times$ \& Aggressive, loses accuracy \\
+0.90 & 87 & 3.5$$\times$ \& Good balance \\
+0.92 & 88 & 3.0$$\times$ \& Default \\
+0.95 & 89 & 2.0$$\times$ \& Conservative \\
+0.99 & 90 & 1.2$$\times$ \& Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1836,7 +1836,7 @@ RoBERTa acc & 72 & 72 & **74.0** \\
 \end{table}
 
 \textbf{Trade-off.} A3/AASVD may give slightly higher accuracy in-domain (with 
-calibration), but Adaptive SVD is \textbf{5$\times$} faster and works in 
+calibration), but Adaptive SVD is \textbf{5$$\times$} faster and works in 
 zero-data settings.
 
 \subsection{8.7 Numerical Stability}
@@ -1866,7 +1866,7 @@ exploding gradients.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Structured?} \\
 \midrule
 Head pruning (50\%) & 86.4 & 84\% \& Hard (removes heads) \\
-**Adaptive SVD** & **88.0** & 3.0$\times$ \& Soft (per-head low-rank) \\
+**Adaptive SVD** & **88.0** & 3.0$$\times$ \& Soft (per-head low-rank) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1899,7 +1899,7 @@ No failures observed in this configuration.
 2. \textbf{Residual adapters recover 5.0\%} accuracy at negligible cost.
 3. \textbf{$\tau$=0.92 is robust} across models and layers.
 4. \textbf{Per-layer rank distribution} is bimodal: Q/K high, V low.
-5. \textbf{Faster than A3/AASVD} by 5$\times$ on compression time.
+5. \textbf{Faster than A3/AASVD} by 5$$\times$ on compression time.
 
 \clearpage
 
@@ -1995,10 +1995,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 45 MB & **3.0$\times$** \\
-Params & 66.95M & 22000000M & **3.0$\times$** \\
-VRAM & 183 MB & 130 MB & **2.1\times$\times$** \\
-Inference time & 1.90 s & 2.3 s & 1.2$\times$ \\
+Disk (FP16) & 134 MB & 45 MB & **3.0$$\times$** \\
+Params & 66.95M & 22000000M & **3.0$$\times$** \\
+VRAM & 183 MB & 130 MB & **2.1$$\times$** \\
+Inference time & 1.90 s & 2.3 s & 1.2$$\times$ \\
 Accuracy & 90.71\% & 88.0\% & -2.7\% \\
 Compression time & --- & 15 s \& Fast \\
 \bottomrule
@@ -2016,11 +2016,11 @@ compression speed.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Calibration} \\
 \midrule
-ALBERT \& Sharing & 3.5$\times$ & 89.4\% \& Retrain \\
-DistilBERT \& Distill & 1.6$\times$ & 90.7\% \& Retrain \\
-A3 \& Low-rank & 2.1\times$\times$ & 85.5 \& Data \\
-AASVD \& Low-rank & 2.1\times$\times$ & 85.0 \& Data \\
-**Adaptive SVD** \& Low-rank & **3.0$\times$** & **88.0** & **None** \\
+ALBERT \& Sharing & 3.5$$\times$ & 89.4\% \& Retrain \\
+DistilBERT \& Distill & 1.6$$\times$ & 90.7\% \& Retrain \\
+A3 \& Low-rank & 2.1$$\times$ & 85.5 \& Data \\
+AASVD \& Low-rank & 2.1$$\times$ & 85.0 \& Data \\
+**Adaptive SVD** \& Low-rank & **3.0$$\times$** & **88.0** & **None** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2031,7 +2031,7 @@ AASVD \& Low-rank & 2.1\times$\times$ & 85.0 \& Data \\
 Same disk savings as A3/AASVD.
 
 \subsubsection{Latency}
-Two matmuls + adapter = ~1.2$\times$ slower than baseline. On CPU, 
+Two matmuls + adapter = ~1.2$$\times$ slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 \subsubsection{Compatibility}
@@ -2141,7 +2141,7 @@ Factorized layers are slower at inference:
 \item Adapter adds one more matmul
 \end{itemize}
 \begin{itemize}
-\item ~1.2$\times$ slower on GPU
+\item ~1.2$$\times$ slower on GPU
 \end{itemize}
 
 \textbf{Mitigation.} The compressed model uses less memory, so larger batch sizes 
@@ -2248,9 +2248,9 @@ AASVD, no calibration data is required.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{Compression time} \\
 \midrule
-DistilBERT & -2.7\% & **3.0$\times$** & 15 s \\
-RoBERTa & -4.6\% & **2.5$\times$** & 30 s \\
-GPT-2 & -3.9\% & **2.5$\times$** & 30 s \\
+DistilBERT & -2.7\% & **3.0$$\times$** & 15 s \\
+RoBERTa & -4.6\% & **2.5$$\times$** & 30 s \\
+GPT-2 & -3.9\% & **2.5$$\times$** & 30 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2445,9 +2445,9 @@ torch.backends.cudnn.benchmark = False
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} & \textbf{Compress time} \\
 \midrule
-DistilBERT & 88.0\% $\pm$ 1\% & 3.0$\times$ & 15 s \\
-RoBERTa & 74.0\% $\pm$ 1\% & 2.5$\times$ & 30 s \\
-GPT-2 & 75.5\% $\pm$ 1\% & 2.5$\times$ & 30 s \\
+DistilBERT & 88.0\% $\pm$ 1\% & 3.0$$\times$ & 15 s \\
+RoBERTa & 74.0\% $\pm$ 1\% & 2.5$$\times$ & 30 s \\
+GPT-2 & 75.5\% $\pm$ 1\% & 2.5$$\times$ & 30 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3219,7 +3219,7 @@ Key entry points:
 Model \& DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 22000000 \\
-Compression ratio & 3.0$\times$ \\
+Compression ratio & 3.0$$\times$ \\
 Accuracy & 88.0\% \\
 F1 (binary) & 0.880 \\
 F1 (macro) & 0.879 \\
@@ -3246,7 +3246,7 @@ Avg reconstruction error & 0.27 \\
 \midrule
 Params (before) & 124,647,170 \\
 Params (after) & 50000000 \\
-Compression ratio & 2.5$\times$ \\
+Compression ratio & 2.5$$\times$ \\
 Accuracy & 74.0\% \\
 ... & ... \\
 \bottomrule
@@ -3263,7 +3263,7 @@ Accuracy & 74.0\% \\
 \midrule
 Params (before) & 124,441,344 \\
 Params (after) & 50000000 \\
-Compression ratio & 2.5$\times$ \\
+Compression ratio & 2.5$$\times$ \\
 Accuracy & 75.5\% \\
 ... & ... \\
 \bottomrule
@@ -3322,11 +3322,11 @@ Accuracy & 75.5\% \\
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT acc} & \textbf{Avg rank} & \textbf{Ratio} \\
 \midrule
-0.85 & 85 & 64 & 5.0$\times$ \\
-0.90 & 87 & 90 & 3.5$\times$ \\
-0.92 & 88 & 105 & 3.0$\times$ \\
-0.95 & 89 & 160 & 2.0$\times$ \\
-0.99 & 90 & 350 & 1.2$\times$ \\
+0.85 & 85 & 64 & 5.0$$\times$ \\
+0.90 & 87 & 90 & 3.5$$\times$ \\
+0.92 & 88 & 105 & 3.0$$\times$ \\
+0.95 & 89 & 160 & 2.0$$\times$ \\
+0.99 & 90 & 350 & 1.2$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3468,7 +3468,7 @@ Accuracy peaked early then collapsed.
 \textbf{Goal.} Near-lossless compression.
 
 \textbf{Result.} Accuracy was near-baseline but compression ratio was only 
-1.3$\times$.
+1.3$$\times$.
 
 \textbf{Conclusion.} $\tau$=0.99 defeats the purpose.
 
@@ -3501,7 +3501,7 @@ degraded before recovery.
 
 \subsubsection{D.2.1 Per-Head Rank}
 
-We tested separate rank per head. Result: no improvement, 4$\times$ slower 
+We tested separate rank per head. Result: no improvement, 4$$\times$ slower 
 (SVD per head).
 
 \subsubsection{D.2.2 Learned $\tau$}

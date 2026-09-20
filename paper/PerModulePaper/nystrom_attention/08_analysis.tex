@@ -71,10 +71,10 @@ is reasonable for most inputs but may miss important local structure.
 \toprule
 \textbf{Iterations} & \textbf{$\|I - A V_k\|_F$} & \textbf{Speedup vs SVD} \\
 \midrule
-1 & 0.024 & 3$\times$ \\
-2 & 0.024 & 2.5$\times$ \\
-3 & 0.024 & 2$\times$ \\
-5 & 0.024 & 1.5$\times$ \\
+1 & 0.024 & 3$$\times$ \\
+2 & 0.024 & 2.5$$\times$ \\
+3 & 0.024 & 2$$\times$ \\
+5 & 0.024 & 1.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,11 +92,11 @@ is reasonable for most inputs but may miss important local structure.
 \toprule
 \textbf{$N$} & \textbf{Dense time} & \textbf{Nystr m time} & \textbf{Speedup} \\
 \midrule
-128 & 0.85 & Same (dense) & 1.0$\times$ \\
-256 & 0.85 & 0.85 & 85.6$\times$ \\
-512 & 0.85 & 0.85 & 86.2$\times$ \\
-1024 & 0.85 & 0.85 & 86.4$\times$ \\
-2048 & 0.85 & 0.85 & 86.5$\times$ \\
+128 & 0.85 & Same (dense) & 1.0$$\times$ \\
+256 & 0.85 & 0.85 & 85.6$$\times$ \\
+512 & 0.85 & 0.85 & 86.2$$\times$ \\
+1024 & 0.85 & 0.85 & 86.4$$\times$ \\
+2048 & 0.85 & 0.85 & 86.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,10 +114,10 @@ is reasonable for most inputs but may miss important local structure.
 \toprule
 \textbf{$N$} & \textbf{Dense VRAM} & \textbf{Nystr m VRAM} & \textbf{Reduction} \\
 \midrule
-128 & 0.85 & 0.85 & 1.0$\times$ \\
-512 & 0.85 & 0.85 & 350 MB$\times$ \\
-1024 & 0.85 & 0.85 & 420 MB$\times$ \\
-2048 & 0.85 & 0.85 & 580 MB$\times$ \\
+128 & 0.85 & 0.85 & 1.0$$\times$ \\
+512 & 0.85 & 0.85 & 350 MB$$\times$ \\
+1024 & 0.85 & 0.85 & 420 MB$$\times$ \\
+2048 & 0.85 & 0.85 & 580 MB$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -155,7 +155,7 @@ RoBERTa's output projection is outside the inner attention. Requires
 Datasets & LRA, GLUE & SST-2 \\
 Models & BERT & Four families \\
 $N$ tested & 1024-4096 & 128-2048 \\
-Nystr m speedup & ~2-5$\times$ & 84.5$\times$ \\
+Nystr m speedup & ~2-5$$\times$ & 84.5$$\times$ \\
 Accuracy drop & 0.5-2\% & 86.4\%\% \\
 \bottomrule
 \end{tabular}

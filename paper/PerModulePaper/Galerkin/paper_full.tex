@@ -658,7 +658,7 @@ For $N = 128$ and $r = 64$:
 \item Decoder: $\sim 4 \times 10^6$ FLOPs per head
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~2$\times$}
+\item \textbf{Encoder speedup: ~2$$\times$}
 \end{itemize}
 
 For $N = 512$ and $r = 64$:
@@ -669,7 +669,7 @@ For $N = 512$ and $r = 64$:
 \item Decoder: $\sim 6.4 \times 10^7$
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~8$\times$}
+\item \textbf{Encoder speedup: ~8$$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -1044,10 +1044,10 @@ GPT-2 \& Fallback & $O(N^2 d)$ \\
 \toprule
 \textbf{$r$} & \textbf{D acc} & \textbf{R acc} & \textbf{FLOPs vs baseline} \\
 \midrule
-16 & 87.5 & 74.5 & 8$\times$ \\
-32 & 89.0 & 76.5 & 4$\times$ \\
-**64** & **89.91** & **77.35** & **2$\times$** \\
-128 & 90.10 & 77.55 & 1$\times$ \\
+16 & 87.5 & 74.5 & 8$$\times$ \\
+32 & 89.0 & 76.5 & 4$$\times$ \\
+**64** & **89.91** & **77.35** & **2$$\times$** \\
+128 & 90.10 & 77.55 & 1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1179,7 +1179,7 @@ No systematic failures observed.
 
 \subsection{8.7 Summary of Insights}
 
-1. \textbf{Encoder benefit is real} --- 2$\times$ speedup at $N=128$.
+1. \textbf{Encoder benefit is real} --- 2$$\times$ speedup at $N=128$.
 2. \textbf{Decoder fallback necessary} --- no benefit for GPT-2.
 3. \textbf{DCT basis optimal} --- beats random orthonormal.
 4. \textbf{Energy scaling works} --- preserves activation magnitude.
@@ -1253,7 +1253,7 @@ For DistilBERT at $N = 256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 131K & **2$\times$ reduction** \\
+Attention FLOPs & 262K & 131K & **2$$\times$ reduction** \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 67.54M & +589824M \\
 \bottomrule
@@ -1279,7 +1279,7 @@ FNet & $O(N\log N)$ \& N/A \& No \\
 \subsection{9.6 Deployment Considerations}
 
 \subsubsection{Encoder latency}
-2$\times$ faster at $N=128$, 8$\times$ at $N=512$.
+2$$\times$ faster at $N=128$, 8$$\times$ at $N=512$.
 
 \subsubsection{Decoder latency}
 No benefit.

@@ -86,10 +86,10 @@ values after recovery. Some heads have converged to short-term decay
 \toprule
 \textbf{$N$} & \textbf{Baseline time} & \textbf{SVD-Lin time} & \textbf{Actual speedup} & \textbf{Theory} \\
 \midrule
-128 & 4.2 s & 84.0 & 84.8$\times$ & ~1$\times$ \\
-256 & 16.8 s & 84.8 & 85.6$\times$ & 2$\times$ \\
-512 & 67 s & 85.6 & 86.2$\times$ & 4$\times$ \\
-1024 & 268 s & 86.4 & 86.4$\times$ & 8$\times$ \\
+128 & 4.2 s & 84.0 & 84.8$$\times$ & ~1$$\times$ \\
+256 & 16.8 s & 84.8 & 85.6$$\times$ & 2$$\times$ \\
+512 & 67 s & 85.6 & 86.2$$\times$ & 4$$\times$ \\
+1024 & 268 s & 86.4 & 86.4$$\times$ & 8$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -174,7 +174,7 @@ $x > -1$. This ensures the denominator is positive.
 
 \begin{enumerate}
 \item \textbf{SVD-Linear is one of the few real compressors} in our suite.
-\item \textbf{Parameter reduction is ~50\%$\times$} at $r = 32$.
+\item \textbf{Parameter reduction is ~50\%$$\times$} at $r = 32$.
 \item \textbf{Complexity scales linearly}, unlike softmax attention.
 \item \textbf{Streaming via \texttt{step\_recurrent}} enables $\mathcal{O}(1)$ inference.
 \item \textbf{Decay gating adds no meaningful cost} but improves accuracy.

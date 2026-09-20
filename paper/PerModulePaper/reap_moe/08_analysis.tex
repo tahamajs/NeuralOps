@@ -4,7 +4,7 @@
 
 \subsubsection{Increased Capacity}
 
-With $E = 8$ experts, the effective FFN capacity is 8$\times$ the original. Even 
+With $E = 8$ experts, the effective FFN capacity is 8$$\times$ the original. Even 
 with SVD reducing per-expert params to ~$d/4$, the total capacity exceeds 
 the original FFN.
 
@@ -12,7 +12,7 @@ the original FFN.
 
 \textbf{Figure 8.1} shows expert utilization over training. Without aux loss, 
 the router collapses to 1-2 experts. With aux loss, utilization is balanced 
-within 0.85$\times$.
+within 0.85$$\times$.
 
 \subsubsection{Zero-Init Stability}
 
@@ -89,13 +89,13 @@ training.
 
 \subsubsection{Parameter Bloat}
 
-With $E = 16$, parameters can 3$\times$ the original. Mitigation: reduce $E$ or 
+With $E = 16$, parameters can 3$$\times$ the original. Mitigation: reduce $E$ or 
 increase SVD compression.
 
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{SVD experts reduce per-expert params} by ~4$\times$.
+\item \textbf{SVD experts reduce per-expert params} by ~4$$\times$.
 \item \textbf{Aux loss is essential} for balanced utilization.
 \item \textbf{Zero-init final layer} is critical for stability.
 \item \textbf{$E = 8$, $k = 2$ is a sweet spot.}

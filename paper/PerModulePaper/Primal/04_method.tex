@@ -16,7 +16,7 @@ $F_3 \in \mathbb{R}^{m \times L}$.
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-      Q, K $\in$ R^{L $\times$ d_h}
+      Q, K $\in$ R^{L $$\times$ d_h}
              |
               
       +-----------------+
@@ -28,7 +28,7 @@ $F_3 \in \mathbb{R}^{m \times L}$.
       +--------+--------+-----------+
                                      
    F$_1$ = Q K_l       F$_2$ = Q_l K_l    F$_3$ = Q_l K 
-    (L $\times$ m)          (m $\times$ m)         (m $\times$ L)
+    (L $$\times$ m)          (m $$\times$ m)         (m $$\times$ L)
                        |
                         
               +-----------------+
@@ -39,7 +39,7 @@ $F_3 \in \mathbb{R}^{m \times L}$.
                        |
       +----------------+----------------+
                                          
-   A $\approx$ F$_1$ F$_2$   F$_3$                  (L $\times$ L)
+   A $\approx$ F$_1$ F$_2$   F$_3$                  (L $$\times$ L)
       |
        
    softmax(A)   V
@@ -188,10 +188,10 @@ the whole sequence), but empirically works well for generation.
 
 \textbf{Algorithm 1:} Primal Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
         attention_mask, is_causal
         m (num landmarks), K (pinv iters)
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
 1:  # Segment pooling for landmarks
 2:  Q_l, K_l $\leftarrow$ pool_to_landmarks(Q, K, m)     # (B, H, m, d_h)

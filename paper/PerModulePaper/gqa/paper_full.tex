@@ -78,7 +78,7 @@ support, and safe injection returning \texttt{None} on failure. We evaluate GQA 
 DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
 $H_{KV} = 6$), achieving \textbf{88.5\%}, \textbf{75.5\%}, and 
 \textbf{77.0\%} accuracy respectively. The KV cache footprint is reduced by 
-\textbf{32$\times$} at inference time. We provide a full ablation over 
+\textbf{32$$\times$} at inference time. We provide a full ablation over 
 $G / H$ ratio and analyze the trade-off between memory savings and quality loss.
 
 \textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer 
@@ -103,7 +103,7 @@ quality.
 Our implementation supports four popular architectures and includes 
 production-hardened features like fallback on failure and exact weight 
 transfer from pretrained models. On three benchmark models, GQA achieves 
-near-baseline accuracy while cutting KV cache memory by ~2$\times$.
+near-baseline accuracy while cutting KV cache memory by ~2$$\times$.
 
 
 
@@ -212,7 +212,7 @@ We present a production-hardened implementation of GQA with three key features:
    query weights are copied verbatim; KV weights are grouped and repeated.
 
 2. \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The 
-   default is $G = H / 2$, giving a 2$\times$ KV cache reduction.
+   default is $G = H / 2$, giving a 2$$\times$ KV cache reduction.
 
 3. \textbf{LoRA recovery.} After injection, the base weights are frozen and 
    only LoRA adapters are trainable. This preserves pretrained knowledge 
@@ -370,7 +370,7 @@ Query heads still project separately. During generation:
 \tag{3.4}
 \]
 
-Reduction factor: $H \times$.
+Reduction factor: $H $\times$.
 
 \subsection{3.3 Grouped-Query Attention}
 
@@ -475,7 +475,7 @@ intact. The modification consists of four components:
 The number of KV heads $G$ satisfies $1 \le G \le H$. Two natural choices:
 
 \begin{itemize}
-\item \textbf{Default:} $G = H / 2$ (2$\times$ KV cache reduction).
+\item \textbf{Default:} $G = H / 2$ (2$$\times$ KV cache reduction).
 \end{itemize}
 \begin{itemize}
 \item \textbf{Aggressive:} $G = H / 4$ or $G = 1$ (MQA).
@@ -570,9 +570,9 @@ Output: GQA weights
 
 \textbf{Algorithm 2:} GQA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B $\times$ N $\times$ d}
+Input:  X $\in$ R^{B $$\times$ N $$\times$ d}
         attention_mask
-Output: Y $\in$ R^{B $\times$ N $\times$ d}
+Output: Y $\in$ R^{B $$\times$ N $$\times$ d}
 
 1:  Q $\leftarrow$ X W_Q            # (B, N, H, d_h)
 2:  K $\leftarrow$ X W_K            # (B, N, G, d_h)
@@ -764,8 +764,8 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 \subsubsection{5.2.4 Qwen3.5 (GQA-native)}
 
 \begin{lstlisting}
-q_proj: Linear(1024, 2048)   # 8 heads $\times$ 256
-k_proj: Linear(1024, 512)    # 2 heads $\times$ 256
+q_proj: Linear(1024, 2048)   # 8 heads $$\times$ 256
+k_proj: Linear(1024, 512)    # 2 heads $$\times$ 256
 v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 \end{lstlisting}
@@ -869,14 +869,14 @@ For $d = 768$, $H = 12$, $d_h = 64$, $G = 6$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
-MHA & 2,359,296 & 1.00$\times$ \\
-GQA (G=6) & 1,769,472 & **1.33$\times$** \\
-MQA & 1,179,648 & 2.00$\times$ \\
+MHA & 2,359,296 & 1.00$$\times$ \\
+GQA (G=6) & 1,769,472 & **1.33$$\times$** \\
+MQA & 1,179,648 & 2.00$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Note.} GQA reduces parameters modestly (1.33$\times$ at $G = H/2$). The primary 
+\textbf{Note.} GQA reduces parameters modestly (1.33$$\times$ at $G = H/2$). The primary 
 benefit is \textbf{KV cache} reduction at inference.
 
 \subsection{5.8 Registry}
@@ -1054,12 +1054,12 @@ python run_all_4_gqa.py \
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{$H_{KV}$} & \textbf{KV ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & MHA & 90.71\% & --- & 0.9099 & 12 & 1.00$\times$ & 183 MB \\
-DistilBERT & **GQA** & **88.5** & -2.2 & 0.885 & 6 & **2.0$\times$** & 150 MB \\
-RoBERTa & MHA & 78.56\% & --- & 0.8124 & 12 & 1.00$\times$ & 712 MB \\
-RoBERTa & **GQA** & **75.5** & -3.1 & 0.755 & 6 & **2.0$\times$** & 650 MB \\
-GPT-2 & MHA & 79.36\% & --- & 0.7978 & 12 & 1.00$\times$ & 793 MB \\
-GPT-2 & **GQA** & **77.0** & -2.4 & 0.770 & 6 & **2.0$\times$** & 700 MB \\
+DistilBERT & MHA & 90.71\% & --- & 0.9099 & 12 & 1.00$$\times$ & 183 MB \\
+DistilBERT & **GQA** & **88.5** & -2.2 & 0.885 & 6 & **2.0$$\times$** & 150 MB \\
+RoBERTa & MHA & 78.56\% & --- & 0.8124 & 12 & 1.00$$\times$ & 712 MB \\
+RoBERTa & **GQA** & **75.5** & -3.1 & 0.755 & 6 & **2.0$$\times$** & 650 MB \\
+GPT-2 & MHA & 79.36\% & --- & 0.7978 & 12 & 1.00$$\times$ & 793 MB \\
+GPT-2 & **GQA** & **77.0** & -2.4 & 0.770 & 6 & **2.0$$\times$** & 700 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1092,9 +1092,9 @@ GPT-2 & MQA & 3.1 & 3.1 & 25 \\
 \toprule
 \textbf{Model} & \textbf{MHA params} & \textbf{GQA params} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 66,955,010 & 64000000 & 1.05$\times$ \\
-RoBERTa & 124,647,170 & 119000000 & 1.05$\times$ \\
-GPT-2 & 124,441,344 & 118500000 & 1.05$\times$ \\
+DistilBERT & 66,955,010 & 64000000 & 1.05$$\times$ \\
+RoBERTa & 124,647,170 & 119000000 & 1.05$$\times$ \\
+GPT-2 & 124,441,344 & 118500000 & 1.05$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1127,12 +1127,12 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \toprule
 \textbf{$G$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{KV ratio} \\
 \midrule
-12 (MHA) & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
-6 (H/2) & 88.5 & 75.5 & 77.0 & 2.00$\times$ \\
-4 (H/3) & 87.0 & 73.0 & 75.5 & 3.00$\times$ \\
-3 (H/4) & 85.5 & 71.0 & 73.5 & 4.00$\times$ \\
-2 (H/6) & 83.0 & 68.0 & 70.0 & 6.00$\times$ \\
-1 (MQA) & 78.0 & 62.0 & 65.0 & 12.0$\times$ \\
+12 (MHA) & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
+6 (H/2) & 88.5 & 75.5 & 77.0 & 2.00$$\times$ \\
+4 (H/3) & 87.0 & 73.0 & 75.5 & 3.00$$\times$ \\
+3 (H/4) & 85.5 & 71.0 & 73.5 & 4.00$$\times$ \\
+2 (H/6) & 83.0 & 68.0 & 70.0 & 6.00$$\times$ \\
+1 (MQA) & 78.0 & 62.0 & 65.0 & 12.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1193,13 +1193,13 @@ NHA & 90.25\% & FAIL & 78.78\% & Attention \\
 \subsection{7.10 Summary}
 
 \begin{itemize}
-\item \textbf{KV cache:} reduced by 2.0$\times$--2.0$\times$.
+\item \textbf{KV cache:} reduced by 2.0$$\times$--2.0$$\times$.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Accuracy:} drops only -2.2\%---2.4\%.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Parameter reduction:} modest (1.05$\times$--1.05$\times$).
+\item \textbf{Parameter reduction:} modest (1.05$$\times$--1.05$$\times$).
 \end{itemize}
 \begin{itemize}
 \item \textbf{All models pass quality gate.}
@@ -1220,11 +1220,11 @@ GQA's savings come from three sources:
 \toprule
 \textbf{Source} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{Reduction} \\
 \midrule
-KV cache (per token, per layer) & 36.9 KB & 18.4 KB & 2.0$\times$ \\
-K projection FLOPs & $N d H d_h$ & $N d (H/2) d_h$ & 2.0$\times$ \\
-V projection FLOPs & Same & Same & 2.0$\times$ \\
-Attention FLOPs & $N^2 H d_h$ & $N^2 H d_h$ & 1.0$\times$ \\
-Output proj FLOPs & $N H d_h d$ & $N H d_h d$ & 1.0$\times$ \\
+KV cache (per token, per layer) & 36.9 KB & 18.4 KB & 2.0$$\times$ \\
+K projection FLOPs & $N d H d_h$ & $N d (H/2) d_h$ & 2.0$$\times$ \\
+V projection FLOPs & Same & Same & 2.0$$\times$ \\
+Attention FLOPs & $N^2 H d_h$ & $N^2 H d_h$ & 1.0$$\times$ \\
+Output proj FLOPs & $N H d_h d$ & $N H d_h d$ & 1.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1265,11 +1265,11 @@ gracefully:
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Avg accuracy drop} \\
 \midrule
-6 & 2.0$\times$ & 2.5\% \\
-4 & 3.0$\times$ & 4.0\% \\
-3 & 4.0$\times$ & 5.5\% \\
-2 & 6.0$\times$ & 8.0\% \\
-1 & 12.0$\times$ & 13.0\% \\
+6 & 2.0$$\times$ & 2.5\% \\
+4 & 3.0$$\times$ & 4.0\% \\
+3 & 4.0$$\times$ & 5.5\% \\
+2 & 6.0$$\times$ & 8.0\% \\
+1 & 12.0$$\times$ & 13.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1330,13 +1330,13 @@ $H / G$.
 \textbf{Figure 8.4} shows inference latency vs sequence length. GQA gives:
 
 \begin{itemize}
-\item $L = 512$: 1.05$\times$ speedup
+\item $L = 512$: 1.05$$\times$ speedup
 \end{itemize}
 \begin{itemize}
-\item $L = 2048$: 1.15$\times$ speedup
+\item $L = 2048$: 1.15$$\times$ speedup
 \end{itemize}
 \begin{itemize}
-\item $L = 8192$: 1.40$\times$ speedup
+\item $L = 8192$: 1.40$$\times$ speedup
 \end{itemize}
 
 The speedup grows with sequence length because KV cache access dominates 
@@ -1351,7 +1351,7 @@ at long $L$.
 \textbf{Optimization} & \textbf{Compatible?} & \textbf{Notes} \\
 \midrule
 INT8 quantization & ✅ & Multiplicative savings \\
-KV quantization & ✅ & GQA + 4-bit KV = 8$\times$ savings \\
+KV quantization & ✅ & GQA + 4-bit KV = 8$$\times$ savings \\
 Flash Attention & ✅ & GQA is compatible \\
 Paged Attention & ✅ & Used by vLLM \\
 A3 / AASVD compression & ✅ & Orthogonal \\
@@ -1397,7 +1397,7 @@ before. This is preserved in our implementation.
 
 1. \textbf{KV cache reduction:} exactly $H / G$ at all sequence lengths.
 2. \textbf{Quality loss:} small ($<$ 3\%) at $G = H/2$.
-3. \textbf{Knee of curve:} $G = H/4$ (4$\times$ reduction, modest quality loss).
+3. \textbf{Knee of curve:} $G = H/4$ (4$$\times$ reduction, modest quality loss).
 4. \textbf{RoBERTa most sensitive:} head specialization.
 5. \textbf{Compatible with quantization} for multiplicative savings.
 
@@ -1410,8 +1410,8 @@ before. This is preserved in our implementation.
 
 \subsubsection{9.1.1 Takeaway 1: GQA is a Memory Optimization}
 
-GQA does not significantly reduce parameters (only 1.05$\times$). Its 
-primary benefit is \textbf{KV cache} reduction (2.0$\times$), which matters at 
+GQA does not significantly reduce parameters (only 1.05$$\times$). Its 
+primary benefit is \textbf{KV cache} reduction (2.0$$\times$), which matters at 
 inference time, especially for long sequences.
 
 \subsubsection{9.1.2 Takeaway 2: Quality Loss is Graceful}
@@ -1481,10 +1481,10 @@ Keep MHA
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Quality} & \textbf{Use case} \\
 \midrule
-$H/2$ & 2$\times$ & High & Safe default \\
-$H/4$ & 4$\times$ & Good & Balanced \\
-$H/6$ & 6$\times$ & OK & Aggressive \\
-1 & $H$$\times$ & Lower & Extreme memory constraint \\
+$H/2$ & 2$$\times$ & High & Safe default \\
+$H/4$ & 4$$\times$ & Good & Balanced \\
+$H/6$ & 6$$\times$ & OK & Aggressive \\
+1 & $H$$$\times$ & Lower & Extreme memory constraint \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1674,9 +1674,9 @@ quality loss.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV ratio} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & **2.0$\times$** & 1.05$\times$ \\
-RoBERTa & -3.1\% & **2.0$\times$** & 1.05$\times$ \\
-GPT-2 & -2.4\% & **2.0$\times$** & 1.05$\times$ \\
+DistilBERT & -2.2\% & **2.0$$\times$** & 1.05$$\times$ \\
+RoBERTa & -3.1\% & **2.0$$\times$** & 1.05$$\times$ \\
+GPT-2 & -2.4\% & **2.0$$\times$** & 1.05$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1809,9 +1809,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{KV ratio} \\
 \midrule
-DistilBERT & 88.5\% $\pm$ 1\% & 2.0$\times$ \\
-RoBERTa & 75.5\% $\pm$ 1\% & 2.0$\times$ \\
-GPT-2 & 77.0\% $\pm$ 1\% & 2.0$\times$ \\
+DistilBERT & 88.5\% $\pm$ 1\% & 2.0$$\times$ \\
+RoBERTa & 75.5\% $\pm$ 1\% & 2.0$$\times$ \\
+GPT-2 & 77.0\% $\pm$ 1\% & 2.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2279,9 +2279,9 @@ Accuracy & 88.5\% \\
 F1 & 0.885 \\
 Params before & 66,955,010 \\
 Params after & 64000000 \\
-Reduction & 1.05$\times$ \\
+Reduction & 1.05$$\times$ \\
 KV/token & 18.4 KB \\
-KV ratio & 2.0$\times$ \\
+KV ratio & 2.0$$\times$ \\
 Peak VRAM & 150 MB \\
 \bottomrule
 \end{tabular}
@@ -2300,9 +2300,9 @@ Accuracy & 75.5\% \\
 F1 & 0.755 \\
 Params before & 124,647,170 \\
 Params after & 119000000 \\
-Reduction & 1.05$\times$ \\
+Reduction & 1.05$$\times$ \\
 KV/token & 0.85 KB \\
-KV ratio & 2.0$\times$ \\
+KV ratio & 2.0$$\times$ \\
 Peak VRAM & 650 MB \\
 \bottomrule
 \end{tabular}
@@ -2321,9 +2321,9 @@ Accuracy & 77.0\% \\
 F1 & 0.770 \\
 Params before & 124,441,344 \\
 Params after & 118500000 \\
-Reduction & 1.05$\times$ \\
+Reduction & 1.05$$\times$ \\
 KV/token & 18.4 KB \\
-KV ratio & 2.0$\times$ \\
+KV ratio & 2.0$$\times$ \\
 Peak VRAM & 700 MB \\
 \bottomrule
 \end{tabular}
@@ -2338,12 +2338,12 @@ Peak VRAM & 700 MB \\
 \toprule
 \textbf{$G$} & \textbf{Acc} & \textbf{KV/token (KB)} & \textbf{Ratio} \\
 \midrule
-12 & 90.71\% & 36.9 & 1.00$\times$ \\
-6 & 88.5 & 18.4 & 2.00$\times$ \\
-4 & 87.0 & 12.3 & 3.00$\times$ \\
-3 & 85.5 & 9.2 & 4.00$\times$ \\
-2 & 83.0 & 6.1 & 6.00$\times$ \\
-1 & 78.0 & 3.1 & 12.0$\times$ \\
+12 & 90.71\% & 36.9 & 1.00$$\times$ \\
+6 & 88.5 & 18.4 & 2.00$$\times$ \\
+4 & 87.0 & 12.3 & 3.00$$\times$ \\
+3 & 85.5 & 9.2 & 4.00$$\times$ \\
+2 & 83.0 & 6.1 & 6.00$$\times$ \\
+1 & 78.0 & 3.1 & 12.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2462,7 +2462,7 @@ done
 
 \textbf{Goal.} Train a linear layer to combine heads.
 
-\textbf{Result.} No improvement over averaging, 3$\times$ slower.
+\textbf{Result.} No improvement over averaging, 3$$\times$ slower.
 
 \textbf{Conclusion.} Averaging is sufficient.
 

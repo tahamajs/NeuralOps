@@ -5,8 +5,8 @@
 
 \subsubsection{Takeaway 1: GQA is a Memory Optimization}
 
-GQA does not significantly reduce parameters (only 1.05$\times$). Its 
-primary benefit is \textbf{KV cache} reduction (2.0$\times$), which matters at 
+GQA does not significantly reduce parameters (only 1.05$$\times$). Its 
+primary benefit is \textbf{KV cache} reduction (2.0$$\times$), which matters at 
 inference time, especially for long sequences.
 
 \subsubsection{Takeaway 2: Quality Loss is Graceful}
@@ -67,10 +67,10 @@ Keep MHA
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Quality} & \textbf{Use case} \\
 \midrule
-$H/2$ & 2$\times$ & High & Safe default \\
-$H/4$ & 4$\times$ & Good & Balanced \\
-$H/6$ & 6$\times$ & OK & Aggressive \\
-1 & $H$$\times$ & Lower & Extreme memory constraint \\
+$H/2$ & 2$$\times$ & High & Safe default \\
+$H/4$ & 4$$\times$ & Good & Balanced \\
+$H/6$ & 6$$\times$ & OK & Aggressive \\
+1 & $H$$$\times$ & Lower & Extreme memory constraint \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -42,7 +42,7 @@ for i in range(seq_len):    # 128 iterations
     ...
 \end{lstlisting}
 
-\textbf{Kernel launches.} For $L = 128$ and 12 heads $\times$ 12 layers, this is 
+\textbf{Kernel launches.} For $L = 128$ and 12 heads $$\times$ 12 layers, this is 
 $128 \times 4 \times 144 = 73{,}728$ kernel launches per forward pass.
 
 \textbf{Comparison.} PyTorch SDPA uses 1--2 kernel launches per attention call.

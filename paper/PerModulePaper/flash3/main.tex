@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 FlashAttention-3 (Dao et al., 2024) achieves state-of-the-art attention 
 throughput on Hopper GPUs by leveraging tensor memory accelerators (TMA), 
@@ -81,7 +73,7 @@ architecture heterogeneity, and pretrained weight transfer. We present a
 \item \textbf{Transfers pretrained weights across four architectures}: GPT-2 Conv1D,
   RoBERTa/BERT nested self-attention, DistilBERT flat, and Qwen/LLaMA
   GQA+RoPE.
-\item \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2$\times$ throughput.
+\item \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2$$\times$ throughput.
 \item \textbf{Adds trainable LoRA adapters} for parameter-efficient recovery.
 
 \end{enumerate}
@@ -106,9 +98,6 @@ Hopper GPU, FP8, SDPA fallback
 \noindent\textbf{Keywords:} FlashAttention-3, exact attention, hardware optimization,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -123,12 +112,10 @@ Hopper GPU, FP8, SDPA fallback
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

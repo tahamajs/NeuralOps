@@ -52,10 +52,10 @@ extraction, ensuring weight transfer succeeds for all tested models.
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT params} & \textbf{Ratio} & \textbf{Mean rank} \\
 \midrule
-0.90 & 0.85 & 32$\times$ & 0.85 \\
-0.95 & 0.85 & 32$\times$ & 0.85 \\
-0.99 & 0.85 & 32$\times$ & 0.85 \\
-0.995 & 0.85 & 32$\times$ & 0.85 \\
+0.90 & 0.85 & 32$$\times$ & 0.85 \\
+0.95 & 0.85 & 32$$\times$ & 0.85 \\
+0.99 & 0.85 & 32$$\times$ & 0.85 \\
+0.995 & 0.85 & 32$$\times$ & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -191,7 +191,7 @@ LoRA & 0 & 2.3 s ms \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{MinimalAURORA is a real compressor.} Parameters reduce by 50\%$\times$.
+\item \textbf{MinimalAURORA is a real compressor.} Parameters reduce by 50\%$$\times$.
 \item \textbf{Energy threshold adapts per layer.} Simpler than AASVD/A3.
 \item \textbf{No activation weighting} -- trades accuracy for simplicity.
 \item \textbf{\texttt{pres\_gate} is unused.} Recommend removal.

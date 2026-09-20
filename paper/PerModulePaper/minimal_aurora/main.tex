@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 We present \textbf{MinimalAURORA}, a production-hardened low-rank attention 
 replacement that compresses each of the four attention projections 
@@ -90,7 +82,7 @@ On SST-2 with 50 LoRA recovery steps and energy threshold
 $\varepsilon = 45.2$, MinimalAURORA achieves \textbf{85.44\%} on 
 DistilBERT ($\Delta$ = -5.27), \textbf{50.92\%} on RoBERTa ($\Delta$ = -27.64), 
 and \textbf{50.92\%} on GPT-2 ($\Delta$ = -28.44). Total parameter count 
-decreases by \textbf{50\%$\times$--2.1\times$\times$}. Peak VRAM drops by \textbf{380 MB\%}.
+decreases by \textbf{50\%$$\times$--2.1$$\times$}. Peak VRAM drops by \textbf{380 MB\%}.
 
 MinimalAURORA \textbf{reduces} parameter count. The LoRA adapters add 
 $r_L(d_\text{in} + d_\text{out})$ trainable parameters but this is 
@@ -107,9 +99,6 @@ parameter-efficient fine-tuning, transformer compression
 \noindent\textbf{Keywords:} SVD factorization, energy threshold, low-rank attention,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -124,12 +113,10 @@ parameter-efficient fine-tuning, transformer compression
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

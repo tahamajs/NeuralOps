@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{ASVD} & \textbf{90.37} & -0.34 & 0.9079 & \textbf{5.5$\times$} & 344 MB MB & 2.4 s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{ASVD} & \textbf{77.75} & -0.81 & 0.8142 & \textbf{5.0$\times$} & 714 MB MB & 5.2 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{ASVD} & \textbf{85.78} & +6.42 & 0.8686 & \textbf{5.0$\times$} & 346 MB MB & 5.5 s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{ASVD} & \textbf{90.37} & -0.34 & 0.9079 & \textbf{5.5$$\times$} & 344 MB MB & 2.4 s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{ASVD} & \textbf{77.75} & -0.81 & 0.8142 & \textbf{5.0$$\times$} & 714 MB MB & 5.2 s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{ASVD} & \textbf{85.78} & +6.42 & 0.8686 & \textbf{5.0$$\times$} & 346 MB MB & 5.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{ASVD} & \textbf{85.78} & +6.42 & 0.8686 & \textbf{5.0$\times$} &
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After ASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 12165730 & \textbf{5.5$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 24929230 & \textbf{5.0$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 24888140 & \textbf{5.0$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 12165730 & \textbf{5.5$$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 24929230 & \textbf{5.0$$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 24888140 & \textbf{5.0$$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,10 +49,10 @@ GPT-2 & 124,441,344 & 24888140 & \textbf{5.0$\times$} & 0.85 \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{ASVD (r=64)} & \textbf{Ratio} \\
 \midrule
-\texttt{q\_lin} (768$\times$768) & 589,824 & 98,368 & 6.0$\times$ \\
-\texttt{k\_lin} (768$\times$768) & 589,824 & 98,368 & 6.0$\times$ \\
-\texttt{v\_lin} (768$\times$768) & 589,824 & 98,368 & 6.0$\times$ \\
-\texttt{out\_lin} (768$\times$768) & 589,824 & 98,368 & 6.0$\times$ \\
+\texttt{q\_lin} (768$$\times$768) & 589,824 & 98,368 & 6.0$$\times$ \\
+\texttt{k\_lin} (768$$\times$768) & 589,824 & 98,368 & 6.0$$\times$ \\
+\texttt{v\_lin} (768$$\times$768) & 589,824 & 98,368 & 6.0$$\times$ \\
+\texttt{out\_lin} (768$$\times$768) & 589,824 & 98,368 & 6.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,10 +132,10 @@ GPT-2 & ASVD & 5.5 s & 21000 & 346 MB MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & 86.0 & 12.0$\times$ & 73.0 & 11.0$\times$ & 74.5 & 11.0$\times$ \\
-32 & 87.5 & 8.0$\times$ & 74.5 & 7.0$\times$ & 76.0 & 7.0$\times$ \\
-64 & 88.5 & 5.5$\times$ & 75.5 & 5.0$\times$ & 76.8 & 5.0$\times$ \\
-128 & 89.2 & 3.0$\times$ & 76.5 & 2.8$\times$ & 77.5 & 2.8$\times$ \\
+16 & 86.0 & 12.0$$\times$ & 73.0 & 11.0$$\times$ & 74.5 & 11.0$$\times$ \\
+32 & 87.5 & 8.0$$\times$ & 74.5 & 7.0$$\times$ & 76.0 & 7.0$$\times$ \\
+64 & 88.5 & 5.5$$\times$ & 75.5 & 5.0$$\times$ & 76.8 & 5.0$$\times$ \\
+128 & 89.2 & 3.0$$\times$ & 76.5 & 2.8$$\times$ & 77.5 & 2.8$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ GPT-2 & ASVD & 5.5 s & 21000 & 346 MB MB \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & 87.5 & 7.0$\times$ & 74.5 & 75.8 \\
-0.95 & 88.5 & 5.5$\times$ & 75.5 & 76.8 \\
-0.99 & 89.5 & 4.0$\times$ & 76.5 & 77.8 \\
-0.995 & 89.8 & 3.5$\times$ & 76.7 & 78.0 \\
+0.90 & 87.5 & 7.0$$\times$ & 74.5 & 75.8 \\
+0.95 & 88.5 & 5.5$$\times$ & 75.5 & 76.8 \\
+0.99 & 89.5 & 4.0$$\times$ & 76.5 & 77.8 \\
+0.995 & 89.8 & 3.5$$\times$ & 76.7 & 78.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -225,10 +225,10 @@ Fixed (r=64) & 87.5 & 74.8 & 76.0 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
-a3 (r=64) & 88.5 & 32$\times$ & 72.0 & 4.5$\times$ & 73.0 & 4.5$\times$ \\
-aasvd (r=288) & 85.0 & 4.0$\times$ & 72.0 & 3.5$\times$ & 73.0 & 3.5$\times$ \\
-\textbf{ASVD (r=64)} & \textbf{90.37} & \textbf{5.5$\times$} & \textbf{77.75} & \textbf{5.0$\times$} & \textbf{85.78} & \textbf{5.0$\times$} \\
+full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ & 79.36\% & 1.00$$\times$ \\
+a3 (r=64) & 88.5 & 32$$\times$ & 72.0 & 4.5$$\times$ & 73.0 & 4.5$$\times$ \\
+aasvd (r=288) & 85.0 & 4.0$$\times$ & 72.0 & 3.5$$\times$ & 73.0 & 3.5$$\times$ \\
+\textbf{ASVD (r=64)} & \textbf{90.37} & \textbf{5.5$$\times$} & \textbf{77.75} & \textbf{5.0$$\times$} & \textbf{85.78} & \textbf{5.0$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

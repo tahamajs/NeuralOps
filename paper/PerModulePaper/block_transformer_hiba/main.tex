@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography \& Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math \& Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables \& Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics \& Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,20 +46,21 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title \& Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract \& Keywords Block ---
 \begin{abstract}
 Transformer self-attention scales quadratically with sequence length, making long-context inference prohibitively expensive on memory-constrained hardware. Existing sparse approaches trade accuracy for efficiency by permanently discarding tokens, which degrades performance on tasks requiring global reasoning. We introduce \textbf{Hierarchical Intra-Block and Inter-Block Attention (HIBA)}, a block-sparse hybrid attention mechanism that strictly bounds memory scaling while maintaining global context routing.
 
 HIBA divides the sequence into chunks of size $W$, computing exact dense attention intra-block and sparse Top-K attention inter-block. To prevent information bottlenecking, HIBA employs a periodic dense rectification strategy, falling back to exact full attention every $k$ layers. We transfer base weights exactly from pretrained attention modules via a robust extraction procedure supporting flat (DistilBERT), nested (RoBERTa), and causal fused (GPT-2) architectures. Trainable capacity is provided through residual LoRA adapters initialized to zero, allowing the mechanism to adapt without catastrophic forgetting.
 
-We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on the SST-2 sentiment task with 50 LoRA recovery steps at rank 16. HIBA achieves \textbf{90.35\%} on DistilBERT ($\Delta$ = -0.36), \textbf{78.40\%} on RoBERTa ($\Delta$ = -0.16), and \textbf{79.10\%} on GPT-2 ($\Delta$ = -0.26). Parameter count changes by \textbf{+0.89\%} due to residual LoRA adapters. Peak inference VRAM decreases by \textbf{-35\%} on long sequences, though wall-clock latency currently increases by \textbf{1.2$\times$} due to Python loop overhead in inter-block sparse indexing. Our results demonstrate that periodic rectification successfully stabilizes sparse transformers across diverse architectural families.
+We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on the SST-2 sentiment task with 50 LoRA recovery steps at rank 16. HIBA achieves \textbf{90.35\%} on DistilBERT ($\Delta$ = -0.36), \textbf{78.40\%} on RoBERTa ($\Delta$ = -0.16), and \textbf{79.10\%} on GPT-2 ($\Delta$ = -0.26). Parameter count changes by \textbf{+0.89\%} due to residual LoRA adapters. Peak inference VRAM decreases by \textbf{-35\%} on long sequences, though wall-clock latency currently increases by \textbf{1.2$$\times$} due to Python loop overhead in inter-block sparse indexing. Our results demonstrate that periodic rectification successfully stabilizes sparse transformers across diverse architectural families.
 
 \textbf{Keywords:} efficient attention, block-sparse attention, LoRA, KV-cache, transformer compression
 
@@ -79,9 +71,6 @@ We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on the SST-2 sentiment task w
 \noindent\textbf{Keywords:} efficient attention, block-sparse attention, LoRA, KV-cache, transformer compression
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -96,12 +85,10 @@ We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on the SST-2 sentiment task w
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

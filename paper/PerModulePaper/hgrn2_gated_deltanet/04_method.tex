@@ -10,7 +10,7 @@ the two branches per token.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$\times$L$\times$d}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
               |
        +------+------+
                       
@@ -153,8 +153,8 @@ This prevents injecting a random output projection.
 
 \textbf{Algorithm 1:} HGRN2-GatedDeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Y_hgrn $\leftarrow$ HGRN2Branch(X)                   Sequential O(L)
  2: Y_delta $\leftarrow$ DeltaNetBranch(X)               Sequential O(L)

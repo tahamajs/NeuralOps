@@ -31,7 +31,7 @@ The remainder of this paper is organized as follows: Section 2 reviews foundatio
 Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
 \begin{enumerate}
 \item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
-\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2\times$ mathematical throughput without irregular memory access penalties.
+\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2$\times$ mathematical throughput without irregular memory access penalties.
 \item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
 \end{enumerate}
 
@@ -270,7 +270,7 @@ For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
 \begin{equation}
 \rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}
 \end{equation}
-When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0$\times$.
 
 \begin{table}[H]
 \centering
@@ -655,9 +655,9 @@ As foundation architectures extend sequence context windows from $2{,}048$ to $1
 Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
 \subsection{Energy Efficiency and Carbon Footprint Quantification}
-Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5$\times$ to $10$\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{svdprojattn} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
+By reducing parameter storage by $2.5$\times$ to $3.0$\times$, \texttt{svdprojattn} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
 
 
 \section{Limitations and Failure Modes}
@@ -766,7 +766,7 @@ Decomposing each projection at rank $r$ reduces parameter count to:
 \[
 P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
 \]
-When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2$\times$ on KV projections.
 
 \subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
 In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
@@ -914,13 +914,13 @@ We record per-operation step latencies across standard forward-pass submodules i
 \toprule
 \textbf{Submodule Phase} & \textbf{DistilBERT (ms)} & \textbf{RoBERTa (ms)} & \textbf{GPT-2 (ms)} & \textbf{Speedup} \\
 \midrule
-Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0\times$ \\
-Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0\times$ \\
-Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84\times$ \\
-FFN Projections & 4.12 & 8.90 & 9.10 & $1.0\times$ \\
-Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0\times$ \\
+Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0$\times$ \\
+Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0$\times$ \\
+Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84$\times$ \\
+FFN Projections & 4.12 & 8.90 & 9.10 & $1.0$\times$ \\
+Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0$\times$ \\
 \midrule
-\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$\times$} \\
+\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$$\times$} \\
 \bottomrule
 \end{tabular}
 \caption{Detailed wall-clock execution latency across attention and feed-forward sublayers.}
@@ -981,7 +981,7 @@ Evaluating factorized models on sequence lengths $L > 2048$ without position int
 \section*{Appendix E. Broader Impact and Datacenter Sustainability}\addcontentsline{toc}{section}{Appendix E}
 
 \subsection*{E.1 Datacenter Power and Carbon Accounting}
-By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8\times$.
+By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8$\times$.
 
 \subsection*{E.2 Lifecycle Carbon Accounting and Data Center Scalability}
 The global environmental footprint of AI deployment is increasingly dominated by continuous inference workloads. Operating a 12-layer transformer model on high-utilization inference servers consumes an average of $350$ Watts per GPU. By reducing DRAM access frequency via weight compression, power draw during token generation drops by $28\%$, avoiding an estimated $1.2$ metric tons of $\text{CO}_2$ emissions per server rack annually.
@@ -998,7 +998,7 @@ On embedded and edge accelerator platforms (such as NVIDIA Jetson AGX Orin and A
 By curtailing total parameter footprint and substituting memory-bound dense GEMMs with compute-bound factorized projections, the proposed method reduces average chip thermal dissipation by $4.2^\circ\text{C}$ under continuous load. This temperature reduction prevents thermal throttle interventions, enabling sustained real-time performance on battery-powered edge hardware.
 
 \subsection*{E.6 Energy Consumption Modeling Across Computational Precisions}
-Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100\times$ to $200\times$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
+Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100$\times$ to $200$\times$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
 
 \begin{table}[H]
 \centering
@@ -1007,11 +1007,11 @@ Energy dissipation during transformer inference is dominated by off-chip DRAM ac
 \toprule
 \textbf{Hardware Architecture} & \textbf{Precision} & \textbf{Memory Access (pJ)} & \textbf{ALU Operation (pJ)} & \textbf{Energy Reduction} \\
 \midrule
-Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0\times$) \\
-Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84\times$ \\
-Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0\times$) \\
-Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91\times$ \\
-Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40\times$ \\
+Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0$\times$) \\
+Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84$\times$ \\
+Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0$\times$) \\
+Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91$\times$ \\
+Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40$\times$ \\
 \bottomrule
 \end{tabular}
 \caption{Energy consumption breakdown per token evaluation across hardware tiers.}

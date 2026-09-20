@@ -115,20 +115,20 @@ smaller rank at the same error.
 \textbf{Method} & \textbf{Type} & \textbf{Year} & \textbf{Venue} & \textbf{Model} & \textbf{Ratio} & \textbf{SST-2 Acc} \\
 \midrule
 SVD (Eckart-Young)\footnotemark[1] & Low-rank & 1936 & Psychometrika & DistilBERT & 1.25$\times^\ddagger$ & 86.4\% \\
-FWSVD\footnotemark[2] & Fisher SVD & 2022 & EMNLP & BERT-base & 2.00$\times$ & 88.2\% \\
-DRONE\footnotemark[3] & Data-aware & 2021 & NeurIPS & BERT-base & 1.92$\times$ & 89.1\% \\
-ASVD\footnotemark[4] & Activation SVD & 2023 & arXiv & LLaMA-7B & 1.25$\times$ & N/R$^\dagger$ \\
-SVD-LLM\footnotemark[5] & Whitened SVD & 2025 & ICLR & LLaMA-7B & 5.00$\times$ & N/R$^\dagger$ \\
-SparseGPT\footnotemark[6] & Pruning & 2023 & ICML & LLaMA-7B & 2.00$\times$ & N/R$^\dagger$ \\
-Wanda\footnotemark[7] & Pruning & 2024 & ICLR & LLaMA-7B & 2.00$\times$ & N/R$^\dagger$ \\
-AWQ\footnotemark[8] & Quantization & 2024 & MLSys & LLaMA-7B & 4.00$\times$ & N/R$^\dagger$ \\
-DistilBERT\footnotemark[9] & Distillation & 2019 & arXiv & BERT-base & 1.67$\times$ & 90.7\% \\
-TinyBERT\footnotemark[10] & Distillation & 2020 & EMNLP & BERT-base & 7.50$\times$ & 87.5\% \\
-ALBERT\footnotemark[11] & Sharing & 2020 & ICLR & BERT-base & 3.50$\times$ & 89.4\% \\
-Performer\footnotemark[12] & Linear Attn & 2021 & ICLR & Transformer & 1.00$\times$ & 83.1\% \\
-\textbf{A3 (ours)}\footnotemark[13] & \textbf{Activation SVD} & \textbf{2026} & \textbf{Preprint} & \textbf{DistilBERT} & \textbf{1.02$\times$} & \textbf{90.02\%} \\
+FWSVD\footnotemark[2] & Fisher SVD & 2022 & EMNLP & BERT-base & 2.00$$\times$ & 88.2\% \\
+DRONE\footnotemark[3] & Data-aware & 2021 & NeurIPS & BERT-base & 1.92$$\times$ & 89.1\% \\
+ASVD\footnotemark[4] & Activation SVD & 2023 & arXiv & LLaMA-7B & 1.25$$\times$ & N/R$^\dagger$ \\
+SVD-LLM\footnotemark[5] & Whitened SVD & 2025 & ICLR & LLaMA-7B & 5.00$$\times$ & N/R$^\dagger$ \\
+SparseGPT\footnotemark[6] & Pruning & 2023 & ICML & LLaMA-7B & 2.00$$\times$ & N/R$^\dagger$ \\
+Wanda\footnotemark[7] & Pruning & 2024 & ICLR & LLaMA-7B & 2.00$$\times$ & N/R$^\dagger$ \\
+AWQ\footnotemark[8] & Quantization & 2024 & MLSys & LLaMA-7B & 4.00$$\times$ & N/R$^\dagger$ \\
+DistilBERT\footnotemark[9] & Distillation & 2019 & arXiv & BERT-base & 1.67$$\times$ & 90.7\% \\
+TinyBERT\footnotemark[10] & Distillation & 2020 & EMNLP & BERT-base & 7.50$$\times$ & 87.5\% \\
+ALBERT\footnotemark[11] & Sharing & 2020 & ICLR & BERT-base & 3.50$$\times$ & 89.4\% \\
+Performer\footnotemark[12] & Linear Attn & 2021 & ICLR & Transformer & 1.00$$\times$ & 83.1\% \\
+\textbf{A3 (ours)}\footnotemark[13] & \textbf{Activation SVD} & \textbf{2026} & \textbf{Preprint} & \textbf{DistilBERT} & \textbf{1.02$$\times$} & \textbf{90.02\%} \\
 \bottomrule
 \end{tabular}
-\caption{Comprehensive comparison of representative model compression and efficiency methods. $^\dagger$N/R indicates not reported on SST-2 classification. $^\ddagger$Uniform SVD forces unconstrained factorization, achieving 1.25$\times$ reduction but suffering a 4.3\% accuracy drop. In contrast, A3 employs error-thresholded fallback to prioritize strict accuracy preservation over aggressive compression (resulting in a conservative 1.02$\times$ ratio). Source footnotes: $^1$Our baseline. $^2$Hsu et al., Table 2. $^3$Chen et al., Table 1. $^4$Yuan et al., Table 4. $^5$Sun et al., Table 3. $^6$Frantar et al., Table 2. $^7$Sun et al., Table 1. $^8$Lin et al., Table 2. $^9$Sanh et al., Table 1. $^{10}$Jiao et al., Table 2. $^{11}$Lan et al., Table 2. $^{12}$Choromanski et al., Table 2. $^{13}$Empirical evaluation.}
+\caption{Comprehensive comparison of representative model compression and efficiency methods. $^\dagger$N/R indicates not reported on SST-2 classification. $^\ddagger$Uniform SVD forces unconstrained factorization, achieving 1.25$$\times$ reduction but suffering a 4.3\% accuracy drop. In contrast, A3 employs error-thresholded fallback to prioritize strict accuracy preservation over aggressive compression (resulting in a conservative 1.02$$\times$ ratio). Source footnotes: $^1$Our baseline. $^2$Hsu et al., Table 2. $^3$Chen et al., Table 1. $^4$Yuan et al., Table 4. $^5$Sun et al., Table 3. $^6$Frantar et al., Table 2. $^7$Sun et al., Table 1. $^8$Lin et al., Table 2. $^9$Sanh et al., Table 1. $^{10}$Jiao et al., Table 2. $^{11}$Lan et al., Table 2. $^{12}$Choromanski et al., Table 2. $^{13}$Empirical evaluation.}
 \label{tab:prior_work_comparison}
 \end{table*}

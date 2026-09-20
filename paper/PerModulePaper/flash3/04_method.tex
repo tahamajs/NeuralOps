@@ -152,7 +152,7 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
 Output: Y, None
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)
@@ -201,8 +201,8 @@ SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
-naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$$\times$.
 
 \subsection{Parameter Analysis}
 

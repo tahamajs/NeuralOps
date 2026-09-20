@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & \textbf{PHANTOM} & \textbf{72.59} & -18.12 & 0.7668 & 2.0x & \textbf{50\%$\times$} & 328 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & \textbf{PHANTOM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1\times$\times$} & 375 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1\times$\times$} & 501 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
+DistilBERT & \textbf{PHANTOM} & \textbf{72.59} & -18.12 & 0.7668 & 2.0x & \textbf{50\%$$\times$} & 328 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
+RoBERTa & \textbf{PHANTOM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 375 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
+GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 501 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,8 +25,8 @@ GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} \textbf{50\%$\times$} on DistilBERT,
-  \textbf{2.1\times$\times$} on RoBERTa, \textbf{2.1\times$\times$} on GPT-2.
+\item \textbf{Parameter reduction:} \textbf{50\%$$\times$} on DistilBERT,
+  \textbf{2.1$$\times$} on RoBERTa, \textbf{2.1$$\times$} on GPT-2.
 \item \textbf{Accuracy:} drops \textbf{-18.12\%} on DistilBERT.
 \item \textbf{VRAM:} reduces by \textbf{380 MB\%}.
 
@@ -42,9 +42,9 @@ GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{PHANTOM} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1\times$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1\times$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,11 +58,11 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1\times$\times$} & 0.85 \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{PHANTOM} & \textbf{Ratio} \\
 \midrule
-\texttt{q\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
-\texttt{k\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
-\texttt{v\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
-\texttt{out\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
-\textbf{Total} & 2,359,296 & \textbf{98,304} & \textbf{24$\times$} \\
+\texttt{q\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
+\texttt{k\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
+\texttt{v\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
+\texttt{out\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
+\textbf{Total} & 2,359,296 & \textbf{98,304} & \textbf{24$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,9 +98,9 @@ O & 32 & 32 & 32 \\
 \toprule
 \textbf{Model} & \textbf{Avg bucket} & \textbf{Max bucket} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 64 & 0.85 & \textbf{32$\times$} \\
-RoBERTa & 0.85 & 0.85 & \textbf{32$\times$} \\
-GPT-2 & 0.85 & 0.85 & \textbf{32$\times$} \\
+DistilBERT & 64 & 0.85 & \textbf{32$$\times$} \\
+RoBERTa & 0.85 & 0.85 & \textbf{32$$\times$} \\
+GPT-2 & 0.85 & 0.85 & \textbf{32$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,10 +137,10 @@ GPT-2 & PHANTOM & 2.3 s s & 0.85 & 501 MB MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-8 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-16 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-32 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
-64 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+8 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+16 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+32 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+64 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -232,10 +232,10 @@ No LoRA recovery & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
-A3 & 0.85 & 32$\times$ & 32 & 32$\times$ \\
-AASVD & 0.85 & 32$\times$ & 32 & 32$\times$ \\
-\textbf{PHANTOM} & \textbf{72.59} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1\times$\times$} \\
+full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
+A3 & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
+AASVD & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
+\textbf{PHANTOM} & \textbf{72.59} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -261,7 +261,7 @@ GPT-2 & 0.85 s & 0.85 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item Compression ratio: \textbf{50\%$\times$--2.1\times$\times$}
+\item Compression ratio: \textbf{50\%$$\times$--2.1$$\times$}
 \item Accuracy drop: \textbf{-18.12\%---28.44\%}
 \item VRAM reduction: \textbf{380 MB\%}
 \item All models pass quality gate

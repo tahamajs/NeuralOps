@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 Mixture-of-Experts (MoE) architectures increase model capacity without 
 proportionally increasing inference FLOPs by activating only a subset of 
@@ -74,7 +66,7 @@ experts per token. However, standard MoE implementations face three problems:
 by combining \textbf{SVD-factorized expert networks} with **load-balancing 
 regularization\textbf{ and }noise-injected routing**. Each expert is a two-layer 
 MLP whose weights are factored into $U \Sigma V^\top$, reducing per-expert 
-parameters by \textbf{32$\times$} while preserving expressive capacity. 
+parameters by \textbf{32$$\times$} while preserving expressive capacity. 
 The router uses top-$k$ selection with auxiliary load-balancing loss 
 $\mathcal{L}_\text{aux} = E \sum_i \rho_i \pi_i$, where $\rho_i$ is expert 
 utilization and $\pi_i$ is the mean routing probability. REAP-MoE integrates 
@@ -85,7 +77,7 @@ On SST-2 with DistilBERT, RoBERTa-base, and GPT-2, REAP-MoE achieves
 50 LoRA recovery steps, compared to baselines of 90.71\%, 
 78.56\%, and 79.36\%. Parameter count changes by \textbf{66.4M\%} 
 because MoE replaces the FFN block: with 8 experts at SVD rank 
-32, per-layer parameters scale as 8$\times$ the FFN size, 
+32, per-layer parameters scale as 8$$\times$ the FFN size, 
 mitigated by SVD factorization. We report honest negative results for 
 parameter-sensitive deployments.
 
@@ -98,9 +90,6 @@ transformer efficiency, robust routing
 \noindent\textbf{Keywords:} mixture of experts, load balancing, SVD factorization,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -115,12 +104,10 @@ transformer efficiency, robust routing
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

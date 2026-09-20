@@ -6,7 +6,7 @@
 SALT achieves two things simultaneously:
 
 \begin{enumerate}
-\item \textbf{Storage reduction:} the checkpoint is 12$\times$ smaller.
+\item \textbf{Storage reduction:} the checkpoint is 12$$\times$ smaller.
 \item \textbf{Inference memory:} unchanged.
 
 \end{enumerate}
@@ -34,9 +34,9 @@ Each forward pass now does:
 Compare to baseline: only step 3.
 
 \textbf{Extra FLOPs:} $2 d_\text{out} \cdot r \cdot d_\text{in}$ per layer per 
-forward. For 768$\times$768 and r=16: 37,748,736 extra FLOPs per forward.
+forward. For 768$$\times$768 and r=16: 37,748,736 extra FLOPs per forward.
 
-\textbf{Measured slowdown:} 2.3 s$\times$ (from 1.42xs vs 1.9s).
+\textbf{Measured slowdown:} 2.3 s$$\times$ (from 1.42xs vs 1.9s).
 
 \subsection{The Fused Alternative}
 
@@ -54,7 +54,7 @@ def forward(self, x):
 \textbf{Cost:} $\mathcal{O}(BL \cdot r \cdot (d_\text{out} + d_\text{in}))$ -- 
 significantly less than full.
 
-\textbf{Expected speedup:} 2-4$\times$ on top of baseline (from FLOPs alone). But we did 
+\textbf{Expected speedup:} 2-4$$\times$ on top of baseline (from FLOPs alone). But we did 
 not implement this. See  10.1.
 
 \subsection{Why Does Accuracy Hold?}
@@ -150,7 +150,7 @@ Same issue.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{SALT reduces storage by 12$\times$} but not inference memory.
+\item \textbf{SALT reduces storage by 12$$\times$} but not inference memory.
 \item \textbf{Naive forward is slow} due to reconstruction overhead.
 \item \textbf{Accuracy holds} because pretrained weights provide a good starting point.
 \item \textbf{$\gamma$ and AB provide complementary corrections.}

@@ -60,10 +60,10 @@ be more compressed without losing critical information.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-Fixed rank 64 & 86 & 5.0$\times$ \& Over-compress slow-decaying layers \\
-Fixed rank 128 & 87.5 & 3.5$\times$ \& Moderate \\
-Fixed rank 192 & 88.5 & 1.7$\times$ \& Under-compress fast-decaying \\
-\textbf{Adaptive ($\tau$=0.92)} & \textbf{88.0} & \textbf{3.0$\times$} & \textbf{Best} \\
+Fixed rank 64 & 86 & 5.0$$\times$ \& Over-compress slow-decaying layers \\
+Fixed rank 128 & 87.5 & 3.5$$\times$ \& Moderate \\
+Fixed rank 192 & 88.5 & 1.7$$\times$ \& Under-compress fast-decaying \\
+\textbf{Adaptive ($\tau$=0.92)} & \textbf{88.0} & \textbf{3.0$$\times$} & \textbf{Best} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,11 +103,11 @@ drops by \textbf{8\%}.
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-0.85 & 85 & 5.0$\times$ \& Aggressive, loses accuracy \\
-0.90 & 87 & 3.5$\times$ \& Good balance \\
-0.92 & 88 & 3.0$\times$ \& Default \\
-0.95 & 89 & 2.0$\times$ \& Conservative \\
-0.99 & 90 & 1.2$\times$ \& Near-lossless \\
+0.85 & 85 & 5.0$$\times$ \& Aggressive, loses accuracy \\
+0.90 & 87 & 3.5$$\times$ \& Good balance \\
+0.92 & 88 & 3.0$$\times$ \& Default \\
+0.95 & 89 & 2.0$$\times$ \& Conservative \\
+0.99 & 90 & 1.2$$\times$ \& Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -138,7 +138,7 @@ RoBERTa acc & 72 & 72 & \textbf{74.0} \\
 \end{table}
 
 \textbf{Trade-off.} A3/AASVD may give slightly higher accuracy in-domain (with 
-calibration), but Adaptive SVD is \textbf{5$\times$} faster and works in 
+calibration), but Adaptive SVD is \textbf{5$$\times$} faster and works in 
 zero-data settings.
 
 \subsection{Numerical Stability}
@@ -169,7 +169,7 @@ exploding gradients.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Structured?} \\
 \midrule
 Head pruning (50\%) & 86.4 & 84\% \& Hard (removes heads) \\
-\textbf{Adaptive SVD} & \textbf{88.0} & 3.0$\times$ \& Soft (per-head low-rank) \\
+\textbf{Adaptive SVD} & \textbf{88.0} & 3.0$$\times$ \& Soft (per-head low-rank) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -204,5 +204,5 @@ No failures observed in this configuration.
 \item \textbf{Residual adapters recover 5.0\%} accuracy at negligible cost.
 \item \textbf{$\tau$=0.92 is robust} across models and layers.
 \item \textbf{Per-layer rank distribution} is bimodal: Q/K high, V low.
-\item \textbf{Faster than A3/AASVD} by 5$\times$ on compression time.
+\item \textbf{Faster than A3/AASVD} by 5$$\times$ on compression time.
 \end{enumerate}

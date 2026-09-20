@@ -26,7 +26,7 @@
 \textbf{Result.} 
 \begin{itemize}
 \item Memory: $\mathcal{O}(d^2)$ dense matrix storage, requiring over 5 GB additional GPU VRAM
-\item Time: 4.5$\times$ slower wall-clock execution
+\item Time: 4.5$$\times$ slower wall-clock execution
 \item Accuracy improvement: $<0.2\%$ over diagonal weighting
 \end{itemize}
 \textbf{Conclusion.} The diagonal empirical variance proxy $\mathbb{E}[x^2]$ offers the superior Pareto trade-off between runtime and accuracy.
@@ -37,7 +37,7 @@
 
 \textbf{Result.}
 \begin{itemize}
-\item Time: 24$\times$ slower than adaptive rank escalation
+\item Time: 24$$\times$ slower than adaptive rank escalation
 \item Accuracy improvement: $<0.4\%$
 \end{itemize}
 \textbf{Conclusion.} Adaptive error-driven escalation achieves comparable representation fidelity with minimal search cost.
@@ -60,12 +60,12 @@ Fisher sensitivity. Result: no measurable improvement over uniform rank-8/16 LoR
 \subsubsection{D.2.2 Iterative Refinement}
 
 We tried iteratively reweighting and refactorizing after an initial SVD pass. Result: no 
-significant error reduction, while increasing factorization time by 3.2$\times$.
+significant error reduction, while increasing factorization time by 3.2$$\times$.
 
 \subsubsection{D.2.3 Block-Diagonal Fisher Approximations}
 
 We evaluated block-diagonal Fisher weighting with block size 64. Result: 
-computation time increased by 2.8$\times$ without yielding statistically significant accuracy gains on SST-2 validation.
+computation time increased by 2.8$$\times$ without yielding statistically significant accuracy gains on SST-2 validation.
 
 \subsection{D.3 Hyperparameter Sensitivity in Failed Regimes}
 
@@ -98,12 +98,12 @@ $1\times 10^{-3}$ & FAIL (diverged) & Loss divergence \\
 \toprule
 \textbf{Rank} & \textbf{Compression Ratio} & \textbf{DistilBERT Validation Acc} \\
 \midrule
-8   & 1.08$\times$ & 81.20\% (severe under-parameterization) \\
-16  & 1.06$\times$ & 83.40\% \\
-32  & 1.05$\times$ & 84.62\% \\
-64  & 1.03$\times$ & 87.15\% \\
-128 & 1.02$\times$ & 89.45\% \\
-256 & 1.02$\times$ & 90.02\% (optimal fidelity) \\
+8   & 1.08$$\times$ & 81.20\% (severe under-parameterization) \\
+16  & 1.06$$\times$ & 83.40\% \\
+32  & 1.05$$\times$ & 84.62\% \\
+64  & 1.03$$\times$ & 87.15\% \\
+128 & 1.02$$\times$ & 89.45\% \\
+256 & 1.02$$\times$ & 90.02\% (optimal fidelity) \\
 \bottomrule
 \end{tabular}
 \caption{Impact of target rank constraint on DistilBERT classification accuracy.}

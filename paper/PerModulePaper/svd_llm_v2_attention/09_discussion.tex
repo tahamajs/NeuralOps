@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Compression}
 
-SVD-LLM V2 reduces attention parameters by \textbf{50\%$\times$--2.1\times$\times$} with 
+SVD-LLM V2 reduces attention parameters by \textbf{50\%$$\times$--2.1$$\times$} with 
 accuracy drops of \textbf{-8.83\%---28.44\%}.
 
 \subsubsection{Takeaway 2: Interpretable Compression}
@@ -64,10 +64,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{SVD-LLM V2} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1\times$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
-VRAM & 183 MB & 289 MB MB & \textbf{2.1\times$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1\times$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+VRAM & 183 MB & 289 MB MB & \textbf{2.1$$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
 Accuracy & 90.71\% & 81.88\% & -8.83\% \\
 \bottomrule
 \end{tabular}
@@ -82,12 +82,12 @@ Accuracy & 90.71\% & 81.88\% & -8.83\% \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Interpretable} \\
 \midrule
-ALBERT & -- & 3.5$\times$ & 89.4\% & No \\
-DistilBERT & -- & 1.6$\times$ & 90.7\% & No \\
-AWQ & Required & 4$\times$ & 90.5\% & No \\
-A3 & Required & 5$\times$ & 86.4\%\% & No \\
-MinimalPRISM & None & 2.1\times$\times$ & 86.4\%\% & No \\
-\textbf{SVD-LLM V2} & \textbf{None} & \textbf{50\%$\times$} & \textbf{81.88\%} & \textbf{Yes} \\
+ALBERT & -- & 3.5$$\times$ & 89.4\% & No \\
+DistilBERT & -- & 1.6$$\times$ & 90.7\% & No \\
+AWQ & Required & 4$$\times$ & 90.5\% & No \\
+A3 & Required & 5$$\times$ & 86.4\%\% & No \\
+MinimalPRISM & None & 2.1$$\times$ & 86.4\%\% & No \\
+\textbf{SVD-LLM V2} & \textbf{None} & \textbf{50\%$$\times$} & \textbf{81.88\%} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}

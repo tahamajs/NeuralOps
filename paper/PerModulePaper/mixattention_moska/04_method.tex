@@ -175,8 +175,8 @@ For $k = rL$ with $r = 0.5$: bidirectional scores reduce by factor 2.
 
 \textbf{Algorithm 1:} FASA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_causal, fasa_keep_ratio r
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_causal, fasa_keep_ratio r
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)

@@ -14,7 +14,7 @@ Target Dataset & SST-2 (binary classification) \\
 Params (before) & 66,955,010 \\
 Params (after) & 65,709,314 \\
 Saved Parameters & +1,245,696 \\
-Compression Ratio & 1.019$\times$ (1.86\% reduction) \\
+Compression Ratio & 1.019$$\times$ (1.86\% reduction) \\
 Accuracy & 90.02\% (Baseline 90.71\%, $\Delta -0.69\%$) \\
 F1 Score & 0.9043 (Macro F1: 0.9000) \\
 Precision & 0.9014 \\
@@ -48,7 +48,7 @@ Target Dataset & SST-2 (binary classification) \\
 Params (before) & 124,647,170 \\
 Params (after) & 124,057,346 \\
 Saved Parameters & +589,824 \\
-Compression Ratio & 1.005$\times$ (0.47\% reduction) \\
+Compression Ratio & 1.005$$\times$ (0.47\% reduction) \\
 Accuracy & 83.26\% (Baseline 78.56\%, $\Delta +4.70\%$) \\
 F1 Score & 0.8460 (Macro F1: 0.8313) \\
 Precision & 0.8394 \\
@@ -82,7 +82,7 @@ Target Dataset & SST-2 (binary classification) \\
 Params (before) & 124,441,344 \\
 Params (after) & 123,916,032 \\
 Saved Parameters & +525,312 \\
-Compression Ratio & 1.004$\times$ (0.42\% reduction) \\
+Compression Ratio & 1.004$$\times$ (0.42\% reduction) \\
 Accuracy & 63.19\% (Baseline 79.36\%, $\Delta -16.17\%$) \\
 F1 Score & 0.7216 (Macro F1: 0.5892) \\
 Precision & 0.7075 \\
@@ -198,9 +198,9 @@ python Codes/framework/run_quality_sweep.py \
 \toprule
 \textbf{Model Family} & \textbf{Baseline Parameters} & \textbf{After A3 Factorization} & \textbf{Saved Parameters} & \textbf{Net Model Reduction} \\
 \midrule
-DistilBERT-base & 66,955,010 & 65,709,314 & +1,245,696 & \textbf{1.86\%} (1.019$\times$) \\
-RoBERTa-base    & 124,647,170 & 124,057,346 & +589,824 & \textbf{0.47\%} (1.005$\times$) \\
-GPT-2 Small     & 124,441,344 & 123,916,032 & +525,312 & \textbf{0.42\%} (1.004$\times$) \\
+DistilBERT-base & 66,955,010 & 65,709,314 & +1,245,696 & \textbf{1.86\%} (1.019$$\times$) \\
+RoBERTa-base    & 124,647,170 & 124,057,346 & +589,824 & \textbf{0.47\%} (1.005$$\times$) \\
+GPT-2 Small     & 124,441,344 & 123,916,032 & +525,312 & \textbf{0.42\%} (1.004$$\times$) \\
 \bottomrule
 \end{tabular}
 \caption{Exact full-model parameter tallies before and after A3 factorized compression across evaluated architectures.}
@@ -239,11 +239,11 @@ GPT-2      & A3 Compressed & 4.50 s (5.16 ms/sample) & 572.1 MB & 12,412 \\
 \toprule
 \textbf{Rank Target} & \textbf{DistilBERT Acc} & \textbf{Ratio} & \textbf{RoBERTa Acc} & \textbf{Ratio} & \textbf{GPT-2 Acc} & \textbf{Ratio} \\
 \midrule
-$r = 32$  & 84.62\% & 1.05$\times$ & 75.12\% & 1.02$\times$ & 55.40\% & 1.01$\times$ \\
-$r = 64$  & 87.15\% & 1.03$\times$ & 79.40\% & 1.01$\times$ & 59.80\% & 1.01$\times$ \\
-$r = 128$ & 89.45\% & 1.02$\times$ & 81.19\% & 1.00$\times$ & 61.50\% & 1.00$\times$ \\
-$r = 192$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\times$ \\
-$r = 256$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\times$ \\
+$r = 32$  & 84.62\% & 1.05$$\times$ & 75.12\% & 1.02$$\times$ & 55.40\% & 1.01$$\times$ \\
+$r = 64$  & 87.15\% & 1.03$$\times$ & 79.40\% & 1.01$$\times$ & 59.80\% & 1.01$$\times$ \\
+$r = 128$ & 89.45\% & 1.02$$\times$ & 81.19\% & 1.00$$\times$ & 61.50\% & 1.00$$\times$ \\
+$r = 192$ & 90.02\% & 1.02$$\times$ & 83.26\% & 1.00$$\times$ & 63.19\% & 1.00$$\times$ \\
+$r = 256$ & 90.02\% & 1.02$$\times$ & 83.26\% & 1.00$$\times$ & 63.19\% & 1.00$$\times$ \\
 \bottomrule
 \end{tabular}
 \caption{Downstream validation accuracy and whole-model parameter compression ratio as a function of target rank constraints.}
@@ -262,12 +262,12 @@ To determine the global Pareto frontier across operational configurations, an ex
 \toprule
 \textbf{Config} & $\tau$ & \textbf{Rank} & \textbf{Scope} & \textbf{Layers} & \textbf{Ratio} & \textbf{Acc} & \textbf{Time (s)} \\
 \midrule
-Config 5  & 0.30 & 128 & Attn-only & 7/24  & 0.9888$\times$ & \textbf{90.71\%} & 10.0 \\
-Config 2  & 0.30 & 64  & Attn-only & 7/24  & 0.9897$\times$ & 90.60\% & 10.6 \\
-Config 14 & 0.40 & 64  & Attn-only & 24/24 & 0.9421$\times$ & 90.60\% & 10.9 \\
-Config 26 & 0.50 & 64  & Attn-only & 24/24 & \textbf{0.9104$\times$} & \textbf{90.02\%} & \textbf{1.68} \\
-Config 47 & 0.60 & 256 & Attn-only & 24/24 & 0.9295$\times$ & 90.37\% & 1.31 \\
-Config 44 & 0.60 & 192 & Attn-only & 24/24 & \textbf{0.8943$\times$} & 89.68\% & 1.30 \\
+Config 5  & 0.30 & 128 & Attn-only & 7/24  & 0.9888$$\times$ & \textbf{90.71\%} & 10.0 \\
+Config 2  & 0.30 & 64  & Attn-only & 7/24  & 0.9897$$\times$ & 90.60\% & 10.6 \\
+Config 14 & 0.40 & 64  & Attn-only & 24/24 & 0.9421$$\times$ & 90.60\% & 10.9 \\
+Config 26 & 0.50 & 64  & Attn-only & 24/24 & \textbf{0.9104$$\times$} & \textbf{90.02\%} & \textbf{1.68} \\
+Config 47 & 0.60 & 256 & Attn-only & 24/24 & 0.9295$$\times$ & 90.37\% & 1.31 \\
+Config 44 & 0.60 & 192 & Attn-only & 24/24 & \textbf{0.8943$$\times$} & 89.68\% & 1.30 \\
 \bottomrule
 \end{tabular}
 \caption{Representative Pareto-optimal configurations from the 48-run hyperparameter optimization sweep on DistilBERT/SST-2. Baseline accuracy: 90.71\%. Source: \texttt{results/a3\_optimization/config\_sweep.csv}.}
@@ -343,14 +343,14 @@ Step 100 (Diminishing Return) & 0.0007 & 0.0011 & 0.0028 \\
 \toprule
 \textbf{Pipeline Configuration} & \textbf{Precision} & \textbf{Disk Footprint} & \textbf{Effective Ratio} & \textbf{SST-2 Acc} & \textbf{Peak VRAM} \\
 \midrule
-DistilBERT Baseline & FP16 & 134.0 MB & 1.00$\times$ & 90.71\% & 183.0 MB \\
-DistilBERT + INT8 PTQ & INT8 & 67.0 MB & 2.00$\times$ & 90.45\% & 142.0 MB \\
-DistilBERT + A3 ($r=128$) & FP16 & 131.5 MB & 1.02$\times$ & 90.02\% & 333.7 MB \\
-DistilBERT + A3 + INT8 PTQ & INT8 & \textbf{65.8 MB} & \textbf{2.04$\times$} & \textbf{89.84\%} & \textbf{210.0 MB} \\
-RoBERTa Baseline & FP16 & 249.3 MB & 1.00$\times$ & 78.56\% & 712.0 MB \\
-RoBERTa + INT8 PTQ & INT8 & 124.7 MB & 2.00$\times$ & 78.20\% & 485.0 MB \\
-RoBERTa + A3 ($r=128$) & FP16 & 248.1 MB & 1.00$\times$ & 83.26\% & 531.4 MB \\
-RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$\times$} & \textbf{82.95\%} & \textbf{395.0 MB} \\
+DistilBERT Baseline & FP16 & 134.0 MB & 1.00$$\times$ & 90.71\% & 183.0 MB \\
+DistilBERT + INT8 PTQ & INT8 & 67.0 MB & 2.00$$\times$ & 90.45\% & 142.0 MB \\
+DistilBERT + A3 ($r=128$) & FP16 & 131.5 MB & 1.02$$\times$ & 90.02\% & 333.7 MB \\
+DistilBERT + A3 + INT8 PTQ & INT8 & \textbf{65.8 MB} & \textbf{2.04$$\times$} & \textbf{89.84\%} & \textbf{210.0 MB} \\
+RoBERTa Baseline & FP16 & 249.3 MB & 1.00$$\times$ & 78.56\% & 712.0 MB \\
+RoBERTa + INT8 PTQ & INT8 & 124.7 MB & 2.00$$\times$ & 78.20\% & 485.0 MB \\
+RoBERTa + A3 ($r=128$) & FP16 & 248.1 MB & 1.00$$\times$ & 83.26\% & 531.4 MB \\
+RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$$\times$} & \textbf{82.95\%} & \textbf{395.0 MB} \\
 \bottomrule
 \end{tabular}
 \caption{Compound compression performance evaluating A3 factorized checkpoints under post-training INT8 quantization (analytical estimate: disk footprints and compression ratios are mathematically derived from INT8 bit-width; downstream accuracy is an analytical projection from first-order roundoff perturbation bounds).}

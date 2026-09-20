@@ -10,7 +10,7 @@ This section describes our reproduction of Nystr mformer from Xiong et al.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input hidden_states $\in$ R^{B $\times$ N $\times$ D}         |
+   |  Input hidden_states $\in$ R^{B $$\times$ N $$\times$ D}         |
    +--------------------+-------------------------+
                         |
                          
@@ -182,10 +182,10 @@ if self.kv_repeat > 1:
 
 \textbf{Algorithm 1:} Nystr m attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ N $\times$ d}
-        valid_mask $\in$ {0,1}^{B $\times$ N}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ N $$\times$ d}
+        valid_mask $\in$ {0,1}^{B $$\times$ N}
         num_landmarks m
-Output: context $\in$ R^{B $\times$ H $\times$ N $\times$ d}
+Output: context $\in$ R^{B $$\times$ H $$\times$ N $$\times$ d}
 
 1:  if is_causal or is_decoder:
 2:      # Dense causal attention
@@ -238,7 +238,7 @@ Nystr m & $\mathcal{O}(N m d_h)$ & $\mathcal{O}(N m)$ \\
 \tag{4.4}
 \]
 
-For $N = 4096$, $m = 32$: \textbf{128$\times$ speedup}.
+For $N = 4096$, $m = 32$: \textbf{128$$\times$ speedup}.
 
 \subsection{Theoretical Notes}
 

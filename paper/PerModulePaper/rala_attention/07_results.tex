@@ -54,9 +54,9 @@ because of LoRA adapters and the augmentation matrices.
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{RALA} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -171,7 +171,7 @@ nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
 \item RALA is a \textbf{linear attention replacement}, not a compressor.
 \item Accuracy drop: -30.62\%, -27.76\%, -28.44\%.
 \item Parameter increase: +48.5\%\%.
-\item Inference time: 2.3 s$\times$ (due to sequential prefix scan).
+\item Inference time: 2.3 s$$\times$ (due to sequential prefix scan).
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}

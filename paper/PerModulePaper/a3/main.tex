@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography \& Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage[protrusion=true,expansion=false]{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math \& Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables \& Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics \& Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,16 +46,16 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title \& Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract \& Keywords Block ---
 \begin{abstract}
-
 Low-rank factorization is a classical approach to compressing the linear layers 
 of transformer models, replacing each weight matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
 with a product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$, 
@@ -91,9 +82,6 @@ zero-overhead CPU FP32 SVD factorization, and automated Hugging Face hub integra
 information, LayerNorm recalibration, transformer efficiency
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -105,31 +93,13 @@ information, LayerNorm recalibration, transformer efficiency
 \input{09_discussion.tex}
 \input{10_limitations.tex}
 \input{11_conclusion.tex}
+\input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
-\onecolumn
-\begin{center}
-{\Large\bfseries Supplementary Material: Appendix for A3}
-\end{center}
-\vspace{1em}
-
-\noindent This supplementary appendix provides comprehensive mathematical proofs, algorithmic listings, extended empirical data across multiple benchmark tasks, negative results, and ethical considerations:
-\begin{itemize}
-    \item \textbf{Appendix A (Mathematical Proofs and Bounds):} Full proofs of Eckart-Young optimality under Fisher weighting, streaming convergence, asymptotic complexity, and break-even parameter bounds.
-    \item \textbf{Appendix B (Implementation and Systems Details):} Complete pseudocode (Algorithm 1), module structures, wrapper implementations, exception handling, and reproduction scripts.
-    \item \textbf{Appendix C (Full Experimental Benchmarks):} Exhaustive per-layer parameter tallies, hardware profiling, rank ablations ($r=32$--$256$), weighting ablations, and compound INT8 quantization.
-    \item \textbf{Appendix D (Negative Results and Failure Modes):} Diagnostic breakdown of all 18 fallback layers in DistilBERT, failed algorithmic variants, and hyperparameter sensitivity in failed regimes.
-    \item \textbf{Appendix E (Ethical Considerations):} Broader societal impacts, carbon emissions analysis, compute resources, and data usage ethics.
-\end{itemize}
-\vspace{1.5em}
-\hrule
-\vspace{1.5em}
-
-\twocolumn
-
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

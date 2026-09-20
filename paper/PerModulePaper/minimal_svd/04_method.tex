@@ -19,7 +19,7 @@ adaptively per layer based on spectral energy.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
+   |  Input weight W $\in$ R^{d_out $$\times$ d_in}           |
    +--------------------+-------------------------+
                         |
                          
@@ -87,10 +87,10 @@ Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$\times$ \\
-r=64 & 98,304 & \textbf{6.00$\times$} \\
-r=128 & 196,608 & 3.00$\times$ \\
-r=64 + LoRA r=16 & 122,880 & 4.80$\times$ \\
+Original & 589,824 & 1.00$$\times$ \\
+r=64 & 98,304 & \textbf{6.00$$\times$} \\
+r=128 & 196,608 & 3.00$$\times$ \\
+r=64 + LoRA r=16 & 122,880 & 4.80$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

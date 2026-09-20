@@ -121,7 +121,7 @@ sparsity.
 
 \subsection{Inference Cost Breakdown}
 
-AdaSplash is \textbf{slower} than baseline by 1.9$\times$. This comes from:
+AdaSplash is \textbf{slower} than baseline by 1.9$$\times$. This comes from:
 
 \begin{enumerate}
 \item \textbf{Entmax bisection:} 25 iterations of the same computation.
@@ -212,7 +212,7 @@ No systematic failures observed.
 \begin{enumerate}
 \item \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
 \item \textbf{Attention sinks are essential} for stability.
-\item \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
+\item \textbf{Entmax bisection is the slowdown} (25$$\times$ overhead vs softmax).
 \item \textbf{Sparsity is uniform across layers} -- no layer-specific tuning needed.
 \item \textbf{Parameter count increases} due to LoRA -- this is not compression.
 \end{enumerate}

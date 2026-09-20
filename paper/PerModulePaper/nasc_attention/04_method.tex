@@ -229,8 +229,8 @@ Gate & $O(L d)$ & $O(d)$ \\
 
 \textbf{Algorithm 1:} NASC forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, is_cross, W, B_s, k, F
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, is_cross, W, B_s, k, F
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)

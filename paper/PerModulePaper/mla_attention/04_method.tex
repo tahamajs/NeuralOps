@@ -292,9 +292,9 @@ Total & $\mathcal{O}(N_l (H d_h)^2 d)$ & $\mathcal{O}(N_l c d)$ \\
 \toprule
 \textbf{Model} & \textbf{Standard KV} & \textbf{MLA KV} & \textbf{Reduction} \\
 \midrule
-DistilBERT & $2 \cdot 12 \cdot 64 = 1536$ & 0.85 & \textbf{2.1\times$\times$} \\
-RoBERTa & 1536 & 0.85 & \textbf{2.1\times$\times$} \\
-GPT-2 & 1536 & 0.85 & \textbf{2.1\times$\times$} \\
+DistilBERT & $2 \cdot 12 \cdot 64 = 1536$ & 0.85 & \textbf{2.1$$\times$} \\
+RoBERTa & 1536 & 0.85 & \textbf{2.1$$\times$} \\
+GPT-2 & 1536 & 0.85 & \textbf{2.1$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -311,7 +311,7 @@ MLA reproduction:
 \item Handles four architectures with Conv1D transposition, nested bypass, and
   GQA expansion.
 \item Uses LoRA for recovery.
-\item Achieves \textbf{32$\times$} KV-cache reduction.
+\item Achieves \textbf{32$$\times$} KV-cache reduction.
 \end{enumerate}
 \begin{lstlisting}
 

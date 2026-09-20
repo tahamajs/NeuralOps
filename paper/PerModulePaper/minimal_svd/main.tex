@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
 We present \textbf{MinimalSVD}, a compact and reproducible method for compressing 
 the four attention projections of transformer language models. Each weight 
@@ -70,7 +62,7 @@ matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ is factorized as
 $W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r}$ 
 and $V \in \mathbb{R}^{r \times d_\text{in}}$. The parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
-\textbf{50\%$\times$} reduction per projection on DistilBERT at rank $r = 32$.
+\textbf{50\%$$\times$} reduction per projection on DistilBERT at rank $r = 32$.
 
 The core novelty is \textbf{spectral energy-adaptive rank selection}: instead of 
 fixing $r$ uniformly across layers, MinimalSVD computes the cumulative 
@@ -88,7 +80,7 @@ GPT-2 (causal with Conv1D), and Qwen3.5 (GQA + RoPE) -- via architecture-aware
 weight extraction, Frobenius norm validation, and LoRA recovery.
 
 On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
-energy $\eta = 45.2$, MinimalSVD achieves \textbf{50\%$\times$--2.1\times$\times$} 
+energy $\eta = 45.2$, MinimalSVD achieves \textbf{50\%$$\times$--2.1$$\times$} 
 parameter reduction with accuracy drops of only \textbf{-1.83\%--+1.49\%} 
 after 50 LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{380 MB\%}.
@@ -102,9 +94,6 @@ compression, LoRA recovery, multi-architecture transformers
 \noindent\textbf{Keywords:} low-rank factorization, SVD, energy-adaptive rank, attention
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -119,12 +108,10 @@ compression, LoRA recovery, multi-architecture transformers
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

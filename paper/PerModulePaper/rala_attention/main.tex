@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography & Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math & Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables & Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics & Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,16 +46,16 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title & Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract & Keywords Block ---
 \begin{abstract}
-
 Linear attention reduces the quadratic complexity of softmax attention to 
 $\mathcal{O}(L)$ in sequence length by factorizing the attention matrix as 
 a product of kernel feature maps. However, standard linear attention loses 
@@ -86,7 +77,7 @@ We evaluate RALA on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery.
 On DistilBERT, RALA achieves \textbf{60.09\%} (baseline 0.85\%, 
 $\Delta$ = -30.62). Parameter count increases by \textbf{48.5\%\%} due to 
 LoRA adapters and the augmentation matrices; RALA is \textbf{not} a compression 
-method. Wall-clock inference increases by \textbf{2.3 s$\times$} because the 
+method. Wall-clock inference increases by \textbf{2.3 s$$\times$} because the 
 causal prefix scan is implemented as a Python loop. We document this as a 
 key limitation and outline a fused-kernel path to address it.
 
@@ -99,9 +90,6 @@ efficient transformers
 \noindent\textbf{Keywords:} linear attention, low-rank augmentation, softplus kernel,
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -116,12 +104,10 @@ efficient transformers
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

@@ -7,7 +7,7 @@ We reproduced \textbf{Multi-Head Latent Attention} from DeepSeek-AI (2024) and
 ported it to four transformer families: DistilBERT (flat), RoBERTa 
 (nested), GPT-2 (causal Conv1D), and Qwen3.5 (GQA + RoPE). MLA replaces 
 separate K and V projections with a shared low-rank latent vector, 
-reducing KV-cache size by \textbf{2.1\times$\times$--2.1\times$\times$}.
+reducing KV-cache size by \textbf{2.1$$\times$--2.1$$\times$}.
 
 \subsection{Results Recap}
 
@@ -18,9 +18,9 @@ reducing KV-cache size by \textbf{2.1\times$\times$--2.1\times$\times$}.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV reduction} & \textbf{Params} \\
 \midrule
-DistilBERT & -39.79\% & \textbf{2.1\times$\times$} & 66.4MM \\
-RoBERTa & -27.64\% & \textbf{2.1\times$\times$} & 124.6MM \\
-GPT-2 & -22.14\% & \textbf{2.1\times$\times$} & 124.4MM \\
+DistilBERT & -39.79\% & \textbf{2.1$$\times$} & 66.4MM \\
+RoBERTa & -27.64\% & \textbf{2.1$$\times$} & 124.6MM \\
+GPT-2 & -22.14\% & \textbf{2.1$$\times$} & 124.4MM \\
 \bottomrule
 \end{tabular}
 \end{table}

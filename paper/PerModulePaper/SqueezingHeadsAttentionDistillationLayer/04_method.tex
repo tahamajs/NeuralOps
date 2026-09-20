@@ -129,9 +129,9 @@ Output: SqueezingHeadsDistiller instance
 
 \textbf{Algorithm 2:} Squeezing Heads forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
+Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
         attention_mask, position_embeddings
-Output: output $\in$ R^{B $\times$ L $\times$ d}
+Output: output $\in$ R^{B $$\times$ L $$\times$ d}
 
  1: Q $\leftarrow$ LoRALinear_q(hidden_states)
  2: K $\leftarrow$ LoRALinear_k(hidden_states)

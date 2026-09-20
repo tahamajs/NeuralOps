@@ -245,8 +245,8 @@ $B_O$ & $d \cdot r_L$ \\
 
 \textbf{Algorithm 1:} Compressed MHA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$\times$N$\times$d}
+Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$$\times$N$$\times$d}
 
  1: Proj_1 $\leftarrow$ X @ Vh_qkv^T
  2: Proj_2 $\leftarrow$ Proj_1 * S_qkv
@@ -337,7 +337,7 @@ Compressed QKV & $2 \cdot 384 \cdot 832 = 638,976$ \\
 Compressed O & $384 \cdot 832 = 319,488$ \\
 LoRA & $16 \cdot 1664 = 26,624$ \\
 \textbf{Total compressed} & ~985,088 \\
-\textbf{Reduction} & \textbf{2.4$\times$} \\
+\textbf{Reduction} & \textbf{2.4$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -347,7 +347,7 @@ For $r_{qkv} = r_{out} = 64$:
 \item Compressed QKV: $2 \cdot 64 \cdot 832 = 106,496$
 \item Compressed O: $64 \cdot 832 = 53,248$
 \item LoRA: 26,624
-\item \textbf{Total:} ~186,368 $\to$ \textbf{12.7$\times$ reduction}
+\item \textbf{Total:} ~186,368 $\to$ \textbf{12.7$$\times$ reduction}
 
 \end{itemize}
 \subsubsection{Inference Complexity}

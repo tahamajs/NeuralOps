@@ -153,7 +153,7 @@ projections. Even with correct concatenation, the resulting attention is
 \textbf{LN mismatch} & $\pm$0.85\% accuracy & Fresh LN \\
 \textbf{Silent transfer} & Random attention & \texttt{try/except: pass} \\
 \textbf{Non-causal MHA} & Wrong for GPT-2 & Missing mask \\
-\textbf{GatedDeltaNet slow} & 84.5$\times$ slowdown & Python loops \\
+\textbf{GatedDeltaNet slow} & 84.5$$\times$ slowdown & Python loops \\
 \textbf{OOM on 12-layer} & CUDA error & State memory \\
 \bottomrule
 \end{tabular}

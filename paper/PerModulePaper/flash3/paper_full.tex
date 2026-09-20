@@ -74,7 +74,7 @@ architecture heterogeneity, and pretrained weight transfer. We present a
 3. \textbf{Transfers pretrained weights across four architectures}: GPT-2 Conv1D, 
    RoBERTa/BERT nested self-attention, DistilBERT flat, and Qwen/LLaMA 
    GQA+RoPE.
-4. \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2$\times$ throughput.
+4. \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2$$\times$ throughput.
 5. \textbf{Adds trainable LoRA adapters} for parameter-efficient recovery.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
@@ -99,7 +99,7 @@ Hopper GPU, FP8, SDPA fallback
 Attention is the most expensive part of transformer computation. 
 FlashAttention-3 is a fast, exact attention algorithm that uses special 
 hardware features on NVIDIA Hopper GPUs to avoid materializing the large 
-attention matrix, using less memory and running 2-4$\times$ faster. Our work is a 
+attention matrix, using less memory and running 2-4$$\times$ faster. Our work is a 
 "wrapper" --- a piece of code that lets you use FlashAttention-3 with any 
 pretrained transformer (like BERT, GPT-2, or LLaMA) without retraining. 
 If your GPU doesn't support FlashAttention-3, the wrapper automatically 
@@ -168,11 +168,11 @@ backward rather than stored. This gives:
 \item \textbf{Memory:} $\mathcal{O}(L)$ instead of $\mathcal{O}(L^2)$.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Throughput:} 2-4$\times$ faster than standard attention on Hopper GPUs.
+\item \textbf{Throughput:} 2-4$$\times$ faster than standard attention on Hopper GPUs.
 \end{itemize}
 
 \textbf{FP8 support.} FlashAttention-3 adds FP8 (e4m3) tensor core utilization, 
-achieving another 2$\times$ on H100/H200.
+achieving another 2$$\times$ on H100/H200.
 
 \subsection{1.2 The Deployment Problem}
 
@@ -281,10 +281,10 @@ recomputation for attention, reducing memory from $\mathcal{O}(L^2)$ to
 $\mathcal{O}(L)$ while being faster due to reduced HBM traffic.
 
 \textbf{FlashAttention-2.} Dao (2023) improves parallelism and work partitioning, 
-achieving ~2$\times$ over v1.
+achieving ~2$$\times$ over v1.
 
 \textbf{FlashAttention-3.} Dao et al. (2024) add TMA (Hopper), warp-specialized 
-asynchronous execution, and FP8 support, achieving ~2$\times$ over v2 on H100.
+asynchronous execution, and FP8 support, achieving ~2$$\times$ over v2 on H100.
 
 \textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\\_dot\\_product\\_attention}, 
 which auto-selects between a math path, a memory-efficient path, and 
@@ -407,9 +407,9 @@ Over FlashAttention-2, v3 adds:
    from HBM to shared memory, freeing the SM for computation.
 2. \textbf{Warp specialization.} Producer-consumer model where some warps handle 
    memory while others compute.
-3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
+3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$$\times$ throughput.
 
-\textbf{Result.} ~2$\times$ throughput over v2 on H100.
+\textbf{Result.} ~2$$\times$ throughput over v2 on H100.
 
 \subsection{3.4 PyTorch SDPA}
 
@@ -624,7 +624,7 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
 Output: Y, None
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)
@@ -672,8 +672,8 @@ SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
-naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$$\times$.
 
 \subsection{4.9 Parameter Analysis}
 
@@ -1116,7 +1116,7 @@ full & 90.71\% & 0 & Baseline \\
 \item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
 \end{itemize}
 \begin{itemize}
-\item \textbf{Runtime on H100:} estimated 2-4$\times$ faster (not tested).
+\item \textbf{Runtime on H100:} estimated 2-4$$\times$ faster (not tested).
 \end{itemize}
 
 \clearpage
@@ -1267,7 +1267,7 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{H100/H200 inference} --- FA3 gives 2-4$\times$ throughput
+\item \textbf{H100/H200 inference} --- FA3 gives 2-4$$\times$ throughput
 \end{itemize}
 \begin{itemize}
 \item \textbf{Long sequences} ($L \geq 2048$) --- memory savings substantial
@@ -1314,8 +1314,8 @@ For DistilBERT on RTX 4070 (SDPA path):
 \midrule
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 Params & 66.9M & 67.55M & +589826M \\
-Time & 1.90 s & 1.95 s & 1.03$\times$ \\
-VRAM & 183 MB & 190 MB & 1.04$\times$ \\
+Time & 1.90 s & 1.95 s & 1.03$$\times$ \\
+VRAM & 183 MB & 190 MB & 1.04$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2133,7 +2133,7 @@ Std & 0.08 & 0.05 & 0.08 \\
 
 \subsection{D.5 Unresolved Questions}
 
-1. \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
+1. \textbf{H100 benchmarks:} Would FA3 be 2-4$$\times$ faster?
 2. \textbf{FP8 accuracy:} Real vs simulated?
 3. \textbf{Long context:} $L > 8192$ untested?
 4. \textbf{Training:} FA3 backward path untested?

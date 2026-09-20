@@ -16,7 +16,7 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
 
 \begin{lstlisting}
    +--------------------------------------------------+
-   |  Input: hidden_states $\in$ R^{B$\times$L$\times$d}                |
+   |  Input: hidden_states $\in$ R^{B$$\times$L$$\times$d}                |
    +-------------------+------------------------------+
                        |
                         
@@ -44,7 +44,7 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
                        |
                         
    +--------------------------------------------------+
-   |  Output: y $\in$ R^{B$\times$L$\times$d}                           |
+   |  Output: y $\in$ R^{B$$\times$L$$\times$d}                           |
    +--------------------------------------------------+
 \end{lstlisting}
 
@@ -77,9 +77,9 @@ For $d_\text{in} = d_\text{out} = 768$ and $r = 16$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.0$\times$ \\
-PHANTOM (r=16) & 24,576 & \textbf{24$\times$} \\
-PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$\times$} \\
+Original & 589,824 & 1.0$$\times$ \\
+PHANTOM (r=16) & 24,576 & \textbf{24$$\times$} \\
+PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -275,7 +275,7 @@ $\tau_s$ & 1.0 & Standard softpick temperature \\
 
 With $k = 4$ bits, the number of buckets per round is $2^4 = 16$. The average 
 bucket size is roughly $L / 16$, so sparse attention cost is 
-$\mathcal{O}(L^2 / 16)$ -- a 16$\times$ reduction.
+$\mathcal{O}(L^2 / 16)$ -- a 16$$\times$ reduction.
 
 \subsection{Rectified Softpick}
 
@@ -308,8 +308,8 @@ masking), which would otherwise produce a zero row.
 
 \textbf{Algorithm 1:} PHANTOM forward pass
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B$\times$L$\times$d}, mask
-Output: y $\in$ R^{B$\times$L$\times$d}
+Input:  hidden_states $\in$ R^{B$$\times$L$$\times$d}, mask
+Output: y $\in$ R^{B$$\times$L$$\times$d}
 
 1:  # Phase 1: CUR projections
 2:  Q $\leftarrow$ CUR_q(hidden_states)
@@ -370,7 +370,7 @@ $W_K$ & 589,824 & 24,576 \\
 $W_V$ & 589,824 & 24,576 \\
 $W_O$ & 589,824 & 24,576 \\
 \textbf{Total per layer} & 2,359,296 & \textbf{98,304} \\
-\textbf{Ratio} & 1.00$\times$ & \textbf{24$\times$} \\
+\textbf{Ratio} & 1.00$$\times$ & \textbf{24$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -402,8 +402,8 @@ For $L = 128$, $k = 4$, $B \approx 8$:
 \toprule
 \textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
 \midrule
-Attention & 128  = 16,384 ops & 4 $\times$ 128 $\times$ 8 = 4,096 ops \\
-\textbf{Speedup} & -- & \textbf{4$\times$} \\
+Attention & 128  = 16,384 ops & 4 $$\times$ 128 $$\times$ 8 = 4,096 ops \\
+\textbf{Speedup} & -- & \textbf{4$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -411,7 +411,7 @@ Attention & 128  = 16,384 ops & 4 $\times$ 128 $\times$ 8 = 4,096 ops \\
 \subsubsection{Memory Complexity}
 
 Attention matrix memory reduces from $\mathcal{O}(B H L^2)$ to 
-$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$\times$ reduction.
+$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$$\times$ reduction.
 
 \subsection{Theoretical Notes}
 

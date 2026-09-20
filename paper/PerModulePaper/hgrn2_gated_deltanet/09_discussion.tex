@@ -9,7 +9,7 @@ attention. For long-context deployment, this is a genuine win.
 
 \subsubsection{Takeaway 2: Short-Sequence Slowdown}
 
-At $L = 128$, our method is \textbf{1.0x$\times$ slower}. This is a significant 
+At $L = 128$, our method is \textbf{1.0x$$\times$ slower}. This is a significant 
 limitation for standard benchmarks.
 
 \subsubsection{Takeaway 3: Two Branches Beat One}
@@ -58,7 +58,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & 53.56\% & -37.15\% \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Inference time & 45s & 0.85s & 86.4$\times$ \\
+Inference time & 45s & 0.85s & 86.4$$\times$ \\
 Peak VRAM & 380 MB MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -70,8 +70,8 @@ The main limitation is the Python loop. A \textbf{fused Triton kernel} could
 eliminate the loop overhead, potentially giving:
 
 \begin{itemize}
-\item 3-5$\times$ speedup at L = 128.
-\item 10-20$\times$ at L = 1024.
+\item 3-5$$\times$ speedup at L = 128.
+\item 10-20$$\times$ at L = 1024.
 
 \end{itemize}
 This is a clear avenue for future work.

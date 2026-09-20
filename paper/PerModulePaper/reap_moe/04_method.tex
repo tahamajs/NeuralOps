@@ -162,8 +162,8 @@ when imbalanced.
 
 \textbf{Algorithm 1:} REAP-MoE forward pass
 \begin{lstlisting}
-Input:  x $\in$ R^{B$\times$L$\times$d}
-Output: y $\in$ R^{B$\times$L$\times$d}, L_aux
+Input:  x $\in$ R^{B$$\times$L$$\times$d}
+Output: y $\in$ R^{B$$\times$L$$\times$d}, L_aux
 
 1:  # Attention stage
 2:  Q $\leftarrow$ LN_1(x); K $\leftarrow$ LN_1(x); V $\leftarrow$ LN_1(x)
@@ -224,7 +224,7 @@ Compare to standard FFN:
 \tag{4.17}
 \]
 
-So MoE with SVD is \textbf{1.5$\times$ the FFN parameters}, not 8$\times$ as in standard MoE.
+So MoE with SVD is \textbf{1.5$$\times$ the FFN parameters}, not 8$$\times$ as in standard MoE.
 
 \subsubsection{Compute}
 
@@ -235,7 +235,7 @@ Per token, only $k$ experts run:
 \tag{4.18}
 \]
 
-For $k = 2$, this is 2$\times$ the SVD layer's FLOPs.
+For $k = 2$, this is 2$$\times$ the SVD layer's FLOPs.
 
 \subsubsection{Summary}
 
@@ -247,7 +247,7 @@ For $k = 2$, this is 2$\times$ the SVD layer's FLOPs.
 \textbf{Component} & \textbf{Original FFN} & \textbf{REAP-MoE (E=8, k=2)} \\
 \midrule
 Parameters & $8d^2$ & $1.5 E d^2 \approx 12d^2$ \\
-Per-token FLOPs & $8d^2$ & $3 k d^2 = 6d^2$ (SVD $\times$ k) \\
+Per-token FLOPs & $8d^2$ & $3 k d^2 = 6d^2$ (SVD $$\times$ k) \\
 Effective capacity & $8d^2$ & $12d^2$ \\
 \bottomrule
 \end{tabular}

@@ -58,8 +58,8 @@ with $\tau$ chosen so that $\sum_i p_i = 1$.
 
 \textbf{Algorithm 1:} $\alpha$-Entmax via bisection
 \begin{lstlisting}
-Input: scores s $\in$ R^{B$\times$H$\times$L_q$\times$L_k}, $\alpha$, valid_mask, n_iter
-Output: p $\in$ R^{B$\times$H$\times$L_q$\times$L_k} with sum_i p_i = 1
+Input: scores s $\in$ R^{B$$\times$H$$\times$L_q$$\times$L_k}, $\alpha$, valid_mask, n_iter
+Output: p $\in$ R^{B$$\times$H$$\times$L_q$$\times$L_k} with sum_i p_i = 1
 
 1:  if |$\alpha$ - 1| < $\epsilon$:                          Softmax case
 2:      return softmax(s, masked)
@@ -231,7 +231,7 @@ AdaSplash + LoRA & $d_\text{in} d_\text{out} + r_L (d_\text{in} + d_\text{out})$
 \end{table}
 
 For $d = 768$, $r_L = 16$: each projection adds $16 \times 1536 = 24{,}576$ 
-parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
+parameters. Across 4 projections $$\times$ $N_l$ layers: significant addition.
 
 \textbf{AdaSplash is not a compression method.}
 
@@ -265,10 +265,10 @@ If a projection has near-zero norm, we raise an error and skip injection.
 
 \textbf{Algorithm 2:} AdaSplash forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
+Input:  hidden_states X $\in$ R^{B$$\times$L$$\times$d}
         attention_mask, position_embeddings
         hyperparameters $\alpha$, W, S, r_L
-Output: output Y $\in$ R^{B$\times$L$\times$d}
+Output: output Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ X W_Q^T + (X A_Q^T) B_Q^T
  2: K $\leftarrow$ X W_K^T + (X A_K^T) B_K^T
@@ -319,7 +319,7 @@ Output projection & $O(L d^2)$ \\
 \end{table}
 
 \textbf{Compared to softmax:} AdaSplash adds $n_\text{iter} \times L^2$ operations 
-for entmax bisection. For $n_\text{iter} = 25$, this is ~25$\times$ 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25$$\times$ 
 slower attention.
 
 \textbf{For causal decoders with splash masking,} the mask restricts nonzero 

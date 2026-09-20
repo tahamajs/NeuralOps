@@ -7,7 +7,7 @@ The naive implementation computes $K$ full attention matrices:
 
 \begin{lstlisting}
 for k in range(K_num):
-    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # $\leftarrow$ full L$\times$L
+    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # $\leftarrow$ full L$$\times$L
     scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
     attn = F.softmax(scores, dim=-1)
     out_k = torch.matmul(attn, V)
@@ -25,7 +25,7 @@ Each iteration:
 \end{enumerate}
 \textbf{Total cost.} $K$ times the cost of dense attention, plus $K$ kernel launches.
 
-\textbf{Measured.} DistilBERT baseline 1.9s $\to$ routing 1.42xs (2.3 s$\times$).
+\textbf{Measured.} DistilBERT baseline 1.9s $\to$ routing 1.42xs (2.3 s$$\times$).
 
 \subsection{What Would Make Routing Fast?}
 

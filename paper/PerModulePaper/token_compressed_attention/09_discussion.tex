@@ -61,7 +61,7 @@ For DistilBERT at L = 512:
 \midrule
 Params & 66.95M & 66.4MM & +6.3\% \\
 KV cache & 0.85 & 0.85 & -50\% \\
-Inference time & 0.85 s & 0.85 s & 2.1\times$\times$ \\
+Inference time & 0.85 s & 0.85 s & 2.1$$\times$ \\
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
 \end{tabular}
@@ -107,7 +107,7 @@ At long L, KV cache dominates memory. TCA's 50\% reduction means:
 
 \subsubsection{Combined with Quantization}
 
-TCA + INT8 $\to$ \textbf{~8$\times$ total reduction} in KV footprint.
+TCA + INT8 $\to$ \textbf{~8$$\times$ total reduction} in KV footprint.
 
 \subsection{Open Questions}
 

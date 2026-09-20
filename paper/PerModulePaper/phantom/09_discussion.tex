@@ -33,7 +33,7 @@ dominant signal.
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 32$): LSH overhead dominates
-\item \textbf{Latency-critical} applications: 4 rounds = 4$\times$ attention compute
+\item \textbf{Latency-critical} applications: 4 rounds = 4$$\times$ attention compute
 \item \textbf{Very small models} (<10M): overhead too large
 
 \end{itemize}
@@ -63,10 +63,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{PHANTOM} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1\times$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
-VRAM & 183 MB & 328 MB MB & \textbf{2.1\times$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1\times$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+VRAM & 183 MB & 328 MB MB & \textbf{2.1$$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
 Accuracy & 90.71\% & 72.59\% & -18.12\% \\
 \bottomrule
 \end{tabular}
@@ -83,10 +83,10 @@ Accuracy & 90.71\% & 72.59\% & -18.12\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
-AASVD & Low-rank & 2.1\times$\times$ & 86.4\%\% \\
-SparseGPT & Pruning & 2$\times$ & 86.4\%\% \\
-\textbf{PHANTOM} & CUR + LSH & \textbf{50\%$\times$} & \textbf{72.59\%} \\
+ALBERT & Sharing & 3.5$$\times$ & 89.4\% \\
+AASVD & Low-rank & 2.1$$\times$ & 86.4\%\% \\
+SparseGPT & Pruning & 2$$\times$ & 86.4\%\% \\
+\textbf{PHANTOM} & CUR + LSH & \textbf{50\%$$\times$} & \textbf{72.59\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,12 +104,12 @@ PHANTOM's main benefit is storage. For 100M params:
 \end{itemize}
 \subsubsection{Latency}
 
-Multi-round LSH adds ~4$\times$ attention compute. On GPU, matmul-dominated so 
+Multi-round LSH adds ~4$$\times$ attention compute. On GPU, matmul-dominated so 
 effect is small.
 
 \subsubsection{Memory}
 
-Attention memory reduced by \textbf{32$\times$} due to bucket sparsity.
+Attention memory reduced by \textbf{32$$\times$} due to bucket sparsity.
 
 \subsection{Open Questions}
 

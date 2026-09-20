@@ -86,7 +86,7 @@ span $S_\text{max} = 128$, learned spans converge to
 \textbf{68} on DistilBERT (47\% reduction from max), 
 \textbf{72} on RoBERTa, and \textbf{75} on GPT-2. Accuracy drops by 
 only \textbf{-1.2\%}, \textbf{-2.1\%}, and \textbf{-1.9\%} respectively. 
-Attention memory is reduced by \textbf{2$\times$} at convergence. The 
+Attention memory is reduced by \textbf{2$$\times$} at convergence. The 
 learned spans show systematic head heterogeneity, with some heads converging 
 to local (span $\approx$ 16) and others to global (span $\approx$ max) behavior.
 
@@ -472,7 +472,7 @@ with a \textbf{span-masked} variant:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+    Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
              │
              ▼
     ┌──────────────────────────────┐
@@ -650,11 +650,11 @@ We use $\lambda = 0.01$ by default.
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
         span_logits ℓ $\in$ R^H
         max_span S_max, ramp_size R
         attention_mask, is_causal
-Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
 1:  span $\leftarrow$ sigmoid(ℓ) * S_max                # (H,)
 2:
@@ -1285,11 +1285,11 @@ pruning.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn mem} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & **2$\times$** \\
-ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$\times$ & 1.00$\times$ \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** \& Learned span & 1.00$\times$ & 1.00$\times$ \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & **2$$\times$** \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$$\times$ & 1.00$$\times$ \\
+**ASA-Span** & **89.5** & **76.5** & **77.5** \& Learned span & 1.00$$\times$ & 1.00$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2529,7 +2529,7 @@ done
 
 \textbf{Goal.} Modulate span by content (query-specific).
 
-\textbf{Result.} No improvement, 2$\times$ slower.
+\textbf{Result.} No improvement, 2$$\times$ slower.
 
 \textbf{Conclusion.} Distance-based span is sufficient.
 

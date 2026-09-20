@@ -85,8 +85,8 @@ For $d = 768$ and $r = 384$ (energy 0.95):
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$\times$ \\
-SVD r=384 & 589,824 & \textbf{1.00$\times$} \\
+Original & 589,824 & 1.00$$\times$ \\
+SVD r=384 & 589,824 & \textbf{1.00$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,8 +193,8 @@ This preserves correctness at the cost of quadratic complexity for decoders.
 
 \textbf{Algorithm 1:} AEGIS-V5 forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, is_decoder
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
 1:  Q $\leftarrow$ SVD_Q(X); K $\leftarrow$ SVD_K(X); V $\leftarrow$ SVD_V(X)
 2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
@@ -264,7 +264,7 @@ blend\_logits & 0 & $H$ & +negligible \\
 
 For $d = 768$, $r = 384$ (energy 0.95 default):
 \begin{itemize}
-\item SVD: no compression (ratio 1.00$\times$)
+\item SVD: no compression (ratio 1.00$$\times$)
 \item LoRA: +98,304
 \item RFF: $4 \cdot 64 \cdot 128 = 32,768$
 \item \textbf{Net: +131,072 params per layer}
@@ -272,7 +272,7 @@ For $d = 768$, $r = 384$ (energy 0.95 default):
 \end{itemize}
 For $d = 768$, $r = 128$:
 \begin{itemize}
-\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$\times$ compression}
+\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$$\times$ compression}
 \item LoRA: +98,304
 \item RFF: +32,768
 \item \textbf{Net: -262,144 params per layer}

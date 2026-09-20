@@ -53,7 +53,7 @@ The dedicated encoder path uses \textbf{associative accumulation} -- 4 matmuls,
 no Python loops. The decoder path uses \textbf{chunked prefix-sum} with 
 \texttt{chunk\_size = 32} -- 4 Python iterations for $L=128$.
 
-\textbf{Compare with GatedDeltaNet:} Its chunk size is 8, giving 16 outer $\times$ 8 inner = 128 Python iterations. Cosformer has 4 $\times$ 32 = 128 inner operations but batched in matmuls.
+\textbf{Compare with GatedDeltaNet:} Its chunk size is 8, giving 16 outer $$\times$ 8 inner = 128 Python iterations. Cosformer has 4 $$\times$ 32 = 128 inner operations but batched in matmuls.
 
 \subsection{RoBERTa's Instability}
 
@@ -111,7 +111,7 @@ Output proj & 1 & 1 \\
 \end{tabular}
 \end{table}
 
-30 kernel launches vs 6. \textbf{5$\times$ more launches} $\to$ 5$\times$ slower.
+30 kernel launches vs 6. \textbf{5$$\times$ more launches} $\to$ 5$$\times$ slower.
 
 \subsection{Memory Efficiency}
 
@@ -177,8 +177,8 @@ Max weight & 0.45 & 0.18 \\
 \textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
 \midrule
 \textbf{RoBERTa collapse} & Acc $\approx$ 50\% & Nested + cos/sin mismatch \\
-\textbf{GPT-2 slowdown} & 5$\times$ slower & Chunked Python loop \\
-\textbf{VRAM increase} & 1.3-1.5$\times$ & Extra tensors \\
+\textbf{GPT-2 slowdown} & 5$$\times$ slower & Chunked Python loop \\
+\textbf{VRAM increase} & 1.3-1.5$$\times$ & Extra tensors \\
 \textbf{Parameter increase} & +0.9-4\% & LoRA \\
 \bottomrule
 \end{tabular}
@@ -193,10 +193,10 @@ Max weight & 0.45 & 0.18 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Speed} & \textbf{Params} \\
 \midrule
-baseline & 90.71\% & 1.0$\times$ & 0 \\
-FlashAttention-2 & 90.71\% & 1.1$\times$ & 0 \\
-Cosformer & 77.75\% & 1.84$\times$ & +5.73\% \\
-A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
+baseline & 90.71\% & 1.0$$\times$ & 0 \\
+FlashAttention-2 & 90.71\% & 1.1$$\times$ & 0 \\
+Cosformer & 77.75\% & 1.84$$\times$ & +5.73\% \\
+A3 (SVD) & 88.5\% & 0.8$$\times$ & \textbf{-60\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,7 +206,7 @@ A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
 \begin{enumerate}
 \item \textbf{Cosformer is a reasonable linear attention.} Locality recovery works.
 \item \textbf{Encoder path is clean} -- no Python loops.
-\item \textbf{Decoder path has overhead} -- chunked scan is 5$\times$ slower.
+\item \textbf{Decoder path has overhead} -- chunked scan is 5$$\times$ slower.
 \item \textbf{RoBERTa is problematic} -- nested + reweighting causes instability.
 \item \textbf{Parameter count increases} -- LoRA adds ~1-4\%.
 \end{enumerate}

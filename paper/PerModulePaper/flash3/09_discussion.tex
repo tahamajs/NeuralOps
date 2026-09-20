@@ -21,7 +21,7 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{H100/H200 inference} -- FA3 gives 2-4$\times$ throughput
+\item \textbf{H100/H200 inference} -- FA3 gives 2-4$$\times$ throughput
 \item \textbf{Long sequences} ($L \geq 2048$) -- memory savings substantial
 \item \textbf{Production serving} -- stable, exact attention
 
@@ -61,8 +61,8 @@ For DistilBERT on RTX 4070 (SDPA path):
 \midrule
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 66.4MM & +-32MM \\
-Time & 1.90 s & 1.42x s & 2.1\times$\times$ \\
-VRAM & 183 MB & 317 MB MB & 2.1\times$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+VRAM & 183 MB & 317 MB MB & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

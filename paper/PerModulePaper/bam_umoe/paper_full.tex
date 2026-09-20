@@ -435,7 +435,7 @@ The forward pass:
         │              │      │   top-2)     │
         │              │      └──────┬───────┘
         │              │             │
-        │              │             ▼  $\times$ 0.1 $\times$ $\sigma$(gate)
+        │              │             ▼  $$\times$ 0.1 $$\times$ $\sigma$(gate)
         │              │        ┌─────────┐
         │              │        │ Add     │
         │              │        │ to V    │
@@ -590,8 +590,8 @@ with nested encoder bypass: for RoBERTa/BERT, \texttt{out\\_lin} is not applied
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
-Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, mask, position_embeddings
+Output: Y $\in$ R^{B$$\times$L$$\times$d}, aux_loss
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)                        ▷ Frozen base + LoRA
 2:  K $\leftarrow$ LoRALinear_K(X)
@@ -636,7 +636,7 @@ Output proj & $O(L d^2)$ \\
 \end{tabular}
 \end{table}
 
-The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $$\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
 \subsubsection{4.7.2 Parameter Count}
@@ -658,10 +658,10 @@ Total experts & $8 d^2 E$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $E = 8$: \textbf{8 $\times$ 768² $\times$ 8 $\approx$ 37.7M params per layer}.
+For $d = 768$, $E = 8$: \textbf{8 $$\times$ 768² $$\times$ 8 $\approx$ 37.7M params per layer}.
 
 \textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
-66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
+66.9M model. Parameter count \textbf{increases by ~4.4$$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}
 
@@ -900,9 +900,9 @@ GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & 777 MB MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{BAM-UMoE} & \textbf{Increase} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 293M & +226M & 4.4$\times$ \\
-RoBERTa & 124.6M & 570M & +445M & 4.6$\times$ \\
-GPT-2 & 124.4M & 570M & +445M & 4.6$\times$ \\
+DistilBERT & 66.9M & 293M & +226M & 4.4$$\times$ \\
+RoBERTa & 124.6M & 570M & +445M & 4.6$$\times$ \\
+GPT-2 & 124.4M & 570M & +445M & 4.6$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -975,9 +975,9 @@ GPT-2 & BAM-UMoE & 2.3 s s & 777 MB MB \\
 \toprule
 \textbf{$k$} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & 88.5 & 1$\times$ \\
-**2** & **89.5** & **2$\times$** \\
-4 & 89.3 & 4$\times$ \\
+1 & 88.5 & 1$$\times$ \\
+**2** & **89.5** & **2$$\times$** \\
+4 & 89.3 & 4$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1120,7 +1120,7 @@ LoRA only (r=16) & 88.9 & 66.9M+0.6M \\
 \end{table}
 
 \textbf{Observation.} MoE adds 0.6\% accuracy at cost of 
-4.4$\times$ parameters.
+4.4$$\times$ parameters.
 
 \subsection{8.6 Failure Analysis}
 
@@ -1193,7 +1193,7 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 Accuracy & 90.71\% & 89.5\% & -1.2\% \\
 Params & 66.9M & 293M & +226M \\
 VRAM & 183 MB & 800 MB & +617 MB \\
-Time & 1.90 s & 4.5 s & 2.4$\times$ \\
+Time & 1.90 s & 4.5 s & 2.4$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1269,11 +1269,11 @@ attention. Total compute roughly doubles.
 \subsection{10.4 VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~380 MB$\times$.
+increasing peak memory by ~380 MB$$\times$.
 
 \subsection{10.5 Inference Latency}
 
-Two matmuls + router overhead = ~2.1\times$\times$ slower.
+Two matmuls + router overhead = ~2.1$$\times$ slower.
 
 \subsection{10.6 Task Coverage}
 
@@ -1889,7 +1889,7 @@ For RoBERTa, do NOT apply \texttt{out\\_lin} --- the outer layer does it.
 Params (before) & 66,955,010 \\
 Params (after) & 293000000 \\
 Parameter increase & +226M \\
-Ratio & 4.4$\times$ \\
+Ratio & 4.4$$\times$ \\
 Accuracy & 89.5\% \\
 F1 & 0.895 \\
 Peak VRAM & 800 MB \\
@@ -1958,9 +1958,9 @@ Accuracy & 77.8\% \\
 \toprule
 \textbf{k} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-1 & 88.5 & 1.0$\times$ \\
-2 & 89.5 & 1.5$\times$ \\
-4 & 89.3 & 2.5$\times$ \\
+1 & 88.5 & 1.0$$\times$ \\
+2 & 89.5 & 1.5$$\times$ \\
+4 & 89.3 & 2.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

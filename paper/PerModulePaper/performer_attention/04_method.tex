@@ -208,8 +208,8 @@ shows as \texttt{missing\_key}. Defaults to 1.0 (harmless), but its presence bre
 
 \textbf{Algorithm 1:} PerformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: Q $\leftarrow$ Q * d^{-0.25};  K $\leftarrow$ K * d^{-0.25}

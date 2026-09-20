@@ -10,7 +10,7 @@ whose projections are SVD-factorized.
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -55,7 +55,7 @@ where LoRA provides a trainable residual:
 \]
 
 \textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$ vs $d_\text{in} d_\text{out}$. 
-For $768 \times 768$, $r = 32$: \textbf{~11$\times$ reduction}.
+For $768 \times 768$, $r = 32$: \textbf{~11$$\times$ reduction}.
 
 \textbf{Initialization.} $U$ and $V$ are initialized orthogonally.
 
@@ -201,8 +201,8 @@ order, but reduces memory from $\mathcal{O}(N d_h^2)$ to $\mathcal{O}(d_h^2)$.
 
 \textbf{Algorithm 1:} SVD-Linear Attention batch forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask
-Output: Y $\in$ R^{B$\times$N$\times$d}
+Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask
+Output: Y $\in$ R^{B$$\times$N$$\times$d}
 
  1: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V $\leftarrow$ SVDLinear_V(X)
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -225,8 +225,8 @@ Output: Y $\in$ R^{B$\times$N$\times$d}
 
 \textbf{Algorithm 2:} \texttt{step\_recurrent} (streaming)
 \begin{lstlisting}
-Input:  x_t $\in$ R^{B$\times$d}, past_state (S, Z)
-Output: y_t $\in$ R^{B$\times$d}, new_state
+Input:  x_t $\in$ R^{B$$\times$d}, past_state (S, Z)
+Output: y_t $\in$ R^{B$$\times$d}, new_state
 
 1: q $\leftarrow$ SVDLinear_Q(x_t); k $\leftarrow$ SVDLinear_K(x_t); v $\leftarrow$ SVDLinear_V(x_t)
 2:  _q $\leftarrow$ ELU(q) + 1;  _k $\leftarrow$ ELU(k) + 1
@@ -266,9 +266,9 @@ For $N = 512$, $d_h = 64$, $C = 64$:
 \toprule
 \textbf{Mode} & \textbf{Time} \\
 \midrule
-Softmax & 512  $\times$ 64 $\approx$ 1.7 $\times$ 10 \\
-SVD-Linear & 512 $\times$ 64 $\times$ 64 $\approx$ 2 $\times$ 10 \\
-\textbf{Speedup} & \textbf{~8$\times$} \\
+Softmax & 512  $$\times$ 64 $\approx$ 1.7 $$\times$ 10 \\
+SVD-Linear & 512 $$\times$ 64 $$\times$ 64 $\approx$ 2 $$\times$ 10 \\
+\textbf{Speedup} & \textbf{~8$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -299,15 +299,15 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r = 32$, $r_L = 16$, $N_\ell =
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
 \midrule
-Q/K/V/O SVD & 4 $\times$ 49,216 = 196,864 & 1,181,184 \\
-LoRA & 4 $\times$ 24,576 = 98,304 & 589,824 \\
+Q/K/V/O SVD & 4 $$\times$ 49,216 = 196,864 & 1,181,184 \\
+LoRA & 4 $$\times$ 24,576 = 98,304 & 589,824 \\
 Decay gate & 9,228 & 55,368 \\
 \textbf{Total} & \textbf{304,396} & \textbf{1,826,376} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Baseline per layer: 2,359,296. \textbf{Reduction: ~50\%$\times$}.
+Baseline per layer: 2,359,296. \textbf{Reduction: ~50\%$$\times$}.
 
 \subsection{Theoretical Notes}
 

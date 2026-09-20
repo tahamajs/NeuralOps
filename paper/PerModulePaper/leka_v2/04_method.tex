@@ -16,7 +16,7 @@ LEKAv2 replaces standard attention with a hybrid pipeline:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$\times$L$\times$d}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
               |
          Q/K/V Projection (frozen + LoRA)
               |
@@ -199,8 +199,8 @@ With $g_h^{(0)} \approx 0.12$, the local branch dominates initially.
 
 \textbf{Algorithm 1:} LEKAv2 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
  2: reshape to (B, H, L, d_h)

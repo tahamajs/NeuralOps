@@ -179,7 +179,7 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
  1: Q $\leftarrow$ LoRALinear_Q(X)                         Frozen base + LoRA
@@ -255,8 +255,8 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 \midrule
 Baseline & $\mathcal{O}(L^2 d_h)$ \\
 ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
-\textbf{Reduction at $L=128$} & \textbf{$\approx 2.7\times$} \\
-\textbf{Reduction at $L=512$} & \textbf{$\approx 10.7\times$} \\
+\textbf{Reduction at $L=128$} & \textbf{$\approx 2.7$\times$} \\
+\textbf{Reduction at $L=512$} & \textbf{$\approx 10.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

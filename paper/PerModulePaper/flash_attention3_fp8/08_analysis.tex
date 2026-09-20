@@ -59,9 +59,9 @@ Based on the FlashAttention-3 paper (Shah et al., 2024):
 \toprule
 \textbf{Configuration} & \textbf{Speedup over FP16} \\
 \midrule
-FP16 FlashAttention-2 & 1.0$\times$ \\
-FP8 FlashAttention-3 (H100 SXM) & ~1.8$\times$ \\
-FP8 FlashAttention-3 (H100 PCIe) & ~1.5$\times$ \\
+FP16 FlashAttention-2 & 1.0$$\times$ \\
+FP8 FlashAttention-3 (H100 SXM) & ~1.8$$\times$ \\
+FP8 FlashAttention-3 (H100 PCIe) & ~1.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -191,7 +191,7 @@ Since FP8 is unavailable, we analyze the SDPA path:
 \toprule
 \textbf{Operation} & \textbf{Kernel launches} \\
 \midrule
-Q/K/V projection ($\times$3) & 3 \\
+Q/K/V projection ($$\times$3) & 3 \\
 RoPE (if applicable) & 2 \\
 repeat\_kv (if GQA) & 2 \\
 SDPA & 1 \\

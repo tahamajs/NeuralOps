@@ -15,7 +15,7 @@ OHA replaces MHSA with a two-branch block:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -171,8 +171,8 @@ destabilize training.
 
 \textbf{Algorithm 1:} OHA forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, W, d_c
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, W, d_c
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -197,7 +197,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 21: out_global $\leftarrow$ P_global C_V
 22:
 23: # Gating
-24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$\times$L$\times$H}
+24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$$\times$L$$\times$H}
 25: combined $\leftarrow$ $\gamma$   out_local + (1-$\gamma$)   out_global
 26:
 27: combined $\leftarrow$ concat_heads(combined)
@@ -245,7 +245,7 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
 \]
 
-\textbf{~43$\times$ faster} in attention.
+\textbf{~43$$\times$ faster} in attention.
 
 \subsection{Parameter Analysis}
 

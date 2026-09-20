@@ -100,7 +100,7 @@ O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right)
 \textbf{Peak memory.} $\mathcal{O}(B H C L)$ instead of $\mathcal{O}(B H L^2)$.
 
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
-instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$\times$ reduction.}
+instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$$\times$ reduction.}
 
 \subsection{LoRA Recovery}
 

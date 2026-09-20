@@ -23,7 +23,7 @@ materializing $S$ by \textbf{tiling} the computation:
 \item Never write the full $S$ matrix to HBM.
 
 \end{itemize}
-This gives $\mathcal{O}(L)$ \textbf{peak memory} and \textbf{2--4$\times$ wall-clock speedup} 
+This gives $\mathcal{O}(L)$ \textbf{peak memory} and \textbf{2--4$$\times$ wall-clock speedup} 
 over standard attention.
 
 \textbf{FlashAttention-3} (Shah et al., 2024) extends this to Hopper 
@@ -32,7 +32,7 @@ architecture:
 \begin{enumerate}
 \item \textbf{Asynchronous TMA} (Tensor Memory Accelerator) for bulk memory copy.
 \item \textbf{Warp specialization} to overlap compute and memory.
-\item \textbf{FP8 support} for $2\times$ higher throughput.
+\item \textbf{FP8 support} for $2$\times$ higher throughput.
 
 \end{enumerate}
 Crucially, FlashAttention-3 produces \textbf{exact} attention -- the output is 

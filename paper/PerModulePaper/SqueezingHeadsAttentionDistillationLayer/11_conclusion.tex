@@ -16,9 +16,9 @@ and allows head-dim reduction with LoRA recovery.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Trainable} & \textbf{Head-dim reduction} \\
 \midrule
-DistilBERT & -0.46\% & 113$\times$ & 1.0$\times$ \\
-RoBERTa & -1.8\% & 105$\times$ & 1.0$\times$ \\
-GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
+DistilBERT & -0.46\% & 113$$\times$ & 1.0$$\times$ \\
+RoBERTa & -1.8\% & 105$$\times$ & 1.0$$\times$ \\
+GPT-2 & -1.9\% & 105$$\times$ & 1.0$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +27,7 @@ GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
 
 \begin{enumerate}
 \item \textbf{LoRA recovers most accuracy} lost by head-dim reduction.
-\item \textbf{Trainable params reduced by ~100$\times$.}
+\item \textbf{Trainable params reduced by ~100$$\times$.}
 \item \textbf{Drop-in wrapper} -- no architecture change.
 \item \textbf{Multi-architecture support} with RoPE, GQA, causality.
 \item \textbf{Beats head pruning} by not discarding information.

@@ -253,7 +253,7 @@ add:
 
 per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
 
-\textbf{Total overhead (DistilBERT):} 4 projections $\times$ 6 layers $\times$ 24,576 = 
+\textbf{Total overhead (DistilBERT):} 4 projections $$\times$ 6 layers $$\times$ 24,576 = 
 \textbf{589,824 params} (+0.88\%).
 
 \textbf{This is not a compression method.}
@@ -262,8 +262,8 @@ per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
 
 \textbf{Algorithm 1:} FlashAttention3FP8 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      With LoRA
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)

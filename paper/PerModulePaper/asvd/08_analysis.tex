@@ -85,9 +85,9 @@ Failure mode & Fallback & Fallback & \textbf{Abort} \\
 \toprule
 \textbf{Method} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-A3 & 88.5 & 32$\times$ \\
-AASVD & 85.0 & 4.0$\times$ \\
-\textbf{ASVD} & \textbf{90.37} & \textbf{5.5$\times$} \\
+A3 & 88.5 & 32$$\times$ \\
+AASVD & 85.0 & 4.0$$\times$ \\
+\textbf{ASVD} & \textbf{90.37} & \textbf{5.5$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,10 +116,10 @@ representative layers:
 \toprule
 \textbf{$\varepsilon$} & \textbf{Avg rank} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-0.90 & 32 & 87.5 & 7.0$\times$ \\
-0.95 & 58 & 88.5 & 5.5$\times$ \\
-0.99 & 112 & 89.5 & 4.0$\times$ \\
-0.995 & 144 & 89.8 & 3.5$\times$ \\
+0.90 & 32 & 87.5 & 7.0$$\times$ \\
+0.95 & 58 & 88.5 & 5.5$$\times$ \\
+0.99 & 112 & 89.5 & 4.0$$\times$ \\
+0.995 & 144 & 89.8 & 3.5$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -146,9 +146,9 @@ LoRA & 0 & 0.15 ms \\
 \end{tabular}
 \end{table}
 
-The factorized projections are \textbf{~2.0$\times$ faster} because 
+The factorized projections are \textbf{~2.0$$\times$ faster} because 
 the two matmuls (768$\to$64 and 64$\to$768) have fewer FLOPs than one matmul 
-(768$\times$768).
+(768$$\times$768).
 
 \subsection{Parameter Breakdown}
 
@@ -161,14 +161,14 @@ For DistilBERT with $r = 64$ and $r_L = 16$:
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
 \midrule
-Base SVD (4 $\times$ 98,368) & 393,472 & 2,360,832 \\
-LoRA (4 $\times$ 24,576) & 98,304 & 589,824 \\
+Base SVD (4 $$\times$ 98,368) & 393,472 & 2,360,832 \\
+LoRA (4 $$\times$ 24,576) & 98,304 & 589,824 \\
 \textbf{Total} & \textbf{491,776} & \textbf{2,950,656} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Versus baseline (4 $\times$ 589,824 = 2,359,296 per layer): \textbf{5.5$\times$} 
+Versus baseline (4 $$\times$ 589,824 = 2,359,296 per layer): \textbf{5.5$$\times$} 
 reduction.
 
 \subsection{The `raise` Problem}
@@ -216,7 +216,7 @@ NaN & Loss = NaN & Numerical instability \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{ASVD is a real compressor.} Parameters reduce by 5.5$\times$.
+\item \textbf{ASVD is a real compressor.} Parameters reduce by 5.5$$\times$.
 \item \textbf{Explicit $\Sigma$ enables inspection and rank truncation.}
 \item \textbf{Energy-based rank adapts per layer.}
 \item \textbf{$\epsilon$ = 0.95 is a good default.}

@@ -3,7 +3,7 @@
 \subsection{Why Does Zero-Shot SVD Work?}
 
 The pretrained weight $W_Q$ has an intrinsic low-rank structure: for a 
-768$\times$768 matrix trained on natural language, the singular values decay 
+768$$\times$768 matrix trained on natural language, the singular values decay 
 rapidly. \textbf{Figure 8.1} shows the singular value spectrum for a middle 
 DistilBERT layer:
 
@@ -82,9 +82,9 @@ GPT-2 & 0.85 & \textbf{50.92} \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Domain} & \textbf{Reduction} \\
 \midrule
-A3 \& Required \& All layers & 3-5$\times$ \\
-AASVD \& Required \& All layers & 3-4$\times$ \\
-\textbf{SOA Fused} & \textbf{Not required} & \textbf{Q/K/V only} & \textbf{2-3$\times$} \\
+A3 \& Required \& All layers & 3-5$$\times$ \\
+AASVD \& Required \& All layers & 3-4$$\times$ \\
+\textbf{SOA Fused} & \textbf{Not required} & \textbf{Q/K/V only} & \textbf{2-3$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,7 +120,7 @@ nested attention structure requires more recovery.
 \item \textbf{Zero-shot SVD works} because pretrained weights are low-rank.
 \item \textbf{$W_O$ matters} -- factorizing it would compound error.
 \item \textbf{LoRA recovery adds 5.5\%.}
-\item \textbf{Rank 128 is a sweet spot} -- 3$\times$ reduction, minimal loss.
+\item \textbf{Rank 128 is a sweet spot} -- 3$$\times$ reduction, minimal loss.
 \item \textbf{No calibration is a major practical advantage.}
 
 \end{enumerate}

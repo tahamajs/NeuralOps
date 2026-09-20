@@ -6,7 +6,7 @@
 SALT replaces each linear projection $W$ with a three-component parameterization:
 
 \begin{lstlisting}
-    Weight W $\in$ R^{d_out $\times$ d_in}
+    Weight W $\in$ R^{d_out $$\times$ d_in}
             |
              
     +-------------------------+
@@ -161,7 +161,7 @@ $B$ & $(r, d_\text{in})$ \& Yes & $r \cdot d_\text{in}$ \\
 bias & $(d_\text{out},)$ \& Yes & $d_\text{out}$ \\
 \textbf{Total} &  &  & $2r(d_\text{out} + d_\text{in}) + 2r + d_\text{out}$ \\
 \textbf{Full W} &  &  & $d_\text{out} \cdot d_\text{in}$ \\
-\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$\times$} \\
+\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -186,7 +186,7 @@ top-$r$.
 
 \textbf{Algorithm 1:} SALT initialization
 \begin{lstlisting}
-Input:  W $\in$ R^{d_out $\times$ d_in}, bias b, rank r
+Input:  W $\in$ R^{d_out $$\times$ d_in}, bias b, rank r
 Output: SALTLinear module
 
 1: U, S, Vt $\leftarrow$ svd(W, full_matrices=False)
@@ -203,8 +203,8 @@ Output: SALTLinear module
 
 \textbf{Algorithm 2:} SALT forward (naive)
 \begin{lstlisting}
-Input:  x $\in$ R^{B $\times$ L $\times$ d_in}
-Output: y $\in$ R^{B $\times$ L $\times$ d_out}
+Input:  x $\in$ R^{B $$\times$ L $$\times$ d_in}
+Output: y $\in$ R^{B $$\times$ L $$\times$ d_out}
 
 1: S_$\gamma$ $\leftarrow$ S * $\gamma$
 2: W_svd $\leftarrow$ (U * S_$\gamma$) @ Vt            (d_out, d_in)

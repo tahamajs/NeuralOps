@@ -34,7 +34,7 @@ The forward pass:
         |              |      |   top-2)     |
         |              |      +------+-------+
         |              |             |
-        |              |                $\times$ 0.1 $\times$ $\sigma$(gate)
+        |              |                $$\times$ 0.1 $$\times$ $\sigma$(gate)
         |              |        +---------+
         |              |        | Add     |
         |              |        | to V    |
@@ -189,8 +189,8 @@ with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
-Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, mask, position_embeddings
+Output: Y $\in$ R^{B$$\times$L$$\times$d}, aux_loss
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)                          Frozen base + LoRA
 2:  K $\leftarrow$ LoRALinear_K(X)
@@ -236,7 +236,7 @@ Output proj & $O(L d^2)$ \\
 \end{tabular}
 \end{table}
 
-The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $$\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
 \subsubsection{Parameter Count}
@@ -259,10 +259,10 @@ Total experts & $8 d^2 E$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $E = 8$: \textbf{8 $\times$ 768  $\times$ 8 $\approx$ 37.7M params per layer}.
+For $d = 768$, $E = 8$: \textbf{8 $$\times$ 768  $$\times$ 8 $\approx$ 37.7M params per layer}.
 
 \textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
-66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
+66.9M model. Parameter count \textbf{increases by ~4.4$$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}
 \begin{lstlisting}

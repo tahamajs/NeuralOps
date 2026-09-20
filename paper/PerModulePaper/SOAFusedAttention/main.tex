@@ -1,25 +1,18 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\renewcommand{\ttdefault}{cmtt}
+\input{math_commands.tex}
 
-% --- Typography \& Geometry ---
-\usepackage[utf8]{inputenc}
-\usepackage{microtype}
-\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
-
-% --- Math \& Symbols ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-
-% --- Tables \& Arrays ---
+\usepackage{hyperref}
+\usepackage{url}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
-
-% --- Graphics \& Floats ---
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subcaption}
-
-% --- Code Listings ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
 \usepackage{xcolor}
 \usepackage{listings}
 
@@ -46,8 +39,6 @@
     belowskip=8pt
 }
 
-% --- Hyperlinks ---
-\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -55,14 +46,15 @@
     urlcolor=blue!70!black
 }
 
-% --- Input Title \& Authors ---
 \input{00_meta.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
 
 \begin{document}
 
 \maketitle
 
-% --- Abstract \& Keywords Block ---
 \begin{abstract}
 Transformer attention projections $W_Q, W_K, W_V \in \mathbb{R}^{d \times d}$ 
 account for 75\% of the parameters in a standard attention block. We introduce 
@@ -81,13 +73,13 @@ rank.
 
 We replace $d \times d$ with $k(d + d) = 2kd$ parameters per projection, 
 yielding a compression ratio of $\frac{d}{2k}$. For $d = 768$ and $k = 128$, 
-this is a \textbf{3$\times$ reduction}. LoRA adapters attached to the up-projection 
+this is a \textbf{3$$\times$ reduction}. LoRA adapters attached to the up-projection 
 provide recovery capacity; base factor weights remain frozen to preserve 
 compression.
 
 On SST-2, SOA Fused Attention achieves \textbf{81.31\%} on DistilBERT 
 (baseline 90.71\%), \textbf{50.92\%} on RoBERTa (baseline 78.56\%), 
-and \textbf{50.92\%} on GPT-2 (baseline 79.36\%), with \textbf{1.92$\times$--1.92$\times$} 
+and \textbf{50.92\%} on GPT-2 (baseline 79.36\%), with \textbf{1.92$$\times$--1.92$$\times$} 
 parameter reduction on attention projections. Peak VRAM decreases by 
 \textbf{10\%}. We support GQA, RoPE, and both causal and 
 bidirectional attention. The implementation is production-hardened with 
@@ -103,9 +95,6 @@ initialization, SVD, parameter-efficient transformers
 \noindent\textbf{Keywords:} attention compression, low-rank factorization, zero-shot
 \end{abstract}
 
-\vspace{1em}
-
-% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -120,12 +109,10 @@ initialization, SVD, parameter-efficient transformers
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
-% --- Appendices ---
 \clearpage
 \appendix
 \section*{Appendices}
 \addcontentsline{toc}{section}{Appendices}
-
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

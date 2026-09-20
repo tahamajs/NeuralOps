@@ -315,16 +315,16 @@ For $m = n = 768$:
 \toprule
 \textbf{Rank} & \textbf{ASVD} & \textbf{ASVD + LoRA(16)} & \textbf{Ratio vs baseline} \\
 \midrule
-16 & 24,592 & 49,168 & 12.0$\times$ \\
-32 & 49,152 & 73,728 & 8.0$\times$ \\
-64 & 98,304 & 122,880 & 4.8$\times$ \\
-128 & 196,608 & 221,184 & 2.7$\times$ \\
-256 & 393,216 & 417,792 & 1.4$\times$ \\
+16 & 24,592 & 49,168 & 12.0$$\times$ \\
+32 & 49,152 & 73,728 & 8.0$$\times$ \\
+64 & 98,304 & 122,880 & 4.8$$\times$ \\
+128 & 196,608 & 221,184 & 2.7$$\times$ \\
+256 & 393,216 & 417,792 & 1.4$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Aggregated (DistilBERT, 6 layers $\times$ 4 projections):}
+\textbf{Aggregated (DistilBERT, 6 layers $$\times$ 4 projections):}
 
 \begin{table}[H]
 \centering
@@ -333,9 +333,9 @@ For $m = n = 768$:
 \toprule
 \textbf{Rank} & \textbf{Total ASVD params} & \textbf{Compression ratio} \\
 \midrule
-32 & 1,179,648 & \textbf{~57$\times$} (attention block) \\
-64 & 2,359,296 & \textbf{~28$\times$} \\
-128 & 4,718,592 & \textbf{~14$\times$} \\
+32 & 1,179,648 & \textbf{~57$$\times$} (attention block) \\
+64 & 2,359,296 & \textbf{~28$$\times$} \\
+128 & 4,718,592 & \textbf{~14$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -15,7 +15,7 @@ matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, one replaces
 $W$ with the product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$ 
 and $V \in \mathbb{R}^{r \times d_\text{in}}$ with $r \ll \min(d_\text{in}, d_\text{out})$. 
 Parameter count drops from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. 
-For a $768 \times 768$ matrix at $r = 64$, this is a \textbf{6$\times$ reduction}.
+For a $768 \times 768$ matrix at $r = 64$, this is a \textbf{6$$\times$ reduction}.
 
 Classical truncated SVD is optimal for this problem in an unweighted Frobenius 
 sense, but the objective is misleading. The unweighted loss treats every 

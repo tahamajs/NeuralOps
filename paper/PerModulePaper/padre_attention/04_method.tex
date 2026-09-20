@@ -202,9 +202,9 @@ encoders and decoders, it's passed through \texttt{out\_proj}:
 
 \textbf{Algorithm 1:} PADRe forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask, position_embeddings
         order d, temperature T, is_decoder
-Output: Y $\in$ R^{B$\times$N$\times$d}
+Output: Y $\in$ R^{B$$\times$N$$\times$d}
 
  1: Q $\leftarrow$ q_proj(X); K $\leftarrow$ k_proj(X); V $\leftarrow$ v_proj(X)
  2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)

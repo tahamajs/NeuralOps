@@ -6,7 +6,7 @@
 Routing Attention consists of four steps:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$\times$L$\times$d}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
             |
              
     +-------------------------+
@@ -63,8 +63,8 @@ We use Lloyd's algorithm for $n_{\text{iters}}$ iterations:
 
 \textbf{Algorithm 1:} Cluster assignment
 \begin{lstlisting}
-Input:  F $\in$ R^{B$\times$H$\times$L$\times$d}, K clusters, n_iters
-Output: cluster_ids $\in$ {0, ..., K-1}^{B$\times$H$\times$L}
+Input:  F $\in$ R^{B$$\times$H$$\times$L$$\times$d}, K clusters, n_iters
+Output: cluster_ids $\in$ {0, ..., K-1}^{B$$\times$H$$\times$L}
 
 1: step $\leftarrow$ max(1, L // K)
 2: init_idx $\leftarrow$ [0, step, 2*step, ..., (K-1)*step]    Deterministic init
@@ -201,8 +201,8 @@ Only \texttt{A, B} are trainable; \texttt{W\_frozen} is copied from the pretrain
 
 \textbf{Algorithm 2:} Routing Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V        LoRA projections
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -264,7 +264,7 @@ Routing Attention adds LoRA adapters (no new architectural parameters):
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{Total (DistilBERT)} \\
 \midrule
-LoRA (4 proj $\times$ $r$) & 4 $\times$ 2 r d & 6 $\times$ 98,304 = 589,824 \\
+LoRA (4 proj $$\times$ $r$) & 4 $$\times$ 2 r d & 6 $$\times$ 98,304 = 589,824 \\
 \textbf{Total added} &  & \textbf{~589,824} \\
 \textbf{Percentage} &  & \textbf{+0.88\%} \\
 \bottomrule

@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Storage} \\
 \midrule
 DistilBERT \& full & 90.71\% & -- & 0.9099 & -- & 134 MB \\
-DistilBERT & \textbf{salt} & \textbf{80.28} & -10.43 & 0.8102 & \textbf{48.2\%$\times$} & 256 MB MB \\
+DistilBERT & \textbf{salt} & \textbf{80.28} & -10.43 & 0.8102 & \textbf{48.2\%$$\times$} & 256 MB MB \\
 RoBERTa \& full & 78.56\% & -- & 0.8124 & -- & 249 MB \\
-RoBERTa & \textbf{salt} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
+RoBERTa & \textbf{salt} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{32$$\times$} & 84.5 MB \\
 GPT-2 \& full & 79.36\% & -- & 0.7978 & -- & 249 MB \\
-GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
+GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$$\times$} & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,10 +25,10 @@ GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$\times$} &
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 48.2\%$\times$ (DistilBERT), 32$\times$
-  (RoBERTa), 32$\times$ (GPT-2).
+\item \textbf{Parameter reduction:} 48.2\%$$\times$ (DistilBERT), 32$$\times$
+  (RoBERTa), 32$$\times$ (GPT-2).
 \item \textbf{Accuracy preservation:} within 0.85\%.
-\item \textbf{Storage reduction:} ~32$\times$.
+\item \textbf{Storage reduction:} ~32$$\times$.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -42,14 +42,14 @@ GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$\times$} &
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After SALT} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{48.2\%$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{32$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{32$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{48.2\%$$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{32$$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{32$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Per-layer breakdown (768$\times$768 projection, r=16):}
+\textbf{Per-layer breakdown (768$$\times$768 projection, r=16):}
 
 \begin{table}[H]
 \centering
@@ -60,7 +60,7 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{32$\times$} \\
 \midrule
 Full W & 589,824 \\
 SALT total & 49,936 \\
-\textbf{Reduction} & \textbf{11.8$\times$} \\
+\textbf{Reduction} & \textbf{11.8$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,9 +76,9 @@ SALT total & 49,936 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{SALT} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,11 +97,11 @@ reconstruction at each forward pass.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Params (per layer)} & \textbf{Reduction} \\
 \midrule
-4 & 32 & 12,336 & 47.8$\times$ \\
-8 & 32 & 24,656 & 23.9$\times$ \\
-16 & 32 & 49,296 & 12.0$\times$ \\
-32 & 32 & 98,576 & 5.98$\times$ \\
-64 & 32 & 197,136 & 2.99$\times$ \\
+4 & 32 & 12,336 & 47.8$$\times$ \\
+8 & 32 & 24,656 & 23.9$$\times$ \\
+16 & 32 & 49,296 & 12.0$$\times$ \\
+32 & 32 & 98,576 & 5.98$$\times$ \\
+64 & 32 & 197,136 & 2.99$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -191,11 +191,11 @@ a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction: 48.2\%$\times$--32$\times$}
-\item \textbf{Storage reduction: ~32$\times$}
+\item \textbf{Parameter reduction: 48.2\%$$\times$--32$$\times$}
+\item \textbf{Storage reduction: ~32$$\times$}
 \item \textbf{Accuracy preserved within 0.85\%}
 \item \textbf{Inference memory: unchanged}
-\item \textbf{Inference latency: 2.3 s$\times$ (slightly slower)}
+\item \textbf{Inference latency: 2.3 s$$\times$ (slightly slower)}
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}

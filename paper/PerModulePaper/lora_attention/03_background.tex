@@ -77,15 +77,15 @@ $W_O$ & 589,824 & 24,576 \\
 \end{tabular}
 \end{table}
 
-\textbf{Reduction:} ~24$\times$ fewer trainable parameters.
+\textbf{Reduction:} ~24$$\times$ fewer trainable parameters.
 
 \subsection{Memory Savings}
 
 Full fine-tuning requires:
 \begin{itemize}
-\item Gradients: \texttt{params $\times$ 2 bytes} (FP16)
-\item AdamW state: \texttt{params $\times$ 8 bytes} (two FP32 moments)
-\item Total: \texttt{params $\times$ 10 bytes}
+\item Gradients: \texttt{params $$\times$ 2 bytes} (FP16)
+\item AdamW state: \texttt{params $$\times$ 8 bytes} (two FP32 moments)
+\item Total: \texttt{params $$\times$ 10 bytes}
 
 \end{itemize}
 For DistilBERT attention (14.2M params):
@@ -94,7 +94,7 @@ For DistilBERT attention (14.2M params):
 \item LoRA FT: ~1 MB
 
 \end{itemize}
-\textbf{Total reduction: ~100$\times$}
+\textbf{Total reduction: ~100$$\times$}
 
 \subsection{Multi-Architecture Weight Formats}
 

@@ -170,7 +170,7 @@ Factorized (rank $r$) & $r(d + d) = 2rd$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $r = 64$: \textbf{6$\times$ reduction}.
+For $d = 768$, $r = 64$: \textbf{6$$\times$ reduction}.
 
 For Q projection, ORION uses $r = 64$ and $d = 768$:
 
@@ -204,15 +204,15 @@ Fusion & $\mathcal{O}(L d)$ \\
 
 \textbf{Total:} $\mathcal{O}(L^2 d) \cdot (H_f / H) + \mathcal{O}(L F d) \cdot (H_k / H)$.
 
-For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$\times$} compared to full 
+For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$$\times$} compared to full 
 attention (assuming linear cost is negligible for short sequences).
 
 \subsection{Algorithm}
 
 \textbf{Algorithm 1:} ORION forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}
-Output: Y $\in$ R^{B$\times$L$\times$d}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
 
 1: # Factorized projections
 2: Q_all $\leftarrow$ W_Q_up(W_Q_down(X))

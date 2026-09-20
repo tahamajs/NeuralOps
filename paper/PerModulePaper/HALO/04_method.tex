@@ -16,7 +16,7 @@ per-head gates:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-        Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
+        Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
                  |
         +--------+--------+
                            
@@ -169,10 +169,10 @@ streams, which matches empirical observations that some heads are local
 
 \textbf{Algorithm 1:} HALO-ReGLA forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
+Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
         attention_mask, position_embeddings
         is_causal
-Output: output $\in$ R^{B $\times$ L $\times$ d}
+Output: output $\in$ R^{B $$\times$ L $$\times$ d}
 
  1: Q, K, V $\leftarrow$ proj(hidden_states)
  2: Q, K $\leftarrow$ apply_rope(Q, K, position_embeddings)
