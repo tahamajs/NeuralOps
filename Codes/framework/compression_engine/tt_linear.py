@@ -186,6 +186,11 @@ class TTLinearLayer(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        self._cached_weight: Optional[torch.Tensor] = None
+
+    def _invalidate_cache(self) -> None:
+        self._cached_weight = None
+
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
@@ -194,8 +199,11 @@ class TTLinearLayer(nn.Module):
     def materialize_weight(self) -> torch.Tensor:
         """
         Reconstruct the full dense weight matrix W in R^{out_features x in_features}.
-        Safe against 1-dimension collapsing.
+        Safe against 1-dimension collapsing, with evaluation caching (B20).
         """
+        if not self.training and self._cached_weight is not None:
+            return self._cached_weight
+
         # Start with core 0: select leading boundary index 0
         res = self.cores[0][0]  # (p0, q0, r1)
         for i in range(1, self.d):
@@ -210,7 +218,10 @@ class TTLinearLayer(nn.Module):
         q_indices = [2 * k + 1 for k in range(self.d)]
         p_indices = [2 * k for k in range(self.d)]
         res = res.permute(*(q_indices + p_indices)).contiguous()
-        return res.view(self.out_features, self.in_features)
+        W = res.view(self.out_features, self.in_features)
+        if not self.training:
+            self._cached_weight = W
+        return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with direct TT core contraction (no dense weight materialization)."""
