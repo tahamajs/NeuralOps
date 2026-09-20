@@ -241,7 +241,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
                 existing_lora_r = getattr(module, "r", getattr(module, "lora_r", 0))
                 eff_lora_r = existing_lora_r if existing_lora_r > 0 else self.lora_r
-                eff_lora_alpha = getattr(module, "lora_alpha", getattr(module, "alpha", self.lora_alpha))
+                eff_lora_alpha = getattr(module, "lora_alpha", None) or getattr(module, "alpha", None) or self.lora_alpha
 
                 svd_layer = SVDLinear(
                     in_features=d_in,

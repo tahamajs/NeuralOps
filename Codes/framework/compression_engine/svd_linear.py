@@ -13,7 +13,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+try:
+    from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+except Exception:
+    FusedSVDLinear = None
+    fused_svd_linear = None
+
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -135,7 +140,7 @@ class SVDLinearLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with optional fused kernel acceleration and LoRA branch."""
-        if self.use_fused_kernel and self.lora_r <= 0:
+        if self.use_fused_kernel and self.lora_r <= 0 and fused_svd_linear is not None:
             return fused_svd_linear(
                 x=x,
                 V=self.V,

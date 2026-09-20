@@ -139,6 +139,8 @@ class DirectSVDEncoderLayer(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
+        *args: Any,
+        **kwargs: Any,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
         """Forward pass with SVD attention + FFN residual blocks."""
         attn_out = self.svd_attention(hidden_states)
