@@ -21,7 +21,7 @@ from transformers import (
     AutoTokenizer,
     get_linear_schedule_with_warmup,
 )
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 
 
 def parse_args():
@@ -31,16 +31,24 @@ def parse_args():
     )
     parser.add_argument("--model_name_or_path", type=str, default="gpt2",
                         help="Base model to fine-tune (HuggingFace ID or local path)")
+    parser.add_argument("--model_path", type=str, default=None,
+                        help="Alias for --model_name_or_path")
     parser.add_argument("--output_dir", type=str, default="models/gpt2_wikitext",
                         help="Directory to save fine-tuned model checkpoint")
+    parser.add_argument("--save_path", type=str, default=None,
+                        help="Alias for --output_dir")
     parser.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1",
                         help="WikiText config name")
+    parser.add_argument("--dataset_path", type=str, default=None,
+                        help="Path to local dataset directory saved via save_to_disk")
     parser.add_argument("--epochs", type=int, default=2,
                         help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=4,
                         help="Per-device batch size")
     parser.add_argument("--seq_len", type=int, default=1024,
                         help="Block size / sequence length for language modeling")
+    parser.add_argument("--max_length", type=int, default=None,
+                        help="Alias for --seq_len")
     parser.add_argument("--stride", type=int, default=512,
                         help="Stride for sliding-window evaluation")
     parser.add_argument("--lr", type=float, default=5e-5,
@@ -111,6 +119,13 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[INIT] Fine-tuning {args.model_name_or_path} on {args.dataset_name} using device: {device}")
 
+    if args.model_path:
+        args.model_name_or_path = args.model_path
+    if args.save_path:
+        args.output_dir = args.save_path
+    if args.max_length:
+        args.seq_len = args.max_length
+
     # Load Tokenizer & Model
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=True)
     if tokenizer.pad_token is None:
@@ -120,10 +135,13 @@ def main():
     model.to(device)
 
     # Load WikiText-2
-    try:
-        raw_datasets = load_dataset("wikitext", args.dataset_name)
-    except Exception:
-        raw_datasets = load_dataset("Salesforce/wikitext", args.dataset_name)
+    if args.dataset_path and Path(args.dataset_path).exists():
+        raw_datasets = load_from_disk(args.dataset_path)
+    else:
+        try:
+            raw_datasets = load_dataset("wikitext", args.dataset_name)
+        except Exception:
+            raw_datasets = load_dataset("Salesforce/wikitext", args.dataset_name)
 
     # Tokenize and group texts into blocks of seq_len
     def tokenize_function(examples):

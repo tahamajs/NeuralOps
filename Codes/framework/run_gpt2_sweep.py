@@ -104,8 +104,14 @@ def parse_args():
                         help="List of modules to evaluate")
     parser.add_argument("--seq_len", type=int, default=1024,
                         help="Sliding window context length")
+    parser.add_argument("--max_length", type=int, default=None,
+                        help="Alias for --seq_len")
     parser.add_argument("--stride", type=int, default=512,
                         help="Sliding window stride length")
+    parser.add_argument("--batch_size", type=int, default=4,
+                        help="Batch size")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of workers (default 1)")
     parser.add_argument("--max_eval_tokens", type=int, default=100000,
                         help="Maximum total tokens to evaluate (None for full split)")
     parser.add_argument("--rank", type=int, default=64,
@@ -183,6 +189,18 @@ def compute_perplexity_with_metrics(model, tokenizer, test_dataset, seq_len=1024
 
 def main():
     args = parse_args()
+    if args.max_length:
+        args.seq_len = args.max_length
+
+    # Parse comma-separated modules if passed as a single string
+    parsed_mods = []
+    if isinstance(args.modules, list):
+        for item in args.modules:
+            parsed_mods.extend([m.strip() for m in item.split(",") if m.strip()])
+    elif isinstance(args.modules, str):
+        parsed_mods = [m.strip() for m in args.modules.split(",") if m.strip()]
+    args.modules = parsed_mods or DEFAULT_DECODER_MODULES
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print("=" * 80)
