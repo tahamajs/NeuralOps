@@ -561,7 +561,7 @@ class PADReAttention(BaseAttention):
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
 
         # Polynomial kernel: (1 + S/order)^order, clamped to avoid negative base or overflow
-        base = torch.clamp(1.0 + (scores_centered / self.order), min=0.0)
+        base = torch.clamp(1.0 + (scores_centered / self.order), min=0.0, max=10.0)
         attn_weights = base**self.order
 
         # Zero out invalid positions

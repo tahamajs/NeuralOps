@@ -169,9 +169,9 @@ def compute_empirical_hessian(
         except Exception:
             H_inv = (1.0 / reg) * torch.eye(d_in, device=device)
 
-    # Ensure no NaN / Inf in returned tensors
-    H_inv = torch.nan_to_num(H_inv, nan=0.0, posinf=1.0, neginf=-1.0)
-    H_reg = torch.nan_to_num(H_reg, nan=0.0, posinf=1.0, neginf=-1.0)
+    # Ensure no NaN / Inf in returned tensors with realistic dynamic range
+    H_inv = torch.nan_to_num(H_inv, nan=0.0, posinf=1e8, neginf=-1e8)
+    H_reg = torch.nan_to_num(H_reg, nan=0.0, posinf=1e8, neginf=-1e8)
 
     return H_reg, H_inv
 

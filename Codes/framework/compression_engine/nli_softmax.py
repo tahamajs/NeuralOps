@@ -29,15 +29,15 @@ class NLISoftmaxFunction(torch.autograd.Function):
     def forward(ctx: Any, x: torch.Tensor, dim: int = -1) -> torch.Tensor:
         """Forward pass for NLI Softmax."""
         y = F.softmax(x, dim=dim)
-        ctx.save_for_backward(x)
+        ctx.save_for_backward(y)
         return y
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], None]:
-        """Backward pass for NLI Softmax with numerical stability & clamping."""
-        (x,) = ctx.saved_tensors
-        sig = torch.sigmoid(x.float()).to(dtype=grad_output.dtype)
-        grad_input = grad_output * sig * (1.0 - sig)
+        """Mathematically exact backward pass for Softmax with numerical stability & clamping."""
+        (y,) = ctx.saved_tensors
+        dot = (grad_output * y).sum(dim=-1, keepdim=True)
+        grad_input = y * (grad_output - dot)
         if not torch.isfinite(grad_input).all():
             grad_input = torch.nan_to_num(grad_input, nan=0.0, posinf=1.0, neginf=-1.0)
         if grad_input.dtype in (torch.float16, torch.bfloat16):
