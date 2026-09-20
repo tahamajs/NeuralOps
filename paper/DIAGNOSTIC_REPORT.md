@@ -419,3 +419,66 @@ $$\Delta\% = \frac{\text{params}_{\text{after}} - \text{params}_{\text{before}}}
   - Preserves **$>91.0\%$** accuracy on SST-2 and **$>82.5\%$** on MNLI under physical parameter compression rates of **$1.15\times$ to $1.25\times$**.
   - Outperforms naive SVD, ASVD, and uncalibrated linear attention models which suffer from mode collapse (34.0% MNLI accuracy) or parameter expansion violations.
   - Demonstrates strict bounded memory scaling ($O(1)$ recurrent or $O(N \cdot r)$ low-rank state updates) without CUDA memory allocation crashes.
+
+---
+
+## Part 6: Quality Gate Reconciliation & Multi-Tier Audit
+
+### 1. Reconciliation of `hgrn2_outer`: `FAIL` vs. `TIMEOUT`
+
+- **Historical Log**: Recorded as `FAIL` with `RuntimeError: CUDA error: CUBLAS_STATUS_EXECUTION_FAILED`.
+  - *Cause*: Batched matrix multiplication of sliced outer-product tensors (`kt` and `vt`) under non-contiguous GPU memory strides violated cuBLAS leading dimension requirements.
+- **Current Log**: Recorded as `TIMEOUT` (`Child produced no result file after 3600.1s`).
+  - *Cause*: Adding `.contiguous()` resolved the cuBLAS illegal memory access. However, because `Codes/framework/attentions/hgrn2_outer.py` executes bidirectional recurrence using sequential token-by-token Python loops (`for t in range(L)` and `for t in reversed(range(L))`) without fused CUDA/Triton kernels, its eager PyTorch execution is computationally prohibitive ($O(L \cdot d^2)$ per layer across batches), causing the execution watchdog to terminate it after 1 hour (3600 seconds).
+- **Which is Correct?**: **`TIMEOUT` is the accurate status post-bugfix**. The memory crash bug was fixed, revealing the underlying sequential execution latency bottleneck.
+
+### 2. Statistical Calibration of MNLI Validation Set
+
+Evaluating on the representative MNLI validation sample ($N=1,000$):
+- **Number of Classes ($K$)**: 3 (Entailment, Neutral, Contradiction)
+- **Theoretical Random Chance**: $1 / 3 = 33.33\%$
+- **Validation Class Distribution**: Label 0: 341, Label 1: 319, Label 2: 340
+- **Empirical Majority-Class Baseline ($p_0$)**: $341 / 1000 = 34.10\%$
+- **Standard Error ($\text{SE}$)**: $\sqrt{\frac{p_0 (1 - p_0)}{N}} = \sqrt{\frac{0.341 \times 0.659}{1000}} = 1.499\%$
+- **Statistically Significant PASS Threshold ($3\sigma$, 99.87% confidence)**:
+  $$\text{Threshold} = p_0 + 3 \times \text{SE} = 34.10\% + 3 \times 1.499\% = \mathbf{38.60\%}$$
+
+### 3. Why Previous "PASS" Counts Were Misleading
+
+The earlier binary/single-axis status metric conflated two independent dimensions and masked severe degradation:
+1. **Conflating Parameter Delta with Accuracy**:
+   - Modules such as `aegis_v1` achieved high accuracy (**71.6%**), but because routing weights added +196,680 parameters (+0.29%), its status was labeled `MODERATE_EXPANSION`.
+   - In contrast, broken modules like `kda_attention` collapsed to **34.0%** accuracy (below majority chance), but because it added +78 parameters, it was ALSO labeled `MODERATE_EXPANSION`.
+   - Overriding accuracy with parameter delta collapsed high-performing models and degenerate models into the same label.
+2. **The "Pseudo-PASS" Illusion in the 37%–49% Accuracy Band**:
+   - Under the static 36.90% threshold, any module scoring $\ge 36.90\%$ was labeled `PASS`.
+   - Consequently, modules like `hybrid_svd` (37.1%), `block_transformer_hiba` (38.5%), `hamming_attention` (39.3%), `aegis_v3` (41.5%), `aegis_v4` (42.5%), `aegis_v5` (42.5%), and `bonsai` (48.2%) were certified as `PASS`.
+   - Relative to the **81.5% uncompressed DistilBERT baseline**, a model scoring 37.1% or 41.5% is barely 3% to 7% above uninformative random guessing. Labeling models that lost up to 54% absolute accuracy as `PASS` provided a false assurance of quality. They must be isolated as `PASS_LOW_MARGINAL` / `SUSPECT`.
+
+### 4. Orthogonal Two-Axis Classification Framework
+
+To provide complete scientific clarity, every evaluated module is classified along two independent axes:
+- **Compression Status**:
+  - `reduced`: $\Delta_{\text{effective}} < 0$ (base parameters strictly reduced)
+  - `equal`: $\Delta_{\text{effective}} = 0$ (base parameters exactly preserved, e.g. pure attention replacement without layer factorization)
+  - `expanded`: $\Delta_{\text{effective}} > 0$ (base parameters increased)
+  where $\Delta_{\text{effective}} = (\text{params}_{\text{after}} - \text{lora\_params}) - \text{params}_{\text{before}}$.
+- **Accuracy Status**:
+  - `pass`: $\ge 55.0\%$ (usable representations)
+  - `marginal`: $37.0\% \le \text{acc} < 55.0\%$ (suspect / degraded, near chance)
+  - `fail`: $< 37.0\%$ (below statistical chance threshold)
+
+### 5. Verified Recount Across 71 Evaluated Modules
+
+Based on the canonical snapshot emitted to `results/distilbert_mnli_full_mnli_sweep/summary_v2.csv`:
+
+| Accuracy Tier | Criterion | Module Count | Representative Modules |
+| :--- | :--- | :---: | :--- |
+| **`PASS_STRICT`** | $\text{Accuracy} \ge 70.0\%$ | **34** | `direct_svd` (82.2%), `kmeans` (82.2%), `cachenotes` (82.0%), `armor` (82.0%), `ast` (81.6%), `dobi` (81.5%), `astro` (81.4%), `admm` (81.0%), `adasplash` (79.7%), `aegis_v6` (79.6%), `a3` (79.0%), `adaptive` (79.0%), `cur_moe` (77.6%), `linformer` (77.2%), `aasvd` (74.5%), `aegis_v1` (71.6%) |
+| **`PASS_OK`** | $55.0\% \le \text{Accuracy} < 70.0\%$ | **6** | `adaptive_svd` (68.1%), `admm_pruner` (65.9%), `compressed_attention_layer_energy` (61.0%), `fused_svd_kernel` (59.4%), `come` (56.7%) |
+| **`PASS_MARGINAL` (SUSPECT)** | $37.0\% \le \text{Accuracy} < 55.0\%$ | **16** | `swift_svd` (53.3%), `chela_slay` (53.1%), `minimal_svd` (52.7%), `res_svd` (51.8%), `flash3` (50.4%), `bonsai` (48.2%), `aegis_hybrid` (48.1%), `jamba` (48.0%), `aegis_v4` (42.5%), `aegis_v3` (41.5%), `hamming` (39.3%), `block_transformer_hiba` (38.5%), `hybrid_svd` (37.1%) |
+| **`FAIL`** | $\text{Accuracy} < 37.0\%$ | **12** | `aegis_v2` (36.3%), `adaptive_sparse` (36.4%), `performer` (35.7%), `cosformer` (35.4%), `gqa` (35.2%), `mla` (34.7%), `hgrn2_layer` (34.4%), `simple_ssm` (34.2%), `mamba` (34.1%), `kda` (34.0%), `galerkin` (33.3%), `aegis_spectron_fp8` (32.8%) |
+| **`SKIP_DEPRECATED`** | Memory / Hardware Incompatible | **2** | `hgrn2_gated_deltanet`, `gated_delta_net` (>15GB RAM scan requirement) |
+| **`TIMEOUT`** | Exceeded 3600s Watchdog | **1** | `hgrn2_outer` (unvectorized $O(L \cdot d^2)$ token loop) |
+| **TOTAL** | | **71** | |
+
