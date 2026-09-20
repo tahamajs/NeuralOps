@@ -87,8 +87,8 @@ class CompressedDistilBertAttention(BaseAttention):
         self,
         model_config: Optional[Any] = None,
         rank: Optional[int] = None,
-        rank_qkv: int = 64,
-        rank_out: int = 64,
+        rank_qkv: int = 256,
+        rank_out: int = 256,
         dropout: float = 0.1,
         lora_rank: int = 16,
         pretrained_attn: Optional[nn.Module] = None,
@@ -110,10 +110,9 @@ class CompressedDistilBertAttention(BaseAttention):
         self.is_decoder: bool = bool(getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes))
         self.is_nested_encoder: bool = False
 
-        h_sz = self.hidden_size
-        rank_val = rank or kwargs.get("rank_qkv", rank_qkv if "rank_qkv" in kwargs else h_sz)
+        rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
         self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
-        out_r = rank or kwargs.get("rank_out", rank_out if "rank_out" in kwargs else h_sz)
+        out_r = rank or kwargs.get("rank_out", rank_out)
         self.rank_out = min(out_r, self.all_head_size, self.hidden_size)
         self.lora_rank = getattr(cfg, "lora_rank", lora_rank)
         self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
@@ -535,8 +534,9 @@ def inject_compressed_mha(
 
     try:
         h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
-        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
-        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", h_sz)) if comp_config is not None else h_sz
+        default_rank = min(64, h_sz // 4)
+        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", default_rank)) if comp_config is not None else default_rank
+        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", default_rank)) if comp_config is not None else default_rank
         dropout = getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1
         new_attn = CompressedDistilBertAttention(
             model_config=model_config,

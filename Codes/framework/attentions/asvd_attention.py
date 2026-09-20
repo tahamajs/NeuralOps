@@ -405,22 +405,26 @@ class ASVDAttention(BaseAttention):
             else:
                 r_energy = min(U.size(1), Vt.size(0))
 
+            # Cap rank so factorized layer strictly compresses or matches original parameter count
+            # Dense size: in_features * out_features. Factored size: r * (in_features + out_features) + r
+            max_param_r = max(1, int((target_linear.in_features * target_linear.out_features) / (target_linear.in_features + target_linear.out_features + 1)))
+
             if self.dynamic_rank:
-                r = max(16, min(r_energy, U.size(1), Vt.size(0)))
+                r = max(16, min(r_energy, U.size(1), Vt.size(0), max_param_r))
             else:
-                r = min(self.rank, U.size(1), Vt.size(0))
+                r = min(self.rank, U.size(1), Vt.size(0), max_param_r)
 
             w_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
             diff = torch.norm(W - w_rec, p="fro")
             denom = torch.norm(W, p="fro") + 1e-9
             rel_err = float((diff / denom).item())
 
-            # If error exceeds threshold under dynamic rank, expand rank to meet error constraint
+            # If error exceeds threshold under dynamic rank, expand rank within safe compression bound
             if self.error_threshold is not None and rel_err > self.error_threshold:
-                if self.dynamic_rank and r < min(U.size(1), Vt.size(0)):
+                if self.dynamic_rank and r < min(U.size(1), Vt.size(0), max_param_r):
                     indices_strict = (cum_energy >= (1.0 - (self.error_threshold ** 2) + 1e-5)).nonzero()
                     if len(indices_strict) > 0:
-                        r = indices_strict[0].item() + 1
+                        r = min(indices_strict[0].item() + 1, max_param_r)
                         w_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
                         rel_err = float((torch.norm(W - w_rec) / denom).item())
 
