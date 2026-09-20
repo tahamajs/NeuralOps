@@ -144,7 +144,7 @@ def main():
     if all_pareto:
         pd.concat(all_pareto).to_csv(os.path.join(out_dir, "table5_pareto_frontier.csv"), index=False)
 
-    print(f"\n✅ All tables written to: {out_dir}")
+    print(f"\n[SUCCESS] All tables written to: {out_dir}")
 
 
 if __name__ == "__main__":
