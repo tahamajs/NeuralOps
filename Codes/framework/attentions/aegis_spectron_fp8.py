@@ -995,7 +995,7 @@ def inject_aegis_spectron_fp8(
         svd_rank=getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 384)) if comp_config else 384,
         lora_rank=getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32)) if comp_config else 32,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
-        router_init_bias=getattr(comp_config, "router_init_bias", kwargs.get("router_init_bias", (1.0, 1.0, 1.0))),
+        router_init_bias=getattr(comp_config, "router_init_bias", kwargs.get("router_init_bias", (4.0, 0.0, 0.0))),
         is_decoder=is_dec,
         fp8_format=getattr(comp_config, "fp8_format", "e4m3") if comp_config else "e4m3",
     )
