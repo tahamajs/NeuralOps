@@ -55,53 +55,57 @@ def fp8_cast_simulate(
     if not isinstance(x, torch.Tensor) or not x.is_floating_point():
         return x
 
-    orig_dtype = x.dtype
-    x_f = x.float()
+    with torch.no_grad():
+        orig_dtype = x.dtype
+        x_f = x.float()
 
-    fmt = format.lower()
-    if fmt in ("e4m3", "float8_e4m3fn"):
-        max_val = 448.0
-        torch_dtype = getattr(torch, "float8_e4m3fn", None)
-        mantissa_bits = 3
-    elif fmt in ("e5m2", "float8_e5m2"):
-        max_val = 57344.0
-        torch_dtype = getattr(torch, "float8_e5m2", None)
-        mantissa_bits = 2
-    else:
-        raise ValueError(f"Unsupported FP8 format: '{format}'. Supported formats: 'e4m3', 'e5m2'")
+        fmt = format.lower()
+        if fmt in ("e4m3", "float8_e4m3fn"):
+            max_val = 448.0
+            torch_dtype = getattr(torch, "float8_e4m3fn", None)
+            mantissa_bits = 3
+        elif fmt in ("e5m2", "float8_e5m2"):
+            max_val = 57344.0
+            torch_dtype = getattr(torch, "float8_e5m2", None)
+            mantissa_bits = 2
+        else:
+            raise ValueError(f"Unsupported FP8 format: '{format}'. Supported formats: 'e4m3', 'e5m2'")
 
-    # 1. Prefer torchao if installed
-    try:
-        from torchao.quantization.quant_api import to_fp8
-        return to_fp8(x, format=fmt).to(orig_dtype).clamp(min=-1e4, max=1e4)
-    except Exception:
-        pass
-
-    # Dynamic scaling factor calculation
-    if per_channel:
-        amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
-    else:
-        amax = x_f.abs().amax().clamp(min=1e-12)
-
-    scale = max_val / amax
-    x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
-
-    # 2. PyTorch native float8 roundtrip
-    if torch_dtype is not None:
+        # 1. Prefer torchao if installed
         try:
-            x_fp8 = x_scaled.to(torch_dtype)
-            x_dequant = (x_fp8.float() / scale.float().clamp(min=1e-8)).to(orig_dtype)
-            return x_dequant.clamp(min=-1e4, max=1e4)
+            from torchao.quantization.quant_api import to_fp8
+            x_dequant = to_fp8(x, format=fmt).to(orig_dtype).clamp(min=-1e4, max=1e4)
+            return x + (x_dequant - x).detach()
         except Exception:
             pass
 
-    # 3. Mathematical fallback: bit-depth IEEE-754 mantissa rounding
-    abs_x = torch.abs(x_scaled).clamp(min=1e-12)
-    exp = torch.floor(torch.log2(abs_x))
-    factor = 2.0 ** (exp - mantissa_bits)
-    rounded = torch.round(abs_x / factor) * factor
-    x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)).to(orig_dtype)
-    return x_dequant.clamp(min=-1e4, max=1e4)
+        # Dynamic scaling factor calculation
+        if per_channel:
+            amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
+        else:
+            amax = x_f.abs().amax().clamp(min=1e-12)
+
+        scale = max_val / amax
+        x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
+
+        # 2. PyTorch native float8 roundtrip
+        if torch_dtype is not None:
+            try:
+                x_fp8 = x_scaled.to(torch_dtype)
+                x_dequant = (x_fp8.float() / scale.float().clamp(min=1e-8)).to(orig_dtype)
+                return x + (x_dequant.clamp(min=-1e4, max=1e4) - x).detach()
+            except Exception:
+                pass
+
+        # 3. Mathematical fallback: bit-depth IEEE-754 mantissa rounding
+        abs_x = torch.abs(x_scaled).clamp(min=1e-12)
+        exp = torch.floor(torch.log2(abs_x))
+        factor = 2.0 ** (exp - mantissa_bits)
+        rounded = torch.round(abs_x / factor) * factor
+        x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)).to(orig_dtype)
+        x_dequant = x_dequant.clamp(min=-1e4, max=1e4)
+
+    return x + (x_dequant - x).detach()
 
 
 @dataclass
@@ -120,7 +124,7 @@ class AegisSpectronFP8Config:
     c_glob: float = 0.8
     c_lin: float = 1.0
     dropout: float = 0.1
-    router_init_bias: Tuple[float, float, float] = (1.0, 1.0, 1.0)
+    router_init_bias: Tuple[float, float, float] = (4.0, 0.0, 0.0)
     is_decoder: bool = False
     fp8_format: str = "e4m3"
 
@@ -138,7 +142,7 @@ class AegisSpectronFP8Config:
         self.c_glob = kwargs.get("c_glob", 0.8)
         self.c_lin = kwargs.get("c_lin", 1.0)
         self.dropout = kwargs.get("dropout", 0.1)
-        self.router_init_bias = kwargs.get("router_init_bias", (1.0, 1.0, 1.0))
+        self.router_init_bias = kwargs.get("router_init_bias", (4.0, 0.0, 0.0))
         self.is_decoder = kwargs.get("is_decoder", False)
         self.fp8_format = kwargs.get("fp8_format", "e4m3")
 
