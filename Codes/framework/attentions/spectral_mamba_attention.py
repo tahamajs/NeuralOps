@@ -5,7 +5,6 @@ from framework.attentions.spectral_mamba import (
     SpectralMamba,
     LoRALinear,
     inject_spectral_mamba,
-    spectraformer_inject,
 )
 
 __all__ = [
@@ -14,5 +13,4 @@ __all__ = [
     "SpectralMamba",
     "LoRALinear",
     "inject_spectral_mamba",
-    "spectraformer_inject",
 ]

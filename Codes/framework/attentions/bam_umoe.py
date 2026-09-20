@@ -202,8 +202,8 @@ class UnifiedMoE(nn.Module):
         self.router = nn.Linear(self.dim, self.num_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
-        # Experts: 2-layer MLP with GELU non-linearity
-        hidden_dim = self.out_dim * expert_multiplier
+        # Experts: 2-layer compact MLP with GELU non-linearity
+        hidden_dim = max(32, (self.out_dim * expert_multiplier) // 4)
         self.experts = nn.ModuleList([
             nn.Sequential(
                 nn.Linear(dim, hidden_dim),

@@ -185,11 +185,12 @@ class ExpertChoiceMoE(nn.Module):
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
+        expert_hidden_dim = max(32, d_model // 4)
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(d_model, d_model),
+                nn.Linear(d_model, expert_hidden_dim),
                 nn.GELU(),
-                nn.Linear(d_model, d_model),
+                nn.Linear(expert_hidden_dim, d_model),
             )
             for _ in range(n_experts)
         ])

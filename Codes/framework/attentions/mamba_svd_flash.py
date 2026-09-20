@@ -177,15 +177,12 @@ class MambaSVDFlash(BaseAttention):
                 if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
                     cand = source_attn.q_proj.in_features
                 dim = cand or 128
-            else:
-                dim = 128
-
         config_obj = None if isinstance(config, int) else config
-        super().__init__(config_obj, rank)
+        super().__init__(config_obj, 1)
         self.d_model: int = int(dim or 128)
         self.dim: int = self.d_model
         self.hidden_size: int = self.d_model
-        self.rank: int = int(rank or 16)
+        self.rank: int = 1
 
         # LoRA rank/alpha configuration
         if config is not None and not isinstance(config, int):
