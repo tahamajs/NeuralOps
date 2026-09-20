@@ -1,0 +1,8 @@
+KEY: han2025mamba
+URL: https://doi.org/10.1007/978-981-96-9818-9_35
+FETCHED_AT_UTC: 2026-09-20T14:44:33.637556+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: bd7174b6f189a619e6f864a72ed2c38e57376cfa4a741f3e1b90c031de85237c
+BODY_BYTES_LEN: 12052
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,8,13]],"date-time":"2026-08-13T03:21:32Z","timestamp":1786591292150,"version":"build-2736575974"},"publisher-location":"Singapore","reference-count":30,"publisher":"Springer Nature Singapore","isbn-type":[{"value":"9789819698172","type":"print"},{"value":"9789819698189","type":"electronic"}],"license":[{"start":{"date-parts":[[2025,1,1]],"date-time":"2025-01-01T00:00:00Z","timestamp":1735689600000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.spr

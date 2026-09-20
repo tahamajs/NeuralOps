@@ -1,0 +1,8 @@
+KEY: zhu2024transmamba
+URL: https://doi.org/10.21203/rs.3.rs-4782985/v1
+FETCHED_AT_UTC: 2026-09-20T14:47:54.472584+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: b54e774e81cb6a8dac7fa458352c2809b856870995abac19a90b595839d30f88
+BODY_BYTES_LEN: 3586
+BODY_PREVIEW_FIRST_500_CHARS:
+{"institution":[{"name":"Research Square"}],"indexed":{"date-parts":[[2026,1,20]],"date-time":"2026-01-20T11:45:52Z","timestamp":1768909552884,"version":"3.49.0"},"posted":{"date-parts":[[2024,8,23]]},"group-title":"In Review","reference-count":0,"publisher":"Springer Science and Business Media LLC","license":[{"start":{"date-parts":[[2024,8,23]],"date-time":"2024-08-23T00:00:00Z","timestamp":1724371200000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/l

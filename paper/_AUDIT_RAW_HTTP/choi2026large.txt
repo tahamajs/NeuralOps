@@ -1,0 +1,8 @@
+KEY: choi2026large
+URL: https://doi.org/10.2139/ssrn.6686359
+FETCHED_AT_UTC: 2026-09-20T14:43:50.584365+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: b41ed662d8d7bc44e5b5ea5aa8ec86cbb4abe27cd025b24c37bdd7a02d5a2040
+BODY_BYTES_LEN: 2686
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,7,29]],"date-time":"2026-07-29T14:07:19Z","timestamp":1785334039439,"version":"3.55.0"},"posted":{"date-parts":[[2026]]},"group-title":"SSRN","reference-count":0,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/www.uspto.gov\/ip-policy\/copyright-policy\/copyright-basics"}],"content-domain":{"domain":[],"crossmark

@@ -1,0 +1,8 @@
+KEY: patel2026efficient
+URL: https://doi.org/10.1109/isiber68248.2026.11469970
+FETCHED_AT_UTC: 2026-09-20T14:45:59.581331+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: e1163653bbd38215a074262f0a562eb23f34860950436aa15ad8120039a3fb33
+BODY_BYTES_LEN: 6126
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,6,3]],"date-time":"2026-06-03T16:04:58Z","timestamp":1780502698500,"version":"3.54.1"},"reference-count":23,"publisher":"IEEE","license":[{"start":{"date-parts":[[2026,2,26]],"date-time":"2026-02-26T00:00:00Z","timestamp":1772064000000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2026,2,26]],"date-time":"2026-02-26T00:00:00Z","timestamp":1772064000000},"content-version":"stm-asf","delay-in

@@ -1,0 +1,8 @@
+KEY: khasia2026memory
+URL: https://doi.org/10.2139/ssrn.7188238
+FETCHED_AT_UTC: 2026-09-20T14:45:02.348679+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 57a13a5c2778130bdc575354a9c1b93e1bddf44aa9b7ac7342b08ff0fda6c5ee
+BODY_BYTES_LEN: 2816
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,8,7]],"date-time":"2026-08-07T15:18:02Z","timestamp":1786115882891,"version":"build-2736575974"},"posted":{"date-parts":[[2026]]},"group-title":"SSRN","reference-count":0,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/www.uspto.gov\/ip-policy\/copyright-policy\/copyright-basics"}],"content-domain":{"domain":[],"

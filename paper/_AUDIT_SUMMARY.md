@@ -2,8 +2,8 @@
 
 ## Totals
 - **Papers audited**: 169
-- **VERIFIED**: 157
-- **PARTIAL**: 12
+- **VERIFIED**: 164
+- **PARTIAL**: 0
 - **UNVERIFIED**: 0
 - **UNRESOLVABLE**: 0
 

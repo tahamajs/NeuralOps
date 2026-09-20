@@ -1,0 +1,8 @@
+KEY: pavlitska2023sparsely
+URL: https://doi.org/10.1109/ijcnn54540.2023.10191904
+FETCHED_AT_UTC: 2026-09-20T14:46:01.603379+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: e2ab6a02736f27f34f0379d35fa796604d6a991c4644a564af46070bb5a17247
+BODY_BYTES_LEN: 7397
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,8,19]],"date-time":"2026-08-19T17:59:53Z","timestamp":1787162393259,"version":"build-2736575974"},"reference-count":32,"publisher":"IEEE","license":[{"start":{"date-parts":[[2023,6,18]],"date-time":"2023-06-18T00:00:00Z","timestamp":1687046400000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2023,6,18]],"date-time":"2023-06-18T00:00:00Z","timestamp":1687046400000},"content-version":"stm-asf

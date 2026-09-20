@@ -1,0 +1,8 @@
+KEY: hatefi2026mult
+URL: https://doi.org/10.1016/j.knosys.2026.116082
+FETCHED_AT_UTC: 2026-09-20T14:44:35.957832+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 66f156e2d43ffcd72d95e84638a51e8121606e069bcc2fd579fa6ab269bec59a
+BODY_BYTES_LEN: 20827
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,7,4]],"date-time":"2026-07-04T02:21:56Z","timestamp":1783131716300,"version":"3.54.6"},"reference-count":64,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,6,1]],"date-time":"2026-06-01T00:00:00Z","timestamp":1780272000000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2026,6,1]],"date-time":"2026-06-01T00:00:00Z","timestamp":1780272000000},"content-version":"tdm",

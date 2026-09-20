@@ -1,0 +1,8 @@
+KEY: cai2025hybrid
+URL: https://doi.org/10.1109/icmlca66850.2025.11336556
+FETCHED_AT_UTC: 2026-09-20T14:43:46.868122+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: f8e421f654cbf94bf814a3a35fb7c9d23b66b9eebad665e2e674c829c0c17902
+BODY_BYTES_LEN: 4090
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,7,17]],"date-time":"2026-07-17T15:25:36Z","timestamp":1784301936841,"version":"3.55.0"},"reference-count":14,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,10,17]],"date-time":"2025-10-17T00:00:00Z","timestamp":1760659200000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,10,17]],"date-time":"2025-10-17T00:00:00Z","timestamp":1760659200000},"content-version":"stm-asf","delay

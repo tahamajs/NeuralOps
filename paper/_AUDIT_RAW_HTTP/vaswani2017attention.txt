@@ -1,0 +1,15 @@
+KEY: vaswani2017attention
+URL: https://arxiv.org/abs/1706.03762
+FETCHED_AT_UTC: 2026-09-20T14:47:03.039776+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 29e42a996471db9c019f1122825cdac0e6d64c96767d9ee5c0b8891de6204bee
+BODY_BYTES_LEN: 43644
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[1706.03762] Attention Is All You Need</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" h

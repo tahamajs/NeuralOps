@@ -21,8 +21,8 @@ The 11 Category C modules fall into three architectural sub-families:
 
 | Module Identifier | Architectural Family | Baseline Params | Expanded Params | Param Delta | Compression Ratio | Peak VRAM | Forward Latency | Literature Citation |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| `bam_umoe` | MoE (Universal Gating) | 66.96M | 180.86M | +113.90M (+170.25%) | 0.501 | 2945.5 MB | 47.64 ms | Zhou et al. (ICLR 2024) |
-| `expert_choice_moe` | MoE (Expert Choice Routing) | 66.96M | 180.86M | +113.90M (+170.25%) | 0.661 | 1420.0 MB | 43.21 ms | Zhou et al. (NeurIPS 2022) |
+| `bam_umoe` | MoE (Universal Gating) | 66.96M | 180.86M | +4.37M (+99.60%) | 0.501 | 2945.5 MB | 47.64 ms | Zhou et al. (ICLR 2024) |
+| `expert_choice_moe` | MoE (Expert Choice Routing) | 66.96M | 180.86M | +2.25M (+51.29%) | 0.661 | 1420.0 MB | 43.21 ms | Zhou et al. (NeurIPS 2022) |
 | `reap_moe` | MoE (Pruning & Expansion) | 66.96M | 110.16M | +43.20M (+64.60%) | 0.824 | 2926.2 MB | 46.06 ms | Puigcerver et al. (2024) |
 | `jamba` | Hybrid Transformer-Mamba | 66.96M | 160.26M | +93.30M (+139.44%) | 0.623 | 3848.8 MB | 1039.84 ms | Lieber et al. (2024) |
 | `jamba_info` | Hybrid SSM Info Routing | 66.96M | 92.06M | +25.10M (+37.47%) | 0.308 | 3912.0 MB | 1084.20 ms | Lieber et al. (2024) |
@@ -38,7 +38,7 @@ The 11 Category C modules fall into three architectural sub-families:
 ## D.3 Detailed Architectural Breakdown of Category C Modules
 
 ### D.3.1 `bam_umoe` (BAM Universal Mixture-of-Experts)
-- **Parameter Profile**: Baseline 66.96M -> 180.86M params (+113.90M, **+170.25%**).
+- **Parameter Profile**: Evaluated 4.38M -> 8.75M params (+4.37M, **+99.60%**, ratio 0.501).
 - **Architectural Formulation**: BAM (Balanced Adaptive Mixture) replaces standard feedforward linear projections ($W_1 \in \mathbb{R}^{d 	imes 4d}, W_2 \in \mathbb{R}^{4d 	imes d}$) with an ensemble of $E=8$ independent expert FFNs modulated by a universal token router $G(x) \in \mathbb{R}^E$:
   $$y = \sum_{e=1}^E G(x)_e \cdot 	ext{FFN}_e(x), \quad G(x) = 	ext{Softmax}(	ext{TopK}(x W_g + \epsilon, k=2))$$
   Each layer retains 8 distinct 4x intermediate feedforward projections, increasing feedforward parameters by an exact factor of $8	imes$. Across 6 layers, this adds $6 	imes 7 	imes (2 	imes 768 	imes 3072) pprox 113.9	ext{M}$ parameters.
@@ -53,7 +53,7 @@ The 11 Category C modules fall into three architectural sub-families:
 ---
 
 ### D.3.2 `expert_choice_moe` (Expert Choice Routing MoE)
-- **Parameter Profile**: Baseline 66.96M -> 180.86M params (+113.90M, **+170.25%**).
+- **Parameter Profile**: Evaluated 4.38M -> 8.75M params (+4.37M, **+99.60%**, ratio 0.501).
 - **Architectural Formulation**: Instead of tokens selecting top-$k$ experts (token-choice routing), Expert Choice MoE inverts the routing logic: each expert independently selects top-$C$ tokens from the sequence batch:
   $$I_{e} = 	ext{TopK}_{tokens}(X W_e, C), \quad y_i = \sum_{e: i \in I_e} S_{e, i} \cdot 	ext{FFN}_e(x_i)$$
   This guarantees perfect load balancing across all $E=8$ experts, eliminating dropped tokens. However, the complete $8	imes$ feedforward weight replication remains identical to BAM.
@@ -152,7 +152,8 @@ The 11 Category C modules fall into three architectural sub-families:
 ### D.3.10 `tpa_attention` (Temporal / Trajectory Projection Attention)
 - **Parameter Profile**: Baseline 66.96M -> 95.66M params (+28.70M, **+42.86%**).
 - **Architectural Formulation**: Maintains an auxiliary recurrent trajectory bank across layers that computes second-order temporal cross-attention:
-  $$A_{	ext{temp}} = 	ext{Softmax}\left(rac{Q_t M_{	ext{traj}}^T}{\sqrt{d}}ight) M_{	ext{traj}}$$
+  $$A_{	ext{temp}} = 	ext{Softmax}\left(rac{Q_t M_{	ext{traj}}^T}{\sqrt{d}}
+ight) M_{	ext{traj}}$$
   The trajectory memory matrix $M_{	ext{traj}} \in \mathbb{R}^{K 	imes d}$ and associated projection layers add substantial static parameter capacity.
 - **Empirical Performance**:
   - Peak Memory: 2150.0 MB.
@@ -176,10 +177,13 @@ The 11 Category C modules fall into three architectural sub-families:
 ## D.4 Methodological Justification for Exclusion from the Core Compression Frontier
 
 In empirical model compression research, an algorithm is evaluated on its Pareto optimality along two primary dimensions:
-1. **Parameter Compression Rate**: $ho = rac{	ext{Params}_{	ext{baseline}}}{	ext{Params}_{	ext{compressed}}}$ (where $ho > 1.0$ indicates compression).
+1. **Parameter Compression Rate**: $
+ho = rac{	ext{Params}_{	ext{baseline}}}{	ext{Params}_{	ext{compressed}}}$ (where $
+ho > 1.0$ indicates compression).
 2. **Task Performance Retention**: $lpha = rac{	ext{Accuracy}_{	ext{compressed}}}{	ext{Accuracy}_{	ext{baseline}}}$.
 
-For Category C models, $ho$ ranges between **0.189 and 0.824** (corresponding to parameter increases of $+24.25\%$ to $+170.25\%$). Plotting these architectures on the same Pareto frontier as true compression techniques (such as SVD-Linear Attention, ASVD, or Linformer) would introduce:
+For Category C models, $
+ho$ ranges between **0.189 and 0.824** (corresponding to parameter increases of $+24.25\%$ to $+170.25\%$). Plotting these architectures on the same Pareto frontier as true compression techniques (such as SVD-Linear Attention, ASVD, or Linformer) would introduce:
 - **Distorted Baseline Comparisons**: Hybrid and MoE architectures utilize their extra parameters to model complex linguistic phenomena, achieving strong task accuracy through capacity scaling rather than efficient representation.
 - **Hardware Profile Mismatch**: MoE architectures require large DRAM memory allocations to store un-activated expert weights (up to 5.08 GB VRAM), making them incompatible with target edge devices that require strict memory bounds ($<1.5$ GB).
 

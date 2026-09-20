@@ -1,0 +1,8 @@
+KEY: tan2024efficient
+URL: https://doi.org/10.1364/opticaopen.25149473.v1
+FETCHED_AT_UTC: 2026-09-20T14:46:53.420699+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: ed361597aaaf9675169352ede53611a2bd30e1f08b3991c6f9f0489018df49c7
+BODY_BYTES_LEN: 3907
+BODY_PREVIEW_FIRST_500_CHARS:
+{"institution":[{"name":"Optica Open"}],"indexed":{"date-parts":[[2024,2,7]],"date-time":"2024-02-07T00:53:25Z","timestamp":1707267205393},"posted":{"date-parts":[[2024,2,6]]},"reference-count":0,"publisher":"Optica Publishing Group","license":[{"start":{"date-parts":[[2024,2,6]],"date-time":"2024-02-06T00:00:00Z","timestamp":1707177600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/doi.org\/10.1364\/OA_License_v2#OPG-OO"}],"content-domain":{"domain":[],"crossmark-restric

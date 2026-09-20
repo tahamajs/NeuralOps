@@ -1,0 +1,8 @@
+KEY: d2026legal
+URL: https://doi.org/10.1109/tqcebt67648.2026.11681634
+FETCHED_AT_UTC: 2026-09-20T14:43:57.041249+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 9da91543c77d1946bc48320fc0fe40b030b688249fb8eb62c7316048de0f7deb
+BODY_BYTES_LEN: 9314
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,9,17]],"date-time":"2026-09-17T07:03:26Z","timestamp":1789628606659,"version":"build-2803163510"},"reference-count":28,"publisher":"IEEE","license":[{"start":{"date-parts":[[2026,4,1]],"date-time":"2026-04-01T00:00:00Z","timestamp":1775001600000},"content-version":"vor","delay-in-days":0,"URL":"https:\/\/ieeexplore.ieee.org\/Xplorehelp\/downloads\/license-information\/IEEE.html"},{"start":{"date-parts":[[2026,4,1]],"date-time":"2026-04-01T00:00:00Z","timestamp":17

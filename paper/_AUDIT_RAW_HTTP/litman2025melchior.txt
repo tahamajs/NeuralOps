@@ -1,0 +1,8 @@
+KEY: litman2025melchior
+URL: https://doi.org/10.1101/2025.01.11.632456
+FETCHED_AT_UTC: 2026-09-20T14:45:28.607688+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 5a010f29f88f5aa57db5ebab965f70bfa244db303a8053856ea49c1c37f24da2
+BODY_BYTES_LEN: 7637
+BODY_PREVIEW_FIRST_500_CHARS:
+{"institution":[{"name":"bioRxiv"}],"indexed":{"date-parts":[[2026,1,15]],"date-time":"2026-01-15T23:22:39Z","timestamp":1768519359996,"version":"3.49.0"},"posted":{"date-parts":[[2025,1,14]]},"group-title":"Bioinformatics","reference-count":35,"publisher":"openRxiv","license":[{"start":{"date-parts":[[2025,1,14]],"date-time":"2025-01-14T00:00:00Z","timestamp":1736812800000},"content-version":"vor","delay-in-days":0,"URL":"http:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"d

@@ -1,0 +1,8 @@
+KEY: ikuta2021deep
+URL: https://doi.org/10.36227/techrxiv.15066138
+FETCHED_AT_UTC: 2026-09-20T14:44:48.594916+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 5c85461c385d11221ab8e95c6aa44ae9715406f98ea75f1427f22a66521e4cbc
+BODY_BYTES_LEN: 3797
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2025,2,21]],"date-time":"2025-02-21T00:59:40Z","timestamp":1740099580140,"version":"3.37.3"},"posted":{"date-parts":[[2021,7,29]]},"reference-count":0,"publisher":"Institute of Electrical and Electronics Engineers (IEEE)","license":[{"start":{"date-parts":[[2021,7,29]],"date-time":"2021-07-29T00:00:00Z","timestamp":1627516800000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"domain":[],
