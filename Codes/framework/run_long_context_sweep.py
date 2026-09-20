@@ -89,6 +89,8 @@ def parse_args():
     )
     parser.add_argument("--model_path", type=str, default="models/distilbert_sst2",
                         help="Path to pre-trained/fine-tuned classification model")
+    parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/byte_imdb",
+                        help="Path to pre-cached byte-imdb dataset directory")
     parser.add_argument("--output_dir", type=str, default="results/long_context",
                         help="Directory to save sweep results and summary.csv")
     parser.add_argument("--modules", type=str, nargs="*", default=DEFAULT_LONG_CONTEXT_MODULES,
@@ -97,6 +99,10 @@ def parse_args():
                         help="Evaluation batch size (kept small for 4096 tokens to avoid OOM)")
     parser.add_argument("--seq_len", type=int, default=4096,
                         help="Target sequence length in tokens/bytes")
+    parser.add_argument("--max_length", type=int, default=None,
+                        help="Alias for --seq_len")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Parallel workers (default 1)")
     parser.add_argument("--max_eval_samples", type=int, default=500,
                         help="Number of test samples to evaluate (None for full split)")
     parser.add_argument("--rank", type=int, default=64,
@@ -106,6 +112,42 @@ def parse_args():
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Dry run: print planned steps without executing")
     return parser.parse_args()
+
+
+def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -> None:
+    """Expands position embeddings to target_seq_len via linear interpolation if needed."""
+    cfg = getattr(model, "config", None)
+    if cfg is None:
+        return
+    max_pos = getattr(cfg, "max_position_embeddings", None)
+    if max_pos is not None and max_pos < target_seq_len:
+        # DistilBERT
+        if hasattr(model, "distilbert") and hasattr(model.distilbert, "embeddings"):
+            pos_emb = model.distilbert.embeddings.position_embeddings
+            old_w = pos_emb.weight.data  # [max_pos, dim]
+            # Interpolate: [1, dim, max_pos] -> [1, dim, target_seq_len]
+            new_w = torch.nn.functional.interpolate(
+                old_w.t().unsqueeze(0), size=target_seq_len, mode="linear", align_corners=False
+            ).squeeze(0).t()
+            new_pos_emb = torch.nn.Embedding(target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype)
+            new_pos_emb.weight.data.copy_(new_w)
+            model.distilbert.embeddings.position_embeddings = new_pos_emb
+            if hasattr(model.distilbert.embeddings, "register_buffer"):
+                model.distilbert.embeddings.register_buffer(
+                    "position_ids", torch.arange(target_seq_len).expand((1, -1)).to(old_w.device)
+                )
+            cfg.max_position_embeddings = target_seq_len
+        # RoBERTa / BERT
+        elif hasattr(model, "roberta") and hasattr(model.roberta, "embeddings"):
+            pos_emb = model.roberta.embeddings.position_embeddings
+            old_w = pos_emb.weight.data
+            new_w = torch.nn.functional.interpolate(
+                old_w.t().unsqueeze(0), size=target_seq_len + 2, mode="linear", align_corners=False
+            ).squeeze(0).t()
+            new_pos_emb = torch.nn.Embedding(target_seq_len + 2, old_w.shape[1], device=old_w.device, dtype=old_w.dtype)
+            new_pos_emb.weight.data.copy_(new_w)
+            model.roberta.embeddings.position_embeddings = new_pos_emb
+            cfg.max_position_embeddings = target_seq_len + 2
 
 
 def evaluate_long_context(model, dataloader, max_samples=None, device="cuda"):
@@ -162,11 +204,24 @@ def evaluate_long_context(model, dataloader, max_samples=None, device="cuda"):
 
 def main():
     args = parse_args()
+    if args.max_length:
+        args.seq_len = args.max_length
+
+    # Parse comma-separated modules if passed as a single string
+    parsed_mods = []
+    if isinstance(args.modules, list):
+        for item in args.modules:
+            parsed_mods.extend([m.strip() for m in item.split(",") if m.strip()])
+    elif isinstance(args.modules, str):
+        parsed_mods = [m.strip() for m in args.modules.split(",") if m.strip()]
+    args.modules = parsed_mods or DEFAULT_LONG_CONTEXT_MODULES
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print("=" * 80)
     print("LONG-CONTEXT SWEEP: BYTE-LEVEL IMDB (4096 TOKENS)")
     print(f"Model Path:      {args.model_path}")
+    print(f"Dataset Dir:     {args.dataset_dir}")
     print(f"Sequence Length: {args.seq_len}")
     print(f"Batch Size:      {args.batch_size}")
     print(f"Modules:         {len(args.modules)} modules")
@@ -189,11 +244,13 @@ def main():
         split="test",
         batch_size=args.batch_size,
         max_length=args.seq_len,
+        dataset_dir=args.dataset_dir,
     )
 
     # 1. Baseline Evaluation
     LOG.info("Evaluating baseline uncompressed model on 4096-token Byte IMDb...")
     base_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+    adapt_model_pos_embeddings(base_model, target_seq_len=args.seq_len)
     if args.fp16 and device == "cuda":
         base_model.half()
     base_model.to(device)
@@ -242,6 +299,7 @@ def main():
 
         try:
             cand_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+            adapt_model_pos_embeddings(cand_model, target_seq_len=args.seq_len)
             if args.fp16 and device == "cuda":
                 cand_model.half()
             cand_model.to(device)
