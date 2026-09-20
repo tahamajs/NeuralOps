@@ -1,9 +1,9 @@
 \section*{Appendix A. Complete Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
 
 \subsection*{Conditioning and Numerical Bounds}
-Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{adaptivecompressor}, spectral truncation bounds intermediate condition ratios:
+Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{AdaptiveRanks}, spectral truncation bounds intermediate condition ratios:
 \[
-\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r}
+\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
 \]
 
 \subsection*{Gradient Dynamics of Decoupled Adapters}
@@ -58,10 +58,10 @@ To preserve numerical stability and prevent gradient vanishing or explosion acro
 \]
 \textit{then the hidden activation norm $\|X_l\|_F$ remains strictly bounded for arbitrary sequence depth $L$:}
 \[
-\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
+\|X_L\|_F \le \|X_0\|_F \exp\left( \sqrt{N} \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
 \]
 \textbf{Proof.} Consider the forward difference $\|X_l - X_{l-1}\|_F$. Applying sub-multiplicativity of the operator norm:
 \[
 \|X_l - X_{l-1}\|_F \le \left\| \operatorname{Softmax}\left(\cdot\right) \right\|_2 \|X_{l-1}\|_F \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2
 \]
-Since the softmax attention matrix is row-stochastic, its induced $\ell_\infty$ and $\ell_2$ operator norms are strictly bounded by $1$. Therefore, by discrete Gr\"onwall inequality summation across $l = 1, \dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\square$
+Since the attention weight matrix $A = \operatorname{Softmax}(QK^\top/\sqrt{d})$ is row-stochastic, $\|A\|_\infty = 1$ and $\|A\|_1 \le N$. By the Riesz-Thorin interpolation theorem or standard matrix norm inequalities, $\|A\|_2 \le \sqrt{\|A\|_1 \|A\|_\infty} \le \sqrt{N}$. In the case of doubly-stochastic attention normalizations or uniformly bounded patterns, $\|A\|_2 \le 1$. Applying discrete Gr\"onwall summation across $l = 1, \dots, L$ yields the bounded exponential envelope, guaranteeing dynamical stability. $\square$

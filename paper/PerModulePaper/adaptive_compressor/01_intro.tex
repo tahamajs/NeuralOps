@@ -3,17 +3,17 @@
 \subsection{Motivation and Computational Bottlenecks}
 Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
-The \texttt{adaptivecompressor} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{adaptivecompressor} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
+The \texttt{AdaptiveRanks} compressor module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{AdaptiveRanks} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
 \subsection{Arithmetic Intensity and the Memory Wall}
 During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
 \[
 \mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
 \]
-In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{adaptivecompressor} curtails byte transfer volume per token step, unlocking wall-clock speedups.
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{AdaptiveRanks} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
 \subsection{Framework Integration and Objectives}
-Integrated within the unified framework, \texttt{adaptivecompressor} conforms to strict architectural contracts:
+Integrated within the unified framework, \texttt{AdaptiveRanks} conforms to strict architectural contracts:
 \begin{itemize}
 \item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
 \item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.

@@ -1,26 +1,26 @@
 \section{Related Work and Theoretical Foundations}
 
 \subsection{Model Compression Paradigms}
-Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+Transformer compression literature focuses on parameter and memory reduction through distinct mechanisms:
 \begin{enumerate}
-\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
-\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2$\times$ mathematical throughput without irregular memory access penalties.
-\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions~\citep{eckart1936,halko2011,wang2024svdllm,yuan2023asvd,hsu2022fwsvd,chen2021drone,lan2020albert,novikov2015tensor}. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks~\citep{frantar2023gptq,lin2024awq,xiao2023smoothquant}. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
 \end{enumerate}
 
-\subsection{Sensitivity-Aware Saliency Metrics}
-Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\subsection{Sensitivity-Aware Saliency and Activation Whitening}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction~\citep{kirkpatrick2017,molchanov2019}:
 \[
-S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}[|X_j|]
 \]
+By rotating weights into the empirical activation covariance principal basis, activation-aware methods minimize output reconstruction distortion.
 
 \subsection{Efficient Attention Formulations}
-Standard softmax attention requires computing an $N \times N$ dense matrix:
+Standard softmax attention requires computing an $N \times N$ dense matrix~\citep{vaswani2017}:
 \[
 \text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
 \]
-Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+Kernelized linear attention and low-rank approximation reformulate this via positive feature maps or matrix factorization~\citep{katharopoulos2020,choromanski2021,xiong2021nystromformer}, enabling associative evaluation:
 \[
 (Q K^\top) V = Q (K^\top V)
 \]
-This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{adaptivecompressor} module leverages these structural properties to optimize inference speed and VRAM overhead.
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{AdaptiveRanks} compressor leverages these structural properties to optimize inference speed and VRAM overhead.

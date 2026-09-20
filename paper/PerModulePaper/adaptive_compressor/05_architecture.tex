@@ -1,13 +1,13 @@
 \section{Architecture and Implementation Details}
 
 \subsection{Submodule Hierarchy}
-The \texttt{AdaptiveTransformerCompressor} architecture decouples frozen compressed base representations from adaptive recovery pathways:
+The \texttt{AdaptiveRanks} architecture decouples frozen compressed base representations from adaptive recovery pathways:
 
 \begin{figure}[H]
 \centering
 \begin{verbatim}
 +-------------------------------------------------------------+
-|                     AdaptiveTransformerCompre               |
+|                      AdaptiveRanks                          |
 |  Input X [B, N, D_in]                                       |
 |        |                                                    |
 |        +----------------------------+                       |
@@ -29,11 +29,11 @@ The \texttt{AdaptiveTransformerCompressor} architecture decouples frozen compres
 |  Output Y [B, N, D_out]                                     |
 +-------------------------------------------------------------+
 \end{verbatim}
-\caption{Submodule tensor flow and adapter integration in \texttt{AdaptiveTransformerCompressor}.}
+\caption{Submodule tensor flow and adapter integration in \texttt{AdaptiveRanks}.}
 \end{figure}
 
 \subsection{Submodule Specification Matrix}
-Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter buffers comprising \texttt{AdaptiveTransformerCompressor}:
+Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter buffers comprising \texttt{AdaptiveRanks}:
 
 \begin{table}[H]
 \centering
@@ -44,13 +44,12 @@ Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter b
 \midrule
 \texttt{V\_r} / \texttt{weight} & Parameter & $(r, d_{\text{in}})$ & No & Low-rank basis \\
 \texttt{U\_r} & Parameter & $(d_{\text{out}}, r)$ & No & Expansion basis \\
-\texttt{mask} & BoolTensor & $(d_{\text{out}}, d_{\text{in}})$ & No & Sparsity mask \\
 \texttt{lora\_A} & Parameter & $(r_{\text{lora}}, d_{\text{in}})$ & Yes & Adaptation input \\
 \texttt{lora\_B} & Parameter & $(d_{\text{out}}, r_{\text{lora}})$ & Yes & Adaptation output \\
 \texttt{bias} & Parameter & $(d_{\text{out}})$ & No & Layer bias \\
 \bottomrule
 \end{tabular}
-\caption{Submodule specifications for \texttt{AdaptiveTransformerCompressor}.}
+\caption{Submodule specifications for \texttt{AdaptiveRanks}.}
 \label{tab:submodules_adaptivecompressor}
 \end{table}
 
@@ -81,7 +80,7 @@ LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rota
 \end{itemize}
 
 \subsection{Memory Allocation and Tensor Buffer Management}
-In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{AdaptiveTransformerCompressor}, forward execution partitions parameter access across two sequential matrix multiplications:
+In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{AdaptiveRanks}, forward execution partitions parameter access across two sequential matrix multiplications:
 \begin{enumerate}
 \item Intermediate hidden buffer: $H = X V_r^\top \in \mathbb{R}^{B \times N \times r}$
 \item Final output projection: $Y = H U_r^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$

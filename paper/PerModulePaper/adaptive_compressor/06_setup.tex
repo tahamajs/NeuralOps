@@ -1,7 +1,7 @@
 \section{Experimental Setup and Evaluation Protocol}
 
 \subsection{Benchmark Datasets and Tasks}
-Empirical validations are executed across standard benchmarks:
+Empirical validations are executed across standard benchmarks~\citep{sanh2019distilbert,liu2019roberta,radford2019gpt2,touvron2023llama}:
 \begin{itemize}
 \item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
 \item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
@@ -25,4 +25,4 @@ Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
 \end{table}
 
 \subsection{Hardware and Profiling Configuration}
-Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$) following standard benchmarking methodologies~\citep{kwon2023pagedattention,horowitz2014,strubell2019}.
