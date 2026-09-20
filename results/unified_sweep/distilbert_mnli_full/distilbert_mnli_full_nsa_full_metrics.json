@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_nsa",
     "performance": {
-        "accuracy_pct": 81.6,
-        "f1_score": 0.8157,
-        "f1_macro": 0.8157,
-        "precision": 0.8161,
-        "recall": 0.8156,
-        "val_loss": 0.5962,
+        "accuracy_pct": 81.7,
+        "f1_score": 0.8167,
+        "f1_macro": 0.8167,
+        "precision": 0.8171,
+        "recall": 0.8166,
+        "val_loss": 0.5969,
         "status": "PASS",
-        "elapsed_s": 21.15
+        "elapsed_s": 14.19
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -34,8 +34,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 325.98,
-        "tokens_per_sec": 19112.97
+        "peak_vram_mb": 324.79,
+        "tokens_per_sec": 19616.12
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 292.2,
-        "L_256_vram_mb": 301.13,
+        "L_128_vram_mb": 291.01,
+        "L_256_vram_mb": 299.93,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T22:51:57.337235"
+    "timestamp": "2026-09-20T07:58:17.853816"
 }

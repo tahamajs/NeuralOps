@@ -1,14 +1,14 @@
 {
     "model": "distilbert_agnews_full_nexus",
     "performance": {
-        "accuracy_pct": 94.0,
-        "f1_score": 0.9361,
-        "f1_macro": 0.9361,
-        "precision": 0.9361,
-        "recall": 0.9361,
-        "val_loss": 0.1908,
-        "status": "REJECTED_EXPANSION",
-        "elapsed_s": 111.03
+        "accuracy_pct": 92.8,
+        "f1_score": 0.9254,
+        "f1_macro": 0.9254,
+        "precision": 0.9304,
+        "recall": 0.9242,
+        "val_loss": 0.2386,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 17.29
     },
     "efficiency": {
         "total_params_before": 66956548,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 404.39,
-        "tokens_per_sec": 5102.39
+        "peak_vram_mb": 344.57,
+        "tokens_per_sec": 16191.03
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 294.35,
-        "L_256_vram_mb": 313.58,
+        "L_128_vram_mb": 290.84,
+        "L_256_vram_mb": 310.08,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T21:40:35.048930"
+    "timestamp": "2026-09-20T08:27:20.811802"
 }
