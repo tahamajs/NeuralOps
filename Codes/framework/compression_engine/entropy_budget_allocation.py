@@ -283,7 +283,8 @@ class EntropyBudgetCompressor(BaseCompressor):
 
             total_s = S.sum() + self.eps
             p = torch.clamp(S / total_s, min=self.eps, max=1.0)
-            entropy = -torch.sum(p * torch.log(p)).item()
+            # B18: Shannon entropy in bits using log2
+            entropy = -torch.sum(p * torch.log2(p)).item()
             entropy = max(entropy, 1e-4)
 
             for i in range(r_floor, max_r):
