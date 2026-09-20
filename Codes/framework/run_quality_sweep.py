@@ -2633,16 +2633,37 @@ def run_single_module_main(args) -> dict:
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
-    # In fresh mode, evaluate everything; otherwise only skip modules that genuinely PASSED.
+    # In fresh mode, evaluate everything; otherwise only skip modules that genuinely PASSED with non-zero accuracy.
     # PASS_LOW is NOT skipped — it gets re-evaluated on new datasets where thresholds differ.
     # CRASH/FAIL/REJECTED_EXPANSION are always re-tried unless in BLOCKED_MODULES.
-    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") == "PASS"}
+    existing = set() if args.fresh else {
+        m for m, r in summary_dict.items()
+        if r.get("status") == "PASS" and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
+    }
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
         if name in DEPRECATED_MODULES:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
+            row = {
+                "module_name": name, "status": "SKIP_DEPRECATED",
+                "accuracy_pct": 0.0, "elapsed_s": 0.0,
+                "error": f"DEPRECATED: {dep_reason}",
+                "path": "deprecated", "timestamp": datetime.now().isoformat(),
+            }
+            summary_dict[name] = row
+            _tmp = path.with_suffix(".tmp")
+            with _tmp.open("w", newline="", encoding="utf8") as _f:
+                _w = csv.DictWriter(_f, fieldnames=FIELDS, extrasaction="ignore")
+                _w.writeheader()
+                for _m in summary_dict:
+                    _w.writerow(summary_dict[_m])
+            if _tmp.exists():
+                if path.exists():
+                    try: path.unlink()
+                    except Exception: pass
+                _tmp.rename(path)
             continue
         if name in BLOCKED_MODULES:
             bl_reason = BLOCKED_MODULES[name]
@@ -2674,7 +2695,7 @@ def run_single_module_main(args) -> dict:
 
         LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
                  n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
-        t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+        t = time.monotonic(); status, acc, err = "PENDING", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
 
         support = module_family_support(name).get(family, "unknown")
         from framework.core.registry import is_module_declared_compatible
@@ -2876,11 +2897,19 @@ def run_single_module_main(args) -> dict:
         # STEP 0: Honest Three-Way Status Classification
         # -------------------------------------------------------------------------
         if not status.startswith("SKIP_") and status != "FAIL":
-            status = "PASS" if acc >= pass_threshold_pct else "PASS_LOW"
+            if acc <= 0.0 or (status == "PENDING" and acc < pass_threshold_pct):
+                status = "EVAL_FAILED" if acc <= 0.0 else "PASS_LOW"
+                if acc <= 0.0:
+                    err = f"EVAL_FAILED: evaluated accuracy is non-positive ({acc:.2f}%)"
+            elif acc >= pass_threshold_pct:
+                status = "PASS"
+            else:
+                status = "PASS_LOW"
+
             if had_nan:
                 status = "PASS_LOW"
                 err = "note: recovery_loss_nan"
-            elif acc < pass_threshold_pct:
+            elif acc < pass_threshold_pct and status != "EVAL_FAILED":
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
             # Check parameter expansion — exclude LoRA adapter params from base model count
