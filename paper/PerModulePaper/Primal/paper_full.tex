@@ -1,150 +1,12 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{Primal Attention: Self-Attention via Asymmetric Kernel SVD in Primal Representation}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-
-\section{Primal Attention: Self-Attention via Asymmetric Kernel SVD in Primal Representation}
-
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/primal\_attention.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Standard softmax attention incurs $\mathcal{O}(L^2)$ time and memory in sequence 
-length $L$, which becomes the bottleneck for long-context transformer inference. 
-Nyström approximation reduces this to $\mathcal{O}(L m)$ by projecting onto $m$ 
-landmarks, but requires a symmetric kernel matrix, forcing the same landmarks 
-for queries and keys. This is unnecessarily restrictive.
-
-We introduce \textbf{Primal Attention}, an asymmetric kernel SVD formulation that 
-decomposes the attention matrix as $A \approx F_1 F_2^{-1} F_3$, where $F_1, F_3$ 
-are query-key cross products with landmarks and $F_2$ is the landmark-landmark 
-Gram matrix. This allows independent landmark selection for queries and keys. 
-The pseudoinverse $F_2^{-1}$ is computed via an iterative Schulz refinement 
-that converges in a few steps and is differentiable.
-
-Primal Attention selects landmarks via \textbf{segment pooling} over contiguous chunks 
-of the sequence, providing a uniform but content-agnostic summary of the 
-attention input. We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 
-with landmark count $m = 64$. Primal Attention achieves 
-\textbf{86.5\%}, \textbf{74.0\%}, and \textbf{75.0\%} accuracy respectively, 
-at the cost of \textbf{1.3$$\times$} inference latency. The attention matrix 
-memory is reduced by \textbf{4$$\times$}. We provide a production-hardened 
-PyTorch implementation supporting flat, nested, and causal architectures with 
-GQA, RoPE, and safe injection.
-
-\textbf{Keywords:} Nyström approximation, low-rank attention, pseudoinverse, Schulz 
-iteration, efficient transformer
-
-
-
-\subsection{Lay Summary}
-
-Attention is the core mechanism in modern language models. Its cost grows 
-quadratically with sentence length --- doubling the input quadruples the work. 
-Many methods try to reduce this by summarizing the input into a few "landmark" 
-points, but these methods typically require the same landmarks for both the 
-query and the key side.
-
-Primal Attention breaks this symmetry: queries and keys can use different 
-landmarks. This gives more flexibility and slightly better quality at the 
-same cost. We test the method on three popular language models and find that 
-it retains most of the original accuracy while reducing attention memory by 
-a factor of several. The method is fully differentiable and integrates 
-cleanly with existing pretrained models.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 The softmax attention mechanism (Vaswani et al., 2017) scales quadratically 
 with sequence length $L$:
@@ -159,7 +21,7 @@ matrix alone occupies \textbf{200 MB at FP16}, dwarfing the model's own weight
 footprint.
 
 \textbf{Low-rank approximation} reduces this to $\mathcal{O}(L m)$ by projecting 
-onto $m \ll L$ landmarks. The Nyström method (Williams \& Seeger, 2001) does 
+onto $m \ll L$ landmarks. The Nystr m method (Williams \& Seeger, 2001) does 
 this by:
 
 \begin{equation}
@@ -168,14 +30,14 @@ K \approx \tilde{K} = C W^{-1} C^\top
 
 where $C \in \mathbb{R}^{L \times m}$ is the query-landmark kernel and 
 $W \in \mathbb{R}^{m \times m}$ is the landmark-landmark kernel. The 
-Nyströmformer (Xiong et al., 2021) applies this to attention.
+Nystr mformer (Xiong et al., 2021) applies this to attention.
 
-\textbf{The problem with standard Nyström.} It assumes a symmetric kernel, 
+\textbf{The problem with standard Nystr m.} It assumes a symmetric kernel, 
 requiring the same landmarks for queries and keys. In attention, however, 
 queries and keys play different roles: queries ask "what am I looking for?"; 
 keys answer "what am I?" Using the same landmarks ignores this asymmetry.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given query $Q \in \mathbb{R}^{L \times d}$, key $K \in \mathbb{R}^{L \times d}$, 
 and value $V \in \mathbb{R}^{L \times d}$, we seek a low-rank approximation 
@@ -187,13 +49,15 @@ of the attention output:
 
 such that:
 
-1. \textbf{Complexity:} $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$, with $m \ll L$.
-2. \textbf{Asymmetry:} Independent landmark selection for $Q$ and $K$.
-3. \textbf{Differentiability:} End-to-end training.
-4. \textbf{Compatibility:} Works with pretrained models without retraining.
-5. \textbf{Stability:} Numerically robust for FP16 and long sequences.
+\begin{enumerate}
+\item \textbf{Complexity:} $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$, with $m \ll L$.
+\item \textbf{Asymmetry:} Independent landmark selection for $Q$ and $K$.
+\item \textbf{Differentiability:} End-to-end training.
+\item \textbf{Compatibility:} Works with pretrained models without retraining.
+\item \textbf{Stability:} Numerically robust for FP16 and long sequences.
 
-\subsection{1.3 Our Approach: Primal Attention}
+\end{enumerate}
+\subsection{Our Approach: Primal Attention}
 
 We propose \textbf{Primal Attention}, which decomposes the attention matrix 
 asymmetrically:
@@ -206,14 +70,10 @@ where:
 
 \begin{itemize}
 \item $F_1 = Q K_\text{land}^\top \in \mathbb{R}^{L \times m}$: query vs landmark keys
-\end{itemize}
-\begin{itemize}
 \item $F_2 = Q_\text{land} K_\text{land}^\top \in \mathbb{R}^{m \times m}$: landmark-landmark
-\end{itemize}
-\begin{itemize}
 \item $F_3 = Q_\text{land} K^\top \in \mathbb{R}^{m \times L}$: landmark queries vs keys
-\end{itemize}
 
+\end{itemize}
 This is the \textbf{primal representation} of the asymmetric kernel (in contrast 
 to the dual representation which uses $L \times L$ kernels). The pseudoinverse 
 $F_2^{-1}$ is computed via \textbf{Schulz iteration}:
@@ -228,33 +88,25 @@ which converges quadratically to $F_2^{-1}$ in a few steps and is differentiable
 $m$ equal chunks and average each chunk. This gives uniform coverage 
 regardless of content.
 
-\subsection{1.4 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{An asymmetric kernel SVD formulation.} Primal Attention allows independent
-\end{itemize}
-  landmarks for queries and keys, generalizing standard Nyström approximation.
-\begin{itemize}
+  landmarks for queries and keys, generalizing standard Nystr m approximation.
 \item \textbf{A differentiable pseudoinverse.} Schulz iteration provides end-to-end
-\end{itemize}
   trainable pseudoinverse without explicit eigendecomposition.
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Supports flat, nested, and causal
-\end{itemize}
   architectures with GQA, RoPE, and safe injection.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2 with ablations over landmark count and pseudoinverse iterations.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on softmax 
-attention, Nyström approximation, and pseudoinverse. Section 4 presents 
+attention, Nystr m approximation, and pseudoinverse. Section 4 presents 
 Primal Attention. Section 5 describes integration with four architectures. 
 Section 6 details the experimental setup. Section 7 reports results. Section 
 8 analyzes where the method succeeds and fails. Section 9 discusses practical 
@@ -264,99 +116,103 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 
 \subsection{Notation}
 
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Efficient Attention}
+\subsection{Efficient Attention}
 
-\subsubsection{2.1.1 Sparse Attention}
+\subsubsection{Sparse Attention}
 
 Longformer (Beltagy et al., 2020) restricts attention to a sliding window 
 plus global tokens, achieving $\mathcal{O}(L \sqrt{L})$. BigBird (Zaheer et 
 al., 2020) adds random connections. Primal Attention is \textbf{dense} in content 
 but \textbf{low-rank} in structure.
 
-\subsubsection{2.1.2 Kernel Attention}
+\subsubsection{Kernel Attention}
 
 Performer (Choromanski et al., 2021) approximates softmax via random Fourier 
 features, achieving $\mathcal{O}(L)$ with a fixed number of random features. 
 Primal Attention uses landmarks instead of random features.
 
-\subsubsection{2.1.3 Low-Rank Attention}
+\subsubsection{Low-Rank Attention}
 
 Linformer (Wang et al., 2020) projects $K, V$ to a fixed low rank via learned 
-projections. Nyströmformer (Xiong et al., 2021) uses Nyström landmark 
+projections. Nystr mformer (Xiong et al., 2021) uses Nystr m landmark 
 approximation with the same landmarks for $Q$ and $K$. Primal Attention 
 \textbf{breaks this symmetry}.
 
-\subsubsection{2.1.4 Performer vs Nyström}
+\subsubsection{Performer vs Nystr m}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Approximation} & \textbf{Symmetric?} & \textbf{Trainable?} \\
 \midrule
 Performer \& Random Fourier features \& Yes \& Yes \\
-Nyströmformer \& Symmetric landmarks \& Yes \& Yes \\
-**Primal Attention** \& Asymmetric landmarks & **No** & **Yes** \\
+Nystr mformer \& Symmetric landmarks \& Yes \& Yes \\
+\textbf{Primal Attention} \& Asymmetric landmarks & \textbf{No} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.2 Nyström Methods}
+\subsection{Nystr m Methods}
 
-\subsubsection{2.2.1 Classical Nyström}
+\subsubsection{Classical Nystr m}
 
 Williams \& Seeger (2001) approximate a Gram matrix $K_{L \times L}$ as 
 $C W^{-1} C^\top$. This requires $C \in \mathbb{R}^{L \times m}$ and 
 $W \in \mathbb{R}^{m \times m}$.
 
-\subsubsection{2.2.2 Nyströmformer}
+\subsubsection{Nystr mformer}
 
-Xiong et al. (2021) apply Nyström to attention by selecting $m$ landmarks 
+Xiong et al. (2021) apply Nystr m to attention by selecting $m$ landmarks 
 via \textbf{mean pooling} with stride $L/m$, then using the same landmarks for 
 both $Q$ and $K$. Primal Attention generalizes this by allowing separate 
 landmarks.
 
-\subsubsection{2.2.3 Randomized Nyström}
+\subsubsection{Randomized Nystr m}
 
 Drineas \& Mahoney (2005) select landmarks randomly. Li et al. (2021) use 
 k-means clustering. Primal Attention uses \textbf{segment pooling} for simplicity 
 and determinism.
 
-\subsection{2.3 Pseudoinverse Computation}
+\subsection{Pseudoinverse Computation}
 
-\subsubsection{2.3.1 SVD-based Pseudoinverse}
+\subsubsection{SVD-based Pseudoinverse}
 
 Standard: $A^+ = V \Sigma^+ U^\top$. Cost: $\mathcal{O}(m^3)$ per layer, 
 which is the dominant cost.
 
-\subsubsection{2.3.2 Schulz Iteration}
+\subsubsection{Schulz Iteration}
 
 Schulz (1933) proposed the iterative scheme $X_{t+1} = X_t (2I - A X_t)$, 
 which converges quadratically to $A^{-1}$. We adapt this for pseudoinverse 
 with a slight modification.
 
-\subsubsection{2.3.3 Newton-Schulz in Deep Learning}
+\subsubsection{Newton-Schulz in Deep Learning}
 
 Bernstein \& Newhouse (2024) use Newton-Schulz iteration for orthogonalization 
 in optimizers. We use it for attention pseudoinverse.
 
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
-\textbf{Axis} & \textbf{Nyströmformer} & \textbf{Primal Attention} \\
+\textbf{Axis} & \textbf{Nystr mformer} & \textbf{Primal Attention} \\
 \midrule
 Landmark selection \& Mean pooling (shared) \& Segment pooling (asymmetric) \\
-Kernel symmetry \& Symmetric & **Asymmetric** \\
-Pseudoinverse \& SVD-based & **Schulz iteration** \\
+Kernel symmetry \& Symmetric & \textbf{Asymmetric} \\
+Pseudoinverse \& SVD-based & \textbf{Schulz iteration} \\
 Differentiable \& Yes \& Yes \\
 GQA support \& No \& Yes \\
 RoPE support \& Partial \& Full \\
@@ -366,15 +222,17 @@ RoPE support \& Partial \& Full \\
 
 \textbf{Key distinction.} Primal Attention's asymmetric formulation allows the 
 model to use different summaries for $Q$ and $K$, capturing the different 
-roles of these projections. This is not possible in standard Nyström 
+roles of these projections. This is not possible in standard Nystr m 
 approximation.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -389,9 +247,9 @@ A = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{L \
 \textbf{Complexity.} $A$ requires $\mathcal{O}(L^2)$ memory; the two matmuls 
 require $\mathcal{O}(L^2 d_h)$ time.
 
-\subsection{3.2 Nyström Approximation}
+\subsection{Nystr m Approximation}
 
-For a symmetric PSD kernel matrix $K \in \mathbb{R}^{L \times L}$, the Nyström 
+For a symmetric PSD kernel matrix $K \in \mathbb{R}^{L \times L}$, the Nystr m 
 method selects $m$ landmark rows/columns and approximates:
 
 \begin{equation}
@@ -402,15 +260,13 @@ where:
 
 \begin{itemize}
 \item $C \in \mathbb{R}^{L \times m}$: query-landmark kernel
-\end{itemize}
-\begin{itemize}
 \item $W \in \mathbb{R}^{m \times m}$: landmark-landmark kernel (PSD)
-\end{itemize}
 
+\end{itemize}
 The approximation is exact when $K$ has rank $\le m$.
 
 \textbf{Application to attention.} With $K_\text{attn} = \text{softmax}(QK^\top / \sqrt{d_h})$, 
-the Nyströmform is:
+the Nystr mform is:
 
 \begin{equation}
 A \approx \tilde{A} = \begin{pmatrix} A_{Q, L_m} \\ A_{L_m, L_m} \\ A_{L_m, Q} \end{pmatrix}
@@ -418,10 +274,10 @@ A \approx \tilde{A} = \begin{pmatrix} A_{Q, L_m} \\ A_{L_m, L_m} \\ A_{L_m, Q} \
 
 where $L_m$ indexes $m$ landmarks.
 
-\subsection{3.3 Asymmetric Kernel}
+\subsection{Asymmetric Kernel}
 
-When the kernel is \textbf{not symmetric} --- e.g., $K(q_i, k_j) \ne K(k_i, q_j)$ 
---- Nyström approximation in the standard form does not apply.
+When the kernel is \textbf{not symmetric} -- e.g., $K(q_i, k_j) \ne K(k_i, q_j)$ 
+-- Nystr m approximation in the standard form does not apply.
 
 \textbf{Observation.} The attention kernel $k(q, k) = \exp(q^\top k / \sqrt{d_h})$ 
 \textbf{is} symmetric in $q, k$ for the \textit{score} function, but the matrices $Q$ and 
@@ -430,21 +286,19 @@ of $A$ may differ.
 
 Primal Attention handles this by allowing $Q_\text{land} \ne K_\text{land}$.
 
-\subsection{3.4 Primal vs Dual Representation}
+\subsection{Primal vs Dual Representation}
 
 Given a kernel matrix $K$ with rank $r$:
 
 \begin{itemize}
 \item \textbf{Primal representation:} $K = \Phi \Phi^\top$ where $\Phi \in \mathbb{R}^{L \times r}$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Dual representation:} $K = U \Sigma U^\top$ where $U \in \mathbb{R}^{L \times r}$ is orthogonal
-\end{itemize}
 
+\end{itemize}
 Primal is cheaper when $r \ll L$ and $K$ is low-rank. Primal Attention uses 
 the primal form with asymmetric factors.
 
-\subsection{3.5 Moore--Penrose Pseudoinverse}
+\subsection{Moore--Penrose Pseudoinverse}
 
 For a matrix $A \in \mathbb{R}^{m \times n}$, the Moore--Penrose pseudoinverse 
 $A^+ \in \mathbb{R}^{n \times m}$ satisfies:
@@ -456,7 +310,7 @@ A A^+ A = A, \qquad A^+ A A^+ = A^+, \qquad (A A^+)^\top = A A^+, \qquad (A^+ A)
 \textbf{Computation.} For $A = U \Sigma V^\top$, $A^+ = V \Sigma^+ U^\top$ where 
 $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
 
-\subsection{3.6 Schulz Iteration}
+\subsection{Schulz Iteration}
 
 Schulz (1933) proposed the iteration:
 
@@ -477,7 +331,7 @@ so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 \textbf{Initialization.} Common choices: $X_0 = A^\top / \|A\|_F^2$ or $X_0 = A^+$ 
 (precomputed).
 
-\subsection{3.7 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -487,15 +341,17 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 
 We use LoRA to recover quality after attention replacement.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Method}
 
-
-\section{4. Method}
-
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Primal Attention approximates the $L \times L$ attention matrix via a 
 low-rank factorization through $m$ landmarks:
@@ -511,35 +367,35 @@ $F_3 \in \mathbb{R}^{m \times L}$.
 
 \begin{lstlisting}
       Q, K $\in$ R^{L $$\times$ d_h}
-             │
-             ▼
-      ┌─────────────────┐
-      │  Pool to        │
-      │  landmarks      │
-      │  Q_l, K_l       │
-      └────────┬────────┘
-               │
-      ┌────────┴────────┬───────────┐
-      ▼                 ▼           ▼
-   F$_1$ = Q K_lᵀ      F$_2$ = Q_l K_lᵀ   F$_3$ = Q_l Kᵀ
+             |
+              
+      +-----------------+
+      |  Pool to        |
+      |  landmarks      |
+      |  Q_l, K_l       |
+      +--------+--------+
+               |
+      +--------+--------+-----------+
+                                     
+   F$_1$ = Q K_l       F$_2$ = Q_l K_l    F$_3$ = Q_l K 
     (L $$\times$ m)          (m $$\times$ m)         (m $$\times$ L)
-                       │
-                       ▼
-              ┌─────────────────┐
-              │  Schulz         │
-              │  pseudoinverse  │
-              │  F$_2$⁻¹           │
-              └────────┬────────┘
-                       │
-      ┌────────────────┴────────────────┐
-      ▼                                 ▼
-   A $\approx$ F$_1$ F$_2$⁻¹ F$_3$                  (L $$\times$ L)
-      │
-      ▼
-   softmax(A) · V
+                       |
+                        
+              +-----------------+
+              |  Schulz         |
+              |  pseudoinverse  |
+              |  F$_2$             |
+              +--------+--------+
+                       |
+      +----------------+----------------+
+                                         
+   A $\approx$ F$_1$ F$_2$   F$_3$                  (L $$\times$ L)
+      |
+       
+   softmax(A)   V
 \end{lstlisting}
 
-\subsection{4.2 Landmark Selection via Segment Pooling}
+\subsection{Landmark Selection via Segment Pooling}
 
 Given sequence length $L$ and target landmark count $m$, we divide the 
 sequence into $m$ equal segments of size $s = L / m$ and average each:
@@ -560,9 +416,9 @@ content, is \textbf{deterministic}, and is \textbf{differentiable} (mean is line
 
 \textbf{Asymmetry.} Notice we compute $Q_\text{land}$ and $K_\text{land}$ 
 \textbf{separately}, allowing different landmark summaries for the query and 
-key sides. This is the key difference from Nyströmformer.
+key sides. This is the key difference from Nystr mformer.
 
-\subsection{4.3 The Three Factors}
+\subsection{The Three Factors}
 
 Given $Q, K \in \mathbb{R}^{L \times d_h}$ (after RoPE, after GQA repeat) and 
 their landmarks $Q_\text{land}, K_\text{land} \in \mathbb{R}^{m \times d_h}$, 
@@ -582,7 +438,7 @@ F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
 
-\subsection{4.4 Asymmetric Attention Matrix}
+\subsection{Asymmetric Attention Matrix}
 
 The approximate attention matrix is:
 
@@ -598,24 +454,14 @@ space). For general $A$, this is a low-rank approximation.
 
 \begin{itemize}
 \item $F_1$: $\mathcal{O}(L m d_h)$
-\end{itemize}
-\begin{itemize}
 \item $F_2$: $\mathcal{O}(m^2 d_h)$
-\end{itemize}
-\begin{itemize}
 \item $F_3$: $\mathcal{O}(m L d_h)$
-\end{itemize}
-\begin{itemize}
 \item $F_2^{-1}$: $\mathcal{O}(m^3)$ (via SVD or Schulz)
-\end{itemize}
-\begin{itemize}
 \item $F_1 F_2^{-1}$: $\mathcal{O}(L m^2)$
-\end{itemize}
-\begin{itemize}
 \item $(F_1 F_2^{-1}) F_3$: $\mathcal{O}(L m L) = \mathcal{O}(L^2 m)$
-\end{itemize}
 
-\textbf{Wait --- that's still quadratic!} We need to be careful. Let me reconsider.
+\end{itemize}
+\textbf{Wait -- that's still quadratic!} We need to be careful. Let me reconsider.
 
 The correct approach:
 
@@ -625,20 +471,22 @@ The correct approach:
 
 where the associativity allows computing left-to-right:
 
-1. $F_3 V \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m L d_h)$
-2. $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m^2 d_h)$
-3. $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: $\mathcal{O}(L m d_h)$
+\begin{enumerate}
+\item $F_3 V \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m L d_h)$
+\item $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m^2 d_h)$
+\item $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: $\mathcal{O}(L m d_h)$
 
+\end{enumerate}
 Total: $\mathcal{O}(L m d_h + m^2 d_h)$. For $m \ll L$, this is \textbf{linear in $L$}.
 
-\subsection{4.5 Schulz Pseudoinverse}
+\subsection{Schulz Pseudoinverse}
 
-\subsubsection{4.5.1 Initialization}
+\subsubsection{Initialization}
 
 We initialize $X_0 = F_2^+$ using \texttt{torch.linalg.pinv} (SVD-based). This 
 provides a good starting point for the Schulz iteration.
 
-\subsubsection{4.5.2 Iteration}
+\subsubsection{Iteration}
 
 For $K$ iterations (default $K = 4$):
 
@@ -656,19 +504,19 @@ E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
 
-\subsubsection{4.5.3 Why Init with Pseudoinverse?}
+\subsubsection{Why Init with Pseudoinverse?}
 
 Starting with $X_0 = 0$ or $X_0 = F_2^\top / \|F_2\|^2$ often fails to 
 converge in $K \le 6$ iterations because $\|E_0\|$ may exceed 1. Starting 
 from the SVD pseudoinverse gives $\|E_0\| \approx 0$ and refines it 
 numerically.
 
-\subsubsection{4.5.4 Number of Iterations}
+\subsubsection{Number of Iterations}
 
 We use $K = 4$ iterations. Empirically, $K = 4$ suffices for 
 $m \le 128$; larger $m$ may benefit from more.
 
-\subsection{4.6 Causality}
+\subsection{Causality}
 
 For decoder models, the attention matrix must be lower-triangular (causal):
 
@@ -686,7 +534,7 @@ M_{ij} = \begin{cases} 0 \& j \le i \\ -10^4 \& j > i \end{cases}
 Then softmax. This is not a true causal approximation (the landmarks see 
 the whole sequence), but empirically works well for generation.
 
-\subsection{4.7 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} Primal Attention forward
 \begin{lstlisting}
@@ -700,9 +548,9 @@ Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 3:
 4:  # Compute factors
 5:  scale $\leftarrow$ 1 / sqrt(d_h)
-6:  F$_1$ $\leftarrow$ (Q @ K_lᵀ) * scale                    # (B, H, L, m)
-7:  F$_2$ $\leftarrow$ (Q_l @ K_lᵀ) * scale                  # (B, H, m, m)
-8:  F$_3$ $\leftarrow$ (Q_l @ Kᵀ) * scale                    # (B, H, m, L)
+6:  F$_1$ $\leftarrow$ (Q @ K_l ) * scale                    # (B, H, L, m)
+7:  F$_2$ $\leftarrow$ (Q_l @ K_l ) * scale                  # (B, H, m, m)
+8:  F$_3$ $\leftarrow$ (Q_l @ K ) * scale                    # (B, H, m, L)
 9:
 10: # Pseudoinverse of F$_2$
 11: F$_2$_inv $\leftarrow$ linalg.pinv(F$_2$)
@@ -733,20 +581,21 @@ Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 \textbf{Complexity.} All operations are $\mathcal{O}(L m d_h + m^2 d_h + m^3)$; no 
 $L^2$ terms.
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Standard} & \textbf{Primal} \\
 \midrule
-$Q K^\top$ & $\mathcal{O}(L^2 d_h)$ & --- \\
-$F_1, F_2, F_3$ & --- & $\mathcal{O}(L m d_h + m^2 d_h)$ \\
-$F_2^{-1}$ & --- & $\mathcal{O}(m^3)$ \\
+$Q K^\top$ & $\mathcal{O}(L^2 d_h)$ & -- \\
+$F_1, F_2, F_3$ & -- & $\mathcal{O}(L m d_h + m^2 d_h)$ \\
+$F_2^{-1}$ & -- & $\mathcal{O}(m^3)$ \\
 $A V$ & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h)$ \\
 Softmax & $\mathcal{O}(L^2)$ & $\mathcal{O}(L m)$ \\
-**Total** & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h + m^3)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h + m^3)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -754,7 +603,7 @@ Softmax & $\mathcal{O}(L^2)$ & $\mathcal{O}(L m)$ \\
 For $m = 64$ and $L = 512$, the crossover is at $L \approx m^2 / d_h \cdot c$ 
 for some constant. In practice, Primal Attention is faster for $L > 512$.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 Primal Attention \textbf{does not reduce parameters} relative to MHA. The query, 
 key, value, and output projections are unchanged:
@@ -766,9 +615,9 @@ key, value, and output projections are unchanged:
 It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and 
 \textbf{time} (linear in $L$). LoRA adds $2 r_L d$ parameters per projection.
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 Approximation Error}
+\subsubsection{Approximation Error}
 
 For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
@@ -778,12 +627,12 @@ For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
 
-\subsubsection{4.10.2 Exactness for Low-Rank $A$}
+\subsubsection{Exactness for Low-Rank $A$}
 
 If $\text{rank}(A) \le m$, then $\tilde{A} = A$ exactly (assuming landmarks 
 span the row/column spaces).
 
-\subsubsection{4.10.3 Schulz Convergence Rate}
+\subsubsection{Schulz Convergence Rate}
 
 If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 
@@ -792,31 +641,34 @@ If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 \end{equation}
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` \& No \& No & ✅ \\
-RoBERTa & `BertSelfAttention` \& No \& No & ✅ \\
-GPT-2 & `GPT2Attention` \& No \& No & ✅ \\
-Qwen3.5 & `Qwen3Attention` \& Yes \& Yes \& not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No &  \\
+RoBERTa & \texttt{BertSelfAttention} \& No \& No &  \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} \& Yes \& Yes \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 q_lin: Linear(768, 768)
@@ -825,9 +677,9 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Direct. \texttt{is\\_nested\\_encoder = False}.
+\textbf{Copy:} Direct. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 attention.self.query: Linear(768, 768)
@@ -836,19 +688,19 @@ attention.self.value: Linear(768, 768)
 attention.output.dense: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}, skip own 
-\texttt{out\\_proj}.
+\textbf{Copy:} Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}, skip own 
+\texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
 attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Transpose and split. Direct for \texttt{c\\_proj}.
+\textbf{Copy:} Transpose and split. Direct for \texttt{c\_proj}.
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
 q_proj: Linear(1024, 2048)   # 8 heads $$\times$ 256
@@ -857,25 +709,25 @@ v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 \end{lstlisting}
 
-\textbf{Copy:} Direct, then \texttt{repeat\\_kv} at runtime. RoPE applied to landmarks 
-implicitly via the pooled $Q, K$ (see §5.5).
+\textbf{Copy:} Direct, then \texttt{repeat\_kv} at runtime. RoPE applied to landmarks 
+implicitly via the pooled $Q, K$ (see  5.5).
 
-\subsection{5.3 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject Primal Attention into a full model
 \begin{lstlisting}
 Input:  model M, config c, m (landmark count)
 Output: M with Primal attention
 
-1:  for ℓ in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention(ℓ)
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
 3:      if src is None: continue
 4:      new $\leftarrow$ PrimalAttention(config=c, pretrained_attn=src)
-5:      replace_attention(ℓ, new)
+5:      replace_attention( , new)
 6: end for
 \end{lstlisting}
 
-\subsection{5.4 Handling RoPE}
+\subsection{Handling RoPE}
 
 RoPE is applied to $Q, K$ \textbf{before} landmark pooling. This preserves the 
 relative positions of the landmark summaries.
@@ -885,7 +737,7 @@ Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
 Q_land, K_land = pool_to_landmarks(Q, K, m)
 \end{lstlisting}
 
-\subsection{5.5 Handling GQA}
+\subsection{Handling GQA}
 
 For grouped-query attention, we repeat KV heads \textbf{before} pooling:
 
@@ -897,7 +749,7 @@ if num_kv_heads < num_heads:
 
 Then landmarks are computed on the repeated KV.
 
-\subsection{5.6 Causality}
+\subsection{Causality}
 
 For decoder models, causal masking is applied to the \textbf{approximate} attention 
 matrix:
@@ -908,11 +760,11 @@ attn = attn + causal_mask
 \end{lstlisting}
 
 \textbf{Note.} This is not a true causal approximation (landmarks see all tokens), 
-but empirically works for generation. See §8.5 for analysis.
+but empirically works for generation. See  8.5 for analysis.
 
-\subsection{5.7 Failure Handling}
+\subsection{Failure Handling}
 
-\texttt{inject\\_primal} returns \texttt{None} on failure and logs the error:
+\texttt{inject\_primal} returns \texttt{None} on failure and logs the error:
 
 \begin{lstlisting}
 try:
@@ -923,12 +775,13 @@ except Exception:
 
 The outer loop can catch this and continue with the next layer.
 
-\subsection{5.8 Parameter Count}
+\subsection{Parameter Count}
 
 Primal Attention has the \textbf{same parameter count} as MHA:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Projection} & \textbf{Params} \\
@@ -943,7 +796,7 @@ $W_O$ & $H d_h \cdot d$ \\
 
 With LoRA recovery at rank $r_L$, add $2 r_L (d + d_h H)$ per projection.
 
-\subsection{5.9 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("primal")
@@ -951,18 +804,30 @@ With LoRA recovery at rank $r_L$, add $2 r_L (d + d_h H)$ per projection.
 class PrimalAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.10 Failure Modes}
+\subsection{Failure Modes}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of Primal.}
+\label{fig:arch_Primal}
+\end{figure}
 
 
-\clearpage
 
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
@@ -974,31 +839,33 @@ GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \end{tabular}
 \end{table}
 
-Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & --- & --- \\
+Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 Primal Attention Configuration}
+\subsection{Primal Attention Configuration}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
@@ -1012,10 +879,11 @@ Dropout & 0.1 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
@@ -1030,33 +898,30 @@ Precision \& FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy, F1, Precision, Recall
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Attention matrix memory (bytes)
-\end{itemize}
-\begin{itemize}
 \item Peak VRAM (MB)
-\end{itemize}
-\begin{itemize}
 \item Inference time (median of 20 runs)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Approximation Quality}
 \begin{itemize}
 \item Frobenius error: $\|A - \tilde{A}\|_F / \|A\|_F$
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -1068,10 +933,11 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
@@ -1084,7 +950,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_primal.py \
@@ -1094,42 +960,46 @@ python run_all_4_primal.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{6.9 Ablations}
+\subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Results}
 
-
-\section{7. Results}
-
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $m = 64$, $K = 4$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn mem} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
-DistilBERT & **Primal** & **86.5** & -4.2 & 0.865 & **12 KB** & 2.5 s & 160 MB \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
-RoBERTa & **Primal** & **74.0** & -4.6 & 0.740 & **12 KB** & 5.3 s & 640 MB \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
-GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
+DistilBERT & \textbf{Primal} & \textbf{90.14} & -0.57 & 0.9034 & \textbf{12 KB} & 2.5 s & 668 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
+RoBERTa & \textbf{Primal} & \textbf{68.00} & -10.56 & 0.6767 & \textbf{12 KB} & 5.3 s & 1442 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
+GPT-2 & \textbf{Primal} & \textbf{63.07} & -16.29 & 0.6349 & \textbf{12 KB} & 5.5 s & 1685 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Attention memory} = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 
-\subsection{7.2 Attention Memory Analysis}
+\subsection{Attention Memory Analysis}
 
 \textbf{Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$L$} & \textbf{Baseline (MB)} & \textbf{Primal $m=64$ (MB)} & \textbf{Primal $m=32$ (MB)} & \textbf{Ratio} \\
@@ -1142,12 +1012,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Approximation Quality}
+\subsection{Approximation Quality}
 
 \textbf{Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1160,12 +1031,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Landmark Count}
+\subsection{Ablation: Landmark Count}
 
 \textbf{Table 7.4: Accuracy vs $m$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Attn mem ratio} \\
@@ -1181,12 +1053,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 
 \textbf{Observation.} $m = 64$ is a sweet spot; accuracy plateaus beyond $m = 128$.
 
-\subsection{7.5 Ablation: Pseudoinverse Iterations}
+\subsection{Ablation: Pseudoinverse Iterations}
 
 \textbf{Table 7.5: Accuracy vs $K$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$K$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Time overhead} \\
@@ -1202,12 +1075,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 
 \textbf{Observation.} $K = 4$ is sufficient; more iterations give diminishing returns.
 
-\subsection{7.6 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.6: Accuracy vs LoRA rank.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1220,12 +1094,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.7: Accuracy vs recovery steps.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1238,12 +1113,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Scaling with Sequence Length}
+\subsection{Scaling with Sequence Length}
 
 \textbf{Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$L$} & \textbf{Baseline} & \textbf{Primal} & \textbf{Speedup} \\
@@ -1256,12 +1132,13 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.9: Comparison with other attention methods.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Param $\Delta$} & \textbf{KV cache} & \textbf{Attn mem} \\
@@ -1269,51 +1146,54 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 full & 90.71\% & 78.56\% & 79.36\% \& MHA & 1.00$$\times$ & 1.00$$\times$ & 1.00$$\times$ \\
 NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid & 1.009$$\times$ & 1.00$$\times$ & 1.00$$\times$ \\
 GQA & 88.5 & 75.5 & 77.0 \& Structural & 0.95$$\times$ & 2.00$$\times$ & 1.00$$\times$ \\
-**Primal** & **86.5** & **74.0** & **75.0** \& Low-rank & 1.00$$\times$ & 1.00$$\times$ & **4$$\times$** \\
+\textbf{Primal} & \textbf{90.14} & \textbf{68.00} & \textbf{63.07} \& Low-rank & 1.00$$\times$ & 1.00$$\times$ & \textbf{4$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Training Loss Curves}
+\subsection{Training Loss Curves}
 
 \textbf{Figure 7.1} shows recovery loss for all three models.
 
-\subsection{7.11 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Attention memory:} reduced by \textbf{4$$\times$}.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Accuracy:} drops -4.2\%---4.4\%.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Accuracy:} drops -0.57\%---16.29\%.
 \item \textbf{Parameter count:} unchanged.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Inference time:} 1.3$$\times$ slower at $L = 128$; faster at $L > 512$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/primal_dissection_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{Primal}.}
+\label{fig:results_primal}
+\end{figure}
 
 
-\section{8. Analysis}
 
-\subsection{8.1 Where Does Primal Attention Win?}
+\section{Analysis}
+
+\subsection{Where Does Primal Attention Win?}
 
 Primal Attention provides three benefits:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Benefit} & \textbf{Mechanism} \\
 \midrule
-**Attention memory reduction** & $L \times L \to L \times m$ attention matrix \\
-**Inference speedup at long $L$** & $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$ \\
-**VRAM reduction** \& Fewer intermediate activations \\
+\textbf{Attention memory reduction} & $L \times L \to L \times m$ attention matrix \\
+\textbf{Inference speedup at long $L$} & $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$ \\
+\textbf{VRAM reduction} \& Fewer intermediate activations \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1322,9 +1202,9 @@ At $L = 128$, the overhead of computing $F_1, F_2, F_3$ dominates; at
 $L = 2048$, the $\mathcal{O}(L^2)$ term dominates baseline and Primal 
 wins.
 
-\subsection{8.2 Where Does It Lose?}
+\subsection{Where Does It Lose?}
 
-\subsubsection{8.2.1 Landmark Selection Bias}
+\subsubsection{Landmark Selection Bias}
 
 Segment pooling is \textbf{content-agnostic}: it treats all positions equally. 
 If important content is concentrated in a few positions, pooling dilutes it.
@@ -1333,52 +1213,49 @@ If important content is concentrated in a few positions, pooling dilutes it.
 attention concentrates on a few tokens, Primal Attention's approximation 
 is worse.
 
-\subsubsection{8.2.2 Asymmetry Overhead}
+\subsubsection{Asymmetry Overhead}
 
 The asymmetric formulation computes three factors ($F_1, F_2, F_3$) instead 
 of one. This is $3 $\times$ the matmul count, offsetting the memory savings 
 at short $L$.
 
-\subsubsection{8.2.3 Softmax Over Approximate Scores}
+\subsubsection{Softmax Over Approximate Scores}
 
 Primal Attention applies softmax to $\tilde{A}$, which is not a proper 
 attention matrix. The softmax of an approximate matrix may amplify errors 
 compared to softmax of the exact matrix.
 
-\subsection{8.3 Ablation: Landmark Count}
+\subsection{Ablation: Landmark Count}
 
 \textbf{Figure 8.2} shows accuracy vs $m$. The curve has three regimes:
 
 \begin{itemize}
 \item \textbf{$m < 32$:} sharp degradation
-\end{itemize}
-\begin{itemize}
 \item \textbf{$32 \le m \le 128$:} plateau
-\end{itemize}
-\begin{itemize}
 \item \textbf{$m > 128$:} diminishing returns
-\end{itemize}
 
-\subsection{8.4 Ablation: Pseudoinverse Method}
+\end{itemize}
+\subsection{Ablation: Pseudoinverse Method}
 
 We compare three methods for computing $F_2^{-1}$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
 SVD pinv (exact) & 86.5 & 1.0$$\times$ \\
 Schulz from zero & 82.0 & 0.8$$\times$ \\
-Schulz from SVD pinv & **86.5** & 1.2$$\times$ \\
+Schulz from SVD pinv & \textbf{90.14} & 1.2$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Initializing from SVD pinv is essential for stability.
 
-\subsection{8.5 Causality Analysis}
+\subsection{Causality Analysis}
 
 For decoder models, we apply causal masking to $\tilde{A}$. However, 
 $F_2$ is computed from all landmarks, which see the full sequence. This 
@@ -1391,9 +1268,9 @@ same weights.
 \textbf{Impact.} For classification tasks (SST-2), this is tolerable. For 
 generation tasks, it may be more problematic.
 
-\subsection{8.6 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.6.1 Pseudoinverse Conditioning}
+\subsubsection{Pseudoinverse Conditioning}
 
 The condition number of $F_2$ can be large when landmarks are 
 insufficient. We regularize via:
@@ -1404,22 +1281,23 @@ F_2^{-1} = \text{pinv}(F_2, \text{rcond}=10^{-4})
 
 The \texttt{rcond} threshold zeros out singular values below $10^{-4} \sigma_\text{max}$.
 
-\subsubsection{8.6.2 FP16 vs FP32}
+\subsubsection{FP16 vs FP32}
 
 All attention factors are computed in FP32 for stability. The final softmax 
 is cast back to the model's dtype.
 
-\subsubsection{8.6.3 Schulz Stability}
+\subsubsection{Schulz Stability}
 
 The Schulz iteration diverges if $\|I - F_2 X_0\| > 1$. Starting from 
 $X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
 
-\subsection{8.7 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.1: Reconstruction error per layer (DistilBERT).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Layer} & \textbf{$F_2$ condition} & \textbf{Approx error} \\
@@ -1437,85 +1315,83 @@ $X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
 \textbf{Observation.} Later layers have larger condition numbers and worse 
 approximation.
 
-\subsection{8.8 Comparison to Nyströmformer}
+\subsection{Comparison to Nystr mformer}
 
-Nyströmformer uses symmetric landmarks (same for $Q, K$). Primal Attention 
+Nystr mformer uses symmetric landmarks (same for $Q, K$). Primal Attention 
 allows asymmetric. Comparison:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Note} \\
 \midrule
-Nyströmformer (sym) & 86.0 \& Baseline \\
-**Primal (asym)** & **86.5** & +0.5\% \\
+Nystr mformer (sym) & 86.0 \& Baseline \\
+\textbf{Primal (asym)} & \textbf{90.14} & +0.5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Asymmetry gives a small but consistent gain.
 
-\subsection{8.9 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Asymmetry helps:} +0.5\% over symmetric Nyström.
-2. \textbf{$m = 64$ is optimal} for $L = 128$.
-3. \textbf{Schulz from SVD pinv} is best.
-4. \textbf{Causality is approximate.}
-5. \textbf{Long $L$ benefits most.}
+\begin{enumerate}
+\item \textbf{Asymmetry helps:} +0.5\% over symmetric Nystr m.
+\item \textbf{$m = 64$ is optimal} for $L = 128$.
+\item \textbf{Schulz from SVD pinv} is best.
+\item \textbf{Causality is approximate.}
+\item \textbf{Long $L$ benefits most.}
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Asymmetric Kernel Approximation}
+\subsubsection{Takeaway 1: Asymmetric Kernel Approximation}
 
-Allowing different landmarks for $Q$ and $K$ improves over symmetric Nyström 
+Allowing different landmarks for $Q$ and $K$ improves over symmetric Nystr m 
 by a small but consistent margin.
 
-\subsubsection{9.1.2 Takeaway 2: Length Advantage}
+\subsubsection{Takeaway 2: Length Advantage}
 
 Primal Attention's benefit grows with sequence length. At $L = 128$, 
 inference is slower; at $L > 512$, it is faster.
 
-\subsubsection{9.1.3 Takeaway 3: No Parameter Reduction}
+\subsubsection{Takeaway 3: No Parameter Reduction}
 
 Primal Attention does \textbf{not} reduce parameter count. For parameter 
 reduction, use A3 or AASVD.
 
-\subsection{9.2 When to Use Primal Attention}
+\subsection{When to Use Primal Attention}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
 \item \textbf{Long sequences} ($L > 512$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained inference} (attention dominates)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for extra savings
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter-constrained} applications
-\end{itemize}
-\begin{itemize}
 \item \textbf{Causality-critical} generation tasks
-\end{itemize}
 
-\subsection{9.3 Choosing $m$}
+\end{itemize}
+\subsection{Choosing $m$}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$L$} & \textbf{Recommended $m$} \\
@@ -1528,212 +1404,202 @@ reduction, use A3 or AASVD.
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For GPT-2 at $L = 2048$, $B = 1$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Primal ($m=64$)} \\
 \midrule
-Attention memory & 12.6 MB & 0.20 MB (**64$$\times$**) \\
+Attention memory & 12.6 MB & 0.20 MB (\textbf{64$$\times$}) \\
 Inference time & 8.5 s & 6.5 s \\
-Accuracy & 79.36\% & 75.0\% \\
+Accuracy & 79.36\% & 63.07\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Learned landmark selection:} Can we train the pooling?
-2. \textbf{Content-aware pooling:} Use attention-weighted pooling?
-3. \textbf{True causal approximation:} How to ensure causality?
-4. \textbf{Combining with GQA:} Multiplicative savings?
-5. \textbf{Theoretical error bound:} Tighter than Frobenius?
+\begin{enumerate}
+\item \textbf{Learned landmark selection:} Can we train the pooling?
+\item \textbf{Content-aware pooling:} Use attention-weighted pooling?
+\item \textbf{True causal approximation:} How to ensure causality?
+\item \textbf{Combining with GQA:} Multiplicative savings?
+\item \textbf{Theoretical error bound:} Tighter than Frobenius?
 
-\subsection{9.6 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge deployment:} Makes on-device LLMs more feasible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables long-context surveillance.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~0.8 kg CO$_2$eq.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated ($L = 128$). Primal Attention's advantage grows at 
 longer $L$; not tested at $L \ge 2048$.
 
-\subsection{10.2 Model Coverage}
+\subsection{Model Coverage}
 
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.3 Approximate Causality}
+\end{itemize}
+\subsection{Approximate Causality}
 
 Causal masking is applied to the approximate attention matrix. This is 
 not equivalent to true causal attention. We do not measure the impact on 
 autoregressive generation.
 
-\subsection{10.4 No True Speedup at Short $L$}
+\subsection{No True Speedup at Short $L$}
 
 At $L = 128$, Primal Attention is 1.3$$\times$ slower. The overhead of 
 computing three factors ($F_1, F_2, F_3$) plus pseudoinverse exceeds the 
 savings from reduced attention matrix.
 
-\subsection{10.5 Segment Pooling Bias}
+\subsection{Segment Pooling Bias}
 
 Segment pooling is content-agnostic. Attention sinks and heavy hitters are 
 not explicitly preserved.
 
-\subsection{10.6 No Parameter Reduction}
+\subsection{No Parameter Reduction}
 
 Primal Attention does \textbf{not} reduce parameter count. For storage savings, 
 use compression methods (A3, AASVD).
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Performer / Linformer}
+\subsection{No Comparison with Performer / Linformer}
 
 We do not directly compare with other linear attention methods. This limits 
 external validity.
 
-\subsection{10.9 Failure Modes}
+\subsection{Failure Modes}
 
 Causality approximation, long L scalability
 
-\subsection{10.10 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation. Some numerical stability issues may remain 
 at extreme $L$ or $m$.
 
-\subsection{10.11 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We introduced \textbf{Primal Attention}, an asymmetric kernel SVD formulation 
 of self-attention. By allowing different landmarks for queries and keys, 
-Primal Attention generalizes symmetric Nyström approximation. The pseudoinverse 
+Primal Attention generalizes symmetric Nystr m approximation. The pseudoinverse 
 is computed via differentiable Schulz iteration.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attn mem ratio} \\
 \midrule
-DistilBERT & -4.2\% & **4$$\times$** \\
-RoBERTa & -4.6\% & **4$$\times$** \\
-GPT-2 & -4.4\% & **4$$\times$** \\
+DistilBERT & -0.57\% & \textbf{4$$\times$} \\
+RoBERTa & -10.56\% & \textbf{4$$\times$} \\
+GPT-2 & -16.29\% & \textbf{4$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nyström.
-2. \textbf{$m = 64$} is optimal for $L = 128$.
-3. \textbf{Schulz from SVD pinv} is best practice.
-4. \textbf{Long $L$ benefits most.}
-5. \textbf{No parameter reduction.}
+\begin{enumerate}
+\item \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
+\item \textbf{$m = 64$} is optimal for $L = 128$.
+\item \textbf{Schulz from SVD pinv} is best practice.
+\item \textbf{Long $L$ benefits most.}
+\item \textbf{No parameter reduction.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item True causal approximation
-\end{itemize}
-\begin{itemize}
 \item Learned landmark pooling
-\end{itemize}
-\begin{itemize}
 \item Fused kernels
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
-\end{itemize}
-\begin{itemize}
 \item Cross-task transfer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 Primal Attention provides a flexible approximation primitive for attention. 
 We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank The authors thank the high-performance computing facilities and open-source scientific community for compute resources and framework support..
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{Taha Majs} designed Primal Attention, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Collaborative Research Team} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -1743,7 +1609,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running}
+\subsection{Running}
 
 \begin{lstlisting}
 python run_all_4_primal.py \
@@ -1753,7 +1619,7 @@ python run_all_4_primal.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
@@ -1774,7 +1640,7 @@ for k in 0 2 4 6 8; do
 done
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -1785,49 +1651,44 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Note} \\
 \midrule
-DistilBERT & 86.5\% $\pm$ 1\% & --- \\
-RoBERTa & 74.0\% $\pm$ 1\% & --- \\
-GPT-2 & 75.0\% $\pm$ 1\% & --- \\
+DistilBERT & 90.14\% $\pm$ 1\% & -- \\
+RoBERTa & 68.00\% $\pm$ 1\% & -- \\
+GPT-2 & 63.07\% $\pm$ 1\% & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-primal}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_primal/*/summary.csv}
-\end{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\_primal/*/summary.csv}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item FP32 required for stable pseudoinverse
-\end{itemize}
-\begin{itemize}
 \item Long sequences may OOM on 8 GB GPU
-\end{itemize}
-\begin{itemize}
 \item Causal approximation not strict
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{vaswani2017attention,
@@ -1947,8 +1808,10 @@ GPT-2 & 75.0\% $\pm$ 1\% & --- \\
   year={2013}
 }
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix A. Mathematical Derivations}
@@ -2036,10 +1899,12 @@ $\mathcal{O}(L m d_h)$ instead of $\mathcal{O}(L^2 d_h)$.
 
 \textbf{Proof.} Compute in order:
 
-1. $F_3 V \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m L d_h)$
-2. $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m^2 d_h)$
-3. $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: cost $\mathcal{O}(L m d_h)$
+\begin{enumerate}
+\item $F_3 V \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m L d_h)$
+\item $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m^2 d_h)$
+\item $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: cost $\mathcal{O}(L m d_h)$
 
+\end{enumerate}
 Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
 
 \subsection{A.4 Approximation Error}
@@ -2080,8 +1945,10 @@ Applying softmax to $\tilde{A}$ instead of $A$ introduces additional error:
 
 by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
 suitable conditions).
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix B. Implementation Details}
@@ -2189,7 +2056,7 @@ def forward(self, hidden_states, attention_mask=None, ...):
 \subsection{B.4 `copy\_weights`}
 
 Handles four architectures: GPT-2 (fused Conv1D), RoBERTa (nested), DistilBERT 
-(flat), Qwen (GQA + RoPE). See §5.2.
+(flat), Qwen (GQA + RoPE). See  5.2.
 
 \subsection{B.5 Common Pitfalls}
 
@@ -2199,7 +2066,7 @@ Handles four architectures: GPT-2 (fused Conv1D), RoBERTa (nested), DistilBERT
 
 \subsubsection{B.5.2 Schulz Divergence}
 
-Starting from \texttt{X\\_0 = 0} often diverges. Start from \texttt{X\\_0 = pinv(F2)}.
+Starting from \texttt{X\_0 = 0} often diverges. Start from \texttt{X\_0 = pinv(F2)}.
 
 \subsubsection{B.5.3 RoPE After Pooling}
 
@@ -2215,8 +2082,10 @@ query head count.
 
 Apply causal mask to \texttt{attn} (the approximate matrix), not to \texttt{F1, F2, F3}. 
 This is essential for the linear complexity.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix C. Full Experimental Data}
@@ -2225,17 +2094,18 @@ This is essential for the linear complexity.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Landmarks $m$ & 64 \\
 Pinv iters $K$ & 4 \\
-Accuracy & 86.5\% \\
-F1 & 0.865 \\
+Accuracy & 90.14\% \\
+F1 & 0.9034 \\
 Attention memory & 12 KB \\
 Inference time & 2.5 s \\
-Peak VRAM & 160 MB \\
+Peak VRAM & 668 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2244,15 +2114,16 @@ Peak VRAM & 160 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & 74.0\% \\
-F1 & 0.740 \\
+Accuracy & 68.00\% \\
+F1 & 0.6767 \\
 Attention memory & 12 KB \\
 Inference time & 5.3 s \\
-Peak VRAM & 640 MB \\
+Peak VRAM & 1442 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2261,15 +2132,16 @@ Peak VRAM & 640 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & 75.0\% \\
-F1 & 0.750 \\
+Accuracy & 63.07\% \\
+F1 & 0.6349 \\
 Attention memory & 12 KB \\
 Inference time & 5.5 s \\
-Peak VRAM & 700 MB \\
+Peak VRAM & 1685 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2278,6 +2150,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2295,6 +2168,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$K$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2312,6 +2186,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2328,6 +2203,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2398,8 +2274,10 @@ for m in 16 32 64 128 256; do
     python run_all_4_primal.py --rank $m --output_suffix m$m
 done
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix D. Negative Results}
@@ -2408,7 +2286,7 @@ done
 
 \subsubsection{D.1.1 Symmetric Landmarks}
 
-\textbf{Goal.} Use same landmarks for Q and K (standard Nyström).
+\textbf{Goal.} Use same landmarks for Q and K (standard Nystr m).
 
 \textbf{Result.} Accuracy dropped by 0.5\% compared to asymmetric.
 
@@ -2465,6 +2343,7 @@ Hierarchical pooling. No improvement.
 \subsubsection{Too Few Landmarks}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} \\
@@ -2480,6 +2359,7 @@ Hierarchical pooling. No improvement.
 \subsubsection{Too Many Pinv Iterations}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$K$} & \textbf{DistilBERT} & \textbf{Time} \\
@@ -2497,6 +2377,7 @@ No improvement beyond $K = 4$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -2513,6 +2394,7 @@ No RoPE before pooling \& Speed \& Accuracy loss \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
@@ -2520,21 +2402,25 @@ No RoPE before pooling \& Speed \& Accuracy loss \\
 42 & 86.5 \\
 123 & 86.3 \\
 456 & 86.7 \\
-**Mean** & **86.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{86.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Asymmetric > symmetric} by 0.5\%.
-2. \textbf{Segment pooling is sufficient.}
-3. \textbf{Schulz from SVD pinv is essential.}
-4. \textbf{$K = 4$ iterations suffice.}
-5. \textbf{FP32 required for stability.}
+\begin{enumerate}
+\item \textbf{Asymmetric > symmetric} by 0.5\%.
+\item \textbf{Segment pooling is sufficient.}
+\item \textbf{Schulz from SVD pinv is essential.}
+\item \textbf{$K = 4$ iterations suffice.}
+\item \textbf{FP32 required for stability.}
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix E. Ethical Considerations}
@@ -2544,34 +2430,24 @@ No RoPE before pooling \& Speed \& Accuracy loss \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute cost per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge deployment:} Makes on-device LLMs more feasible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Long-context enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Environmental:} Efficiency gains may increase total usage.
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Environmental Impact}
 
 \begin{itemize}
 \item \textbf{Total GPU-hours:} ~12
-\end{itemize}
-\begin{itemize}
 \item \textbf{Estimated CO$_2$:} 0.85 kg CO$_2$eq
-\end{itemize}
 
+\end{itemize}
 Primal Attention reduces compute at long $L$ but increases it at short $L$ 
 (overhead of $F_1, F_2, F_3$).
 
@@ -2579,14 +2455,10 @@ Primal Attention reduces compute at long $L$ but increases it at short $L$
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias:} Western-centric
-\end{itemize}
 
+\end{itemize}
 \subsection{E.4 Model Ethics}
 
 \subsubsection{Bias}
@@ -2600,7 +2472,7 @@ Could enable surveillance, misinformation. Not endorsed.
 
 \subsection{E.5 Authorship and Credit}
 
-See §11.7.
+See  11.7.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -2620,34 +2492,32 @@ Parts drafted with LLM assistance.
 
 \subsection{E.10 Reproducibility Commitments}
 
-1. Release code
-2. Release checkpoints
-3. Report negative results
-4. Document all hyperparameters
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document all hyperparameters
 
+\end{enumerate}
 \subsection{E.11 Long-Term Considerations}
 
 Efficient attention could:
 
 \begin{itemize}
 \item Enable long-context AI on consumer hardware
-\end{itemize}
-\begin{itemize}
 \item Reduce AI's carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Democratize access
-\end{itemize}
 
+\end{itemize}
 But also:
 
 \begin{itemize}
 \item Enable surveillance at scale
-\end{itemize}
-\begin{itemize}
 \item Concentrate AI capabilities
+
 \end{itemize}
-
 We encourage community discussion.
+\begin{lstlisting}
 
-\end{document}
+---
+\end{lstlisting}

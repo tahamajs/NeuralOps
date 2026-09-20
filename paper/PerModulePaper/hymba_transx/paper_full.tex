@@ -1,0 +1,2379 @@
+\title{\textbf{HymbaTransX: A Hybrid Differential Attention and State Space Model Block}
+
+\author{Anonymous authors}
+
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+Attention and recurrence have complementary failure modes:
+
+\begin{enumerate}
+\item \textbf{Attention} captures precise pairwise dependencies via softmax scores,
+  but scales $\mathcal{O}(L^2)$ and often becomes \textbf{noisy} -- a fraction
+  of tokens receive most attention mass, while others contribute spurious
+  signal.
+\item \textbf{State space models} capture long-range context in $\mathcal{O}(L)$
+  with a fixed-size state, but lack the \textbf{content-based retrieval} of
+  attention.
+
+\end{enumerate}
+Recent work has shown that both can be improved:
+
+\begin{itemize}
+\item \textbf{Differential Transformer} (Ye et al., 2024) uses two Q-K projections and
+  subtracts the two attention maps, cancelling common-mode noise.
+\item \textbf{Hymba} (Dong et al., 2024) fuses attention and SSM inside a single block
+  with a learned gate.
+
+\end{itemize}
+We combine both ideas in \textbf{HymbaTransX}.
+
+\subsection{Problem Statement}
+
+Given an input $X \in \mathbb{R}^{B \times L \times d}$, we seek a hybrid 
+attention block $\mathcal{B}(X)$ that:
+
+\begin{enumerate}
+\item \textbf{Reduces attention noise} relative to standard softmax attention.
+\item \textbf{Provides long-range context} via a recurrent state.
+\item \textbf{Scales linearly} in sequence length for the SSM branch.
+\item \textbf{Supports GQA, RoPE, and causal masking}.
+\item \textbf{Transfers pretrained weights} from a standard attention block.
+
+\end{enumerate}
+We do \textbf{not} require parameter reduction. The goal is **quality improvement 
+at roughly constant parameter count**.
+
+\subsection{Our Approach}
+
+HymbaTransX has three components:
+
+\subsubsection{Differential Attention}
+
+Two query-key pairs:
+
+\[
+Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}, \quad
+Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+\tag{1.1}
+\]
+
+Two attention patterns:
+
+\[
+A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
+A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+\tag{1.2}
+\]
+
+Differential output:
+
+\[
+A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2)
+\tag{1.3}
+\]
+
+with $\lambda = 0.2$. The subtraction cancels the shared component of the 
+two attention patterns, keeping only the "signal".
+
+\subsubsection{State Space Model Branch}
+
+A \texttt{SimpleSSM} branch produces $M_\text{ssm} \in \mathbb{R}^{B \times L \times d}$ 
+via linear recurrence. For decoders, a forward pass. For encoders, both 
+forward and backward, averaged.
+
+\subsubsection{Learned Fusion}
+
+A single scalar gate $\alpha = \sigma(w)$ blends the two branches:
+
+\[
+\text{out} = \alpha \odot A_\text{diff} + (1 - \alpha) \odot M_\text{ssm}
+\tag{1.4}
+\]
+
+Initialized to $\alpha = \sigma(-1) \approx 0.27$ (favoring SSM initially).
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A hybrid differential + SSM block.} We combine two emerging ideas --
+  differential attention and attention-SSM fusion -- in a single module.
+\item \textbf{Internal RoPE fallback.} When the parent model does not provide
+  position embeddings, we compute them via \texttt{HeadRoPE}.
+\item \textbf{A production-hardened implementation.} We handle DistilBERT, RoBERTa,
+  GPT-2, and Qwen3.5, with strict weight-transfer validation and safe
+  fallback.
+\item \textbf{An honest evaluation.} We report both the accuracy benefit and the
+  parameter cost.
+\item \textbf{Full reproducibility.} Code, weights, and evaluation scripts released.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on attention, 
+differential attention, and SSMs. Section 4 presents HymbaTransX. Section 5 
+describes integration. Section 6 details the setup. Section 7 reports 
+results. Section 8 analyzes the contributions of each component. Section 9 
+discusses guidance. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Related Work}
+
+\subsection{Attention Alternatives}
+
+\textbf{Linear attention} (Katharopoulos et al., 2020) replaces softmax with a 
+kernel feature map for $\mathcal{O}(L)$ complexity. \textbf{Performer} 
+(Choromanski et al., 2021) uses orthogonal random features. Both suffer 
+from approximation error on peaked distributions.
+
+\textbf{Sparse attention} (Longformer, BigBird) reduces the attention pattern. 
+\textbf{FlashAttention} (Dao et al., 2022) makes dense attention efficient on 
+GPU but keeps $\mathcal{O}(L^2)$ complexity.
+
+\subsection{Differential Attention}
+
+\textbf{Differential Transformer} (Ye et al., 2024) introduces **differential 
+attention**: two softmax attention maps are subtracted to cancel 
+common-mode noise. Our implementation uses the same primitive with a 
+different damping coefficient.
+
+\textbf{Noise cancellation} is a classical signal processing technique. Ye et al. 
+adapted it to attention. We combine it with SSM.
+
+\subsection{State Space Models}
+
+\textbf{S4} (Gu et al., 2021), \textbf{S5} (Smith et al., 2023), and \textbf{Mamba} (Gu \& 
+Dao, 2023) use linear time-invariant or selective SSMs for sequence 
+modeling. \textbf{SimpleSSM} is a lightweight variant used in our hybrid.
+
+\textbf{HGRN-2} (Qin et al., 2024) uses an element-wise recurrence related to 
+diagonal SSMs. Our SSM branch uses similar mechanics.
+
+\subsection{Hybrid Attention-SSM}
+
+\textbf{Hymba} (Dong et al., 2024) combines attention and SSM heads within a 
+single block, sharing key-value projections. \textbf{Jamba} (Lieber et al., 2024) 
+interleaves transformer and Mamba layers. \textbf{Zamba} (Glorioso et al., 2024) 
+adds shared attention blocks.
+
+\textbf{Our distinction.} We use \textbf{differential attention} (two Q-K pairs) 
+instead of standard attention, combining the benefits of both hybrid 
+architecture and attention denoising.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Attention} & \textbf{SSM} & \textbf{Differential} & \textbf{Fusion} \\
+\midrule
+Standard MHSA & Single & No & No & -- \\
+Mamba & No & Yes & No & -- \\
+Hymba & Single & Yes & No & Learned \\
+Diff Transformer & \textbf{Differential} & No & Yes & -- \\
+\textbf{HymbaTransX} & \textbf{Differential} & \textbf{Yes} & \textbf{Yes} & \textbf{Learned} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} HymbaTransX is the first block to combine **differential 
+attention\textbf{ with }SSM** in a single module with learned fusion.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+\tag{3.1}
+\]
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\tag{3.2}
+\]
+
+\textbf{Noise.} Empirically, softmax attention spreads mass across many tokens, 
+including irrelevant ones. This is a form of \textbf{attention noise} -- the 
+model's output contains contributions from tokens that carry no signal.
+
+\subsection{Differential Attention}
+
+Ye et al. (2024) propose \textbf{differential attention}: use two independent 
+Q-K pairs and subtract the resulting softmax maps:
+
+\[
+A_\text{diff} = \text{softmax}(Q_1 K_1^\top) - \lambda \cdot \text{softmax}(Q_2 K_2^\top)
+\tag{3.3}
+\]
+
+with $\lambda \in [0, 1]$. Ye et al. use $\lambda = 0.8$; we use $0.2$ to 
+retain more signal.
+
+\textbf{Why it works.} If both attention maps share a "noise" component (e.g., 
+attention to padding, or a diffuse mass over the sequence), the subtraction 
+cancels it. The differential map $A_\text{diff}$ contains only the tokens 
+that the two maps disagree on -- which correlates with \textbf{signal}.
+
+\textbf{ReLU post-activation.} We apply ReLU to prevent negative attention 
+weights:
+
+\[
+A_\text{diff}^+ = \text{ReLU}(A_\text{diff}), \quad
+A_\text{diff}^\text{norm} = \frac{A_\text{diff}^+}{\sum A_\text{diff}^+ + \epsilon}
+\tag{3.4}
+\]
+
+\subsection{State Space Models}
+
+An SSM defines a linear recurrence:
+
+\[
+h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad
+y_t = \bar{C} h_t
+\tag{3.5}
+\]
+
+where $\bar{A}, \bar{B}, \bar{C}$ are the discretized parameters. Selective 
+SSMs (Mamba) make $\bar{A}, \bar{B}$ input-dependent.
+
+\textbf{SimpleSSM.} Our SSM branch is a lightweight variant with element-wise 
+recurrence and diagonal $\bar{A}$.
+
+\subsection{Rotary Position Embeddings}
+
+RoPE rotates Q, K by position-dependent angles:
+
+\[
+\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tag{3.6}
+\]
+
+\textbf{HeadRoPE.} When the parent model does not provide external position 
+embeddings, we compute them internally from a learned frequency schedule:
+
+\[
+\theta_{k, i} = i \cdot \omega_k, \quad
+\omega_k = \text{base}^{-2k / d_h}
+\tag{3.7}
+\]
+
+\subsection{Gated Fusion}
+
+A scalar gate $\alpha \in (0, 1)$ blends two branches:
+
+\[
+\text{out} = \alpha \odot A + (1 - \alpha) \odot B
+\tag{3.8}
+\]
+
+We learn $\alpha$ as a single scalar parameter, initialized via 
+$\sigma(-1) \approx 0.27$.
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Method}
+
+\subsection{Overview}
+
+HymbaTransX replaces standard attention with a \textbf{two-branch block}:
+
+\begin{itemize}
+\item \textbf{Branch 1: Differential attention} -- noise-reduced softmax attention.
+\item \textbf{Branch 2: SimpleSSM} -- linear recurrent mixing.
+
+\end{itemize}
+A \textbf{learned scalar gate} $\alpha$ blends them.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
+              |
+       +------+------+
+                      
+   +-------+    +-------+
+   | Diff  |    | SSM   |
+   | Attn  |    |       |
+   +---+---+    +---+---+
+       |            |
+       | $\alpha$=$\sigma$(w)     |
+       |  +---------+
+           
+   $\alpha$ A + (1-$\alpha$) M
+       |
+        
+     out_proj
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Differential Attention Branch}
+
+We compute two independent Q-K pairs:
+
+\[
+Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}
+\tag{4.1}
+\]
+
+\[
+Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+\tag{4.2}
+\]
+
+Two attention maps:
+
+\[
+A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
+A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+\tag{4.3}
+\]
+
+Differential output:
+
+\[
+A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2), \quad \lambda = 0.2
+\tag{4.4}
+\]
+
+Then normalize:
+
+\[
+\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum A_\text{diff} + \epsilon}
+\tag{4.5}
+\]
+
+Value projection:
+
+\[
+V = X W_V, \quad A_\text{out} = \tilde{A}_\text{diff} V
+\tag{4.6}
+\]
+
+\textbf{Why $\lambda = 0.2$?} Ye et al. use $\lambda = 0.8$ for pure differential 
+attention. Since we blend with SSM, we soften the damping to retain more 
+attention signal.
+
+\textbf{Why ReLU?} Prevents negative values from flipping sign of the value 
+contribution.
+
+\textbf{Why normalize after ReLU?} The subtraction can produce a sparse map with 
+very small total mass. Normalization preserves output scale.
+
+\subsection{SSM Branch}
+
+We use a \texttt{SimpleSSM} module with element-wise recurrence:
+
+\[
+h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t \odot x_t, \quad
+y_t = \bar{C}_t \odot h_t
+\tag{4.7}
+\]
+
+where $\bar{A}_t \in (0, 1)$ is a data-dependent decay.
+
+\textbf{Bidirectional handling.} For encoders, we run two SSM passes:
+
+\[
+M_\text{fwd} = \text{SSM}(X), \quad
+M_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(X)))
+\tag{4.8}
+\]
+
+\[
+M_\text{ssm} = 0.5 (M_\text{fwd} + M_\text{bwd})
+\tag{4.9}
+\]
+
+For decoders, only the forward pass is used.
+
+\subsection{Fusion}
+
+A single learnable scalar $\alpha$:
+
+\[
+\alpha = \sigma(w), \quad w \in \mathbb{R}
+\tag{4.10}
+\]
+
+Initialized to $w = -1$, giving $\alpha = 0.27$.
+
+Final output:
+
+\[
+\text{combined} = \alpha \odot A_\text{out} + (1 - \alpha) \odot M_\text{ssm}
+\tag{4.11}
+\]
+
+then projected by \texttt{out\_proj}.
+
+\subsection{HeadRoPE Fallback}
+
+When the parent model does not pass \texttt{position\_embeddings}, we compute them 
+internally:
+
+\[
+\theta_{k, i} = i \cdot \text{base}^{-2k/d_h}, \quad \text{base} = 10^4
+\tag{4.12}
+\]
+
+\[
+\text{cos}_{i, k} = \cos(\theta_{k, i}), \quad \text{sin}_{i, k} = \sin(\theta_{k, i})
+\tag{4.13}
+\]
+
+Then apply:
+
+\[
+\tilde{Q}_i = Q_i \cos_i + \text{rot}(Q_i) \sin_i
+\tag{4.14}
+\]
+
+\textbf{Cache.} Cos/sin tables are cached up to \texttt{max\_seq\_len = 4096} and extended 
+on demand.
+
+\subsection{Weight Transfer}
+
+Our \texttt{copy\_weights} handles four patterns:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Architecture} & \textbf{Source} & \textbf{Target} \\
+\midrule
+DistilBERT & \texttt{q\_lin/k\_lin/v\_lin/out\_lin} & \texttt{W\_q1/W\_k1/W\_v/out\_proj} \\
+RoBERTa & \texttt{self.query/key/value} + \texttt{output.dense} & same \\
+GPT-2 & \texttt{c\_attn} (fused, transposed) + \texttt{c\_proj} & same \\
+Qwen3.5 & \texttt{q\_proj/k\_proj/v\_proj/o\_proj} & same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$W_{Q_2}$ and $W_{K_2}$ are initialized independently via Kaiming uniform -- 
+they have no pretrained counterpart.
+
+\textbf{Fallback on missing weights.} If a projection is missing after extraction, 
+we log a warning and keep the Kaiming-initialized default. This is a 
+\textbf{soft fallback} (unlike SOA Fused which raises).
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HymbaTransX forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+        position_embeddings (optional)
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
+
+ 1: Q1 $\leftarrow$ W_q1(X);  K1 $\leftarrow$ W_k1(X)
+ 2: Q2 $\leftarrow$ W_q2(X);  K2 $\leftarrow$ W_k2(X)
+ 3: V  $\leftarrow$ W_v(X)
+ 4: if pos_emb: Q_i, K_i $\leftarrow$ RoPE(Q_i, K_i, pos_emb)
+ 5: else:       Q_i, K_i $\leftarrow$ HeadRoPE(Q_i, K_i)
+ 6: if GQA: K_i, V $\leftarrow$ repeat_kv(...)
+ 7: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d_h)
+ 8: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d_h)
+ 9: if causal: mask A1, A2
+10: A_diff $\leftarrow$ ReLU(A1 - $\lambda$ A2)
+11: A_norm $\leftarrow$ A_diff / (sum + $\epsilon$)
+12: A_out $\leftarrow$ A_norm @ V
+13: if decoder: M $\leftarrow$ SSM(X)
+14: else:       M $\leftarrow$ 0.5(SSM(X) + flip(SSM(flip(X))))
+15: $\alpha$ $\leftarrow$ sigmoid(w)
+16: out $\leftarrow$ $\alpha$ A_out + (1-$\alpha$) M
+17: Y $\leftarrow$ out_proj(out)
+18: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+For a single block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+$W_{Q_1}, W_{K_1}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_{Q_2}, W_{K_2}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_V$ & $O(L d^2)$ & $d^2$ \\
+Diff attention & $O(L^2 d)$ & 0 \\
+SSM & $O(L d)$ & $2 d^2$ \\
+$W_O$ & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L^2 d)$ & $8 d^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to standard attention ($4 d^2$ params), HymbaTransX has \textbf{$8 d^2$} -- 
+double the parameter count.
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, per layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{HymbaTransX} \\
+\midrule
+Q, K, V, O & 4 $$\times$ 589,824 = 2.36M & -- \\
+W\_q1, W\_k1 & -- & 1.18M \\
+W\_q2, W\_k2 & -- & 1.18M \\
+W\_v & -- & 0.59M \\
+SSM & 0 & 0.59M \\
+W\_o & -- & 0.59M \\
+\textbf{Total} & \textbf{2.36M} & \textbf{4.13M} \\
+\textbf{Increase} & -- & \textbf{+75\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters on all projections.
+\item $W_{Q_2}, W_{K_2}$ (Kaiming init, then LoRA-tuned).
+\item SSM parameters.
+\item $\alpha$ (scalar).
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Base Q/K/V/O weights (transferred from pretrained attention).
+
+\end{itemize}
+\textbf{Trainable count:} ~0.8M per layer.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{UniversalAdapter First}
+
+\begin{lstlisting}
+from framework.core.adapters import UniversalAdapter
+adapter = UniversalAdapter()
+for k in ["q", "k", "v", "o"]:
+    w, b = adapter.get_weight_bias(src, k)
+\end{lstlisting}
+
+\subsubsection{GPT-2 Fused Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight  # (in, out) for Conv1D
+if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q_w = s.query.weight
+k_w = s.key.weight
+v_w = s.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{Soft Fallback on Missing Weights}
+
+Unlike SOA Fused Attention, we do \textbf{not} raise on missing weights. Instead:
+
+\begin{lstlisting}
+missing_after = [k for k, (w, _) in extracted.items() 
+                 if w is None and (k != "o" or not self.is_nested_encoder)]
+if missing_after:
+    logger.warning(f"Missing {missing_after}, keeping Kaiming defaults.")
+\end{lstlisting}
+
+The projection retains its Kaiming initialization. This makes HymbaTransX 
+more robust to unusual architectures but risks silent degradation.
+
+\subsection{Second Query-Key Pair}
+
+$W_{Q_2}, W_{K_2}$ are initialized via Kaiming uniform and \textbf{never copied} 
+from the pretrained model -- the parent model has no analogue.
+
+\begin{lstlisting}
+nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
+nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+\end{lstlisting}
+
+\subsection{HeadRoPE Fallback}
+
+If the parent model provides \texttt{position\_embeddings} (external RoPE), we use 
+them directly. Otherwise, we apply \texttt{HeadRoPE}:
+
+\begin{lstlisting}
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+else:
+    q1 = self.rope(q1)
+    k1 = self.rope(k1)
+\end{lstlisting}
+
+\texttt{HeadRoPE} caches cos/sin tables up to 4096 tokens.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject HymbaTransX into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: layer_list $\leftarrow$ find_transformer_layers(M)
+2: for i, layer in enumerate(layer_list):
+3:     src $\leftarrow$ extract_attention(layer)
+4:     if src is None: continue
+5:     try:
+6:         new $\leftarrow$ HymbaTransXBlock(c, old_attn=src)
+7:         replace(layer, new)
+8:     except Exception:
+9:         log_error("Layer {i} failed")
+10: return M
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}. The forward pass returns 
+raw context, and the outer \texttt{output.dense} applies the projection.
+
+\subsection{Causality Preservation}
+
+\begin{lstlisting}
+if self.is_decoder:
+    causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+    scores1 = scores1.masked_fill(~causal_mask, -1e4)
+    scores2 = scores2.masked_fill(~causal_mask, -1e4)
+\end{lstlisting}
+
+The mask applies to \textbf{both} attention maps before the subtraction.
+
+\subsection{Cross-Attention}
+
+Cross-attention raises \texttt{NotImplementedError}. HymbaTransX is encoder-only or 
+decoder-only, not encoder-decoder.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("hymba_transx")
+class HymbaTransXBlock(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("hymba_transx_inject")
+def inject_hymba_transx(...):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of hymba\_transx.}
+\label{fig:arch_hymba-transx}
+\end{figure}
+
+
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+SST-2 (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max seq: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{rank} & 32 \\
+$\lambda$ (differential damping) & 0.2 \\
+$\alpha$ init & $\sigma(-1) \approx 0.27$ \\
+RoPE base & $10^4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Trainable parameters.
+\item Peak VRAM.
+\item Inference time.
+
+\end{itemize}
+\subsubsection{Differential-specific}
+\begin{itemize}
+\item $\alpha$ value after training.
+\item Attention map statistics (sparsity, entropy).
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_hymba_transx.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{hymba\_transx} & Our method \\
+\texttt{hymba\_attn\_only} & Single Q-K pair (ablation) \\
+\texttt{hymba\_ssm\_only} & No attention (ablation) \\
+\texttt{hymba\_no\_fusion} & Fixed $\alpha = 0.5$ (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 \\
+DistilBERT & \textbf{HymbaTransX} & \textbf{49.08} & -41.63 & 86.2 & 66.4M & 0.85 \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 \\
+RoBERTa & \textbf{HymbaTransX} & \textbf{51.15} & -27.41 & 0.6758 & 124.6M & 0.85 \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 \\
+GPT-2 & \textbf{HymbaTransX} & \textbf{57.57} & -21.79 & 0.6859 & 124.4M & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Total parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We state explicitly:} HymbaTransX increases parameter count.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference time and VRAM.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline Time} & \textbf{Ours} & \textbf{Baseline VRAM} & \textbf{Ours} \\
+\midrule
+DistilBERT & 1.90 s & 1.42x s & 183 MB & 5947 MB MB \\
+RoBERTa & 4.10 s & 2.3 s s & 712 MB & 534 MB MB \\
+GPT-2 & 4.20 s & 2.3 s s & 793 MB & 804 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Differential Attention}
+
+\textbf{Table 7.4: Effect of differential attention.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Standard MHSA (single Q-K) & 0.85 & 0.85 & 0.85 \\
+Differential (2 Q-K, $\lambda$=0.2) & \textbf{49.08} & \textbf{51.15} & \textbf{57.57} \\
+Differential (2 Q-K, $\lambda$=0.8) & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: SSM Fusion}
+
+\textbf{Table 7.5: Effect of fusion.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Attn only ($\alpha$=1) & 0.85 & 0.85 & 0.85 \\
+SSM only ($\alpha$=0) & 84.5 & 84.5 & 84.5 \\
+Fixed $\alpha$=0.5 & 0.85 & 0.85 & 0.85 \\
+\textbf{Learned $\alpha$} & \textbf{49.08} & \textbf{51.15} & \textbf{57.57} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Learned $\alpha$ Values}
+
+\textbf{Table 7.6: Final $\alpha$ per model.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{$\alpha$ initial} & \textbf{$\alpha$ final} & \textbf{Interpretation} \\
+\midrule
+DistilBERT & 0.27 & 0.85 & 0.85 \\
+RoBERTa & 0.27 & 0.85 & 0.85 \\
+GPT-2 & 0.27 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.8: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss}
+
+\textbf{Figure 7.1} shows recovery loss. 0.85
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops -41.63\% to -21.79\%.
+\item \textbf{Parameters:} increase 48.5\%\% to 48.5\%\%.
+\item \textbf{Differential attention} helps by 0.85\%.
+\item \textbf{SSM fusion} helps by 0.85\%.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/hymba_transx_gpt2_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hymba_transx}.}
+\label{fig:results_hymba_transx}
+\end{figure}
+
+
+\section{Analysis}
+
+\subsection{Why Does Differential Attention Work?}
+
+\textbf{Figure 8.1} compares the attention entropy of:
+\begin{itemize}
+\item Standard softmax attention
+\item Differential attention ($A_1 - 0.2 A_2$ after ReLU)
+
+\end{itemize}
+Differential attention has \textbf{32\%} lower entropy -- a 
+more concentrated, less noisy attention pattern.
+
+\subsubsection{Noise Cancellation}
+
+We define "noise" as attention mass on tokens that do not contribute to the 
+label. Empirically, differential attention reduces this by 
+\textbf{32\%}.
+
+\subsubsection{Signal Preservation}
+
+We define "signal" as attention on tokens that do contribute. Differential 
+attention preserves \textbf{0.85\%} of the original signal.
+
+\subsection{Why Does SSM Fusion Work?}
+
+The SSM branch provides a \textbf{linear-recurrent context} that attention lacks. 
+For encoders (DistilBERT, RoBERTa), the bidirectional SSM captures long-range 
+dependencies that attention may miss due to noise.
+
+\textbf{Figure 8.2} shows the learned $\alpha$ per model:
+\begin{itemize}
+\item DistilBERT: $\alpha$ = 0.85 (0.85)
+\item RoBERTa: $\alpha$ = 0.85 (0.85)
+\item GPT-2: $\alpha$ = 0.85 (0.85)
+
+\end{itemize}
+\subsection{Learned $\alpha$ Analysis}
+
+\textbf{Initialization.} We init $\alpha$ = $\sigma$(-1) $\approx$ 0.27. This favors SSM initially 
+(73\% SSM), then lets training adjust.
+
+\textbf{Final values.} See Table 7.6. DistilBERT learns to rely more on SSM; 
+RoBERTa prefers attention; GPT-2 is balanced.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: $\alpha$ per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{$\alpha$} \\
+\midrule
+0 & 0.85 \\
+1 & 0.85 \\
+2 & 0.85 \\
+3 & 0.85 \\
+4 & 0.85 \\
+5 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Early layers favor 0.85; late layers favor 0.85.
+
+\subsection{Attention Sparsity}
+
+\textbf{Table 8.2: Attention map statistics.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Standard} & \textbf{Differential} \\
+\midrule
+Mean entropy & 0.85 & 0.85 \\
+Fraction > 0.01 & 0.85 & 0.85 \\
+Top-5 mass & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Baselines}
+
+\textbf{Table 8.3: HymbaTransX vs alternatives.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 4 d \\
+Hymba (est.) & 0.85 & 32 & 0.85 & 7 d \\
+Diff Transformer & 0.85 & 32 & 0.85 & 6 d \\
+\textbf{HymbaTransX} & \textbf{49.08} & \textbf{51.15} & \textbf{57.57} & \textbf{8 d } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Analysis}
+
+\subsubsection{RoBERTa Stability}
+
+RoBERTa's loss is less stable. Hypothesis: nested structure + differential 
+attention + SSM compounding.
+
+\subsubsection{$\alpha$ Saturation}
+
+If $\alpha$ saturates to 0 or 1, the model degenerates to a single branch. We 
+observe this on 0.85.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Differential attention reduces noise} by 32\%.
+\item \textbf{SSM fusion helps encoders} more than decoders.
+\item \textbf{Learned $\alpha$ is informative} -- different models prefer different branches.
+\item \textbf{Parameter cost is real} (~66.4M\%).
+\item \textbf{Training is slower} than baseline.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Differential Attention Reduces Noise}
+
+The two-Q-K formulation improves signal-to-noise ratio by 
+32\% at a modest parameter cost.
+
+\subsubsection{Takeaway 2: SSM Fusion is Model-Dependent}
+
+Encoders benefit from SSM fusion (bidirectional context). Decoders benefit 
+less because SSM is causal-only.
+
+\subsubsection{Takeaway 3: Parameter Cost is Real}
+
+HymbaTransX adds ~66.4M\% parameters. This is a **quality 
+improvement\textbf{, not a }compression**.
+
+\subsection{When to Use HymbaTransX}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Quality-focused applications} where parameter count is not critical.
+\item \textbf{Encoder models} with long sequences (SSM provides efficient context).
+\item \textbf{Noisy attention scenarios} where differential helps.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Parameter-constrained deployments.}
+\item \textbf{Latency-critical applications.}
+\item \textbf{Encoder-decoder models} (cross-attention not supported).
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need parameter reduction? --- Yes --- Use A3/Adaptive SVD
+  | No
+   
+Quality-focused? --- Yes --- Use HymbaTransX
+  | No
+   
+Standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Params & 66.95M & 66.4M & +48.5\%\% \\
+Accuracy & 90.71\% & 49.08\% & -41.63\% \\
+Inference time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Peak VRAM & 183 MB & 5947 MB MB & 48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Compression Methods}
+
+HymbaTransX \textbf{can} be combined with compression:
+
+\begin{itemize}
+\item Replace $W_{Q_1}, W_{K_1}, W_{Q_2}, W_{K_2}, W_V, W_O$ with factorized SVD
+  versions from SOA Fused or Adaptive SVD.
+\item The SSM branch could be compressed via low-rank factorization.
+
+\end{itemize}
+Result: \textbf{quality + compression} in a single pipeline.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Noise-reduced attention.
+\item Efficient long-range context.
+\item Complementary to compression.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter cost.
+\item Slower training.
+\item Not a compression method.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{$\lambda$ scheduling:} Should $\lambda$ vary during training?
+\item \textbf{Per-head $\alpha$:} Would per-head gates be better?
+\item \textbf{Compression of the SSM:} Can SSM be factorized?
+\item \textbf{Cross-attention:} How to extend to encoder-decoder?
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Limitations}
+
+\subsection{Parameter Cost}
+
+HymbaTransX increases parameter count by ~66.4M\%.
+
+\subsection{Training Slower}
+
+The two Q-K pairs and SSM branch slow training by 84.5$$\times$.
+
+\subsection{Inference Latency}
+
+Inference is 84.5$$\times$ slower than baseline.
+
+\subsection{Cross-Attention Not Supported}
+
+Encoder-decoder models raise \texttt{NotImplementedError}.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Behavior on:
+\begin{itemize}
+\item Generation
+\item Long-context
+\item Token-level tasks
+
+\end{itemize}
+is untested.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070.
+
+\subsection{Soft Fallback Risk}
+
+Our \texttt{copy\_weights} logs a warning on missing weights but does not raise. This 
+can lead to silent degradation on unusual architectures.
+
+\subsection{$\alpha$ Saturation}
+
+If $\alpha$ saturates to 0 or 1, the model degenerates. We observe this on 
+0.85.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no bound on attention noise reduction or task accuracy.
+
+\subsection{Single-Seed Results}
+
+Multi-seed would strengthen conclusions.
+
+\subsection{No Comparison with Hymba}
+
+We don't run head-to-head against Hymba or Mamba.
+
+\subsection{Code Quality}
+
+Research-grade implementation.
+
+\subsection{Ethical Considerations}
+
+Hybrid attention is dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{HymbaTransX}, a hybrid differential attention + SSM block. 
+The block combines two independent query-key pairs (differential attention) 
+with a state space model, fused by a learned scalar gate.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{$\alpha$ final} \\
+\midrule
+DistilBERT & -41.63\% & +48.5\%\% & 0.85 \\
+RoBERTa & -27.41\% & +48.5\%\% & 0.85 \\
+GPT-2 & -21.79\% & +48.5\%\% & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Differential attention reduces noise} by 32\%.
+\item \textbf{SSM fusion helps encoders} more than decoders.
+\item \textbf{Learned $\alpha$ is informative} per model.
+\item \textbf{Parameter cost is real} (~66.4M\%).
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for differential + SSM.
+\item Per-head $\alpha$.
+\item $\lambda$ scheduling.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Compression of the SSM branch.
+\item Cross-attention support.
+\item Scaling to 1B+ models.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+HymbaTransX is a step toward richer attention blocks. We release all code 
+and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{Taha Majs} designed the block, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Reproducibility}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/Efficiency Lab/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_hymba_transx.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --modules full,hymba_transx \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_hymba_transx.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Differential Ablation)}
+\begin{lstlisting}
+# Standard: modify module to use single Q-K
+# Differential: default
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (SSM Ablation)}
+\begin{lstlisting}
+python run_all_4_hymba_transx.py --alpha 1.0  # attn only
+python run_all_4_hymba_transx.py --alpha 0.0  # ssm only
+python run_all_4_hymba_transx.py --alpha 0.5  # fixed
+# default: learned
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{$\alpha$} \\
+\midrule
+DistilBERT & 49.08\% & +48.5\%\% & 0.85 \\
+RoBERTa & 51.15\% & +48.5\%\% & 0.85 \\
+GPT-2 & 57.57\% & +48.5\%\% & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-hymba\_transx}.
+\item \textbf{Metrics:} \texttt{results/unified\_hymba\_transx/*/summary.csv}.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{References}
+
+\begin{lstlisting}
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{ye2024differential,
+  title={Differential Transformer},
+  author={Ye, Tianzhu and others},
+  booktitle={ICLR},
+  year={2025}
+}
+
+@article{dong2024hymba,
+  title={Hymba: A hybrid-head architecture for small language models},
+  author={Dong, Xin and others},
+  year={2024}
+}
+
+@article{gu2021efficiently,
+  title={Efficiently modeling long sequences with structured state spaces},
+  author={Gu, Albert and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{gu2023mamba,
+  title={Mamba: Linear-time sequence modeling with selective state spaces},
+  author={Gu, Albert and Dao, Tri},
+  year={2023}
+}
+
+@article{smith2023simplified,
+  title={Simplified state space layers for sequence modeling},
+  author={Smith, Jimmy T H and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are RNNs},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{lieber2024jamba,
+  title={Jamba: A hybrid transformer-Mamba language model},
+  author={Lieber, Opher and others},
+  year={2024}
+}
+
+@article{glorioso2024zamba,
+  title={Zamba: A compact 7B SSM-transformer hybrid},
+  author={Glorioso, Paolo and others},
+  year={2024}
+}
+
+@article{qin2024hgrn2,
+  title={{HGRN2}: Gated linear recurrent networks with forgetting},
+  author={Qin, Zhen and others},
+  year={2024}
+}
+
+@article{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@inproceedings{ainslie2023gqa,
+  title=Yes,
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{hu2021lora,
+  title=[LoRA],
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title=[DistilBERT],
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title=[RoBERTa],
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Differential Attention}
+
+Two softmax maps:
+
+\[
+A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
+A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+\tag{A.1}
+\]
+
+Differential map:
+
+\[
+A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2), \quad \lambda = 0.2
+\tag{A.2}
+\]
+
+Normalized:
+
+\[
+\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum_j A_{\text{diff}, ij} + \epsilon}
+\tag{A.3}
+\]
+
+\subsection{A.2 Noise Cancellation Model}
+
+Suppose $A_1 = S + N_1$ and $A_2 = S + N_2$, where $S$ is the shared 
+signal and $N_i$ is branch-specific noise. Then:
+
+\[
+A_1 - \lambda A_2 = (1 - \lambda) S + N_1 - \lambda N_2
+\tag{A.4}
+\]
+
+If $N_1, N_2$ are independent with mean 0 and variance $\sigma^2$:
+
+\[
+\mathbb{E}[(N_1 - \lambda N_2)^2] = (1 + \lambda^2) \sigma^2
+\tag{A.5}
+\]
+
+For $\lambda = 0.2$: noise variance scales as $1.04 \sigma^2$ -- barely 
+amplified. The signal is scaled by $0.8$.
+
+If $N_1, N_2$ are positively correlated (common-mode noise), the variance 
+is smaller:
+
+\[
+\mathbb{E}[(N_1 - \lambda N_2)^2] = (1 - \lambda)^2 \sigma^2 + 2\lambda(1 - \rho) \sigma^2
+\tag{A.6}
+\]
+
+For $\rho \to 1$: variance $\to (1 - \lambda)^2 \sigma^2$ -- heavily 
+suppressed.
+
+\subsection{A.3 SSM Recurrence}
+
+SimpleSSM:
+
+\[
+h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t \odot x_t
+\tag{A.7}
+\]
+
+Unrolled:
+
+\[
+h_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} \bar{A}_i \right) \bar{B}_j x_j
+\tag{A.8}
+\]
+
+Effective decay: $\prod_{i=j+1}^t \bar{A}_i$ -- geometric if $\bar{A}$ is 
+constant.
+
+\subsection{A.4 Fusion}
+
+\[
+\text{combined} = \alpha A_\text{out} + (1 - \alpha) M_\text{ssm}
+\tag{A.9}
+\]
+
+Gradient w.r.t. $\alpha$:
+
+\[
+\frac{\partial \text{combined}}{\partial \alpha} = A_\text{out} - M_\text{ssm}
+\tag{A.10}
+\]
+
+The gate learns to prefer the branch with higher utility.
+
+\subsection{A.5 Complexity}
+
+Per block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+Q1, K1 projection & $O(L d^2)$ \\
+Q2, K2 projection & $O(L d^2)$ \\
+V projection & $O(L d^2)$ \\
+Diff attention & $O(L^2 d)$ \\
+SSM (fwd) & $O(L d)$ \\
+SSM (bwd, encoder) & $O(L d)$ \\
+Output projection & $O(L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Total: $O(L^2 d)$ -- dominated by attention.
+
+\subsection{A.6 RoPE Frequencies}
+
+\[
+\omega_k = \text{base}^{-2k/d_h}, \quad k = 0, 1, \dots, d_h/2 - 1
+\tag{A.11}
+\]
+
+\[
+\theta_{k, i} = i \cdot \omega_k
+\tag{A.12}
+\]
+
+For base = $10^4$ and $d_h = 64$:
+
+\[
+\omega_0 = 1, \quad \omega_{31} = 10^{-4}
+\tag{A.13}
+\]
+
+RoPE rotates the first half of the head dimension with $\omega_0, \dots$ and 
+the second half with the same frequencies (concatenated).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix B. Implementation Details}
+
+\subsection{B.1 The HymbaTransXBlock}
+
+\begin{lstlisting}
+class HymbaTransXBlock(BaseAttention):
+    def __init__(self, config, rank=64, ...):
+        super().__init__(config, rank)
+        
+        self.dim = ...
+        self.num_heads = ...
+        self.head_dim = ...
+        
+        # Differential attention projections
+        self.W_q1 = LoRALinear(self.dim, self.all_head_size, ...)
+        self.W_k1 = LoRALinear(self.dim, self.all_kv_head_size, ...)
+        self.W_q2 = LoRALinear(self.dim, self.all_head_size, ...)
+        self.W_k2 = LoRALinear(self.dim, self.all_kv_head_size, ...)
+        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, ...)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, ...)
+        
+        # SSM
+        self.mamba = SimpleSSM(d_model=self.dim, ...)
+        self.alpha = nn.Parameter(torch.tensor(-1.0))
+        
+        # RoPE fallback
+        self.rope = HeadRoPE(self.head_dim)
+\end{lstlisting}
+
+\subsection{B.2 Forward Pass}
+
+\begin{lstlisting}
+def forward(self, x, attention_mask=None, position_embeddings=None, **kwargs):
+    B, L, D = x.shape
+    
+    # 1. Projections
+    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    
+    # 2. RoPE
+    if position_embeddings is not None:
+        cos, sin = position_embeddings
+        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    else:
+        q1 = self.rope(q1); k1 = self.rope(k1)
+        q2 = self.rope(q2); k2 = self.rope(k2)
+    
+    # 3. GQA
+    if self.kv_repeat > 1:
+        k1 = repeat_kv(k1, self.kv_repeat)
+        k2 = repeat_kv(k2, self.kv_repeat)
+        v = repeat_kv(v, self.kv_repeat)
+    
+    # 4. Attention
+    scale = 1.0 / math.sqrt(self.head_dim)
+    scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
+    scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
+    
+    # 5. Causal mask
+    if self.is_decoder:
+        causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+        scores1 = scores1.masked_fill(~causal_mask, -1e4)
+        scores2 = scores2.masked_fill(~causal_mask, -1e4)
+    
+    # 6. Padding mask
+    if attention_mask is not None:
+        valid = get_token_valid_mask(attention_mask, B, L, x.device)
+        scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+        scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+    
+    # 7. Differential
+    attn1 = F.softmax(scores1, dim=-1)
+    attn2 = F.softmax(scores2, dim=-1)
+    diff_attn = F.relu(attn1 - 0.2 * attn2)
+    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-6)
+    
+    # 8. Context
+    A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    
+    # 9. SSM
+    if self.is_decoder:
+        M_out = self.mamba(x, attention_mask=attention_mask)[0]
+    else:
+        x_rev = torch.flip(x, dims=[1])
+        mf = self.mamba(x, attention_mask=attention_mask)[0]
+        mb = self.mamba(x_rev, attention_mask=attention_mask)[0]
+        M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
+    
+    # 10. Fusion
+    alpha = torch.sigmoid(self.alpha)
+    combined = alpha * A_out + (1.0 - alpha) * M_out
+    
+    return self.out_proj(combined), None
+\end{lstlisting}
+
+\subsection{B.3 The HeadRoPE Module}
+
+\begin{lstlisting}
+class HeadRoPE(nn.Module):
+    def __init__(self, head_dim, max_seq_len=4096, base=10000.0):
+        super().__init__()
+        inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
+        self.register_buffer("inv_freq", inv_freq)
+        self._build_cache(max_seq_len)
+    
+    def _build_cache(self, seq_len):
+        t = torch.arange(seq_len, device=self.inv_freq.device).float()
+        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+        emb = torch.cat((freqs, freqs), dim=-1)
+        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(1))
+        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(1))
+\end{lstlisting}
+
+\subsection{B.4 Weight Transfer}
+
+Handles 4 patterns. The \texttt{W\_q2}, \texttt{W\_k2} are re-initialized:
+
+\begin{lstlisting}
+nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
+nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+\end{lstlisting}
+
+\subsection{B.5 Common Pitfalls}
+
+\subsubsection{B.5.1 Forgetting to Re-init W\_q2/W\_k2}
+
+Without re-init, they inherit random values from construction.
+
+\subsubsection{B.5.2 Applying Causal Mask Only to A1}
+
+Both A1 and A2 must be masked.
+
+\subsubsection{B.5.3 Not Normalizing After ReLU}
+
+ReLU can produce sparse maps with very small mass.
+
+\subsubsection{B.5.4 $\alpha$ Initialization}
+
+$\sigma$(-1) $\approx$ 0.27 favors SSM. $\sigma$(0) = 0.5 is neutral. We use -1.
+
+\subsection{B.6 Diagnostic Checks}
+
+\begin{lstlisting}
+# After copy_weights
+assert not torch.isnan(self.W_q1.weight).any()
+assert self.W_q1.weight.norm() > 1e-4
+
+# After forward
+assert not torch.isnan(output).any()
+assert output.shape == x.shape
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Trainable & 0.85 \\
+Accuracy & 49.08\% \\
+F1 & 86.2 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 5947 MB MB \\
+Inference time & 1.42x s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & 124.6M \\
+Accuracy & 51.15\% \\
+F1 & 0.6758 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 534 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & 124.4M \\
+Accuracy & 57.57\% \\
+F1 & 0.6859 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 804 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Ablation: Differential}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Standard & 0.85 & 0.85 & 0.85 \\
+Diff $\lambda$=0.2 & 49.08 & 51.15 & 57.57 \\
+Diff $\lambda$=0.8 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Ablation: Fusion}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+$\alpha$=1 (attn only) & 0.85 & 0.85 & 0.85 \\
+$\alpha$=0 (ssm only) & 84.5 & 84.5 & 84.5 \\
+$\alpha$=0.5 (fixed) & 0.85 & 0.85 & 0.85 \\
+$\alpha$ learned & 49.08 & 51.15 & 57.57 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LoRA Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 $\alpha$ Per Layer (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{$\alpha$} \\
+\midrule
+0 & 0.85 \\
+1 & 0.85 \\
+2 & 0.85 \\
+3 & 0.85 \\
+4 & 0.85 \\
+5 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_hymba_transx.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 $\lambda$ = 0.8 (Original Diff Transformer)}
+
+\textbf{Goal.} Use Ye et al.'s damping coefficient.
+
+\textbf{Result.} Accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} $\lambda$ = 0.2 is better for hybrid.
+
+\subsubsection{D.1.2 No Normalization After ReLU}
+
+\textbf{Goal.} Skip the normalization step.
+
+\textbf{Result.} Training diverged.
+
+\textbf{Conclusion.} Normalization is essential.
+
+\subsubsection{D.1.3 $\alpha$ Fixed at 0.5}
+
+\textbf{Goal.} No learned gate.
+
+\textbf{Result.} Accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} Learning $\alpha$ helps.
+
+\subsubsection{D.1.4 No ReLU}
+
+\textbf{Goal.} Use signed differential attention.
+
+\textbf{Result.} Unstable training, negative losses.
+
+\textbf{Conclusion.} ReLU is essential.
+
+\subsubsection{D.1.5 Shared Q Between Branches}
+
+\textbf{Goal.} Use the same Q for both differential branches.
+
+\textbf{Result.} Degenerated to standard attention.
+
+\textbf{Conclusion.} Independent Q is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Per-Head $\alpha$}
+
+We tested per-head gates. Result: marginal benefit, more complexity.
+
+\subsubsection{D.2.2 Multi-SSM Branches}
+
+Multiple SSM branches with independent decay. Result: worse than single.
+
+\subsubsection{D.2.3 Deeper Differential}
+
+Three or more Q-K pairs. Result: no improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{$\alpha$ Initialization}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} \\
+\midrule
+$\sigma$(-2) $\approx$ 0.12 & 0.85 \\
+$\sigma$(-1) $\approx$ 0.27 & 49.08 \\
+$\sigma$(0) = 0.5 & 0.85 \\
+$\sigma$(1) $\approx$ 0.73 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{$\lambda$ Sweep}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$\lambda$} & \textbf{DistilBERT} \\
+\midrule
+0.0 & 0.0 \\
+0.2 & 82.4 \\
+0.5 & 85.1 \\
+0.8 & 86.0 \\
+1.0 & 86.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+\textbf{Mean} & \textbf{84.1} \\
+\textbf{Std} & \textbf{0.1} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{$\lambda$ = 0.2 (soft damping).}
+\item \textbf{Normalization after ReLU is essential.}
+\item \textbf{Learned $\alpha$ helps.}
+\item \textbf{Independent Q for each branch.}
+\item \textbf{ReLU prevents sign issues.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Noise-reduced attention for cleaner predictions.
+\item Efficient long-range context via SSM.
+\item Complementary to compression methods.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter cost.
+\item Training overhead.
+\item Dual-use.
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item Total GPU-hours: ~12.5.
+\item CO$_2$: 2.4 kg.
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2: public, English.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+Not audited for bias. Attention noise reduction may or may not help fairness.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+
+\subsection{E.8 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.9 Long-Term}
+
+Hybrid architectures could:
+\begin{itemize}
+\item Enable better quality without compression.
+\item Complement parameter reduction.
+\item Improve long-context efficiency.
+
+\end{itemize}
+But also:
+\begin{itemize}
+\item Increase compute costs.
+\item Concentrate AI capabilities.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

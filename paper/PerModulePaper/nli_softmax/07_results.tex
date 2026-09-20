@@ -41,3 +41,11 @@ AG News & 66,956,548 & 67,546,372 & +589,824 (+0.88\%) & 589,824 & 0 & 0 \\
 
 \subsection{Inference Efficiency and Memory Footprint}
 Execution profiling demonstrates that \texttt{nli\_softmax} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/nli_softmax_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{nli_softmax}.}
+\label{fig:results_nli_softmax}
+\end{figure}

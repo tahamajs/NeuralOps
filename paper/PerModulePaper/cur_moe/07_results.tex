@@ -41,3 +41,11 @@ AG News & 66,956,548 & 63,385,348 & -3,571,200 (-5.33\%) & 635,140 & 0 & 0 \\
 
 \subsection{Inference Efficiency and Memory Footprint}
 Execution profiling demonstrates that \texttt{cur\_moe} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/cur_moe_roberta_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{cur_moe}.}
+\label{fig:results_cur_moe}
+\end{figure}

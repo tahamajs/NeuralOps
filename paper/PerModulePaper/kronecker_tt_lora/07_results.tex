@@ -41,3 +41,11 @@ AG News & 66,956,548 & 68,461,828 & +1,505,280 (+2.25\%) & 331,776 & 0 & 0 \\
 
 \subsection{Inference Efficiency and Memory Footprint}
 Execution profiling demonstrates that \texttt{kronecker\_tt\_lora} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/kronecker_tt_lora_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{kronecker_tt_lora}.}
+\label{fig:results_kronecker_tt_lora}
+\end{figure}

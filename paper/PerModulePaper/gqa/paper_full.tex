@@ -1,151 +1,12 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{GQA: Grouped-Query Attention for Memory-Efficient Transformer Inference}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-
-\section{GQA: Grouped-Query Attention for Memory-Efficient Transformer Inference}
-
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/gqa.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Autoregressive transformer inference is bottlenecked by the memory footprint of 
-the key-value (KV) cache, which scales linearly with sequence length and number 
-of heads. Multi-Head Attention (MHA) stores one $K$ and $V$ per query head 
-($H_{KV} = H$), which is maximally expressive but also maximally memory-intensive. 
-Multi-Query Attention (MQA) collapses all KV heads into one ($H_{KV} = 1$), 
-achieving minimal memory at a cost to quality. \textbf{Grouped-Query Attention} (GQA) 
-interpolates between these extremes: it partitions the $H$ query heads into $G$ 
-groups and shares a single KV head per group ($H_{KV} = G \le H$).
-
-We present a production-hardened PyTorch implementation of GQA that supports 
-flat (DistilBERT), nested (RoBERTa), causal (GPT-2), and grouped-query (Qwen3.5) 
-architectures. Our implementation includes exact pretrained weight transfer 
-via \texttt{copy\\_weights}, frozen base weights with LoRA recovery adapters, RoPE 
-support, and safe injection returning \texttt{None} on failure. We evaluate GQA on 
-DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
-$H_{KV} = 6$), achieving \textbf{88.5\%}, \textbf{75.5\%}, and 
-\textbf{77.0\%} accuracy respectively. The KV cache footprint is reduced by 
-\textbf{32$$\times$} at inference time. We provide a full ablation over 
-$G / H$ ratio and analyze the trade-off between memory savings and quality loss.
-
-\textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer 
-inference, attention architecture
-
-
-
-\subsection{Lay Summary}
-
-When a chatbot generates text, it needs to remember the previous tokens it 
-has seen. This "memory" is called the KV cache, and it grows linearly with 
-the length of the conversation. For long conversations, this memory can 
-become the bottleneck --- not the model's weights, but the activations it 
-stores per token.
-
-GQA solves this by sharing memory between groups of attention heads. Instead 
-of storing a separate memory per head (as MHA does) or a single shared memory 
-for all heads (as MQA does), it stores one memory per group of heads. This 
-gives a smooth trade-off: fewer groups means less memory but slightly lower 
-quality.
-
-Our implementation supports four popular architectures and includes 
-production-hardened features like fallback on failure and exact weight 
-transfer from pretrained models. On three benchmark models, GQA achieves 
-near-baseline accuracy while cutting KV cache memory by ~2$$\times$.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Autoregressive inference in transformer models is memory-bound, not 
 compute-bound. During generation, the model stores keys and values for every 
@@ -166,25 +27,27 @@ FP16 is:
 \tag{1.2}
 \]
 
-which is \textbf{5\% of the model's 774 MB weight footprint} --- small in isolation, 
+which is \textbf{5\% of the model's 774 MB weight footprint} -- small in isolation, 
 but growing linearly with sequence length and batch size. At $L = 32{,}768$ 
 and $B = 8$, the KV cache dominates inference memory, requiring \textbf{9.6 GB} 
 per layer group, exceeding most consumer GPUs.
 
 Two extremes have been explored to reduce this cost:
 
-1. \textbf{Multi-Head Attention (MHA).} Each of the $H$ query heads has its own 
-   $K$ and $V$ ($H_{KV} = H$). Maximally expressive, maximally memory-intensive.
-2. \textbf{Multi-Query Attention (MQA).} All query heads share a single $K, V$ 
-   pair ($H_{KV} = 1$). Minimal memory, but empirically worse quality, 
-   especially on tasks requiring fine-grained attention.
+\begin{enumerate}
+\item \textbf{Multi-Head Attention (MHA).} Each of the $H$ query heads has its own
+  $K$ and $V$ ($H_{KV} = H$). Maximally expressive, maximally memory-intensive.
+\item \textbf{Multi-Query Attention (MQA).} All query heads share a single $K, V$
+  pair ($H_{KV} = 1$). Minimal memory, but empirically worse quality,
+  especially on tasks requiring fine-grained attention.
 
+\end{enumerate}
 \textbf{Grouped-Query Attention (GQA)} was introduced as a middle ground: partition 
 the $H$ query heads into $G$ groups, each with a dedicated $K, V$ pair 
 ($H_{KV} = G$). The KV cache shrinks by a factor of $H / G$, and quality 
 degrades gracefully with $G$.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained MHA-based model $\mathcal{M}$ with $H$ query heads and 
 $H_{KV} = H$, we seek a modified model $\mathcal{M}'$ such that:
@@ -197,47 +60,45 @@ $H_{KV} = H$, we seek a modified model $\mathcal{M}'$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Quality preservation:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
-2. \textbf{Weight compatibility:} No retraining of base weights; use LoRA recovery.
-3. \textbf{Architecture portability:} Must work with flat, nested, and causal transformers.
-4. \textbf{Inference ready:} KV cache reduction must be realized at generation time.
+\begin{enumerate}
+\item \textbf{Quality preservation:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Weight compatibility:} No retraining of base weights; use LoRA recovery.
+\item \textbf{Architecture portability:} Must work with flat, nested, and causal transformers.
+\item \textbf{Inference ready:} KV cache reduction must be realized at generation time.
 
-\subsection{1.3 Our Approach}
+\end{enumerate}
+\subsection{Our Approach}
 
 We present a production-hardened implementation of GQA with three key features:
 
-1. \textbf{Exact weight transfer.} The \texttt{copy\\_weights} procedure handles four 
-   distinct attention configurations: flat (DistilBERT), nested (RoBERTa), 
-   causal (GPT-2), and grouped-query (Qwen3.5). For MHA $\to$ GQA conversion, 
-   query weights are copied verbatim; KV weights are grouped and repeated.
+\begin{enumerate}
+\item \textbf{Exact weight transfer.} The \texttt{copy\_weights} procedure handles four
+  distinct attention configurations: flat (DistilBERT), nested (RoBERTa),
+  causal (GPT-2), and grouped-query (Qwen3.5). For MHA $\to$ GQA conversion,
+  query weights are copied verbatim; KV weights are grouped and repeated.
 
-2. \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The 
-   default is $G = H / 2$, giving a 2$$\times$ KV cache reduction.
+\item \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The
+  default is $G = H / 2$, giving a 2$$\times$ KV cache reduction.
 
-3. \textbf{LoRA recovery.} After injection, the base weights are frozen and 
-   only LoRA adapters are trainable. This preserves pretrained knowledge 
-   while allowing task-specific adaptation.
+\item \textbf{LoRA recovery.} After injection, the base weights are frozen and
+  only LoRA adapters are trainable. This preserves pretrained knowledge
+  while allowing task-specific adaptation.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A production-hardened GQA implementation.} Our PyTorch implementation
-\end{itemize}
   handles four attention variants, RoPE, LoRA recovery, and safe fallback.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} We benchmark GQA on DistilBERT, RoBERTa, and
-\end{itemize}
   GPT-2 on SST-2 with ablations over $G / H$ ratio.
-\begin{itemize}
 \item \textbf{KV cache analysis.} We provide a detailed breakdown of where the memory
-\end{itemize}
   savings come from and how they scale with $L$ and $B$.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
-\end{itemize}
   released under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention 
 and KV cache. Section 4 presents GQA. Section 5 describes integration with 
@@ -251,61 +112,60 @@ concludes.
 \subsection{Notation}
 
 
-\clearpage
 
+\section{Related Work}
 
-\section{2. Related Work}
+\subsection{Attention Variants}
 
-\subsection{2.1 Attention Variants}
-
-\subsubsection{2.1.1 Multi-Head Attention (MHA)}
+\subsubsection{Multi-Head Attention (MHA)}
 
 Introduced by Vaswani et al. (2017), MHA splits the hidden dimension into 
 $H$ heads, each with its own $Q, K, V$ projections. This is the standard 
 configuration for BERT, RoBERTa, and most encoder-only models.
 
-\subsubsection{2.1.2 Multi-Query Attention (MQA)}
+\subsubsection{Multi-Query Attention (MQA)}
 
 Shazeer (2019) proposed MQA, which shares a single $K, V$ pair across all 
 query heads. This reduces the KV cache by a factor of $H$ but often 
 degrades quality, especially for tasks requiring head diversity.
 
-\subsubsection{2.1.3 Grouped-Query Attention (GQA)}
+\subsubsection{Grouped-Query Attention (GQA)}
 
 Ainslie et al. (2023) proposed GQA as a middle ground, evaluated on 
 T5-based models. GQA is now standard in LLaMA-2, Mistral, Qwen, and 
 Gemma. Our work re-implements GQA in a unified framework with extensive 
 architecture support.
 
-\subsection{2.2 KV Cache Optimization}
+\subsection{KV Cache Optimization}
 
-\subsubsection{2.2.1 Eviction}
+\subsubsection{Eviction}
 
 H2O (Zhang et al., 2023) keeps attention sinks and heavy hitters. 
 StreamingLLM (Xiao et al., 2024) preserves initial tokens. These methods 
 are orthogonal to GQA.
 
-\subsubsection{2.2.2 Quantization}
+\subsubsection{Quantization}
 
 KIVI (Liu et al., 2024) quantizes KV to 2-bit. KVQuant (Hooper et al., 2024) 
 uses per-channel scaling. GQA can be combined with quantization for 
 multiplicative savings.
 
-\subsubsection{2.2.3 Low-Rank Compression}
+\subsubsection{Low-Rank Compression}
 
 Low-rank KV cache compression (e.g., MLA in DeepSeek-V2) projects KV into 
 a low-rank space. This is an orthogonal approach to reducing the number of 
 heads.
 
-\subsection{2.3 Parameter-Efficient Fine-Tuning}
+\subsection{Parameter-Efficient Fine-Tuning}
 
 LoRA (Hu et al., 2021) freezes base weights and trains low-rank adapters. 
 We use LoRA as a recovery mechanism after GQA injection.
 
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Original GQA (Ainslie et al.)} & \textbf{Our Implementation} \\
@@ -323,15 +183,13 @@ Companion methods & None & Integrated with A3, AASVD, etc. \\
 not a new algorithmic contribution. We focus on robustness, architecture 
 coverage, and integration with the broader compression toolkit.
 
-\subsection{2.5 Comparison with Related Variants}
+\subsection{Comparison with Related Variants}
 
 
-\clearpage
 
+\section{Background}
 
-\section{3. Background}
-
-\subsection{3.1 Multi-Head Attention}
+\subsection{Multi-Head Attention}
 
 Standard MHA computes:
 
@@ -354,7 +212,7 @@ per head per token. The total cache size is:
 \tag{3.2}
 \]
 
-\subsection{3.2 Multi-Query Attention}
+\subsection{Multi-Query Attention}
 
 MQA shares a single $K, V$ pair across all query heads:
 
@@ -372,7 +230,7 @@ Query heads still project separately. During generation:
 
 Reduction factor: $H $\times$.
 
-\subsection{3.3 Grouped-Query Attention}
+\subsection{Grouped-Query Attention}
 
 GQA partitions $H$ query heads into $G$ groups, each with its own $K, V$:
 
@@ -398,7 +256,7 @@ Query heads in group $g$ share $K_g, V_g$. The KV cache size is:
 Reduction factor: $H / G$. The MHA and MQA cases are special cases at 
 $G = H$ and $G = 1$.
 
-\subsection{3.4 KV Head Repetition}
+\subsection{KV Head Repetition}
 
 During the forward pass, each KV head must be repeated to match the 
 corresponding query heads. If $H / G = r$ (integer), each KV head is 
@@ -412,7 +270,7 @@ replicated $r$ times:
 This is implemented efficiently via \texttt{reshape} + \texttt{expand} (no memory copy 
 in most cases).
 
-\subsection{3.5 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
@@ -424,7 +282,7 @@ RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 GQA applies RoPE to the shared $K$ heads before repetition. This is the 
 standard configuration in LLaMA, Mistral, and Qwen.
 
-\subsection{3.6 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -436,54 +294,52 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. In GQA, we freeze the KV projection weights 
 and train LoRA adapters for recovery.
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}
 
 
-\clearpage
 
+\section{Method}
 
-\section{4. Method}
-
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 GQA is a \textbf{structural modification} of the attention mechanism: it reduces 
 the number of $K, V$ heads from $H$ to $G$ while keeping all $H$ query heads 
 intact. The modification consists of four components:
 
-1. \textbf{Group configuration} (§4.2): choose $G$.
-2. \textbf{Projection initialization} (§4.3): initialize $K, V$ for the reduced head count.
-3. \textbf{Weight transfer} (§4.4): copy query weights verbatim; group-reduce KV weights.
-4. \textbf{Forward pass} (§4.5): apply standard attention with KV repetition.
+\begin{enumerate}
+\item \textbf{Group configuration} ( 4.2): choose $G$.
+\item \textbf{Projection initialization} ( 4.3): initialize $K, V$ for the reduced head count.
+\item \textbf{Weight transfer} ( 4.4): copy query weights verbatim; group-reduce KV weights.
+\item \textbf{Forward pass} ( 4.5): apply standard attention with KV repetition.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the difference between MHA, GQA, and MQA at $H = 8$.
 
 \begin{lstlisting}
     MHA (H_KV = 8)          GQA (H_KV = 4)          MQA (H_KV = 1)
 
-    Q1 ── K1 V1             Q1 ── K1 V1             Q1 ── K1 V1
-    Q2 ── K2 V2             Q2 ── ┘                 Q2 ── ┘
-    Q3 ── K3 V3             Q3 ── K2 V2             Q3 ── ┘
-    Q4 ── K4 V4             Q4 ── ┘                 Q4 ── ┘
-    Q5 ── K5 V5             Q5 ── K3 V3             Q5 ── ┘
-    Q6 ── K6 V6             Q6 ── ┘                 Q6 ── ┘
-    Q7 ── K7 V7             Q7 ── K4 V4             Q7 ── ┘
-    Q8 ── K8 V8             Q8 ── ┘                 Q8 ── ┘
+    Q1 -- K1 V1             Q1 -- K1 V1             Q1 -- K1 V1
+    Q2 -- K2 V2             Q2 -- +                 Q2 -- +
+    Q3 -- K3 V3             Q3 -- K2 V2             Q3 -- +
+    Q4 -- K4 V4             Q4 -- +                 Q4 -- +
+    Q5 -- K5 V5             Q5 -- K3 V3             Q5 -- +
+    Q6 -- K6 V6             Q6 -- +                 Q6 -- +
+    Q7 -- K7 V7             Q7 -- K4 V4             Q7 -- +
+    Q8 -- K8 V8             Q8 -- +                 Q8 -- +
 \end{lstlisting}
 
-\subsection{4.2 Group Configuration}
+\subsection{Group Configuration}
 
 The number of KV heads $G$ satisfies $1 \le G \le H$. Two natural choices:
 
 \begin{itemize}
 \item \textbf{Default:} $G = H / 2$ (2$$\times$ KV cache reduction).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Aggressive:} $G = H / 4$ or $G = 1$ (MQA).
-\end{itemize}
 
+\end{itemize}
 Our default is $G = H / 2$ to balance quality and memory.
 
-\subsection{4.3 Projection Initialization}
+\subsection{Projection Initialization}
 
 For a target model with hidden size $d$ and per-head dimension $d_h$:
 
@@ -497,9 +353,9 @@ W_O \in \mathbb{R}^{H d_h \times d}
 The query and output projections have unchanged shapes; only $W_K, W_V$ 
 shrink by $H / G$.
 
-\subsection{4.4 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{4.4.1 From MHA to GQA}
+\subsubsection{From MHA to GQA}
 
 Given MHA weights $W_Q^{(\text{MHA})} \in \mathbb{R}^{d \times H d_h}$ and 
 $W_K^{(\text{MHA})}, W_V^{(\text{MHA})} \in \mathbb{R}^{d \times H d_h}$, we 
@@ -522,7 +378,7 @@ of the head weights within each group.
 \textbf{Alternative:} We could pick the first head in each group or use learned 
 pooling. Our experiments use averaging.
 
-\subsubsection{4.4.2 From GQA to GQA (Re-grouping)}
+\subsubsection{From GQA to GQA (Re-grouping)}
 
 If the source is already GQA with $G_\text{src}$ groups and we want 
 $G_\text{tgt} < G_\text{src}$, we group the source KV heads:
@@ -534,9 +390,9 @@ W_K^{(\text{tgt})}_g = \text{mean}\!\left(W_K^{(\text{src})}_{g' \in g}\right)
 
 If $G_\text{tgt} = G_\text{src}$, the copy is exact.
 
-\subsubsection{4.4.3 Copy Procedure Pseudocode}
+\subsubsection{Copy Procedure Pseudocode}
 
-\textbf{Algorithm 1:} \texttt{copy\\_weights} for GQA
+\textbf{Algorithm 1:} \texttt{copy\_weights} for GQA
 \begin{lstlisting}
 Input:  src_attn (MHA or GQA)
         H, G, d_h
@@ -566,7 +422,7 @@ Output: GQA weights
 22: freeze_base_weights()
 \end{lstlisting}
 
-\subsection{4.5 Forward Pass}
+\subsection{Forward Pass}
 
 \textbf{Algorithm 2:} GQA forward
 \begin{lstlisting}
@@ -596,9 +452,9 @@ Output: Y $\in$ R^{B $$\times$ N $$\times$ d}
 20: return Y
 \end{lstlisting}
 
-\subsection{4.6 KV Cache Analysis}
+\subsection{KV Cache Analysis}
 
-\subsubsection{4.6.1 Per-Token Memory}
+\subsubsection{Per-Token Memory}
 
 For a single layer at sequence position $t$:
 
@@ -612,7 +468,7 @@ For a single layer at sequence position $t$:
 \tag{4.6}
 \]
 
-\subsubsection{4.6.2 Total Cache}
+\subsubsection{Total Cache}
 
 For sequence length $L$ and batch size $B$ across $N_l$ layers:
 
@@ -621,12 +477,13 @@ For sequence length $L$ and batch size $B$ across $N_l$ layers:
 \tag{4.7}
 \]
 
-\subsubsection{4.6.3 Concrete Numbers}
+\subsubsection{Concrete Numbers}
 
 For GPT-2 ($N_l = 12$, $H = 12$, $d_h = 64$, FP16):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Config} & \textbf{$H_{KV}$} & \textbf{KV/token (KB)} & \textbf{KV at L=1024 (MB)} & \textbf{KV at L=8192 (MB)} \\
@@ -639,10 +496,11 @@ MQA & 1 & 3.1 & 3.1 & 25 \\
 \end{tabular}
 \end{table}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{MHA} & \textbf{GQA} \\
@@ -652,7 +510,7 @@ K projection FLOPs & $\mathcal{O}(N d \cdot H d_h)$ & $\mathcal{O}(N d \cdot G d
 V projection FLOPs & Same as K & Same as K \\
 Attention FLOPs & $\mathcal{O}(N^2 H d_h)$ & Same \\
 Output projection FLOPs & Same & Same \\
-**KV cache bytes** & $2 H d_h L B$ & $2 G d_h L B$ \\
+\textbf{KV cache bytes} & $2 H d_h L B$ & $2 G d_h L B$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -661,25 +519,27 @@ Output projection FLOPs & Same & Same \\
 to $G / H$, but \textbf{not} attention FLOPs or output projection FLOPs. The primary 
 benefit is memory-bound inference.
 
-\subsection{4.8 Rank and Head Grouping}
+\subsection{Rank and Head Grouping}
 
 The number of KV heads $G$ must satisfy two constraints:
 
-1. $G \le H$ (can't have more KV heads than query heads).
-2. $H$ is divisible by $G$ (each group has $H / G$ heads).
+\begin{enumerate}
+\item $G \le H$ (can't have more KV heads than query heads).
+\item $H$ is divisible by $G$ (each group has $H / G$ heads).
 
+\end{enumerate}
 If $H$ is prime, only $G = 1$ or $G = H$ are valid. For $H = 12$, valid values 
 are $G \in \{1, 2, 3, 4, 6, 12\}$.
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 MHA and MQA as Special Cases}
+\subsubsection{MHA and MQA as Special Cases}
 
 At $G = H$, GQA reduces to MHA (each head has its own KV). At $G = 1$, GQA 
 reduces to MQA (all heads share KV). GQA is a \textbf{continuous interpolation} 
 between these extremes.
 
-\subsubsection{4.9.2 Expressiveness Bound}
+\subsubsection{Expressiveness Bound}
 
 For a fixed sequence, the set of attention matrices expressible by GQA is a 
 subset of MHA's expressible set. The reduction is bounded by the number of 
@@ -693,23 +553,22 @@ distinct KV heads:
 relative to MHA's $|\text{Expr}(\text{MHA})|$ (informally, up to a 
 factor depending on $d_h$).
 
-\clearpage
 
+\section{Architecture Integration}
 
-\section{5. Architecture Integration}
-
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{Heads (H)} & \textbf{KV heads} & \textbf{Config} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & 12 & 12 (MHA) & Flat \\
-RoBERTa & `BertSelfAttention` & 12 & 12 (MHA) & Nested \\
-GPT-2 & `GPT2Attention` & 12 & 12 (MHA) & Causal \\
-Qwen3.5 & `Qwen3Attention` & 8 & 2 (GQA) & GQA + RoPE \\
+DistilBERT & \texttt{MultiHeadSelfAttention} & 12 & 12 (MHA) & Flat \\
+RoBERTa & \texttt{BertSelfAttention} & 12 & 12 (MHA) & Nested \\
+GPT-2 & \texttt{GPT2Attention} & 12 & 12 (MHA) & Causal \\
+Qwen3.5 & \texttt{Qwen3Attention} & 8 & 2 (GQA) & GQA + RoPE \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -718,9 +577,9 @@ GQA targets all four. For DistilBERT/RoBERTa/GPT-2 (all MHA), we reduce
 $H_{KV}$ from 12 to 6 by default. For Qwen3.5 (already GQA), we either 
 preserve or further reduce.
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 DistilBERT has four projections:
 
@@ -731,11 +590,11 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Extraction:} Direct. \texttt{q\\_lin.weight} copied to \texttt{query.weight}, etc.
+\textbf{Extraction:} Direct. \texttt{q\_lin.weight} copied to \texttt{query.weight}, etc.
 
-\textbf{Nested?} No. \texttt{out\\_lin} is inside attention, so \texttt{is\\_nested\\_encoder = False}.
+\textbf{Nested?} No. \texttt{out\_lin} is inside attention, so \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 attention.self.query: Linear(768, 768)
@@ -745,9 +604,9 @@ attention.output.dense: Linear(768, 768)
 \end{lstlisting}
 
 \textbf{Extraction:} From inner \texttt{self}. \texttt{attention.output.dense} is outside, so 
-\texttt{is\\_nested\\_encoder = True} and we skip our own \texttt{out\\_proj}.
+\texttt{is\_nested\_encoder = True} and we skip our own \texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
 attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
@@ -761,7 +620,7 @@ w = src.c_attn.weight.t()  # (2304, 768)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 Qwen3.5 (GQA-native)}
+\subsubsection{Qwen3.5 (GQA-native)}
 
 \begin{lstlisting}
 q_proj: Linear(1024, 2048)   # 8 heads $$\times$ 256
@@ -773,43 +632,43 @@ o_proj: Linear(2048, 1024)
 \textbf{Extraction:} Direct. Source is already GQA. If reducing $G$ from 2 to 1, 
 we average the two KV heads.
 
-\subsection{5.3 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 3:} Inject GQA into a full model
 \begin{lstlisting}
 Input:  model M, config c, G (target KV heads)
 Output: M with GQA-injected attention
 
-1:  for ℓ in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention(ℓ)
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
 3:      if src is None: continue
 4:      H $\leftarrow$ num_query_heads(src)
-5:      G $\leftarrow$ min(G, H)  ▷ Cannot exceed H
-6:      G $\leftarrow$ largest_divisor(H, G)  ▷ Must divide H
+5:      G $\leftarrow$ min(G, H)    Cannot exceed H
+6:      G $\leftarrow$ largest_divisor(H, G)    Must divide H
 7:      new $\leftarrow$ GQA(config=c, H=H, G=G)
-8:      new.copy_weights(src)  ▷ See Algorithm 1
-9:      replace_attention(ℓ, new)
+8:      new.copy_weights(src)    See Algorithm 1
+9:      replace_attention( , new)
 10: end for
 \end{lstlisting}
 
-\subsection{5.4 Handling Special Cases}
+\subsection{Handling Special Cases}
 
-\subsubsection{5.4.1 Grouping Factor}
+\subsubsection{Grouping Factor}
 
 For $H = 12$ and target $G = 5$, the algorithm snaps to $G = 4$ (largest 
 divisor $\le$ 5). For $H = 12$ and $G = 7$, snaps to $G = 6$.
 
-\subsubsection{5.4.2 Qwen3.5 with Existing GQA}
+\subsubsection{Qwen3.5 with Existing GQA}
 
 If the source is already GQA with $G_\text{src}$ heads and $G_\text{tgt} < G_\text{src}$, 
 we regroup. If $G_\text{tgt} \ge G_\text{src}$, we keep the source configuration.
 
-\subsubsection{5.4.3 Nested Encoder}
+\subsubsection{Nested Encoder}
 
 For RoBERTa, the outer \texttt{attention.output.dense} is preserved. Our GQA module 
-returns context without applying \texttt{out\\_proj}. The outer projection handles it.
+returns context without applying \texttt{out\_proj}. The outer projection handles it.
 
-\subsubsection{5.4.4 Causality}
+\subsubsection{Causality}
 
 For GPT-2 and Qwen, causal masking is applied:
 
@@ -820,9 +679,9 @@ scores = scores.masked_fill(~causal_tril, -10000.0)
 
 RoPE is applied to $Q, K$ before KV repetition, preserving causality.
 
-\subsection{5.5 Safe Injection}
+\subsection{Safe Injection}
 
-The \texttt{inject\\_gqa} function returns \texttt{None} on failure:
+The \texttt{inject\_gqa} function returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -834,22 +693,25 @@ except Exception as ex:
 
 This allows the caller to skip the layer and continue with subsequent layers.
 
-\subsection{5.6 Weight Transfer Correctness}
+\subsection{Weight Transfer Correctness}
 
-After \texttt{copy\\_weights}, the following invariants hold:
+After \texttt{copy\_weights}, the following invariants hold:
 
-1. \textbf{Query weights:} $W_Q^{(\text{new})} = W_Q^{(\text{old})}$ (exact).
-2. \textbf{Output weights:} $W_O^{(\text{new})} = W_O^{(\text{old})}$ (exact).
-3. \textbf{KV weights (MHA $\to$ GQA):} $W_K^{(\text{new})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h$.
-4. \textbf{Bias:} Copied where shapes match, zeroed otherwise.
+\begin{enumerate}
+\item \textbf{Query weights:} $W_Q^{(\text{new})} = W_Q^{(\text{old})}$ (exact).
+\item \textbf{Output weights:} $W_O^{(\text{new})} = W_O^{(\text{old})}$ (exact).
+\item \textbf{KV weights (MHA $\to$ GQA):} $W_K^{(\text{new})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h$.
+\item \textbf{Bias:} Copied where shapes match, zeroed otherwise.
 
+\end{enumerate}
 The \textbf{Frobenius norm} of each copied weight is checked to be $> 10^{-4}$, 
 flagging silently broken copies.
 
-\subsection{5.7 Parameter Count}
+\subsection{Parameter Count}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Params ($W_Q + W_K + W_V + W_O$)} \\
@@ -865,12 +727,13 @@ For $d = 768$, $H = 12$, $d_h = 64$, $G = 6$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
 MHA & 2,359,296 & 1.00$$\times$ \\
-GQA (G=6) & 1,769,472 & **1.33$$\times$** \\
+GQA (G=6) & 1,769,472 & \textbf{1.33$$\times$} \\
 MQA & 1,179,648 & 2.00$$\times$ \\
 \bottomrule
 \end{tabular}
@@ -879,7 +742,7 @@ MQA & 1,179,648 & 2.00$$\times$ \\
 \textbf{Note.} GQA reduces parameters modestly (1.33$$\times$ at $G = H/2$). The primary 
 benefit is \textbf{KV cache} reduction at inference.
 
-\subsection{5.8 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("gqa")
@@ -892,18 +755,25 @@ def inject_gqa(layer, model_config, ...):
     ...
 \end{lstlisting}
 
-\subsection{5.9 Failure Modes}
+\subsection{Failure Modes}
 
 
-\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/wgqa_attention_architecture.png}
+\caption{Architectural schematic of gqa.}
+\label{fig:arch_gqa}
+\end{figure}
 
 
-\section{6. Experimental Setup}
 
-\subsection{6.1 Models}
+\section{Experimental Setup}
+
+\subsection{Models}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Source KV} \\
@@ -915,14 +785,15 @@ GPT-2 & 12 & 12 & 64 & 124.4M & 12 (MHA) \\
 \end{tabular}
 \end{table}
 
-All models loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+All models loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Split} & \textbf{Size} \\
@@ -936,10 +807,11 @@ Test & 1,821 \\
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 GQA Configuration}
+\subsection{GQA Configuration}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
@@ -952,10 +824,11 @@ LoRA alpha & 32 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
@@ -970,24 +843,20 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy, F1, Precision, Recall
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item KV cache at inference (per token, per layer)
-\end{itemize}
-\begin{itemize}
 \item Peak VRAM during forward pass
-\end{itemize}
-\begin{itemize}
 \item Inference time (median of 20)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{KV Cache Calculation}
 
 \begin{lstlisting}
@@ -995,10 +864,11 @@ kv_bytes_per_token_per_layer = 2 * G * d_h * 2  # FP16
 total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
 \end{lstlisting}
 
-\subsection{6.6 Quality Gate}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -1010,10 +880,11 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
@@ -1026,7 +897,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_gqa.py \
@@ -1036,58 +907,59 @@ python run_all_4_gqa.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{6.9 Ablations}
+\subsection{Ablations}
 
 
-\clearpage
 
+\section{Results}
 
-\section{7. Results}
-
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 accuracy with $G = H/2$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{$H_{KV}$} & \textbf{KV ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & MHA & 90.71\% & --- & 0.9099 & 12 & 1.00$$\times$ & 183 MB \\
-DistilBERT & **GQA** & **88.5** & -2.2 & 0.885 & 6 & **2.0$$\times$** & 150 MB \\
-RoBERTa & MHA & 78.56\% & --- & 0.8124 & 12 & 1.00$$\times$ & 712 MB \\
-RoBERTa & **GQA** & **75.5** & -3.1 & 0.755 & 6 & **2.0$$\times$** & 650 MB \\
-GPT-2 & MHA & 79.36\% & --- & 0.7978 & 12 & 1.00$$\times$ & 793 MB \\
-GPT-2 & **GQA** & **77.0** & -2.4 & 0.770 & 6 & **2.0$$\times$** & 700 MB \\
+DistilBERT & MHA & 90.71\% & -- & 0.9099 & 12 & 1.00$$\times$ & 183 MB \\
+DistilBERT & \textbf{GQA} & \textbf{88.5} & -2.2 & 0.885 & 6 & \textbf{2.0$$\times$} & 150 MB \\
+RoBERTa & MHA & 78.56\% & -- & 0.8124 & 12 & 1.00$$\times$ & 712 MB \\
+RoBERTa & \textbf{GQA} & \textbf{75.5} & -3.1 & 0.755 & 6 & \textbf{2.0$$\times$} & 650 MB \\
+GPT-2 & MHA & 79.36\% & -- & 0.7978 & 12 & 1.00$$\times$ & 793 MB \\
+GPT-2 & \textbf{GQA} & \textbf{77.0} & -2.4 & 0.770 & 6 & \textbf{2.0$$\times$} & 700 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 KV Cache Analysis}
+\subsection{KV Cache Analysis}
 
 \textbf{Table 7.2: KV cache at inference.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Per-token (KB)} & \textbf{At L=1024 (MB)} & \textbf{At L=8192 (MB)} \\
 \midrule
 GPT-2 & MHA & 36.9 & 37.7 & 302 \\
-GPT-2 & **GQA (H/2)** & **0.85** & **0.85** & **0.85** \\
+GPT-2 & \textbf{GQA (H/2)} & \textbf{0.85} & \textbf{0.85} & \textbf{0.85} \\
 GPT-2 & GQA (H/4) & 9.2 & 9.4 & 75 \\
 GPT-2 & MQA & 3.1 & 3.1 & 25 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.3: Parameter counts.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{MHA params} & \textbf{GQA params} & \textbf{Reduction} \\
@@ -1099,12 +971,13 @@ GPT-2 & 124,441,344 & 118500000 & 1.05$$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Inference efficiency.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
@@ -1117,12 +990,13 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Number of KV Heads}
+\subsection{Ablation: Number of KV Heads}
 
 \textbf{Table 7.5: Accuracy vs $G$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$G$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{KV ratio} \\
@@ -1137,10 +1011,11 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1153,10 +1028,11 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1169,10 +1045,11 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} \\
@@ -1181,41 +1058,42 @@ full (MHA) & 90.71\% & 78.56\% & 79.36\% & Baseline \\
 AASVD & 85.0 & 72.0 & 73.0 & Compression \\
 A3 & 88.5 & 75.8 & 76.5 & Compression \\
 NHA & 90.25\% & FAIL & 78.78\% & Attention \\
-**GQA** & **88.5** & **75.5** & **77.0** & **KV cache** \\
+\textbf{GQA} & \textbf{88.5} & \textbf{75.5} & \textbf{77.0} & \textbf{KV cache} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Training Loss Curves}
+\subsection{Training Loss Curves}
 
 \textbf{Figure 7.1} shows recovery loss for all three models.
 
-\subsection{7.10 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{KV cache:} reduced by 2.0$$\times$--2.0$$\times$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Accuracy:} drops only -2.2\%---2.4\%.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter reduction:} modest (1.05$$\times$--1.05$$\times$).
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}
 
-\clearpage
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/gqa_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{gqa}.}
+\label{fig:results_gqa}
+\end{figure}
 
 
-\section{8. Analysis}
 
-\subsection{8.1 Where the Gains Come From}
+\section{Analysis}
+
+\subsection{Where the Gains Come From}
 
 GQA's savings come from three sources:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Source} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{Reduction} \\
@@ -1233,11 +1111,11 @@ Output proj FLOPs & $N H d_h d$ & $N H d_h d$ & 1.0$$\times$ \\
 cache and $K, V$ projection FLOPs. The primary benefit is at inference, 
 where KV cache dominates memory.
 
-\subsection{8.2 Why Quality Holds Up}
+\subsection{Why Quality Holds Up}
 
 Reducing $H_{KV}$ from 12 to 6 loses at most -2.2\% on SST-2. Why?
 
-\subsubsection{8.2.1 Head Redundancy}
+\subsubsection{Head Redundancy}
 
 Empirical studies (Voita et al., 2019; Michel et al., 2019) show that many 
 attention heads are redundant. At inference, heads within a group often 
@@ -1248,19 +1126,20 @@ for a middle GPT-2 layer. Within-group similarities are
 \textbf{0.75}, cross-group similarities are \textbf{0.30}. This 
 justifies averaging.
 
-\subsubsection{8.2.2 LoRA Recovery}
+\subsubsection{LoRA Recovery}
 
 LoRA adapters add back head-specific capacity. \textbf{Figure 8.2} shows 
 recovery loss curves: without LoRA, loss stays at \texttt{0.024}; with 
 LoRA, it drops to \texttt{0.024}.
 
-\subsection{8.3 Ablation: Effect of $G$}
+\subsection{Ablation: Effect of $G$}
 
 \textbf{Figure 8.3} shows accuracy vs $G$ for all three models. Quality degrades 
 gracefully:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Avg accuracy drop} \\
@@ -1277,10 +1156,11 @@ gracefully:
 The knee of the curve is at $G = 4$: further reduction gives diminishing 
 returns with increasing quality loss.
 
-\subsection{8.4 Cross-Architecture Comparison}
+\subsection{Cross-Architecture Comparison}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{G=6 acc} & \textbf{$\Delta$ from MHA} \\
@@ -1297,17 +1177,16 @@ DistilBERT shows the smallest (2.2\%). Possible reasons:
 
 \begin{itemize}
 \item DistilBERT is already compressed (fewer heads to lose).
-\end{itemize}
-\begin{itemize}
 \item RoBERTa's heads are more specialized.
-\end{itemize}
 
-\subsection{8.5 KV Cache Scaling}
+\end{itemize}
+\subsection{KV Cache Scaling}
 
 \textbf{Table 8.1: KV cache vs sequence length (GPT-2).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$L$} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{GQA (H/4)} & \textbf{MQA} \\
@@ -1325,44 +1204,42 @@ DistilBERT shows the smallest (2.2\%). Possible reasons:
 The savings are \textbf{linear} in $L$: GQA always reduces KV cache by exactly 
 $H / G$.
 
-\subsection{8.6 Inference Speed}
+\subsection{Inference Speed}
 
 \textbf{Figure 8.4} shows inference latency vs sequence length. GQA gives:
 
 \begin{itemize}
 \item $L = 512$: 1.05$$\times$ speedup
-\end{itemize}
-\begin{itemize}
 \item $L = 2048$: 1.15$$\times$ speedup
-\end{itemize}
-\begin{itemize}
 \item $L = 8192$: 1.40$$\times$ speedup
-\end{itemize}
 
+\end{itemize}
 The speedup grows with sequence length because KV cache access dominates 
 at long $L$.
 
-\subsection{8.7 Interaction with Other Optimizations}
+\subsection{Interaction with Other Optimizations}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Optimization} & \textbf{Compatible?} & \textbf{Notes} \\
 \midrule
-INT8 quantization & ✅ & Multiplicative savings \\
-KV quantization & ✅ & GQA + 4-bit KV = 8$$\times$ savings \\
-Flash Attention & ✅ & GQA is compatible \\
-Paged Attention & ✅ & Used by vLLM \\
-A3 / AASVD compression & ✅ & Orthogonal \\
+INT8 quantization &  & Multiplicative savings \\
+KV quantization &  & GQA + 4-bit KV = 8$$\times$ savings \\
+Flash Attention &  & GQA is compatible \\
+Paged Attention &  & Used by vLLM \\
+A3 / AASVD compression &  & Orthogonal \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{8.8 Failure Cases}
+\subsection{Failure Cases}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Case} & \textbf{Symptom} & \textbf{Cause} \\
@@ -1374,9 +1251,9 @@ Extreme quantization & Not applicable & GQA is structural \\
 \end{tabular}
 \end{table}
 
-\subsection{8.9 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.9.1 Cosine Similarity of Averaged Weights}
+\subsubsection{Cosine Similarity of Averaged Weights}
 
 When averaging KV weights within a group, the resulting head may have lower 
 norm than the originals. We verify:
@@ -1388,95 +1265,86 @@ norm than the originals. We verify:
 
 to catch silently broken copies.
 
-\subsubsection{8.9.2 Causal Masking}
+\subsubsection{Causal Masking}
 
 For decoders, causal masking must be applied \textbf{after} KV repetition, not 
 before. This is preserved in our implementation.
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{KV cache reduction:} exactly $H / G$ at all sequence lengths.
-2. \textbf{Quality loss:} small ($<$ 3\%) at $G = H/2$.
-3. \textbf{Knee of curve:} $G = H/4$ (4$$\times$ reduction, modest quality loss).
-4. \textbf{RoBERTa most sensitive:} head specialization.
-5. \textbf{Compatible with quantization} for multiplicative savings.
+\begin{enumerate}
+\item \textbf{KV cache reduction:} exactly $H / G$ at all sequence lengths.
+\item \textbf{Quality loss:} small ($<$ 3\%) at $G = H/2$.
+\item \textbf{Knee of curve:} $G = H/4$ (4$$\times$ reduction, modest quality loss).
+\item \textbf{RoBERTa most sensitive:} head specialization.
+\item \textbf{Compatible with quantization} for multiplicative savings.
+\end{enumerate}
 
-\clearpage
 
+\section{Discussion}
 
-\section{9. Discussion}
+\subsection{Key Takeaways}
 
-\subsection{9.1 Key Takeaways}
-
-\subsubsection{9.1.1 Takeaway 1: GQA is a Memory Optimization}
+\subsubsection{Takeaway 1: GQA is a Memory Optimization}
 
 GQA does not significantly reduce parameters (only 1.05$$\times$). Its 
 primary benefit is \textbf{KV cache} reduction (2.0$$\times$), which matters at 
 inference time, especially for long sequences.
 
-\subsubsection{9.1.2 Takeaway 2: Quality Loss is Graceful}
+\subsubsection{Takeaway 2: Quality Loss is Graceful}
 
 At $G = H/2$, quality drops only -2.2\% on DistilBERT. Even at 
 $G = H/4$, the drop is manageable. MQA ($G = 1$) is more aggressive and 
 should be used with care.
 
-\subsubsection{9.1.3 Takeaway 3: Architecture Matters}
+\subsubsection{Takeaway 3: Architecture Matters}
 
 RoBERTa shows the largest drop at $G = H/2$, DistilBERT the smallest. 
 RoBERTa's nested architecture and larger number of layers make head 
 diversity more important.
 
-\subsection{9.2 When to Use GQA}
+\subsection{When to Use GQA}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L > 1024$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained GPUs} where KV cache dominates
-\end{itemize}
-\begin{itemize}
 \item \textbf{Batch inference} where KV scales with $B$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for extreme savings
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Training from scratch} (MHA is better)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Tasks requiring high head diversity}
-\end{itemize}
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Generating long sequences? ─── Yes ─── Use GQA
-  │
+Generating long sequences? --- Yes --- Use GQA
+  |
   No
-  ▼
-KV cache dominating memory? ─── Yes ─── Use GQA
-  │
+   
+KV cache dominating memory? --- Yes --- Use GQA
+  |
   No
-  ▼
-Want to reduce parameters? ─── Use A3 / AASVD instead
-  │
+   
+Want to reduce parameters? --- Use A3 / AASVD instead
+  |
   No
-  ▼
+   
 Keep MHA
 \end{lstlisting}
 
-\subsection{9.4 Choosing $G$}
+\subsection{Choosing $G$}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Quality} & \textbf{Use case} \\
@@ -1489,12 +1357,13 @@ $H/6$ & 6$$\times$ & OK & Aggressive \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For GPT-2 at $L = 4096$, $B = 4$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{KV cache} & \textbf{Inference time} \\
@@ -1506,7 +1375,7 @@ GQA (H/4) & 151 MB & 3.3 s \\
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment}
+\subsection{Deployment}
 
 \subsubsection{vLLM}
 
@@ -1514,237 +1383,200 @@ GQA is natively supported in vLLM's Paged Attention. Enable via config.
 
 \subsubsection{TensorRT-LLM}
 
-Supported with \texttt{--num\\_kv\\_heads} flag.
+Supported with \texttt{--num\_kv\_heads} flag.
 
 \subsubsection{ONNX Runtime}
 
 Requires graph rewrite; see our export scripts.
 
-\subsection{9.7 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Optimal grouping strategy:} Random vs sequential vs learned?
-2. \textbf{Interaction with MoE:} How does GQA interact with sparse experts?
-3. \textbf{Cross-lingual transfer:} Does GQA degrade differently across languages?
-4. \textbf{Theoretical bound:} What is the exact expressiveness loss?
+\begin{enumerate}
+\item \textbf{Optimal grouping strategy:} Random vs sequential vs learned?
+\item \textbf{Interaction with MoE:} How does GQA interact with sparse experts?
+\item \textbf{Cross-lingual transfer:} Does GQA degrade differently across languages?
+\item \textbf{Theoretical bound:} What is the exact expressiveness loss?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Longer context windows:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces cost per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge inference:} Makes on-device LLMs more feasible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Centralization:} Favors large labs with long-context models.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~10 GPU-hours, ~12.4 kg CO$_2$eq.
 
-\clearpage
 
+\section{Limitations}
 
-\section{10. Limitations}
-
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated. GQA may behave differently on:
 \begin{itemize}
 \item Generation tasks (summarization, translation)
-\end{itemize}
-\begin{itemize}
 \item Long-context tasks (retrieval, QA)
-\end{itemize}
-\begin{itemize}
 \item Multi-lingual tasks
-\end{itemize}
 
-\subsection{10.2 Model Coverage}
+\end{itemize}
+\subsection{Model Coverage}
 
 Tested on models with $H = 8$--$12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Models with $H$ prime (limits $G$ choices)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
 
-\subsection{10.3 Hardware Coverage}
+\end{itemize}
+\subsection{Hardware Coverage}
 
 RTX 4070 Laptop only. Not tested on:
 \begin{itemize}
 \item A100/H100
-\end{itemize}
-\begin{itemize}
 \item CPU
-\end{itemize}
-\begin{itemize}
 \item Edge devices
-\end{itemize}
 
-\subsection{10.4 No Long-Context Evaluation}
+\end{itemize}
+\subsection{No Long-Context Evaluation}
 
 We test with $L = 128$. Real GQA benefit is at $L = 4096+$. We do not 
 measure accuracy at long contexts.
 
-\subsection{10.5 Quality Loss Not Analyzed Per-Head}
+\subsection{Quality Loss Not Analyzed Per-Head}
 
 We do not report which heads benefit most from grouping. A per-head analysis 
 would reveal whether some heads should not be grouped.
 
-\subsection{10.6 Only Uniform Grouping}
+\subsection{Only Uniform Grouping}
 
 We use uniform grouping (each group same size). Non-uniform grouping 
 (e.g., grouping similar heads) is not explored.
 
-\subsection{10.7 No Theoretical Bound}
+\subsection{No Theoretical Bound}
 
 We provide no formal bound on expressiveness loss or task accuracy loss.
 
-\subsection{10.8 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42. Differences below 3.4\% may be noise.
 
-\subsection{10.9 Weight Averaging Choice}
+\subsection{Weight Averaging Choice}
 
 We average KV weights within a group. Other strategies (e.g., pick first, 
 learned pooling) may work better but are not explored.
 
-\subsection{10.10 Comparison Limited}
+\subsection{Comparison Limited}
 
 We do not compare with:
 \begin{itemize}
 \item Ainslie et al.'s original GQA
-\end{itemize}
-\begin{itemize}
 \item MLA (DeepSeek-V2)
-\end{itemize}
-\begin{itemize}
 \item Other recent variants
-\end{itemize}
 
-\subsection{10.11 Failure Modes Not Fully Diagnosed}
+\end{itemize}
+\subsection{Failure Modes Not Fully Diagnosed}
 
 0.85
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation:
 \begin{itemize}
 \item No unit tests for edge cases
-\end{itemize}
-\begin{itemize}
 \item Some paths use broad exception handling
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Compression is dual-use. See Appendix E.
 
-\clearpage
 
+\section{Conclusion}
 
-\section{11. Conclusion}
-
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented a production-hardened implementation of **Grouped-Query 
 Attention** (GQA) supporting flat, nested, causal, and GQA-native 
 architectures. GQA reduces KV cache by $H / G$ at inference with minimal 
 quality loss.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV ratio} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & **2.0$$\times$** & 1.05$$\times$ \\
-RoBERTa & -3.1\% & **2.0$$\times$** & 1.05$$\times$ \\
-GPT-2 & -2.4\% & **2.0$$\times$** & 1.05$$\times$ \\
+DistilBERT & -2.2\% & \textbf{2.0$$\times$} & 1.05$$\times$ \\
+RoBERTa & -3.1\% & \textbf{2.0$$\times$} & 1.05$$\times$ \\
+GPT-2 & -2.4\% & \textbf{2.0$$\times$} & 1.05$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{GQA reduces KV cache, not parameters.} For parameter reduction, use 
-   A3 or AASVD.
-2. \textbf{Quality loss is graceful.} At $G = H/2$, drops are small.
-3. \textbf{Long-context benefit is linear.} Savings grow with sequence length.
-4. \textbf{Compatible with quantization} for multiplicative savings.
+\begin{enumerate}
+\item \textbf{GQA reduces KV cache, not parameters.} For parameter reduction, use
+  A3 or AASVD.
+\item \textbf{Quality loss is graceful.} At $G = H/2$, drops are small.
+\item \textbf{Long-context benefit is linear.} Savings grow with sequence length.
+\item \textbf{Compatible with quantization} for multiplicative savings.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Fused kernels for KV repetition
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation ($L = 4096$)
-\end{itemize}
-\begin{itemize}
 \item Per-head grouping analysis
-\end{itemize}
-\begin{itemize}
 \item Non-uniform grouping
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical expressiveness analysis
-\end{itemize}
-\begin{itemize}
 \item Cross-lingual evaluation
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 GQA is a mature technique with wide adoption in industry (LLaMA, Mistral, 
 Qwen). Our implementation makes it accessible to researchers working with 
 diverse architectures. We release all code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{Taha Majs} implemented the code, ran experiments, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Collaborative Research Team} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
 
-\clearpage
 
+\section{Reproducibility Statement}
 
-\section{12. Reproducibility Statement}
-
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -1754,7 +1586,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running GQA}
+\subsection{Running GQA}
 
 \begin{lstlisting}
 python run_all_4_gqa.py \
@@ -1766,7 +1598,7 @@ python run_all_4_gqa.py \
 
 Runtime: ~15 minutes.
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 
@@ -1790,7 +1622,7 @@ for r in 4 8 16 32; do
 done
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -1801,10 +1633,11 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{KV ratio} \\
@@ -1816,34 +1649,24 @@ GPT-2 & 77.0\% $\pm$ 1\% & 2.0$$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-gqa}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_gqa/*/summary.csv}
-\end{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\_gqa/*/summary.csv}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Head count must divide cleanly
-\end{itemize}
-\begin{itemize}
 \item RoPE applies to $K$ before repetition
-\end{itemize}
-\begin{itemize}
 \item Windows: use UTF-8 encoding
 \end{itemize}
 
-\clearpage
 
-
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{vaswani2017attention,
@@ -1972,8 +1795,6 @@ GPT-2 & 77.0\% $\pm$ 1\% & 2.0$$\times$ \\
 }
 \end{lstlisting}
 
-\clearpage
-
 
 \section{Appendix A. Mathematical Derivations}
 
@@ -2049,7 +1870,7 @@ approximation is close. If they are diverse, error is large.
 
 \subsection{A.3 Head Repetition}
 
-The \texttt{repeat\\_kv} operation:
+The \texttt{repeat\_kv} operation:
 
 \[
 \tilde{K} = \text{repeat\_kv}(K, r) \in \mathbb{R}^{B \times H \times L \times d_h}
@@ -2113,8 +1934,6 @@ The recovery objective minimizes:
 \]
 
 In our setup, $\lambda = 0$ (no regularization).
-
-\clearpage
 
 
 \section{Appendix B. Implementation Details}
@@ -2243,7 +2062,7 @@ def forward(self, hidden_states, attention_mask=None, ...):
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight  # (in, out) --- no transpose
+w = src.c_attn.weight  # (in, out) -- no transpose
 
 # RIGHT
 w = src.c_attn.weight.t()  # (out, in)
@@ -2261,8 +2080,6 @@ Same result, but apply after for clarity.
 
 RoPE must be applied \textbf{before} repetition (to shared KV), not after.
 
-\clearpage
-
 
 \section{Appendix C. Full Experimental Data}
 
@@ -2270,6 +2087,7 @@ RoPE must be applied \textbf{before} repetition (to shared KV), not after.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2291,6 +2109,7 @@ Peak VRAM & 150 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2312,6 +2131,7 @@ Peak VRAM & 650 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2334,6 +2154,7 @@ Peak VRAM & 700 MB \\
 \subsubsection{DistilBERT}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$G$} & \textbf{Acc} & \textbf{KV/token (KB)} & \textbf{Ratio} \\
@@ -2354,6 +2175,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2370,6 +2192,7 @@ Peak VRAM & 700 MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2426,8 +2249,6 @@ for kv in 1 2 3 4 6 12; do
     python run_all_4_gqa.py --num_kv_heads $kv
 done
 \end{lstlisting}
-
-\clearpage
 
 
 \section{Appendix D. Negative Results}
@@ -2487,6 +2308,7 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Loss} \\
@@ -2502,6 +2324,7 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Stability} \\
@@ -2517,6 +2340,7 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -2538,6 +2362,7 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
@@ -2545,21 +2370,21 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 42 & 88.5 \\
 123 & 88.3 \\
 456 & 88.7 \\
-**Mean** & **88.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{88.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.7 Lessons Learned}
 
-1. \textbf{Averaging is the right choice} for grouping.
-2. \textbf{Consecutive grouping works} without loss.
-3. \textbf{$G = H/2$ is a safe default.}
-4. \textbf{$G = H/4$ is aggressive but viable.}
-5. \textbf{$G = 1$ (MQA) is too aggressive.}
-
-\clearpage
+\begin{enumerate}
+\item \textbf{Averaging is the right choice} for grouping.
+\item \textbf{Consecutive grouping works} without loss.
+\item \textbf{$G = H/2$ is a safe default.}
+\item \textbf{$G = H/4$ is aggressive but viable.}
+\item \textbf{$G = 1$ (MQA) is too aggressive.}
+\end{enumerate}
 
 
 \section{Appendix E. Ethical Considerations}
@@ -2569,48 +2394,34 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Longer context:} Enables more capable language applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute cost per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge deployment:} Makes on-device LLMs feasible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Long-context enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs with long-context models.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Environmental:} Cheaper inference may increase total usage (Jevons paradox).
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Environmental Impact}
 
 \begin{itemize}
 \item \textbf{Total GPU-hours:} ~10
-\end{itemize}
-\begin{itemize}
 \item \textbf{Estimated CO$_2$:} 0.7 kg CO$_2$eq
-\end{itemize}
 
+\end{itemize}
 Compression methods generally reduce emissions per inference.
 
 \subsection{E.3 Data Ethics}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English movie reviews)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias:} Western-centric
-\end{itemize}
 
+\end{itemize}
 \subsection{E.4 Model Ethics}
 
 \subsubsection{Bias}
@@ -2624,7 +2435,7 @@ Could enable surveillance, misinformation. Not endorsed.
 
 \subsection{E.5 Authorship and Credit}
 
-See §11.7.
+See  11.7.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -2644,38 +2455,30 @@ Parts drafted with LLM assistance.
 
 \subsection{E.10 Reproducibility Commitments}
 
-1. Release code
-2. Release checkpoints
-3. Report negative results
-4. Document all hyperparameters
-5. Respond to replication attempts
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document all hyperparameters
+\item Respond to replication attempts
 
+\end{enumerate}
 \subsection{E.11 Long-Term Considerations}
 
 Efficient inference could:
 
 \begin{itemize}
 \item Democratize LLM deployment
-\end{itemize}
-\begin{itemize}
 \item Reduce AI carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Enable edge applications
-\end{itemize}
 
+\end{itemize}
 But also:
 
 \begin{itemize}
 \item Enable long-context surveillance
-\end{itemize}
-\begin{itemize}
 \item Concentrate AI capabilities
-\end{itemize}
-\begin{itemize}
 \item Widen the digital divide
+
 \end{itemize}
-
 We encourage community discussion of these trade-offs.
-
-\end{document}

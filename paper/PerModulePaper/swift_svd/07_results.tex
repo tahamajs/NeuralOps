@@ -41,3 +41,11 @@ AG News & 66,956,548 & 46,465,540 & -20,491,008 (-30.60\%) & 635,140 & 0 & 0 \\
 
 \subsection{Inference Efficiency and Memory Footprint}
 Execution profiling demonstrates that \texttt{swift\_svd} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/swift_svd_distilbert_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{swift_svd}.}
+\label{fig:results_swift_svd}
+\end{figure}

@@ -41,3 +41,11 @@ AG News & 66,956,548 & 34,663,684 & -32,292,864 (-48.23\%) & 1,327,104 & 0 & 0 \
 
 \subsection{Inference Efficiency and Memory Footprint}
 Execution profiling demonstrates that \texttt{kronecker\_compressor} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/kronecker_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{kronecker_compressor}.}
+\label{fig:results_kronecker_compressor}
+\end{figure}

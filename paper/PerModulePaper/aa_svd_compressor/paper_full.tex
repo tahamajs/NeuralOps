@@ -1,3 +1,8 @@
+\title{\textbf{Aa Svd Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}
+
+\author{Anonymous authors}
+
+
 \section{Introduction}
 
 \subsection{Motivation and Computational Bottlenecks}
@@ -28,29 +33,33 @@ The remainder of this paper is organized as follows: Section 2 reviews foundatio
 \section{Related Work and Theoretical Foundations}
 
 \subsection{Model Compression Paradigms}
-Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+Transformer compression literature focuses on parameter and memory reduction through distinct architectural mechanisms:
 \begin{enumerate}
-\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
-\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2$\times$ mathematical throughput without irregular memory access penalties.
-\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD~\citep{eckart1936}, randomized linear algebra~\citep{halko2011}, or Tensor-Train decompositions~\citep{novikov2015tensor}. Modern approaches adapt singular projections to transformer parameter dynamics, as seen in ALBERT cross-layer sharing~\citep{lan2020albert}, SVD-LLM~\citep{wang2024svdllm}, ASVD~\citep{yuan2023asvd}, FWSVD~\citep{hsu2022fwsvd}, and DRONE~\citep{chen2021drone}. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. Prominent methods include GPTQ~\citep{frantar2023gptq}, AWQ~\citep{lin2024awq}, and SmoothQuant~\citep{xiao2023smoothquant}, which address activation outliers to retain representation fidelity.
 \end{enumerate}
 
 \subsection{Sensitivity-Aware Saliency Metrics}
-Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
-\[
-S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
-\]
+Weight magnitude alone often fails to correlate with functional layer saliency~\citep{kirkpatrick2017, molchanov2019}. Modern compression systems leverage activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction. Rather than crude element-wise magnitude approximations, data-driven low-rank compression weights projection parameters using empirical activation covariances:
+\begin{align}
+C_X &= \frac{1}{N} \sum_{i=1}^N X_i^\top X_i \\
+W_w &= W C_X^{1/2} \\
+\operatorname{SVD}(W_w) &= U \Sigma V^\top \\
+U_r &= U_{:, :r} \Sigma_r^{1/2} \\
+V_r &= \Sigma_r^{1/2} V^\top C_X^{-1/2}
+\end{align}
+Following Low-Rank Adaptation (LoRA) formulations~\citep{hu2022lora}, low-rank factorizations can be augmented with lightweight trainable adapter bypasses to recover expressive capacity without re-training full base weights.
 
 \subsection{Efficient Attention Formulations}
 Standard softmax attention requires computing an $N \times N$ dense matrix:
 \[
 \text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
 \]
-Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+Linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation~\citep{katharopoulos2020, choromanski2021, xiong2021nystromformer}:
 \[
 (Q K^\top) V = Q (K^\top V)
 \]
-This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{aasvdcompressor} module leverages these structural properties to optimize inference speed and VRAM overhead.
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{AASVD} module leverages these structural properties to optimize inference speed and VRAM overhead.
 
 
 \section{Mathematical Background and Formal Notation}
@@ -103,13 +112,13 @@ guaranteeing balanced Frobenius bounds:
 \section{Methodological Formulation and Execution Pipeline}
 
 \subsection{Algorithmic Overview}
-The \texttt{aasvdcompressor} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:
+The \texttt{AASVD} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:
 \begin{enumerate}
-\item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
-\item \textbf{Decomposition / Sparsification:} Apply SVD spectral factoring or proximal shrinkage.
-\item \textbf{Constraint Projection:} Enforce rank truncation via cumulative energy $\tau$ or 2:4 tensor-core masks.
-\item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches.
-\item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches safety limits.
+  \item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
+  \item \textbf{Decomposition:} Apply SVD spectral factoring.
+  \item \textbf{Constraint Projection:} Enforce rank truncation via cumulative energy $\tau$.
+  \item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches.
+  \item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches limits.
 \end{enumerate}
 
 \begin{figure*}[t]
@@ -121,17 +130,36 @@ The \texttt{aasvdcompressor} module executes a structured transformation replaci
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|  Phase 1: SVD / Proximal Factorization: W = U Sigma V^T OR S_lambda(W)        |
-|  Phase 2: Energy Rank / Structured Mask: E(r) >= tau OR Pi_{2:4}(W)           |
-|  Phase 3: Symmetric Splitting: U_r = U Sigma^{1/2}, V_r = Sigma^{1/2} V^T     |
-|  Phase 4: Adapter Binding: W_eff = U_r V_r + (alpha / r) B A (B init to 0)    |
-|  Phase 5: Fallback Guardrail: If ||W - W_eff||_F / ||W||_F > max_err -> Dense |
+|  Phase 1: Streaming Activation Covariance: C_X = (1/N) \sum X_i^T X_i         |
+|  Phase 2: Covariance Preconditioning: W_w = W C_X^{1/2}                       |
+|  Phase 3: SVD Decomposition: SVD(W_w) = U Sigma V^T                           |
+|  Phase 4: Low-Rank Projection: U_r = U[:, :r] Sigma_r^{1/2}                  |
+|                                V_r = Sigma_r^{1/2} V^T C_X^{-1/2}             |
+|  Phase 5: Residual Adapter Binding: W_eff = U_r V_r + (alpha/r) B A           |
+|  Phase 6: Safety Fallback Guardrail: If ||W - W_eff||_F / ||W||_F > max_err   |
 +-------------------------------------------------------------------------------+
 \end{verbatim}
-\caption{End-to-end execution and safety verification pipeline of \texttt{aasvdcompressor}.}
+\caption{End-to-end execution and safety verification pipeline of \texttt{AASVD}.}
 \end{figure*}
 
 \subsection{Formal Mathematical Derivations}
+
+\subsubsection{Streaming Activation Covariance}
+\label{sec:activation_covariance}
+The AASVD compressor estimates the input activation covariance $C_X$ using a streaming exponential moving average (EMA):
+\begin{equation}
+C_X^{(t)} = \beta C_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum_{i=1}^B X_i^\top X_i
+\end{equation}
+where $\beta = 0.90$ is the momentum coefficient and $B$ is the batch size. This $\mathcal{O}(d^2)$ streaming formulation avoids materializing the full $\mathcal{O}(N d^2)$ activation buffer in memory.
+
+The empirical covariance is used to precondition the weight matrix before Singular Value Decomposition:
+\begin{align}
+W_w &= W C_X^{1/2} \\
+W_w &= U \Sigma V^\top \\
+U_r &= U_{:, :r} \Sigma_r^{1/2} \\
+V_r &= \Sigma_r^{1/2} V^\top C_X^{-1/2}
+\end{align}
+The preconditioning transformation $C_X^{1/2}$ concentrates low-rank capacity on high-variance activation directions, while $C_X^{-1/2}$ restores the coordinate space of $V_r$, ensuring that $U_r V_r \approx W$.
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
@@ -163,34 +191,16 @@ For target energy threshold $\tau \in (0, 1)$, the optimal rank $r^*$ satisfies:
 r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}
 \end{equation}
 
-\subsubsection{Soft-Thresholding Shrinkage}
-In proximal sparsity modes, the $\ell_1$ proximal operator executes element-wise:
-\begin{equation}
-\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max(|W| - \lambda, 0)
-\end{equation}
-
-\subsubsection{Hardware-Aligned 2:4 Structured Sparsity}
-For NVIDIA tensor core execution, each contiguous 4-element block is projected to 50\% sparsity:
-\begin{equation}
-\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2
-\end{equation}
-
-\subsubsection{Iterative Proximal Update}
-Calibration updates parameters via projected gradient steps:
-\begin{equation}
-W^{(t+1)} = \Pi_{\Omega}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)
-\end{equation}
-
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
 \begin{equation}
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
 \end{equation}
 
-\subsubsection{Zero-Residual Initialization}
-Initial equivalence with unadapted weights is guaranteed by zero initialization:
+\subsubsection{Residual Adapter Initialization}
+Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
 \begin{equation}
-A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0
+A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
 \end{equation}
 
 \subsubsection{Relative Frobenius Reconstruction Error}
@@ -200,7 +210,7 @@ Post-compression parameter distortion is evaluated against the uncompressed matr
 \end{equation}
 
 \subsubsection{Automated Guardrail Decision Rule}
-Should the relative error breach pre-specified threshold $\delta_{\text{max}}$:
+Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
 \begin{equation}
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
 \end{equation}
@@ -226,30 +236,29 @@ W_f = layer.weight.data.float()
 frob_norm = torch.linalg.norm(W_f)
 assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
-# Phase 2: Core mathematical decomposition
-if is_svd_factorization:
-    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
-    r = torch.searchsorted(cum_energy, tau).item() + 1
-    r = max(min_rank, min(r, max_rank))
-    # Symmetric square-root distribution
-    U_r = U[:, :r] * torch.sqrt(S[:r])
-    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-elif is_proximal_sparsity:
-    W_curr = W_f.clone()
-    for step in range(num_steps):
-        # Soft-thresholding
-        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
-        # Structural 2:4 or block projection
-        W_proj = apply_structural_mask(W_soft, sparsity_target)
-        W_curr = W_curr - eta * (W_curr - W_proj)
-    W_r = W_proj
+# Phase 2: Activation-weighted covariance preconditioning
+C_X_sqrt = torch.linalg.cholesky(cov_X + 1e-6 * torch.eye(d_in))
+W_weighted = torch.matmul(W_f, C_X_sqrt)
 
-# Phase 3: Adapter binding & zero-initialization
-lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+# Phase 3: SVD decomposition and energy truncation
+U, S, Vh = torch.linalg.svd(W_weighted, full_matrices=False)
+cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+r = torch.searchsorted(cum_energy, tau).item() + 1
+r = max(min_rank, min(r, max_rank))
+
+# Symmetric square-root distribution & coordinate restoration
+C_X_inv_sqrt = torch.linalg.inv(C_X_sqrt)
+U_r = U[:, :r] * torch.sqrt(S[:r])
+V_r = torch.matmul(torch.diag(torch.sqrt(S[:r])), Vh[:r, :])
+V_r = torch.matmul(V_r, C_X_inv_sqrt)
+
+# Phase 4: LoRA adapter binding & Kaiming uniform init
+k = 1.0 / math.sqrt(d_in)
+lora_A = nn.Parameter(torch.empty(lora_r, d_in).uniform_(-k, k))
 lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-# Phase 4: Fallback verification
+# Phase 5: Fallback verification
+W_reconstructed = torch.matmul(U_r, V_r)
 recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
 if recon_err > max_error_ceiling or torch.isnan(recon_err):
     logger.warning('Triggering safety fallback to uncompressed layer')
@@ -263,21 +272,18 @@ Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
 \end{equation}
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}
-\end{equation}
-For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}
-\end{equation}
-When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0$\times$.
+\begin{align}
+\rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\
+\rho_{\text{FLOPs}}^{\text{sym}} &= \frac{d}{2 r} \quad \text{when } d_{\text{in}} = d_{\text{out}} = d
+\end{align}
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Operation} & \textbf{Standard} & \textbf{aa\_svd\_compressor} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
+\textbf{Operation} & \textbf{Standard} & \textbf{AASVD} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
 \midrule
 Q Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
 K Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
@@ -292,11 +298,11 @@ LoRA Residual & None & $2 \times (d \times r_L)$ & $\mathcal{O}(2r_L d)$ & $0.02
 \end{table}
 
 \subsection{Gradient Propagation and Backpropagation Dynamics}
-Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$ and $V_r$ are derived as:
+Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$, $V_r$, and activation inputs $X$ are derived as:
 \begin{align}
 \frac{\partial \mathcal{L}}{\partial U_r} &= \sum_{b=1}^{\mathcal{B}} (\delta Y_b)^\top (X_b V_r^\top) \in \mathbb{R}^{d_{\text{out}} \times r} \\
 \frac{\partial \mathcal{L}}{\partial V_r} &= \sum_{b=1}^{\mathcal{B}} ((\delta Y_b) U_r)^\top X_b \in \mathbb{R}^{r \times d_{\text{in}}} \\
-\frac{\partial \mathcal{L}}{\partial p{5cm}} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
+\frac{\partial \mathcal{L}}{\partial X} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
 \end{align}
 When factor matrices are kept frozen during inference recovery, computing gradient caches for base factors is bypassed entirely, cutting backward memory by up to $65\%$.
 
@@ -352,29 +358,11 @@ Dividing both sides by $\|W\|_F^2$:
 \[
 \frac{\|W - W_r\|_F^2}{\|W\|_F^2} = 1 - \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{i=1}^{\rho} \sigma_i^2} = 1 - \mathcal{E}(r)
 \]
-Since $r$ is chosen such that $\mathcal{E}(r) \ge \tau$, we have:
+Since rank $r$ satisfies $\mathcal{E}(r) \ge \tau$, we obtain:
 \[
-\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}
+\frac{\|W - W_r\|_F}{\|W\|_F} = \sqrt{1 - \mathcal{E}(r)} \le \sqrt{1 - \tau}
 \]
-This completes the proof. $\square$
-\end{proof}
-
-\textbf{Theorem 2 (Initial Inference Invariance under Zero Residual).} \textit{Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.}
-
-\begin{proof}
-At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
-\[
-B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
-\]
-Consequently:
-\[
-W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r
-\]
-Hence, output activations satisfy:
-\[
-Y = X W_{\text{eff}}^\top + b = X W_r^\top + b
-\]
-The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$
+which completes the proof.
 \end{proof}
 
 
@@ -520,56 +508,65 @@ Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_aasvdcompressor} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_aasvdcompressor} details empirical evaluation metrics across target backbones on SST-2, MNLI, and AG News benchmarks.
 
 \begin{table*}[t]
 \centering
 \small
 \begin{tabular}{llcccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Task / Benchmark} & \textbf{Backbone Architecture} & \textbf{Baseline Acc} & \textbf{AASVD Acc} & \textbf{$\Delta$ Acc} & \textbf{F1 Score} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & PASS & Comp 30.96x & Mem -0.0\% \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & PASS & Comp 30.96x & Mem -0.0\% \\
+SST-2 (Binary Sentiment) & DistilBERT-base & 90.71\% & 88.30\% & -2.41\% & 0.8864 \\
+SST-2 (Binary Sentiment) & RoBERTa-base & 78.56\% & 81.08\% & +2.52\% & 0.8345 \\
+SST-2 (Binary Sentiment) & GPT-2 Small & 79.36\% & 65.71\% & -13.65\% & 0.7433 \\
+MNLI (Matched 3-Class NLI) & DistilBERT-base & 81.80\% & 68.60\% & -13.20\% & 0.6842 \\
+AG News (4-Way Topic) & DistilBERT-base & 94.26\% & 92.10\% & -2.16\% & 0.9181 \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aasvdcompressor}.}
+\caption{Empirical validation accuracy and classification metrics for \texttt{AASVD} across diverse model families and reasoning tasks. Sources: \texttt{results/unified\_sweep/distilbert/distilbert\_sst2\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/roberta/roberta-base\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/gpt2/gpt2\_aasvd\_full\_metrics.json}, \texttt{results/unified\_sweep/distilbert\_mnli\_full/distilbert\_mnli\_full\_aasvd\_full\_metrics.json}, and \texttt{results/unified\_sweep/distilbert\_agnews\_full/distilbert\_agnews\_full\_aasvd\_full\_metrics.json}.}
 \label{tab:results_acc_aasvdcompressor}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_aasvdcompressor} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_aasvdcompressor} documents parameter counts before and after factorization, trainable adapter overhead, and compression ratios.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccc}
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\textbf{Model / Benchmark} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Factorized Layers} & \textbf{Fallback Layers} & \textbf{Ratio} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & Baseline FP32 & Reduced (30.96x) & 0 & 30.96x \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & Baseline FP32 & Reduced (30.96x) & 0 & 30.96x \\
+DistilBERT (SST-2) & 66,955,010 & 59,090,690 & 2,177,282 & 16 & 8 & 1.13$\times$ \\
+RoBERTa-base (SST-2) & 124,647,170 & 115,308,290 & 2,474,498 & 19 & 29 & 1.08$\times$ \\
+GPT-2 Small (SST-2) & 124,441,344 & 121,393,920 & 497,664 & 4 & 20 & 1.03$\times$ \\
+DistilBERT (MNLI) & 66,955,779 & 59,091,459 & 2,178,051 & 16 & 8 & 1.13$\times$ \\
+DistilBERT (AG News) & 66,956,548 & 59,092,228 & 1,588,228 & 16 & 8 & 1.13$\times$ \\
 \bottomrule
 \end{tabular}
-\caption{Parameter scaling and recovery parameter counts for \texttt{aasvdcompressor}.}
+\caption{Parameter scaling, layer fallback counts, and recovery parameter dimensions for \texttt{AASVD}.}
 \label{tab:results_params_aasvdcompressor}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_aasvdcompressor} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_aasvdcompressor} presents empirical memory profiling, execution throughput, and mean reconstruction errors across benchmarks.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\textbf{Model / Benchmark} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Elapsed Time} & \textbf{Reconstruction Error} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd & Elapsed 0.8s & 106.1 MB & Verified \\
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & aa\_svd\_compressor & Elapsed 0.809s & 106.1 MB & Verified \\
+DistilBERT (SST-2) & 87,925 & 338.9 MB & 7.64 s & 0.8124 \\
+RoBERTa-base (SST-2) & 46,349 & 563.1 MB & 13.70 s & 0.8352 \\
+GPT-2 Small (SST-2) & 51,284 & 752.3 MB & 13.12 s & 0.7738 \\
+DistilBERT (MNLI) & 45,768 & 319.0 MB & 28.79 s & 0.8333 \\
+DistilBERT (AG News) & 58,002 & 214.5 MB & 24.97 s & 0.8355 \\
 \bottomrule
 \end{tabular}
-\caption{Inference throughput and VRAM footprint for \texttt{aasvdcompressor}.}
+\caption{Inference throughput, peak GPU VRAM allocation, and reconstruction error metrics for \texttt{AASVD}.}
 \label{tab:results_vram_aasvdcompressor}
 \end{table*}
 

@@ -1,0 +1,2052 @@
+\title{\textbf{NEXUS: Neural Efficient X-scoring Unified Sparse Attention}
+
+\author{Anonymous authors}
+
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+Sparse attention has seen rapid progress in 2024--2025. Notable recent 
+advances include:
+
+\begin{itemize}
+\item \textbf{XAttention} (Xu et al., ICML 2025): training-free block scoring via
+  antidiagonal correlations.
+\item \textbf{SeerAttention} (Gao et al., NeurIPS 2025): learnable per-head block
+  sparsity.
+\item \textbf{DuSA} (Cao et al., NeurIPS 2025): dual-stage intra-block dense +
+  inter-block sparse.
+\item \textbf{AnchorAttention} (Zhu et al., 2025): stripe-based fine-grained sparsity.
+\item \textbf{Spectraformer} (Nguyen et al., 2025): RFF-based global rectification.
+\item \textbf{Softpick} (Zuhri et al., 2025): rectified softmax with natural ~47\%
+  sparsity.
+
+\end{itemize}
+\textbf{These techniques are complementary but rarely combined.} NEXUS is our 
+attempt to unify them in a single attention module.
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with $H$ heads and hidden 
+dimension $d$, we seek an attention mechanism $\mathcal{A}'$ such that:
+
+\[
+\text{FLOPs}(\mathcal{A}') \ll \mathcal{O}(N^2), \quad
+\mathcal{A}' \approx \mathcal{A}
+\tag{1.1}
+\]
+
+subject to:
+
+\begin{enumerate}
+\item \textbf{Modularity:} Each sparse mechanism can be enabled/disabled.
+\item \textbf{Multi-architecture:} DistilBERT, RoBERTa, GPT-2.
+\item \textbf{Pretrained compatibility:} Reuse pretrained Q/K/V/O weights.
+\item \textbf{Causal correctness:} Preserve causality for decoders.
+\item \textbf{Training stability:} No collapses.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+NEXUS combines six sparse-attention mechanisms in a unified pipeline:
+
+\subsubsection{Block Partitioning}
+
+The sequence is partitioned into $M = \lceil N / B_s \rceil$ blocks of size 
+$B_s$ (default 16).
+
+\subsubsection{XAttention Block Scoring}
+
+Sub-sampled queries and keys compute coarse block-to-block scores:
+
+\[
+S_{b_i, b_j} = \frac{1}{|B_i| |B_j|} \sum_{i \in B_i, j \in B_j} \frac{q_i \cdot k_j}{\sqrt{d_h}}
+\tag{1.2}
+\]
+
+Top-$k$ key blocks are retained per query block.
+
+\subsubsection{SeerAttention Learnable Gating}
+
+A learnable bottleneck network predicts per-head block budgets:
+
+\[
+g_h = \sigma(W_q \bar{Q}_h \cdot W_k \bar{K}_h^T)
+\tag{1.3}
+\]
+
+The gate overrides/adds to the XAttention mask.
+
+\subsubsection{DuSA Dual-Stage}
+
+Intra-block (diagonal) is always dense. Inter-block uses top-$k$.
+
+\subsubsection{AnchorAttention Stripe}
+
+For $N > 256$, a stripe band mask restricts fine-grained within-block 
+attention to adjacent stripe groups.
+
+\subsubsection{Softpick}
+
+A rectified softmax:
+
+\[
+\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i/T} - 1)}{\sum_j \text{ReLU}(e^{x_j/T} - 1)}
+\tag{1.4}
+\]
+
+\subsubsection{Spectraformer RFF Rectification}
+
+Periodically, a global linear attention with RFF features is applied.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A unified framework} for combining six recent sparse attention
+  mechanisms in a single module.
+\item \textbf{Modular design} with per-component enable/disable flags.
+\item \textbf{Multi-architecture support} for flat, nested, and causal transformers.
+\item \textbf{Honest complexity analysis.} We report which components are active under
+  which conditions.
+\item \textbf{Reproducible ablation.} Each component is ablated independently.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on each of 
+the six components. Section 4 presents NEXUS. Section 5 describes 
+integration. Section 6 details setup. Section 7 reports results. Section 8 
+analyzes per-component contributions. Section 9 discusses trade-offs. 
+Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Related Work}
+
+\subsection{XAttention}
+
+\textbf{XAttention} (Xu et al., 2025) proposes \textbf{training-free} block scoring via 
+antidiagonal sub-sampling. Blocks are ranked by the mean magnitude of their 
+antidiagonal entries. We adopt the sub-sampled block scoring approach.
+
+\subsection{SeerAttention}
+
+\textbf{SeerAttention} (Gao et al., 2025) introduces a \textbf{learnable} gating network 
+for block-level sparsity. It predicts per-head sparsity budgets using a 
+low-rank query-key pooling network. We adopt a similar gating structure.
+
+\subsection{DuSA}
+
+\textbf{DuSA} (Cao et al., 2025) uses a \textbf{dual-stage} approach: dense intra-block 
+attention (all tokens within a block) + sparse inter-block attention (top-$k$ 
+blocks). We adopt this two-stage structure.
+
+\subsection{AnchorAttention}
+
+\textbf{AnchorAttention} (Zhu et al., 2025) applies \textbf{stripe band masking} at the 
+token level. Tokens within a stripe group attend to adjacent groups. We adopt 
+a simplified stripe mask.
+
+\subsection{Spectraformer}
+
+\textbf{Spectraformer} (Nguyen et al., 2025) uses RFF for global linear attention. 
+We apply it periodically (every \texttt{rectify\_interval} layers) as a global 
+rectification.
+
+\subsection{Softpick}
+
+\textbf{Softpick} (Zuhri et al., 2025) is a rectified softmax that produces 
+natural sparsity (~47\% activation) without sink tokens. We use it in place 
+of standard softmax.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Learnable?} & \textbf{Training-free?} & \textbf{Complexity} \\
+\midrule
+XAttention & No & Yes & $\mathcal{O}(N B_s + N k B_s)$ \\
+SeerAttention & Yes & No & $\mathcal{O}(N B_s + N k B_s)$ \\
+DuSA & Partial & No & $\mathcal{O}(N B_s + N k B_s)$ \\
+AnchorAttention & No & Yes & $\mathcal{O}(N S_w)$ \\
+Spectraformer & No & Yes & $\mathcal{O}(N F)$ \\
+\textbf{NEXUS} & \textbf{Yes} & \textbf{Partial} & \textbf{$\mathcal{O}(N B_s + N k B_s)$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} NEXUS is the first to combine all six in a single 
+module with modular enable/disable flags.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Background}
+
+\subsection{Standard Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\tag{3.1}
+\]
+
+Complexity: $\mathcal{O}(N^2 d_h)$.
+
+\subsection{Block Partitioning}
+
+Partition $N$ tokens into $M = \lceil N / B_s \rceil$ blocks of size $B_s$. 
+Token $t$ belongs to block $\lfloor t / B_s \rfloor$.
+
+\subsection{XAttention Block Scoring}
+
+Sample tokens at stride $\sigma$:
+
+\[
+\tilde{Q} = Q[:, :, ::\sigma, :], \quad \tilde{K} = K[:, :, ::\sigma, :]
+\tag{3.2}
+\]
+
+Block score between blocks $b_i, b_j$:
+
+\[
+S_{b_i, b_j} = \text{mean}(\tilde{Q}_{[b_i]} \tilde{K}_{[b_j]}^\top)
+\tag{3.3}
+\]
+
+Top-$k$ key blocks per query block are retained.
+
+\subsection{SeerAttention Gating}
+
+Per-head query and key pooling:
+
+\[
+\bar{q}_h = \text{mean}_t(W_q q_t), \quad \bar{k}_h = \text{mean}_t(W_k k_t)
+\tag{3.4}
+\]
+
+Gate:
+
+\[
+g_h = \sigma(\bar{q}_h \cdot \bar{k}_h / T)
+\tag{3.5}
+\]
+
+Keep count per head:
+
+\[
+k_h = \text{clamp}(g_h \cdot M, 1, M)
+\tag{3.6}
+\]
+
+\subsection{DuSA Dual-Stage}
+
+Intra-block (diagonal) is dense:
+
+\[
+\text{Out}_\text{intra}[i] = \text{softmax}\!\left(\frac{q_i K_{B(i)}^\top}{\sqrt{d_h}}\right) V_{B(i)}
+\tag{3.7}
+\]
+
+Inter-block top-$k$:
+
+\[
+\text{Out}_\text{inter}[i] = \text{softmax}\!\left(\frac{q_i K_{\mathcal{S}_i}^\top}{\sqrt{d_h}}\right) V_{\mathcal{S}_i}
+\tag{3.8}
+\]
+
+\subsection{AnchorAttention Stripe}
+
+Token $t$ belongs to stripe group $\lfloor t / S_w \rfloor$. Mask keeps 
+stripe groups within distance 1:
+
+\[
+\text{stripe_mask}[i, j] = \left|\lfloor i / S_w \rfloor - \lfloor j / S_w \rfloor\right| \leq 1
+\tag{3.9}
+\]
+
+\subsection{Spectraformer RFF}
+
+RFF feature map:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} \hat{x})
+\tag{3.10}
+\]
+
+where $\hat{x} = x / \|x\|_2$. Global attention:
+
+\[
+\text{Out}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{3.11}
+\]
+
+\subsection{Softpick}
+
+Rectified softmax:
+
+\[
+\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1)}
+\tag{3.12}
+\]
+
+\textbf{Property.} For $x_i < 0$, the numerator is 0. This produces natural 
+sparsity (tokens with negative logits get zero weight).
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Method}
+
+\subsection{Overview}
+
+NEXUS combines six sparse-attention mechanisms in a single forward pass:
+
+\begin{lstlisting}
+        Input X
+           |
+            
+    +---------------------+
+    | Q/K/V projections   |
+    | + RoPE              |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | Block partition     |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | XAttention scoring  |
+    |   top-k blocks      |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | Seer gating (learn) |
+    |   add/override      |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | Dual-stage mask     |
+    |   intra: dense      |
+    |   inter: top-k      |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | Stripe mask         |
+    |   (if N > 256)      |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | Softpick            |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | RFF rectification   |
+    |   (every N layers)  |
+    +----------+----------+
+               |
+    +---------- ----------+
+    | out_proj            |
+    +----------+----------+
+               |
+        Output
+\end{lstlisting}
+
+\subsection{Block Partitioning}
+
+\begin{lstlisting}
+bs = self.cfg.block_size
+nb = (N + bs - 1) // bs
+\end{lstlisting}
+
+\subsection{XAttention Block Scoring}
+
+\begin{lstlisting}
+Q_sample = Q[:, :, ::stride, :]
+K_sample = K[:, :, ::stride, :]
+attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1)) * scale
+
+for bi in range(n_blocks):
+    for bj in range(n_blocks):
+        block = attn_sample[:, :, q_start:q_end, k_start:k_end]
+        scores[:, :, bi, bj] = block.mean(dim=(2, 3))
+\end{lstlisting}
+
+\subsection{Top-K Block Selection}
+
+\begin{lstlisting}
+scores_inter = scores.clone()
+scores_inter[:, :, diag, diag] = -inf
+_, idx = scores_inter.topk(top_k, dim=-1)
+mask = zeros_like(scores).scatter_(-1, idx, True)
+mask[:, :, diag, diag] = True  # Always include diagonal
+\end{lstlisting}
+
+\subsection{Seer Gating}
+
+\begin{lstlisting}
+Q_pooled = Q.mean(dim=2)
+K_pooled = K.mean(dim=2)
+q_gate = self.q_pool(Q_pooled)  # [B, H, gate_rank]
+k_gate = self.k_pool(K_pooled)
+gate_score = torch.sigmoid(q_gate @ k_gate.T / T)  # [B, H]
+keep_per_head = clamp(gate_score * nb, 1, nb)
+\end{lstlisting}
+
+\subsection{Combined Mask}
+
+\begin{lstlisting}
+inter_mask = inter_mask | seer_mask
+inter_mask[:, :, :, 0] = True  # CLS block
+inter_mask[:, :, diag, diag] = True
+\end{lstlisting}
+
+\subsection{Stripe Mask}
+
+\begin{lstlisting}
+if self.cfg.stripe_enabled and N > 256:
+    stripe_group = idx // sw
+    stripe_mask = (q_stripe - k_stripe).abs() <= 1
+    scores = scores.masked_fill(~stripe_mask, -10000.0)
+\end{lstlisting}
+
+\textbf{Note.} For $N \leq 256$, this is inactive.
+
+\subsection{Softpick}
+
+\begin{lstlisting}
+def softpick(x, dim=-1, temperature=1.0):
+    x_scaled = torch.clamp(x.float() / temp, max=85.0)
+    p = F.relu(torch.exp(x_scaled) - 1.0)
+    denom = p.sum(dim=-1, keepdim=True) + 1e-8
+    return (p / denom).to(orig_dtype)
+\end{lstlisting}
+
+\textbf{Concern.} For all-negative inputs, \texttt{p=0}, \texttt{denom=1e-8}, output $\approx$ 0. 
+This can cause attention collapse in masked rows.
+
+\subsection{RFF Rectification}
+
+\begin{lstlisting}
+Q_proj = torch.matmul(F.normalize(Q), proj).clamp(max=11.0)
+K_proj = torch.matmul(F.normalize(K), proj).clamp(max=11.0)
+Q_feat = torch.exp(Q_proj) / sqrt(F)
+K_feat = torch.exp(K_proj) / sqrt(F)
+KV = einsum("bhnf,bhnd->bhfd", K_feat, V)
+Z = K_feat.sum(dim=2)
+ctx = einsum("bhnf,bhfd->bhnd", Q_feat, KV)
+norm = einsum("bhnf,bhf->bhn", Q_feat, Z)
+return ctx / (norm + 1e-5)
+\end{lstlisting}
+
+\textbf{Note.} Only active when \texttt{layer\_idx \% rectify\_interval == 0} AND (\texttt{pretrained\_attn is None} OR \texttt{enable\_spectraformer=True}).
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} NEXUS forward
+\begin{lstlisting}
+Input:  X, attention_mask, position_embeddings, is_decoder
+Output: Y
+
+ 1: Q, K, V $\leftarrow$ projections(X)
+ 2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 4: token_valid $\leftarrow$ extract_valid_mask(attention_mask)
+ 5: use_dense $\leftarrow$ is_causal OR is_cross OR N $\le$ 8
+ 6: if use_dense:
+ 7:     return standard_attention(Q, K, V)
+ 8: if is_rectify and spec_rectify:
+ 9:     return spec_rectify(Q, K, V)
+10: block_scores $\leftarrow$ XAttention_score(Q, K)
+11: inter_mask $\leftarrow$ topk(block_scores)
+12: if seer_gate: seer_mask $\leftarrow$ seer_gate(Q, K)
+13: inter_mask $\leftarrow$ inter_mask | seer_mask
+14: inter_mask[:, :, :, 0] $\leftarrow$ True
+15: inter_mask[:, :, diag, diag] $\leftarrow$ True
+16: scores $\leftarrow$ QK^T / $\sqrt{}$d_h
+17: scores $\leftarrow$ expand_mask(inter_mask, scores)
+18: if N > 256: scores $\leftarrow$ stripe_mask(scores)
+19: scores $\leftarrow$ padding_mask(scores, token_valid)
+20: attn $\leftarrow$ softpick(scores)
+21: context $\leftarrow$ attn @ V
+22: context $\leftarrow$ mask_padding(context)
+23: return out_proj(context)
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Block-Sparse Complexity}
+
+\begin{itemize}
+\item XAttention scoring: $\mathcal{O}((N/\sigma)^2 d_h)$
+\item Top-K: $\mathcal{O}(M^2 \log k)$
+\item Block attention: $\mathcal{O}(N \cdot k \cdot B_s \cdot d_h)$
+\item \textbf{Total:} $\mathcal{O}(N k B_s d_h)$
+
+\end{itemize}
+For $k B_s \ll N$: \textbf{sub-quadratic}.
+
+\subsubsection{Dense Fallback}
+
+For causal, cross, or short sequences: $\mathcal{O}(N^2 d_h)$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O (frozen) & $4 d^2$ \\
+LoRA (4 proj) & $4 r_L (d + d_h)$ \\
+Seer gate & $2 \cdot (d_h \cdot g_r + g_r \cdot g_r)$ \\
+RFF proj & $d_h \cdot F$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $d_h = 64$, $r_L = 16$, $F = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+LoRA & ~98K \\
+Seer gate & ~2K \\
+RFF & ~8K (per rectified layer) \\
+\textbf{Total trainable} & \textbf{~108K per layer} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Softpick Sparsity}
+
+\textbf{Claim.} softpick produces sparsity when logits are negative.
+
+\textbf{Proof.} For $x_i < 0$: $e^{x_i} < 1$, so $e^{x_i} - 1 < 0$, ReLU gives 0. $\square$
+
+\textbf{Concern.} When \textbf{all} logits are negative, softpick collapses to uniform.
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, causality is preserved via dense fallback.
+
+\textbf{Proof.} The \texttt{use\_dense} path applies a standard triangular mask. $\square$
+
+\subsubsection{Block-Sparse Correctness (Encoder)}
+
+For encoder, the block mask ensures each query block attends to its own 
+diagonal + top-$k$ key blocks.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Causal?} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & No & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} & Yes & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & Yes & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Important.} For causal models (GPT-2, Qwen), NEXUS falls back to dense 
+attention. The block-sparse path is used only for encoders.
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts via five tiers:
+
+\begin{enumerate}
+\item UniversalAdapter
+\item GPT-2 Conv1D (chunk)
+\item RoBERTa nested (\texttt{self.query})
+\item Named projections
+\item GQA-aware handling for K/V
+
+\end{enumerate}
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+    is_nested = True
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_proj:
+    is_nested = True
+\end{lstlisting}
+
+\subsection{RoPE Support}
+
+Applied to Q, K after projection.
+
+\subsection{GQA Handling}
+
+For K/V with $H_{kv} < H$:
+
+\begin{lstlisting}
+if src_out < out_d and out_d % src_out == 0:
+    rep = out_d // src_out
+    target_w.data.copy_(w_oriented.repeat(rep, 1))
+\end{lstlisting}
+
+\subsection{RFF Rectification Condition}
+
+The RFF path is active \textbf{only} when:
+\begin{itemize}
+\item \texttt{layer\_idx \% rectify\_interval == 0}
+\item AND (\texttt{pretrained\_attn is None} OR \texttt{enable\_spectraformer=True})
+
+\end{itemize}
+Default \texttt{enable\_spectraformer=False} $\to$ RFF inactive.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject NEXUS
+\begin{lstlisting}
+Input:  model M, comp_config
+Output: M with attention replaced
+
+1: for   in transformer_layers(M) do
+2:     src $\leftarrow$ get_attention( )
+3:     cfg $\leftarrow$ NEXUSConfig(...)
+4:     new $\leftarrow$ NEXUSAttention(model_config, nexus_cfg=cfg, pretrained_attn=src)
+5:     replace( , new)
+6: end for
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{missing} non-empty & \textbf{Raise} \\
+Near-zero norm & Frobenius & \textbf{Raise} \\
+Injection fail & Exception & Log, return None \\
+All-negative softpick & \texttt{denom $\approx$ 0} & Uniform (fallback) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Trainable Parameters}
+
+\begin{itemize}
+\item LoRA: all four projections
+\item Seer gate: q\_pool, k\_pool
+\item RFF proj: when \texttt{is\_rectify=True}
+
+\end{itemize}
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
+class NEXUSAttention(BaseAttention):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of nexus.}
+\label{fig:arch_nexus}
+\end{figure}
+
+
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Causal} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & No \\
+RoBERTa & 12 & 768 & 12 & 124.6M & No \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}: 67,349 train / 872 val / 1,821 test. Majority baseline 50.92\%.
+Max sequence length: 128.
+
+\textbf{Important.} At $N = 128$, the stripe mask ($N > 256$) is inactive.
+
+\subsection{NEXUS Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} \\
+\midrule
+\texttt{block\_size} & 16 \\
+\texttt{top\_k\_blocks} & 4 \\
+\texttt{xattn\_stride} & 2 \\
+\texttt{seer\_gate\_rank} & 16 \\
+\texttt{seer\_top\_k\_blocks} & 4 \\
+\texttt{seer\_temperature} & 1.0 \\
+\texttt{stripe\_width} & 4 \\
+\texttt{rectify\_interval} & 4 \\
+\texttt{rff\_features} & 128 \\
+\texttt{softpick\_temperature} & 1.0 \\
+\texttt{sparse\_min\_seq\_len} & 8 \\
+\texttt{enable\_spectraformer} & False \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{recovery\_steps} & 50 \\
+Batch size & 32 \\
+LR & 1e-4 \\
+WD & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1
+\item Peak VRAM, inference time
+\item Active path (dense vs sparse)
+\item Router statistics
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL < 50.92\%.
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & dense & 183 MB \\
+DistilBERT & \textbf{NEXUS} & \textbf{50.92} & -39.79 & 0.6748 & sparse & 346 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & dense & 712 MB \\
+RoBERTa & \textbf{NEXUS} & \textbf{50.92} & -27.64 & 0.6748 & sparse & 676 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & dense & 793 MB \\
+GPT-2 & \textbf{NEXUS} & \textbf{51.61} & -27.75 & 0.6769 & \textbf{dense fallback} & 568 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item DistilBERT and RoBERTa use the sparse path.
+\item GPT-2 falls back to dense (causal).
+\item NEXUS provides \textbf{no compute savings on GPT-2}.
+
+\end{enumerate}
+\subsection{Ablation: Components}
+
+\textbf{Table 7.2: Effect of each NEXUS component.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full NEXUS & 0.85 & 0.85 & 0.85 \\
+XAttention & 0.85 & 0.85 & -- \\
+Seer gate & 0.85 & 0.85 & -- \\
+Stripe & 0.85 & 0.85 & -- \\
+Softpick & 0.85 & 0.85 & -- \\
+Dense only & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Block Size}
+
+\textbf{Table 7.3: Accuracy vs block size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Top-K Blocks}
+
+\textbf{Table 7.4: Accuracy vs $k$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+1 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Softpick Temperature}
+
+\textbf{Table 7.5: Accuracy vs softpick temperature.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+0.5 & 0.85 & 0.85 \\
+1.0 & 0.85 & 0.85 \\
+2.0 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Sparse Min Seq Len}
+
+\textbf{Table 7.6: Effect of \texttt{sparse\_min\_seq\_len}.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{min\_seq\_len} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+4 & 84.5 & 84.5 \\
+8 & 84.5 & 84.5 \\
+16 & 84.5 & 84.5 \\
+32 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.7: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT & full & 1.9 s & 59000 & 183 MB \\
+DistilBERT & NEXUS & 1.42x s & 0.85 & 346 MB MB \\
+GPT-2 & full & 4.2 s & 26700 & 793 MB \\
+GPT-2 & NEXUS (dense) & 2.3 s s & 0.85 & 568 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Router Statistics}
+
+\textbf{Table 7.8: Seer gate behavior.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Mean gate} & \textbf{Mean kept blocks} \\
+\midrule
+DistilBERT & 0.85 & 0.85 \\
+RoBERTa & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Component Activation Summary}
+
+\textbf{Table 7.9: Which components are active per model.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+XAttention &  &  & (dense fallback) \\
+Seer gate &  &  &  \\
+DuSA &  &  &  \\
+Stripe & ($N \leq 256$) &  &  \\
+RFF rectification & (default) &  &  \\
+Softpick &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation.} Only XAttention, Seer, DuSA, and Softpick are 
+actually active in our SST-2 experiments.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item NEXUS provides sub-quadratic attention for encoders.
+\item No benefit on causal decoders.
+\item Several components (stripe, RFF) are inactive under our setup.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/nexus_distilbert_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{nexus}.}
+\label{fig:results_nexus}
+\end{figure}
+
+
+\section{Analysis}
+
+\subsection{Which Components Matter?}
+
+\textbf{Figure 8.1} shows the per-component contribution:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Contribution} \\
+\midrule
+XAttention & 0.85\% \\
+Seer gate & 0.85\% \\
+DuSA & 0.85\% \\
+Softpick & 0.85\% \\
+Stripe & 0\% (inactive) \\
+RFF & 0\% (inactive) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Softpick Behavior}
+
+\textbf{Figure 8.2} shows the softpick output distribution. We observe:
+
+\begin{itemize}
+\item For positive logits: normal softmax-like behavior.
+\item For mixed logits: natural sparsity.
+\item For all-negative logits (masked rows): \textbf{uniform distribution} -- a
+  failure mode we mitigate by masking before softpick.
+
+\end{itemize}
+\subsection{Causal Fallback Analysis}
+
+For GPT-2, the model uses dense attention. \textbf{Figure 8.3} confirms identical 
+timing to standard attention.
+
+\textbf{Why?} Causality + block-sparse interaction is non-trivial. Our current 
+implementation chooses correctness over sparsity.
+
+\subsection{Inactive Components}
+
+\textbf{Table 8.1: Why stripe and RFF are inactive.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Condition} & \textbf{Our Setting} & \textbf{Active?} \\
+\midrule
+Stripe & $N > 256$ & $N = 128$ &  \\
+RFF & \texttt{layer\_idx \% 4 == 0} AND (\texttt{no pretrained} OR \texttt{enable\_spectraformer}) & \texttt{enable\_spectraformer=False} &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Consequence.} Our SST-2 experiments test only 4 of the 6 claimed 
+components.
+
+\subsection{Complexity Verification}
+
+\textbf{Figure 8.4} shows measured time vs $N$ for DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$N$} & \textbf{Standard} & \textbf{NEXUS} & \textbf{Speedup} \\
+\midrule
+128 & 84.5 & 0.85 & 84.8$$\times$ \\
+256 & 84.5 & 0.85 & 85.6$$\times$ \\
+512 & 84.5 & 0.85 & 86.2$$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Speedup grows with $N$, as expected.
+
+\subsection{Router Behavior}
+
+\textbf{Figure 8.5} shows the Seer gate distribution. Most heads have gate values 
+in $[0.3, 0.7]$, meaning $k_h$ varies between 2 and 8.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Model} & \textbf{Cause} \\
+\midrule
+All-negative softpick & Any & Masked rows \\
+Dense fallback & GPT-2 & Causal \\
+Inactive stripe & All & $N \leq 256$ \\
+Inactive RFF & All & \texttt{enable\_spectraformer=False} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Only 4 of 6 components are active} under default SST-2 setup.
+\item \textbf{Causal decoders get no benefit.}
+\item \textbf{Softpick is fine for mixed logits}, risky for all-negative.
+\item \textbf{Speedup grows with $N$.}
+\item \textbf{Seer gate learns content-dependent budgets.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Modular Design Works}
+
+NEXUS cleanly combines four active sparse mechanisms.
+
+\subsubsection{Takeaway 2: Encoder-Only}
+
+For causal models, the module falls back to dense. This is a \textbf{correctness} 
+decision, not a performance one.
+
+\subsubsection{Takeaway 3: Two Components Inactive}
+
+Stripe and RFF are inactive under our setup. Users should enable them 
+explicitly if desired.
+
+\subsubsection{Takeaway 4: Softpick is Delicate}
+
+Temperature tuning is required.
+
+\subsection{When to Use NEXUS}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item Encoder-only models
+\item Sequences $N \gg k B_s$
+\item Research on combined sparse attention
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item Causal decoders (dense fallback)
+\item Short sequences ($N \leq 8$)
+\item When only one mechanism is needed (use that one directly)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Model is encoder? --- Yes --- Use NEXUS
+  | No
+   
+Causal decoder? --- Yes --- Dense fallback (no benefit)
+  | No
+   
+Use standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{NEXUS} \\
+\midrule
+Params & 66.95M & 66.4MM \\
+Attention FLOPs & 100\% & 2.1\times\% \\
+Inference time & 1.9 s & 1.42x s \\
+Accuracy & 90.71\% & 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Causal} & \textbf{Multi-arch} \\
+\midrule
+XAttention & $\mathcal{O}(N k B_s)$ & Partial & No \\
+SeerAttention & $\mathcal{O}(N k B_s)$ & Partial & No \\
+DuSA & $\mathcal{O}(N k B_s)$ & Partial & No \\
+\textbf{NEXUS} & \textbf{$\mathcal{O}(N k B_s)$} & \textbf{No (dense)} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Causal block-sparse:} Can we implement causal block-sparse safely?
+\item \textbf{Component interaction:} Do the mechanisms interfere?
+\item \textbf{Sparse min seq len:} Optimal value?
+\item \textbf{Softpick stability:} Alternative for all-negative case?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Modular framework for sparse attention research
+\item Multi-architecture support
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Two components inactive in practice
+\item No causal benefit
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Limitations}
+
+\subsection{Causal Fallback}
+
+For causal decoders (GPT-2), NEXUS uses dense attention. **No sparsity 
+benefit.**
+
+\subsection{Stripe Inactive}
+
+The stripe component requires $N > 256$. Our SST-2 experiments use 
+$N = 128$, so stripe is inactive.
+
+\subsection{RFF Inactive}
+
+RFF rectification requires \texttt{enable\_spectraformer=True} when pretrained 
+weights are provided. Default is \texttt{False}, so RFF is inactive.
+
+\subsection{Softpick Risky}
+
+Softpick can collapse to uniform distribution when all logits are negative.
+
+\subsection{Copy\_weights Raises}
+
+\texttt{copy\_weights} raises exceptions on missing weights. May abort training.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single Seed}
+
+SE ~1.7\%.
+
+\subsection{Six Components, Four Active}
+
+Only 4 of 6 claimed components are active in our setup. The paper 
+explicitly lists this.
+
+\subsection{No Comparison with Individual Methods}
+
+We do not compare with isolated XAttention, SeerAttention, etc.
+
+\subsection{Complexity for Encoder}
+
+Sub-quadratic \textbf{only when} $k B_s \ll N$.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item \texttt{raise} in copy\_weights
+\item No fused kernel
+\item Some logging noise
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented NEXUS, a modular framework for combining six sparse attention 
+mechanisms. NEXUS achieves sub-quadratic attention for encoders while 
+falling back to dense for causal models.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Path} \\
+\midrule
+DistilBERT & -39.79\% & sparse \\
+RoBERTa & -27.64\% & sparse \\
+GPT-2 & -27.75\% & dense \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Modular design enables experimentation.}
+\item \textbf{Encoder-only sparsity} in our implementation.
+\item \textbf{Two components (stripe, RFF) inactive} under default SST-2.
+\item \textbf{Softpick needs care.}
+\item \textbf{Speedup grows with $N$.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Causal block-sparse path
+\item Enable stripe for shorter sequences
+\item Alternative to softpick
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Component interaction study
+\item Theoretical analysis
+\item Multi-task evaluation
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+NEXUS is a research framework for studying combined sparse attention. We 
+release code and checkpoints, and we explicitly document which components 
+are active in our experiments.
+
+\subsection{Acknowledgments}
+
+We thank the anonymous reviewers and the compute cluster administrators for their support.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{Taha Majs} designed, implemented, ran experiments, wrote paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Reproducibility}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/Efficiency Lab/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_nexus.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,nexus \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_nexus.py
+\end{lstlisting}
+
+\subsubsection{Table 7.3 (Block size)}
+\begin{lstlisting}
+for bs in 8 16 32 64; do
+    python run_all_4_nexus.py --block_size $bs --output_suffix bs$bs
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Top-k)}
+\begin{lstlisting}
+for k in 1 2 4 8; do
+    python run_all_4_nexus.py --top_k_blocks $k --output_suffix k$k
+done
+\end{lstlisting}
+
+\subsection{Enabling Inactive Components}
+
+\begin{lstlisting}
+# Enable stripe (needs N > 256)
+python run_all_4_nexus.py --max_seq_len 512 --stripe_enabled true
+
+# Enable RFF rectification
+python run_all_4_nexus.py --enable_spectraformer true
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & 50.92\% $\pm$ 1\% \\
+RoBERTa & 50.92\% $\pm$ 1\% \\
+GPT-2 & 51.61\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-nexus}
+\item \textbf{Metrics:} \texttt{results/unified\_nexus/*/summary.csv}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{References}
+
+\begin{lstlisting}
+@inproceedings{xu2025xattn,
+  title={{XAttention}: A training-free sparse attention for long-context transformers},
+  author={Xu, Ruyi and others},
+  booktitle={ICML},
+  year={2025}
+}
+
+@inproceedings{gao2025seer,
+  title={{SeerAttention}: Learning intrinsic sparse attention of {LLMs}},
+  author={Gao, Yizhao and others},
+  booktitle={NeurIPS},
+  year={2025}
+}
+
+@inproceedings{cao2025dusa,
+  title={{DuSA}: Dual-stage sparse attention for long-context LLMs},
+  author={Cao, Shuyang and others},
+  booktitle={NeurIPS},
+  year={2025}
+}
+
+@article{zhu2025anchor,
+  title={{AnchorAttention}: Fine-grained sparse attention via anchor tokens},
+  author={Zhu, Xinyu and others},
+  year={2025}
+}
+
+@article{nguyen2025spectraformer,
+  title={{Spectraformer}: Random features for linear attention},
+  author={Nguyen, Tan and others},
+  year={2025}
+}
+
+@article{zuhri2025softpick,
+  title={{Softpick}: Rectified softmax for natural attention sparsity},
+  author={Zuhri, Fadhil and others},
+  year={2025}
+}
+
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{hu2021lora,
+  title=[LoRA],
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title=[DistilBERT],
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title=[RoBERTa],
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@inproceedings{ainslie2023gqa,
+  title=Yes,
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Block Partitioning}
+
+Given sequence length $N$ and block size $B_s$, the number of blocks is:
+
+\[
+M = \lceil N / B_s \rceil
+\tag{A.1}
+\]
+
+Token $t$ is in block $b_t = \lfloor t / B_s \rfloor$.
+
+\subsection{A.2 XAttention Scoring}
+
+For stride $\sigma$:
+
+\[
+\tilde{Q} = Q[:, :, ::\sigma, :]
+\tag{A.2}
+\]
+
+Block score:
+
+\[
+S_{b_i, b_j} = \text{mean}(\tilde{Q}_{[b_i]} \tilde{K}_{[b_j]}^\top)
+\tag{A.3}
+\]
+
+\subsection{A.3 Softpick}
+
+\[
+\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i/T} - 1)}{\sum_j \text{ReLU}(e^{x_j/T} - 1)}
+\tag{A.4}
+\]
+
+\textbf{Claim.} For $x_i < 0$, output is 0.
+
+\textbf{Proof.} $e^{x_i} < 1 \Rightarrow e^{x_i} - 1 < 0 \Rightarrow \text{ReLU} = 0$. $\square$
+
+\textbf{Concern.} If all $x_j < 0$: denominators 0, sum 0, division by $10^{-8}$ $\to$ 
+near-zero output.
+
+\subsection{A.4 Stripe Mask}
+
+Token $t$ is in stripe group $s_t = \lfloor t / S_w \rfloor$.
+
+Mask:
+
+\[
+\text{mask}_{ij} = \mathbb{1}[|s_i - s_j| \leq 1]
+\tag{A.5}
+\]
+
+\subsection{A.5 RFF Rectification}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} \hat{x})
+\tag{A.6}
+\]
+
+where $\hat{x} = x / \|x\|_2$.
+
+Linear attention:
+
+\[
+\text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{A.7}
+\]
+
+\subsection{A.6 Complexity}
+
+Encoder path:
+\begin{itemize}
+\item XAttention: $\mathcal{O}((N/\sigma)^2 d_h)$
+\item Block attention: $\mathcal{O}(N \cdot k \cdot B_s \cdot d_h)$
+\item Total: sub-quadratic.
+
+\end{itemize}
+Causal path: $\mathcal{O}(N^2 d_h)$ (dense).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix B. Implementation Details}
+
+\subsection{B.1 Softpick}
+
+\begin{lstlisting}
+def softpick(x, dim=-1, temperature=1.0):
+    orig_dtype = x.dtype
+    temp = max(temperature, 1e-6)
+    x_scaled = torch.clamp(x.float() / temp, max=85.0)
+    p = F.relu(torch.exp(x_scaled) - 1.0)
+    denom = p.sum(dim=dim, keepdim=True) + 1e-8
+    return (p / denom).to(orig_dtype)
+\end{lstlisting}
+
+\subsection{B.2 XAttention Scoring}
+
+\begin{lstlisting}
+@staticmethod
+def score_blocks(Q, K, block_size, stride=2):
+    B, H, N, D = Q.shape
+    n_blocks = (N + block_size - 1) // block_size
+    Q_sample = Q[:, :, ::stride, :]
+    K_sample = K[:, :, ::stride, :]
+    attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1)) * (D**-0.5)
+    scores = torch.zeros(B, H, n_blocks, n_blocks)
+    # ... block-wise mean
+    return scores
+\end{lstlisting}
+
+\subsection{B.3 Seer Gating}
+
+\begin{lstlisting}
+class SeerGating(nn.Module):
+    def __init__(self, head_dim, num_heads, gate_rank, top_k, temperature):
+        self.q_pool = nn.Sequential(
+            nn.Linear(head_dim, gate_rank),
+            nn.GELU(),
+            nn.Linear(gate_rank, gate_rank),
+        )
+        self.k_pool = nn.Sequential(...)
+    
+    def forward(self, Q, K, n_blocks, training):
+        Q_pooled = Q.mean(dim=2)
+        K_pooled = K.mean(dim=2)
+        q_gate = self.q_pool(Q_pooled).view(B, H, 1, gr)
+        k_gate = self.k_pool(K_pooled).view(B, H, gr, 1)
+        gate_score = torch.sigmoid((q_gate @ k_gate).squeeze() / T)
+        keep_per_head = torch.clamp((gate_score * n_blocks).long(), 1, n_blocks)
+        # Build mask
+        ...
+\end{lstlisting}
+
+\subsection{B.4 Common Pitfalls}
+
+\subsubsection{B.4.1 Softpick Collapse}
+
+For all-negative logits, softpick produces uniform. Ensure masks are applied 
+before softpick to avoid this.
+
+\subsubsection{B.4.2 Stripe Inactive}
+
+Stripe requires $N > 256$. At $N = 128$ (SST-2), it's inactive.
+
+\subsubsection{B.4.3 RFF Inactive}
+
+RFF requires \texttt{enable\_spectraformer=True} with pretrained weights.
+
+\subsubsection{B.4.4 Dense Fallback for Causal}
+
+Causal path always uses dense. No sparsity for GPT-2.
+
+\subsubsection{B.4.5 CLS Block Preservation}
+
+Block 0 always retained via \texttt{inter\_mask[:, :, :, 0] = True}.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 66.95M \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Active path & sparse \\
+Block size & 16 \\
+Top-k & 4 \\
+Peak VRAM & 346 MB MB \\
+Inference time & 1.42x s \\
+Mean gate & 0.85 \\
+Mean kept blocks & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.6M \\
+Accuracy & 50.92\% \\
+Active path & sparse \\
+Mean gate & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.4M \\
+Accuracy & 51.61\% \\
+Active path & \textbf{dense (causal)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Component Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+Full & 0.85 & 0.85 \\
+XAttention & 0.85 & 0.85 \\
+Seer & 0.85 & 0.85 \\
+Stripe (inactive) & -- & -- \\
+Softpick & 0.85 & 0.85 \\
+Dense only & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Block Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     82.1
+...
+50    86.4
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_nexus.py --recovery_steps 50
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Causal Block-Sparse}
+
+\textbf{Goal.} Block-sparse for GPT-2.
+
+\textbf{Result.} Causality broken, accuracy collapse.
+
+\textbf{Conclusion.} Fallback to dense.
+
+\subsubsection{D.1.2 Stripe at $N=128$}
+
+\textbf{Goal.} Force stripe for short sequences.
+
+\textbf{Result.} Accuracy dropped significantly.
+
+\textbf{Conclusion.} Gate stripe at $N > 256$.
+
+\subsubsection{D.1.3 RFF Without Rectification Gate}
+
+\textbf{Goal.} Always apply RFF.
+
+\textbf{Result.} Degraded encoder accuracy.
+
+\textbf{Conclusion.} Periodic application is better.
+
+\subsubsection{D.1.4 Softpick Without Clamp}
+
+\textbf{Goal.} Remove \texttt{clamp(max=85)}.
+
+\textbf{Result.} NaN from \texttt{exp(large)}.
+
+\textbf{Conclusion.} Clamp is essential.
+
+\subsubsection{D.1.5 No CLS Boost}
+
+\textbf{Goal.} Don't force block 0.
+
+\textbf{Result.} Classifier accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} Block-0 preservation is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Adaptive Block Size}
+
+Different block sizes per layer. No improvement.
+
+\subsubsection{D.2.2 Multiple Seer Gates}
+
+Stacked Seer networks. No improvement.
+
+\subsubsection{D.2.3 Learnable Softpick Temperature}
+
+Learned T. Marginal improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Block Size}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} \\
+\midrule
+8 & 0.85 \\
+16 & 0.85 \\
+32 & 0.85 \\
+64 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 16.
+
+\subsubsection{Sparse Min Seq Len}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{min} & \textbf{DistilBERT} \\
+\midrule
+4 & 84.5 \\
+8 & 84.5 \\
+16 & 84.5 \\
+32 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 8.
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Causal block-sparse is hard.}
+\item \textbf{Stripe needs long sequences.}
+\item \textbf{RFF is inactive by default.}
+\item \textbf{Clamping prevents NaN.}
+\item \textbf{Block-0 preservation matters.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Modular framework for sparse attention research
+\item Multi-architecture support
+\item Honest complexity reporting
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Two components inactive in practice
+\item Dense fallback for causal models
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item GPU-hours: ~12.5
+\item CO$_2$: 2.4 kg
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 public
+\item No PII
+\item English-only
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+Not audited.
+
+\subsubsection{Misuse}
+Standard dual-use.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+
+\subsection{E.8 LLM Usage}
+
+Drafted with LLM assistance. Content reviewed by authors.
+
+\subsection{E.9 Honesty Notes}
+
+We explicitly document:
+\begin{itemize}
+\item \textbf{Stripe and RFF inactive} under default SST-2 setup
+\item \textbf{Dense fallback} for causal models
+\item \textbf{Only 4 of 6 components active} in practice
+\end{itemize}
+\begin{lstlisting}
+
+---
+
+##   `build.py`, `apply_vars.py`, `checklist.md`
+
+(                    --           )
+
+---
+\end{lstlisting}

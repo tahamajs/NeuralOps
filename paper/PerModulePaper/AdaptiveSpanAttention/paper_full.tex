@@ -1,155 +1,12 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{Adaptive Span Attention: Learned Per-Head Attention Windows via Differentiable Soft Ramps}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-
-\section{Adaptive Span Attention: Learned Per-Head Attention Windows via Differentiable Soft Ramps}
-
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/adaptive\_span\_attention.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Standard self-attention allows every query to attend to every key, requiring 
-$\mathcal{O}(L^2)$ time and memory regardless of whether long-range dependencies 
-are actually needed. Fixed-window attention (Longformer, Mistral) truncates 
-attention to a sliding window, but the window size is a static hyperparameter 
-that cannot adapt to the differing needs of individual heads.
-
-We present \textbf{Adaptive Span Attention} (ASA-Span), which learns a per-head 
-attention span via a single scalar logit per head. Given a head's span 
-$z_h \in [0, S_\text{max}]$ and a ramp size $R$, we mask attention scores by 
-the \textbf{continuous piecewise-linear ramp}:
-
-\begin{equation}
-g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-\]
-
-where $d$ is the distance between query and key positions. The mask is 
-\textbf{differentiable} in $z_h$, allowing end-to-end training. An \textbf{L1 penalty} 
-on the total span encourages the model to shrink windows when they are not 
-needed, achieving automatic context pruning.
-
-We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
-span $S_\text{max} = 128$, learned spans converge to 
-\textbf{68} on DistilBERT (47\% reduction from max), 
-\textbf{72} on RoBERTa, and \textbf{75} on GPT-2. Accuracy drops by 
-only \textbf{-1.2\%}, \textbf{-2.1\%}, and \textbf{-1.9\%} respectively. 
-Attention memory is reduced by \textbf{2$$\times$} at convergence. The 
-learned spans show systematic head heterogeneity, with some heads converging 
-to local (span $\approx$ 16) and others to global (span $\approx$ max) behavior.
-
-\textbf{Keywords:} adaptive attention, learned span, differentiable masking, 
-per-head budgets, efficient transformer
-
-
-
-\subsection{Lay Summary}
-
-Transformers read sequences by "attending" to all previous tokens. For a 
-1000-word article, each word looks at 1000 others --- expensive. Existing 
-methods limit this to a fixed window (e.g., last 512 tokens), but this 
-window is the same for all attention heads. In practice, some heads only 
-need nearby context while others need long-range context.
-
-Our method lets each head \textbf{learn its own window size}. A single trainable 
-number per head controls the window. As training progresses, the windows 
-shrink automatically to the smallest size that preserves quality. Some heads 
-converge to tiny windows (16 tokens) and others to large ones (128 tokens), 
-revealing that heads have very different contextual needs.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Standard self-attention (Vaswani et al., 2017) allows every position to attend 
 to every other position, requiring $\mathcal{O}(L^2)$ time and memory in 
@@ -167,81 +24,73 @@ But not all attention heads need the same window:
 
 \begin{itemize}
 \item Some heads are \textbf{local}: they attend to nearby tokens for syntax.
-\end{itemize}
-\begin{itemize}
 \item Some heads are \textbf{global}: they attend to distant tokens for coreference.
-\end{itemize}
-\begin{itemize}
 \item Some heads are \textbf{sparse}: they attend to a few specific positions.
-\end{itemize}
 
+\end{itemize}
 A single window size forces all heads into the same trade-off. \textbf{Figure 1.1} 
 shows the attention distance distribution for a middle GPT-2 layer: some heads 
 concentrate within 32 tokens, others spread beyond 128.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a transformer with $H$ heads and a maximum window size $S_\text{max}$, 
 we seek a \textbf{per-head} window size $z_h \in [0, S_\text{max}]$ such that:
 
-1. \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
-2. \textbf{Differentiable:} gradients flow through $z_h$.
-3. \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
-4. \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\begin{enumerate}
+\item \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
+\item \textbf{Differentiable:} gradients flow through $z_h$.
+\item \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
+\item \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
-\subsection{1.3 Our Approach: Adaptive Span Attention}
+\end{enumerate}
+\subsection{Our Approach: Adaptive Span Attention}
 
 We propose \textbf{Adaptive Span Attention} (ASA-Span), which learns per-head 
 spans via:
 
-1. \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking 
-   function is:
-\[
-   g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
+\begin{enumerate}
+\item \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking
+  function is:
+  \begin{equation}
+g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
 \end{equation}
-   where $d$ is the query-key distance. This is \textbf{piecewise linear} and 
-   \textbf{differentiable} in $z_h$.
+  where $d$ is the query-key distance. This is \textbf{piecewise linear} and
+  \textbf{differentiable} in $z_h$.
 
-2. \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
-\begin{equation}
-z_h = \sigma(\ell_h) \cdot S_\text{max}
+\item \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
+  \begin{equation}
+z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
 \end{equation}
 
-3. \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages 
-   the model to \textbf{shrink} spans that are not needed. At initialization, 
-   $z_h \approx S_\text{max}$ (fully open); during training, spans shrink 
-   to the smallest size preserving accuracy.
+\item \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages
+  the model to \textbf{shrink} spans that are not needed. At initialization,
+  $z_h \approx S_\text{max}$ (fully open); during training, spans shrink
+  to the smallest size preserving accuracy.
 
-4. \textbf{No hard truncation.} Unlike sliding-window attention, ASA-Span does not 
-   hard-truncate scores. It applies a soft multiplicative mask, so distant 
-   tokens are \textbf{down-weighted} rather than removed. This preserves 
-   differentiability and avoids artifacts at the window boundary.
+\item \textbf{No hard truncation.} Unlike sliding-window attention, ASA-Span does not
+  hard-truncate scores. It applies a soft multiplicative mask, so distant
+  tokens are \textbf{down-weighted} rather than removed. This preserves
+  differentiability and avoids artifacts at the window boundary.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A differentiable soft-ramp formulation.} We extend Sukhbaatar et al.'s
-\end{itemize}
-  (2019) adaptive span to modern transformers with a numerically stable and 
+  (2019) adaptive span to modern transformers with a numerically stable and
   GPU-efficient implementation.
-\begin{itemize}
 \item \textbf{Per-head span heterogeneity.} We show that learned spans are highly
-\end{itemize}
   non-uniform, with systematic dependence on head index and layer depth.
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Supports flat, nested, and causal
-\end{itemize}
   architectures with RoPE, GQA, and T5-style relative position bias.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2 with ablations over max span, ramp size, and L1 penalty.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention and 
 window attention. Section 4 presents ASA-Span. Section 5 describes integration 
@@ -254,13 +103,15 @@ limitations. Section 11 concludes.
 
 \subsection{Notation}
 
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Window-Based Sparse Attention}
+\subsection{Window-Based Sparse Attention}
 
 \textbf{Longformer} (Beltagy et al., 2020): Sliding window of size $w$ + global 
 tokens. Achieves $\mathcal{O}(L w)$ complexity with fixed $w$.
@@ -273,7 +124,7 @@ decoder-only adoption.
 
 \textbf{Limitation.} All use fixed window size for all heads.
 
-\subsection{2.2 Learned Sparse Patterns}
+\subsection{Learned Sparse Patterns}
 
 \textbf{Adaptive Span} (Sukhbaatar et al., 2019): \textbf{Our direct predecessor.} 
 Learns per-head span via continuous soft ramp. The original paper applied 
@@ -288,7 +139,7 @@ and dilation. Complements ASA-Span.
 \textbf{Our work} generalizes Sukhbaatar et al. to modern architectures (BERT, 
 RoBERTa, GPT-2) with modern tools (RoPE, GQA, LoRA).
 
-\subsection{2.3 Content-Based Sparsity}
+\subsection{Content-Based Sparsity}
 
 \textbf{Routing Transformer} (Roy et al., 2021): K-means clustering of queries 
 and keys. Content-based but not distance-based.
@@ -300,7 +151,7 @@ and keys. Content-based but not distance-based.
 \textbf{Our work} is \textbf{distance-based}, which is orthogonal to content-based 
 methods and can be combined.
 
-\subsection{2.4 Differentiable Masking}
+\subsection{Differentiable Masking}
 
 \textbf{Gumbel-Softmax} (Jang et al., 2017): Stochastic relaxation of discrete 
 sampling.
@@ -310,21 +161,22 @@ top-$k$ approximation.
 
 \textbf{Soft ramp} (Our ASA-Span): Piecewise-linear differentiable window.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{ASA-Span} \\
 \midrule
-Window type \& Fixed & **Learned per-head** \\
-Differentiability & --- & **Soft ramp** \\
-Regularization & --- & **L1 span penalty** \\
-Distance-based \& Yes & **Yes** \\
-Modern architectures \& Limited & **BERT, RoBERTa, GPT-2, T5** \\
-RoPE support \& No & **Yes** \\
-GQA support \& No & **Yes** \\
+Window type \& Fixed & \textbf{Learned per-head} \\
+Differentiability & -- & \textbf{Soft ramp} \\
+Regularization & -- & \textbf{L1 span penalty} \\
+Distance-based \& Yes & \textbf{Yes} \\
+Modern architectures \& Limited & \textbf{BERT, RoBERTa, GPT-2, T5} \\
+RoPE support \& No & \textbf{Yes} \\
+GQA support \& No & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -333,15 +185,17 @@ GQA support \& No & **Yes** \\
 learned per-head spans with support for RoPE, GQA, and T5-style biases. It 
 generalizes Sukhbaatar et al. (2019) to the current transformer ecosystem.
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Background}
 
-
-\section{3. Background}
-
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -359,7 +213,7 @@ O = P V \in \mathbb{R}^{L \times d_h}
 
 \textbf{Complexity.} $\mathcal{O}(L^2)$ memory and time.
 
-\subsection{3.2 Window Attention}
+\subsection{Window Attention}
 
 \textbf{Fixed window.} Restrict attention to positions within distance $w$:
 
@@ -373,7 +227,7 @@ For a causal model, $P_{ij} = 0$ for $j > i$ or $i - j > w$.
 
 \textbf{Implementation.} Often done with band masks or block-sparse patterns.
 
-\subsection{3.3 Learned Span (Sukhbaatar et al., 2019)}
+\subsection{Learned Span (Sukhbaatar et al., 2019)}
 
 \textbf{Idea.} Replace the fixed window $w$ with a per-head learned span $z_h$.
 
@@ -385,21 +239,17 @@ g_z(d) = \text{clamp}\!\left(\frac{R + z - d}{R}, 0, 1\right)
 
 \begin{itemize}
 \item For $d \leq z$: $g_z(d) = 1$ (fully attend)
-\end{itemize}
-\begin{itemize}
 \item For $z < d < z + R$: $g_z(d) = \frac{R + z - d}{R}$ (linear decay)
-\end{itemize}
-\begin{itemize}
 \item For $d \geq z + R$: $g_z(d) = 0$ (no attend)
-\end{itemize}
 
+\end{itemize}
 \textbf{Parameterization.} We use a scalar logit:
 
 \begin{equation}
 z = \sigma(\ell) \cdot S_\text{max}
 \end{equation}
 
-\subsection{3.4 Span Regularization}
+\subsection{Span Regularization}
 
 \textbf{L1 penalty.} To encourage small spans:
 
@@ -412,7 +262,7 @@ training, the model shrinks $z_h$ to reduce the penalty, subject to preserving
 task accuracy. The equilibrium depends on $\lambda$: larger $\lambda$ $\to$ 
 smaller spans.
 
-\subsection{3.5 Softmax Renormalization}
+\subsection{Softmax Renormalization}
 
 After applying the ramp mask:
 
@@ -428,7 +278,7 @@ This renormalization ensures rows sum to 1. We implement this via:
 
 where we work in log space to avoid numerical issues.
 
-\subsection{3.6 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -439,7 +289,7 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. ASA-Span uses LoRA to adapt the frozen 
 projections to the new span structure.
 
-\subsection{3.7 Relative Position Bias}
+\subsection{Relative Position Bias}
 
 T5 (Raffel et al., 2020) adds a learned bias based on bucketed relative 
 position:
@@ -450,59 +300,63 @@ S_{ij} \leftarrow S_{ij} + b_{\text{bucket}(i - j)}
 
 ASA-Span preserves this bias, applying the ramp \textbf{after} adding the bias.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Method}
 
-
-\section{4. Method}
-
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Adaptive Span Attention (ASA-Span) replaces the standard softmax attention 
 with a \textbf{span-masked} variant:
 
-1. Compute standard scores $S = QK^\top / \sqrt{d_h}$.
-2. Apply causal, padding, and position-bias masks.
-3. Apply the \textbf{per-head soft ramp} $g_{z_h}(d)$.
-4. Renormalize via softmax.
-5. Multiply with $V$.
+\begin{enumerate}
+\item Compute standard scores $S = QK^\top / \sqrt{d_h}$.
+\item Apply causal, padding, and position-bias masks.
+\item Apply the \textbf{per-head soft ramp} $g_{z_h}(d)$.
+\item Renormalize via softmax.
+\item Multiply with $V$.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
     Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
-             │
-             ▼
-    ┌──────────────────────────────┐
-    │  S = Q K^T / $\sqrt{}$d_h            │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  Apply masks (causal, pad)   │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  Per-head ramp:              │
-    │  g_z(d) = clamp((R+z-d)/R)   │
-    │  S̃ = S + log(g_z + $\epsilon$)        │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────┐
-    │  P = softmax(S̃)              │
-    └──────────────┬───────────────┘
-                   │
-                   ▼
-              O = P · V
+             |
+              
+    +------------------------------+
+    |  S = Q K^T / $\sqrt{}$d_h            |
+    +--------------+---------------+
+                   |
+                    
+    +------------------------------+
+    |  Apply masks (causal, pad)   |
+    +--------------+---------------+
+                   |
+                    
+    +------------------------------+
+    |  Per-head ramp:              |
+    |  g_z(d) = clamp((R+z-d)/R)   |
+    |  S  = S + log(g_z + $\epsilon$)        |
+    +--------------+---------------+
+                   |
+                    
+    +------------------------------+
+    |  P = softmax(S )              |
+    +--------------+---------------+
+                   |
+                    
+              O = P   V
 \end{lstlisting}
 
-\subsection{4.2 Learnable Span}
+\subsection{Learnable Span}
 
-\subsubsection{4.2.1 Parameterization}
+\subsubsection{Parameterization}
 
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The span is:
@@ -514,7 +368,7 @@ z_h = \sigma(\ell_h) \cdot S_\text{max}
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
 (hyperparameter).
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 
@@ -526,14 +380,14 @@ This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}
 The span starts \textbf{nearly fully open} and shrinks during training via the 
 L1 penalty.
 
-\subsubsection{4.2.3 Why Start Open?}
+\subsubsection{Why Start Open?}
 
 Starting with a small span would immediately hurt accuracy. Starting open 
 lets the model decide which spans to shrink, based on task loss.
 
-\subsection{4.3 Soft Ramp Mask}
+\subsection{Soft Ramp Mask}
 
-\subsubsection{4.3.1 Definition}
+\subsubsection{Definition}
 
 Given query position $i$ and key position $j$, define the distance:
 
@@ -550,25 +404,19 @@ The ramp mask is:
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \end{equation}
 
-\subsubsection{4.3.2 Properties}
+\subsubsection{Properties}
 
 \begin{itemize}
 \item \textbf{Continuous:} $g_z$ is continuous in $z$ and $d$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Piecewise-linear:} Three regimes (full, linear decay, zero).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Differentiable in $z$:}
-\end{itemize}
-\begin{equation}
-\frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
+  \begin{equation}
+\frac{\partial g\_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
 \end{equation}
-\begin{itemize}
 \item \textbf{Bounded:} $g_z \in [0, 1]$.
-\end{itemize}
 
-\subsubsection{4.3.3 Numerical Stability}
+\end{itemize}
+\subsubsection{Numerical Stability}
 
 We compute the ramp in FP32 and apply in log space:
 
@@ -578,7 +426,7 @@ We compute the ramp in FP32 and apply in log space:
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
 
-\subsection{4.4 Renormalization}
+\subsection{Renormalization}
 
 After masking, the attention row does not sum to 1. We renormalize:
 
@@ -593,7 +441,7 @@ softmax:
 P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
 \end{equation}
 
-\subsection{4.5 Fast Path Optimization}
+\subsection{Fast Path Optimization}
 
 If the ramp has no effect (all heads have $z_h + R \geq L$), we skip ramp 
 computation:
@@ -606,9 +454,9 @@ if not ((span + self.ramp_size) >= N_k).all():
 
 This avoids the $\mathcal{O}(H L^2)$ ramp allocation when unnecessary.
 
-\subsection{4.6 L1 Span Penalty}
+\subsection{L1 Span Penalty}
 
-\subsubsection{4.6.1 Formulation}
+\subsubsection{Formulation}
 
 We add to the loss:
 
@@ -616,7 +464,7 @@ We add to the loss:
 \mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
 \end{equation}
 
-\subsubsection{4.6.2 Effect}
+\subsubsection{Effect}
 
 The gradient w.r.t. $\ell_h$:
 
@@ -628,10 +476,11 @@ always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up
 when the model needs long-range context. The equilibrium depends on 
 $\lambda$.
 
-\subsubsection{4.6.3 Recommended Values}
+\subsubsection{Recommended Values}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$\lambda$} & \textbf{Effect} \\
@@ -646,17 +495,17 @@ $\lambda$.
 
 We use $\lambda = 0.01$ by default.
 
-\subsection{4.7 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
 Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
-        span_logits ℓ $\in$ R^H
+        span_logits   $\in$ R^H
         max_span S_max, ramp_size R
         attention_mask, is_causal
 Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
-1:  span $\leftarrow$ sigmoid(ℓ) * S_max                # (H,)
+1:  span $\leftarrow$ sigmoid( ) * S_max                # (H,)
 2:
 3:  S $\leftarrow$ Q @ K^T * scale                      # (B, H, L, L)
 4:
@@ -683,30 +532,32 @@ Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 25: return O
 \end{lstlisting}
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{ASA-Span} \\
 \midrule
 Score matrix & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H L^2)$ \\
-Ramp mask & --- & $\mathcal{O}(B H L^2)$ \\
+Ramp mask & -- & $\mathcal{O}(B H L^2)$ \\
 Softmax & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H L^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Note.} ASA-Span does \textbf{not reduce complexity}. The full score matrix is 
-still computed. Its benefit is \textbf{interpretability} and \textbf{pruning} --- the 
+still computed. Its benefit is \textbf{interpretability} and \textbf{pruning} -- the 
 model learns which spans matter. To realize speedup, one would apply a hard 
 mask after training and use sparse kernels.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA-Span} \\
@@ -715,8 +566,8 @@ $W_Q$ & $d H d_h$ \& Same \\
 $W_K$ & $d H_{kv} d_h$ \& Same \\
 $W_V$ & $d H_{kv} d_h$ \& Same \\
 $W_O$ & $H d_h d$ \& Same \\
-**Span logits** & 0 & **$H$** \\
-**LoRA** & 0 & $2 r_L (\cdots)$ \\
+\textbf{Span logits} & 0 & \textbf{$H$} \\
+\textbf{LoRA} & 0 & $2 r_L (\cdots)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -724,9 +575,9 @@ $W_O$ & $H d_h d$ \& Same \\
 ASA-Span adds \textbf{$H$ parameters} (one logit per head). It does not reduce 
 parameter count.
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 Approximation Quality}
+\subsubsection{Approximation Quality}
 
 For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 
@@ -740,7 +591,7 @@ where $\epsilon_R$ is the ramp-induced error:
 \epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
 \end{equation}
 
-\subsubsection{4.10.2 Head Span Heterogeneity}
+\subsubsection{Head Span Heterogeneity}
 
 Empirically, spans converge to a bimodal distribution:
 
@@ -748,7 +599,7 @@ Empirically, spans converge to a bimodal distribution:
 z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
 \end{equation}
 
-\subsubsection{4.10.3 Equilibrium of L1 Penalty}
+\subsubsection{Equilibrium of L1 Penalty}
 
 The equilibrium span satisfies:
 
@@ -758,32 +609,35 @@ The equilibrium span satisfies:
 
 The task loss derivative depends on the model, but in practice heads with 
 small gradients converge to small spans.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT \& Flat \& No \& No \& No & ✅ \\
-RoBERTa \& Nested \& No \& No \& No & ✅ \\
-GPT-2 \& Causal \& No \& No \& No & ✅ \\
+DistilBERT \& Flat \& No \& No \& No &  \\
+RoBERTa \& Nested \& No \& No \& No &  \\
+GPT-2 \& Causal \& No \& No \& No &  \\
 T5 \& Causal + bias \& No \& No \& Yes \& not tested \\
 Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& No \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 q_lin: Linear(768, 768)
@@ -792,9 +646,9 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-Direct copy. \texttt{is\\_nested\\_encoder = False}.
+Direct copy. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 attention.self.query: Linear(768, 768)
@@ -806,18 +660,18 @@ attention.output.dense: Linear(768, 768)
 Extract from inner \texttt{self}. The outer \texttt{attention.output.dense} is preserved 
 via \texttt{IdentityOutProj} (identity, no operation).
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
 attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 \end{lstlisting}
 
-Transpose \texttt{c\\_attn} weight, split into Q/K/V.
+Transpose \texttt{c\_attn} weight, split into Q/K/V.
 
-\subsubsection{5.2.4 T5 (Relative Position Bias)}
+\subsubsection{T5 (Relative Position Bias)}
 
-T5 has \texttt{relative\\_attention\\_bias} embedding. We preserve it:
+T5 has \texttt{relative\_attention\_bias} embedding. We preserve it:
 
 \begin{lstlisting}
 if hasattr(src, "relative_attention_bias"):
@@ -825,7 +679,7 @@ if hasattr(src, "relative_attention_bias"):
     self.has_relative_attention_bias = True
 \end{lstlisting}
 
-\subsection{5.3 Nested Encoder Handling}
+\subsection{Nested Encoder Handling}
 
 For RoBERTa/BERT, we use \texttt{IdentityOutProj} for the inner attention's output 
 projection:
@@ -840,7 +694,7 @@ class IdentityOutProj(nn.Identity):
 The outer \texttt{attention.output.dense} (in \texttt{BertAttention}) applies the actual 
 projection.
 
-\subsection{5.4 Causality}
+\subsection{Causality}
 
 For decoders, we apply the causal mask \textbf{before} the ramp:
 
@@ -852,7 +706,7 @@ scores = scores.masked_fill(~causal_tril, -10000.0)
 
 For causal distance, $d_{ij} = \max(0, i - j)$.
 
-\subsection{5.5 RoPE Handling}
+\subsection{RoPE Handling}
 
 RoPE is applied to Q, K \textbf{before} computing scores:
 
@@ -862,7 +716,7 @@ Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
 
 Then standard score computation, mask, ramp.
 
-\subsection{5.6 Fast Path}
+\subsection{Fast Path}
 
 If all heads have \texttt{span + R >= L}, we skip ramp computation entirely. This 
 avoids allocating $\mathcal{O}(H L^2)$ when unnecessary.
@@ -874,36 +728,32 @@ if not ((span + self.ramp_size) >= N_k).all():
     ...
 \end{lstlisting}
 
-\subsection{5.7 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject ASA-Span into a full model
 \begin{lstlisting}
 Input:  model M, config c, S_max, R
 Output: M with ASA-Span attention
 
-1:  for ℓ in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention(ℓ)
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
 3:      if src is None: continue
 4:      if is_already_adaptive_span(src): continue
 5:      new $\leftarrow$ AdaptiveSpanAttention(config=c, pretrained_attn=src,
 6:                                    max_span=S_max, ramp_size=R)
-7:      replace_attention(ℓ, new)
+7:      replace_attention( , new)
 8: end for
 \end{lstlisting}
 
-\subsection{5.8 Failure Handling}
+\subsection{Failure Handling}
 
-\texttt{inject\\_adaptive\\_span} returns \texttt{None} on:
+\texttt{inject\_adaptive\_span} returns \texttt{None} on:
 \begin{itemize}
 \item Already-injected layer (AdaptiveSpan instance)
-\end{itemize}
-\begin{itemize}
 \item DeltaNet/LinearAttention layers (unsupported)
-\end{itemize}
-\begin{itemize}
 \item Weight extraction failure
-\end{itemize}
 
+\end{itemize}
 \begin{lstlisting}
 try:
     new_block = AdaptiveSpanAttention(...)
@@ -911,10 +761,11 @@ except Exception:
     return None
 \end{lstlisting}
 
-\subsection{5.9 Parameter Count}
+\subsection{Parameter Count}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Projection} & \textbf{Params} \\
@@ -930,7 +781,7 @@ Span logits & $H$ \\
 
 Total: same as MHA + $H$ extra parameters.
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("adaptive_span")
@@ -938,18 +789,30 @@ Total: same as MHA + $H$ extra parameters.
 class AdaptiveSpanAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes}
+\subsection{Failure Modes}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of AdaptiveSpanAttention.}
+\label{fig:arch_AdaptiveSpanAttention}
+\end{figure}
 
 
-\clearpage
 
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
@@ -961,14 +824,15 @@ GPT-2 & 12 & 12 & 64 & 124.4M \& Causal \\
 \end{tabular}
 \end{table}
 
-Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Split} & \textbf{Size} \\
@@ -982,10 +846,11 @@ Test & 1,821 \\
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 ASA-Span Configuration}
+\subsection{ASA-Span Configuration}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
@@ -1000,10 +865,11 @@ LoRA alpha & 32 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
@@ -1018,36 +884,31 @@ Precision \& FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy, F1, Precision, Recall
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Learned span per head
-\end{itemize}
-\begin{itemize}
 \item Attention memory
-\end{itemize}
-\begin{itemize}
 \item Inference time
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Interpretability}
 \begin{itemize}
 \item Span distribution histogram
-\end{itemize}
-\begin{itemize}
 \item Layer-wise span evolution
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -1059,10 +920,11 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
@@ -1075,7 +937,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_adaptive_span.py \
@@ -1085,47 +947,51 @@ python run_all_4_adaptive_span.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{6.9 Ablations}
+\subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Results}
 
-
-\section{7. Results}
-
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Learned span} & \textbf{Attn mem} & \textbf{Time} \\
 \midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & --- & 128 KB & 1.9 s \\
-DistilBERT & **ASA-Span** & **89.5** & -1.2 & 0.895 & **68** & 128 KB & 2.1 s \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & --- & 128 KB & 4.1 s \\
-RoBERTa & **ASA-Span** & **76.5** & -2.1 & 0.765 & **72** & 128 KB & 4.5 s \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & --- & 128 KB & 4.2 s \\
-GPT-2 & **ASA-Span** & **77.5** & -1.9 & 0.775 & **75** & 128 KB & 4.6 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & -- & 128 KB & 1.9 s \\
+DistilBERT & \textbf{ASA-Span} & \textbf{89.5} & -1.2 & 0.895 & \textbf{68} & 128 KB & 2.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & -- & 128 KB & 4.1 s \\
+RoBERTa & \textbf{ASA-Span} & \textbf{76.5} & -2.1 & 0.765 & \textbf{72} & 128 KB & 4.5 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & -- & 128 KB & 4.2 s \\
+GPT-2 & \textbf{ASA-Span} & \textbf{77.5} & -1.9 & 0.775 & \textbf{75} & 128 KB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Learned Spans}
+\subsection{Learned Spans}
 
 \textbf{Table 7.2: Span distribution across heads.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Mean span} & \textbf{Min} & \textbf{Max} & \textbf{Std} & \textbf{Reduction from $S_\text{max}$} \\
 \midrule
-DistilBERT & **68** & 16 & 124 & 35 & 47\% \\
-RoBERTa & **72** & 20 & 128 & 32 & 44\% \\
-GPT-2 & **75** & 18 & 126 & 34 & 41\% \\
+DistilBERT & \textbf{68} & 16 & 124 & 35 & 47\% \\
+RoBERTa & \textbf{72} & 20 & 128 & 32 & 44\% \\
+GPT-2 & \textbf{75} & 18 & 126 & 34 & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1133,12 +999,13 @@ GPT-2 & **75** & 18 & 126 & 34 & 41\% \\
 \textbf{Observation.} Learned spans are \textbf{highly non-uniform}. Some heads 
 converge to < 16 (local), others to near $S_\text{max}$ (global).
 
-\subsection{7.3 Per-Layer Span Evolution}
+\subsection{Per-Layer Span Evolution}
 
 \textbf{Table 7.3: Mean span per layer (DistilBERT).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Mean span} \\
@@ -1157,12 +1024,13 @@ converge to < 16 (local), others to near $S_\text{max}$ (global).
 have \textbf{smaller} spans. This matches the observation that early layers 
 integrate global context while late layers refine local features.
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Memory and time.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
@@ -1179,12 +1047,13 @@ GPT-2 \& ASA-Span & 780 MB & 4.6 s \\
 because the ramp is applied as a \textbf{soft mask} rather than a hard window. 
 To realize speedup, a \textbf{hard truncation} post-training is needed.
 
-\subsection{7.5 Ablation: Max Span}
+\subsection{Ablation: Max Span}
 
 \textbf{Table 7.5: Accuracy vs $S_\text{max}$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$S_\text{max}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Learned mean} \\
@@ -1197,12 +1066,13 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Ramp Size}
+\subsection{Ablation: Ramp Size}
 
 \textbf{Table 7.6: Accuracy vs $R$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1219,12 +1089,13 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 \textbf{Observation.} Larger $R$ gives smoother transitions but less aggressive 
 pruning.
 
-\subsection{7.7 Ablation: L1 Penalty}
+\subsection{Ablation: L1 Penalty}
 
 \textbf{Table 7.7: Accuracy and span vs $\lambda$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT acc} & \textbf{Mean span} & \textbf{Reduction} \\
@@ -1239,12 +1110,13 @@ pruning.
 
 \textbf{Observation.} $\lambda = 0.01$ is a good balance.
 
-\subsection{7.8 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.8: Accuracy vs LoRA rank.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1257,12 +1129,13 @@ pruning.
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.9: Accuracy vs recovery steps.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1275,26 +1148,27 @@ pruning.
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.10: Comparison.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn mem} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
 GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & **2$$\times$** \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
 ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$$\times$ & 1.00$$\times$ \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** \& Learned span & 1.00$$\times$ & 1.00$$\times$ \\
+\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \& Learned span & 1.00$$\times$ & 1.00$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Training Loss and Span Evolution}
+\subsection{Training Loss and Span Evolution}
 
 \textbf{Figure 7.1} shows span evolution over training steps.
 
@@ -1302,51 +1176,40 @@ ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$$\times$ & 1.00$$\times$ \\
 shrinkage is faster in early layers, slower in late layers. By step 50, 
 convergence is reached.
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -1.2\%---1.9\%.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Learned spans:} 68--75 (from max 128).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reduction:} 47\%--41\%.
-\end{itemize}
-\begin{itemize}
 \item \textbf{No parameter reduction.}
-\end{itemize}
-\begin{itemize}
 \item \textbf{No speedup in current implementation.}
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Head Span Heterogeneity}
+\subsection{Head Span Heterogeneity}
 
 \textbf{Figure 8.1} shows the histogram of learned spans across all heads in each 
 model. The distribution is \textbf{bimodal}:
 
 \begin{itemize}
 \item \textbf{Local heads:} $\sim 40\%$ converge to $z_h < 32$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Global heads:} $\sim 30\%$ converge to $z_h > 96$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Middle heads:} $\sim 30\%$ fall in between
-\end{itemize}
 
+\end{itemize}
 \textbf{Table 8.1: Head classification.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Category} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1358,61 +1221,47 @@ Global ($z > 96$) & 3 & 3 & 3 \\
 \end{tabular}
 \end{table}
 
-\subsection{8.2 Layer-Wise Span Pattern}
+\subsection{Layer-Wise Span Pattern}
 
 \textbf{Figure 8.2} shows mean span vs layer for GPT-2. The pattern:
 
 \begin{itemize}
 \item \textbf{Layers 0--3}: mean span ~105 (larger)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Layers 4--8}: mean span ~75 (middle)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Layers 9--11}: mean span ~55 (smaller)
-\end{itemize}
 
+\end{itemize}
 \textbf{Interpretation.} Early layers need global context to integrate information; 
 late layers refine local features.
 
-\subsection{8.3 Span Shrinkage Dynamics}
+\subsection{Span Shrinkage Dynamics}
 
 \textbf{Figure 8.3} shows span vs training step. Key observations:
 
 \begin{itemize}
 \item \textbf{Step 0:} Spans $\approx$ $S_\text{max}$ (initialized open)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Step 10:} ~10\% shrinkage
-\end{itemize}
-\begin{itemize}
 \item \textbf{Step 30:} ~30\% shrinkage
-\end{itemize}
-\begin{itemize}
 \item \textbf{Step 50:} Convergence
-\end{itemize}
 
+\end{itemize}
 \textbf{Fast shrinkers.} Some heads shrink rapidly (within 10 steps), others 
 slowly. The fast shrinkers are typically \textbf{redundant heads} that can be 
 locally approximated.
 
-\subsection{8.4 Effect of Ramp Size}
+\subsection{Effect of Ramp Size}
 
 \textbf{Figure 8.4} shows the effective attention profile for different $R$:
 
 \begin{itemize}
 \item $R = 1$: Sharp cutoff (near-hard window)
-\end{itemize}
-\begin{itemize}
 \item $R = 16$: Moderate transition
-\end{itemize}
-\begin{itemize}
 \item $R = 64$: Very smooth, span effectively larger
-\end{itemize}
 
+\end{itemize}
 The optimal $R$ balances differentiability with pruning.
 
-\subsection{8.5 Span vs Attention Entropy}
+\subsection{Span vs Attention Entropy}
 
 \textbf{Figure 8.5} shows correlation between learned span and attention entropy:
 
@@ -1425,18 +1274,19 @@ attention); heads with \textbf{small spans} have \textbf{low entropy} (concentra
 attention). This confirms that span correlates with the actual attention 
 pattern.
 
-\subsection{8.6 Comparison with Fixed Window}
+\subsection{Comparison with Fixed Window}
 
 \textbf{Table 8.2: ASA-Span vs fixed window at same mean span.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Fixed $w = $ mean span & 85.0 & 73.0 & 74.0 \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** \\
+\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1444,12 +1294,13 @@ Fixed $w = $ mean span & 85.0 & 73.0 & 74.0 \\
 \textbf{Observation.} ASA-Span outperforms fixed-window by 4.5\% 
 because per-head adaptation captures head-specific needs.
 
-\subsection{8.7 Span Interpretability}
+\subsection{Span Interpretability}
 
 \textbf{Table 8.3: Head spans in DistilBERT layer 3.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Head} & \textbf{Span} & \textbf{Interpretation} \\
@@ -1465,29 +1316,30 @@ because per-head adaptation captures head-specific needs.
 Manual inspection shows that \textbf{local heads} typically track syntactic 
 dependencies; \textbf{global heads} track semantic relationships.
 
-\subsection{8.8 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.8.1 Log-Space Ramp}
+\subsubsection{Log-Space Ramp}
 
 We compute \texttt{log(ramp + $\epsilon$)} in FP32 to avoid \texttt{log(0) = -inf}. The \texttt{$\epsilon$ = 1e-8} 
 prevents underflow.
 
-\subsubsection{8.8.2 Softmax Renormalization}
+\subsubsection{Softmax Renormalization}
 
 After ramp masking, the row may sum to a very small number. We renormalize 
 via softmax, which is numerically stable.
 
-\subsubsection{8.8.3 FP16 Issues}
+\subsubsection{FP16 Issues}
 
 The ramp mask is computed in FP32 for accuracy. Cast back to FP16 for the 
 context computation.
 
-\subsection{8.9 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.9.1 Layers Where ASA-Span Fails}
+\subsubsection{Layers Where ASA-Span Fails}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
@@ -1498,78 +1350,75 @@ layer.2.attn \& RoBERTa & 1.8 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.9.2 Root Causes}
+\subsubsection{Root Causes}
 
 Some heads need larger span than initialized
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Learned spans are bimodal}: local vs global heads.
-2. \textbf{Layer depth correlates with span}: early = larger, late = smaller.
-3. \textbf{$R = 32$} is optimal.
-4. \textbf{$\lambda = 0.01$} balances compression and accuracy.
-5. \textbf{Attention entropy} correlates with learned span.
-6. \textbf{No speedup without hard truncation.}
+\begin{enumerate}
+\item \textbf{Learned spans are bimodal}: local vs global heads.
+\item \textbf{Layer depth correlates with span}: early = larger, late = smaller.
+\item \textbf{$R = 32$} is optimal.
+\item \textbf{$\lambda = 0.01$} balances compression and accuracy.
+\item \textbf{Attention entropy} correlates with learned span.
+\item \textbf{No speedup without hard truncation.}
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Learned Spans are Interpretable}
+\subsubsection{Takeaway 1: Learned Spans are Interpretable}
 
 The learned spans reveal a \textbf{structural} pattern in the model: some heads 
 are naturally local, others global. This is not visible from fixed-window 
 methods.
 
-\subsubsection{9.1.2 Takeaway 2: Span Regularization Works}
+\subsubsection{Takeaway 2: Span Regularization Works}
 
 The L1 penalty causes spans to shrink gracefully, with minimal accuracy loss 
 at $\lambda = 0.01$.
 
-\subsubsection{9.1.3 Takeaway 3: No Speedup Without Hard Truncation}
+\subsubsection{Takeaway 3: No Speedup Without Hard Truncation}
 
 The soft ramp is differentiable but \textbf{does not speed up inference} because 
 all scores are still computed. To realize speedup, one would:
-1. Train with soft ramp.
-2. Convert to hard window at inference.
-3. Use a sparse kernel.
+\begin{enumerate}
+\item Train with soft ramp.
+\item Convert to hard window at inference.
+\item Use a sparse kernel.
 
-\subsection{9.2 When to Use ASA-Span}
+\end{enumerate}
+\subsection{When to Use ASA-Span}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
 \item \textbf{Interpretability studies} (head structure analysis)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for hard-window pruning}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Long-context fine-tuning}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with other methods}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Immediate speedup needed} (use hard window directly)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter-constrained} (use A3/AASVD)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Very short sequences} (no benefit)
-\end{itemize}
 
-\subsection{9.3 Choosing Max Span}
+\end{itemize}
+\subsection{Choosing Max Span}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Sequence length} & \textbf{Recommended $S_\text{max}$} \\
@@ -1584,10 +1433,11 @@ all scores are still computed. To realize speedup, one would:
 
 \textbf{Rule of thumb.} $S_\text{max} = L / 4$ to $L / 2$.
 
-\subsection{9.4 Choosing Ramp Size}
+\subsection{Choosing Ramp Size}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Use case} & \textbf{Recommended $R$} \\
@@ -1600,17 +1450,18 @@ Very smooth & 64 \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For DistilBERT at $L = 128$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{Accuracy} & \textbf{Mean span} & \textbf{Reduction} \\
 \midrule
-Baseline & 90.71\% & --- & --- \\
+Baseline & 90.71\% & -- & -- \\
 ASA-Span $\lambda=0$ & 90.5\% & 126 & 0\% \\
 ASA-Span $\lambda=0.01$ & 89.5\% & 68 & 47\% \\
 ASA-Span $\lambda=0.1$ & 86.0\% & 32 & 75\% \\
@@ -1618,215 +1469,202 @@ ASA-Span $\lambda=0.1$ & 86.0\% & 32 & 75\% \\
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Conversion to Hard Window}
+\subsection{Conversion to Hard Window}
 
 To realize speedup, one can:
 
-1. \textbf{Train} with soft ramp.
-2. \textbf{Extract} learned spans $\{z_h\}$.
-3. \textbf{Round} to nearest power of 2 (for kernel alignment).
-4. \textbf{Replace} soft ramp with hard band mask.
-5. \textbf{Use sparse kernel} (e.g., block-sparse or flash attention with local window).
+\begin{enumerate}
+\item \textbf{Train} with soft ramp.
+\item \textbf{Extract} learned spans $\{z_h\}$.
+\item \textbf{Round} to nearest power of 2 (for kernel alignment).
+\item \textbf{Replace} soft ramp with hard band mask.
+\item \textbf{Use sparse kernel} (e.g., block-sparse or flash attention with local window).
 
-\subsection{9.7 Open Questions}
+\end{enumerate}
+\subsection{Open Questions}
 
-1. \textbf{Learned ramp size:} Can we learn $R$ per head?
-2. \textbf{Interaction with content:} Does distance-based sparsity combine with 
-   content-based (e.g., ASA-Sparse)?
-3. \textbf{Cross-layer transfer:} Do spans transfer between tasks?
-4. \textbf{Long-context scaling:} How do spans evolve at $L = 4096$?
+\begin{enumerate}
+\item \textbf{Learned ramp size:} Can we learn $R$ per head?
+\item \textbf{Interaction with content:} Does distance-based sparsity combine with
+  content-based (e.g., ASA-Sparse)?
+\item \textbf{Cross-layer transfer:} Do spans transfer between tasks?
+\item \textbf{Long-context scaling:} How do spans evolve at $L = 4096$?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Interpretability:} Reveals head structure.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Foundation for pruning:} Basis for hard-window deployment.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Efficiency:} Enables fixed-window deployment.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~0.8 kg CO$_2$eq.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 No Speedup}
+\subsection{No Speedup}
 
 ASA-Span \textbf{does not} reduce inference time because all scores are computed. 
 The soft ramp only changes the \textbf{values}, not the \textbf{structure}. To 
 realize speedup, hard truncation + sparse kernels are needed (not implemented).
 
-\subsection{10.2 No Parameter Reduction}
+\subsection{No Parameter Reduction}
 
 ASA-Span adds $H$ parameters (span logits). Total parameter count is 
 \textbf{unchanged}.
 
-\subsection{10.3 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated. Long-context tasks ($L > 512$) not tested.
 
-\subsection{10.4 Model Coverage}
+\subsection{Model Coverage}
 
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.5 Fixed Ramp Size}
+\end{itemize}
+\subsection{Fixed Ramp Size}
 
 The ramp size $R$ is a hyperparameter, not learned. Future work could learn 
 it per-head.
 
-\subsection{10.6 Distance-Only Masking}
+\subsection{Distance-Only Masking}
 
 ASA-Span uses only distance, not content. This is complementary to 
 content-based methods but limits expressiveness.
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item Longformer
-\end{itemize}
-\begin{itemize}
 \item BigBird
-\end{itemize}
-\begin{itemize}
 \item Mistral sliding window
-\end{itemize}
 
-\subsection{10.9 T5 / Qwen Not Verified}
+\end{itemize}
+\subsection{T5 / Qwen Not Verified}
 
 The T5 relative position bias and Qwen RoPE + GQA paths are implemented but 
 not tested in this paper.
 
-\subsection{10.10 Failure Modes}
+\subsection{Failure Modes}
 
 Long-context evaluation, hard truncation speedup
 
-\subsection{10.11 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.12 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Adaptive Span Attention} (ASA-Span), a learnable per-head 
 window mechanism for transformer attention. Each head maintains a scalar 
 logit that controls its span, masked via a continuous soft ramp. An L1 penalty 
 encourages span shrinkage, achieving automatic pruning.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Learned span} & \textbf{Reduction} \\
 \midrule
-DistilBERT & -1.2\% & **68** & 47\% \\
-RoBERTa & -2.1\% & **72** & 44\% \\
-GPT-2 & -1.9\% & **75** & 41\% \\
+DistilBERT & -1.2\% & \textbf{68} & 47\% \\
+RoBERTa & -2.1\% & \textbf{72} & 44\% \\
+GPT-2 & -1.9\% & \textbf{75} & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Learned spans are bimodal}: local vs global heads.
-2. \textbf{Layer depth correlates with span}: early = larger, late = smaller.
-3. \textbf{L1 regularization shrinks spans} to the minimum needed.
-4. \textbf{No speedup without hard truncation.}
-5. \textbf{Interpretability is the main benefit.}
+\begin{enumerate}
+\item \textbf{Learned spans are bimodal}: local vs global heads.
+\item \textbf{Layer depth correlates with span}: early = larger, late = smaller.
+\item \textbf{L1 regularization shrinks spans} to the minimum needed.
+\item \textbf{No speedup without hard truncation.}
+\item \textbf{Interpretability is the main benefit.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Learn ramp size per-head
-\end{itemize}
-\begin{itemize}
 \item Hard truncation + sparse kernels
-\end{itemize}
-\begin{itemize}
 \item Combine with content-based sparsity
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical bounds on span vs accuracy
-\end{itemize}
-\begin{itemize}
 \item Cross-task span transfer
-\end{itemize}
-\begin{itemize}
 \item Integration with compression
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 ASA-Span provides an interpretable mechanism for learning per-head attention 
 windows. We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank The authors thank the high-performance computing facilities and open-source community for compute resources and framework support..
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{Taha Majs} designed the implementation, ran experiments, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Collaborative Research Team} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -1836,7 +1674,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running}
+\subsection{Running}
 
 \begin{lstlisting}
 python run_all_4_adaptive_span.py \
@@ -1846,7 +1684,7 @@ python run_all_4_adaptive_span.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
@@ -1874,7 +1712,7 @@ for L in 0 0.001 0.01 0.1; do
 done
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -1885,10 +1723,11 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Mean span} \\
@@ -1900,34 +1739,28 @@ GPT-2 & 77.5\% $\pm$ 1\% & ~75 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\\_span}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_adaptive\\_span/*/summary.csv}
-\end{itemize}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_span}
+\item \textbf{Metrics:} \texttt{results/unified\_adaptive\_span/*/summary.csv}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Slow training due to ramp allocation
-\end{itemize}
-\begin{itemize}
 \item Fast path optimization needed for short sequences
-\end{itemize}
-\begin{itemize}
 \item No hard truncation for actual speedup
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{vaswani2017attention,
@@ -2055,8 +1888,10 @@ GPT-2 & 77.5\% $\pm$ 1\% & ~75 \\
   year={2021}
 }
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix A. Mathematical Derivations}
@@ -2080,14 +1915,10 @@ Composition preserves continuity. $\square$
 
 \begin{itemize}
 \item For $d < z$: $g_z(d) = 1$ (constant), so $\partial g_z / \partial z = 0$.
-\end{itemize}
-\begin{itemize}
 \item For $z < d < z + R$: $g_z(d) = (R + z - d) / R$, so $\partial g_z / \partial z = 1/R$.
-\end{itemize}
-\begin{itemize}
 \item For $d > z + R$: $g_z(d) = 0$ (constant), so $\partial g_z / \partial z = 0$.
-\end{itemize}
 
+\end{itemize}
 At the boundaries $d = z$ and $d = z + R$, the derivative is one-sided but 
 the function is continuous. $\square$
 
@@ -2173,8 +2004,10 @@ P_{ij}^{\text{hard}} = \frac{\mathbb{1}[|i-j| \le w] \exp(S_{ij})}{\sum_j \mathb
 
 The soft ramp approaches this as $R \to 0$. For finite $R$, the soft ramp 
 provides \textbf{smoother gradients} and \textbf{avoids boundary artifacts}.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix B. Implementation Details}
@@ -2298,9 +2131,11 @@ Use \texttt{logit = 4.0}.
 \subsubsection{B.6.5 Missing Fast Path}
 
 Without fast path, ramp is allocated even for short sequences. Add the 
-\texttt{if not ((span + ramp) >= N\\_k).all()} check.
+\texttt{if not ((span + ramp) >= N\_k).all()} check.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix C. Full Experimental Data}
@@ -2309,6 +2144,7 @@ Without fast path, ramp is allocated even for short sequences. Add the
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2331,6 +2167,7 @@ Inference time & 2.1 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2347,6 +2184,7 @@ Reduction & 44\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2363,6 +2201,7 @@ Reduction & 41\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Mean span} \\
@@ -2381,6 +2220,7 @@ Reduction & 41\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$S_\text{max}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2397,6 +2237,7 @@ Reduction & 41\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2414,6 +2255,7 @@ Reduction & 41\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT acc} & \textbf{Mean span} \\
@@ -2430,6 +2272,7 @@ Reduction & 41\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Head} & \textbf{Span} \\
@@ -2485,8 +2328,10 @@ for S in 32 64 128 256; do
     python run_all_4_adaptive_span.py --max_span $S
 done
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix D. Negative Results}
@@ -2552,6 +2397,7 @@ Multiple disjoint windows per head. No improvement.
 \subsubsection{Ramp Size Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
@@ -2568,6 +2414,7 @@ Multiple disjoint windows per head. No improvement.
 \subsubsection{L1 Too Aggressive}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT} \\
@@ -2585,6 +2432,7 @@ Aggressive L1 collapses spans; accuracy drops.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -2601,6 +2449,7 @@ Per-layer $\lambda$ \& Quality \& No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
@@ -2608,21 +2457,25 @@ Per-layer $\lambda$ \& Quality \& No improvement \\
 42 & 89.5 \\
 123 & 89.3 \\
 456 & 89.7 \\
-**Mean** & **89.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{89.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Start fully open, shrink via L1.}
-2. \textbf{Soft ramp is essential} for differentiability.
-3. \textbf{$R = 32$} is a good default.
-4. \textbf{$\lambda = 0.01$} balances compression and accuracy.
-5. \textbf{Learned spans are interpretable.}
+\begin{enumerate}
+\item \textbf{Start fully open, shrink via L1.}
+\item \textbf{Soft ramp is essential} for differentiability.
+\item \textbf{$R = 32$} is a good default.
+\item \textbf{$\lambda = 0.01$} balances compression and accuracy.
+\item \textbf{Learned spans are interpretable.}
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix E. Ethical Considerations}
@@ -2632,43 +2485,31 @@ Per-layer $\lambda$ \& Quality \& No improvement \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Interpretability:} Reveals head structure.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Foundation for pruning:} Basis for hard-window deployment.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Efficiency:} Enables fixed-window deployment.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Efficiency gains benefit malicious applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Environmental Impact}
 
 \begin{itemize}
 \item \textbf{Total GPU-hours:} ~12
-\end{itemize}
-\begin{itemize}
 \item \textbf{Estimated CO$_2$:} 0.85 kg CO$_2$eq
-\end{itemize}
 
+\end{itemize}
 \subsection{E.3 Data Ethics}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English movie reviews)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias:} Western-centric
-\end{itemize}
 
+\end{itemize}
 \subsection{E.4 Model Ethics}
 
 \subsubsection{Bias}
@@ -2682,7 +2523,7 @@ Not endorsed.
 
 \subsection{E.5 Authorship and Credit}
 
-See §11.7.
+See  11.7.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -2702,34 +2543,32 @@ Parts drafted with LLM assistance.
 
 \subsection{E.10 Reproducibility Commitments}
 
-1. Release code
-2. Release checkpoints
-3. Report negative results
-4. Document all hyperparameters
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document all hyperparameters
 
+\end{enumerate}
 \subsection{E.11 Long-Term Considerations}
 
 Adaptive spans could:
 
 \begin{itemize}
 \item Reveal structural properties of transformer heads
-\end{itemize}
-\begin{itemize}
 \item Enable efficient deployment on edge
-\end{itemize}
-\begin{itemize}
 \item Reduce AI's carbon footprint
-\end{itemize}
 
+\end{itemize}
 But also:
 
 \begin{itemize}
 \item Enable widespread AI deployment
-\end{itemize}
-\begin{itemize}
 \item Concentrate capabilities
+
 \end{itemize}
-
 We encourage community discussion.
+\begin{lstlisting}
 
-\end{document}
+---
+\end{lstlisting}
