@@ -2433,8 +2433,26 @@ def run_single_module_main(args) -> dict:
         }), encoding="utf-8")
     except Exception as e:
         LOG.warning("Could not write finetune_metadata.json: %s", e)
-    LOG.info("Precomputing validation and training batches directly on device %s...", device)
-    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else (out / "batch_cache")
+    # Make batch cache dataset-specific to prevent cross-dataset contamination
+    if getattr(args, "cached_batches_dir", None):
+        _cached_dir = Path(args.cached_batches_dir)
+        if _cached_dir.name == "batch_cache":
+            _cached_dir = _cached_dir.parent / f"batch_cache_{args.dataset}"
+    else:
+        _cached_dir = out / f"batch_cache_{args.dataset}"
+
+    cache_meta = _cached_dir / "meta.json"
+    if cache_meta.exists():
+        try:
+            with open(cache_meta, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+            if meta.get("dataset") != args.dataset:
+                import shutil
+                shutil.rmtree(str(_cached_dir), ignore_errors=True)
+                _cached_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+
     _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
     _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
     eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
@@ -2455,6 +2473,13 @@ def run_single_module_main(args) -> dict:
                 _cached_dir.mkdir(parents=True, exist_ok=True)
                 torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches], str(_eval_cache))
                 torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches], str(_train_cache))
+                meta_content = {
+                    "dataset": args.dataset,
+                    "max_length": eval_seq_len,
+                    "num_eval_batches": len(eval_batches),
+                    "num_train_batches": len(train_batches),
+                }
+                cache_meta.write_text(json.dumps(meta_content, indent=2), encoding="utf-8")
                 LOG.info("Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)", _cached_dir)
             except Exception as _cache_err:
                 LOG.warning("Could not save batch cache: %s", _cache_err)
