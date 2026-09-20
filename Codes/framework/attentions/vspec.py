@@ -765,8 +765,8 @@ class VSpecAttention(BaseAttention):
         if k_len == N:
             output = out
         else:
-            output = torch.zeros(B, N, D, device=device, dtype=out.dtype)
-            output.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, D), out)
+            zeros = torch.zeros(B, N, D, device=device, dtype=out.dtype)
+            output = zeros.scatter(1, idx.unsqueeze(-1).expand(-1, -1, D), out)
 
         return (output, (attn_weights if output_attentions else None))
 
