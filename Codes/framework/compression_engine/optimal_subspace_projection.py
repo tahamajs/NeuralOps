@@ -516,9 +516,9 @@ def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = Non
         return compressed_model
     except Exception as e:
         logger.error("optimal_subspace_projection_factory failed: %s", e)
-        if kwargs.get("return_stats", False) or kwargs.get("return_tuple", False):
-            return None, {}
-        return None
+        if kwargs.get("return_stats", False) or kwargs.get("return_tuple", False) or ('return_stats' in locals() and return_stats):
+            return model, {}
+        return model
 
 
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection_inject")

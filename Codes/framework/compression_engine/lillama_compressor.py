@@ -268,7 +268,7 @@ class LiLLaMACompressor(BaseCompressor):
                     continue
 
             final_w = W_new.t().contiguous() if is_conv1d else W_new
-            target_layer.weight.data = final_w.to(dtype=dtype, device=device)
+            target_layer.weight.data.copy_(final_w.to(dtype=dtype, device=device))
             # Freeze base weight, preserve LoRA adapter trainability
             target_layer.weight.requires_grad = False
             if hasattr(target_layer, "bias") and target_layer.bias is not None:
@@ -317,7 +317,7 @@ class LiLLaMACompressor(BaseCompressor):
         self.stats = stats
         logger.info(
             "LiLLaMA compression complete: %d layers distilled, avg error: %.4f",
-            distilled_layers_count,
+            len(self.compressed_layers),
             avg_err,
         )
         return self.model, stats

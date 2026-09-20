@@ -8,9 +8,6 @@ from framework.compression_engine.kvtc_compressor import (
     SimpleEntropyCoder,
     kvtc_factory,
 )
-from framework.core.registry import COMPRESSOR_REGISTRY
-
-COMPRESSOR_REGISTRY.register("kvtc_quantizer")(kvtc_factory)
 
 __all__ = [
     "KVTCCompressor",
