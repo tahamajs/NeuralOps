@@ -140,6 +140,8 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dtype != self.weight.dtype:
+            x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
@@ -494,8 +496,8 @@ class LinformerAttention(BaseAttention):
             ).squeeze(0).to(dtype=dtype, device=device)
 
         # Project key/value sequence dimensions: (k_eff, L) @ (B, H, L, d) -> (B, H, k_eff, d)
-        K_proj = torch.matmul(E_act, k)
-        V_proj = torch.matmul(F_act, v)
+        K_proj = torch.matmul(E_act.to(k.dtype), k)
+        V_proj = torch.matmul(F_act.to(v.dtype), v)
 
         scale = 1.0 / math.sqrt(d)
         scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale  # [B, H, L, k_eff]
@@ -529,7 +531,7 @@ class LinformerAttention(BaseAttention):
                 hm = head_mask
             attn = attn * hm
 
-        context = torch.matmul(attn, V_proj)  # [B, H, L, d]
+        context = torch.matmul(attn, V_proj.to(attn.dtype))  # [B, H, L, d]
         context = context * mask_expanded
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
@@ -538,7 +540,7 @@ class LinformerAttention(BaseAttention):
         else:
             out = self.out_proj(context )
 
-        return out, (attn if output_attentions else None)
+        return out.to(dtype), (attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("linformer_inject")
