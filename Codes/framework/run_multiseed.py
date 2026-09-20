@@ -8,11 +8,7 @@ Target Rank: 64
 
 Outputs:
   - results/multiseed/{seed}/{module}.json
-  - results/multiseed/summary.csv with columns: module, mean_acc, std_acc, mean_f1, std_f1
-
-Usage:
-    python run_multiseed.py --dry_run
-    python run_multiseed.py --rank 64
+  - results/multiseed/final_summary.csv with columns: module, mean_acc, std_acc, mean_f1, std_f1
 """
 from __future__ import annotations
 
@@ -28,7 +24,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from transformers import AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from datasets import load_from_disk, load_dataset
 
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
@@ -37,12 +34,13 @@ sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
+from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
 
 LOG = logging.getLogger("MultiSeedRunner")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 SEEDS = [42, 123, 456]
-TARGET_MODULES = ["dense", "a3", "kmeans", "aasvd", "adaptive_svd"]
+TARGET_MODULES = ["dense", "a3", "kmeans", "aasvd", "adaptive_svd", "adaptive"]
 
 
 def seed_everything(seed: int):
@@ -64,6 +62,8 @@ def parse_args():
     )
     parser.add_argument("--model_path", type=str, default="models/distilbert_mnli_full",
                         help="Path to fine-tuned model checkpoint")
+    parser.add_argument("--dataset_dir", type=str, default="Codes/framework/data/glue_data/mnli",
+                        help="Path to MNLI dataset directory")
     parser.add_argument("--output_dir", type=str, default="results/multiseed",
                         help="Directory to save multi-seed results")
     parser.add_argument("--seeds", type=int, nargs="*", default=SEEDS,
@@ -72,6 +72,8 @@ def parse_args():
                         help="List of modules to evaluate across seeds")
     parser.add_argument("--rank", type=int, default=64,
                         help="Target rank for low-rank decomposition")
+    parser.add_argument("--batch_size", type=int, default=None,
+                        help="Batch size for validation (auto-sizes to 32/16/8 based on VRAM if not specified)")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print planned evaluation matrix without running")
     return parser.parse_args()
@@ -79,13 +81,25 @@ def parse_args():
 
 def main():
     args = parse_args()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if args.batch_size is None:
+        if device.type == "cuda":
+            try:
+                free_bytes, _ = torch.cuda.mem_get_info()
+                free_gb = free_bytes / (1024 ** 3)
+                args.batch_size = 32 if free_gb >= 6.0 else (16 if free_gb >= 4.0 else 8)
+            except Exception:
+                args.batch_size = 16
+        else:
+            args.batch_size = 16
 
     print("=" * 80)
     print("MULTI-SEED STATISTICAL RIGOR EVALUATION (MNLI)")
-    print(f"Seeds:   {args.seeds}")
-    print(f"Modules: {args.modules}")
-    print(f"Rank:    {args.rank}")
+    print(f"Seeds:      {args.seeds}")
+    print(f"Modules:    {args.modules}")
+    print(f"Rank:       {args.rank}")
+    print(f"Batch Size: {args.batch_size}")
     print("=" * 80)
 
     if args.dry_run:
@@ -98,7 +112,18 @@ def main():
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    summary_csv = out_dir / "summary.csv"
+    summary_csv = out_dir / "final_summary.csv"
+
+    # Load dataset validation split
+    if Path(args.dataset_dir).exists():
+        ds = load_from_disk(args.dataset_dir)
+    else:
+        ds = load_dataset("glue", "mnli")
+    val_split = ds["validation_matched"] if "validation_matched" in ds else ds["validation"]
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model_path)
+    eval_batches = prepare_eval_batches(tokenizer, val_split, "mnli", 128, args.batch_size, device)
+    LOG.info("Prepared %d validation batches for MNLI evaluation", len(eval_batches))
 
     # Store runs: module -> list of accuracies and F1s
     module_runs = {m: {"acc": [], "f1": []} for m in args.modules}
@@ -116,8 +141,7 @@ def main():
 
             try:
                 model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
-                if device == "cuda":
-                    model.half()
+                model.eval()
                 model.to(device)
 
                 if mod != "dense":
@@ -125,10 +149,15 @@ def main():
                     model, comp_stats = apply_module_to_model(
                         model, mod, typ, rank=args.rank, device=device
                     )
+                    model.eval()
+                    model.to(device)
 
-                # Simulated mock result dict if eval helper is called offline
-                acc = 82.5 + random.uniform(-0.5, 0.5) if mod != "dense" else 84.1 + random.uniform(-0.2, 0.2)
-                f1 = acc / 100.0 * 0.99
+                eval_res = evaluate_comprehensive(
+                    model, tokenizer, val_split, "mnli", 128, args.batch_size, device,
+                    fp16=True, precomputed_batches=eval_batches
+                )
+                acc = float(eval_res["accuracy_pct"])
+                f1 = float(eval_res["f1_score"])
 
                 module_runs[mod]["acc"].append(acc)
                 module_runs[mod]["f1"].append(f1)
@@ -171,6 +200,13 @@ def main():
         })
 
     with open(summary_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["module", "mean_acc", "std_acc", "mean_f1", "std_f1", "num_seeds"])
+        writer.writeheader()
+        for r in summary_rows:
+            writer.writerow(r)
+
+    # Also duplicate to summary.csv
+    with open(out_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["module", "mean_acc", "std_acc", "mean_f1", "std_f1", "num_seeds"])
         writer.writeheader()
         for r in summary_rows:
