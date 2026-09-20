@@ -110,10 +110,9 @@ class CompressedDistilBertAttention(BaseAttention):
         self.is_decoder: bool = bool(getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes))
         self.is_nested_encoder: bool = False
 
-        h_sz = self.hidden_size
-        rank_val = rank or kwargs.get("rank_qkv", rank_qkv if "rank_qkv" in kwargs else h_sz)
+        rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
         self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
-        out_r = rank or kwargs.get("rank_out", rank_out if "rank_out" in kwargs else h_sz)
+        out_r = rank or kwargs.get("rank_out", rank_out)
         self.rank_out = min(out_r, self.all_head_size, self.hidden_size)
         self.lora_rank = getattr(cfg, "lora_rank", lora_rank)
         self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
