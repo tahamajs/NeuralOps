@@ -26,7 +26,7 @@ from typing import Optional
 
 import torch
 from torch.utils.data import DataLoader, Dataset
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 
 
 class ByteIMDbDataset(Dataset):
@@ -35,44 +35,63 @@ class ByteIMDbDataset(Dataset):
     Each character is encoded as UTF-8 bytes (vocabulary size 256, 0 reserved for PAD).
     """
 
-    def __init__(self, split: str = "test", max_length: int = 4096):
+    def __init__(self, split: str = "test", max_length: int = 4096, dataset_dir: Optional[str] = None):
         self.split = split
         self.max_length = max_length
+        self.dataset_dir = dataset_dir
         self.samples = []
         self._load_data()
 
     def _load_data(self):
         loaded = False
 
-        # Attempt 1: Load pre-built byte-imdb
-        for candidate_name in ["harubaru2/byte-imdb", "lra/byte-level-imdb"]:
+        # Attempt 0: Load from explicit local dataset_dir
+        if self.dataset_dir and Path(self.dataset_dir).exists():
             try:
-                ds = load_dataset(candidate_name, split=self.split)
-                for item in ds:
-                    raw_input = item.get("input_ids", item.get("text", item.get("bytes", [])))
-                    label = int(item.get("label", item.get("target", 0)))
-                    self.samples.append((raw_input, label))
-                loaded = True
-                print(f"[DATA] Successfully loaded {len(self.samples)} samples from {candidate_name} ({self.split})")
-                break
-            except Exception:
-                continue
-
-        # Attempt 2: Fallback to standard HuggingFace 'imdb' and convert to byte-level
-        if not loaded:
-            try:
-                print(f"[DATA] Loading standard 'imdb' dataset and converting to byte streams...")
-                ds = load_dataset("imdb", split=self.split)
-                for item in ds:
-                    # Encode text as raw UTF-8 byte values (1-255, +1 offset to avoid 0)
-                    text = item["text"]
+                print(f"[DATA] Loading dataset from local disk: {self.dataset_dir}")
+                ds_disk = load_from_disk(self.dataset_dir)
+                split_data = ds_disk[self.split] if self.split in ds_disk else (ds_disk["test"] if "test" in ds_disk else ds_disk["train"])
+                for item in split_data:
+                    text = item.get("text", "")
                     raw_bytes = [b + 1 for b in text.encode("utf-8")[:self.max_length]]
-                    label = int(item["label"])
+                    label = int(item.get("label", 0))
                     self.samples.append((raw_bytes, label))
                 loaded = True
-                print(f"[DATA] Successfully converted {len(self.samples)} samples from standard imdb to byte level")
-            except Exception as e:
-                print(f"[DATA ERROR] Could not load online imdb dataset: {e}")
+                print(f"[DATA] Successfully loaded {len(self.samples)} samples from local disk: {self.dataset_dir}")
+            except Exception as disk_err:
+                print(f"[DATA] Local disk load note: {disk_err}")
+
+        # Attempt 1: Load pre-built byte-imdb
+        if not loaded:
+            for candidate_name in ["harubaru2/byte-imdb", "lra/byte-level-imdb"]:
+                try:
+                    ds = load_dataset(candidate_name, split=self.split)
+                    for item in ds:
+                        raw_input = item.get("input_ids", item.get("text", item.get("bytes", [])))
+                        label = int(item.get("label", item.get("target", 0)))
+                        self.samples.append((raw_input, label))
+                    loaded = True
+                    print(f"[DATA] Successfully loaded {len(self.samples)} samples from {candidate_name} ({self.split})")
+                    break
+                except Exception:
+                    continue
+
+        # Attempt 2: Fallback to standard HuggingFace 'imdb' or 'stanfordnlp/imdb' and convert to byte-level
+        if not loaded:
+            for imdb_id in ["stanfordnlp/imdb", "imdb"]:
+                try:
+                    print(f"[DATA] Loading standard '{imdb_id}' dataset and converting to byte streams...")
+                    ds = load_dataset(imdb_id, split=self.split)
+                    for item in ds:
+                        text = item["text"]
+                        raw_bytes = [b + 1 for b in text.encode("utf-8")[:self.max_length]]
+                        label = int(item["label"])
+                        self.samples.append((raw_bytes, label))
+                    loaded = True
+                    print(f"[DATA] Successfully converted {len(self.samples)} samples from {imdb_id} to byte level")
+                    break
+                except Exception as e:
+                    print(f"[DATA ERROR] Could not load online {imdb_id} dataset: {e}")
 
         # Attempt 3: Local disk cache fallback
         if not loaded:
@@ -124,12 +143,13 @@ def get_byte_imdb_dataloader(
     batch_size: int = 2,
     max_length: int = 4096,
     num_workers: int = 0,
+    dataset_dir: Optional[str] = None,
 ) -> DataLoader:
     """
     Creates a PyTorch DataLoader for Byte-Level IMDb with fixed 4096 sequence length.
     Batch size defaults to 2 to strictly guard against CUDA OOM.
     """
-    dataset = ByteIMDbDataset(split=split, max_length=max_length)
+    dataset = ByteIMDbDataset(split=split, max_length=max_length, dataset_dir=dataset_dir)
     return DataLoader(
         dataset,
         batch_size=batch_size,
