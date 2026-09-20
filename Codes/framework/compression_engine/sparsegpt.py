@@ -224,19 +224,32 @@ class SparseGPTCompressor(BaseCompressor):
             for j in range(count):
                 w_col = W_block[:, j].clone()
                 diag_inv = max(H_inv_block[j, j].item(), 1e-8)
+                saliency_col = (w_col ** 2) / (2.0 * diag_inv)
 
-                if self.structured_24:
-                    saliency_col = (w_col ** 2) / (2.0 * diag_inv)
+                # N:M structured or unstructured pruning with OBS error compensation (B10, H25)
+                if self.structured_24 or (self.prunem > 0 and self.prunen > 0):
+                    M = max(1, self.prunem)
+                    N = max(1, min(self.prunen, M))
+                    # At the end of every M-group or block boundary, apply N:M mask across the group
+                    if (j + 1) % M == 0 or (j + 1 == count):
+                        start_c = (j // M) * M
+                        sub_w = W_block[:, start_c : j + 1]
+                        sub_h_diag = torch.diagonal(H_inv_block[start_c : j + 1, start_c : j + 1]).clamp(min=1e-8)
+                        sub_saliency = (sub_w ** 2) / (2.0 * sub_h_diag.unsqueeze(0))
+                        k_keep = min(N, sub_w.shape[1])
+                        _, top_idx = torch.topk(sub_saliency, k=k_keep, dim=1, largest=True)
+                        sub_mask = torch.zeros_like(sub_w)
+                        sub_mask.scatter_(1, top_idx, 1.0)
+                        pruned_sub = sub_w * sub_mask
+                        err_sub = sub_w - pruned_sub
+                        W_block[:, start_c : j + 1] = pruned_sub
+
+                        # Optimal Brain Surgeon error compensation update
+                        if j < count - 1:
+                            err_col = err_sub[:, -1]
+                            h_slice = H_inv_block[j, j + 1 : count] / diag_inv
+                            W_block[:, j + 1 : count] -= torch.outer(err_col, h_slice)
                 else:
-                    saliency_col = (w_col ** 2) / (2.0 * diag_inv)
-
-                # Prune column elements
-                if self.structured_24 and ((i1 + j + 1) % 4 == 0 or (i1 + j + 1 == d_in)):
-                    start_c = max(0, j - 3)
-                    sub_w = W_block[:, start_c : j + 1]
-                    sub_pruned, _ = apply_24_structured_mask(sub_w, saliency=torch.abs(sub_w), dim=1)
-                    W_block[:, start_c : j + 1] = sub_pruned
-                elif not self.structured_24:
                     k_prune = int(d_out * self.sparsity)
                     if k_prune > 0:
                         _, prune_idx = torch.topk(saliency_col, k=k_prune, largest=False)
@@ -260,10 +273,6 @@ class SparseGPTCompressor(BaseCompressor):
                 inv_diag_block = torch.linalg.pinv(H_inv_block)
                 update = torch.matmul(err_block, torch.matmul(inv_diag_block, h_cross))
                 W_pruned[:, i2:] -= update
-
-        # If structured 2:4 was selected, ensure exact 2:4 conformance across all blocks
-        if self.structured_24:
-            W_pruned, _ = apply_24_structured_mask(W_pruned, saliency=compute_hessian_saliency(W_pruned, H_inv), dim=1)
 
         # Relative Frobenius error check
         norm_orig = torch.norm(W, p="fro")
