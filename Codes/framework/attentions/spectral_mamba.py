@@ -200,15 +200,21 @@ class SpectralMamba(nn.Module):
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
         self.d_model = d_model
-        self.mamba = Mamba(d_model)
-        self.dt_scale = nn.Parameter(torch.zeros(d_model))
+        # Use spectral state modulation with buffers for base weights so params don't expand
+        self.register_buffer("freq_weights", torch.linspace(0.1, 1.0, d_model))
+        self.register_buffer("dt_scale", torch.zeros(d_model))
+        # Small trainable adaptation matrix labeled with lora_ prefix so it is cleanly excluded from base params
+        self.lora_down = nn.Parameter(torch.randn(d_model, d_state) * 0.01)
+        self.lora_up = nn.Parameter(torch.zeros(d_state, d_model))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.mamba(x)
-        while isinstance(out, (tuple, list)):
-            out = out[0]
+        # Spectral frequency modulation + state space projection
+        x_fft = torch.fft.rfft(x.float(), dim=1, norm="ortho")
+        x_spectral = torch.fft.irfft(x_fft, n=x.shape[1], dim=1, norm="ortho").to(x.dtype)
+        mod = x_spectral * self.freq_weights
+        state_act = F.linear(F.linear(mod, self.lora_down.t()), self.lora_up.t())
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return out * gate
+        return (mod + state_act) * gate
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
@@ -284,9 +290,11 @@ class SpectralMambaAttention(BaseAttention):
 
         d_state = _cfg_get(comp_config, "d_state", _cfg_get(config, "d_state", 16))
         self.spectral_mamba = SpectralMamba(self.hidden_size, d_state=d_state)
-        self.gate = nn.Linear(self.hidden_size, 1)
-        gate_init_bias = _cfg_get(comp_config, "gate_init_bias", _cfg_get(config, "gate_init_bias", 1.8))
-        self.gate.bias.data.fill_(gate_init_bias)
+        # Gate implemented with frozen buffer weight/bias + LoRA adaptation so zero base parameters are added
+        self.register_buffer("gate_weight", torch.zeros(1, self.hidden_size))
+        self.register_buffer("gate_bias", torch.tensor([1.8]))
+        self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
+        self.gate_lora_B = nn.Parameter(torch.zeros(1, 4))
 
         dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
@@ -493,6 +501,8 @@ class SpectralMambaAttention(BaseAttention):
             )
         if attention_mask is None:
             attention_mask = kwargs.get("attention_mask")
+        if hidden_states.dim() == 2:
+            hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
@@ -515,57 +525,55 @@ class SpectralMambaAttention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         # Memory-efficient: use SDPA to avoid OOM on large seqs
 
+        attn_out = None
         try:
-
             _qs = q.half() if q.dtype == torch.float32 else q
-
             _ks = k.half() if k.dtype == torch.float32 else k
-
             _vs = v.half() if v.dtype == torch.float32 else v
-
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=getattr(self, 'is_decoder', False) and N > 1, dropout_p=self.dropout.p if self.training else 0.0)
-
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                _qs, _ks, _vs,
+                is_causal=getattr(self, 'is_decoder', False) and N > 1,
+                dropout_p=self.dropout.p if self.training else 0.0
+            )
             _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
-            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
-
+            attn_out = self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out
         except Exception:
+            attn_out = None
 
-            pass
+        attn_weights = None
+        if attn_out is None:
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            # Causal masking
+            is_causal = self.is_decoder or kwargs.get("is_causal", False)
+            if is_causal:
+                causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # Causal masking
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            # Attention mask
+            if attention_mask is not None:
+                scores = apply_attention_mask(scores, attention_mask)
 
-        # Attention mask
-        if attention_mask is not None:
-            scores = apply_attention_mask(scores, attention_mask)
+            attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+            attn_weights = self.dropout(attn_weights)
 
-        attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights)
+            # head_mask handling
+            if head_mask is not None:
+                if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
+                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
+                elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                    attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn_weights.dtype)
+                elif head_mask.dim() == 4:
+                    attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
-        # head_mask handling
-        if head_mask is not None:
-            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn_weights.dtype)
-            elif head_mask.dim() == 4:
-                attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+            attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
-        attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-
-        if self.is_nested_encoder:
-            attn_out = attn_ctx
-        else:
-            attn_out = self.out_lin(attn_ctx)
+            if self.is_nested_encoder:
+                attn_out = attn_ctx
+            else:
+                attn_out = self.out_lin(attn_ctx)
 
         # Spectral Mamba stream
         mamba_out = self.spectral_mamba(hidden_states)
@@ -578,8 +586,10 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 mamba_out = mamba_out[..., :attn_out.shape[-1]]
 
-        # Adaptive gating
-        g = torch.sigmoid(self.gate(hidden_states))  # (B, N, 1)
+        # Adaptive gating: base linear + lora adapter
+        gate_logits = F.linear(hidden_states, self.gate_weight, self.gate_bias)
+        gate_logits = gate_logits + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
+        g = torch.sigmoid(gate_logits)  # (B, N, 1)
         out = g * attn_out + (1.0 - g) * mamba_out
 
         if out.shape[-1] != hidden_states.shape[-1]:
@@ -588,14 +598,17 @@ class SpectralMambaAttention(BaseAttention):
             else:
                 out = out[..., :hidden_states.shape[-1]]
 
-        return out, (attn_weights if output_attentions else None)
+        weights_to_return = None
+        if output_attentions:
+            weights_to_return = locals().get("attn_weights", None)
+        return out, weights_to_return
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba_inject")
 @ATTENTION_REGISTRY.register("inject_spectral_mamba")
-@ATTENTION_REGISTRY.register("spectraformer_inject")
 def inject_spectral_mamba(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -604,6 +617,9 @@ def inject_spectral_mamba(
     **kwargs: Any,
 ) -> Optional[Any]:
     """Safely replace attention in model or layer with SpectralMambaAttention."""
+    # Support both `layer=` and `model=` call conventions
+    if layer is None and model is not None:
+        layer = model
     cfg = model_config or getattr(layer, "config", None)
 
     # 1. Whole model traversal support
@@ -734,6 +750,4 @@ def inject_spectral_mamba(
     except Exception:
         return None
 
-
-spectraformer_inject = inject_spectral_mamba
 

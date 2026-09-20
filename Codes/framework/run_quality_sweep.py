@@ -2665,7 +2665,7 @@ def run_single_module_main(args) -> dict:
                     except Exception: pass
                 _tmp.rename(path)
             continue
-        if name in BLOCKED_MODULES:
+        if name in BLOCKED_MODULES and len(names) > 10:
             bl_reason = BLOCKED_MODULES[name]
             LOG.warning(">>> Skipping BLOCKED module [%d/%d]: %s (%s)", n, len(names), name, bl_reason)
             row = {
@@ -3346,7 +3346,10 @@ def main():
                 args.dataset_dir = str(cand)
                 break
 
-    out = Path(args.output_dir) if args.output_dir else Path("results")
+    if args.output_dir is None:
+        safe_model = Path(args.model).name.replace("-", "_").lower()
+        args.output_dir = f"results/{safe_model}_{args.dataset}_sweep"
+    out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     path = out / "summary.csv"
     
@@ -3440,12 +3443,15 @@ def main():
         clear_vram_between_modules()
         return row
 
-    pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
+    if len(names) <= 10:
+        pending_names = [n for n in names if n not in existing]
+    else:
+        pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
 
     for n in names:
         if n in existing:
             print(f">>> Skipping {n} (already PASS)")
-        elif n in BLOCKED_MODULES:
+        elif n in BLOCKED_MODULES and len(names) > 10:
             print(f">>> Skipping BLOCKED {n}")
 
     workers = max(1, getattr(args, "parallel", 1))
