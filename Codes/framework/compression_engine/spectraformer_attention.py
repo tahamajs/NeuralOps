@@ -502,15 +502,19 @@ class SpectraformerAttention(BaseAttention):
         # Ensure R matches head_dim and rank
         R = self.R.to(dtype=hidden_states.dtype, device=hidden_states.device)
         if R.shape[0] != self.head_dim or R.shape[1] != self.rank:
-            torch.manual_seed(42)
-            H = torch.randn(self.head_dim, self.rank, device=hidden_states.device, dtype=hidden_states.dtype)
+            g = torch.Generator(device=hidden_states.device if hidden_states.device.type != 'cpu' else 'cpu').manual_seed(42)
+            H = torch.randn(self.head_dim, self.rank, device=hidden_states.device, dtype=torch.float32, generator=g)
             R, _ = torch.linalg.qr(H)
-            self.register_buffer("R", R)
+            R = R.to(dtype=hidden_states.dtype)
+            if hasattr(self, 'R') and isinstance(self.R, torch.Tensor) and self.R.shape == R.shape:
+                self.R.data.copy_(R)
+            else:
+                self.R = R
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Q_proj, K_proj: (B, H, N, r)
-        Q_proj = F.relu(torch.matmul(q, R)) * scale
-        K_proj = F.relu(torch.matmul(k, R)) * scale
+        # Q_proj, K_proj: (B, H, N, r) - positive ELU+1 feature map with single scale on Q
+        Q_proj = (F.elu(torch.matmul(q, R)) + 1.0) * scale
+        K_proj = F.elu(torch.matmul(k, R)) + 1.0
 
         # Mask padding in K_proj
         if attention_mask is not None:

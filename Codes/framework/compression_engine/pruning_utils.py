@@ -18,13 +18,24 @@ import torch
 import torch.nn as nn
 
 
-# Standard default calibration text corpus
+# Standard diverse default calibration text corpus covering diverse domains (H4)
 DEFAULT_CALIB_TEXTS: List[str] = [
     "Transformers rely on multi-head attention mechanisms to capture long-range contextual dependencies.",
     "Singular value decomposition and structured pruning compress weight matrices while preserving salient singular vectors.",
     "Hardware tensor cores execute structured 2:4 sparse matrix multiplications with double the throughput of dense operations.",
     "Layer shedding and channel pruning eliminate redundant transformer blocks to minimize memory footprint and inference latency.",
     "Empirical Fisher information and second-order Hessian approximations quantify parameter sensitivity under data distributions.",
+    "Natural language understanding benchmarks evaluate classification accuracy and transfer learning representations.",
+    "Autoregressive generation computes key-value states incrementally across progressive decoder sequence steps.",
+    "Low-rank matrix factorizations decouple input and output projections to optimize computational throughput.",
+    "Deep neural network parameter efficiency enables low-latency deployment on edge computing hardware.",
+    "Cross-entropy loss gradients guide backpropagation updates across deep residual feedforward networks.",
+    "High-throughput parallel pipelines stream input batches across distributed asynchronous compute nodes.",
+    "Continuous representations map discrete vocabulary tokens into compact continuous geometric vector spaces.",
+    "Iterative optimization algorithms converge towards local minima under stochastic gradient descent regimes.",
+    "Information theory bounds the minimum compression rate achievable without semantic distortion.",
+    "Orthogonal transformations rotate activation coordinate systems without changing Euclidean vector distances.",
+    "Multi-task transfer learning leverages shared underlying representations across heterogeneous NLP tasks.",
 ]
 
 
@@ -58,12 +69,11 @@ def get_calibration_tensors(
                 return batch.to(device)
 
     if tokenizer is not None:
-        texts = calibration_texts or DEFAULT_CALIB_TEXTS
+        texts = list(calibration_texts or DEFAULT_CALIB_TEXTS)
         try:
-            if len(texts) < sample_size:
-                texts = (texts * ((sample_size // len(texts)) + 1))[:sample_size]
-            elif len(texts) > sample_size:
-                texts = texts[:sample_size]
+            # H4: Do not artificially repeat texts; clamp sample_size to available unique texts
+            actual_samples = min(sample_size, len(texts))
+            texts = texts[:actual_samples]
             encoded = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=seq_len)
             return {k: v.to(device) for k, v in encoded.items()}
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
@@ -273,16 +283,21 @@ def apply_24_structured_mask(
             mask_sub.scatter_(-1, top_idx, 1.0)
             mask[:, : num_blocks * 4] = mask_sub.reshape(d_out, num_blocks * 4)
 
-        # Handle remainder if d_in is not divisible by 4
+        # Handle remainder if d_in is not divisible by 4 (H5: strict 50% target)
         remainder = d_in % 4
         if remainder > 0:
             start = num_blocks * 4
-            keep = max(1, remainder // 2)
-            S_rem = S[:, start:]
-            _, top_idx = torch.topk(S_rem, k=keep, dim=-1, largest=True)
-            mask_rem = torch.zeros_like(S_rem)
-            mask_rem.scatter_(-1, top_idx, 1.0)
-            mask[:, start:] = mask_rem
+            target_keep_total = d_in // 2
+            kept_in_blocks = num_blocks * 2
+            keep = max(0, target_keep_total - kept_in_blocks)
+            if keep > 0:
+                S_rem = S[:, start:]
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=-1, largest=True)
+                mask_rem = torch.zeros_like(S_rem)
+                mask_rem.scatter_(-1, top_idx, 1.0)
+                mask[:, start:] = mask_rem
+            else:
+                mask[:, start:] = 0.0
     else:
         # Apply across rows
         num_blocks = d_out // 4
@@ -294,16 +309,21 @@ def apply_24_structured_mask(
             mask_sub.scatter_(1, top_idx, 1.0)
             mask[: num_blocks * 4, :] = mask_sub.reshape(num_blocks * 4, d_in)
 
-        # Handle remainder if d_out is not divisible by 4
+        # Handle remainder if d_out is not divisible by 4 (H5: strict 50% target)
         remainder = d_out % 4
         if remainder > 0:
             start = num_blocks * 4
-            keep = max(1, remainder // 2)
-            S_rem = S[start:, :]
-            _, top_idx = torch.topk(S_rem, k=keep, dim=0, largest=True)
-            mask_rem = torch.zeros_like(S_rem)
-            mask_rem.scatter_(0, top_idx, 1.0)
-            mask[start:, :] = mask_rem
+            target_keep_total = d_out // 2
+            kept_in_blocks = num_blocks * 2
+            keep = max(0, target_keep_total - kept_in_blocks)
+            if keep > 0:
+                S_rem = S[start:, :]
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=0, largest=True)
+                mask_rem = torch.zeros_like(S_rem)
+                mask_rem.scatter_(0, top_idx, 1.0)
+                mask[start:, :] = mask_rem
+            else:
+                mask[start:, :] = 0.0
 
     masked_weight = W * mask
     return masked_weight.to(dtype=weight.dtype), mask
@@ -370,13 +390,19 @@ def recalibrate_layernorms(
     calibration_loader: Optional[Any] = None,
     calibration_texts: Optional[List[str]] = None,
     device: Optional[torch.device] = None,
+    target_stds: Optional[Dict[nn.Module, float]] = None,
 ) -> None:
     """
     Recalibrates LayerNorm and RMSNorm scaling parameters post-compression
     to restore representation variance.
+    Excludes classification heads, embeddings, and poolers to prevent downstream drift (H22).
     """
+    PROTECTED_KEYWORDS = ["classifier", "score", "lm_head", "pooler", "head", "embed", "wte", "wpe", "shared", "logits"]
     norm_modules = []
     for name, m in model.named_modules():
+        name_l = name.lower()
+        if any(k in name_l for k in PROTECTED_KEYWORDS):
+            continue
         if isinstance(m, nn.LayerNorm) or "norm" in m.__class__.__name__.lower():
             if hasattr(m, "weight") and m.weight is not None:
                 norm_modules.append(m)
@@ -427,10 +453,15 @@ def recalibrate_layernorms(
         if hasattr(m, "weight") and m.weight is not None:
             with torch.no_grad():
                 if std > 1e-4:
-                    correction_factor = 1.0 / std
-                    dampened = 0.8 + 0.2 * correction_factor
-                    dampened = max(0.5, min(2.0, dampened))
-                    m.weight.data.mul_(dampened)
+                    if target_stds is not None and m in target_stds:
+                        # B3: Exact ratio scaling when pre-compression target std is recorded
+                        target_std = target_stds[m]
+                        correction_factor = max(0.5, min(2.0, float(target_std) / float(std)))
+                        m.weight.data.mul_(correction_factor)
+                    else:
+                        correction_factor = 1.0 / std
+                        dampened = 0.8 + 0.2 * max(0.5, min(2.0, correction_factor))
+                        m.weight.data.mul_(dampened)
 
 
 # FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)

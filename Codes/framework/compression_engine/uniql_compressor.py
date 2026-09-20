@@ -86,6 +86,7 @@ class UniQLCompressor(BaseCompressor):
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
         self.target_attention_only = target_attention_only
+        self.quantize_bias = bool(kwargs.get("quantize_bias", False))
         self.compressed_layers: List[Dict[str, Any]] = []
 
     @staticmethod
@@ -263,7 +264,7 @@ class UniQLCompressor(BaseCompressor):
                 continue
 
             base_layer.weight.data.copy_(w_to_assign)
-            new_layer = base_layer if 'uniql_compressor.py' in ['uniql_compressor.py', 'zerokv_neo_compressor.py'] else base_mod
+            new_layer = base_layer
             compressed_layer = new_layer
             # Preserve existing LoRA adapter weights if the source module has them
             if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
@@ -284,7 +285,7 @@ class UniQLCompressor(BaseCompressor):
             else:
                 new_module = compressed_layer
 
-            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
+            if self.quantize_bias and getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
                 b_q = self._quantize(base_layer.bias.data.float(), best_bits)
                 base_layer.bias.data.copy_(b_q.to(dtype=orig_dtype, device=orig_device))
 

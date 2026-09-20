@@ -78,13 +78,21 @@ class ROASTLinear(nn.Module):
         else:
             self.register_parameter('bias', None)
 
-        # Precompute tile indices
+        # Precompute tile indices with high-entropy bitwise mixing (B11, J1)
         tile_idx_i = torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
         tile_idx_j = torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
+        h = (tile_idx_i.long() * 0x9E3779B1) ^ (tile_idx_j.long() * 0x85EBCA77)
+        h = h ^ (h >> 16)
+        h = h * 0x7FEB352D
+        h = (h ^ (h >> 15)) & 0x7FFFFFFF
         self.register_buffer(
             'tile_hash_idx',
-            ((tile_idx_i * 10007 + tile_idx_j * 10009) % self.n_buckets).long(),
+            (h % self.n_buckets).long(),
+            persistent=False,
         )
+
+        self._cached_weight: Optional[torch.Tensor] = None
+        self._cache_stale: bool = True
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
@@ -94,16 +102,26 @@ class ROASTLinear(nn.Module):
             self.register_parameter('lora_A', None)
             self.register_parameter('lora_B', None)
 
+    def _invalidate_cache(self) -> None:
+        self._cached_weight = None
+        self._cache_stale = True
+
     @property
     def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix (out_features, in_features)."""
+        """Reconstructed effective weight matrix (out_features, in_features) with evaluation caching."""
+        if self._cached_weight is not None and not self._cache_stale and not self.training:
+            return self._cached_weight
         W_tiles = self.weight_table[self.tile_hash_idx]  # (tiles_out, tiles_in)
         W_full = torch.repeat_interleave(
             torch.repeat_interleave(W_tiles, self.tile_size, dim=0),
             self.tile_size,
             dim=1,
         )
-        return W_full[: self.out_features, : self.in_features]
+        W_res = W_full[: self.out_features, : self.in_features]
+        if not self.training:
+            self._cached_weight = W_res
+            self._cache_stale = False
+        return W_res
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Vectorized forward pass without per-element python loops."""
