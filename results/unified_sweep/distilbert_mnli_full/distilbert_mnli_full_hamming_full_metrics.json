@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_hamming",
     "performance": {
-        "accuracy_pct": 38.8,
-        "f1_score": 0.3162,
-        "f1_macro": 0.3162,
-        "precision": 0.3924,
-        "recall": 0.3811,
-        "val_loss": 1.0941,
+        "accuracy_pct": 37.8,
+        "f1_score": 0.329,
+        "f1_macro": 0.329,
+        "precision": 0.412,
+        "recall": 0.3793,
+        "val_loss": 1.1071,
         "status": "MODERATE_EXPANSION",
-        "elapsed_s": 230.97
+        "elapsed_s": 12.6
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -34,8 +34,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 319.77,
-        "tokens_per_sec": 669.44
+        "peak_vram_mb": 318.57,
+        "tokens_per_sec": 22618.93
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 292.21,
-        "L_256_vram_mb": 297.48,
+        "L_128_vram_mb": 291.02,
+        "L_256_vram_mb": 296.28,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T22:32:25.613036"
+    "timestamp": "2026-09-20T07:53:23.879091"
 }
