@@ -155,6 +155,8 @@ class LoRALinear(nn.Module):
             self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dtype != self.weight.dtype:
+            x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
@@ -590,7 +592,7 @@ class PerformerAttention(BaseAttention):
             else:
                 out = out[..., : hidden_states.shape[-1]]
 
-        return out, None
+        return out.to(dtype), None
 
 
 @ATTENTION_REGISTRY.register("performer_inject")
