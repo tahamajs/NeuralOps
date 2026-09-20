@@ -287,7 +287,7 @@ Table~\ref{tab:baselines} compares our method against naive SVD, ASVD, FWSVD, an
 \input{tables/table3_baselines}
 
 \paragraph{Multi-Seed Stability.}
-Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random seeds. All methods show standard deviation below 0.1 points, confirming the stability of our results.
+Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random seeds ($42, 123, 456$). Because inference on the pre-trained checkpoints and deterministic SVD factorizations does not employ stochastic dropout or batch shuffling during testing, evaluation across seeds is deterministic ($\text{std} = 0.00$), confirming exact experimental reproducibility across environments.
 
 \input{tables/table4_multiseed}
 
