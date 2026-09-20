@@ -272,42 +272,60 @@ class ASTPruner(BaseCompressor):
             if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
-        calib_inputs = get_calibration_tensors(
-            self.model,
-            tokenizer=self.tokenizer,
-            calibration_loader=self.calibration_loader,
-            calibration_texts=self.calibration_texts,
-            device=self.target_device,
-        )
+        batches = []
+        if self.calibration_loader is not None:
+            for b in self.calibration_loader:
+                batches.append(b)
+                if len(batches) >= 4:
+                    break
+        if not batches:
+            batches = [get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )]
 
+        n_batches_run = 0
         try:
             self.model.train()
-            out = None
-            if isinstance(calib_inputs, dict):
-                out = self.model(**calib_inputs)
-            elif isinstance(calib_inputs, torch.Tensor):
-                out = self.model(calib_inputs)
-            elif isinstance(calib_inputs, (list, tuple)):
-                out = self.model(*calib_inputs)
+            for batch_input in batches:
+                out = None
+                if isinstance(batch_input, dict):
+                    out = self.model(**{k: v.to(self.target_device) if hasattr(v, "to") else v for k, v in batch_input.items()})
+                elif isinstance(batch_input, torch.Tensor):
+                    out = self.model(batch_input.to(self.target_device))
+                elif isinstance(batch_input, (list, tuple)):
+                    out = self.model(*[b.to(self.target_device) if hasattr(b, "to") else b for b in batch_input])
 
-            if self.use_fisher and out is not None:
-                if hasattr(out, "logits"):
-                    loss = 0.5 * torch.sum(out.logits.pow(2))
-                elif isinstance(out, torch.Tensor):
-                    loss = 0.5 * torch.sum(out.pow(2))
-                elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
-                    loss = 0.5 * torch.sum(out[0].pow(2))
-                else:
-                    loss = None
+                if self.use_fisher and out is not None:
+                    if hasattr(out, "logits"):
+                        loss = 0.5 * torch.sum(out.logits.pow(2))
+                    elif isinstance(out, torch.Tensor):
+                        loss = 0.5 * torch.sum(out.pow(2))
+                    elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
+                        loss = 0.5 * torch.sum(out[0].pow(2))
+                    else:
+                        loss = None
 
-                if loss is not None:
-                    self.model.zero_grad()
-                    loss.backward()
-                    for name, module in self.model.named_modules():
-                        if self._is_target_module(name, module) and module.weight.grad is not None:
-                            g = module.weight.grad.detach()
-                            fisher_info[name] = g.pow(2).cpu()
-                    self.model.zero_grad()
+                    if loss is not None:
+                        self.model.zero_grad()
+                        loss.backward()
+                        for name, module in self.model.named_modules():
+                            if self._is_target_module(name, module) and module.weight.grad is not None:
+                                g = module.weight.grad.detach()
+                                g_sq = g.pow(2).cpu()
+                                if name in fisher_info:
+                                    fisher_info[name] = fisher_info[name] + g_sq
+                                else:
+                                    fisher_info[name] = g_sq
+                        self.model.zero_grad()
+                        n_batches_run += 1
+
+            if n_batches_run > 1:
+                for k in fisher_info:
+                    fisher_info[k] = fisher_info[k] / float(n_batches_run)
         except Exception as e:
             logger.debug("AST Fisher calibration exception: %s", e)
         finally:
