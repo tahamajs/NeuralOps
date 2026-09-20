@@ -105,15 +105,30 @@ def evaluate_with_breakdown(model, tokenizer, val_ds, seq_len: int, batch_size: 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True)
-    ap.add_argument("--dataset_dir", required=True)
-    ap.add_argument("--sweep_csv", required=True)
+    ap.add_argument("--model", default="models/distilbert_mnli_full")
+    ap.add_argument("--dataset_dir", default="Codes/framework/data/glue_data/mnli")
+    ap.add_argument("--sweep_csv", default="results/distilbert_mnli_full_mnli_sweep/summary.csv")
     ap.add_argument("--modules", nargs="+", required=True,
-                    help="Module names to audit")
-    ap.add_argument("--out", required=True)
+                    help="Module names to audit (space or comma-separated)")
+    ap.add_argument("--out", "--output", dest="out",
+                    default="results/distilbert_mnli_full_mnli_sweep/collapse_audit.csv")
+    ap.add_argument("--log", default=None, help="Optional log file path")
     ap.add_argument("--batch_size", type=int, default=64)
     ap.add_argument("--seq_len", type=int, default=128)
     args = ap.parse_args()
+
+    # Pre-import attention and compressor modules to populate registries
+    import importlib
+    here = Path(__file__).resolve().parent
+    for pkg, folder in (("framework.attentions", "attentions"), ("framework.compression_engine", "compression_engine")):
+        p_dir = here / folder
+        if p_dir.exists():
+            for p in p_dir.glob("*.py"):
+                if not p.stem.startswith("_"):
+                    try:
+                        importlib.import_module(f"{pkg}.{p.stem}")
+                    except Exception:
+                        pass
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -131,17 +146,26 @@ def main():
 
     # Read sweep data for context
     sweep_data = {}
-    with open(args.sweep_csv, newline="", encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            sweep_data[r["module_name"]] = r
+    if Path(args.sweep_csv).exists():
+        with open(args.sweep_csv, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                sweep_data[r.get("module_name", r.get("module", ""))] = r
+
+    # Flatten comma-separated modules if any
+    module_list = []
+    for item in args.modules:
+        for m in item.split(","):
+            m = m.strip()
+            if m:
+                module_list.append(m)
 
     rows = []
-    for mod_name in args.modules:
+    for mod_name in module_list:
         print(f"\n{'='*60}")
         print(f"Auditing: {mod_name}")
         sweep_r = sweep_data.get(mod_name, {})
-        local_acc = float(sweep_r.get("accuracy_pct", -1))
-        local_status = sweep_r.get("status", "UNKNOWN")
+        local_acc = float(sweep_r.get("accuracy_pct", -1) or -1)
+        local_status = sweep_r.get("status", sweep_r.get("status_raw", "UNKNOWN"))
         print(f"  Local sweep: acc={local_acc:.1f}%, status={local_status}")
 
         # Load fresh base model
@@ -175,9 +199,22 @@ def main():
             else:
                 print(f"  Warning: no finetuned_model.pt found at {ckpt}")
 
+            # Module alias mappings
+            clean_name = mod_name.strip()
+            if clean_name == "galerkin":
+                clean_name = "galerkin_attention"
+            elif clean_name == "mla":
+                clean_name = "mla_attention"
+            elif clean_name == "kda":
+                clean_name = "kda_attention"
+
             # Apply the module injection
-            apply_module_to_model(model, mod_name, model.config)
-            print(f"  Injected {mod_name}")
+            res = apply_module_to_model(model, clean_name, module_type="auto", device=device)
+            if isinstance(res, tuple):
+                model = res[0]
+            else:
+                model = res
+            print(f"  Injected {clean_name}")
 
         except Exception as e:
             print(f"  WARNING: Could not inject {mod_name}: {e}")
@@ -233,10 +270,23 @@ def main():
     print("\n" + "="*60)
     print("COLLAPSE AUDIT SUMMARY")
     print("="*60)
+    summary_lines = []
     for r in rows:
         status = "CONFIRMED" if r.get("collapse_confirmed") is True else (
                  "DENIED" if r.get("collapse_confirmed") is False else "ERROR")
-        print(f"  {r['module']:35} audit_acc={r.get('audit_acc','?'):>6} | collapse={status}")
+        line = f"  {r['module']:35} audit_acc={r.get('audit_acc','?'):>6} | collapse={status}"
+        print(line)
+        summary_lines.append(line)
+
+    if args.log:
+        try:
+            log_path = Path(args.log)
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(log_path, "w", encoding="utf-8") as lf:
+                lf.write("\n".join(summary_lines) + "\n")
+            print(f"Log written to {log_path}")
+        except Exception as e:
+            print(f"Failed to write log to {args.log}: {e}")
 
 
 if __name__ == "__main__":
