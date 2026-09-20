@@ -561,6 +561,7 @@ class SpectraformerAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("spectraformer_attention_inject")
 def inject_spectraformer(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -568,8 +569,48 @@ def inject_spectraformer(
     old_attn: Optional[nn.Module] = None,
     max_error: float = 0.50,
     **kwargs: Any,
-) -> Optional[SpectraformerAttention]:
-    """Single-layer framework injection helper for SpectraformerAttention with equivalence validation."""
+) -> Optional[Any]:
+    """Framework injection helper for SpectraformerAttention with equivalence validation and whole-model traversal."""
+    if layer is None and model is not None:
+        layer = model
+    cfg = model_config or getattr(layer, "config", None)
+
+    # 1. Whole model traversal support
+    if layer is not None and (
+        hasattr(layer, "transformer")
+        or hasattr(layer, "distilbert")
+        or hasattr(layer, "roberta")
+        or hasattr(layer, "bert")
+        or (hasattr(layer, "model") and not hasattr(layer, "forward"))
+    ):
+        layer_list = None
+        if hasattr(layer, "distilbert") and hasattr(layer.distilbert, "transformer"):
+            layer_list = layer.distilbert.transformer.layer
+        elif hasattr(layer, "roberta") and hasattr(layer.roberta, "encoder"):
+            layer_list = layer.roberta.encoder.layer
+        elif hasattr(layer, "bert") and hasattr(layer.bert, "encoder"):
+            layer_list = layer.bert.encoder.layer
+        elif hasattr(layer, "transformer") and hasattr(layer.transformer, "h"):
+            layer_list = layer.transformer.h
+        elif hasattr(layer, "model") and hasattr(layer.model, "layers"):
+            layer_list = layer.model.layers
+        elif hasattr(layer, "encoder") and hasattr(layer.encoder, "layer"):
+            layer_list = layer.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_spectraformer(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    max_error=max_error,
+                    **kwargs,
+                )
+            return layer
+
     src_attn = old_attn
     if src_attn is None and layer is not None:
         src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
