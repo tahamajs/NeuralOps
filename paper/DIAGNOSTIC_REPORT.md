@@ -482,3 +482,69 @@ Based on the canonical snapshot emitted to `results/distilbert_mnli_full_mnli_sw
 | **`TIMEOUT`** | Exceeded 3600s Watchdog | **1** | `hgrn2_outer` (unvectorized $O(L \cdot d^2)$ token loop) |
 | **TOTAL** | | **71** | |
 
+
+---
+
+## Part 7: Threshold Fix — Corrected Gate & Updated Counts
+
+*Added 2026-09-20 post-verification. Supersedes the 36.90% threshold used in all prior sweeps.*
+
+### 7.1 Root Cause of the Incorrect Threshold
+
+`run_quality_sweep.py` lines 2597–2599 contained a dataset-specific hardcode:
+
+```python
+elif getattr(args, "dataset", "") == "mnli":
+    stat_margin_pct = 1.45       # 3 * 0.483%
+    pass_threshold_pct = 36.90   # 3-class (majority=35.45% + 1.45%)
+```
+
+This silently overwrote the live dynamic computation (which had already computed the correct majority from the actual validation split). The assumed majority of **35.45%** does not correspond to the local 1,000-sample split (majority = 34.10%) or the full 9,815-sample official split (majority = 33.74%).
+
+The code was **fixed** (commit staged after `66fc5fdcc`) by replacing the hardcoded branches with:
+
+```python
+stat_margin_pct = round(z_score * se * 100.0, 2)
+pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+threshold_source = f"dynamic: majority={majority_baseline_pct:.2f}% ..."
+```
+
+### 7.2 Corrected Threshold Values
+
+| N | Majority | $p_0$ | SE | **3σ Threshold** |
+|:---:|:---:|:---:|:---:|:---:|
+| 1,000 (local sweep) | 341 | 34.10% | 1.499% | **38.60%** |
+| 9,815 (full MNLI) | 3,312 | 33.74% | 0.477% | **35.18%** |
+
+**For the paper**: Report 35.18% (full MNLI, N=9,815) as the canonical threshold.
+
+### 7.3 Verdict Flips Under Corrected Threshold
+
+Of 173 completed modules, only **3** have their primary `status` field change:
+
+| Module | Acc % | Old Status | **Corrected Status** |
+|:---|:---:|:---:|:---:|
+| `hybrid_svd` | 37.1% | `PASS` | **`PASS_LOW`** |
+| `orion` | 37.4% | `PASS` | **`PASS_LOW`** |
+| `block_transformer_hiba` | 38.5% | `PASS` | **`PASS_LOW`** |
+
+All other 170 modules have the same verdict under both thresholds. Modules with acc ≥ 38.60% remain `PASS`; modules with acc < 36.90% remain `PASS_LOW`/`FAIL` regardless.
+
+### 7.4 Updated Counts (173 completed modules)
+
+| Category | Criterion | Count |
+|:---|:---|:---:|
+| **PASS_STRICT** | acc ≥ 70%, PASS status | **77** |
+| **PASS_OK** | 55% ≤ acc < 70%, PASS | **18** |
+| **PASS_LOW** (≥ corrected threshold) | 38.60% ≤ acc < 55% | **9** |
+| **PASS_LOW** (below corrected, above old) | 36.90% ≤ acc < 38.60% | **3** ← **newly reclassified** |
+| **FAIL** | acc < 36.90% | **12** |
+| **MODERATE_EXPANSION** | base params grew, LoRA-dominated | **32** |
+| **EXTREME_EXPANSION** | base params grew > 20% | **2** |
+| **SKIP_DEPRECATED** | Hardware / memory incompatible | **2** |
+| **TIMEOUT** | > 3,600s watchdog | **1** |
+
+> **Explicit correction for prior claims**: All historical sweeps in this codebase used a hardcoded
+> 36.90% MNLI pass threshold (majority assumption 35.45%) that did not match the local 1,000-sample
+> validation split (actual majority 34.10%). The corrected dynamic threshold is **38.60%** for
+> the local split and **35.18%** for the full 9,815-sample canonical MNLI validation split.
