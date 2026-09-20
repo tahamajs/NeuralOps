@@ -52,10 +52,10 @@ def upload_metrics_item(metrics_path, repo_id, tag_dataset, module_name, env, ra
     h = metrics.get("hardware", {})
 
     status = p.get("status", "PASS")
-    acc = p.get("accuracy_pct", 0.0)
+    acc = float(p.get("accuracy_pct", 0.0) or 0.0)
 
-    # Allow all viable runs
-    if status not in ("PASS", "PASS_LOW", "MODERATE_EXPANSION"):
+    # Allow all viable runs, but reject 0.0% accuracy invalid runs
+    if status not in ("PASS", "PASS_LOW", "MODERATE_EXPANSION") or acc <= 0.0:
         return False
 
     try:
