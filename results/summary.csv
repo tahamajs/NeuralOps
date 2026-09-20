@@ -1,10 +1,10 @@
 module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,latency_ms_per_token,throughput_tok_per_sec,perplexity,long_context_accuracy,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
 mla_attention,CRASH_NO_OUTPUT,0.0,0.0,,,,,18.160791899999822,0.0,,,,,,0,0,,1.0,,,,,,,,,Child produced no result file after 18.2s,,1789768044.084234
-moe_deltakv_paged,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:25:44.906742
+moe_deltakv_paged,MODERATE_EXPANSION,31.9,0.1612,0.1612,0.1063,0.3333,1.1836,15.26,316.16,19557.24,6.54,19557.24,,,66955779,67570179,589824,1.0,0.0,0.0,0,0,,,0,589824,note: evaluated accuracy (31.90%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66980355 base_delta=24576 (+0.04%) lora_excluded=589824,legacy_bert,2026-09-20T01:08:39.894036
 nasc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:04.017387
-nexus,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:23.437809
+nexus,MODERATE_EXPANSION,79.8,0.7972,0.7972,0.7972,0.7972,0.6146,47.57,344.57,4537.39,28.21,4537.39,,,66955779,67561347,605568,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66971523 base_delta=15744 (+0.02%) lora_excluded=589824,legacy_bert,2026-09-20T01:11:06.716638
 nha_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:43.878421
-nli_softmax,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:02.725518
+nli_softmax,PASS_LOW,36.2,0.2153,0.2153,0.6934,0.3542,1.3727,11.98,312.38,25319.61,5.06,25319.61,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,0,589824,note: evaluated accuracy (36.20%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:12:37.133598
 nsa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:21.758164
 nystrom_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:42.605938
 optimized_hybrid_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:03.433177
@@ -23,7 +23,7 @@ rpc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argumen
 salt,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:25.514370
 samba_m3,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:46.509518
 samba_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:07.676490
-simple_ssm,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:28.692788
+simple_ssm,MODERATE_EXPANSION,34.0,0.1692,0.1692,0.1133,0.3333,1.1042,20.61,342.92,16271.05,7.87,16271.05,,,66955779,67564035,516096,1.0,0.0,0.0,0,0,,,6,516096,note: evaluated accuracy (34.00%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=67047939 base_delta=92160 (+0.14%) lora_excluded=516096,legacy_bert,2026-09-20T01:16:31.237414
 smart_weighted_ensemble,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:48.725020
 soa_fused_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:08.937226
 span_expanded_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:28.533480
@@ -43,42 +43,129 @@ vig_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argumen
 wgqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:08.066274
 zeros_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:27.424135
 primal,PASS,81.1,0.8107,0.8107,0.8113,0.8106,0.5856,456.7,327.83,434.17,294.82,434.17,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T23:22:14.613325
-inject_cosformer,REJECTED_EXPANSION,36.6,0.3525,0.3525,0.3683,0.3626,nan,15.33,223.86,20022.82,,,,,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; NON_EXPANSION VIOLATION: before=66955779 after=67545609 delta=589830 (+0.9%),legacy_bert,2026-09-19T14:37:37.314474
+inject_cosformer,MODERATE_EXPANSION,36.5,0.3514,0.3514,0.3669,0.3616,nan,14.22,324.1,21116.45,6.06,21116.45,,,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; MODERATE_EXPANSION: base_before=66955779 base_after=66955785 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T00:59:12.745678
 inject_hymba_transx,REJECTED_EXPANSION,47.1,0.4349,0.4349,0.5014,0.4742,1.0745,50.32,492.18,6162.44,,,,,66955779,89687049,1400838,1.0,0.0,0.0,0,0,,,12,1400832,NON_EXPANSION VIOLATION: before=66955779 after=89687049 delta=22731270 (+33.9%),legacy_bert,2026-09-19T14:38:53.834346
 inject_infini,REJECTED_EXPANSION,42.6,0.3537,0.3537,0.5566,0.4288,1.0675,16.45,330.65,15991.31,,,,,66955779,68135433,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68135433 delta=1179654 (+1.8%),legacy_bert,2026-09-19T14:39:37.897446
-inject_lsh,REJECTED_EXPANSION,39.4,0.3311,0.3311,0.4606,0.3933,1.0969,20.59,323.75,12352.18,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:40:32.498429
+inject_lsh,PASS,39.4,0.3311,0.3311,0.4606,0.3933,1.0969,19.16,323.75,13486.41,9.49,13486.41,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:02:13.840502
 inject_minimal_aurora,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.11,269.14,25414.23,,,,,66955779,58108431,589830,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:42:28.838960
 inject_minimal_svd,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.04,269.13,27429.17,,,,,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:44:25.409722
 inject_minimal_svd_v2,PASS,47.7,0.4263,0.4263,0.5139,0.4833,0.9965,13.55,269.13,25880.28,,,,,66955779,58108419,589824,1.1523,13.21,66.67,0,0,,,30,589824,,legacy_bert,2026-09-19T14:46:33.679728
-inject_nsa,REJECTED_EXPANSION,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,13.25,324.79,21158.47,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:11.219531
-inject_nystrom,REJECTED_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.41,312.33,23122.54,,,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67545603 delta=589824 (+0.9%),legacy_bert,2026-09-19T14:47:48.270883
-adaptive_span,MODERATE_EXPANSION,81.9,0.8187,0.8187,0.819,0.8186,0.5955,11.79,312.77,25715.78,4.98,25715.78,,,66955779,67545675,589896,1.0,0.0,0.0,6,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66955851 base_delta=72 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T00:51:48.896202
+inject_nsa,PASS,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,12.25,324.79,23069.44,5.55,23069.44,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:02:58.068365
+inject_nystrom,PASS,81.9,0.8187,0.8187,0.819,0.8186,0.5952,11.23,312.33,26720.17,4.79,26720.17,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:03:41.541209
+adaptive_span,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:20:56.311602
 asvd,REJECTED_EXPANSION,82.2,0.8217,0.8217,0.8219,0.8217,0.603,16.79,333.52,21452.09,,,,,66955779,68942730,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=68942730 delta=1986951 (+3.0%),legacy_bert,2026-09-19T14:49:46.444838
 inject_replace,PASS,76.1,0.7621,0.7621,0.772,0.7623,0.809,7.04,329.61,43820.46,,,,,66955779,66955779,4136451,1.0,0.0,0.0,0,0,,,6,0,,legacy_bert,2026-09-19T14:49:58.339590
-block_transformer_hiba,PASS,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.54,314.38,22455.1,5.7,22455.1,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:52:34.681740
+block_transformer_hiba,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:20:55.123154
 inject_spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.59,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:24:12.006954
 faq,REJECTED_EXPANSION,81.9,0.8184,0.8184,0.8185,0.8183,0.6015,23.58,408.22,10094.84,,,,,66955779,68282883,1327104,0.9806,-1.98,0.0,0,0,,,0,1327104,NON_EXPANSION VIOLATION: before=66955779 after=68282883 delta=1327104 (+2.0%),legacy_bert,2026-09-19T14:51:18.114365
-fasa,PASS,79.7,0.7961,0.7961,0.7965,0.7959,0.6166,13.89,310.07,20605.05,6.21,20605.05,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:55:25.120907
+fasa,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:53.570076
 goldfinch,REJECTED_EXPANSION,79.1,0.791,0.791,0.7925,0.791,0.5568,14.7,336.02,20239.24,,,,,66955779,71144535,645204,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=71144535 delta=4188756 (+6.3%),legacy_bert,2026-09-19T14:52:42.458098
-halo_regla,MODERATE_EXPANSION,81.3,0.812,0.812,0.8138,0.8118,0.5411,16.23,323.42,17648.84,7.25,17648.84,,,66955779,67600971,645192,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=67011147 base_delta=55368 (+0.08%) lora_excluded=589824,legacy_bert,2026-09-20T00:57:14.300529
+halo_regla,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:45.227539
 inject_aegis_v1,REJECTED_EXPANSION,69.3,0.6925,0.6925,0.699,0.6932,0.6941,24.7,322.8,12554.25,,,,,66955779,67742283,589824,1.0,0.0,0.0,0,0,,,30,589824,NON_EXPANSION VIOLATION: before=66955779 after=67742283 delta=786504 (+1.2%),legacy_bert,2026-09-19T14:54:12.151953
 inject_aegis_v2,REJECTED_EXPANSION,35.2,0.2878,0.2878,0.3364,0.357,1.111,22.53,336.96,15977.85,,,,,66955779,68500755,1544976,1.0,0.0,0.0,0,0,,,30,589824,note: evaluated accuracy (35.20%) below chance threshold (36.90%); NON_EXPANSION VIOLATION: before=66955779 after=68500755 delta=1544976 (+2.3%),legacy_bert,2026-09-19T14:55:05.201747
 kronecker_tt_lora,REJECTED_EXPANSION,81.6,0.8157,0.8157,0.816,0.8157,0.595,18.29,333.95,14073.59,,,,,66955779,68461059,331776,0.978,-2.25,0.0,0,0,,,36,331776,NON_EXPANSION VIOLATION: before=66955779 after=68461059 delta=1505280 (+2.2%),legacy_bert,2026-09-19T14:55:47.389523
 leka_v2,REJECTED_EXPANSION,79.9,0.7986,0.7986,0.7999,0.7983,0.584,22.08,364.16,12469.73,,,,,66955779,67993425,589824,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67993425 delta=1037646 (+1.5%),legacy_bert,2026-09-19T14:56:34.616882
 linformer,REJECTED_EXPANSION,75.6,0.7572,0.7572,0.7629,0.7563,0.6829,12.66,315.53,22779.07,,,,,66955779,67938825,589830,1.0,0.0,0.0,0,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67938825 delta=983046 (+1.5%),legacy_bert,2026-09-19T14:57:18.596333
 ptp,REJECTED_EXPANSION,81.8,0.8177,0.8177,0.818,0.8176,0.5975,13.45,315.54,20884.64,,,,,66955779,67841289,589824,1.0,0.0,0.0,6,0,,,6,589824,NON_EXPANSION VIOLATION: before=66955779 after=67841289 delta=885510 (+1.3%),legacy_bert,2026-09-19T14:57:56.250652
-cosformer,MODERATE_EXPANSION,36.5,0.3514,0.3514,0.3669,0.3616,nan,16.42,324.1,17606.15,7.27,17606.15,,,66955779,67545609,589824,1.0,0.0,0.0,0,0,,,6,589824,note: recovery_loss_nan; MODERATE_EXPANSION: base_before=66955779 base_after=66955785 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T00:53:57.217340
+cosformer,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:26.260521
 spectral_mamba,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.64,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:13.846395
 spectraformer,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,,,66955779,66955779,0,1.0,0.0,0.0,0,0,,,0,0,"ValueError: not enough values to unpack (expected 3, got 2)",legacy_bert,2026-09-19T23:23:42.919182
-hgrn2_outer,MODERATE_EXPANSION,32.6,0.2918,0.2918,0.3219,0.3235,1.1633,1782.08,323.08,333.35,383.98,333.35,,,66955779,67587915,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (32.60%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66998091 base_delta=42312 (+0.06%) lora_excluded=589824,legacy_bert,2026-09-19T23:54:25.982325
-adasplash,PASS,78.4,0.7834,0.7834,0.7837,0.7833,0.6017,43.52,342.78,5517.46,23.2,5517.46,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:52:20.661719
-chela_slay,MODERATE_EXPANSION,45.0,0.385,0.385,0.5575,0.4557,1.0524,20.15,359.32,14687.47,8.71,14687.47,,,66955779,67600971,645192,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=67011147 base_delta=55368 (+0.08%) lora_excluded=589824,legacy_bert,2026-09-20T00:53:09.725490
-cluster,MODERATE_EXPANSION,73.1,0.7294,0.7294,0.7459,0.7296,0.7319,29.41,324.81,8508.08,15.04,8508.08,,,66955779,67545615,589824,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66955791 base_delta=12 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T00:53:35.355459
-eat,PASS,42.4,0.3504,0.3504,0.5773,0.4267,1.0685,10.94,317.56,27955.67,4.58,27955.67,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:54:40.632648
-decay_linear_attn,MODERATE_EXPANSION,36.6,0.3434,0.3434,0.3554,0.3614,1.2616,56.18,330.25,5735.73,22.32,5735.73,,,66955779,67601043,645264,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (36.60%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=67011219 base_delta=55440 (+0.08%) lora_excluded=589824,legacy_bert,2026-09-20T00:55:02.089061
-flash3,PASS,44.1,0.3699,0.3699,0.6022,0.4465,1.0632,10.41,306.07,28132.25,4.55,28132.25,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:55:44.079120
-flash3_fp8,PASS,44.1,0.3699,0.3699,0.6022,0.4465,1.0632,10.45,306.07,27776.36,4.61,27776.36,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T00:56:04.720275
-fusion_attn,MODERATE_EXPANSION,36.9,0.2965,0.2965,0.574,0.3704,1.1067,11.17,306.27,26783.76,4.78,26783.76,,,66955779,67646991,691212,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=67057167 base_delta=101388 (+0.15%) lora_excluded=589824,legacy_bert,2026-09-20T00:56:25.814926
-galerkin,PASS_LOW,33.7,0.3215,0.3215,0.3411,0.3395,1.7525,19.91,319.34,13300.14,9.62,13300.14,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (33.70%) below chance threshold (36.90%),legacy_bert,2026-09-20T00:56:54.236542
-hamming,MODERATE_EXPANSION,37.8,0.329,0.329,0.412,0.3793,1.1071,12.98,318.57,22503.76,5.69,22503.76,,,66955779,67545753,589824,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66955929 base_delta=150 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T00:57:37.356940
+hgrn2_outer,MODERATE_EXPANSION,32.9,0.2805,0.2805,0.3263,0.3264,1.1826,864.46,323.08,450.43,284.17,450.43,,,66955779,67587915,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (32.90%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66998091 base_delta=42312 (+0.06%) lora_excluded=589824,legacy_bert,2026-09-20T01:12:10.582934
+adasplash,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:20:57.735730
+chela_slay,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:22.487430
+cluster,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:24.021208
+eat,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:50.639573
+decay_linear_attn,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:21:49.505610
+flash3,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:18.207630
+flash3_fp8,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:16.693882
+fusion_attn,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:21.084759
+galerkin,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:43.719354
+hamming,CRASH,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,0,0,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",,2026-09-20T01:22:48.300536
 hla,PASS_LOW,35.9,0.2961,0.2961,0.3384,0.3523,1.3036,16.08,322.92,18056.31,7.09,18056.31,,,66955779,67531857,589902,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (35.90%) below chance threshold (36.90%),legacy_bert,2026-09-20T00:58:26.726561
+inject_decay_linear_attention,MODERATE_EXPANSION,36.6,0.3434,0.3434,0.3554,0.3614,1.2617,48.64,330.5,6736.87,19.0,6736.87,,,66955779,67601043,645192,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (36.60%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=67011219 base_delta=55440 (+0.08%) lora_excluded=589824,legacy_bert,2026-09-20T01:00:32.664612
+inject_galerkin,PASS_LOW,33.7,0.3215,0.3215,0.3411,0.3395,1.7525,17.21,319.34,15599.06,8.21,15599.06,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (33.70%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:01:22.241490
+inject_simple_ssm,MODERATE_EXPANSION,34.0,0.1692,0.1692,0.1133,0.3333,1.1042,18.53,342.92,19077.88,6.71,19077.88,,,66955779,67564035,516096,1.0,0.0,0.0,0,0,,,6,516096,note: evaluated accuracy (34.00%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=67047939 base_delta=92160 (+0.14%) lora_excluded=516096,legacy_bert,2026-09-20T01:04:31.931198
+kda,MODERATE_EXPANSION,34.1,0.3003,0.3003,0.3148,0.3354,1.3018,15.26,334.68,19934.51,6.42,19934.51,,,66955779,67545681,589902,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (34.10%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66955857 base_delta=78 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:05:20.714275
+leka_v1,MODERATE_EXPANSION,36.3,0.3384,0.3384,0.4038,0.3658,1.1078,15.25,381.15,19339.09,6.62,19339.09,,,66955779,67546383,589830,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (36.30%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66956559 base_delta=780 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:06:11.429785
+lsh,PASS,39.4,0.3311,0.3311,0.4606,0.3933,1.0969,19.12,323.75,13495.79,9.48,13495.79,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:07:05.603440
+moba,MODERATE_EXPANSION,35.1,0.2815,0.2815,0.5678,0.3573,1.1197,14.09,314.54,20645.98,6.2,20645.98,,,66955779,67545609,589830,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (35.10%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66955785 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:07:53.048793
+nasc,MODERATE_EXPANSION,68.1,0.6739,0.6739,0.7233,0.6768,0.775,34.38,319.28,8270.54,15.48,8270.54,,,66955779,67584021,603666,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66994197 base_delta=38418 (+0.06%) lora_excluded=589824,legacy_bert,2026-09-20T01:09:46.324194
+nha,MODERATE_EXPANSION,80.5,0.8045,0.8045,0.806,0.8041,0.6103,18.87,342.58,15505.22,8.26,15505.22,,,66955779,67550217,594438,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66960393 base_delta=4614 (+0.01%) lora_excluded=589824,legacy_bert,2026-09-20T01:11:57.996769
+nsa,PASS,81.7,0.8167,0.8167,0.8171,0.8166,0.5969,14.03,324.79,19350.53,6.61,19350.53,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:12:56.467147
+nystrom,PASS,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.98,312.33,22751.36,5.63,22751.36,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:13:19.852257
+padre,PASS,76.3,0.7624,0.7624,0.7709,0.7637,0.7717,13.8,321.76,21138.63,6.06,21138.63,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,0,589824,,legacy_bert,2026-09-20T01:13:41.884020
+performer,PASS_LOW,33.5,0.242,0.242,0.3376,0.3286,1.2926,16.53,313.29,17400.73,7.36,17400.73,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (33.50%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:14:07.914561
+qcqa,MODERATE_EXPANSION,31.9,0.1612,0.1612,0.1063,0.3333,1.1828,13.7,316.49,21094.81,6.07,21094.81,,,66955779,67550211,589824,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (31.90%) below chance threshold (36.90%); MODERATE_EXPANSION: base_before=66955779 base_after=66960387 base_delta=4608 (+0.01%) lora_excluded=589824,legacy_bert,2026-09-20T01:14:28.406330
+rala,MODERATE_EXPANSION,36.9,0.3582,0.3582,0.3693,0.3659,1.3325,15.04,316.24,19919.6,6.43,19919.6,,,66955779,67619337,589830,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=67029513 base_delta=73734 (+0.11%) lora_excluded=589824,legacy_bert,2026-09-20T01:14:53.205557
+rpc,PASS,76.1,0.7566,0.7566,0.7652,0.758,0.6921,11.36,317.28,26720.58,4.79,26720.58,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:15:37.428224
+routing,PASS_LOW,33.6,0.297,0.297,0.3317,0.3314,1.5951,65.46,325.89,3844.78,33.29,3844.78,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (33.60%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:16:05.382112
+span_expanded,PASS,81.9,0.8187,0.8187,0.819,0.8186,0.5952,12.58,313.81,22826.79,5.61,22826.79,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-20T01:16:50.752039
+spectra_v2,PASS_LOW,36.8,0.2931,0.2931,0.572,0.3687,1.1068,10.53,306.07,28789.64,4.45,28789.64,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,note: evaluated accuracy (36.80%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:17:11.378452
+squeezing_heads,PASS,80.5,0.8036,0.8036,0.8038,0.8037,0.6158,12.7,317.56,23562.08,5.43,23562.08,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:17:33.792871
+svd,PASS_LOW,34.2,0.2627,0.2627,0.313,0.3512,1.2592,17.37,313.52,15525.89,8.24,15525.89,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (34.20%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:17:59.701736
+unified_rope,PASS,58.2,0.5754,0.5754,0.6503,0.5873,1.0085,14.14,322.52,20255.06,6.32,20255.06,,,66955779,67545603,589824,1.0,0.0,0.0,0,0,,,6,589824,,legacy_bert,2026-09-20T01:18:21.229683
+vig,MODERATE_EXPANSION,60.2,0.6007,0.6007,0.6038,0.602,0.845,18.37,331.92,15583.91,8.21,15583.91,,,66955779,67656339,700560,1.0,0.0,0.0,6,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=67066515 base_delta=110736 (+0.17%) lora_excluded=589824,legacy_bert,2026-09-20T01:18:49.154273
+weighted_ensemble,MODERATE_EXPANSION,59.4,0.5807,0.5807,0.6806,0.5923,1.2577,12.38,334.5,23521.37,5.44,23521.37,,,66955779,67011147,4191819,1.0,0.0,0.0,0,0,,,6,0,MODERATE_EXPANSION: base_before=66955779 base_after=67011147 base_delta=55368 (+0.08%) lora_excluded=0,legacy_bert,2026-09-20T01:19:06.297866
+wgqa,MODERATE_EXPANSION,64.8,0.6485,0.6485,0.6649,0.646,0.7484,13.5,313.64,21675.91,5.91,21675.91,,,66955779,67545747,589968,1.0,0.0,0.0,6,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66955923 base_delta=144 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:19:32.024495
+xattention,MODERATE_EXPANSION,42.3,0.3611,0.3611,0.4341,0.4152,1.0841,14.89,314.83,18021.41,7.1,18021.41,,,66955779,67545609,589830,1.0,0.0,0.0,6,0,,,6,589824,MODERATE_EXPANSION: base_before=66955779 base_after=66955785 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:19:53.641079
+zeros,PASS_LOW,33.9,0.2872,0.2872,0.3609,0.3366,1.1231,11.99,313.61,24325.17,5.26,24325.17,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,note: evaluated accuracy (33.90%) below chance threshold (36.90%),legacy_bert,2026-09-20T01:20:15.156783

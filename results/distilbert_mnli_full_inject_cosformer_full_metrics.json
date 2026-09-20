@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_inject_cosformer",
     "performance": {
-        "accuracy_pct": 36.6,
-        "f1_score": 0.3525,
-        "f1_macro": 0.3525,
-        "precision": 0.3683,
-        "recall": 0.3626,
+        "accuracy_pct": 36.5,
+        "f1_score": 0.3514,
+        "f1_macro": 0.3514,
+        "precision": 0.3669,
+        "recall": 0.3616,
         "val_loss": NaN,
-        "status": "REJECTED_EXPANSION",
-        "elapsed_s": 15.33
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 14.22
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -34,8 +34,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 223.86,
-        "tokens_per_sec": 20022.82
+        "peak_vram_mb": 324.1,
+        "tokens_per_sec": 21116.45
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 191.17,
-        "L_256_vram_mb": 195.49,
+        "L_128_vram_mb": 291.01,
+        "L_256_vram_mb": 295.23,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-19T18:07:36.908907"
+    "timestamp": "2026-09-20T04:29:12.350296"
 }
