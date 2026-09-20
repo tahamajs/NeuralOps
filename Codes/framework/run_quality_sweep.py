@@ -1367,18 +1367,44 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
     val_loss = round(total_loss / max(1, num_batches), 4)
 
     try:
-        from sklearn.metrics import f1_score, precision_score, recall_score
+        from sklearn.metrics import f1_score, precision_score, recall_score, precision_recall_fscore_support
         unique_classes = set(all_targets)
-        if len(unique_classes) <= 2:
+        n_classes = len(unique_classes)
+        if n_classes <= 2:
             f1 = float(f1_score(all_targets, all_preds, average="binary", zero_division=0))
         else:
             f1 = float(f1_score(all_targets, all_preds, average="macro", zero_division=0))
         f1_macro = float(f1_score(all_targets, all_preds, average="macro", zero_division=0))
         precision = float(precision_score(all_targets, all_preds, average="macro", zero_division=0))
         recall = float(recall_score(all_targets, all_preds, average="macro", zero_division=0))
+
+        # Per-class metrics (ordered by class index)
+        class_labels = sorted(unique_classes)
+        per_prec, per_rec, per_f1, per_sup = precision_recall_fscore_support(
+            all_targets, all_preds, labels=class_labels, zero_division=0
+        )
+        per_class = {
+            str(lbl): {
+                "precision": round(float(per_prec[i]), 4),
+                "recall": round(float(per_rec[i]), 4),
+                "f1": round(float(per_f1[i]), 4),
+                "support": int(per_sup[i]),
+            }
+            for i, lbl in enumerate(class_labels)
+        }
+
+        # Mode-collapse detection:
+        # If exactly one class received all predictions (or near-all), it's a collapse.
+        from collections import Counter as _Counter
+        pred_counts = _Counter(all_preds)
+        n_pred = len(all_preds)
+        dominant_pred_frac = max(pred_counts.values()) / max(n_pred, 1)
+        collapse_flag = bool(dominant_pred_frac >= 0.95)  # ≥95% predictions in one class
     except Exception as e:
         LOG.warning("Failed computing classification metrics via sklearn: %s", e)
         f1 = f1_macro = precision = recall = 0.0
+        per_class = {}
+        collapse_flag = False
 
     return {
         "accuracy_pct": acc,
@@ -1391,6 +1417,8 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
         "tokens_per_sec": tokens_per_sec,
         "eval_time_s": round(eval_time, 2),
         "latency_ms": latency_ms_per_sample,
+        "per_class_metrics": per_class,
+        "collapse_flag": collapse_flag,
     }
 
 
@@ -2590,19 +2618,16 @@ def run_single_module_main(args) -> dict:
     se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
     z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
     # Dataset-aware chance and threshold calibration
-    stat_margin_pct = 5.08  # fallback default
-    if getattr(args, "dataset", "") == "sst2":
-        stat_margin_pct = 5.08
-        pass_threshold_pct = 56.00   # binary, chance = 50%
-    elif getattr(args, "dataset", "") == "mnli":
-        stat_margin_pct = 1.45       # 3 * 0.483%
-        pass_threshold_pct = 36.90   # 3-class (majority=35.45% + 1.45% 3-sigma margin)
-    elif getattr(args, "dataset", "") == "ag_news":
-        stat_margin_pct = 2.50
-        pass_threshold_pct = 30.00   # 4-class, chance = 25%
-    else:
-        stat_margin_pct = round(z_score * se * 100.0, 2)
-        pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+    # Dynamic threshold: always derived from the actual validation split majority.
+    # No dataset-specific hardcodes — the majority, SE, and threshold are computed
+    # live from the loaded validation split.  This ensures the threshold is always
+    # calibrated to whatever dataset+split is actually on disk.
+    stat_margin_pct = round(z_score * se * 100.0, 2)
+    pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+    threshold_source = (
+        f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
+        f"SE={se*100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
+    )
 
     LOG.info("=" * 80)
     LOG.info("STATISTICAL BENCHMARK THRESHOLDS (Validation N=%d):", total_val_samples)
@@ -2611,6 +2636,7 @@ def run_single_module_main(args) -> dict:
     LOG.info("  Standard Error (SE):       %.3f%%", se * 100.0)
     LOG.info("  Statistical Margin (3*SE): %.2f%%", stat_margin_pct)
     LOG.info("  PASS Threshold (Min Acc):  %.2f%%", pass_threshold_pct)
+    LOG.info("  Threshold Source:          %s", threshold_source)
     LOG.info("=" * 80)
 
     if isinstance(args.modules, list):
@@ -2989,6 +3015,10 @@ def run_single_module_main(args) -> dict:
             "weighted_reconstruction_error": comp_metrics.get("weighted_reconstruction_error", ""),
             "num_injected_attention_layers": comp_metrics.get("num_injected_attention_layers", 0),
             "lora_params": comp_metrics.get("lora_params", 0),
+            "collapse_flag": perf_metrics.get("collapse_flag", False),
+            "per_class_metrics": json.dumps(perf_metrics.get("per_class_metrics", {})),
+            "threshold_used": pass_threshold_pct,
+            "threshold_source": threshold_source,
             "error": err[:1000],
             "path": path_name,
             "timestamp": datetime.now().isoformat(),
