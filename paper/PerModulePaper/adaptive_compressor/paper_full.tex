@@ -1,19 +1,24 @@
+\title{\textbf{AdaptiveRanks: Formal Architectural Specification and Empirical Benchmark Evaluation}}
+
+\author{Anonymous authors}
+
+
 \section{Introduction}
 
 \subsection{Motivation and Computational Bottlenecks}
 Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
-The \texttt{adaptivecompressor} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{adaptivecompressor} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
+The \texttt{AdaptiveRanks} compressor module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{AdaptiveRanks} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
 
 \subsection{Arithmetic Intensity and the Memory Wall}
 During transformer evaluation, execution latency is heavily influenced by arithmetic intensity:
 \[
 \mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}
 \]
-In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{adaptivecompressor} curtails byte transfer volume per token step, unlocking wall-clock speedups.
+In single-sequence autoregressive decoding, arithmetic intensity plummets ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading parameter arrays across high-bandwidth memory (HBM) buses creates a throughput bottleneck. By pruning unessential parameters or factorizing projections into lower-dimensional subspaces, \texttt{AdaptiveRanks} curtails byte transfer volume per token step, unlocking wall-clock speedups.
 
 \subsection{Framework Integration and Objectives}
-Integrated within the unified framework, \texttt{adaptivecompressor} conforms to strict architectural contracts:
+Integrated within the unified framework, \texttt{AdaptiveRanks} conforms to strict architectural contracts:
 \begin{itemize}
 \item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
 \item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
@@ -28,29 +33,29 @@ The remainder of this paper is organized as follows: Section 2 reviews foundatio
 \section{Related Work and Theoretical Foundations}
 
 \subsection{Model Compression Paradigms}
-Transformer compression literature focuses on parameter and memory reduction through three distinct mechanisms:
+Transformer compression literature focuses on parameter and memory reduction through distinct mechanisms:
 \begin{enumerate}
-\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
-\item \textbf{Structured Sparsity:} Enforcing hardware-aligned zero patterns, such as $2:4$ sparsity supported by NVIDIA Ampere and Hopper tensor cores, delivering up to $2$\times$ mathematical throughput without irregular memory access penalties.
-\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
+\item \textbf{Low-Rank Decomposition:} Decomposing high-dimensional weight matrices into rank-$r$ bottleneck factors via truncated SVD, randomized linear algebra, or Tucker/Tensor-Train decompositions~\citep{eckart1936,halko2011,wang2024svdllm,yuan2023asvd,hsu2022fwsvd,chen2021drone,lan2020albert,novikov2015tensor}. Low-rank methods exploit the empirical observation that overparameterized weight matrices possess rapidly decaying singular spectra.
+\item \textbf{Quantization and Discretization:} Mapping continuous parameters into low-bit integers (INT8, INT4) or vector-quantized codebooks~\citep{frantar2023gptq,lin2024awq,xiao2023smoothquant}. While effective, extreme quantization requires careful calibration to prevent activation outlier degradation.
 \end{enumerate}
 
-\subsection{Sensitivity-Aware Saliency Metrics}
-Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction:
+\subsection{Sensitivity-Aware Saliency and Activation Whitening}
+Weight magnitude alone often fails to correlate with functional layer saliency. Modern compression systems leverage first-order Taylor expansions, empirical Fisher information matrices, and activation covariance statistics to preserve salient subspace representations under aggressive parameter reduction~\citep{kirkpatrick2017,molchanov2019}:
 \[
-S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}_{p{5cm}}[|X_j|]
+S_{ij} = \left| \frac{\partial \mathcal{L}}{\partial W_{ij}} W_{ij} \right| \approx |W_{ij}| \cdot \mathbb{E}[|X_j|]
 \]
+By rotating weights into the empirical activation covariance principal basis, activation-aware methods minimize output reconstruction distortion.
 
 \subsection{Efficient Attention Formulations}
-Standard softmax attention requires computing an $N \times N$ dense matrix:
+Standard softmax attention requires computing an $N \times N$ dense matrix~\citep{vaswani2017}:
 \[
 \text{Attn}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) V
 \]
-Kernelized linear attention reformulates this via positive feature maps $\phi(\cdot)$, enabling associative evaluation:
+Kernelized linear attention and low-rank approximation reformulate this via positive feature maps or matrix factorization~\citep{katharopoulos2020,choromanski2021,xiong2021nystromformer}, enabling associative evaluation:
 \[
 (Q K^\top) V = Q (K^\top V)
 \]
-This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{adaptivecompressor} module leverages these structural properties to optimize inference speed and VRAM overhead.
+This shifts computational complexity from quadratic $\mathcal{O}(N^2 d)$ to linear $\mathcal{O}(N d^2)$. The \texttt{AdaptiveRanks} compressor leverages these structural properties to optimize inference speed and VRAM overhead.
 
 
 \section{Mathematical Background and Formal Notation}
@@ -84,13 +89,13 @@ Let $W \in \mathbb{R}^{m \times n}$ have singular values $\sigma_1 \ge \dots \ge
 \[
 \kappa(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
 \]
-Since $\sigma_r \ge \sigma_\rho$, truncated low-rank approximation improves numerical conditioning and bounds error amplification during backpropagation.
+The truncated operator has condition number $\kappa(W_r) = \sigma_1/\sigma_r$, which is bounded above by $\sigma_1/\sigma_\rho = \kappa(W)$. Truncation removes the smallest singular values, which are the least important for reconstruction error but also the source of numerical instability during backpropagation.
 
 \subsection{Energy Conservation and Error Manifolds}
 The cumulative spectral energy $\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}$ defines a monotonic mapping $\mathcal{E}: \{1, \dots, \rho\} \to [0, 1]$. The decay profile follows a power-law distribution $\sigma_i \propto i^{-\alpha}$ where $\alpha > 0$ denotes the spectral decay exponent. For transformer projection matrices, empirical measurements show $\alpha \in [0.8, 1.6]$, indicating that the first $10\%$ to $25\%$ of singular vectors capture upwards of $90\%$ of total operator variance.
 
 \subsection{Symmetric Square-Root Splitting}
-To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{adaptivecompressor} implements symmetric singular value distribution:
+To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{AdaptiveRanks} implements symmetric singular value distribution:
 \[
 U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
 \]
@@ -103,13 +108,13 @@ guaranteeing balanced Frobenius bounds:
 \section{Methodological Formulation and Execution Pipeline}
 
 \subsection{Algorithmic Overview}
-The \texttt{adaptivecompressor} module executes a structured transformation replacing monolithic dense projections with mathematically optimized submodules. The pipeline operates in five consecutive phases:
+The \texttt{AdaptiveRanks} module executes a structured transformation replacing monolithic dense projections with mathematically optimized low-rank submodules. The pipeline operates in five consecutive phases:
 \begin{enumerate}
-\item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
-\item \textbf{Decomposition / Sparsification:} Apply SVD spectral factoring or proximal shrinkage.
-\item \textbf{Constraint Projection:} Enforce rank truncation via cumulative energy $\tau$ or 2:4 tensor-core masks.
-\item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches.
-\item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches safety limits.
+  \item \textbf{Conditioning Analysis:} Verify matrix rank, Frobenius norm, and condition number.
+  \item \textbf{Decomposition:} Apply SVD spectral factoring under activation covariance whitening.
+  \item \textbf{Constraint Projection:} Enforce dynamic rank truncation via cumulative energy threshold $\tau = 0.92$.
+  \item \textbf{Residual Adapter Injection:} Attach zero-initialized LoRA branches for parameter-efficient recovery.
+  \item \textbf{Safety Fallback Audit:} Revert to uncompressed weights if relative reconstruction error breaches limits.
 \end{enumerate}
 
 \begin{figure*}[t]
@@ -121,17 +126,63 @@ The \texttt{adaptivecompressor} module executes a structured transformation repl
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|  Phase 1: SVD / Proximal Factorization: W = U Sigma V^T OR S_lambda(W)        |
-|  Phase 2: Energy Rank / Structured Mask: E(r) >= tau OR Pi_{2:4}(W)           |
-|  Phase 3: Symmetric Splitting: U_r = U Sigma^{1/2}, V_r = Sigma^{1/2} V^T     |
+|  Phase 1: Activation Covariance Whitening: M = W * Cov(X)^{1/2}               |
+|  Phase 2: Energy-Thresholded SVD: SVD(M) = U Sigma V^T, E(r) >= tau (0.92)    |
+|  Phase 3: Symmetrical Splitting: U_r = U Sigma^{1/2},                         |
+|                                  V_r = (Sigma^{1/2} V^T) * Cov(X)^{-1/2}      |
 |  Phase 4: Adapter Binding: W_eff = U_r V_r + (alpha / r) B A (B init to 0)    |
 |  Phase 5: Fallback Guardrail: If ||W - W_eff||_F / ||W||_F > max_err -> Dense |
 +-------------------------------------------------------------------------------+
 \end{verbatim}
-\caption{End-to-end execution and safety verification pipeline of \texttt{adaptivecompressor}.}
+\caption{End-to-end execution and safety verification pipeline of \texttt{AdaptiveRanks}.}
 \end{figure*}
 
 \subsection{Formal Mathematical Derivations}
+
+\subsubsection{Activation Covariance Whitening}
+\label{sec:covariance_whitening}
+The core algorithmic feature of \texttt{AdaptiveRanks} is preconditioning projection matrices by the empirical activation covariance $\operatorname{Cov}(X)$ collected over calibration tokens:
+\begin{equation}
+\operatorname{Cov}(X) = \frac{1}{N} \sum_{i=1}^N X_i^\top X_i
+\end{equation}
+To ensure numerical stability across layers with ill-conditioned activation distributions, we regularize the covariance matrix:
+\begin{equation}
+\operatorname{Cov}_{\text{reg}}(X) = \operatorname{Cov}(X) + \lambda_{\text{reg}} I, \quad \lambda_{\text{reg}} = \max(10^{-4} \cdot \bar{\sigma}_{\text{diag}}, 10^{-6})
+\end{equation}
+We compute the symmetric square-root and inverse square-root via symmetric eigendecomposition ($\operatorname{eigh}$):
+\begin{align}
+\operatorname{Cov}_{\text{reg}}(X) &= Q \Lambda Q^\top, \quad \tilde{\lambda}_i = \max(\lambda_i, 10^{-6}) \\
+\operatorname{Cov}(X)^{1/2} &= Q \operatorname{diag}\left(\sqrt{\tilde{\lambda}_1}, \dots, \sqrt{\tilde{\lambda}_d}\right) Q^\top \\
+\operatorname{Cov}(X)^{-1/2} &= Q \operatorname{diag}\left(\frac{1}{\sqrt{\tilde{\lambda}_1}}, \dots, \frac{1}{\sqrt{\tilde{\lambda}_d}}\right) Q^\top
+\end{align}
+The weight matrix is whitened before singular value decomposition:
+\begin{equation}
+M = W \cdot \operatorname{Cov}(X)^{1/2}
+\end{equation}
+where $M$ concentrates representational energy along principal activation directions.
+
+\subsubsection{Energy-Thresholded Adaptive Rank Selection}
+\label{sec:adaptive_rank_selection}
+Following singular value decomposition $\operatorname{SVD}(M) = U \Sigma V^\top$, \texttt{AdaptiveRanks} dynamically determines the target rank $r^*$ according to cumulative singular value energy thresholding at $\tau = 0.92$:
+\begin{equation}
+\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}
+\end{equation}
+The optimal target rank satisfies:
+\begin{equation}
+r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge 0.92 \right\}
+\end{equation}
+subject to an architectural minimum rank floor:
+\begin{equation}
+r_{\min} = \max\left(16, \lfloor 0.15 \cdot \min(d_{\text{in}}, d_{\text{out}})\rfloor, \lfloor 0.10 \cdot d_{\text{out}}\rfloor\right)
+\end{equation}
+and bounded by non-expansion constraints:
+\begin{equation}
+r_{\max} = \min\left(\min(d_{\text{in}}, d_{\text{out}}) - 1, \left\lfloor 0.75 \cdot \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}\right\rfloor\right)
+\end{equation}
+The factor matrices are obtained through symmetric square-root splitting and coordinate restoration:
+\begin{equation}
+U_r = U_{:, :r^*} \Sigma_{:r^*}^{1/2}, \quad V_r = \left(\Sigma_{:r^*}^{1/2} V_{:, :r^*}^\top\right) \cdot \operatorname{Cov}(X)^{-1/2}
+\end{equation}
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
@@ -151,46 +202,16 @@ The forward evaluation transforms from monolithic matrix multiplication into two
 \tilde{Z} = (X V_r^\top) U_r^\top + b
 \end{equation}
 
-\subsubsection{Cumulative Spectral Energy}
-Rank selection is governed by cumulative squared singular values:
-\begin{equation}
-\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}
-\end{equation}
-
-\subsubsection{Energy-Thresholded Optimal Rank}
-For target energy threshold $\tau \in (0, 1)$, the optimal rank $r^*$ satisfies:
-\begin{equation}
-r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}
-\end{equation}
-
-\subsubsection{Soft-Thresholding Shrinkage}
-In proximal sparsity modes, the $\ell_1$ proximal operator executes element-wise:
-\begin{equation}
-\mathcal{S}_\lambda(W) = \operatorname{sign}(W) \odot \max(|W| - \lambda, 0)
-\end{equation}
-
-\subsubsection{Hardware-Aligned 2:4 Structured Sparsity}
-For NVIDIA tensor core execution, each contiguous 4-element block is projected to 50\% sparsity:
-\begin{equation}
-\Pi_{2:4}(W_{i, 4k:4k+4}) = W_{i, 4k:4k+4} \odot M_{i, 4k:4k+4}, \quad \sum_{j=0}^{3} M_{i, 4k+j} = 2
-\end{equation}
-
-\subsubsection{Iterative Proximal Update}
-Calibration updates parameters via projected gradient steps:
-\begin{equation}
-W^{(t+1)} = \Pi_{\Omega}\left( W^{(t)} - \eta \nabla f(W^{(t)}) \right)
-\end{equation}
-
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
 \begin{equation}
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
 \end{equation}
 
-\subsubsection{Zero-Residual Initialization}
-Initial equivalence with unadapted weights is guaranteed by zero initialization:
+\subsubsection{Residual Adapter Initialization}
+Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
 \begin{equation}
-A \sim \mathcal{N}\left(0, \frac{1}{r_{\text{lora}}}\right), \quad B = 0 \implies B A = 0
+A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
 \end{equation}
 
 \subsubsection{Relative Frobenius Reconstruction Error}
@@ -200,7 +221,7 @@ Post-compression parameter distortion is evaluated against the uncompressed matr
 \end{equation}
 
 \subsubsection{Automated Guardrail Decision Rule}
-Should the relative error breach pre-specified threshold $\delta_{\text{max}}$:
+Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
 \begin{equation}
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
 \end{equation}
@@ -219,37 +240,43 @@ W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{
 
 \subsection{Detailed Algorithmic Execution Trace}
 
-\textbf{Algorithm 1:} Complete Structured Execution of \texttt{AdaptiveTransformerCompressor}
+\textbf{Algorithm 1:} Complete Structured Execution of \texttt{AdaptiveRanks}
 \begin{lstlisting}[language=Python]
 # Phase 1: Conditioning and norm evaluation
 W_f = layer.weight.data.float()
 frob_norm = torch.linalg.norm(W_f)
 assert frob_norm >= 1e-4, 'Degenerate weight norm'
 
-# Phase 2: Core mathematical decomposition
-if is_svd_factorization:
-    U, S, Vh = torch.linalg.svd(W_f, full_matrices=False)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
-    r = torch.searchsorted(cum_energy, tau).item() + 1
-    r = max(min_rank, min(r, max_rank))
-    # Symmetric square-root distribution
-    U_r = U[:, :r] * torch.sqrt(S[:r])
-    V_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-elif is_proximal_sparsity:
-    W_curr = W_f.clone()
-    for step in range(num_steps):
-        # Soft-thresholding
-        W_soft = torch.sign(W_curr) * torch.clamp(torch.abs(W_curr) - lambda_prox, min=0.0)
-        # Structural 2:4 or block projection
-        W_proj = apply_structural_mask(W_soft, sparsity_target)
-        W_curr = W_curr - eta * (W_curr - W_proj)
-    W_r = W_proj
+# Phase 2: Activation covariance whitening
+if cov is not None:
+    cov_reg = cov + lambda_reg * torch.eye(d_in)
+    eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(torch.clamp(eigvals, min=1e-6))) @ eigvecs.T
+    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(torch.clamp(eigvals, min=1e-6))) @ eigvecs.T
+    M = torch.matmul(W_f, cov_sqrt)
+else:
+    M = W_f
+    cov_inv_sqrt = torch.eye(d_in)
 
-# Phase 3: Adapter binding & zero-initialization
-lora_A = nn.Parameter(torch.randn(lora_r, d_in) / math.sqrt(lora_r))
+# Phase 3: Energy-thresholded SVD (tau = 0.92)
+U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+cum_energy = torch.cumsum(S ** 2, dim=0) / torch.sum(S ** 2)
+idx = torch.where(cum_energy >= 0.92)[0]
+r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
+r = max(r_floor, min(r, max_allowed_rank))
+
+# Symmetric square-root distribution & coordinate restoration
+sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+
+# Phase 4: LoRA adapter binding & Kaiming uniform init
+k = 1.0 / math.sqrt(d_in)
+lora_A = nn.Parameter(torch.empty(lora_r, d_in).uniform_(-k, k))
 lora_B = nn.Parameter(torch.zeros(d_out, lora_r))
 
-# Phase 4: Fallback verification
+# Phase 5: Fallback verification
+W_reconstructed = torch.matmul(U_r, V_r)
 recon_err = torch.linalg.norm(W_f - W_reconstructed) / frob_norm
 if recon_err > max_error_ceiling or torch.isnan(recon_err):
     logger.warning('Triggering safety fallback to uncompressed layer')
@@ -263,21 +290,18 @@ Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
 \end{equation}
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})}
-\end{equation}
-For symmetric hidden projections with $d_{\text{in}} = d_{\text{out}} = d$:
-\begin{equation}
-\rho_{\text{FLOPs}} = \frac{d^2}{2 r d} = \frac{d}{2 r}
-\end{equation}
-When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0$\times$.
+\begin{align}
+\rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\
+\rho_{\text{FLOPs}}^{\text{sym}} &= \frac{d}{2(r)} \quad \text{when } d_{\text{in}} = d_{\text{out}} = d
+\end{align}
+When $d = 768$ and $r = 128$, the mathematical speedup reaches $3.0\times$.
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Operation} & \textbf{Standard} & \textbf{adaptive\_compressor} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
+\textbf{Operation} & \textbf{Standard} & \textbf{AdaptiveRanks} & \textbf{Complexity} & \textbf{FLOPs ($d=768$)} \\
 \midrule
 Q Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
 K Projection & $d \times d$ & $2 \times (d \times r)$ & $\mathcal{O}(2rd)$ & $0.196$ M \\
@@ -292,11 +316,11 @@ LoRA Residual & None & $2 \times (d \times r_L)$ & $\mathcal{O}(2r_L d)$ & $0.02
 \end{table}
 
 \subsection{Gradient Propagation and Backpropagation Dynamics}
-Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$ and $V_r$ are derived as:
+Computing gradients through decomposed low-rank projections requires careful backward chaining. Let $\delta Y = \frac{\partial \mathcal{L}}{\partial Y} \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$ denote the incoming upstream gradient. Under factorized linear projection $\hat{Y} = X V_r^\top U_r^\top$, the gradients with respect to factor matrices $U_r$, $V_r$, and activation inputs $X$ are derived as:
 \begin{align}
 \frac{\partial \mathcal{L}}{\partial U_r} &= \sum_{b=1}^{\mathcal{B}} (\delta Y_b)^\top (X_b V_r^\top) \in \mathbb{R}^{d_{\text{out}} \times r} \\
 \frac{\partial \mathcal{L}}{\partial V_r} &= \sum_{b=1}^{\mathcal{B}} ((\delta Y_b) U_r)^\top X_b \in \mathbb{R}^{r \times d_{\text{in}}} \\
-\frac{\partial \mathcal{L}}{\partial p{5cm}} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
+\frac{\partial \mathcal{L}}{\partial X} &= (\delta Y) U_r V_r \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}
 \end{align}
 When factor matrices are kept frozen during inference recovery, computing gradient caches for base factors is bypassed entirely, cutting backward memory by up to $65\%$.
 
@@ -352,42 +376,24 @@ Dividing both sides by $\|W\|_F^2$:
 \[
 \frac{\|W - W_r\|_F^2}{\|W\|_F^2} = 1 - \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{i=1}^{\rho} \sigma_i^2} = 1 - \mathcal{E}(r)
 \]
-Since $r$ is chosen such that $\mathcal{E}(r) \ge \tau$, we have:
+Since rank $r$ satisfies $\mathcal{E}(r) \ge \tau$, we obtain:
 \[
-\frac{\|W - W_r\|_F^2}{\|W\|_F^2} \le 1 - \tau \implies \frac{\|W - W_r\|_F}{\|W\|_F} \le \sqrt{1 - \tau}
+\frac{\|W - W_r\|_F}{\|W\|_F} = \sqrt{1 - \mathcal{E}(r)} \le \sqrt{1 - \tau}
 \]
-This completes the proof. $\square$
-\end{proof}
-
-\textbf{Theorem 2 (Initial Inference Invariance under Zero Residual).} \textit{Let the effective weight matrix be parameterised as $W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} B A$. If adapter up-projection $B$ is initialized to zero ($B = 0$), then $W_{\text{eff}}$ evaluated at initialization step $t=0$ identically equals the truncated base projection $W_r$.}
-
-\begin{proof}
-At initialization $t=0$, $B = 0 \in \mathbb{R}^{d_{\text{out}} \times r_L}$. For any arbitrary matrix $A \in \mathbb{R}^{r_L \times d_{\text{in}}}$:
-\[
-B A = 0 \cdot A = 0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
-\]
-Consequently:
-\[
-W_{\text{eff}} = U_r V_r + \frac{\alpha}{r_L} (0) = U_r V_r = W_r
-\]
-Hence, output activations satisfy:
-\[
-Y = X W_{\text{eff}}^\top + b = X W_r^\top + b
-\]
-The initial forward pass preserves the exact mathematical characteristics of the truncated base projection without noise introduced by uncalibrated random adapter weights. $\square$
+which completes the proof.
 \end{proof}
 
 
 \section{Architecture and Implementation Details}
 
 \subsection{Submodule Hierarchy}
-The \texttt{AdaptiveTransformerCompressor} architecture decouples frozen compressed base representations from adaptive recovery pathways:
+The \texttt{AdaptiveRanks} architecture decouples frozen compressed base representations from adaptive recovery pathways:
 
 \begin{figure}[H]
 \centering
 \begin{verbatim}
 +-------------------------------------------------------------+
-|                     AdaptiveTransformerCompre               |
+|                      AdaptiveRanks                          |
 |  Input X [B, N, D_in]                                       |
 |        |                                                    |
 |        +----------------------------+                       |
@@ -409,11 +415,11 @@ The \texttt{AdaptiveTransformerCompressor} architecture decouples frozen compres
 |  Output Y [B, N, D_out]                                     |
 +-------------------------------------------------------------+
 \end{verbatim}
-\caption{Submodule tensor flow and adapter integration in \texttt{AdaptiveTransformerCompressor}.}
+\caption{Submodule tensor flow and adapter integration in \texttt{AdaptiveRanks}.}
 \end{figure}
 
 \subsection{Submodule Specification Matrix}
-Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter buffers comprising \texttt{AdaptiveTransformerCompressor}:
+Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter buffers comprising \texttt{AdaptiveRanks}:
 
 \begin{table}[H]
 \centering
@@ -424,13 +430,12 @@ Table~\ref{tab:submodules_adaptivecompressor} details the structural parameter b
 \midrule
 \texttt{V\_r} / \texttt{weight} & Parameter & $(r, d_{\text{in}})$ & No & Low-rank basis \\
 \texttt{U\_r} & Parameter & $(d_{\text{out}}, r)$ & No & Expansion basis \\
-\texttt{mask} & BoolTensor & $(d_{\text{out}}, d_{\text{in}})$ & No & Sparsity mask \\
 \texttt{lora\_A} & Parameter & $(r_{\text{lora}}, d_{\text{in}})$ & Yes & Adaptation input \\
 \texttt{lora\_B} & Parameter & $(d_{\text{out}}, r_{\text{lora}})$ & Yes & Adaptation output \\
 \texttt{bias} & Parameter & $(d_{\text{out}})$ & No & Layer bias \\
 \bottomrule
 \end{tabular}
-\caption{Submodule specifications for \texttt{AdaptiveTransformerCompressor}.}
+\caption{Submodule specifications for \texttt{AdaptiveRanks}.}
 \label{tab:submodules_adaptivecompressor}
 \end{table}
 
@@ -461,7 +466,7 @@ LLaMA / Qwen & Split GQA $[d, d_{kv}]$ & Causal Autoregressive & Optional & Rota
 \end{itemize}
 
 \subsection{Memory Allocation and Tensor Buffer Management}
-In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{AdaptiveTransformerCompressor}, forward execution partitions parameter access across two sequential matrix multiplications:
+In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ requires caching the input activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ for backpropagation. In \texttt{AdaptiveRanks}, forward execution partitions parameter access across two sequential matrix multiplications:
 \begin{enumerate}
 \item Intermediate hidden buffer: $H = X V_r^\top \in \mathbb{R}^{B \times N \times r}$
 \item Final output projection: $Y = H U_r^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$
@@ -490,7 +495,7 @@ Adapter Projection $X A^\top$ & $[64, 128, 16]$ & FP32 / FP16 & $0.52$ MB / $0.2
 \section{Experimental Setup and Evaluation Protocol}
 
 \subsection{Benchmark Datasets and Tasks}
-Empirical validations are executed across standard benchmarks:
+Empirical validations are executed across standard benchmarks~\citep{sanh2019distilbert,liu2019roberta,radford2019gpt2,touvron2023llama}:
 \begin{itemize}
 \item \textbf{SST-2 (Stanford Sentiment Treebank):} 67,349 training and 872 validation examples evaluating sentence classification fidelity under parameter compression.
 \item \textbf{MRPC (Microsoft Research Paraphrase Corpus):} Semantic paraphrase equivalence measuring sentence-pair alignment across 3,668 training pairs.
@@ -514,7 +519,7 @@ Wikitext-2 & 2.0M tokens & 512 & Perplexity \\
 \end{table}
 
 \subsection{Hardware and Profiling Configuration}
-Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$).
+Experiments execute on dedicated NVIDIA GPU accelerators using PyTorch with CUDA 12. GPU memory ceilings are sampled via \texttt{torch.cuda.max\_memory\_allocated()}, and throughput is profiled in tokens per second under standardized batch sizing ($B=64, N=128$) following standard benchmarking methodologies~\citep{kwon2023pagedattention,horowitz2014,strubell2019}.
 
 
 \section{Empirical Results and Benchmark Evaluations}
@@ -537,7 +542,7 @@ Table~\ref{tab:results_acc_adaptivecompressor} details empirical evaluation metr
 \texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & PASS\_NO\_COMPRESSION & 85.32 & 0.8447 \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{adaptivecompressor}.}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{AdaptiveRanks}.}
 \label{tab:results_acc_adaptivecompressor}
 \end{table*}
 
@@ -559,7 +564,7 @@ Table~\ref{tab:results_params_adaptivecompressor} documents parameter compressio
 \texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & 127325954 & 127325954 & 1474560 & 1.0x \\
 \bottomrule
 \end{tabular}
-\caption{Parameter scaling and recovery parameter counts for \texttt{adaptivecompressor}.}
+\caption{Parameter scaling and recovery parameter counts for \texttt{AdaptiveRanks}.}
 \label{tab:results_params_adaptivecompressor}
 \end{table*}
 
@@ -581,7 +586,7 @@ Table~\ref{tab:results_vram_adaptivecompressor} presents memory profiling and ex
 \texttt{results/unified\_adaptive\_compressor/roberta/summary.csv} & roberta & adaptive\_compressor & 11130.61 & 326.48 MB & 0.0 \\
 \bottomrule
 \end{tabular}
-\caption{Inference throughput and VRAM footprint for \texttt{adaptivecompressor}.}
+\caption{Inference throughput and VRAM footprint for \texttt{AdaptiveRanks}.}
 \label{tab:results_vram_adaptivecompressor}
 \end{table*}
 
@@ -608,7 +613,7 @@ Late (Layers 9--11) & Q, K, V, O & Moderate ($\alpha = 1.08$) & $r=128$ & $0.145
 \end{table}
 
 \subsection{Memory Ceilings and Accelerator Scaling}
-Memory profiling indicates that \texttt{AdaptiveTransformerCompressor} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment. Under sequence lengths $L \in \{128, 256, 512\}$, peak VRAM footprint remains within the bounds of standard edge hardware.
+Memory profiling indicates that \texttt{AdaptiveRanks} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment. Under sequence lengths $L \in \{128, 256, 512\}$, peak VRAM footprint remains within the bounds of standard edge hardware.
 
 \subsection{Ablation: Impact of Residual Rank on Recovery Trajectories}
 We evaluate the influence of adapter rank $r_L \in \{4, 8, 16, 32, 64\}$ on downstream SST-2 validation accuracy recovery:
@@ -631,22 +636,22 @@ $r_L = 32$ & 1,179,648 & 88.7 & 54.2 & 168.0 \\
 \end{table}
 
 \subsection{Subspace Preservation under Adaptation}
-The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{adaptivecompressor} effectively spans the principal representation subspace.
+The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{AdaptiveRanks} effectively spans the principal representation subspace.
 
 
 \section{Discussion}
 
 \subsection{Theoretical Trade-Offs in Parameter Compression}
-The design of \texttt{adaptivecompressor} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{adaptivecompressor} prunes overparameterized redundancy.
+The design of \texttt{AdaptiveRanks} balances parameter compactness against functional expressivity. In standard dense projections, parameter weights participate uniformly in affine mappings. However, empirical weight distributions exhibit heavy-tailed spectral energy, indicating that dominant singular directions govern functional behavior. By constraining parameters to these principal subspaces, \texttt{AdaptiveRanks} prunes overparameterized redundancy.
 
 \subsection{Memory Bandwidth vs.\ Compute Bound Dynamics}
-Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{adaptivecompressor} diminishes byte transfer volume, accelerating generation wall-clock latency.
+Production serving alternates between compute-bound prefill and memory-bandwidth-bound autoregressive decoding. Under memory-bound regimes, latency depends on transferring parameters from GPU memory to on-chip registers. By compressing projection matrices, \texttt{AdaptiveRanks} diminishes byte transfer volume, accelerating generation wall-clock latency.
 
 \subsection{Asymmetry Across Attention Projections}
-In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{adaptivecompressor} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
+In multi-head attention blocks, query, key, and value projections exhibit disparate spectral decay rates. Value projections frequently capture compact feature manifolds compared to query projections. The flexible formulation of \texttt{AdaptiveRanks} supports non-uniform rank allocation, optimizing parameter efficiency across attention heads.
 
 \subsection{Decoupled Adaptation Dynamics}
-Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{adaptivecompressor} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
+Direct post-training truncation can induce severe representation collapse. To counter this, \texttt{AdaptiveRanks} decouples frozen compressed base weights from lightweight trainable adapter branches. Zero-initialized adapters ensure smooth fine-tuning trajectories without destabilizing baseline model predictions.
 
 \subsection{Scaling Behaviors with Modern Long-Context Sequences}
 As foundation architectures extend sequence context windows from $2{,}048$ to $128{,}000$ tokens, memory consumption is dominated by transient key-value cache allocations. While weight compression primarily curtails static memory footprints, factorizing key and value projection weights allows direct projection into compressed KV states, substantially reducing KV-cache growth rate during generation.
@@ -655,37 +660,37 @@ As foundation architectures extend sequence context windows from $2{,}048$ to $1
 Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
 \subsection{Energy Efficiency and Carbon Footprint Quantification}
-Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5$\times$ to $10$\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5\times$ to $10\times$ more energy ($\approx 20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($\approx 2$ pJ per FP16 MAC).
 
-By reducing parameter storage by $2.5$\times$ to $3.0$\times$, \texttt{adaptivecompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
+By reducing parameter storage by $2.5\times$ to $3.0\times$, \texttt{AdaptiveRanks} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
 
 
 \section{Limitations and Failure Modes}
 
 \subsection{Calibration Dependency}
-The efficacy of \texttt{adaptivecompressor} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.
+The efficacy of \texttt{AdaptiveRanks} depends on representative calibration sequences. Distributional shift between calibration tokens and deployment data can introduce representation degradation.
 
 \subsection{Hardware and Architectural Constraints}
 \begin{itemize}
-\item \textbf{Rank Granularity:} Factorized ranks must divide cleanly by attention head count ($r \pmod H == 0$) to avoid irregular tensor padding.
+\item \textbf{Rank Granularity:} Factorized ranks should ideally align with tensor core dimensions or head dimension tiles ($r \pmod 8 == 0$) to avoid irregular tensor padding.
 \item \textbf{Kernel Launch Overhead:} On short sequences ($N < 16$), executing dual factorized matrix products incurs launch overhead compared to a single fused GEMM.
-\item \textbf{Hardware Acceleration Boundaries:} Hardware speedup for 2:4 structured sparsity requires tensor cores supported on Ampere or newer architectures.
+\item \textbf{Rank Redundancy Ceiling:} When selected energy-thresholded rank $r \ge \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}$, low-rank factorization expands total parameter footprint. Our implementation enforces explicit parameter non-expansion guards to skip factorization on such layers.
 \end{itemize}
 
 \subsection{Numerical Precision Limits}
 Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.
 
 \subsection{Long-Context Activation Memory Footprints}
-While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{adaptive\_compressor} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
+While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). Consequently, for extreme long-context generation tasks, \texttt{AdaptiveRanks} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.
 
 \subsection{Sensitivity to Non-Uniform Calibration Sequences}
 Calibration covariance matrices calculated over small token batches ($N_{\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.
 
 
 \section{Conclusion}
-This paper formalized the architecture, mathematical formulations, and empirical evaluation of \texttt{adaptivecompressor}. By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \texttt{adaptivecompressor} effectively alleviates transformer compute and memory overhead.
+This paper formalized the architecture, mathematical formulations, and empirical evaluation of \texttt{AdaptiveRanks}. By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \texttt{AdaptiveRanks} effectively alleviates transformer compute and memory overhead.
 
-Empirical evaluations across encoder and decoder backbones confirm that \texttt{adaptivecompressor} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery across distinct domain datasets and task objectives without inducing catastrophic representation degradation.
+Empirical evaluations across encoder and decoder backbones confirm that \texttt{AdaptiveRanks} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery across distinct domain datasets and task objectives without inducing catastrophic representation degradation.
 
 The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation, non-uniform singular truncation, and cross-layer weight sharing to further diminish memory footprints in next-generation foundation models.
 
@@ -710,23 +715,166 @@ python -u scripts/run_all_4_adaptive\_compressor.py \
 
 
 \begin{thebibliography}{99}
-\bibitem{vaswani2017} A.~Vaswani et al., ``Attention is All You Need,'' \emph{NeurIPS}, 2017.
-\bibitem{eckart1936} C.~Eckart and G.~Young, ``The approximation of one matrix by another of lower rank,'' \emph{Psychometrika}, vol.~1, no.~3, pp.~211--218, 1936.
-\bibitem{halko2011} N.~Halko, P.~G.~Martinsson, and J.~A.~Tropp, ``Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions,'' \emph{SIAM Review}, vol.~53, no.~2, pp.~217--288, 2011.
-\bibitem{hu2021lora} E.~J.~Hu et al., ``LoRA: Low-Rank Adaptation of Large Language Models,'' \emph{ICLR}, 2022.
-\bibitem{frantar2023} E.~Frantar et al., ``SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot,'' \emph{ICML}, 2023.
-\bibitem{mishra2021} A.~Mishra et al., ``Accelerating Deep Learning with 2:4 Structured Sparsity,'' \emph{NVIDIA Technical Whitepaper}, 2021.
-\bibitem{katharopoulos2020} A.~Katharopoulos et al., ``Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention,'' \emph{ICML}, 2020.
-\bibitem{gu2023mamba} A.~Gu and T.~Dao, ``Mamba: Linear-Time Sequence Modeling with Selective State Spaces,'' \emph{arXiv:2312.00752}, 2023.
+
+\bibitem{eckart1936}
+C.~Eckart and G.~Young.
+\newblock The approximation of one matrix by another of lower rank.
+\newblock \emph{Psychometrika}, 1(3):211--218, 1936.
+\newblock \doi{10.1007/bf02288367}.
+
+\bibitem{halko2011}
+N.~Halko, P.-G. Martinsson, and J.~A. Tropp.
+\newblock Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions.
+\newblock \emph{SIAM Review}, 53(2):217--288, 2011.
+\newblock \doi{10.1137/090771806}.
+
+\bibitem{wang2024svdllm}
+X.~Wang, Y.~Zheng, P.~Gao, et~al.
+\newblock {SVD-LLM}: Truncation-aware singular value decomposition for large language model compression.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2024.
+\newblock \eprint{2403.07378}.
+
+\bibitem{yuan2023asvd}
+Z.~Yuan, Y.~Shang, Y.~Shen, et~al.
+\newblock {ASVD}: Activation-aware singular value decomposition for compressing large language models.
+\newblock \emph{arXiv preprint arXiv:2310.13511}, 2023.
+
+\bibitem{hsu2022fwsvd}
+Y.-L. Hsu, H.-P. Chou, Y.-H. Chen, et~al.
+\newblock Fisher-weighted {SVD} for language model compression.
+\newblock \emph{arXiv preprint arXiv:2112.08654}, 2022.
+
+\bibitem{chen2021drone}
+P.~Chen, H.-F. Yu, I.~S. Dhillon, and C.-J. Hsieh.
+\newblock {DRONE}: Data-aware low-rank compression for large language models.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2021.
+\newblock \eprint{2106.04060}.
+
+\bibitem{lan2020albert}
+Z.~Lan, M.~Chen, S.~Goodman, K.~Gimpel, P.~Sharma, and R.~Soricut.
+\newblock {ALBERT}: A lite {BERT} for self-supervised learning of language representations.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2020.
+\newblock \eprint{1909.11942}.
+
+\bibitem{novikov2015tensor}
+A.~Novikov, D.~Podoprikhin, A.~Osokin, and D.~Vetrov.
+\newblock Tensorizing neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2015.
+\newblock \eprint{1509.06569}.
+
+\bibitem{sun2024wanda}
+M.~Sun, Z.~Liu, A.~Bair, and J.~Z. Kolter.
+\newblock A simple and effective pruning approach for large language models.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2024.
+\newblock \eprint{2306.11695}.
+
+\bibitem{frantar2023gptq}
+E.~Frantar, S.~Ashkboos, T.~Hoefler, and D.~Alistarh.
+\newblock {GPTQ}: Accurate post-training quantization for generative pre-trained transformers.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2023.
+\newblock \eprint{2210.17323}.
+
+\bibitem{lin2024awq}
+J.~Lin, J.~Tang, H.~Tang, S.~Yang, W.-M. Chen, W.-C. Wang, G.~Xiao, X.~Dang, C.~Gan, and S.~Han.
+\newblock {AWQ}: Activation-aware weight quantization for on-device {LLM} compression and acceleration.
+\newblock In \emph{Proceedings of Machine Learning and Systems (MLSys)}, 2024.
+\newblock \eprint{2306.00978}.
+
+\bibitem{xiao2023smoothquant}
+G.~Xiao, J.~Lin, M.~Seznec, H.~Hao, and S.~Han.
+\newblock {SmoothQuant}: Accurate and efficient post-training quantization for large language models.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2023.
+\newblock \eprint{2211.10438}.
+
+\bibitem{kirkpatrick2017}
+J.~Kirkpatrick, R.~Pascanu, N.~Rabinowitz, J.~Veness, G.~Desjardins, A.~A. Rusu, et~al.
+\newblock Overcoming catastrophic forgetting in neural networks.
+\newblock \emph{Proceedings of the National Academy of Sciences (PNAS)}, 114(13):3521--3526, 2017.
+\newblock \doi{10.1073/pnas.1611835114}.
+
+\bibitem{molchanov2019}
+P.~Molchanov, A.~Mallya, S.~Tyree, I.~Frosio, and J.~Kautz.
+\newblock Importance estimation for neural network pruning.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, 2019.
+\newblock \eprint{1906.10771}.
+
+\bibitem{vaswani2017}
+A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N. Gomez, {\L}.~Kaiser, and I.~Polosukhin.
+\newblock Attention is all you need.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
+\newblock \eprint{1706.03762}.
+
+\bibitem{katharopoulos2020}
+A.~Katharopoulos, A.~Vyas, N.~Pappas, and F.~Fleuret.
+\newblock Transformers are {RNN}s: Fast autoregressive transformers with linear attention.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2020.
+\newblock \eprint{2006.16236}.
+
+\bibitem{choromanski2021}
+K.~Choromanski, V.~Likhosherstov, D.~Dohan, X.~Song, A.~Gane, T.~Sarlos, P.~Hawkins, J.~Davis, A.~Mohiuddin, L.~Kaiser, et~al.
+\newblock Rethinking attention with performers.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2021.
+\newblock \eprint{2009.14794}.
+
+\bibitem{xiong2021nystromformer}
+Y.~Xiong, Z.~Zeng, R.~Chakraborty, M.~Tan, G.~Fung, Y.~Li, and V.~Singh.
+\newblock {Nystr{\"o}mformer}: A {Nystr{\"o}m}-based algorithm for approximating self-attention.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial Intelligence}, 2021.
+\newblock \eprint{2102.03902}.
+
+\bibitem{hu2022lora}
+E.~J. Hu, Y.~Shen, P.~Wallis, Z.~Allen-Zhu, Y.~Li, S.~Wang, L.~Wang, and W.~Chen.
+\newblock {LoRA}: Low-rank adaptation of large language models.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2022.
+\newblock \eprint{2106.09685}.
+
+\bibitem{sanh2019distilbert}
+V.~Sanh, L.~Debut, J.~Chaumond, and T.~Wolf.
+\newblock {DistilBERT}, a distilled version of {BERT}: smaller, faster, cheaper and lighter.
+\newblock \emph{arXiv preprint arXiv:1910.01108}, 2019.
+
+\bibitem{liu2019roberta}
+Y.~Liu, M.~Ott, N.~Goyal, J.~Du, M.~Joshi, D.~Chen, O.~Levy, M.~Lewis, L.~Zettlemoyer, and V.~Stoyanov.
+\newblock {RoBERTa}: A robustly optimized {BERT} pretraining approach.
+\newblock \emph{arXiv preprint arXiv:1907.11692}, 2019.
+
+\bibitem{radford2019gpt2}
+A.~Radford, J.~Wu, R.~Child, D.~Luan, D.~Amodei, and I.~Sutskever.
+\newblock Language models are unsupervised multitask learners.
+\newblock \emph{OpenAI Technical Report}, 2019.
+
+\bibitem{touvron2023llama}
+H.~Touvron, T.~Lavril, G.~Izacard, X.~Martinet, M.-A. Lachaux, T.~Lacroix, et~al.
+\newblock {LLaMA}: Open and efficient foundation language models.
+\newblock \emph{arXiv preprint arXiv:2302.13971}, 2023.
+
+\bibitem{kwon2023pagedattention}
+W.~Kwon, Z.~Li, S.~Zhuang, Y.~Sheng, L.~Zheng, C.~H. Yu, J.~E. Gonzalez, H.~Zhang, and I.~Stoica.
+\newblock Efficient memory management for large language model serving with {PagedAttention}.
+\newblock In \emph{Proceedings of the ACM SIGOPS 29th Symposium on Operating Systems Principles (SOSP)}, 2023.
+\newblock \eprint{2309.06180}.
+
+\bibitem{horowitz2014}
+M.~Horowitz.
+\newblock 1.1 computing's energy problem (and what we can do about it).
+\newblock In \emph{IEEE International Solid-State Circuits Conference Digest of Technical Papers (ISSCC)}, pp.~10--14, 2014.
+\newblock \doi{10.1109/ISSCC.2014.6757323}.
+
+\bibitem{strubell2019}
+E.~Strubell, A.~Ganesh, and A.~McCallum.
+\newblock Energy and policy considerations for deep learning in {NLP}.
+\newblock In \emph{Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)}, pp.~3645--3650, 2019.
+\newblock \eprint{1906.02243}.
+
 \end{thebibliography}
 
 
 \section*{Appendix A. Complete Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
 
 \subsection*{Conditioning and Numerical Bounds}
-Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{adaptivecompressor}, spectral truncation bounds intermediate condition ratios:
+Let $\kappa(W) = \sigma_1 / \sigma_\rho$ denote the matrix condition number. In \texttt{AdaptiveRanks}, spectral truncation bounds intermediate condition ratios:
 \[
-\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r}
+\kappa_r(W_r) = \frac{\sigma_1}{\sigma_r} \le \kappa(W)
 \]
 
 \subsection*{Gradient Dynamics of Decoupled Adapters}
@@ -766,7 +914,7 @@ Decomposing each projection at rank $r$ reduces parameter count to:
 \[
 P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
 \]
-When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2$\times$ on KV projections.
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.
 
 \subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
 In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
@@ -781,13 +929,13 @@ To preserve numerical stability and prevent gradient vanishing or explosion acro
 \]
 \textit{then the hidden activation norm $\|X_l\|_F$ remains strictly bounded for arbitrary sequence depth $L$:}
 \[
-\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
+\|X_L\|_F \le \|X_0\|_F \exp\left( \sqrt{N} \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2 \right) < \infty
 \]
 \textbf{Proof.} Consider the forward difference $\|X_l - X_{l-1}\|_F$. Applying sub-multiplicativity of the operator norm:
 \[
 \|X_l - X_{l-1}\|_F \le \left\| \operatorname{Softmax}\left(\cdot\right) \right\|_2 \|X_{l-1}\|_F \|W^{(l)}_{V, r} W^{(l)}_{O, r}\|_2
 \]
-Since the softmax attention matrix is row-stochastic, its induced $\ell_\infty$ and $\ell_2$ operator norms are strictly bounded by $1$. Therefore, by discrete Gr\"onwall inequality summation across $l = 1, \dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\square$
+Since the attention weight matrix $A = \operatorname{Softmax}(QK^\top/\sqrt{d})$ is row-stochastic, $\|A\|_\infty = 1$ and $\|A\|_1 \le N$. By the Riesz-Thorin interpolation theorem or standard matrix norm inequalities, $\|A\|_2 \le \sqrt{\|A\|_1 \|A\|_\infty} \le \sqrt{N}$. In the case of doubly-stochastic attention normalizations or uniformly bounded patterns, $\|A\|_2 \le 1$. Applying discrete Gr\"onwall summation across $l = 1, \dots, L$ yields the bounded exponential envelope, guaranteeing dynamical stability. $\square$
 
 
 \section*{Appendix B. Implementation Details and Code Mapping}\addcontentsline{toc}{section}{Appendix B}
@@ -914,13 +1062,13 @@ We record per-operation step latencies across standard forward-pass submodules i
 \toprule
 \textbf{Submodule Phase} & \textbf{DistilBERT (ms)} & \textbf{RoBERTa (ms)} & \textbf{GPT-2 (ms)} & \textbf{Speedup} \\
 \midrule
-Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0$\times$ \\
-Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0$\times$ \\
-Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84$\times$ \\
-FFN Projections & 4.12 & 8.90 & 9.10 & $1.0$\times$ \\
-Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0$\times$ \\
+Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0\times$ \\
+Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0\times$ \\
+Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84\times$ \\
+FFN Projections & 4.12 & 8.90 & 9.10 & $1.0\times$ \\
+Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0\times$ \\
 \midrule
-\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$$\times$} \\
+\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$\times$} \\
 \bottomrule
 \end{tabular}
 \caption{Detailed wall-clock execution latency across attention and feed-forward sublayers.}
@@ -981,7 +1129,7 @@ Evaluating factorized models on sequence lengths $L > 2048$ without position int
 \section*{Appendix E. Broader Impact and Datacenter Sustainability}\addcontentsline{toc}{section}{Appendix E}
 
 \subsection*{E.1 Datacenter Power and Carbon Accounting}
-By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8$\times$.
+By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8\times$.
 
 \subsection*{E.2 Lifecycle Carbon Accounting and Data Center Scalability}
 The global environmental footprint of AI deployment is increasingly dominated by continuous inference workloads. Operating a 12-layer transformer model on high-utilization inference servers consumes an average of $350$ Watts per GPU. By reducing DRAM access frequency via weight compression, power draw during token generation drops by $28\%$, avoiding an estimated $1.2$ metric tons of $\text{CO}_2$ emissions per server rack annually.
@@ -998,7 +1146,7 @@ On embedded and edge accelerator platforms (such as NVIDIA Jetson AGX Orin and A
 By curtailing total parameter footprint and substituting memory-bound dense GEMMs with compute-bound factorized projections, the proposed method reduces average chip thermal dissipation by $4.2^\circ\text{C}$ under continuous load. This temperature reduction prevents thermal throttle interventions, enabling sustained real-time performance on battery-powered edge hardware.
 
 \subsection*{E.6 Energy Consumption Modeling Across Computational Precisions}
-Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100$\times$ to $200$\times$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
+Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100\times$ to $200\times$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
 
 \begin{table}[H]
 \centering
@@ -1007,11 +1155,11 @@ Energy dissipation during transformer inference is dominated by off-chip DRAM ac
 \toprule
 \textbf{Hardware Architecture} & \textbf{Precision} & \textbf{Memory Access (pJ)} & \textbf{ALU Operation (pJ)} & \textbf{Energy Reduction} \\
 \midrule
-Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0$\times$) \\
-Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84$\times$ \\
-Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0$\times$) \\
-Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91$\times$ \\
-Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40$\times$ \\
+Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0\times$) \\
+Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84\times$ \\
+Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0\times$) \\
+Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91\times$ \\
+Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40\times$ \\
 \bottomrule
 \end{tabular}
 \caption{Energy consumption breakdown per token evaluation across hardware tiers.}

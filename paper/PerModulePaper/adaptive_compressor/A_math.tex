@@ -43,7 +43,7 @@ Decomposing each projection at rank $r$ reduces parameter count to:
 \[
 P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
 \]
-When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2$\times$ on KV projections.
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2\times$ on KV projections.
 
 \subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
 In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
