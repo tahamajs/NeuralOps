@@ -558,6 +558,7 @@ class SpectraformerAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("spectraformer_inject")
+@ATTENTION_REGISTRY.register("spectraformer_attention_inject")
 def inject_spectraformer(
     layer: Any = None,
     model_config: Any = None,
