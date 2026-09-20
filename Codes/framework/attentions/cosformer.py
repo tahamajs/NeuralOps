@@ -636,9 +636,11 @@ class CosformerAttention(BaseAttention):
             Z_sin = K_sin.sum(dim=2, keepdim=True)  # [B, H, 1, d]
 
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
-            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous()) + self.eps
+            denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
+            denom = denom.abs().clamp(min=self.eps)
 
-            context = (num / denom.clamp(min=self.eps)).to(dtype)
+            context = (num / denom).to(dtype)
+            context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # 8. Head mask handling
         if head_mask is not None:

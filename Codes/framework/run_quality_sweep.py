@@ -3346,7 +3346,10 @@ def main():
                 args.dataset_dir = str(cand)
                 break
 
-    out = Path(args.output_dir) if args.output_dir else Path("results")
+    if args.output_dir is None:
+        safe_model = Path(args.model).name.replace("-", "_").lower()
+        args.output_dir = f"results/{safe_model}_{args.dataset}_sweep"
+    out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     path = out / "summary.csv"
     
