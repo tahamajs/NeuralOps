@@ -20,6 +20,24 @@
 
 ---
 
+## Live Process & GPU State Verification (Updated: 2026-09-21 02:46)
+
+- **Active Training Job**: **Job 1 — RoBERTa Baseline Fine-Tuning**
+- **Process ID**: `23724` (`finetune_roberta_sst2.py`)
+- **Orchestrator Conflict Check**: `auto_pipeline_orchestrator.py` is **NOT** running. Only `PID 23724` is active on the GPU.
+- **GPU Telemetry**:
+  - VRAM: **3,744 MiB** / 8,188 MiB (well below 7.5 GB ceiling)
+  - Temperature: **63°C** (well below 90°C cutoff)
+  - GPU Compute: **27% – 51%**
+- **Training Progression**:
+  - Step 50: `loss = 0.7124`
+  - Step 100: `loss = 0.6987`
+  - Step 200: `loss = 0.4089`
+  - Step 500: `loss = 0.2826`
+  - Step 1000: `loss = 0.2238`
+  - Step 1600 / 6315: `loss = 0.1990` (Epoch 0.76, 26% complete, speed: ~5.7 it/s)
+  - Estimated time remaining for Job 1: **~13 minutes**.
+
 ## Detailed Findings
 
 ### 1. `summary_v4.csv` and `summary.csv`
