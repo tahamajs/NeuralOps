@@ -93,6 +93,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+    initial_seed = args.seeds[0] if args.seeds else 42
+    seed_everything(initial_seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if args.batch_size is None:
