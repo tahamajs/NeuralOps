@@ -60,7 +60,8 @@ class NaiveSVDAttention(MinimalSVDAttention):
         )
 
 
-@ATTENTION_REGISTRY.register_inject("naive_svd")
+@ATTENTION_REGISTRY.register("naive_svd_inject")
+@ATTENTION_REGISTRY.register("inject_naive_svd")
 def inject_naive_svd(
     layer: nn.Module,
     comp_config: Any = None,
