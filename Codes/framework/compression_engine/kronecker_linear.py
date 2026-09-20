@@ -239,6 +239,7 @@ class KroneckerLinear(nn.Module):
             self.bias = nn.Parameter(bias.clone().to(dtype=target_dtype, device=target_device))
         elif not hasattr(self, "bias") or self.bias is None:
             self.register_parameter("bias", None)
+        self._invalidate_cache()
 
     @classmethod
     def from_linear(
@@ -348,4 +349,5 @@ class KroneckerLinear(nn.Module):
         if bias is not None and kron_layer.bias is not None:
             kron_layer.bias.data.copy_(bias.to(dtype=target_dtype, device=target_device))
 
+        kron_layer._invalidate_cache()
         return kron_layer
