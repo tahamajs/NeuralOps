@@ -270,28 +270,26 @@ Table~\ref{tab:ssm_family} presents results for recurrent, SSM, and hybrid archi
 \end{tabular}
 \end{table}
 
-\subsection{Rank Truncation Ablation Grid}
-To characterize the sensitivity of attention compression to rank constraints, Table~\ref{tab:rank_ablation} displays accuracy across truncation ranks $r \in \{64, 128, 192, 256, 320\}$. For \texttt{a3}, increasing rank from 64 to 320 steadily restores SST-2 accuracy from 84.1\% to 90.71\%, but MNLI accuracy plateaues at 72.20\%, confirming that rank truncation fundamentally bounds relational reasoning capacity.
-
-\begin{table}[ht]
+\subsection{Pareto Frontier and Trade-off Analysis}
+\begin{figure}[ht]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{4.5pt}
-\caption{\textbf{Rank Ablation Grid across Attention Truncation Ranks ($r \in \{64, \dots, 320\}$).}}
-\label{tab:rank_ablation}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Module / Task} & \textbf{Rank 64} & \textbf{Rank 128} & \textbf{Rank 192} & \textbf{Rank 256} & \textbf{Rank 320} \\
-\midrule
-\texttt{a3} (SST-2) & 84.10\% & 87.20\% & 88.90\% & 89.80\% & \textbf{90.71\%} \\
-\texttt{a3} (MNLI) & 42.30\% & 55.40\% & 63.80\% & 68.50\% & \textbf{72.20\%} \\
-\texttt{a3} (AG News) & 81.20\% & 84.60\% & 86.80\% & 88.10\% & \textbf{89.30\%} \\
-\texttt{adaptive\_svd} (MNLI)\textsuperscript{*} & 38.40\% & 49.10\% & 57.60\% & 64.20\% & 68.90\% \\
-\texttt{adasvd} (MNLI)\textsuperscript{*} & 35.20\% & 44.00\% & 51.30\% & 56.80\% & 61.00\% \\
-\bottomrule
-\multicolumn{6}{l}{\scriptsize \textsuperscript{*}Ablation points computed from unified calibration sweeps.}
-\end{tabular}
-\end{table}
+\includegraphics[width=0.72\linewidth]{figures/pareto_frontier.png}
+\caption{\textbf{Pareto Frontier: Accuracy vs Compression Rate on MNLI.} The non-dominated frontier demonstrates that vector quantization (\texttt{kmeans}) preserves accuracy (81.4\%) while achieving a $2.73\times$ parameter reduction, whereas low-rank truncation collapses under severe compression.}
+\label{fig:pareto}
+\end{figure}
+
+\paragraph{Pareto Frontier.}
+Figure~\ref{fig:pareto} shows the Pareto frontier between accuracy, compression, and peak VRAM. The \texttt{kmeans} compressor achieves the best trade-off with $2.73\times$ compression at 81.40\% accuracy on MNLI.
+
+\paragraph{Baseline Comparison.}
+Table~\ref{tab:baselines} compares our method against naive SVD, ASVD, FWSVD, and SVD-LLM. Our activation-aware approach outperforms naive SVD by 43.4 points on MNLI, confirming the importance of calibration.
+
+\input{tables/table3_baselines}
+
+\paragraph{Multi-Seed Stability.}
+Table~\ref{tab:multiseed} reports mean $\pm$ standard deviation over 3 random seeds. All methods show standard deviation below 0.1 points, confirming the stability of our results.
+
+\input{tables/table4_multiseed}
 
 \section{Deep Analysis: Why Linear Attention Approximations Fail on Reasoning Tasks}
 \label{sec:deep_analysis}

@@ -1,0 +1,8 @@
+{
+  "seed": 123,
+  "module": "dense",
+  "accuracy_pct": 81.8,
+  "f1_score": 0.8174,
+  "peak_vram_mb": 690.77,
+  "elapsed_s": 0.93
+}

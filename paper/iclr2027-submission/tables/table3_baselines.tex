@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{Baseline comparison across three datasets.}
+\label{tab:baselines}
+\small
+\begin{tabular}{lccc|cc}
+\toprule
+Method & SST-2 & MNLI & AG News & Compression & Peak VRAM \\
+\midrule
+Dense               & 91.06 & 81.80 & 94.50 & 1.00$\times$ & 184 MB \\
+Naive SVD           & 52.64 & 34.10 & 58.90 & 1.21$\times$ & 163 MB \\
+ASVD                & 90.60 & 81.80 & 94.40 & 0.96$\times$ & 203 MB \\
+FWSVD               & 91.06 & 81.80 & 94.50 & 1.00$\times$ & 184 MB \\
+SVD-LLM             & 82.80 & 43.50 & 71.80 & 1.20$\times$ & 221 MB \\
+\midrule
+\textbf{Ours (a3)}  & 89.91 & 77.50 & 93.80 & 1.10$\times$ & 170 MB \\
+\bottomrule
+\end{tabular}
+\end{table}

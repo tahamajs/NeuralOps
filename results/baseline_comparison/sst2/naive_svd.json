@@ -1,0 +1,16 @@
+{
+  "dataset": "sst2",
+  "method": "naive_svd",
+  "status": "PASS",
+  "accuracy_pct": 52.64,
+  "f1_score": 0.1378,
+  "compression_rate": 1.2139,
+  "compression_ratio_pct": 17.62,
+  "peak_vram_mb": 162.7,
+  "latency_ms_per_token": 1.67,
+  "throughput_tok_per_sec": 76806.02,
+  "elapsed_s": 15.29,
+  "total_params_before": 66955010,
+  "total_params_after": 55158530,
+  "timestamp": "2026-09-20T07:22:21"
+}

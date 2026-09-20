@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Multi-seed evaluation on MNLI (mean $\pm$ std over 3 seeds).}
+\label{tab:multiseed}
+\small
+\begin{tabular}{lcc}
+\toprule
+Method & Accuracy (mean $\pm$ std) & F1 (mean $\pm$ std) \\
+\midrule
+Dense       & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
+a3          & 77.50 $\pm$ 0.00 & 0.7732 $\pm$ 0.0000 \\
+kmeans      & 81.90 $\pm$ 0.00 & 0.8170 $\pm$ 0.0000 \\
+aasvd       & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
+adaptive\_svd & 40.30 $\pm$ 0.00 & 0.3341 $\pm$ 0.0000 \\
+adaptive    & 81.80 $\pm$ 0.00 & 0.8174 $\pm$ 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}

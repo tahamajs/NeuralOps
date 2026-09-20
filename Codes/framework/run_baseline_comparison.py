@@ -38,8 +38,10 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
+from datasets import load_dataset, load_from_disk
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
+from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
 
 LOG = logging.getLogger("BaselineComparison")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -106,6 +108,8 @@ def parse_args():
                         help="Evaluation batch size")
     parser.add_argument("--fp16", action="store_true", default=True,
                         help="Evaluate in FP16 precision")
+    parser.add_argument("--parallel", type=int, default=1,
+                        help="Number of parallel workers (kept 1 for single GPU)")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print planned execution table without running evaluations")
     return parser.parse_args()
@@ -113,7 +117,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print("=" * 80)
     print("ICLR BASELINE COMPARISON BENCHMARK SUITE")
@@ -151,7 +155,7 @@ def main():
             try:
                 # Load fresh model
                 model = AutoModelForSequenceClassification.from_pretrained(model_path)
-                if args.fp16 and device == "cuda":
+                if args.fp16 and device.type == "cuda":
                     model.half()
                 model.to(device)
                 p_before = sum(p.numel() for p in model.parameters())
@@ -166,19 +170,35 @@ def main():
                 comp_rate = round(p_before / max(1, p_after), 4)
                 comp_pct = round(100.0 * (1.0 - p_after / max(1, p_before)), 2)
 
-                # Simulated mock result dict if eval helper is called offline
+                # Real evaluation via evaluate_comprehensive
+                tok = AutoTokenizer.from_pretrained(model_path)
+                ds_path = cfg.get("dataset_dir")
+                if ds_path and Path(ds_path).exists():
+                    val_ds = load_from_disk(ds_path)
+                elif Path(f"Codes/framework/data/glue_data/{ds_name}").exists():
+                    val_ds = load_from_disk(f"Codes/framework/data/glue_data/{ds_name}")
+                else:
+                    val_ds = load_dataset("glue" if ds_name != "ag_news" else "ag_news", ds_name if ds_name != "ag_news" else None)
+                
+                val_split = val_ds.get("validation_matched", val_ds.get("validation", val_ds.get("test", None)))
+                eval_batches = prepare_eval_batches(tok, val_split, ds_name, 128, args.batch_size, device)
+                eval_metrics = evaluate_comprehensive(
+                    model, tok, val_split, ds_name, 128, args.batch_size, device,
+                    fp16=args.fp16, precomputed_batches=eval_batches
+                )
+
                 elapsed = round(time.time() - t0, 2)
                 row = {
                     "dataset": ds_name,
                     "method": b_name,
                     "status": "PASS",
-                    "accuracy_pct": 0.0,
-                    "f1_score": 0.0,
+                    "accuracy_pct": round(eval_metrics.get("accuracy_pct", 0.0), 2),
+                    "f1_score": round(eval_metrics.get("f1_score", 0.0), 4),
                     "compression_rate": comp_rate,
                     "compression_ratio_pct": comp_pct,
-                    "peak_vram_mb": 0.0,
-                    "latency_ms_per_token": 0.0,
-                    "throughput_tok_per_sec": 0.0,
+                    "peak_vram_mb": eval_metrics.get("peak_vram_mb", 0.0),
+                    "latency_ms_per_token": eval_metrics.get("latency_ms", 0.0),
+                    "throughput_tok_per_sec": eval_metrics.get("tokens_per_sec", 0.0),
                     "elapsed_s": elapsed,
                     "total_params_before": p_before,
                     "total_params_after": p_after,

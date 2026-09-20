@@ -1,0 +1,8 @@
+{
+  "seed": 456,
+  "module": "a3",
+  "accuracy_pct": 77.5,
+  "f1_score": 0.7732,
+  "peak_vram_mb": 652.52,
+  "elapsed_s": 5.23
+}

@@ -205,7 +205,40 @@ def scan_and_upload():
                 print(f"[MISSING STANDALONE] Uploading {repo_id}...")
                 if upload_target(repo_id, mf, wf, None, "mixed", d, "standalone", env):
                     existing_repos.add(repo_id)
-                    uploaded_count += 1
+    # 4. SCAN MODELS DIRECTORY (Base Checkpoints)
+    models_dir = os.path.join(base_dir, "models")
+    if os.path.exists(models_dir):
+        for m in os.listdir(models_dir):
+            mp = os.path.join(models_dir, m)
+            if not os.path.isdir(mp):
+                continue
+            # Look for weights and config
+            has_w = any(f.endswith(".bin") or f.endswith(".safetensors") or f.endswith(".pt") for f in os.listdir(mp))
+            if not has_w:
+                continue
+            repo_id = f"{HF_ORG}/{m.replace('_', '-')}"
+            if repo_id not in existing_repos:
+                print(f"[MISSING BASE MODEL] Uploading {repo_id} from {mp}...")
+                for attempt in range(5):
+                    try:
+                        api.create_repo(repo_id=repo_id, repo_type="model", private=True, exist_ok=True)
+                        api.upload_folder(
+                            folder_path=mp,
+                            repo_id=repo_id,
+                            commit_message=f"Upload base model {m}"
+                        )
+                        print(f"  [SUCCESS BASE MODEL] -> https://huggingface.co/{repo_id}")
+                        existing_repos.add(repo_id)
+                        uploaded_count += 1
+                        time.sleep(5)  # deliberate throttle between uploads
+                        break
+                    except Exception as err:
+                        if "429" in str(err) or "rate limit" in str(err).lower():
+                            print(f"  [RATE-LIMIT 429] Waiting 65s before retry (attempt {attempt+1}/5)...")
+                            time.sleep(65)
+                        else:
+                            print(f"  [ERROR] Upload {repo_id}: {err}")
+                            break
 
     print(f"\n==========================================")
     print(f"DONE! Uploaded {uploaded_count} previously unuploaded models to {HF_ORG}.")

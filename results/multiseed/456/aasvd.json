@@ -1,0 +1,8 @@
+{
+  "seed": 456,
+  "module": "aasvd",
+  "accuracy_pct": 81.8,
+  "f1_score": 0.8174,
+  "peak_vram_mb": 655.98,
+  "elapsed_s": 4.68
+}

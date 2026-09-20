@@ -293,6 +293,35 @@ def main():
     out_dir = Path(args.output_dir)
     plot_all(df_pass, out_dir)
 
+    # Save combined pareto_frontier.png (Figure 2 in paper)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    x_col = "compression_rate"
+    y_col = "accuracy_pct"
+    df_clean = df_pass.dropna(subset=[x_col, y_col]).copy()
+    df_clean[x_col] = pd.to_numeric(df_clean[x_col], errors="coerce")
+    df_clean[y_col] = pd.to_numeric(df_clean[y_col], errors="coerce")
+    p_front = pareto_front(df_clean, [(x_col, "max"), (y_col, "max")]).sort_values(by=x_col)
+    ax.scatter(df_clean[x_col], df_clean[y_col], c="#4A90E2", alpha=0.6, s=60, edgecolors="none", label="Evaluated Modules")
+    ax.plot(p_front[x_col], p_front[y_col], color="#D0021B", linestyle="--", linewidth=1.5, label="Pareto Frontier")
+    ax.scatter(p_front[x_col], p_front[y_col], c="#D0021B", s=90, edgecolors="black", linewidths=1.0, zorder=5)
+    for _, row in p_front.iterrows():
+        ax.annotate(
+            row["module_name"],
+            (row[x_col], row[y_col]),
+            xytext=(5, 4),
+            textcoords="offset points",
+            fontsize=8,
+            fontweight="semibold",
+        )
+    ax.set_xlabel("Compression Rate (x)")
+    ax.set_ylabel("Validation Accuracy (%)")
+    ax.set_title("Pareto Frontier: Accuracy vs Compression Rate (MNLI)")
+    ax.grid(True, linestyle=":", alpha=0.6)
+    ax.legend(loc="lower left", frameon=True)
+    fig.savefig(out_dir / "pareto_frontier.png")
+    plt.close(fig)
+    print(f"[PLOT] Saved: {out_dir / 'pareto_frontier.png'}")
+
     # Compute 4-objective Pareto optimal set: Accuracy (max), Compression (max), VRAM (min), Throughput (max)
     objectives = [
         ("accuracy_pct", "max"),
@@ -304,6 +333,12 @@ def main():
     print("\n[TABLE 8: PARETO OPTIMAL MODULES]")
     cols_show = ["module_name", "accuracy_pct", "compression_rate", "peak_vram_mb", "tokens_per_sec"]
     print(p_optimal[cols_show].to_string(index=False))
+
+    # Save pareto_table.csv
+    p_optimal.to_csv(out_dir / "pareto_table.csv", index=False)
+    Path("results").mkdir(parents=True, exist_ok=True)
+    p_optimal.to_csv("results/pareto_table.csv", index=False)
+    print(f"[TABLE] Saved: {out_dir / 'pareto_table.csv'} and results/pareto_table.csv")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+{
+  "seed": 42,
+  "module": "kmeans",
+  "accuracy_pct": 81.9,
+  "f1_score": 0.817,
+  "peak_vram_mb": 777.91,
+  "elapsed_s": 3.06
+}
