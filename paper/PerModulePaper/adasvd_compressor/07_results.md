@@ -53,12 +53,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
-| F1 Score | 0.0000 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
-| Compression | 1.000x | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
-| Compressed Layers | 0 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
-| Fallback Layers | 0 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
-| Timestamp | 2026-09-18T18:50:16.067311 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| Accuracy | 0.00% | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
+| F1 Score | 0.0000 | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
+| Compression | 1.000x | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
+| Compressed Layers | 0 | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
+| Timestamp | 2026-09-18T18:51:46.824309 | `results/agnews_unified_adasvd_compressor/gpt2/summary.csv` |
 
 
 > [!CAUTION]

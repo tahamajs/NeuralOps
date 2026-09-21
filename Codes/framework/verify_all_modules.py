@@ -332,13 +332,58 @@ def main():
         results_md = mod['results_md']
         
         # Find CSV rows for this module (case-insensitive)
+        # Define explicit aliases mapping paper directory name to known benchmark names
+        ALIASES = {
+            "AdaptiveSVD": ["adaptive_svd", "adaptive_svd_attention", "adaptive_svd_attn"],
+            "AdaptiveSpanAttention": ["adaptive_span", "adaptive_span_attention"],
+            "AdaptiveSparseAttention": ["adaptive_sparse", "adaptive_sparse_attention", "adaptive_sparse_attn"],
+            "HALO": ["halo", "halo_regla"],
+            "OH": ["oh", "oha", "oha_attention"],
+            "SqueezingHeadsAttentionDistillationLayer": ["squeezing_heads_distill", "squeezing_heads", "squeezing_heads_attention"],
+            "cr_compressor": ["cr", "cr_compressor"],
+            "cur_compressor": ["cur", "cur_compressor", "cur_linear"],
+            "enlighten_compressor": ["enlighten", "enlighten_compressor"],
+            "fusion": ["fusion_attn", "fusion"],
+            "gfws_d_compressor": ["gfws_d", "gfws", "gfws_d_compressor"],
+            "hashed_net_compressor": ["hashed_net", "hashednet", "hashednets", "hashed_net_compressor"],
+            "kronecker_compressor": ["kronecker", "kronecker_compressor", "kronecker_linear", "kronecker_tt_lora"],
+            "mlorq_compressor": ["mlorq", "mlorq_compressor"],
+            "padre_attention": ["padre", "padre_attention"],
+            "qcqa_attention": ["qcqa", "qcqa_attention"],
+            "rala_attention": ["rala", "rala_attention", "rala_linear_attention"],
+            "routing_attention": ["routing", "routing_attention"],
+            "saes_svd": ["saes", "saes_svd", "saes_svd_v2"],
+            "span_expanded_attention": ["span_expanded", "span_expanded_attention"],
+            "token_compressed_attention": ["token_compressed", "token_compressed_attention"],
+            "tpa_attention": ["tpa", "tpa_attention"],
+            "vig_attention": ["vig", "vig_attention"],
+        }
+
+        # Find CSV rows for this module
         rows = module_data.get(name, [])
-        
-        # Also try lowercase and common variants
         if not rows:
             rows = module_data.get(name.lower(), [])
         if not rows:
             rows = module_data.get(name.replace('_', ''), [])
+        
+        # Check alias variations
+        if not rows and name in ALIASES:
+            for alias in ALIASES[name]:
+                if alias in module_data:
+                    rows.extend(module_data[alias])
+                elif alias.lower() in module_data:
+                    rows.extend(module_data[alias.lower()])
+        
+        # Also try stripping trailing _compressor / _attention
+        if not rows:
+            stripped = name.lower()
+            for suffix in ["_compressor", "_attention", "_pruner", "_quantizer"]:
+                if stripped.endswith(suffix):
+                    base = stripped[:-len(suffix)]
+                    if base in module_data:
+                        rows.extend(module_data[base])
+                    break
+
         
         # Get best result
         best_row, classification, detail = get_best_result(rows)

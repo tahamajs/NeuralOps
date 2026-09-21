@@ -143,14 +143,21 @@
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.48% | `results/unified_oha/distilbert/summary.csv` |
+| F1 Score | 0.9073 | `results/unified_oha/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_oha/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_oha/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_oha/distilbert/summary.csv` |
+| Timestamp | 2026-09-15T06:10:48.257148 | `results/unified_oha/distilbert/summary.csv` |
 
 
 > [!CAUTION]
 > The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 89.5, 76.5, 77.5]
+> [76.5]
 > These numbers must NOT be cited in the final paper.
 

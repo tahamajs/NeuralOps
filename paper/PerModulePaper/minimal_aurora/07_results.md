@@ -128,12 +128,12 @@
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 88.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
-| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Compression | 1.152x | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Timestamp | 2026-09-19T23:49:58.176355 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Accuracy | 88.30% | `results/rank_ablation/agnews_rank64/summary.csv` |
+| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Timestamp | 2026-09-20T00:05:45.519353 | `results/rank_ablation/agnews_rank64/summary.csv` |
 
 
 > [!CAUTION]

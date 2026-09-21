@@ -135,16 +135,16 @@
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
 **Classification**: `FALLBACK`  
-**Detail**: comp=0.983 (no compression)
+**Detail**: comp=1.000 (no compression)
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 90.60% | `results/unified_infini/distilbert/summary.csv` |
-| F1 Score | 0.9091 | `results/unified_infini/distilbert/summary.csv` |
-| Compression | 0.983x | `results/unified_infini/distilbert/summary.csv` |
-| Compressed Layers | 24 | `results/unified_infini/distilbert/summary.csv` |
-| Fallback Layers | 0 | `results/unified_infini/distilbert/summary.csv` |
-| Timestamp | 2026-09-14T19:03:25.630922 | `results/unified_infini/distilbert/summary.csv` |
+| Accuracy | 90.60% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.9091 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-19T00:48:37.250337 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
 
 
 > [!CAUTION]

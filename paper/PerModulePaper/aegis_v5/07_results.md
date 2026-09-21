@@ -157,10 +157,10 @@ reduction. The parameter change is dominated by LoRA + RFF.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 89.80% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| F1 Score | 0.8954 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compression | 1.197x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Timestamp | 2026-09-19T16:08:22.693388 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Accuracy | 89.80% | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| F1 Score | 0.8954 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compression | 1.197x | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Timestamp | 2026-09-19T16:08:22.693388 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
 

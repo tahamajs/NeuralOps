@@ -123,10 +123,10 @@ The optimal pruning ratio depends on the task.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 91.10% | `results/rank_ablation/lora0_ag_news/summary.csv` |
-| F1 Score | 0.9075 | `results/rank_ablation/lora0_ag_news/summary.csv` |
-| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
-| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
-| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
-| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Accuracy | 91.10% | `results/rank_ablation/lora0_agnews/summary.csv` |
+| F1 Score | 0.9075 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_agnews/summary.csv` |
 

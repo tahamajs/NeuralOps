@@ -47,12 +47,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 88.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
-| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Compression | 1.152x | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
-| Timestamp | 2026-09-19T23:51:07.151093 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Accuracy | 88.30% | `results/rank_ablation/agnews_rank64/summary.csv` |
+| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank64/summary.csv` |
+| Timestamp | 2026-09-20T00:06:43.915529 | `results/rank_ablation/agnews_rank64/summary.csv` |
 
 
 > [!CAUTION]

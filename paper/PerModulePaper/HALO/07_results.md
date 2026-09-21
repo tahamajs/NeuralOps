@@ -155,14 +155,15 @@ layers have lower gates (linear).
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
-
-
-> [!CAUTION]
-> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78]
-> These numbers must NOT be cited in the final paper.
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.94% | `results/roberta/summary.csv` |
+| F1 Score | 0.0000 | `results/roberta/summary.csv` |
+| Compression | 1.000x | `results/roberta/summary.csv` |
+| Compressed Layers | ? | `results/roberta/summary.csv` |
+| Fallback Layers | ? | `results/roberta/summary.csv` |
+| Timestamp | 2026-09-04T09:19:41.654754 | `results/roberta/summary.csv` |
 

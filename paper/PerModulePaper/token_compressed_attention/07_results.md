@@ -127,14 +127,15 @@ increase is from LoRA adapters and the score network.
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
-
-
-> [!CAUTION]
-> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36]
-> These numbers must NOT be cited in the final paper.
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 81.08% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T08:20:54.930317 | `results/distilbert/summary.csv` |
 

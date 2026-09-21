@@ -1,71 +1,60 @@
 {
   "total": 217,
   "counts": {
-    "NO_DATA": 24,
-    "FALLBACK": 142,
-    "VALID": 46,
+    "VALID": 48,
+    "FALLBACK": 163,
     "COLLAPSED": 0,
     "BROKEN": 4,
+    "NO_DATA": 1,
     "QUESTIONABLE": 1
   },
-  "fabricated": 152,
+  "fabricated": 142,
   "results": [
     {
       "idx": 1,
       "name": "AdaptiveSVD",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "VALID",
+      "detail": "acc=100.00%, comp=1.216x",
+      "accuracy": "100.00%",
+      "compression": "1.216x",
       "fabricated": true,
       "fabricated_values": [
-        90.71,
         78.56,
         79.36,
-        90.71,
         78.56,
         79.36
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 164,
+      "source": "results/long_context/summary.csv"
     },
     {
       "idx": 2,
       "name": "AdaptiveSpanAttention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36,
-        90.71,
-        78.56,
-        79.36
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.74%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 64,
+      "source": "results/roberta/summary.csv"
     },
     {
       "idx": 3,
       "name": "AdaptiveSparseAttention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.86%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
-        90.71,
         78.56,
         79.36,
-        90.71,
         78.56,
         79.36
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 63,
+      "source": "results/roberta/summary.csv"
     },
     {
       "idx": 4,
@@ -84,52 +73,33 @@
         71.22
       ],
       "csv_rows": 35,
-      "source": "results/summary.csv"
+      "source": ".../rank_ablation/lora0_sst2/summary.csv"
     },
     {
       "idx": 5,
       "name": "HALO",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36,
-        90.71,
-        78.56,
-        79.36,
-        90.25,
-        78.78
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.94%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 66,
+      "source": "results/roberta/summary.csv"
     },
     {
       "idx": 6,
       "name": "OH",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
-        90.71,
-        78.56,
-        79.36,
-        90.71,
-        78.56,
-        79.36,
-        90.25,
-        78.78,
-        89.5,
-        76.5,
-        77.5
+        76.5
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 27,
+      "source": "...ts/unified_oha/distilbert/summary.csv"
     },
     {
       "idx": 7,
@@ -165,21 +135,14 @@
     {
       "idx": 9,
       "name": "SqueezingHeadsAttentionDistillationLayer",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36,
-        90.71,
-        78.56,
-        79.36
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.30%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 41,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
     },
     {
       "idx": 10,
@@ -214,7 +177,7 @@
       "compression": "1.016x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 137,
+      "csv_rows": 142,
       "source": "...nk_ablation/agnews_rank32/summary.csv"
     },
     {
@@ -308,7 +271,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 40,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 19,
@@ -328,7 +291,7 @@
         73.39
       ],
       "csv_rows": 3,
-      "source": "...svd_compressor/distilbert/summary.csv"
+      "source": "...ed_adasvd_compressor/gpt2/summary.csv"
     },
     {
       "idx": 20,
@@ -359,7 +322,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 64,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 22,
@@ -371,7 +334,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 104,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 23,
@@ -397,7 +360,7 @@
         90.71
       ],
       "csv_rows": 73,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 25,
@@ -412,8 +375,8 @@
         79.36,
         78.56
       ],
-      "csv_rows": 70,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 71,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 26,
@@ -425,7 +388,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 100,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 27,
@@ -439,7 +402,7 @@
         78.56
       ],
       "csv_rows": 100,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 28,
@@ -451,7 +414,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 101,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 29,
@@ -463,7 +426,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 111,
-      "source": "...nk_ablation/agnews_rank32/summary.csv"
+      "source": "...nk_ablation/agnews_rank64/summary.csv"
     },
     {
       "idx": 30,
@@ -534,7 +497,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 56,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 35,
@@ -546,7 +509,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 82,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 36,
@@ -588,8 +551,8 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 50,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 51,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 39,
@@ -600,8 +563,8 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 39,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 40,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 40,
@@ -615,7 +578,7 @@
         67.89
       ],
       "csv_rows": 98,
-      "source": "results/pareto_table.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 41,
@@ -683,39 +646,32 @@
         71.22,
         58.72
       ],
-      "csv_rows": 83,
+      "csv_rows": 84,
       "source": "results/long_context/summary.csv"
     },
     {
       "idx": 46,
       "name": "cr_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 30,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 47,
       "name": "cur_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        90.71,
-        79.36,
-        79.36,
-        78.56,
-        78.56
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 38,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 48,
@@ -741,7 +697,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 114,
-      "source": "results/pareto_table.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 50,
@@ -783,7 +739,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 63,
-      "source": "results/pareto_table.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 53,
@@ -798,7 +754,7 @@
         78.56
       ],
       "csv_rows": 63,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 54,
@@ -813,7 +769,7 @@
         67.89
       ],
       "csv_rows": 31,
-      "source": "results/pareto_table.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 55,
@@ -825,7 +781,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 42,
-      "source": "results/unified_dobi/qwen3_5/summary.csv"
+      "source": ".../unified_dobi_svd/qwen3_5/summary.csv"
     },
     {
       "idx": 56,
@@ -842,7 +798,7 @@
         78.56
       ],
       "csv_rows": 5,
-      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+      "source": "...inal_paper_run/sst2_plotting_data.csv"
     },
     {
       "idx": 57,
@@ -854,7 +810,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 57,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 58,
@@ -866,26 +822,19 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 49,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 59,
       "name": "enlighten_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        89.22,
-        79.36,
-        61.12,
-        78.56,
-        51.03
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.80%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 29,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 60,
@@ -921,7 +870,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 54,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 63,
@@ -968,7 +917,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 60,
-      "source": "results/pareto_table.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 66,
@@ -982,7 +931,7 @@
         88.0
       ],
       "csv_rows": 37,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 67,
@@ -1025,7 +974,7 @@
         71.22
       ],
       "csv_rows": 15,
-      "source": "...t_2026_08_26/benchmark_summary_v2.csv"
+      "source": "...inal_paper_run/sst2_plotting_data.csv"
     },
     {
       "idx": 69,
@@ -1037,7 +986,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 59,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 70,
@@ -1049,7 +998,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 59,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 71,
@@ -1077,26 +1026,19 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 101,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 73,
       "name": "fusion",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36,
-        90.71,
-        90.25,
-        90.25
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.12%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 70,
+      "source": "results/roberta/summary.csv"
     },
     {
       "idx": 74,
@@ -1107,7 +1049,7 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 68,
+      "csv_rows": 70,
       "source": "results/roberta/summary.csv"
     },
     {
@@ -1181,14 +1123,14 @@
     {
       "idx": 79,
       "name": "gfws_d_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 30,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 80,
@@ -1219,8 +1161,8 @@
         79.36,
         78.78
       ],
-      "csv_rows": 61,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "csv_rows": 62,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 82,
@@ -1235,7 +1177,7 @@
         75.0
       ],
       "csv_rows": 49,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 83,
@@ -1247,7 +1189,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 60,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 84,
@@ -1273,7 +1215,7 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 65,
+      "csv_rows": 66,
       "source": "results/roberta/summary.csv"
     },
     {
@@ -1291,7 +1233,7 @@
         71.22,
         78.56
       ],
-      "csv_rows": 38,
+      "csv_rows": 39,
       "source": "...lts/adaptive_v3/benchmark_summary.csv"
     },
     {
@@ -1313,14 +1255,14 @@
     {
       "idx": 88,
       "name": "hashed_net_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.60%",
+      "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 29,
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 89,
@@ -1366,8 +1308,8 @@
         90.94,
         75.46
       ],
-      "csv_rows": 67,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 68,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 92,
@@ -1432,7 +1374,7 @@
         75.11
       ],
       "csv_rows": 59,
-      "source": "...ep/distilbert_agnews_full/summary.csv"
+      "source": "...weep/distilbert_mnli_full/summary.csv"
     },
     {
       "idx": 96,
@@ -1453,9 +1395,9 @@
       "idx": 97,
       "name": "infini",
       "classification": "FALLBACK",
-      "detail": "comp=0.983 (no compression)",
+      "detail": "comp=1.000 (no compression)",
       "accuracy": "90.60%",
-      "compression": "0.983x",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
         78.56,
@@ -1465,8 +1407,8 @@
         78.78,
         78.78
       ],
-      "csv_rows": 28,
-      "source": "...unified_infini/distilbert/summary.csv"
+      "csv_rows": 30,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 98,
@@ -1511,7 +1453,7 @@
         79.36,
         78.56
       ],
-      "csv_rows": 39,
+      "csv_rows": 40,
       "source": "...r/abandoned_run/benchmark_summary.csv"
     },
     {
@@ -1529,21 +1471,14 @@
     {
       "idx": 102,
       "name": "kronecker_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.48,
-        90.94,
-        60.78,
-        60.32,
-        75.11,
-        70.07
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "VALID",
+      "detail": "acc=90.94%, comp=1.003x",
+      "accuracy": "90.94%",
+      "compression": "1.003x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 124,
+      "source": "...fied_kronecker/distilbert/summary.csv"
     },
     {
       "idx": 103,
@@ -1568,7 +1503,7 @@
       "compression": "0.978x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 60,
+      "csv_rows": 61,
       "source": "...necker_tt_lora/distilbert/summary.csv"
     },
     {
@@ -1596,7 +1531,7 @@
         78.56,
         79.36
       ],
-      "csv_rows": 65,
+      "csv_rows": 66,
       "source": "results/t5_cola_parallel/summary.csv"
     },
     {
@@ -1608,8 +1543,8 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 64,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 65,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 108,
@@ -1625,7 +1560,7 @@
         90.25,
         90.71
       ],
-      "csv_rows": 68,
+      "csv_rows": 69,
       "source": "results/distilbert/summary.csv"
     },
     {
@@ -1673,7 +1608,7 @@
         79.36
       ],
       "csv_rows": 99,
-      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+      "source": "...t_mnli_full_mnli_sweep/summary_v2.csv"
     },
     {
       "idx": 112,
@@ -1699,7 +1634,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 23,
-      "source": "results/neuralops_mrpc_results.csv"
+      "source": "...t_2026_08_26/benchmark_summary_v2.csv"
     },
     {
       "idx": 114,
@@ -1750,8 +1685,8 @@
         79.36,
         78.56
       ],
-      "csv_rows": 45,
-      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+      "csv_rows": 46,
+      "source": "...t_mnli_full_mnli_sweep/summary_v2.csv"
     },
     {
       "idx": 117,
@@ -1838,7 +1773,7 @@
         75.5
       ],
       "csv_rows": 57,
-      "source": "...nk_ablation/agnews_rank32/summary.csv"
+      "source": "...nk_ablation/agnews_rank64/summary.csv"
     },
     {
       "idx": 122,
@@ -1856,7 +1791,7 @@
         78.56
       ],
       "csv_rows": 58,
-      "source": "...rank_ablation/sst2_rank32/summary.csv"
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
     },
     {
       "idx": 123,
@@ -1874,7 +1809,7 @@
         78.56
       ],
       "csv_rows": 57,
-      "source": "...rank_ablation/sst2_rank32/summary.csv"
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
     },
     {
       "idx": 124,
@@ -1892,7 +1827,7 @@
         78.56
       ],
       "csv_rows": 98,
-      "source": "...nk_ablation/agnews_rank32/summary.csv"
+      "source": "...nk_ablation/agnews_rank64/summary.csv"
     },
     {
       "idx": 125,
@@ -1908,7 +1843,7 @@
         78.56
       ],
       "csv_rows": 86,
-      "source": "...nk_ablation/agnews_rank32/summary.csv"
+      "source": "...nk_ablation/agnews_rank64/summary.csv"
     },
     {
       "idx": 126,
@@ -1944,26 +1879,21 @@
         79.36
       ],
       "csv_rows": 10,
-      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+      "source": "...t_mnli_full_mnli_sweep/summary_v2.csv"
     },
     {
       "idx": 128,
       "name": "mlorq_compressor",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
-        90.48,
-        90.48,
-        60.78,
-        62.04,
-        75.11,
-        72.02
+        75.11
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 25,
+      "source": ".../unified_mlorq/distilbert/summary.csv"
     },
     {
       "idx": 129,
@@ -1982,8 +1912,8 @@
         64.56,
         78.44
       ],
-      "csv_rows": 60,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 61,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 130,
@@ -1997,7 +1927,7 @@
         75.11
       ],
       "csv_rows": 55,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 131,
@@ -2012,7 +1942,7 @@
         78.56,
         79.36
       ],
-      "csv_rows": 61,
+      "csv_rows": 62,
       "source": "results/distilbert/summary.csv"
     },
     {
@@ -2031,7 +1961,7 @@
         85.32
       ],
       "csv_rows": 15,
-      "source": "results/run_quality_ep1/summary.csv"
+      "source": "...n_quality_20260826_175056/summary.csv"
     },
     {
       "idx": 133,
@@ -2042,7 +1972,7 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 66,
+      "csv_rows": 67,
       "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
     },
     {
@@ -2054,8 +1984,8 @@
       "compression": "1.000x",
       "fabricated": false,
       "fabricated_values": [],
-      "csv_rows": 32,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 33,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 135,
@@ -2070,7 +2000,7 @@
         78.56
       ],
       "csv_rows": 32,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 136,
@@ -2106,7 +2036,7 @@
         79.36
       ],
       "csv_rows": 31,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 138,
@@ -2137,7 +2067,7 @@
         79.36
       ],
       "csv_rows": 60,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 140,
@@ -2149,7 +2079,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 27,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 141,
@@ -2163,7 +2093,7 @@
         67.89
       ],
       "csv_rows": 10,
-      "source": "results/final_paper_run/summary.csv"
+      "source": "...inal_paper_run/sst2_plotting_data.csv"
     },
     {
       "idx": 142,
@@ -2185,18 +2115,14 @@
     {
       "idx": 143,
       "name": "padre_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.90%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 24,
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 144,
@@ -2215,7 +2141,7 @@
         79.36,
         77.5
       ],
-      "csv_rows": 49,
+      "csv_rows": 50,
       "source": "...r/abandoned_run/benchmark_summary.csv"
     },
     {
@@ -2258,7 +2184,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 58,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 148,
@@ -2323,51 +2249,41 @@
         78.56,
         79.36
       ],
-      "csv_rows": 13,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "csv_rows": 14,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 152,
       "name": "qcqa_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "80.39%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
         90.48,
-        63.76,
         60.78,
-        50.92,
-        75.11,
-        51.03
+        75.11
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 31,
+      "source": "results/distilbert/summary.csv"
     },
     {
       "idx": 153,
       "name": "rala_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "77.98%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
         90.71,
-        78.56,
-        79.36,
         90.71,
-        78.56,
-        79.36,
         90.25,
-        78.78,
-        90.71,
-        64.56,
-        78.44
+        90.71
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 34,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 154,
@@ -2379,7 +2295,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 53,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 155,
@@ -2445,7 +2361,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 137,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 159,
@@ -2479,10 +2395,10 @@
     {
       "idx": 161,
       "name": "routing_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "35.90%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
         90.71,
@@ -2499,8 +2415,8 @@
         90.71,
         79.36
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 32,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
     },
     {
       "idx": 162,
@@ -2518,7 +2434,7 @@
         78.78
       ],
       "csv_rows": 33,
-      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 163,
@@ -2535,18 +2451,17 @@
     {
       "idx": 164,
       "name": "saes_svd",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.80%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
-        89.42,
         76.8,
         77.15
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 64,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
     },
     {
       "idx": 165,
@@ -2588,7 +2503,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 57,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 168,
@@ -2600,7 +2515,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 62,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 169,
@@ -2766,21 +2681,14 @@
     {
       "idx": 180,
       "name": "span_expanded_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        90.71,
-        79.36,
-        79.24,
-        78.56,
-        81.65
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 32,
+      "source": "...ank_ablation/lora0_agnews/summary.csv"
     },
     {
       "idx": 181,
@@ -2935,7 +2843,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 122,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 192,
@@ -2977,7 +2885,7 @@
         57.91
       ],
       "csv_rows": 55,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 194,
@@ -3105,7 +3013,7 @@
         75.11
       ],
       "csv_rows": 18,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 202,
@@ -3127,18 +3035,14 @@
     {
       "idx": 203,
       "name": "token_compressed_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
-      "fabricated": true,
-      "fabricated_values": [
-        90.71,
-        78.56,
-        79.36
-      ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "81.08%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 25,
+      "source": "results/distilbert/summary.csv"
     },
     {
       "idx": 204,
@@ -3158,20 +3062,17 @@
     {
       "idx": 205,
       "name": "tpa_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "77.29%",
+      "compression": "1.000x",
       "fabricated": true,
       "fabricated_values": [
         90.71,
-        75.0,
-        79.36,
-        75.46,
-        59.75
+        79.36
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 25,
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 206,
@@ -3254,21 +3155,17 @@
     {
       "idx": 211,
       "name": "vig_attention",
-      "classification": "NO_DATA",
-      "detail": "No CSV rows found",
-      "accuracy": "\u2014",
-      "compression": "\u2014",
+      "classification": "FALLBACK",
+      "detail": "comp=0.990 (no compression)",
+      "accuracy": "88.30%",
+      "compression": "0.990x",
       "fabricated": true,
       "fabricated_values": [
-        90.94,
-        88.3,
         57.91,
-        61.35,
-        75.46,
-        61.24
+        75.46
       ],
-      "csv_rows": 0,
-      "source": "\u2014"
+      "csv_rows": 28,
+      "source": "...ts/unified_vig/distilbert/summary.csv"
     },
     {
       "idx": 212,
@@ -3280,7 +3177,7 @@
       "fabricated": false,
       "fabricated_values": [],
       "csv_rows": 85,
-      "source": "...s/rank_ablation/ablation_all_rows.csv"
+      "source": "...k_ablation/agnews_rank256/summary.csv"
     },
     {
       "idx": 213,
@@ -3294,7 +3191,7 @@
         75.11
       ],
       "csv_rows": 20,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 214,
@@ -3308,7 +3205,7 @@
         75.46
       ],
       "csv_rows": 31,
-      "source": ".../unified_sweep/distilbert/summary.csv"
+      "source": "...p/distilbert/summary_buggy_backup.csv"
     },
     {
       "idx": 215,

@@ -47,10 +47,10 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 89.91% | `results/unified_sweep/distilbert/summary.csv` |
-| F1 Score | 0.9020 | `results/unified_sweep/distilbert/summary.csv` |
-| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
-| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
-| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
-| Timestamp | 2026-09-19T01:56:33.266369 | `results/unified_sweep/distilbert/summary.csv` |
+| Accuracy | 89.91% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.9020 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-19T01:56:33.266369 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
 

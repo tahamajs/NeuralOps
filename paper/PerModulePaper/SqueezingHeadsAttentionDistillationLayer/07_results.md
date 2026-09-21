@@ -123,14 +123,15 @@
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
-
-
-> [!CAUTION]
-> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
-> These numbers must NOT be cited in the final paper.
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.30% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9391 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T18:51:14.038525 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
 

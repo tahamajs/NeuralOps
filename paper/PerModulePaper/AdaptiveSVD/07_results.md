@@ -196,14 +196,21 @@ calibration-based methods.
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `VALID`  
+**Detail**: acc=100.00%, comp=1.216x
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 100.00% | `results/long_context/summary.csv` |
+| F1 Score | 0.0000 | `results/long_context/summary.csv` |
+| Compression | 1.216x | `results/long_context/summary.csv` |
+| Compressed Layers | ? | `results/long_context/summary.csv` |
+| Fallback Layers | ? | `results/long_context/summary.csv` |
+| Timestamp | 2026-09-20T06:54:29 | `results/long_context/summary.csv` |
 
 
 > [!CAUTION]
 > The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+> [78.56, 79.36, 78.56, 79.36]
 > These numbers must NOT be cited in the final paper.
 

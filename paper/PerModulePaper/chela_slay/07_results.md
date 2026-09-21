@@ -143,10 +143,10 @@ $L = 128$.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 90.60% | `results/unified_sweep/distilbert/summary.csv` |
-| F1 Score | 0.9091 | `results/unified_sweep/distilbert/summary.csv` |
-| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
-| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
-| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
-| Timestamp | 2026-09-18T22:58:14.712540 | `results/unified_sweep/distilbert/summary.csv` |
+| Accuracy | 90.60% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.9091 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-18T22:58:14.712540 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
 

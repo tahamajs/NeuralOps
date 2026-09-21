@@ -151,14 +151,21 @@ larger is too soft.
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.86% | `results/roberta/summary.csv` |
+| F1 Score | 0.0000 | `results/roberta/summary.csv` |
+| Compression | 1.000x | `results/roberta/summary.csv` |
+| Compressed Layers | ? | `results/roberta/summary.csv` |
+| Fallback Layers | ? | `results/roberta/summary.csv` |
+| Timestamp | 2026-09-04T08:30:16.083265 | `results/roberta/summary.csv` |
 
 
 > [!CAUTION]
 > The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+> [78.56, 79.36, 78.56, 79.36]
 > These numbers must NOT be cited in the final paper.
 

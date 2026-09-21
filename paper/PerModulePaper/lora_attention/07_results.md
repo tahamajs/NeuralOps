@@ -138,10 +138,10 @@
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/neuralops_mrpc_results.csv` |
-| F1 Score | 0.0000 | `results/neuralops_mrpc_results.csv` |
-| Compression | 1.000x | `results/neuralops_mrpc_results.csv` |
-| Compressed Layers | ? | `results/neuralops_mrpc_results.csv` |
-| Fallback Layers | ? | `results/neuralops_mrpc_results.csv` |
-| Timestamp | unknown | `results/neuralops_mrpc_results.csv` |
+| Accuracy | 0.00% | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Compression | 1.000x | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Compressed Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Fallback Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Timestamp | 2026-08-26T17:24:54.747018 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
 

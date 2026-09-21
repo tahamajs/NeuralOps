@@ -136,12 +136,12 @@ results should be **identical**.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
-| F1 Score | 0.0000 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
-| Compression | 1.000x | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
-| Compressed Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
-| Fallback Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
-| Timestamp | 2026-08-26T17:23:38.332542 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Accuracy | 0.00% | `results/final_paper_run/sst2_plotting_data.csv` |
+| F1 Score | 0.9025 | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compression | 1.000x | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compressed Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Fallback Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Timestamp | unknown | `results/final_paper_run/sst2_plotting_data.csv` |
 
 
 > [!CAUTION]

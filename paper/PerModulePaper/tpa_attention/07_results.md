@@ -42,14 +42,21 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 77.29% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.7537 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-19T02:13:48.634705 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
 
 
 > [!CAUTION]
 > The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 75.0, 79.36, 75.46, 59.75]
+> [90.71, 79.36]
 > These numbers must NOT be cited in the final paper.
 

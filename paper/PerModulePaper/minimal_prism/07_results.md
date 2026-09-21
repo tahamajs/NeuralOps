@@ -181,12 +181,12 @@ $\sqrt{1 - 45.2} = 0.03$.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 88.30% | `results/rank_ablation/sst2_rank32/summary.csv` |
-| F1 Score | 0.8825 | `results/rank_ablation/sst2_rank32/summary.csv` |
-| Compression | 1.152x | `results/rank_ablation/sst2_rank32/summary.csv` |
-| Compressed Layers | 0 | `results/rank_ablation/sst2_rank32/summary.csv` |
-| Fallback Layers | 0 | `results/rank_ablation/sst2_rank32/summary.csv` |
-| Timestamp | 2026-09-19T22:19:23.555811 | `results/rank_ablation/sst2_rank32/summary.csv` |
+| Accuracy | 88.30% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.8825 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.152x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-19T22:19:23.555811 | `results/rank_ablation/ablation_all_rows.csv` |
 
 
 > [!CAUTION]

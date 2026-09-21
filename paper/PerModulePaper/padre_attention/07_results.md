@@ -96,14 +96,15 @@
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
-
-
-> [!CAUTION]
-> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36]
-> These numbers must NOT be cited in the final paper.
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.90% | `results/rank_ablation/lora0_agnews/summary.csv` |
+| F1 Score | 0.9149 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_agnews/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_agnews/summary.csv` |
 

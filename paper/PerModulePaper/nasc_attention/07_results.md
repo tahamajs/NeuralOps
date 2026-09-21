@@ -149,12 +149,12 @@
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/run_quality_ep1/summary.csv` |
-| F1 Score | 0.8184 | `results/run_quality_ep1/summary.csv` |
-| Compression | 1.000x | `results/run_quality_ep1/summary.csv` |
-| Compressed Layers | ? | `results/run_quality_ep1/summary.csv` |
-| Fallback Layers | ? | `results/run_quality_ep1/summary.csv` |
-| Timestamp | 2026-08-27T01:58:05.226513 | `results/run_quality_ep1/summary.csv` |
+| Accuracy | 0.00% | `results/run_quality_20260826_175056/summary.csv` |
+| F1 Score | 0.6746 | `results/run_quality_20260826_175056/summary.csv` |
+| Compression | 1.000x | `results/run_quality_20260826_175056/summary.csv` |
+| Compressed Layers | ? | `results/run_quality_20260826_175056/summary.csv` |
+| Fallback Layers | ? | `results/run_quality_20260826_175056/summary.csv` |
+| Timestamp | 2026-08-26T18:21:32.647830 | `results/run_quality_20260826_175056/summary.csv` |
 
 
 > [!CAUTION]

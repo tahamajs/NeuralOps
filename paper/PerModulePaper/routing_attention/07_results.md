@@ -120,10 +120,17 @@ recomputes $K$ full attention matrices.
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 35.90% | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| F1 Score | 0.0000 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compressed Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Fallback Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Timestamp | 2026-09-20T15:39:33.466534 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
 
 
 > [!CAUTION]

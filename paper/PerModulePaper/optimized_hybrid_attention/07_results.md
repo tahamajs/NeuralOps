@@ -53,12 +53,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/final_paper_run/summary.csv` |
-| F1 Score | 0.9087 | `results/final_paper_run/summary.csv` |
-| Compression | 1.000x | `results/final_paper_run/summary.csv` |
-| Compressed Layers | ? | `results/final_paper_run/summary.csv` |
-| Fallback Layers | ? | `results/final_paper_run/summary.csv` |
-| Timestamp | 2026-08-29T10:30:46.665834 | `results/final_paper_run/summary.csv` |
+| Accuracy | 0.00% | `results/final_paper_run/sst2_plotting_data.csv` |
+| F1 Score | 0.9087 | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compression | 1.000x | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compressed Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Fallback Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Timestamp | unknown | `results/final_paper_run/sst2_plotting_data.csv` |
 
 
 > [!CAUTION]

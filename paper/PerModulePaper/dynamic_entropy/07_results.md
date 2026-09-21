@@ -44,12 +44,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 0.00% | `results/all_121_compressors_gpu_matrix.csv` |
-| F1 Score | 0.0000 | `results/all_121_compressors_gpu_matrix.csv` |
-| Compression | 1.000x | `results/all_121_compressors_gpu_matrix.csv` |
-| Compressed Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
-| Fallback Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
-| Timestamp | unknown | `results/all_121_compressors_gpu_matrix.csv` |
+| Accuracy | 0.00% | `results/final_paper_run/sst2_plotting_data.csv` |
+| F1 Score | 0.8277 | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compression | 1.000x | `results/final_paper_run/sst2_plotting_data.csv` |
+| Compressed Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Fallback Layers | ? | `results/final_paper_run/sst2_plotting_data.csv` |
+| Timestamp | unknown | `results/final_paper_run/sst2_plotting_data.csv` |
 
 
 > [!CAUTION]

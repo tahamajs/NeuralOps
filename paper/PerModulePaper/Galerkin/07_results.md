@@ -136,12 +136,12 @@ to **the basis itself**.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 75.57% | `results/summary.csv` |
-| F1 Score | 0.7515 | `results/summary.csv` |
-| Compression | 1.000x | `results/summary.csv` |
-| Compressed Layers | 0 | `results/summary.csv` |
-| Fallback Layers | 0 | `results/summary.csv` |
-| Timestamp | 2026-09-20T01:50:18.958417 | `results/summary.csv` |
+| Accuracy | 75.57% | `results/rank_ablation/lora0_sst2/summary.csv` |
+| F1 Score | 0.7515 | `results/rank_ablation/lora0_sst2/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_sst2/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_sst2/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_sst2/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_sst2/summary.csv` |
 
 
 > [!CAUTION]

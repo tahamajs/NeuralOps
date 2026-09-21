@@ -47,10 +47,10 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 90.10% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| F1 Score | 0.8976 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compression | 1.197x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Timestamp | 2026-09-19T16:08:35.548944 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Accuracy | 90.10% | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| F1 Score | 0.8976 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compression | 1.197x | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Timestamp | 2026-09-19T16:08:35.548944 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
 

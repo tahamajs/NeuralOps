@@ -112,12 +112,12 @@
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 44.10% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| F1 Score | 0.3486 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compression | 1.078x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
-| Timestamp | 2026-09-19T16:27:47.581167 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Accuracy | 44.10% | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| F1 Score | 0.3486 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compression | 1.078x | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Timestamp | 2026-09-19T16:27:47.581167 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
 
 
 > [!CAUTION]

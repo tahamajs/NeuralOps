@@ -56,12 +56,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| Accuracy | 91.50% | `results/pareto_table.csv` |
-| F1 Score | 0.9104 | `results/pareto_table.csv` |
-| Compression | 1.241x | `results/pareto_table.csv` |
-| Compressed Layers | 1 | `results/pareto_table.csv` |
-| Fallback Layers | 0 | `results/pareto_table.csv` |
-| Timestamp | 2026-09-19T16:12:55.658957 | `results/pareto_table.csv` |
+| Accuracy | 91.50% | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| F1 Score | 0.9104 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compression | 1.241x | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Compressed Layers | 1 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
+| Timestamp | 2026-09-19T16:12:55.658957 | `results/unified_sweep/distilbert_mnli_full/summary.csv` |
 
 
 > [!CAUTION]

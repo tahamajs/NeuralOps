@@ -117,14 +117,21 @@ because of LoRA adapters and the augmentation matrices.
 ---
 ## ✅ Verified Results (Auto-Updated 2026-09-21)
 
-**Classification**: `NO_DATA`  
-**Detail**: No CSV rows found
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
 
-*No valid CSV data found for this module.*
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 77.98% | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| F1 Score | 0.7600 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
+| Timestamp | 2026-09-19T01:48:04.146119 | `results/unified_sweep/distilbert/summary_buggy_backup.csv` |
 
 
 > [!CAUTION]
 > The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
-> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 90.71, 64.56, 78.44]
+> [90.71, 90.71, 90.25, 90.71]
 > These numbers must NOT be cited in the final paper.
 

@@ -1,6 +1,6 @@
 # All Modules Verified — Final Summary
 
-**Generated**: 2026-09-21T08:49:48.048275
+**Generated**: 2026-09-21T10:19:14.653483
 
 **Total Modules**: 217
 
@@ -8,18 +8,19 @@
 
 | Classification | Count | % |
 |----------------|-------|---|
-| VALID | 46 | 21.2% |
+| VALID | 48 | 22.1% |
 | QUESTIONABLE | 1 | 0.5% |
 | COLLAPSED | 0 | 0.0% |
-| FALLBACK | 142 | 65.4% |
+| FALLBACK | 163 | 75.1% |
 | BROKEN | 4 | 1.8% |
-| NO_DATA | 24 | 11.1% |
+| NO_DATA | 1 | 0.5% |
 
-**Modules with fabricated numbers**: 152
+**Modules with fabricated numbers**: 142
 
 
-## ✅ VALID Modules (46)
+## ✅ VALID Modules (48)
 
+- `AdaptiveSVD`: 100.00% @ 1.216x
 - `SOAFusedAttention`: 76.30% @ 1.145x
 - `a3`: 100.00% @ 1.094x
 - `aa_svd_compressor`: 85.80% @ 1.133x
@@ -40,6 +41,7 @@
 - `cur_moe`: 94.30% @ 1.056x
 - `fused_svd_kernel`: 91.90% @ 1.076x
 - `hybrid_svd_layer`: 77.18% @ 1.907x
+- `kronecker_compressor`: 90.94% @ 1.003x
 - `lola_attention`: 77.98% @ 1.227x
 - `mgie_svd`: 60.09% @ 1.003x
 - `minimal_aurora`: 88.30% @ 1.152x
@@ -67,44 +69,18 @@
 - `swift_svd_act`: 60.09% @ 1.003x
 - `vspec`: 93.50% @ 1.036x
 
-## ❌ NO_DATA Modules — Need GPU Runs (24)
+## ❌ NO_DATA Modules — Need GPU Runs (1)
 
-- `AdaptiveSVD`
-- `AdaptiveSpanAttention`
-- `AdaptiveSparseAttention`
-- `HALO`
-- `OH`
-- `SqueezingHeadsAttentionDistillationLayer`
-- `cr_compressor`
-- `cur_compressor`
-- `enlighten_compressor`
-- `fusion`
-- `gfws_d_compressor`
-- `hashed_net_compressor`
-- `kronecker_compressor`
-- `mlorq_compressor`
-- `padre_attention`
 - `pruning_utils`
-- `qcqa_attention`
-- `rala_attention`
-- `routing_attention`
-- `saes_svd`
-- `span_expanded_attention`
-- `token_compressed_attention`
-- `tpa_attention`
-- `vig_attention`
 
-## ⚠️ Modules with Fabricated Numbers (152)
+## ⚠️ Modules with Fabricated Numbers (142)
 
-- `AdaptiveSVD`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
-- `AdaptiveSpanAttention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
-- `AdaptiveSparseAttention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+- `AdaptiveSVD`: [78.56, 79.36, 78.56, 79.36]
+- `AdaptiveSparseAttention`: [78.56, 79.36, 78.56, 79.36]
 - `Galerkin`: [90.71, 90.71, 90.71, 90.25, 90.71, 71.22]
-- `HALO`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78]
-- `OH`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 89.5, 76.5, 77.5]
+- `OH`: [76.5]
 - `Primal`: [78.56, 78.56, 78.78]
 - `SOAFusedAttention`: [90.71, 78.56]
-- `SqueezingHeadsAttentionDistillationLayer`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
 - `adaptive_compressor`: [79.36]
 - `adaptive_span_attention`: [90.71, 90.48, 77.52, 85.09]
 - `adaptive_sparse_attention`: [67.55, 78.56, 90.71, 79.36, 67.89, 78.56]
@@ -120,21 +96,18 @@
 - `come`: [67.89]
 - `compressed_attention`: [90.71]
 - `cosformer`: [90.71, 90.71, 90.25, 90.71, 71.22, 58.72]
-- `cur_compressor`: [90.71, 90.71, 79.36, 79.36, 78.56, 78.56]
 - `cur_linear`: [67.89]
 - `cure`: [67.89]
 - `decay_linear_attention`: [90.71, 79.36, 78.56]
 - `direct_svd`: [79.36, 78.56]
 - `dobi`: [79.36, 67.89]
 - `dynamic_entropy`: [90.71, 79.36, 67.89, 78.56]
-- `enlighten_compressor`: [90.71, 89.22, 79.36, 61.12, 78.56, 51.03]
 - `factorised_matrix_state`: [90.71, 79.36, 78.56]
 - `faq_quantizer`: [90.71, 90.48, 79.36, 78.56, 78.56, 80.05]
 - `flash3`: [88.0]
 - `flash_attention3`: [90.71, 78.56, 79.36]
 - `flash_attention3_fp8`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 90.71, 64.56, 78.44, 79.13, 50.92, 71.22]
 - `full_attention`: [90.71, 79.36, 78.56]
-- `fusion`: [90.71, 78.56, 79.36, 90.71, 90.25, 90.25]
 - `galerkin_attention`: [90.71, 90.71]
 - `gated_delta_net`: [90.71, 78.56, 79.36, 90.71, 90.25]
 - `gated_deltanet_block`: [90.71, 78.56, 79.36, 90.71, 86.5, 90.71, 86.5]
@@ -156,7 +129,6 @@
 - `jamba`: [75.46]
 - `jamba_info`: [78.56, 79.36]
 - `kda_attention`: [90.71, 76.83, 79.36, 78.56]
-- `kronecker_compressor`: [90.48, 90.94, 60.78, 60.32, 75.11, 70.07]
 - `kronecker_linear`: [67.89]
 - `leka_v1`: [90.71, 78.56, 79.36]
 - `leka_v3`: [90.71, 90.71, 90.25, 90.71]
@@ -178,7 +150,7 @@
 - `minimal_svd_v2`: [90.71, 79.36, 78.56]
 - `mixattention_moska`: [78.56, 78.56, 78.78, 87.27]
 - `mla_attention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
-- `mlorq_compressor`: [90.48, 90.48, 60.78, 62.04, 75.11, 72.02]
+- `mlorq_compressor`: [75.11]
 - `moba`: [78.56, 79.36, 78.56, 79.36, 78.78, 64.56, 78.44]
 - `modegpt`: [75.11]
 - `moe_deltakv_paged`: [90.71, 78.56, 79.36]
@@ -190,15 +162,14 @@
 - `oats`: [79.36]
 - `optimized_hybrid_attention`: [67.89]
 - `orion`: [90.71, 78.56, 90.71, 78.56]
-- `padre_attention`: [90.71, 78.56, 79.36]
 - `performer_attention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 77.5]
 - `phantom`: [90.71, 78.56, 79.36, 90.71, 78.56]
 - `proxsparse`: [90.48]
 - `proxsparse_pruner`: [90.48, 60.78, 75.11, 90.48, 60.78, 75.11]
 - `pruning_utils`: [89.42, 76.8, 77.15]
 - `ptp`: [78.56, 79.36, 78.56, 79.36]
-- `qcqa_attention`: [90.48, 63.76, 60.78, 50.92, 75.11, 51.03]
-- `rala_attention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 90.71, 64.56, 78.44]
+- `qcqa_attention`: [90.48, 60.78, 75.11]
+- `rala_attention`: [90.71, 90.71, 90.25, 90.71]
 - `regla_attention`: [90.71, 79.82, 79.36, 57.45, 78.56, 64.79]
 - `replace`: [90.48, 60.78, 75.11]
 - `replaceme_compressor`: [90.48, 82.0, 60.78, 56.77, 75.11, 80.62]
@@ -206,7 +177,7 @@
 - `rotational_slicegpt_int4`: [75.11]
 - `routing_attention`: [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 90.71, 64.56, 78.44, 90.71, 79.36]
 - `rpc`: [78.56, 79.36, 78.56, 79.36, 78.78]
-- `saes_svd`: [89.42, 76.8, 77.15]
+- `saes_svd`: [76.8, 77.15]
 - `saes_svd_v2`: [90.48, 60.78, 75.11]
 - `salr`: [75.11]
 - `sdrm`: [75.46]
@@ -218,7 +189,6 @@
 - `soa_fused_module`: [90.94, 87.84, 75.46]
 - `soa_module`: [79.36, 78.56]
 - `soka`: [75.11]
-- `span_expanded_attention`: [90.71, 90.71, 79.36, 79.24, 78.56, 81.65]
 - `sparsegpt`: [60.78]
 - `spectraformer_attention`: [90.48, 60.78, 75.11, 90.48, 60.78, 75.11]
 - `spectral_mamba`: [75.46]
@@ -235,14 +205,13 @@
 - `svd_sequence_attention`: [90.94, 57.91, 75.46, 90.94, 57.91, 75.46]
 - `template_attention`: [60.78, 75.11]
 - `tlinformer_attention`: [57.91, 75.46, 57.91, 75.46]
-- `token_compressed_attention`: [90.71, 78.56, 79.36]
 - `tomoe`: [60.78, 75.11]
-- `tpa_attention`: [90.71, 75.0, 79.36, 75.46, 59.75]
+- `tpa_attention`: [90.71, 79.36]
 - `unified_rope`: [78.56, 79.36]
 - `uniql_compressor`: [90.48, 90.14, 60.78, 60.89, 75.11, 82.45]
 - `upi_mamba`: [90.94, 57.91, 75.46]
 - `upi_stuffed_mamba`: [90.94, 57.91, 75.46]
-- `vig_attention`: [90.94, 88.3, 57.91, 61.35, 75.46, 61.24]
+- `vig_attention`: [57.91, 75.46]
 - `weighted_ensemble`: [75.11]
 - `wgqa`: [75.46]
 - `xattention`: [90.94]
