@@ -115,22 +115,24 @@ class AdaSVDCompressor(BaseCompressor):
         super().__init__(model, name="adasvd", **kwargs)
         cfg = comp_config or kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
-        self.rank = _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", rank))
-        if self.rank is None:
-            import sys
-            for _idx, _arg in enumerate(sys.argv):
-                if _arg in ("--rank", "--adasvd_rank") and _idx + 1 < len(sys.argv):
-                    try:
-                        self.rank = int(sys.argv[_idx + 1])
-                        break
-                    except ValueError:
-                        pass
-                elif _arg.startswith("--rank=") or _arg.startswith("--adasvd_rank="):
-                    try:
-                        self.rank = int(_arg.split("=")[1])
-                        break
-                    except ValueError:
-                        pass
+        # Check CLI args for explicit rank override
+        cli_rank = None
+        import sys
+        for _idx, _arg in enumerate(sys.argv):
+            if _arg in ("--rank", "--adasvd_rank") and _idx + 1 < len(sys.argv):
+                try:
+                    cli_rank = int(sys.argv[_idx + 1])
+                    break
+                except ValueError:
+                    pass
+            elif _arg.startswith("--rank=") or _arg.startswith("--adasvd_rank="):
+                try:
+                    cli_rank = int(_arg.split("=")[1])
+                    break
+                except ValueError:
+                    pass
+
+        self.rank = cli_rank if cli_rank is not None else _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", rank))
 
         self.target_param_ratio = float(
             _cfg_get(cfg, "adasvd_target_ratio", _cfg_get(cfg, "target_param_ratio", target_param_ratio))
