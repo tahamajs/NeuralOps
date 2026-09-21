@@ -1,4 +1,4 @@
-\title{\textbf{Routing Attention: Content-Based Clustering for Sparse Attention}
+\title{\textbf{Routing Attention: Content-Based Clustering for Sparse Attention}}
 
 \author{Anonymous authors}
 
@@ -340,7 +340,7 @@ Sparse (naive) & $\mathcal{O}(K \cdot L^2 d)$ & $\mathcal{O}(L^2)$ & Our impleme
 Routing Attention consists of four steps:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
             |
              
     +-------------------------+
@@ -397,8 +397,8 @@ We use Lloyd's algorithm for $n_{\text{iters}}$ iterations:
 
 \textbf{Algorithm 1:} Cluster assignment
 \begin{lstlisting}
-Input:  F $\in$ R^{B$$\times$H$$\times$L$$\times$d}, K clusters, n_iters
-Output: cluster_ids $\in$ {0, ..., K-1}^{B$$\times$H$$\times$L}
+Input:  F $\in$ R^{B$\times$H$\times$L$\times$d}, K clusters, n_iters
+Output: cluster_ids $\in$ {0, ..., K-1}^{B$\times$H$\times$L}
 
 1: step $\leftarrow$ max(1, L // K)
 2: init_idx $\leftarrow$ [0, step, 2*step, ..., (K-1)*step]    Deterministic init
@@ -535,8 +535,8 @@ Only \texttt{A, B} are trainable; \texttt{W\_frozen} is copied from the pretrain
 
 \textbf{Algorithm 2:} Routing Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V        LoRA projections
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -598,7 +598,7 @@ Routing Attention adds LoRA adapters (no new architectural parameters):
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{Total (DistilBERT)} \\
 \midrule
-LoRA (4 proj $$\times$ $r$) & 4 $$\times$ 2 r d & 6 $$\times$ 98,304 = 589,824 \\
+LoRA (4 proj $\times$ $r$) & 4 $\times$ 2 r d & 6 $\times$ 98,304 = 589,824 \\
 \textbf{Total added} &  & \textbf{~589,824} \\
 \textbf{Percentage} &  & \textbf{+0.88\%} \\
 \bottomrule
@@ -1012,9 +1012,9 @@ It is \textbf{not} a compression method.
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Routing} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1138,7 +1138,7 @@ rala & 90.71\% & -- & 79.36\% & +0.90\% \\
 \begin{itemize}
 \item Accuracy: preserved within -26.95\%---28.44\%.
 \item Parameters: +48.5\%\%.
-\item Inference time: 2.3 s$$\times$ \textbf{slower}.
+\item Inference time: 2.3 s$\times$ \textbf{slower}.
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}
@@ -1146,10 +1146,10 @@ rala & 90.71\% & -- & 79.36\% & +0.90\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/routing_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{routing_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{routing_attention}.}
 \label{fig:results_routing_attention}
 \end{figure}
 
@@ -1163,7 +1163,7 @@ The naive implementation computes $K$ full attention matrices:
 
 \begin{lstlisting}
 for k in range(K_num):
-    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # $\leftarrow$ full L$$\times$L
+    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # $\leftarrow$ full L$\times$L
     scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
     attn = F.softmax(scores, dim=-1)
     out_k = torch.matmul(attn, V)
@@ -1181,7 +1181,7 @@ Each iteration:
 \end{enumerate}
 \textbf{Total cost.} $K$ times the cost of dense attention, plus $K$ kernel launches.
 
-\textbf{Measured.} DistilBERT baseline 1.9s $\to$ routing 1.42xs (2.3 s$$\times$).
+\textbf{Measured.} DistilBERT baseline 1.9s $\to$ routing 1.42xs (2.3 s$\times$).
 
 \subsection{What Would Make Routing Fast?}
 
@@ -1563,9 +1563,9 @@ token-0 anchor. On SST-2, accuracy is preserved within \textbf{-26.95\%}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{Time} \\
 \midrule
-DistilBERT & 63.76\% & -26.95\% & +48.5\%\% & 2.3 s$$\times$ \\
-RoBERTa & 50.92\% & -27.64\% & +48.5\%\% & 2.3 s$$\times$ \\
-GPT-2 & 50.92\% & -28.44\% & +48.5\%\% & 2.3 s$$\times$ \\
+DistilBERT & 63.76\% & -26.95\% & +48.5\%\% & 2.3 s$\times$ \\
+RoBERTa & 50.92\% & -27.64\% & +48.5\%\% & 2.3 s$\times$ \\
+GPT-2 & 50.92\% & -28.44\% & +48.5\%\% & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2276,7 +2276,7 @@ python run_all_4_routing.py --models distilbert,roberta,gpt2
 \textbf{Hypothesis.} Clustering would reduce compute.
 
 \textbf{Result.} The naive loop over clusters computes $K$ full attention 
-matrices. Runtime \textbf{increased} by 2.3 s$$\times$.
+matrices. Runtime \textbf{increased} by 2.3 s$\times$.
 
 \textbf{Conclusion.} Sparse matmul kernels are required.
 
@@ -2424,7 +2424,7 @@ No new risks beyond base models.
 \end{itemize}
 \subsection{E.6 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.7 Acknowledgments}
 

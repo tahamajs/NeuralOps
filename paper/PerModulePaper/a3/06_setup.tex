@@ -26,10 +26,10 @@ GPT-2 Small     & 12 & 768 & 124.4M & Causal Conv1D Projections \\
 \label{sec:setup_calibration}
 
 For streaming calibration, we sample $N = 500$ unlabeled training sequences, processing batches through forward hooks without gradient materialization or test-set contamination. The compression engine defaults to initial target rank $r = 64$ (scalable to $r=128$) subject to an enforced rank ceiling $r_{\mathrm{ceiling}} = \min(\lfloor 0.90 \cdot r_{\mathrm{break\_even}}\rfloor, 320)$ (where $r_{\mathrm{break\_even}} = \frac{d_{\mathrm{in}} d_{\mathrm{out}}}{d_{\mathrm{in}} + d_{\mathrm{out}}} = 384$ for standard 768-dimensional projections; bounded by 256 in conservative configurations) to strictly guarantee non-negative parameter savings. The Frobenius error acceptance gate defaults to $\tau = 0.50$ (with $\tau = 0.40$ as conservative baseline) with up to 5 adaptive rank escalation retries before deterministic fallback. Scale normalization clamps the activation energy scale vector $\mathbf{s} \in [10^{-3}, 10^{3}]$, and closed-form LayerNorm affine recalibration is enabled globally. Furthermore, to guard against severe downstream accuracy collapse on binary classification benchmarks, the evaluation pipeline enforces a strict Quality Gate threshold:
-\begin{equation}
+\[
 \mathrm{Acc}_{\mathrm{target}} \ge \max(56.00\%,\, \mathrm{Acc}_{\mathrm{majority}} + 5.0\%)
 \tag{6.1}
-\end{equation}
+\]
 which requires at least 56.00\% validation accuracy on SST-2 (50.92\% majority baseline) for a compressed checkpoint to be certified with \texttt{PASS} status.
 
 \begin{table}[H]

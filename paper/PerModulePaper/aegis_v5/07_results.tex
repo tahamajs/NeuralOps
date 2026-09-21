@@ -212,10 +212,10 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 \toprule
 \textbf{L} & \textbf{Standard (enc)} & \textbf{AEGIS-V5 (enc)} & \textbf{Speedup} \\
 \midrule
-128 & 1.9 & 2.2 & 0.86$$\times$ \\
-256 & 3.8 & 3.5 & 1.09$$\times$ \\
-512 & 9.5 & 6.0 & 1.58$$\times$ \\
-1024 & 28.0 & 10.5 & 2.67$$\times$ \\
+128 & 1.9 & 2.2 & 0.86$\times$ \\
+256 & 3.8 & 3.5 & 1.09$\times$ \\
+512 & 9.5 & 6.0 & 1.58$\times$ \\
+1024 & 28.0 & 10.5 & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -224,7 +224,7 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 
 \begin{itemize}
 \item With \texttt{max\_rank=384}, no parameter reduction (baseline-equivalent).
-\item With \texttt{max\_rank=128}, ~1.5$$\times$ compression.
+\item With \texttt{max\_rank=128}, ~1.5$\times$ compression.
 \item Decoder fallback preserves accuracy but not complexity.
 \end{itemize}
 \begin{lstlisting}
@@ -232,9 +232,9 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/aegis_v5_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{aegis_v5}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{aegis_v5}.}
 \label{fig:results_aegis_v5}
 \end{figure}

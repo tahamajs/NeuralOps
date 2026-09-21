@@ -2,9 +2,9 @@
 
 \subsection{Softmax Attention}
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 with $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
 
@@ -12,15 +12,15 @@ with $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
 
 Linear attention replaces softmax with a kernel $\phi$:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V)_i = \frac{\sum_j \phi(q_i)^\top \phi(k_j) v_j}{\sum_j \phi(q_i)^\top \phi(k_j)}
-\end{equation}
+\]
 
 The \textbf{associative} trick:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V)_i = \frac{\phi(q_i)^\top \left[ \sum_j \phi(k_j) v_j^\top \right]}{\phi(q_i)^\top \left[ \sum_j \phi(k_j) \right]}
-\end{equation}
+\]
 
 Computing the bracketed terms is $\mathcal{O}(L \cdot 2F \cdot d_h)$, independent of $L^2$.
 
@@ -30,22 +30,22 @@ Computing the bracketed terms is $\mathcal{O}(L \cdot 2F \cdot d_h)$, independen
 kernel $k(x, y) = k(x - y)$ can be represented as the Fourier transform of 
 a probability distribution $p(\omega)$:
 
-\begin{equation}
+\[
 k(x - y) = \mathbb{E}_\omega [e^{i \omega^\top (x - y)}]
-\end{equation}
+\]
 
 Approximating this expectation with $F$ samples:
 
-\begin{equation}
+\[
 k(x - y) \approx \frac{1}{F} \sum_{i=1}^{F} e^{i \omega_i^\top (x - y)}
-\end{equation}
+\]
 
 Using Euler's formula, the real part is:
 
-\begin{equation}
+\[
 k(x - y) \approx \frac{1}{F} \sum_{i=1}^{F} \cos(\omega_i^\top (x - y))
 = \phi(x)^\top \phi(y)
-\end{equation}
+\]
 
 where $\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_i^\top x), \sin(\omega_i^\top x)]_{i=1}^F$.
 
@@ -53,9 +53,9 @@ where $\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_i^\top x), \sin(\omega_i^\top x
 
 The \textbf{Yat-Kernel} (Zhang et al., 2024) modifies the RFF to:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{F^{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
-\end{equation}
+\]
 
 where $\Omega \in \mathbb{R}^{d_h \times F}$ is a random projection matrix.
 
@@ -75,10 +75,10 @@ The Yat-Kernel is thus a scaled cosine-similarity kernel, which is
 
 Given Q, K, we project them onto the unit sphere:
 
-\begin{equation}
+\[
 \hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad
 \hat{K} = \frac{K}{\|K\|_2 + \epsilon}
-\end{equation}
+\]
 
 \textbf{Properties:}
 
@@ -92,22 +92,22 @@ Given Q, K, we project them onto the unit sphere:
 
 A learnable gate blends two streams:
 
-\begin{equation}
+\[
 g = \sigma(W_g X + b_g)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
-\end{equation}
+\]
 
 \textbf{Initialization.} $W_g = 0$, $b_g = 5.0$ gives $g \approx 
 0.993$ at step 0.
 
 \subsection{LoRA Recovery}
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ initially.
 

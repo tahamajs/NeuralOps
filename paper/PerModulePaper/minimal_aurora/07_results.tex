@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{MinimalAURORA} & \textbf{85.44} & -5.27 & 0.8670 & \textbf{50\%$$\times$} & 293 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{MinimalAURORA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$$\times$} & 339 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$$\times$} & 495 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{MinimalAURORA} & \textbf{85.44} & -5.27 & 0.8670 & \textbf{50\%$\times$} & 293 MB MB & 1.42x s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{MinimalAURORA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$\times$} & 339 MB MB & 2.3 s s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$\times$} & 495 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,10 +106,10 @@ GPT-2 & Ours & 2.3 s s & 0.85 & 495 MB MB \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-0.90 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.95 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.99 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.995 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
+0.90 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.995 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -181,12 +181,12 @@ GPT-2 & 1.00 & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ & 79.36\% & 1.00$$\times$ \\
-asvd ($r=32$) & 88.5\% & 12$$\times$ & 75.5\% & 11$$\times$ & 76.8\% & 11$$\times$ \\
-aasvd ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$ \\
-a3 ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$ \\
-res\_svd (16,4) & 88.2\% & 5.9$$\times$ & 74.8\% & 5.5$$\times$ & 75.5\% & 5.5$$\times$ \\
-\textbf{minimal\_aurora} & \textbf{85.44} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
+aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+a3 ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+res\_svd (16,4) & 88.2\% & 5.9$\times$ & 74.8\% & 5.5$\times$ & 75.5\% & 5.5$\times$ \\
+\textbf{minimal\_aurora} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} & \textbf{50.92} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -209,9 +209,9 @@ GPT-2 & PASS & 50.92 & 32 \\
 
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/minimal_aurora_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{minimal_aurora}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_aurora}.}
 \label{fig:results_minimal_aurora}
 \end{figure}

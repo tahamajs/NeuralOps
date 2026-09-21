@@ -1,4 +1,4 @@
-\title{\textbf{FlashAttention-3: Exact Attention with IO-Aware Memory Management}
+\title{\textbf{FlashAttention-3: Exact Attention with IO-Aware Memory Management}}
 
 \author{Anonymous authors}
 
@@ -28,7 +28,7 @@ materializing $S$ by \textbf{tiling} the computation:
 \item Never write the full $S$ matrix to HBM.
 
 \end{itemize}
-This gives $\mathcal{O}(L)$ \textbf{peak memory} and \textbf{2--4$$\times$ wall-clock speedup} 
+This gives $\mathcal{O}(L)$ \textbf{peak memory} and \textbf{2--4$\times$ wall-clock speedup} 
 over standard attention.
 
 \textbf{FlashAttention-3} (Shah et al., 2024) extends this to Hopper 
@@ -37,7 +37,7 @@ architecture:
 \begin{enumerate}
 \item \textbf{Asynchronous TMA} (Tensor Memory Accelerator) for bulk memory copy.
 \item \textbf{Warp specialization} to overlap compute and memory.
-\item \textbf{FP8 support} for $2$\times$ higher throughput.
+\item \textbf{FP8 support} for $2	imes$ higher throughput.
 
 \end{enumerate}
 Crucially, FlashAttention-3 produces \textbf{exact} attention -- the output is 
@@ -199,7 +199,7 @@ Attention** (Ainslie et al., 2023) generalizes this. We support GQA.
 \subsection{FP8 Attention}
 
 \textbf{FP8 in transformers} (Nvidia, 2022; Micikevicius et al., 2022) enables 
-$2$\times$ throughput on Hopper Tensor Cores. \textbf{FP8 attention} requires 
+$2	imes$ throughput on Hopper Tensor Cores. \textbf{FP8 attention} requires 
 careful scaling to avoid overflow. We use \texttt{e4m3fn} with implicit scaling 
 by the FA3 kernel.
 
@@ -236,11 +236,11 @@ and multi-architecture support, not a new attention algorithm.
 \toprule
 \textbf{Method} & \textbf{Speed (Hopper)} & \textbf{Speed (Ampere)} & \textbf{FP8} & \textbf{Fallback} \\
 \midrule
-Standard attention & 1$$\times$ & 1$$\times$ &  & -- \\
-FlashAttention-2 & 3$$\times$ & 3$$\times$ &  & -- \\
-FlashAttention-3 & \textbf{6$$\times$} & N/A &  & -- \\
-SDPA (builtin) & 3$$\times$ & 3$$\times$ & Partial &  \\
-\textbf{Ours} & \textbf{6$$\times$} & \textbf{3$$\times$} &  &  \\
+Standard attention & 1$\times$ & 1$\times$ &  & -- \\
+FlashAttention-2 & 3$\times$ & 3$\times$ &  & -- \\
+FlashAttention-3 & \textbf{6$\times$} & N/A &  & -- \\
+SDPA (builtin) & 3$\times$ & 3$\times$ & Partial &  \\
+\textbf{Ours} & \textbf{6$\times$} & \textbf{3$\times$} &  &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1034,10 +1034,10 @@ GPT-2 & 0.85 \\
 \toprule
 \textbf{Model} & \textbf{L} & \textbf{Baseline} & \textbf{FA3} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 128 & 1.90 & 0.85 & 2.1$$\times$ \\
-DistilBERT & 512 & 12.0 & 0.85 & 2.1$$\times$ \\
-GPT-2 & 128 & 4.20 & 0.85 & 2.1$$\times$ \\
-GPT-2 & 512 & 45.0 & 0.85 & 2.1$$\times$ \\
+DistilBERT & 128 & 1.90 & 0.85 & 2.1$\times$ \\
+DistilBERT & 512 & 12.0 & 0.85 & 2.1$\times$ \\
+GPT-2 & 128 & 4.20 & 0.85 & 2.1$\times$ \\
+GPT-2 & 512 & 45.0 & 0.85 & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1154,7 +1154,7 @@ On our RTX 4070 (Ampere), FA3 is unavailable, so the SDPA path is used.
 This is functionally identical to standard attention, so accuracy matches 
 baseline.
 
-\textbf{On Hopper (H100), FA3 is used and gives 2--6$$\times$ speedup.}
+\textbf{On Hopper (H100), FA3 is used and gives 2--6$\times$ speedup.}
 
 \subsection{Memory Advantage}
 
@@ -1167,10 +1167,10 @@ baseline.
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{FA3} \\
 \midrule
-128 & 1$$\times$ & 1$$\times$ \\
-512 & 4$$\times$ & 1.2$$\times$ \\
-2048 & 16$$\times$ & 1.5$$\times$ \\
-8192 & 64$$\times$ & 2$$\times$ \\
+128 & 1$\times$ & 1$\times$ \\
+512 & 4$\times$ & 1.2$\times$ \\
+2048 & 16$\times$ & 1.5$\times$ \\
+8192 & 64$\times$ & 2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1246,9 +1246,9 @@ Since both paths are exact, no accuracy difference.
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{FA3} & \textbf{FA3 FP8} \\
 \midrule
-512 & 1$$\times$ & 3$$\times$ & 5$$\times$ \\
-2048 & 1$$\times$ & 4$$\times$ & 6$$\times$ \\
-8192 & 1$$\times$ & 4$$\times$ & 6$$\times$ \\
+512 & 1$\times$ & 3$\times$ & 5$\times$ \\
+2048 & 1$\times$ & 4$\times$ & 6$\times$ \\
+8192 & 1$\times$ & 4$\times$ & 6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1257,7 +1257,7 @@ Since both paths are exact, no accuracy difference.
 
 \begin{enumerate}
 \item \textbf{Exact attention -- no approximation.}
-\item \textbf{Speedup depends on hardware.} Hopper sees 3-6$$\times$.
+\item \textbf{Speedup depends on hardware.} Hopper sees 3-6$\times$.
 \item \textbf{Fallback preserves semantics.}
 \item \textbf{No parameter reduction.}
 \item \textbf{Cross-attention supported.}
@@ -1327,8 +1327,8 @@ For DistilBERT on H100, L = 2048:
 \midrule
 Accuracy & 90.71\% & 90.71\% & ~0 \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Time & 180 s & 2.3 s & 84.5$$\times$ \\
-VRAM & 12 MB & 380 MB & 380 MB$$\times$ \\
+Time & 180 s & 2.3 s & 84.5$\times$ \\
+VRAM & 12 MB & 380 MB & 380 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1342,11 +1342,11 @@ VRAM & 12 MB & 380 MB & 380 MB$$\times$ \\
 \toprule
 \textbf{Method} & \textbf{Speedup} & \textbf{Exact} & \textbf{Params} \\
 \midrule
-LoRA (recovery only) & 1$$\times$ &  & +small \\
-FlashAttention-3 & 3-6$$\times$ &  & +small \\
-SDPA & 1$$\times$ &  & 0 \\
-Linear attention & 1-2$$\times$ (long) &  & depends \\
-MoE & 1$$\times$ &  & +large \\
+LoRA (recovery only) & 1$\times$ &  & +small \\
+FlashAttention-3 & 3-6$\times$ &  & +small \\
+SDPA & 1$\times$ &  & 0 \\
+Linear attention & 1-2$\times$ (long) &  & depends \\
+MoE & 1$\times$ &  & +large \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1838,15 +1838,15 @@ On Hopper, FA3 speedup comes from:
 \toprule
 \textbf{Source} & \textbf{Contribution} \\
 \midrule
-Tiled memory & 2$$\times$ (SRAM vs HBM) \\
-TMA async & 1.5$$\times$ (overlapped memory) \\
-Warp specialization & 1.3$$\times$ (compute overlap) \\
-FP8 (optional) & 2$$\times$ \\
+Tiled memory & 2$\times$ (SRAM vs HBM) \\
+TMA async & 1.5$\times$ (overlapped memory) \\
+Warp specialization & 1.3$\times$ (compute overlap) \\
+FP8 (optional) & 2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Combined: ~$2 \times 1.5 \times 1.3 = 3.9$$\times$$ (FP16) or ~$8$$\times$$ (FP8).
+Combined: ~$2 \times 1.5 \times 1.3 = 3.9$\times$$ (FP16) or ~$8	imes$$ (FP8).
 
 
 
@@ -2069,11 +2069,11 @@ Path used & 0.85 \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{FA3} & \textbf{FA3 FP8} \\
 \midrule
-128 & 1$$\times$ & 1$$\times$ & 1$$\times$ \\
-256 & 1$$\times$ & 1.5$$\times$ & 2$$\times$ \\
-512 & 1$$\times$ & 2.5$$\times$ & 4$$\times$ \\
-1024 & 1$$\times$ & 3.5$$\times$ & 5.5$$\times$ \\
-2048 & 1$$\times$ & 4$$\times$ & 6$$\times$ \\
+128 & 1$\times$ & 1$\times$ & 1$\times$ \\
+256 & 1$\times$ & 1.5$\times$ & 2$\times$ \\
+512 & 1$\times$ & 2.5$\times$ & 4$\times$ \\
+1024 & 1$\times$ & 3.5$\times$ & 5.5$\times$ \\
+2048 & 1$\times$ & 4$\times$ & 6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2178,7 +2178,7 @@ benefit over explicit FP16.
 \subsubsection{D.2.3 FA2 on Ampere}
 
 We could use FlashAttention-2 on Ampere. Result: modest speedup over SDPA 
-(1.5$$\times$). We keep SDPA for simplicity.
+(1.5$\times$). We keep SDPA for simplicity.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -2208,10 +2208,10 @@ We could use FlashAttention-2 on Ampere. Result: modest speedup over SDPA
 \toprule
 \textbf{L} & \textbf{FA3 speedup} \\
 \midrule
-64 & 0.9$$\times$ (slower) \\
-128 & 1$$\times$ \\
-512 & 2$$\times$ \\
-2048 & 4$$\times$ \\
+64 & 0.9$\times$ (slower) \\
+128 & 1$\times$ \\
+512 & 2$\times$ \\
+2048 & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2293,7 +2293,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

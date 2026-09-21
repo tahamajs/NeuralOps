@@ -5,9 +5,9 @@
 The softmax attention operation computes a pairwise score between every 
 query and every key:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 This requires $\mathcal{O}(L^2 d)$ time and $\mathcal{O}(L^2)$ memory for 
 sequence length $L$. For $L = 4096$ (a common long-context setting), the 
@@ -77,27 +77,27 @@ producing $K$ centroids $C \in \mathbb{R}^{B \times H \times K \times d_h}$.
 \textbf{Step 2: Centroid-to-key attention.} Compute attention from each centroid 
 to all keys:
 
-\begin{equation}
+\[
 V_{\text{cent}} = \text{softmax}\!\left(\frac{C K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{B \times H \times K \times d_h}
-\end{equation}
+\]
 
 This costs $\mathcal{O}(K L d_h)$ -- linear in $L$.
 
 \textbf{Step 3: Redistribute.} Assign each query to its nearest centroid and 
 collect the corresponding context:
 
-\begin{equation}
+\[
 \text{Global}(Q) = \text{softmax}\!\left(\frac{Q C^\top}{\sqrt{d_h} \cdot \tau}\right) V_{\text{cent}}
-\end{equation}
+\]
 
 where $\tau$ is a learnable temperature.
 
 To capture local structure missed by clustering, we add a sliding-window 
 attention branch and blend via a learnable gate $\alpha$:
 
-\begin{equation}
+\[
 \text{Output} = (1 - \alpha) \cdot \text{Global}(Q) + \alpha \cdot \text{Local}(Q)
-\end{equation}
+\]
 
 \subsection{Contributions}
 

@@ -4,105 +4,105 @@
 
 For $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 The best rank-$k$ approximation in Frobenius norm (Eckart-Young):
 
-\begin{equation}
+\[
 W_k = U_{:, :k} \Sigma_{:k, :k} V_{:k, :}^\top
-\end{equation}
+\]
 
 with error:
 
-\begin{equation}
+\[
 \|W - W_k\|_F = \sqrt{\sum_{i > k} \sigma_i^2}
-\end{equation}
+\]
 
 \subsection{A.2 Factorization}
 
 We split (A.2) into two factors:
 
-\begin{equation}
+\[
 \text{down} = V_{:k, :}^\top \in \mathbb{R}^{k \times n}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{up} = U_{:, :k} \Sigma_{:k, :k} \in \mathbb{R}^{m \times k}
-\end{equation}
+\]
 
 Then:
 
-\begin{equation}
+\[
 \text{up} \cdot \text{down} = U_{:, :k} \Sigma_{:k, :k} V_{:k, :}^\top = W_k
-\end{equation}
+\]
 
 \subsection{A.3 Parameter Count}
 
 For each factorized projection:
 
-\begin{equation}
+\[
 \text{params} = k \cdot n + m \cdot k = k(m + n)
-\end{equation}
+\]
 
 vs baseline $m \cdot n$. Reduction factor:
 
-\begin{equation}
+\[
 \frac{m \cdot n}{k(m + n)}
-\end{equation}
+\]
 
 For square $m = n = d$:
 
-\begin{equation}
+\[
 \frac{d^2}{2kd} = \frac{d}{2k}
-\end{equation}
+\]
 
 \subsection{A.4 LoRA Composition}
 
 With LoRA attached to the up-projection:
 
-\begin{equation}
+\[
 \text{out} = (W_{up} + \Delta W_{up}) \cdot \text{down}(x)
-\end{equation}
+\]
 
 where:
 
-\begin{equation}
+\[
 \Delta W_{up} = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 So the effective weight is:
 
-\begin{equation}
+\[
 W_\text{eff} = (W_{up} + \frac{\alpha}{r_L} B A) \cdot W_\text{down}
-\end{equation}
+\]
 
 \subsection{A.5 GQA Parameter Reduction}
 
 For GQA with $H_{kv} < H$:
 
-\begin{equation}
+\[
 \text{K params baseline} = d \cdot (H_{kv} \cdot d_h) = d^2 \cdot (H_{kv}/H)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{K params ours} = k(d + H_{kv} d_h)
-\end{equation}
+\]
 
 For $H_{kv} = H/4$ and $k = d/6$:
 
-\begin{equation}
+\[
 \text{reduction} = \frac{d^2 (H_{kv}/H)}{k(d + H_{kv} d_h)} \approx \frac{d}{k} \cdot \frac{1}{1 + H_{kv} d_h / d}
-\end{equation}
+\]
 
 \subsection{A.6 Effect of Rank on Error}
 
 The Frobenius error after rank-$k$ truncation is:
 
-\begin{equation}
+\[
 \text{err}(k) = \sqrt{\sum_{i > k} \sigma_i^2} / \|W\|_F
-\end{equation}
+\]
 
 For transformer attention weights, this decays rapidly with $k$.
 
@@ -110,15 +110,15 @@ For transformer attention weights, this decays rapidly with $k$.
 
 Our implementation uses asymmetric split ($\Sigma$ entirely in the up-projection):
 
-\begin{equation}
+\[
 \text{down} = V_k^\top, \quad \text{up} = U_k \Sigma_k
-\end{equation}
+\]
 
 An alternative symmetric split:
 
-\begin{equation}
+\[
 \text{down} = \Sigma_k^{1/2} V_k^\top, \quad \text{up} = U_k \Sigma_k^{1/2}
-\end{equation}
+\]
 
 Both give the same $UV$, but asymmetric has:
 \begin{itemize}

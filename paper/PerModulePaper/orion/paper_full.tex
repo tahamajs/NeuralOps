@@ -1,4 +1,4 @@
-\title{\textbf{ORION: Optimized Rectified Input-aware Orthogonal Network for Hybrid Attention with SVD Factorization}
+\title{\textbf{ORION: Optimized Rectified Input-aware Orthogonal Network for Hybrid Attention with SVD Factorization}}
 
 \author{Anonymous authors}
 
@@ -69,7 +69,7 @@ with $\Omega \in \mathbb{R}^{d_h \times F}$ orthogonally initialized.
 \begin{itemize}
 \item \textbf{A tri-component hybrid attention} combining SVD factorization,
   head-wise bifurcation, and RFF.
-\item \textbf{Genuine parameter reduction} (~6$$\times$ for square projections, ~9.6$$\times$ for
+\item \textbf{Genuine parameter reduction} (~6$\times$ for square projections, ~9.6$\times$ for
   FFN-like projections).
 \item \textbf{An honest disclosure} of the \texttt{copy\_weights} raise-bug that can cause
   catastrophic collapse.
@@ -158,7 +158,7 @@ mechanisms.
 \midrule
 \textbf{Factorization} & Post-hoc SVD & Zero-shot SVD \\
 \textbf{Head mechanism} & Uniform & Bifurcated (2/3, 1/3) \\
-\textbf{Parameter reduction} & Often none & \textbf{~6$$\times$} \\
+\textbf{Parameter reduction} & Often none & \textbf{~6$\times$} \\
 \textbf{Robustness} & Varies & \textbf{\texttt{copy\_weights} raises} \\
 \bottomrule
 \end{tabular}
@@ -435,7 +435,7 @@ Factorized (rank $r$) & $r(d + d) = 2rd$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $r = 64$: \textbf{6$$\times$ reduction}.
+For $d = 768$, $r = 64$: \textbf{6$\times$ reduction}.
 
 For Q projection, ORION uses $r = 64$ and $d = 768$:
 
@@ -469,15 +469,15 @@ Fusion & $\mathcal{O}(L d)$ \\
 
 \textbf{Total:} $\mathcal{O}(L^2 d) \cdot (H_f / H) + \mathcal{O}(L F d) \cdot (H_k / H)$.
 
-For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$$\times$} compared to full 
+For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$\times$} compared to full 
 attention (assuming linear cost is negligible for short sequences).
 
 \subsection{Algorithm}
 
 \textbf{Algorithm 1:} ORION forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: # Factorized projections
 2: Q_all $\leftarrow$ W_Q_up(W_Q_down(X))
@@ -608,7 +608,7 @@ The \texttt{decompose\_from\_weight} method:
 \begin{enumerate}
 \item Computes SVD.
 \item Selects rank by energy threshold.
-\item Sets \texttt{down.weight = $\Sigma$\^{}{1/2} V\^{}T}, \texttt{up.weight = U $\Sigma$\^{}{1/2}}.
+\item Sets \texttt{down.weight = $\Sigma$^{1/2} V^T}, \texttt{up.weight = U $\Sigma$^{1/2}}.
 
 \end{enumerate}
 \subsection{GQA Handling}
@@ -677,8 +677,8 @@ def weight(self):
     return torch.matmul(self.up.weight, self.down.weight)
 \end{lstlisting}
 
-For 768$$\times$768 this is fine. For 3072$$\times$768 with rank 64: \texttt{64 $$\times$ 3072 + 64 $$\times$ 768} 
-= 245K params, materializing to 2.36M -- a 10$$\times$ overhead. Used in Frobenius 
+For 768$\times$768 this is fine. For 3072$\times$768 with rank 64: \texttt{64 $\times$ 3072 + 64 $\times$ 768} 
+= 245K params, materializing to 2.36M -- a 10$\times$ overhead. Used in Frobenius 
 check inside \texttt{copy\_weights}.
 
 \subsubsection{The `raise` Bug}
@@ -892,12 +892,12 @@ Single seed (42).
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Reduction} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ & 1.9 s \\
-DistilBERT & \textbf{ORION} & \textbf{55.50} & \textbf{-35.21} & 0.6959 & \textbf{66.4MM} & \textbf{48.2\%$$\times$} & 1.42x \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.65M & 1.00$$\times$ & 4.1 s \\
-RoBERTa & \textbf{ORION} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & \textbf{124.6MM} & \textbf{45.1\%$$\times$} & 2.3 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.44M & 1.00$$\times$ & 4.2 s \\
-GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124.4MM} & \textbf{46.0\%$$\times$} & 2.3 s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ & 1.9 s \\
+DistilBERT & \textbf{ORION} & \textbf{55.50} & \textbf{-35.21} & 0.6959 & \textbf{66.4MM} & \textbf{48.2\%$\times$} & 1.42x \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.65M & 1.00$\times$ & 4.1 s \\
+RoBERTa & \textbf{ORION} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & \textbf{124.6MM} & \textbf{45.1\%$\times$} & 2.3 s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.44M & 1.00$\times$ & 4.2 s \\
+GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124.4MM} & \textbf{46.0\%$\times$} & 2.3 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -905,8 +905,8 @@ GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 48.2\%$$\times$ (DistilBERT), 45.1\%$$\times$ (RoBERTa),
-  46.0\%$$\times$ (GPT-2).
+\item \textbf{Parameter reduction:} 48.2\%$\times$ (DistilBERT), 45.1\%$\times$ (RoBERTa),
+  46.0\%$\times$ (GPT-2).
 \item \textbf{Accuracy drop:} -35.21\%, -27.64\%, -28.44\%.
 \item **ORION is the first module in our framework to combine real parameter
   reduction with competitive accuracy.**
@@ -923,11 +923,11 @@ GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{ORION} & \textbf{Reduction} \\
 \midrule
-q\_proj & 589,824 & 0.85 & 32$$\times$ \\
-k\_proj & 589,824 & 0.85 & 32$$\times$ \\
-v\_proj & 589,824 & 0.85 & 32$$\times$ \\
-out\_proj & 589,824 & 0.85 & 32$$\times$ \\
-\textbf{Attention total} & \textbf{2,359,296} & \textbf{0.85} & \textbf{32$$\times$} \\
+q\_proj & 589,824 & 0.85 & 32$\times$ \\
+k\_proj & 589,824 & 0.85 & 32$\times$ \\
+v\_proj & 589,824 & 0.85 & 32$\times$ \\
+out\_proj & 589,824 & 0.85 & 32$\times$ \\
+\textbf{Attention total} & \textbf{2,359,296} & \textbf{0.85} & \textbf{32$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -943,9 +943,9 @@ out\_proj & 589,824 & 0.85 & 32$$\times$ \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ORION)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ORION)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 303 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 590 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 2263 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 303 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 590 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 2263 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -961,9 +961,9 @@ GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 2263 MB MB \\
 \toprule
 \textbf{Energy} & \textbf{DistilBERT acc} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
-0.90 & 0.85 & 0.85 & 32$$\times$ \\
-0.95 & 0.85 & 0.85 & 32$$\times$ \\
-0.99 & 0.85 & 0.85 & 32$$\times$ \\
+0.90 & 0.85 & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1080,19 +1080,19 @@ nasc & 0.85 & 32 & 0.85 & +1.6\% \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} 55.50\% ($\Delta$ = -35.21), \textbf{48.2\%$$\times$} reduction
-\item \textbf{RoBERTa:} 50.92\% ($\Delta$ = -27.64), \textbf{45.1\%$$\times$} reduction
-\item \textbf{GPT-2:} 50.92\% ($\Delta$ = -28.44), \textbf{46.0\%$$\times$} reduction
+\item \textbf{DistilBERT:} 55.50\% ($\Delta$ = -35.21), \textbf{48.2\%$\times$} reduction
+\item \textbf{RoBERTa:} 50.92\% ($\Delta$ = -27.64), \textbf{45.1\%$\times$} reduction
+\item \textbf{GPT-2:} 50.92\% ($\Delta$ = -28.44), \textbf{46.0\%$\times$} reduction
 \end{itemize}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/orion_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{orion}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{orion}.}
 \label{fig:results_orion}
 \end{figure}
 
@@ -1235,22 +1235,22 @@ p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
 \toprule
 \textbf{Component} & \textbf{Original} & \textbf{ORION} \\
 \midrule
-Q (768$$\times$768, r=64) & 589,824 & 98,304 \\
-K (768$$\times$768, r=64) & 589,824 & 98,304 \\
-V (768$$\times$768, r=64) & 589,824 & 98,304 \\
-O (768$$\times$768, r=64) & 589,824 & 98,304 \\
-LoRA (r=16, $$\times$4) & 0 & 98,304 \\
+Q (768$\times$768, r=64) & 589,824 & 98,304 \\
+K (768$\times$768, r=64) & 589,824 & 98,304 \\
+V (768$\times$768, r=64) & 589,824 & 98,304 \\
+O (768$\times$768, r=64) & 589,824 & 98,304 \\
+LoRA (r=16, $\times$4) & 0 & 98,304 \\
 RFF & 0 & 0 (frozen, but not persisted) \\
 \textbf{Per layer} & \textbf{2,359,296} & \textbf{393,216} \\
-\textbf{Ratio} & 1.00$$\times$ & \textbf{6.0$$\times$ reduction} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{6.0$\times$ reduction} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Impact per model (DistilBERT):}
 \begin{itemize}
-\item Original attention params: 6 $$\times$ 2.36M = 14.2M
-\item ORION attention params: 6 $$\times$ 393K = 2.36M
+\item Original attention params: 6 $\times$ 2.36M = 14.2M
+\item ORION attention params: 6 $\times$ 393K = 2.36M
 \item \textbf{Savings: 11.8M params (~18\% of model)}
 
 \end{itemize}
@@ -1263,7 +1263,7 @@ RFF & 0 & 0 (frozen, but not persisted) \\
 \toprule
 \textbf{Operation} & \textbf{Baseline} & \textbf{ORION} \\
 \midrule
-Q/K/V projections & 3 & 6 (2$$\times$ for factorized) \\
+Q/K/V projections & 3 & 6 (2$\times$ for factorized) \\
 Attention & 1 & ~4 (kernel + full) \\
 Output projection & 1 & 2 \\
 Fusion & 0 & 1 \\
@@ -1272,7 +1272,7 @@ Fusion & 0 & 1 \\
 \end{tabular}
 \end{table}
 
-\textbf{~2.5$$\times$ more kernel launches} $\to$ slower despite fewer parameters.
+\textbf{~2.5$\times$ more kernel launches} $\to$ slower despite fewer parameters.
 
 \subsection{Failure Mode Taxonomy}
 
@@ -1286,7 +1286,7 @@ Fusion & 0 & 1 \\
 \textbf{\texttt{copy\_weights} raises} & Injection aborts & UniversalAdapter failure \\
 \textbf{\texttt{rff\_proj} not persisted} & Train/test mismatch & \texttt{persistent=False} \\
 \textbf{Masked row collapse} & Zero attention & Softpick denominator = 0 \\
-\textbf{Slower than baseline} & ~2.3 s$$\times$ & More kernel launches \\
+\textbf{Slower than baseline} & ~2.3 s$\times$ & More kernel launches \\
 \textbf{Rank over-pruning} & Accuracy loss & Energy threshold too low \\
 \bottomrule
 \end{tabular}
@@ -1329,7 +1329,7 @@ Reduction & ~60\% & ~32\% \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{ORION genuinely reduces parameters} (~6$$\times$) while preserving accuracy.
+\item \textbf{ORION genuinely reduces parameters} (~6$\times$) while preserving accuracy.
 \item \textbf{The \texttt{copy\_weights} bug} is a robustness concern, not a collapse
   cause (due to the outer try/except).
 \item \textbf{\texttt{rff\_proj} persistence} is a bug that would cause train/test
@@ -1349,7 +1349,7 @@ Reduction & ~60\% & ~32\% \\
 
 \subsubsection{Takeaway 1: Real Compression is Possible}
 
-ORION achieves \textbf{48.2\%$$\times$} parameter reduction with \textbf{-35.21\%} 
+ORION achieves \textbf{48.2\%$\times$} parameter reduction with \textbf{-35.21\%} 
 accuracy drop. This is a genuine, measurable improvement over baseline.
 
 \subsubsection{Takeaway 2: Head Bifurcation is Novel}
@@ -1413,9 +1413,9 @@ For DistilBERT:
 \textbf{Metric} & \textbf{Baseline} & \textbf{ORION} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 55.50\% & -35.21\% \\
-Params & 66.95M & 66.4MM & \textbf{48.2\%$$\times$} \\
-Time & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-VRAM & 183 MB & 303 MB MB & 380 MB$$\times$ \\
+Params & 66.95M & 66.4MM & \textbf{48.2\%$\times$} \\
+Time & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+VRAM & 183 MB & 303 MB MB & 380 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1431,10 +1431,10 @@ VRAM & 183 MB & 303 MB MB & 380 MB$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Params} & \textbf{Speed} \\
 \midrule
-Baseline & 90.71\% & 1.00$$\times$ & 1.0$$\times$ \\
-A3 & 0.85\% & 2.5$$\times$ less & 1.2$$\times$ \\
-Cosformer & 0.85\% & 1.06$$\times$ & 4.9$$\times$ slower \\
-\textbf{ORION} & \textbf{55.50\%} & \textbf{48.2\%$$\times$ less} & \textbf{2.3 s$$\times$} \\
+Baseline & 90.71\% & 1.00$\times$ & 1.0$\times$ \\
+A3 & 0.85\% & 2.5$\times$ less & 1.2$\times$ \\
+Cosformer & 0.85\% & 1.06$\times$ & 4.9$\times$ slower \\
+\textbf{ORION} & \textbf{55.50\%} & \textbf{48.2\%$\times$ less} & \textbf{2.3 s$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1497,7 +1497,7 @@ with NASC which has a batch-level fallback.
 
 \subsection{Slower than Baseline}
 
-~2.3 s$$\times$ slowdown from more kernel launches.
+~2.3 s$\times$ slowdown from more kernel launches.
 
 \subsection{Head Split is Heuristic}
 
@@ -1568,7 +1568,7 @@ FFN projections, this is a memory spike.
 
 We presented \textbf{ORION}, a hybrid attention mechanism combining SVD 
 factorization, head-wise bifurcation, and random Fourier features. ORION 
-achieves \textbf{48.2\%$$\times$} parameter reduction with \textbf{-35.21\%} accuracy 
+achieves \textbf{48.2\%$\times$} parameter reduction with \textbf{-35.21\%} accuracy 
 drop on DistilBERT, and similar results on RoBERTa and GPT-2.
 
 \subsection{Results Recap}
@@ -1580,9 +1580,9 @@ drop on DistilBERT, and similar results on RoBERTa and GPT-2.
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 55.50\% & 66.4MM & \textbf{48.2\%$$\times$} \\
-RoBERTa & 50.92\% & 124.6MM & \textbf{45.1\%$$\times$} \\
-GPT-2 & 50.92\% & 124.4MM & \textbf{46.0\%$$\times$} \\
+DistilBERT & 55.50\% & 66.4MM & \textbf{48.2\%$\times$} \\
+RoBERTa & 50.92\% & 124.6MM & \textbf{45.1\%$\times$} \\
+GPT-2 & 50.92\% & 124.4MM & \textbf{46.0\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1724,9 +1724,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 55.50\% $\pm$ 2\% & 48.2\%$$\times$ \\
-RoBERTa & 50.92\% $\pm$ 3\% & 45.1\%$$\times$ \\
-GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$$\times$ \\
+DistilBERT & 55.50\% $\pm$ 2\% & 48.2\%$\times$ \\
+RoBERTa & 50.92\% $\pm$ 3\% & 45.1\%$\times$ \\
+GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1740,7 +1740,7 @@ for name, mod in model.named_modules():
     if hasattr(mod, 'down') and hasattr(mod, 'up'):
         orig = mod.in_features * mod.out_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
-        print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$$\times$)")
+        print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$\times$)")
 \end{lstlisting}
 
 \subsubsection{Check Head Split}
@@ -2008,10 +2008,10 @@ For $H_k/H = 2/3$: attention reduced by ~1/3.
 
 Per projection: $d^2 \to 2rd$. Ratio: $d / (2r)$.
 
-For $d = 768, r = 64$: $6$\times$.
+For $d = 768, r = 64$: $6	imes$.
 
 For FFN: $768 \times 3072 \to 64 \times (768 + 3072) = 245,760$. 
-Ratio: $9.6$\times$.
+Ratio: $9.6	imes$.
 \begin{lstlisting}
 
 ---
@@ -2189,7 +2189,7 @@ $\Delta$ & -35.21\% \\
 F1 & 0.6959 \\
 Params (before) & 66,955,010 \\
 Params (after) & 66.4M \\
-Reduction & 48.2\%$$\times$ \\
+Reduction & 48.2\%$\times$ \\
 Peak VRAM & 303 MB MB \\
 Inference time & 1.42x s \\
 \bottomrule
@@ -2210,7 +2210,7 @@ $\Delta$ & -27.64\% \\
 F1 & 0.6748 \\
 Params (before) & 124,647,170 \\
 Params (after) & 124.6M \\
-Reduction & 45.1\%$$\times$ \\
+Reduction & 45.1\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2229,7 +2229,7 @@ $\Delta$ & -28.44\% \\
 F1 & 0.6748 \\
 Params (before) & 124,441,344 \\
 Params (after) & 124.4M \\
-Reduction & 46.0\%$$\times$ \\
+Reduction & 46.0\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2243,9 +2243,9 @@ Reduction & 46.0\%$$\times$ \\
 \toprule
 \textbf{Energy} & \textbf{DistilBERT} & \textbf{Reduction} \\
 \midrule
-0.90 & 0.85 & 32$$\times$ \\
-0.95 & 0.85 & 32$$\times$ \\
-0.99 & 0.85 & 32$$\times$ \\
+0.90 & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,4 +1,4 @@
-\title{\textbf{HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement}
+\title{\textbf{HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement}}
 
 \author{Anonymous authors}
 
@@ -199,7 +199,7 @@ s_t = f_t \odot s_{t-1} + g_t
 \]
 
 where $f_t \in \mathbb{R}^d$ is the forget (decay) vector and $g\_t \in 
-\mathbb{R}\^{}d$ is the input. This is a \textbf{first-order linear recurrence}.
+\mathbb{R}^d$ is the input. This is a \textbf{first-order linear recurrence}.
 
 \textbf{Complexity.} Time is $\mathcal{O}(L d)$; memory is $\mathcal{O}(d)$ (or 
 $\mathcal{O}(L d)$ for the outputs). Compare to attention's $\mathcal{O}(L^2 d)$.
@@ -310,7 +310,7 @@ HGRN2Layer replaces standard attention with a single element-wise recurrence.
 The pipeline is:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -491,9 +491,9 @@ model to suppress or amplify the recurrence.
 
 \textbf{Algorithm 1:} HGRN2Layer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         chunk_size C = 32
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: f $\leftarrow$ exp(clamp(-softplus(W_f X + b_f), -3, -1e-4))
  2: i $\leftarrow$ sigmoid(W_i X + b_i)
@@ -1000,12 +1000,12 @@ GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & 0.85 & 84.8$$\times$ \\
-256 & 3.50 & 0.85 & 85.6$$\times$ \\
-512 & 12.0 & 0.85 & 86.2$$\times$ \\
-1024 & 45.0 & 0.85 & 86.4$$\times$ \\
-2048 & 180.0 & 0.85 & 86.5$$\times$ \\
-4096 & 720.0 & 0.85 & 86.6$$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
+4096 & 720.0 & 0.85 & 86.6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1120,10 +1120,10 @@ GPT-2 & 793 & 507 MB & 48.5\%\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/hgrn2_layer_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hgrn2_layer}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hgrn2_layer}.}
 \label{fig:results_hgrn2_layer}
 \end{figure}
 
@@ -1215,10 +1215,10 @@ Our scan is $\mathcal{O}(L)$ -- it scales linearly, so the crossover happens.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speed @ L=128} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1$$\times$ \\
-Linear Transformer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
-Performer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
-\textbf{HGRN2Layer} & \textbf{62.96} & \textbf{52.06} & \textbf{71.44} & \textbf{84.5$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1$\times$ \\
+Linear Transformer & 0.85 & 32 & 0.85 & 84.5$\times$ \\
+Performer & 0.85 & 32 & 0.85 & 84.5$\times$ \\
+\textbf{HGRN2Layer} & \textbf{62.96} & \textbf{52.06} & \textbf{71.44} & \textbf{84.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1268,7 +1268,7 @@ achieving accuracy within -27.75\% of baseline on DistilBERT.
 
 \subsubsection{Takeaway 2: Short Sequences are Slow}
 
-At L = 128, our method is \textbf{1.0x$$\times$ slower} than baseline due to Python 
+At L = 128, our method is \textbf{1.0x$\times$ slower} than baseline due to Python 
 chunk loops.
 
 \subsubsection{Takeaway 3: Parameters Increase}
@@ -1317,7 +1317,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & 62.96\% & -27.75\% \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Time & 45 s & 0.85 s & 86.4$$\times$ \\
+Time & 45 s & 0.85 s & 86.4$\times$ \\
 VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -1326,7 +1326,7 @@ VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
 \subsection{Fused Kernel Opportunity}
 
 A \textbf{fused Triton kernel} for the chunked scan could eliminate the Python 
-loop. Expected speedup: 3-5$$\times$ at L = 128.
+loop. Expected speedup: 3-5$\times$ at L = 128.
 
 \subsection{Broader Impact}
 
@@ -1363,7 +1363,7 @@ HGRN2Layer \textbf{increases} parameter count by ~48.5\%\%.
 
 \subsection{Short-Sequence Slowdown}
 
-At L = 128, we are \textbf{1.0x$$\times$ slower} than baseline.
+At L = 128, we are \textbf{1.0x$\times$ slower} than baseline.
 
 \subsection{Python Loop}
 
@@ -1455,9 +1455,9 @@ weights from four architectures.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} & \textbf{Speed @ L=1024} \\
 \midrule
-DistilBERT & -27.75\% & +48.5\%\% & 1.0x$$\times$ & 86.4$$\times$ \\
-RoBERTa & -26.50\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
-GPT-2 & -7.92\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
+DistilBERT & -27.75\% & +48.5\%\% & 1.0x$\times$ & 86.4$\times$ \\
+RoBERTa & -26.50\% & +48.5\%\% & 84.5$\times$ & 84.5$\times$ \\
+GPT-2 & -7.92\% & +48.5\%\% & 84.5$\times$ & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1986,7 +1986,7 @@ nn.init.constant_(self.forget_gate.bias, -2.5)
 \end{lstlisting}
 
 \textbf{Why -2.5?} \texttt{softplus(-2.5) $\approx$ 0.076}. So \texttt{log f = -0.076}, 
-\texttt{f = e\^{}{-0.076} $\approx$ 0.93}. This means the state retains 93\% of its value 
+\texttt{f = e^{-0.076} $\approx$ 0.93}. This means the state retains 93\% of its value 
 per step -- slow decay.
 
 \subsection{B.4 Input Modulation}
@@ -2240,7 +2240,7 @@ We tested interleaving attention and HGRN. Result: no benefit over full HGRN.
 
 \subsubsection{D.2.3 Multi-State HGRN}
 
-We tested multiple independent state vectors. Result: marginal benefit, 3$$\times$ cost.
+We tested multiple independent state vectors. Result: marginal benefit, 3$\times$ cost.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -2356,7 +2356,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

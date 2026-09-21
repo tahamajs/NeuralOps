@@ -96,9 +96,9 @@ fallback to random initialization**.
 
 Given weight $W$ and per-input-dimension activation energy $F \in \mathbb{R}^n$:
 
-\begin{equation}
+\[
 W_\text{weighted} = W \cdot \text{diag}(\sqrt{F + \epsilon})
-\end{equation}
+\]
 
 with $\epsilon = 10^{-6}$.
 
@@ -122,9 +122,9 @@ as an option.
 
 Given $W$ (or $W_\text{weighted}$), compute:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 The full SVD of a $768 \times 768$ matrix takes ~5 ms on RTX 4070.
 
@@ -132,15 +132,15 @@ The full SVD of a $768 \times 768$ matrix takes ~5 ms on RTX 4070.
 
 Compute cumulative energy:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2}
-\end{equation}
+\]
 
 Select the minimal $r$ such that $E(r) \geq \varepsilon$:
 
-\begin{equation}
+\[
 r_\text{energy} = \min\{r : E(r) \geq \varepsilon\}
-\end{equation}
+\]
 
 \subsubsection{Dynamic vs Fixed Rank}
 
@@ -164,9 +164,9 @@ rank is reached.
 
 \subsubsection{Frobenius Error}
 
-\begin{equation}
+\[
 \text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|_F}{\|W\|_F + 10^{-9}}
-\end{equation}
+\]
 
 \subsubsection{Failure Handling}
 
@@ -315,16 +315,16 @@ For $m = n = 768$:
 \toprule
 \textbf{Rank} & \textbf{ASVD} & \textbf{ASVD + LoRA(16)} & \textbf{Ratio vs baseline} \\
 \midrule
-16 & 24,592 & 49,168 & 12.0$$\times$ \\
-32 & 49,152 & 73,728 & 8.0$$\times$ \\
-64 & 98,304 & 122,880 & 4.8$$\times$ \\
-128 & 196,608 & 221,184 & 2.7$$\times$ \\
-256 & 393,216 & 417,792 & 1.4$$\times$ \\
+16 & 24,592 & 49,168 & 12.0$\times$ \\
+32 & 49,152 & 73,728 & 8.0$\times$ \\
+64 & 98,304 & 122,880 & 4.8$\times$ \\
+128 & 196,608 & 221,184 & 2.7$\times$ \\
+256 & 393,216 & 417,792 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Aggregated (DistilBERT, 6 layers $$\times$ 4 projections):}
+\textbf{Aggregated (DistilBERT, 6 layers $\times$ 4 projections):}
 
 \begin{table}[H]
 \centering
@@ -333,9 +333,9 @@ For $m = n = 768$:
 \toprule
 \textbf{Rank} & \textbf{Total ASVD params} & \textbf{Compression ratio} \\
 \midrule
-32 & 1,179,648 & \textbf{~57$$\times$} (attention block) \\
-64 & 2,359,296 & \textbf{~28$$\times$} \\
-128 & 4,718,592 & \textbf{~14$$\times$} \\
+32 & 1,179,648 & \textbf{~57$\times$} (attention block) \\
+64 & 2,359,296 & \textbf{~28$\times$} \\
+128 & 4,718,592 & \textbf{~14$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -354,9 +354,9 @@ minimizes $\|W - W_r\|_F$ over all rank-$r$ matrices.
 \textbf{Claim.} For energy threshold $\varepsilon$, the reconstruction error 
 satisfies:
 
-\begin{equation}
+\[
 \|W - W_r\|_F \leq (1 - \varepsilon) \|W\|_F
-\end{equation}
+\]
 
 \textbf{Proof.} $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - E(r)) \|W\|_F^2$. 
 If $E(r) \geq \varepsilon$, then $\|W - W_r\|_F^2 \leq (1 - \varepsilon) \|W\|_F^2$. 
@@ -378,9 +378,9 @@ re-factorization.
 \textbf{Proof.} If the rank $r$ needs to be reduced to $r' < r$ after 
 compression, we simply truncate:
 
-\begin{equation}
+\[
 W \to W' = U_{:, :r'} \Sigma_{:r'} V_{:r', :}^\top
-\end{equation}
+\]
 
 This is immediate; no additional SVD is required. $\square$
 \begin{lstlisting}

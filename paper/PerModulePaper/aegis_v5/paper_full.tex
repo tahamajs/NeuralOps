@@ -1,4 +1,4 @@
-\title{\textbf{AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections}
+\title{\textbf{AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections}}
 
 \author{Anonymous authors}
 
@@ -37,10 +37,10 @@ linear attention (approximate, captures long-range dependencies).
 Given a pretrained transformer $\mathcal{M}$ with $H$ heads, we seek an 
 attention mechanism $\mathcal{A}'$ such that:
 
-\begin{equation}
+\[
 \mathcal{A}' \approx \mathcal{A}, \qquad
 \text{Cost}(\mathcal{A}') \ll \mathcal{O}(L^2)
-\end{equation}
+\]
 
 subject to:
 
@@ -73,9 +73,9 @@ on local structure, a few capture global context.
 Each projection $W$ is decomposed via SVD, and the rank $r$ is chosen to 
 capture a target \textbf{energy} fraction:
 
-\begin{equation}
+\[
 r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
-\end{equation}
+\]
 
 where $\eta = 0.95$ by default.
 
@@ -84,17 +84,17 @@ where $\eta = 0.95$ by default.
 The SVD factors $(U_r, V_r)$ are frozen; LoRA adapters provide trainable 
 capacity:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 \subsubsection{Per-Head Adaptive Gating}
 
 The local and global outputs are combined with a learnable per-head gate:
 
-\begin{equation}
+\[
 \text{Out} = \sigma(g_h) \cdot \text{Out}_\text{local} + (1 - \sigma(g_h)) \cdot \text{Out}_\text{global}
-\end{equation}
+\]
 
 Gate bias is initialized to $+2.0$, giving $\sigma(2.0) \approx 0.88$ 
 (mostly local at start).
@@ -224,13 +224,13 @@ projection compression, and (iii) apply LoRA on the frozen factors.
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
 
@@ -239,31 +239,31 @@ Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
 Local window attention restricts each query to a window of size $W$ around 
 it:
 
-\begin{equation}
+\[
 \text{Attn}_\text{local}(q_i, K, V) = \sum_{j : |i - j| \leq W/2} \alpha_{ij} v_j
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L \cdot W \cdot d_h)$.
 
 For decoders, the causal variant restricts to $j \leq i$:
 
-\begin{equation}
+\[
 \text{Attn}_\text{local, causal}(q_i, K, V) = \sum_{j : i - W/2 \leq j \leq i} \alpha_{ij} v_j
-\end{equation}
+\]
 
 \subsection{Kernel Linear Attention}
 
 Kernel attention factorizes the softmax kernel:
 
-\begin{equation}
+\[
 e^{q \cdot k} \approx \phi(q)^\top \phi(k)
-\end{equation}
+\]
 
 The output becomes:
 
-\begin{equation}
+\[
 \text{Out}_\text{kernel}(q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L \cdot F \cdot d_h)$ where $F$ is the feature 
 dimension.
@@ -272,9 +272,9 @@ dimension.
 
 For RFF:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(W_\text{rff} x\right)
-\end{equation}
+\]
 
 where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
 
@@ -282,9 +282,9 @@ where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
 
 Zero-sum keys (Katharopoulos et al., 2020) subtract the mean:
 
-\begin{equation}
+\[
 \tilde{K} = K - \bar{K}
-\end{equation}
+\]
 
 This improves the approximation for positive-definite kernels.
 
@@ -292,36 +292,36 @@ This improves the approximation for positive-definite kernels.
 
 For decoders, the cumulative sum formulation:
 
-\begin{equation}
+\[
 S_i = \sum_{j \leq i} \phi(k_j) v_j^\top, \quad
 Z_i = \sum_{j \leq i} \phi(k_j)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Out}_i = \frac{\phi(q_i)^\top S_i}{\phi(q_i)^\top Z_i}
-\end{equation}
+\]
 
 \subsection{Singular Value Decomposition}
 
 For $W \in \mathbb{R}^{m \times n}$:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 Truncated at rank $r$:
 
-\begin{equation}
+\[
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\end{equation}
+\]
 
 \subsection{Energy-Based Rank Selection}
 
 The \textbf{energy fraction} captured by rank $r$:
 
-\begin{equation}
+\[
 \text{Energy}(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
-\end{equation}
+\]
 
 We select $r^* = \min \{ r : \text{Energy}(r) \geq \eta \}$.
 
@@ -331,9 +331,9 @@ For $\eta = 0.95$: $r^*$ captures 95\% of the weight energy.
 
 LoRA parameterizes weight updates:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A, \quad B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
-\end{equation}
+\]
 
 with $B = 0$ at initialization.
 
@@ -341,9 +341,9 @@ with $B = 0$ at initialization.
 
 Modern models (Qwen, LLaMA) use $H_{kv} < H$:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
-\end{equation}
+\]
 
 Expanded to $H$ via \texttt{repeat\_kv}.
 
@@ -351,26 +351,26 @@ Expanded to $H$ via \texttt{repeat\_kv}.
 
 RoPE rotates $Q, K$:
 
-\begin{equation}
+\[
 \tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 \subsection{Softpick (Fixed)}
 
 The original AEGIS used a ReLU-based softpick:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
-\end{equation}
+\]
 
 where $m = \max_j x_j$. \textbf{Problem:} When $m \leq 0$ (all-masked rows), 
 this returns all zeros, causing attention collapse.
 
 AEGIS-V5 replaces this with a stable softmax:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \frac{e^{x_i / T}}{\sum_j e^{x_j / T}}
-\end{equation}
+\]
 
 which is always numerically stable.
 \begin{lstlisting}
@@ -427,18 +427,18 @@ Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \begin{enumerate}
 \item Compute the SVD:
-  \begin{equation}
-W = U \Sigma V\^{}\top
-\end{equation}
+  \[
+W = U \Sigma V^\top
+\]
 \item Select energy-based rank:
-  \begin{equation}
-r\^{}* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2} \geq \eta \right\}
-\end{equation}
+  \[
+r^* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2} \geq \eta \right\}
+\]
 \item Factor into $W \approx U_r V_r$ where:
-  \begin{equation}
-U\_r = U\_{:, :r} \Sigma\_{:r, :r}\^{}{1/2}, \quad
-  V\_r = \Sigma\_{:r, :r}\^{}{1/2} V\_{:r, :}\^{}\top
-\end{equation}
+  \[
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+  V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
+\]
 
 \end{enumerate}
 \subsubsection{Parameter Reduction}
@@ -465,8 +465,8 @@ For $d = 768$ and $r = 384$ (energy 0.95):
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$$\times$ \\
-SVD r=384 & 589,824 & \textbf{1.00$$\times$} \\
+Original & 589,824 & 1.00$\times$ \\
+SVD r=384 & 589,824 & \textbf{1.00$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -478,9 +478,9 @@ For meaningful compression, we need $r < d/2$.
 
 We freeze $(U_r, V_r)$ and add LoRA adapters:
 
-\begin{equation}
+\[
 y = U_r V_r x + \frac{\alpha}{r_L} B A x
-\end{equation}
+\]
 
 Only $A, B$ are trained.
 
@@ -494,10 +494,10 @@ correctness.
 
 We split $H$ heads:
 
-\begin{equation}
+\[
 H_\text{local} = \lceil 2H/3 \rceil, \quad
 H_\text{global} = H - H_\text{local}
-\end{equation}
+\]
 
 For $H = 12$:
 \begin{itemize}
@@ -509,9 +509,9 @@ For $H = 12$:
 
 Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
 
-\begin{equation}
+\[
 \text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
-\end{equation}
+\]
 
 with a window mask $|i - j| \leq W/2$.
 
@@ -519,9 +519,9 @@ with a window mask $|i - j| \leq W/2$.
 
 Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
 
-\begin{equation}
+\[
 \text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
 
@@ -529,9 +529,9 @@ with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
 
 The outputs are concatenated:
 
-\begin{equation}
+\[
 \text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
-\end{equation}
+\]
 
 \subsection{Adaptive Gating}
 
@@ -539,9 +539,9 @@ The outputs are concatenated:
 
 Each head has a learnable scalar $g_h$:
 
-\begin{equation}
+\[
 \text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
-\end{equation}
+\]
 
 where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
 
@@ -563,9 +563,9 @@ For decoder models, the local+global split \textbf{does not preserve causality}:
 whole sequence, making the split redundant. We fall back to standard dense 
 causal attention:
 
-\begin{equation}
+\[
 \text{if } \text{is\_decoder} : \text{standard causal softmax}
-\end{equation}
+\]
 
 This preserves correctness at the cost of quadratic complexity for decoders.
 
@@ -573,8 +573,8 @@ This preserves correctness at the cost of quadratic complexity for decoders.
 
 \textbf{Algorithm 1:} AEGIS-V5 forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, is_decoder
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ SVD_Q(X); K $\leftarrow$ SVD_K(X); V $\leftarrow$ SVD_V(X)
 2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
@@ -644,7 +644,7 @@ blend\_logits & 0 & $H$ & +negligible \\
 
 For $d = 768$, $r = 384$ (energy 0.95 default):
 \begin{itemize}
-\item SVD: no compression (ratio 1.00$$\times$)
+\item SVD: no compression (ratio 1.00$\times$)
 \item LoRA: +98,304
 \item RFF: $4 \cdot 64 \cdot 128 = 32,768$
 \item \textbf{Net: +131,072 params per layer}
@@ -652,7 +652,7 @@ For $d = 768$, $r = 384$ (energy 0.95 default):
 \end{itemize}
 For $d = 768$, $r = 128$:
 \begin{itemize}
-\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$$\times$ compression}
+\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$\times$ compression}
 \item LoRA: +98,304
 \item RFF: +32,768
 \item \textbf{Net: -262,144 params per layer}
@@ -666,9 +666,9 @@ For $d = 768$, $r = 128$:
 
 If $W = U\Sigma V^\top$, then:
 
-\begin{equation}
+\[
 \|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
-\end{equation}
+\]
 
 The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
 
@@ -676,9 +676,9 @@ The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
 
 Standard RFF bound (Rahimi \& Recht, 2007):
 
-\begin{equation}
+\[
 \sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
-\end{equation}
+\]
 
 with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
 
@@ -1295,10 +1295,10 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 \toprule
 \textbf{L} & \textbf{Standard (enc)} & \textbf{AEGIS-V5 (enc)} & \textbf{Speedup} \\
 \midrule
-128 & 1.9 & 2.2 & 0.86$$\times$ \\
-256 & 3.8 & 3.5 & 1.09$$\times$ \\
-512 & 9.5 & 6.0 & 1.58$$\times$ \\
-1024 & 28.0 & 10.5 & 2.67$$\times$ \\
+128 & 1.9 & 2.2 & 0.86$\times$ \\
+256 & 3.8 & 3.5 & 1.09$\times$ \\
+512 & 9.5 & 6.0 & 1.58$\times$ \\
+1024 & 28.0 & 10.5 & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1307,7 +1307,7 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 
 \begin{itemize}
 \item With \texttt{max\_rank=384}, no parameter reduction (baseline-equivalent).
-\item With \texttt{max\_rank=128}, ~1.5$$\times$ compression.
+\item With \texttt{max\_rank=128}, ~1.5$\times$ compression.
 \item Decoder fallback preserves accuracy but not complexity.
 \end{itemize}
 \begin{lstlisting}
@@ -1315,10 +1315,10 @@ V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/aegis_v5_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{aegis_v5}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{aegis_v5}.}
 \label{fig:results_aegis_v5}
 \end{figure}
 
@@ -1372,9 +1372,9 @@ matrices have slowly decaying singular values.
 
 \textbf{Key finding.} With default \texttt{max\_rank=384} and \texttt{d=768}:
 
-\begin{equation}
+\[
 r(d + d_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
-\end{equation}
+\]
 
 \textbf{SVD provides no compression} when $r = d/2$.
 
@@ -2003,23 +2003,23 @@ GPT-2 & 69.50\% $\pm$ 1\% \\
 For a weight matrix $W$ with SVD $W = U \Sigma V^\top$, the energy captured 
 by rank $r$ is:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_{i} \sigma_i^2}
-\end{equation}
+\]
 
 We select $r^* = \min \{ r : E(r) \geq \eta \}$.
 
 \textbf{Claim.} The Frobenius error after rank-$r^*$ truncation is bounded by:
 
-\begin{equation}
+\[
 \|W - W_{r^*}\|_F \leq \sqrt{1 - \eta} \cdot \|W\|_F
-\end{equation}
+\]
 
 \textbf{Proof.} By definition of $E(r^*)$:
 
-\begin{equation}
+\[
 \sum_{i > r^*} \sigma_i^2 = (1 - E(r^*)) \|W\|_F^2 \leq (1 - \eta) \|W\|_F^2
-\end{equation}
+\]
 
 Taking square roots gives (A.2). $\square$
 
@@ -2028,9 +2028,9 @@ Taking square roots gives (A.2). $\square$
 For an encoder with $H_\text{local}$ local heads and $H_\text{global}$ 
 global heads:
 
-\begin{equation}
+\[
 \text{FLOPs} = B \cdot L \cdot d_h \cdot (H_\text{local} \cdot W + H_\text{global} \cdot F)
-\end{equation}
+\]
 
 For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 
@@ -2038,35 +2038,35 @@ For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 
 For query at position $i$, the window mask is:
 
-\begin{equation}
+\[
 \text{mask}_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
-\end{equation}
+\]
 
 Causal variant:
 
-\begin{equation}
+\[
 \text{mask}_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
-\end{equation}
+\]
 
 \subsection{A.4 Kernel Linear Attention}
 
 RFF feature map:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} x)
-\end{equation}
+\]
 
 Attention output:
 
-\begin{equation}
+\[
 \text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 \textbf{Zero-sum keys.} Subtract mean:
 
-\begin{equation}
+\[
 \tilde{k}_j = k_j - \bar{k}
-\end{equation}
+\]
 
 Then $\phi(\tilde{k}_j)$ is centered around 1.
 
@@ -2074,17 +2074,17 @@ Then $\phi(\tilde{k}_j)$ is centered around 1.
 
 The V5 stable softmax:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}
-\end{equation}
+\]
 
 This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
 
 The V4 (broken) version:
 
-\begin{equation}
+\[
 \text{softpick}_\text{V4}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
-\end{equation}
+\]
 
 \textbf{Failure case.} If $m < 0$, then $e^{-m/T} > 1$, and 
 $\text{ReLU}(e^{(x_i - m)/T} - e^{-m/T}) = 0$ for all $i$ (since 

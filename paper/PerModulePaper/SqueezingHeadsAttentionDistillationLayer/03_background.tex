@@ -5,17 +5,17 @@
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{equation}
+\]
 
 \textbf{Parameter count.} $W_Q, W_K, W_V \in \mathbb{R}^{d \times d}$, 
 $W_O \in \mathbb{R}^{d \times d}$. Total: $4 d^2$.
@@ -36,9 +36,9 @@ Empirical findings:
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 where $A \in \mathbb{R}^{r_L \times d}$, $B \in \mathbb{R}^{d \times r_L}$, 
 $B = 0$ at initialization. Only $A, B$ are trained.
@@ -55,9 +55,9 @@ $B = 0$ at initialization. Only $A, B$ are trained.
 GQA (Ainslie et al., 2023) uses $H_{kv} < H$ KV heads. When the source 
 attention has more heads than the target, we pool:
 
-\begin{equation}
-W_K^{(\text{target})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\end{equation}
+\[
+{W_K^{(\text{target})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+\]
 
 where $r = H_\text{source} / H_\text{target}$.
 
@@ -65,9 +65,9 @@ where $r = H_\text{source} / H_\text{target}$.
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
-\begin{equation}
+\[
 \tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 Squeezing Heads preserves RoPE through the wrapper.
 
@@ -75,9 +75,9 @@ Squeezing Heads preserves RoPE through the wrapper.
 
 When reducing head dimension from $d_h$ to $d_h / s$:
 
-\begin{equation}
-W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h/s, :}
-\end{equation}
+\[
+W_Q^{(\text{new})} = {W_Q^{(\text{old})}}_{:d_h/s, :}
+\]
 
 We preserve the \textbf{leading} $d_h / s$ rows, corresponding to the principal 
 components of the head.

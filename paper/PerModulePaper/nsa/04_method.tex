@@ -12,7 +12,7 @@ NSA computes a hybrid sparse attention mask that combines:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-      Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+      Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
                  |
                   
       +------------------------+
@@ -172,9 +172,9 @@ topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, Tr
 
 \textbf{Algorithm 1:} NSA forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
         attention_mask, is_causal, w, k
-Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
  1: S $\leftarrow$ Q K^T / sqrt(d_h)                    # (B, H, L, L)
  2: valid $\leftarrow$ get_token_valid_mask(attention_mask)

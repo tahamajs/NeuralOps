@@ -64,7 +64,7 @@ for multi-head self-attention that unifies three mechanisms:
 \begin{enumerate}
 \item \textbf{SVD-factorized attention projections} -- $W_Q, W_K, W_V, W_O$ are
   stored as $U \Sigma V^\top$ factors, reducing projection parameter count
-  by ~4$$\times$.
+  by ~4$\times$.
 \item \textbf{Selective SSM branch} -- a Mamba-style state-space block with causal
   depthwise convolution, input-dependent gating, and a chunked associative
   scan.

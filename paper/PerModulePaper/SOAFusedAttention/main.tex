@@ -73,13 +73,13 @@ rank.
 
 We replace $d \times d$ with $k(d + d) = 2kd$ parameters per projection, 
 yielding a compression ratio of $\frac{d}{2k}$. For $d = 768$ and $k = 128$, 
-this is a \textbf{3$$\times$ reduction}. LoRA adapters attached to the up-projection 
+this is a \textbf{3$\times$ reduction}. LoRA adapters attached to the up-projection 
 provide recovery capacity; base factor weights remain frozen to preserve 
 compression.
 
 On SST-2, SOA Fused Attention achieves \textbf{81.31\%} on DistilBERT 
 (baseline 90.71\%), \textbf{50.92\%} on RoBERTa (baseline 78.56\%), 
-and \textbf{50.92\%} on GPT-2 (baseline 79.36\%), with \textbf{1.92$$\times$--1.92$$\times$} 
+and \textbf{50.92\%} on GPT-2 (baseline 79.36\%), with \textbf{1.92$\times$--1.92$\times$} 
 parameter reduction on attention projections. Peak VRAM decreases by 
 \textbf{10\%}. We support GQA, RoPE, and both causal and 
 bidirectional attention. The implementation is production-hardened with 

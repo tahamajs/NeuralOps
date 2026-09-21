@@ -68,7 +68,7 @@ $\gamma \in \mathbb{R}^r$ that modulates the retained singular values; and (iii)
 a trainable low-rank residual $AB$ initialized to zero.
 
 For $d_\text{out} = d_\text{in} = 768$ and $r = 16$, this reduces stored 
-parameters from 589,824 to \textbf{49,936} -- a \textbf{11.8$$\times$ reduction} -- while 
+parameters from 589,824 to \textbf{49,936} -- a \textbf{11.8$\times$ reduction} -- while 
 maintaining the full expressiveness of a rank-$2r$ effective weight matrix. 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
 within \textbf{-10.43\%} (DistilBERT), \textbf{-27.64\%} (RoBERTa), and 
@@ -77,7 +77,7 @@ within \textbf{-10.43\%} (DistilBERT), \textbf{-27.64\%} (RoBERTa), and
 We honestly report a key limitation: because our forward pass reconstructs 
 the full weight matrix $W = U \text{diag}(\Sigma \odot \gamma) V^\top + AB$ 
 before calling \texttt{F.linear}, \textbf{inference memory and latency are not reduced}. 
-Storage footprint is reduced by \textbf{32$$\times$}, but runtime 
+Storage footprint is reduced by \textbf{32$\times$}, but runtime 
 efficiency is unchanged (or slightly worse due to reconstruction overhead). 
 We identify the necessary change -- performing the forward as three sequential 
 matmuls -- to realize the inference-time benefits.

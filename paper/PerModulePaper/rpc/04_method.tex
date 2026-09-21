@@ -16,14 +16,14 @@ RPC replaces the standard attention score with a sketched version:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
                                    
     +----------+             +----------+
     | Q, K, V  |             | $\Omega$ $\in$ R^   |
-    | proj     |             | {d_h$$\times$r}  |
+    | proj     |             | {d_h$\times$r}  |
     +----+-----+             +----+-----+
          |                        |
                                    
@@ -152,9 +152,9 @@ Softmax & $\mathcal{O}(L^2 H)$ & $\mathcal{O}(L^2 H)$ \\
 \tag{4.6}
 \]
 
-For $d_h = 64, r = 32$: theoretical \textbf{2$$\times$ speedup}.
+For $d_h = 64, r = 32$: theoretical \textbf{2$\times$ speedup}.
 
-For $d_h = 64, r = 16$: theoretical \textbf{4$$\times$ speedup}.
+For $d_h = 64, r = 16$: theoretical \textbf{4$\times$ speedup}.
 
 \textbf{Memory.} RPC \textbf{does not reduce} memory; $S^{RPC}$ is still $L \times L$.
 
@@ -200,8 +200,8 @@ Proj buffer & 0 & 0 \\
 
 \textbf{Algorithm 1:} RPC forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, $\Omega$ (fixed)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, $\Omega$ (fixed)
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)            (B, H, L, d_h)
 2:  K $\leftarrow$ W_K X + LoRA_K(X)

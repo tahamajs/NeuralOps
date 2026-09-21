@@ -1,4 +1,4 @@
-\title{\textbf{MinimalAURORA: Energy-Preserving SVD-Factorized Attention for Efficient Transformers}
+\title{\textbf{MinimalAURORA: Energy-Preserving SVD-Factorized Attention for Efficient Transformers}}
 
 \author{Anonymous authors}
 
@@ -329,7 +329,7 @@ approximation plus LoRA residual. \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
     +----------------------------------------+
-    |  Original weight W $\in$ R^{m$$\times$n}           |
+    |  Original weight W $\in$ R^{m$\times$n}           |
     +----------------+-----------------------+
                      |
                       
@@ -412,8 +412,8 @@ y = \text{up}(\text{down}(x)) + \frac{\alpha}{r_L} B A x
 
 where:
 \begin{itemize}
-\item \texttt{down(x) = x V\_r\^{}\top} (down-projection, no bias)
-\item \texttt{up(z) = z U\_r\^{}\top + b} (up-projection, with bias)
+\item \texttt{down(x) = x V\_r^\top} (down-projection, no bias)
+\item \texttt{up(z) = z U\_r^\top + b} (up-projection, with bias)
 \item \texttt{B A x} (LoRA branch)
 
 \end{itemize}
@@ -499,8 +499,8 @@ For $d = 768$, $r = 32$, $r_L = 16$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Baseline & 589,824 & 1.00$$\times$ \\
-MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$$\times$} \\
+Baseline & 589,824 & 1.00$\times$ \\
+MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -509,7 +509,7 @@ MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$$\times$} \\
 
 \textbf{Algorithm 1:} MinimalAURORA factorization
 \begin{lstlisting}
-Input:  W $\in$ R^{m$$\times$n}, $\epsilon$, r_max, r_L
+Input:  W $\in$ R^{m$\times$n}, $\epsilon$, r_max, r_L
 Output: FactorisedLinear with frozen base + trainable LoRA
 
 1:  U, $\Sigma$, V^T $\leftarrow$ svd(W)
@@ -909,12 +909,12 @@ Companion & \texttt{asvd}, \texttt{aasvd}, \texttt{a3}, \texttt{res\_svd} \\
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{MinimalAURORA} & \textbf{85.44} & -5.27 & 0.8670 & \textbf{50\%$$\times$} & 293 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{MinimalAURORA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$$\times$} & 339 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$$\times$} & 495 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{MinimalAURORA} & \textbf{85.44} & -5.27 & 0.8670 & \textbf{50\%$\times$} & 293 MB MB & 1.42x s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{MinimalAURORA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$\times$} & 339 MB MB & 2.3 s s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$\times$} & 495 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -930,9 +930,9 @@ GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1$
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1004,10 +1004,10 @@ GPT-2 & Ours & 2.3 s s & 0.85 & 495 MB MB \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-0.90 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.95 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.99 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
-0.995 & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ & 0.85 & 32$$\times$ \\
+0.90 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.995 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1079,12 +1079,12 @@ GPT-2 & 1.00 & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ & 79.36\% & 1.00$$\times$ \\
-asvd ($r=32$) & 88.5\% & 12$$\times$ & 75.5\% & 11$$\times$ & 76.8\% & 11$$\times$ \\
-aasvd ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$ \\
-a3 ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$ \\
-res\_svd (16,4) & 88.2\% & 5.9$$\times$ & 74.8\% & 5.5$$\times$ & 75.5\% & 5.5$$\times$ \\
-\textbf{minimal\_aurora} & \textbf{85.44} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
+aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+a3 ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+res\_svd (16,4) & 88.2\% & 5.9$\times$ & 74.8\% & 5.5$\times$ & 75.5\% & 5.5$\times$ \\
+\textbf{minimal\_aurora} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} & \textbf{50.92} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1107,10 +1107,10 @@ GPT-2 & PASS & 50.92 & 32 \\
 
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/minimal_aurora_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{minimal_aurora}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_aurora}.}
 \label{fig:results_minimal_aurora}
 \end{figure}
 
@@ -1169,10 +1169,10 @@ extraction, ensuring weight transfer succeeds for all tested models.
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT params} & \textbf{Ratio} & \textbf{Mean rank} \\
 \midrule
-0.90 & 0.85 & 32$$\times$ & 0.85 \\
-0.95 & 0.85 & 32$$\times$ & 0.85 \\
-0.99 & 0.85 & 32$$\times$ & 0.85 \\
-0.995 & 0.85 & 32$$\times$ & 0.85 \\
+0.90 & 0.85 & 32$\times$ & 0.85 \\
+0.95 & 0.85 & 32$\times$ & 0.85 \\
+0.99 & 0.85 & 32$\times$ & 0.85 \\
+0.995 & 0.85 & 32$\times$ & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1308,7 +1308,7 @@ LoRA & 0 & 2.3 s ms \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{MinimalAURORA is a real compressor.} Parameters reduce by 50\%$$\times$.
+\item \textbf{MinimalAURORA is a real compressor.} Parameters reduce by 50\%$\times$.
 \item \textbf{Energy threshold adapts per layer.} Simpler than AASVD/A3.
 \item \textbf{No activation weighting} -- trades accuracy for simplicity.
 \item \textbf{\texttt{pres\_gate} is unused.} Recommend removal.
@@ -1324,7 +1324,7 @@ LoRA & 0 & 2.3 s ms \\
 
 \subsubsection{Takeaway 1: Real Compression}
 
-MinimalAURORA reduces parameters by 50\%$$\times$.
+MinimalAURORA reduces parameters by 50\%$\times$.
 
 \subsubsection{Takeaway 2: Simplicity}
 
@@ -1380,9 +1380,9 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{MinimalAURORA} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
 VRAM & 183 MB & 293 MB MB & -48.5\%\% \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 85.44\% & -5.27\% \\
 \bottomrule
 \end{tabular}
@@ -1397,11 +1397,11 @@ Accuracy & 90.71\% & 85.44\% & -5.27\% \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Calibration?} & \textbf{Complexity} \\
 \midrule
-ASVD & 88.5\% & 12$$\times$ & No & Low \\
-AASVD & 88.5\% & 5$$\times$ & Yes & High \\
-A3 & 88.5\% & 5$$\times$ & Yes & Medium \\
-Res-SVD & 88.2\% & 5.9$$\times$ & No & Medium \\
-\textbf{MinimalAURORA} & \textbf{85.44} & \textbf{50\%$$\times$} & \textbf{No} & \textbf{Low} \\
+ASVD & 88.5\% & 12$\times$ & No & Low \\
+AASVD & 88.5\% & 5$\times$ & Yes & High \\
+A3 & 88.5\% & 5$\times$ & Yes & Medium \\
+Res-SVD & 88.2\% & 5.9$\times$ & No & Medium \\
+\textbf{MinimalAURORA} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{No} & \textbf{Low} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1512,7 +1512,7 @@ Research-grade. Known issues:
 \subsection{Summary}
 
 We presented \textbf{MinimalAURORA}, an energy-preserving SVD-factorized 
-attention module that reduces parameter count by 50\%$$\times$ while 
+attention module that reduces parameter count by 50\%$\times$ while 
 maintaining accuracy within -5.27\%.
 
 \subsection{Results Recap}
@@ -1524,9 +1524,9 @@ maintaining accuracy within -5.27\%.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & -5.27\% & \textbf{50\%$$\times$} \\
-RoBERTa & -27.64\% & \textbf{2.1$$\times$} \\
-GPT-2 & -28.44\% & \textbf{2.1$$\times$} \\
+DistilBERT & -5.27\% & \textbf{50\%$\times$} \\
+RoBERTa & -27.64\% & \textbf{2.1$\times$} \\
+GPT-2 & -28.44\% & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1654,9 +1654,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 85.44\% & 50\%$$\times$ \\
-RoBERTa & 50.92\% & 2.1$$\times$ \\
-GPT-2 & 50.92\% & 2.1$$\times$ \\
+DistilBERT & 85.44\% & 50\%$\times$ \\
+RoBERTa & 50.92\% & 2.1$\times$ \\
+GPT-2 & 50.92\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1963,7 +1963,7 @@ Initialize to 1.0; monitor during training.
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Energy threshold & 45.2 \\
 Accuracy & 85.44\% \\
 F1 & 0.8670 \\
@@ -1985,7 +1985,7 @@ Final \texttt{output\_scale} & Ubuntu 22.04 \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 Final \texttt{output\_scale} & 0.85 \\
 \bottomrule
@@ -2003,7 +2003,7 @@ Final \texttt{output\_scale} & 0.85 \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 Final \texttt{output\_scale} & 0.85 \\
 \bottomrule
@@ -2019,10 +2019,10 @@ Final \texttt{output\_scale} & 0.85 \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-0.95 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-0.99 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-0.995 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
+0.90 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.95 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.99 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.995 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2298,7 +2298,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

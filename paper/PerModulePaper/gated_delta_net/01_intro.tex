@@ -44,14 +44,14 @@ We seek an attention mechanism $\mathcal{A}$ with the following properties:
 \item \textbf{Delta Rule update} (Widrow--Hoff, 1960): correct the state by the error
   between the predicted value and the observed value:
   $$
-  S\_t = S\_{t-1} + K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  S\_t = S\_{t-1} + K\_t^\top (V\_t - K\_t S\_{t-1})
   \tag{1.2}
   $$
 
 \item \textbf{Input-dependent gating:} replace fixed step size with learnable
   $\alpha_t, \beta_t \in (0, 1)$:
   $$
-  S\_t = \beta\_t S\_{t-1} + \alpha\_t K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  S\_t = \beta\_t S\_{t-1} + \alpha\_t K\_t^\top (V\_t - K\_t S\_{t-1})
   \tag{1.3}
   $$
 
@@ -70,7 +70,7 @@ We seek an attention mechanism $\mathcal{A}$ with the following properties:
 \item \textbf{A chunked implementation} that is exact (not approximate) but uses
   nested Python loops.
 \item \textbf{An honest evaluation} reporting that the implementation is
-  \textbf{~45$$\times$ slower} than baseline on DistilBERT and exceeds memory on larger
+  \textbf{~45$\times$ slower} than baseline on DistilBERT and exceeds memory on larger
   models.
 \item \textbf{A negative result:} the algorithm is not the bottleneck; the
   implementation is.

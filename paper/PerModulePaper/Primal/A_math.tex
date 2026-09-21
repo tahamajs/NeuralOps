@@ -13,36 +13,36 @@ Assume $\text{rank}(QK^\top) = r \le m \ll L$. Then there exists
 $U \in \mathbb{R}^{L \times m}$, $W \in \mathbb{R}^{m \times m}$, 
 $V \in \mathbb{R}^{m \times L}$ such that:
 
-\begin{equation}
+\[
 QK^\top = U W^{-1} V
-\end{equation}
+\]
 
 \subsubsection{A.1.2 Choosing Landmarks}
 
 Select $m$ query landmarks $Q_\text{land}$ and $m$ key landmarks $K_\text{land}$. 
 Define:
 
-\begin{equation}
+\[
 F_1 = Q K_\text{land}^\top, \quad
 F_2 = Q_\text{land} K_\text{land}^\top, \quad
 F_3 = Q_\text{land} K^\top
-\end{equation}
+\]
 
 \subsubsection{A.1.3 Exactness}
 
 If the landmarks span the row and column spaces of $QK^\top$, then:
 
-\begin{equation}
+\[
 Q K^\top = F_1 F_2^{-1} F_3
-\end{equation}
+\]
 
 \textbf{Proof.} Let $Q = Q_\text{land} P_Q + Q_\perp$ where $P_Q$ is a 
 projection matrix. Similarly for $K$. Under the span assumption, 
 $Q_\perp$ and $K_\perp$ are in the null space of $QK^\top$. Then:
 
-\begin{equation}
+\[
 QK^\top = (Q_\text{land} P_Q)(K_\text{land} P_K)^\top = Q_\text{land} P_Q P_K^\top K_\text{land}^\top
-\end{equation}
+\]
 
 Since $Q_\text{land} = Q_\text{land} P_Q$ (landmarks are in span), we have 
 $Q_\text{land} = Q_\text{land} (Q_\text{land}^\top Q_\text{land})^{-1} Q_\text{land}^\top Q$... 
@@ -56,7 +56,7 @@ if $\|I - F_2 X_0\| < 1$.
 
 \textbf{Proof.} Define $E_t = I - F_2 X_t$. Then:
 
-\begin{equation}
+\[
 E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t)
 \]
 
@@ -73,7 +73,7 @@ So $E_{t+1} = E_t^2$. By induction, $E_K = E_0^{2^K}$. If $\|E_0\| \le \rho < 1$
 
 \[
 \|E_K\| \le \rho^{2^K}
-\end{equation}
+\]
 
 which decays double-exponentially. $\square$
 
@@ -96,9 +96,9 @@ Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
 
 \textbf{Proposition.} For $A = QK^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
-\begin{equation}
+\[
 \|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
-\end{equation}
+\]
 
 where $\epsilon_\text{landmark}$ depends on how well the landmarks span the 
 principal subspaces.
@@ -113,9 +113,9 @@ $\square$
 
 For causal attention with mask $M$:
 
-\begin{equation}
+\[
 \|A_\text{causal} - \tilde{A}_\text{causal}\|_F \leq \|A - \tilde{A}\|_F + \|\tilde{A}_\text{upper}\|_F
-\end{equation}
+\]
 
 where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$ 
 (before masking). This bounds the error introduced by approximate causality.
@@ -124,9 +124,9 @@ where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$
 
 Applying softmax to $\tilde{A}$ instead of $A$ introduces additional error:
 
-\begin{equation}
+\[
 \|\sigma(\tilde{A}) - \sigma(A)\| \le \|\tilde{A} - A\|
-\end{equation}
+\]
 
 by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
 suitable conditions).

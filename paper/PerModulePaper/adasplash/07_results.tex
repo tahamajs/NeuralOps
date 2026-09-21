@@ -41,9 +41,9 @@ GPT-2 & \textbf{AdaSplash} & \textbf{78.78} & -0.58 & 0.7891 & 125.63M & 810 MB 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AdaSplash} & \textbf{Change} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$$\times$ \\
-RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$$\times$ \\
-GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$$\times$ \\
+DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$\times$ \\
+RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$\times$ \\
+GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,7 +93,7 @@ GPT-2 \& AdaSplash & 8.0 & 16000 & 810 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$$\times$ 
+\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$\times$ 
 due to the entmax bisection (25 iterations per attention call).
 
 \subsection{Ablation: $\alpha$ Parameter}
@@ -254,9 +254,9 @@ GPT-2 & 128 & 76 \\
 \item \textbf{Not a compression method.}
 \end{itemize}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/adasplash_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{adasplash}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{adasplash}.}
 \label{fig:results_adasplash}
 \end{figure}

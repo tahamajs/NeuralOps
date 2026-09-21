@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ \\
-DistilBERT & \textbf{MLA} & \textbf{50.92} & -39.79 & 0.6748 & 66.4MM & \textbf{50\%$$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$$\times$ \\
-RoBERTa & \textbf{MLA} & \textbf{50.92} & -27.64 & 0.6748 & 124.6MM & \textbf{2.1$$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$$\times$ \\
-GPT-2 & \textbf{MLA} & \textbf{57.22} & -22.14 & 0.5260 & 124.4MM & \textbf{2.1$$\times$} \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ \\
+DistilBERT & \textbf{MLA} & \textbf{50.92} & -39.79 & 0.6748 & 66.4MM & \textbf{50\%$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ \\
+RoBERTa & \textbf{MLA} & \textbf{50.92} & -27.64 & 0.6748 & 124.6MM & \textbf{2.1$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ \\
+GPT-2 & \textbf{MLA} & \textbf{57.22} & -22.14 & 0.5260 & 124.4MM & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{MLA} & \textbf{57.22} & -22.14 & 0.5260 & 124.4MM & \textbf{2.1$
 \toprule
 \textbf{Model} & \textbf{Standard KV} & \textbf{MLA KV} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 1536 & 0.85 & \textbf{2.1$$\times$} \\
-RoBERTa & 1536 & 0.85 & \textbf{2.1$$\times$} \\
-GPT-2 & 1536 & 0.85 & \textbf{2.1$$\times$} \\
+DistilBERT & 1536 & 0.85 & \textbf{2.1$\times$} \\
+RoBERTa & 1536 & 0.85 & \textbf{2.1$\times$} \\
+GPT-2 & 1536 & 0.85 & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,9 +67,9 @@ GPT-2 & 84.5 MB & 0.85 MB & 84.5 MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After MLA} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 66.4M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 66.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 66.4M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 66.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,13 +83,13 @@ GPT-2 & 124,441,344 & 66.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{MLA} & \textbf{Ratio} \\
 \midrule
-q\_lin & 589,824 & 0.85 & 32$$\times$ \\
+q\_lin & 589,824 & 0.85 & 32$\times$ \\
 k\_lin & 589,824 & \textbf{fused in kv} & -- \\
 v\_lin & 589,824 & \textbf{fused in kv} & -- \\
 kv\_down & -- & 0.85 & -- \\
 k\_up & -- & 0.85 & -- \\
 v\_up & -- & 0.85 & -- \\
-out\_lin & 589,824 & 0.85 & 32$$\times$ \\
+out\_lin & 589,824 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -144,10 +144,10 @@ GPT-2 & MLA & 2.3 s s & 0.85 & 512 MB MB \\
 \toprule
 \textbf{$c$} & \textbf{DistilBERT} & \textbf{KV ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-128 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-256 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
-512 & 0.85 & 32$$\times$ & 0.85 & 0.85 \\
+64 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+128 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+256 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+512 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -217,10 +217,10 @@ Without $\gamma$ & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{KV ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-full & 90.71\% & 1.0$$\times$ & 78.56\% & 79.36\% \\
-minimal\_svd & 0.85 & 1.0$$\times$ & 32 & 0.85 \\
-svd\_llm\_v2 & 0.85 & 1.0$$\times$ & 32 & 0.85 \\
-\textbf{MLA} & \textbf{50.92} & \textbf{2.1$$\times$} & \textbf{50.92} & \textbf{57.22} \\
+full & 90.71\% & 1.0$\times$ & 78.56\% & 79.36\% \\
+minimal\_svd & 0.85 & 1.0$\times$ & 32 & 0.85 \\
+svd\_llm\_v2 & 0.85 & 1.0$\times$ & 32 & 0.85 \\
+\textbf{MLA} & \textbf{50.92} & \textbf{2.1$\times$} & \textbf{50.92} & \textbf{57.22} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -241,7 +241,7 @@ parameter count.
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{KV-cache reduction:} 2.1$$\times$--2.1$$\times$
+\item \textbf{KV-cache reduction:} 2.1$\times$--2.1$\times$
 \item \textbf{Accuracy drop:} -39.79\%---22.14\%
 \item \textbf{All three models pass quality gate.}
 \item \textbf{Reproduction successful:} MLA ports to four non-DeepSeek families.
@@ -251,9 +251,9 @@ parameter count.
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/mla_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{mla_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mla_attention}.}
 \label{fig:results_mla_attention}
 \end{figure}

@@ -4,21 +4,21 @@
 
 Given $W_Q, W_K, W_V$, stack:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
-\end{equation}
+\]
 
 Full SVD:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 Truncate to rank $r$:
 
-\begin{equation}
+\[
 W_{QKV} \approx U_r \Sigma_r V_r^\top
-\end{equation}
+\]
 
 with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
@@ -26,10 +26,10 @@ with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
 Distribute $\Sigma^{1/2}$:
 
-\begin{equation}
+\[
 U_r' = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
 V_r' = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
-\end{equation}
+\]
 
 Store:
 \begin{itemize}
@@ -40,9 +40,9 @@ Store:
 \end{itemize}
 \textbf{Forward:}
 
-\begin{equation}
+\[
 \text{QKV} = \left((X V_{QKV, r}^\top) \cdot S_{QKV, r}\right) U_{QKV, r}^\top
-\end{equation}
+\]
 
 \subsection{A.3 Parameter Count}
 
@@ -61,21 +61,21 @@ $U_{QKV, r}$ & $(H d_h + 2 H_{kv} d_h) \times r$ & $r (H d_h + 2 H_{kv} d_h)$ \\
 \end{table}
 
 For $H = H_{kv}$, $d_h = d/H$:
-\begin{equation}
+\[
 \text{Total} = r d + r + r (d + 2 d_h) = r(2d + 2 d_h) + r
-\end{equation}
+\]
 
 \subsection{A.4 Comparison with Independent SVD}
 
 Independent:
-\begin{equation}
+\[
 \text{Params}_\text{indep} = 2 r d \cdot 3 = 6 r d
-\end{equation}
+\]
 
 Joint:
-\begin{equation}
+\[
 \text{Params}_\text{joint} = 2 r (d + d_h) + r
-\end{equation}
+\]
 
 For $d = 768$, $d_h = 64$:
 \begin{itemize}
@@ -89,29 +89,29 @@ For $d = 768$, $d_h = 64$:
 
 For $W_O \in \mathbb{R}^{d \times H d_h}$:
 
-\begin{equation}
+\[
 W_O = U_O \Sigma_O V_O^\top
-\end{equation}
+\]
 
 Truncate to $r_{out}$:
 
-\begin{equation}
+\[
 W_O \approx U_{O, r} \Sigma_{O, r} V_{O, r}^\top
-\end{equation}
+\]
 
 \subsection{A.6 LoRA on Both Branches}
 
 QKV LoRA:
 
-\begin{equation}
+\[
 \text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} X
-\end{equation}
+\]
 
 Output LoRA:
 
-\begin{equation}
+\[
 \text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \text{Context}
-\end{equation}
+\]
 
 Both have $B = 0$ at initialization.
 
@@ -119,15 +119,15 @@ Both have $B = 0$ at initialization.
 
 By Eckart-Young:
 
-\begin{equation}
+\[
 \|W_{QKV} - W_{QKV, r}\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}
-\end{equation}
+\]
 
 The energy fraction:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
-\end{equation}
+\]
 
 We can choose $r$ such that $E(r) \geq \eta$.
 
@@ -135,9 +135,9 @@ We can choose $r$ such that $E(r) \geq \eta$.
 
 Standard triangular mask before softmax:
 
-\begin{equation}
+\[
 \text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
-\end{equation}
+\]
 
 \subsection{A.9 Nested Encoder Correctness}
 

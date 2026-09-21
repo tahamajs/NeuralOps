@@ -1,0 +1,106 @@
+{
+  "max_parallel": 8,
+  "jobs": [
+    {
+      "id": "adaptive_svd_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aasvd_mnli_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r32 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aasvd_mnli_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aasvd_mnli_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aasvd_mnli_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r256 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "threshold_flip_group1",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybrid_svd orion block_transformer_hiba leka_v1 infini fusion_attn --lora_rank 16 --batch_size 8 --parallel 1 --output_suffix threshold_flip --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 4 --output_suffix drone_rob64 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "kmeans_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix kmeans_rob --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "a3_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 4 --output_suffix a3_rob --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "adaptive_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 4 --output_suffix adaptive_rob --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "lora2_group2a",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span adaptive_sparse chela_slay cluster fms fusion_attn halo_regla hamming hamming_attention infini kda kda_attention kronecker_tt_lora linformer --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupA --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "lora2_group2b",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1 leka_v2 leka_v3 moba moe_deltakv_paged nasc nexus nha oha ptp qcqa rala simple_ssm --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupB --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "hgrn2_outer_retry",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_outer --parallel 1 --batch_size 4 --output_suffix hgrn2_outer_retry --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "fail_rerun_group7",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer gqa performer_attention aegis_v2 mamba --recovery_steps 100 --parallel 1 --batch_size 4 --output_suffix fail_rerun --fresh",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [],
+  "completed": [],
+  "failed": []
+}

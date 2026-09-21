@@ -84,15 +84,15 @@ For a single attention layer at $L = 128$, $k = 64$:
 \toprule
 \textbf{Operation} & \textbf{Baseline} & \textbf{TCA} & \textbf{Ratio} \\
 \midrule
-QK\^{}T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$$\times$ \\
-Softmax & $L^2$ & $L \cdot k$ & 2.0$$\times$ \\
-AV & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$$\times$ \\
+QK^T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
+Softmax & $L^2$ & $L \cdot k$ & 2.0$\times$ \\
+AV & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
 Score net & 0 & $L d_h \cdot 64$ & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Overall: ~12.5$$\times$ reduction.
+Overall: ~12.5$\times$ reduction.
 
 \subsection{Failure Modes}
 

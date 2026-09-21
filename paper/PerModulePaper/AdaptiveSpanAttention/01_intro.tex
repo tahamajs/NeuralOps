@@ -47,16 +47,16 @@ spans via:
 \begin{enumerate}
 \item \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking
   function is:
-  \begin{equation}
+  \[
 g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
-\end{equation}
+\]
   where $d$ is the query-key distance. This is \textbf{piecewise linear} and
   \textbf{differentiable} in $z_h$.
 
 \item \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
-  \begin{equation}
+  \[
 z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
-\end{equation}
+\]
 
 \item \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages
   the model to \textbf{shrink} spans that are not needed. At initialization,

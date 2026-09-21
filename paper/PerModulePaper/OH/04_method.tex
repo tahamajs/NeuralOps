@@ -15,7 +15,7 @@ OHA replaces MHSA with a two-branch block:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -57,17 +57,17 @@ OHA replaces MHSA with a two-branch block:
 
 For causal models:
 
-\begin{equation}
+\[
 M_{ij}^\text{local} = \begin{cases} 0 \& j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
-\end{equation}
+\]
 
 For bidirectional: symmetric.
 
 \subsubsection{Local Attention}
 
-\begin{equation}
+\[
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
-\end{equation}
+\]
 
 \textbf{Complexity:} $\mathcal{O}(L W d)$.
 
@@ -77,20 +77,20 @@ For bidirectional: symmetric.
 
 We introduce two learnable projections:
 
-\begin{equation}
+\[
 W_k^\text{comp} \in \mathbb{R}^{d \times d_c}, \qquad
 W_v^\text{comp} \in \mathbb{R}^{d \times d_c}
-\end{equation}
+\]
 
 These produce compression weights:
 
-\begin{equation}
+\[
 P_K = \text{softmax}\!\left(X W_k^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
-\end{equation}
+\]
 
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
 a distribution over the $L$ tokens.
@@ -99,19 +99,19 @@ a distribution over the $L$ tokens.
 
 The compressed keys and values are:
 
-\begin{equation}
+\[
 C_K = K^\top P_K \in \mathbb{R}^{B \times d_c \times d_h H}, \qquad
 C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
-\end{equation}
+\]
 
 \textbf{Interpretation.} Each of the $d_c$ summary slots is a weighted average of 
 the sequence's keys (or values). The weights are data-dependent.
 
 \subsubsection{Global Attention}
 
-\begin{equation}
+\[
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
-\end{equation}
+\]
 
 The softmax is over $d_c$ slots. This is the same shape as full attention 
 but with $L$ replaced by $d_c$.
@@ -122,9 +122,9 @@ but with $L$ replaced by $d_c$.
 
 For causal models, the compression must not leak future information:
 
-\begin{equation}
+\[
 C_{K, j} = \frac{\sum_{i \leq \text{pos}(j)} \exp(\cdots) K_i}{\sum_{i \leq \text{pos}(j)} \exp(\cdots)}
-\end{equation}
+\]
 
 where $\text{pos}(j)$ is a monotonic mapping from slot index to position.
 
@@ -139,25 +139,25 @@ global_scores = global_scores.masked_fill(~causal_global, -1e4)
 
 \subsubsection{The Gate}
 
-\begin{equation}
+\[
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
-\end{equation}
+\]
 
 with $W_g \in \mathbb{R}^{d \times H}$.
 
 \subsubsection{Fusion}
 
-\begin{equation}
+\[
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
 We initialize the gate bias to $2.0$:
 
-\begin{equation}
+\[
 \sigma(2.0) \approx 0.88
-\end{equation}
+\]
 
 So the model starts by favoring the local branch. As training progresses, 
 the gate adapts.
@@ -171,8 +171,8 @@ destabilize training.
 
 \textbf{Algorithm 1:} OHA forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, W, d_c
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, W, d_c
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -197,7 +197,7 @@ Output: Y $\in$ R^{B$$\times$L$$\times$d}
 21: out_global $\leftarrow$ P_global C_V
 22:
 23: # Gating
-24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$$\times$L$$\times$H}
+24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$\times$L$\times$H}
 25: combined $\leftarrow$ $\gamma$   out_local + (1-$\gamma$)   out_global
 26:
 27: combined $\leftarrow$ concat_heads(combined)
@@ -245,7 +245,7 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
 \]
 
-\textbf{~43$$\times$ faster} in attention.
+\textbf{~43$\times$ faster} in attention.
 
 \subsection{Parameter Analysis}
 

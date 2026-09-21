@@ -8,7 +8,7 @@ MoE-DeltaKV-Paged has four stages:
 \item \textbf{Projection + RoPE} ( 4.2): standard Q/K/V projection with optional RoPE.
 \item \textbf{Delta-KV compression} ( 4.3): temporal deltas $\to$ SVD $\to$ 4-bit quantization $\to$ reconstruction.
 \item \textbf{Paged attention with MoBA routing} ( 4.4): top-$k$ page selection per query page.
-\item \textbf{Gated fusion + output projection} ( 4.5): mixture weights $$\times$ page contexts + output.
+\item \textbf{Gated fusion + output projection} ( 4.5): mixture weights $\times$ page contexts + output.
 
 \end{enumerate}
 \begin{lstlisting}
@@ -195,8 +195,8 @@ context = (context_per_expert * g_j_exp).sum(dim=3)
 
 \textbf{Algorithm 1:} MoE-DeltaKV-Paged forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ query(X); K $\leftarrow$ key(X); V $\leftarrow$ value(X)
  2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)

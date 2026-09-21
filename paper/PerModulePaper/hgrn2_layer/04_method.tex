@@ -6,7 +6,7 @@ HGRN2Layer replaces standard attention with a single element-wise recurrence.
 The pipeline is:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -187,9 +187,9 @@ model to suppress or amplify the recurrence.
 
 \textbf{Algorithm 1:} HGRN2Layer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         chunk_size C = 32
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: f $\leftarrow$ exp(clamp(-softplus(W_f X + b_f), -3, -1e-4))
  2: i $\leftarrow$ sigmoid(W_i X + b_i)

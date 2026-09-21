@@ -72,7 +72,7 @@ For DistilBERT on SST-2:
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 Params & 66.95M & 67549448M & +594438 \\
 VRAM & 183 MB & 195 MB & +12 \\
-Inference time & 1.90 s & 3.5 s & 1.84$$\times$ \\
+Inference time & 1.90 s & 3.5 s & 1.84$\times$ \\
 Attention sparsity & 0\% & 42\% & +40\% \\
 \bottomrule
 \end{tabular}
@@ -89,11 +89,11 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Sparse} & \textbf{Latency} \\
 \midrule
-Softmax \& Baseline & 0\% \& No & 1$$\times$ \\
-Longformer \& Local & 0\% \& No & ~1$$\times$ \\
-Performer \& Kernel & +linear \& No & ~1$$\times$ \\
-Sparsemax \& Activation & 0\% \& Yes & ~5$$\times$ \\
-\textbf{AdaSplash} & \textbf{Activation + Local} & \textbf{+1\%} & \textbf{Yes} & \textbf{~1.9$$\times$} \\
+Softmax \& Baseline & 0\% \& No & 1$\times$ \\
+Longformer \& Local & 0\% \& No & ~1$\times$ \\
+Performer \& Kernel & +linear \& No & ~1$\times$ \\
+Sparsemax \& Activation & 0\% \& Yes & ~5$\times$ \\
+\textbf{AdaSplash} & \textbf{Activation + Local} & \textbf{+1\%} & \textbf{Yes} & \textbf{~1.9$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,7 +104,7 @@ Sparsemax \& Activation & 0\% \& Yes & ~5$$\times$ \\
 AdaSplash increases storage slightly due to LoRA.
 
 \subsubsection{Latency}
-~1.9$$\times$ slower. Acceptable for research; not for production.
+~1.9$\times$ slower. Acceptable for research; not for production.
 
 \subsubsection{Interpretability}
 Sparse attention maps can be visualized directly.

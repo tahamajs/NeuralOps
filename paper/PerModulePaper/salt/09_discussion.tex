@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Parameter Reduction}
 
-Unlike LoRA, SALT \textbf{actually reduces} total parameters by 12$$\times$. This is a 
+Unlike LoRA, SALT \textbf{actually reduces} total parameters by 12$\times$. This is a 
 real benefit for storage-constrained deployment.
 
 \subsubsection{Takeaway 2: Inference Memory Unchanged}
@@ -70,11 +70,11 @@ Consider SALT + quantization
 \toprule
 \textbf{Method} & \textbf{Storage} & \textbf{Inference VRAM} & \textbf{Latency} \\
 \midrule
-Full & 100\% & 100\% & 1.0$$\times$ \\
-LoRA & 100\% & 100\% & 1.0$$\times$ \\
-SVD Comp & 10\% & 10\% (fused) & 0.5$$\times$ (fused) \\
-\textbf{SALT (naive)} & \textbf{8\%} & \textbf{100\%} & \textbf{1.2$$\times$} \\
-\textbf{SALT (fused)} & \textbf{8\%} & \textbf{10\%} & \textbf{0.5$$\times$ (expected)} \\
+Full & 100\% & 100\% & 1.0$\times$ \\
+LoRA & 100\% & 100\% & 1.0$\times$ \\
+SVD Comp & 10\% & 10\% (fused) & 0.5$\times$ (fused) \\
+\textbf{SALT (naive)} & \textbf{8\%} & \textbf{100\%} & \textbf{1.2$\times$} \\
+\textbf{SALT (fused)} & \textbf{8\%} & \textbf{10\%} & \textbf{0.5$\times$ (expected)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,7 +108,7 @@ SVD Comp & 10\% & 10\% (fused) & 0.5$$\times$ (fused) \\
 \begin{enumerate}
 \item \textbf{Use SALT for storage, not for inference.}
 \item \textbf{Implement fused forward before latency-sensitive use.}
-\item \textbf{Combine with quantization for 24$$\times$ combined compression.}
+\item \textbf{Combine with quantization for 24$\times$ combined compression.}
 \item \textbf{Keep rank r $\ge$ 16} for stability.
 \end{enumerate}
 \begin{lstlisting}

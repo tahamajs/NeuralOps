@@ -1,4 +1,4 @@
-\title{\textbf{REAP-MoE: Robust Expert Allocation and Pruning for Transformer Mixture-of-Experts}
+\title{\textbf{REAP-MoE: Robust Expert Allocation and Pruning for Transformer Mixture-of-Experts}}
 
 \author{Anonymous authors}
 
@@ -435,8 +435,8 @@ when imbalanced.
 
 \textbf{Algorithm 1:} REAP-MoE forward pass
 \begin{lstlisting}
-Input:  x $\in$ R^{B$$\times$L$$\times$d}
-Output: y $\in$ R^{B$$\times$L$$\times$d}, L_aux
+Input:  x $\in$ R^{B$\times$L$\times$d}
+Output: y $\in$ R^{B$\times$L$\times$d}, L_aux
 
 1:  # Attention stage
 2:  Q $\leftarrow$ LN_1(x); K $\leftarrow$ LN_1(x); V $\leftarrow$ LN_1(x)
@@ -497,7 +497,7 @@ Compare to standard FFN:
 \tag{4.17}
 \]
 
-So MoE with SVD is \textbf{1.5$$\times$ the FFN parameters}, not 8$$\times$ as in standard MoE.
+So MoE with SVD is \textbf{1.5$\times$ the FFN parameters}, not 8$\times$ as in standard MoE.
 
 \subsubsection{Compute}
 
@@ -508,7 +508,7 @@ Per token, only $k$ experts run:
 \tag{4.18}
 \]
 
-For $k = 2$, this is 2$$\times$ the SVD layer's FLOPs.
+For $k = 2$, this is 2$\times$ the SVD layer's FLOPs.
 
 \subsubsection{Summary}
 
@@ -520,7 +520,7 @@ For $k = 2$, this is 2$$\times$ the SVD layer's FLOPs.
 \textbf{Component} & \textbf{Original FFN} & \textbf{REAP-MoE (E=8, k=2)} \\
 \midrule
 Parameters & $8d^2$ & $1.5 E d^2 \approx 12d^2$ \\
-Per-token FLOPs & $8d^2$ & $3 k d^2 = 6d^2$ (SVD $$\times$ k) \\
+Per-token FLOPs & $8d^2$ & $3 k d^2 = 6d^2$ (SVD $\times$ k) \\
 Effective capacity & $8d^2$ & $12d^2$ \\
 \bottomrule
 \end{tabular}
@@ -741,9 +741,9 @@ Because the framework replaces only the attention module, the original FFN
 still runs. This means:
 
 \begin{itemize}
-\item \textbf{Effective capacity:} 2$$\times$ (MoE + original FFN)
-\item \textbf{Parameters:} ~2$$\times$ (MoE + original FFN)
-\item \textbf{Compute:} ~2$$\times$ (attention + MoE + FFN)
+\item \textbf{Effective capacity:} 2$\times$ (MoE + original FFN)
+\item \textbf{Parameters:} ~2$\times$ (MoE + original FFN)
+\item \textbf{Compute:} ~2$\times$ (attention + MoE + FFN)
 
 \end{itemize}
 For a cleaner integration, the FFN should be removed. We leave this as 
@@ -970,7 +970,7 @@ MoE experts (8) & 0 & ~7.1M \\
 Router & 0 & ~5.9K \\
 LayerNorm (2) & 0 & 3K \\
 \textbf{Total} & \textbf{4.72M} & \textbf{~9.47M} \\
-\textbf{Ratio} & 1.00$$\times$ & \textbf{2.01$$\times$} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{2.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -993,7 +993,7 @@ GPT-2 & 0.85\% & 0.85\% & 0.85\% & 0.85\% & 0.85 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Utilization is balanced within \textbf{0.85$$\times$} on DistilBERT.
+\textbf{Observation.} Utilization is balanced within \textbf{0.85$\times$} on DistilBERT.
 
 \subsection{Efficiency Profile}
 
@@ -1023,10 +1023,10 @@ DistilBERT & REAP-MoE & 1.42x s & 0.85 & 554 MB MB \\
 \toprule
 \textbf{$E$} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-2 & 86.4\% & 66.4M & 2.1$$\times$ \\
-4 & 86.4\% & 66.4M & 2.1$$\times$ \\
-8 & 86.4\% & 66.4M & 2.1$$\times$ \\
-16 & 86.4\% & 66.4M & 2.1$$\times$ \\
+2 & 86.4\% & 66.4M & 2.1$\times$ \\
+4 & 86.4\% & 66.4M & 2.1$\times$ \\
+8 & 86.4\% & 66.4M & 2.1$\times$ \\
+16 & 86.4\% & 66.4M & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1042,9 +1042,9 @@ DistilBERT & REAP-MoE & 1.42x s & 0.85 & 554 MB MB \\
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{FLOPs} & \textbf{Accuracy} \\
 \midrule
-1 & 86.4\% & 1$$\times$ & 86.4\%\% \\
-2 & 86.4\% & 2$$\times$ & 86.4\%\% \\
-4 & 86.4\% & 4$$\times$ & 86.4\%\% \\
+1 & 86.4\% & 1$\times$ & 86.4\%\% \\
+2 & 86.4\% & 2$\times$ & 86.4\%\% \\
+4 & 86.4\% & 4$\times$ & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1130,7 +1130,7 @@ No noise & 0.85 & 0.85 \\
 \begin{itemize}
 \item \textbf{Accuracy:} 90.02\% on DistilBERT
 \item \textbf{Parameter change:} 66.4M (increase due to MoE)
-\item \textbf{Expert balance:} 0.85$$\times$ max/min utilization
+\item \textbf{Expert balance:} 0.85$\times$ max/min utilization
 \item \textbf{VRAM:} 554 MB MB
 \end{itemize}
 \begin{lstlisting}
@@ -1138,10 +1138,10 @@ No noise & 0.85 & 0.85 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/reap_moe_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{reap_moe}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{reap_moe}.}
 \label{fig:results_reap_moe}
 \end{figure}
 
@@ -1152,7 +1152,7 @@ No noise & 0.85 & 0.85 \\
 
 \subsubsection{Increased Capacity}
 
-With $E = 8$ experts, the effective FFN capacity is 8$$\times$ the original. Even 
+With $E = 8$ experts, the effective FFN capacity is 8$\times$ the original. Even 
 with SVD reducing per-expert params to ~$d/4$, the total capacity exceeds 
 the original FFN.
 
@@ -1160,7 +1160,7 @@ the original FFN.
 
 \textbf{Figure 8.1} shows expert utilization over training. Without aux loss, 
 the router collapses to 1-2 experts. With aux loss, utilization is balanced 
-within 0.85$$\times$.
+within 0.85$\times$.
 
 \subsubsection{Zero-Init Stability}
 
@@ -1237,13 +1237,13 @@ training.
 
 \subsubsection{Parameter Bloat}
 
-With $E = 16$, parameters can 3$$\times$ the original. Mitigation: reduce $E$ or 
+With $E = 16$, parameters can 3$\times$ the original. Mitigation: reduce $E$ or 
 increase SVD compression.
 
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{SVD experts reduce per-expert params} by ~4$$\times$.
+\item \textbf{SVD experts reduce per-expert params} by ~4$\times$.
 \item \textbf{Aux loss is essential} for balanced utilization.
 \item \textbf{Zero-init final layer} is critical for stability.
 \item \textbf{$E = 8$, $k = 2$ is a sweet spot.}
@@ -1260,16 +1260,16 @@ increase SVD compression.
 
 \subsubsection{Takeaway 1: MoE Increases Capacity}
 
-REAP-MoE with $E = 8$ experts provides ~8$$\times$ effective FFN capacity, at ~2$$\times$ 
+REAP-MoE with $E = 8$ experts provides ~8$\times$ effective FFN capacity, at ~2$\times$ 
 parameter cost due to SVD compression.
 
 \subsubsection{Takeaway 2: SVD Reduces Bloat}
 
-Standard MoE with $E = 8$ would 8$$\times$ FFN params. SVD reduces this to ~1.5$$\times$.
+Standard MoE with $E = 8$ would 8$\times$ FFN params. SVD reduces this to ~1.5$\times$.
 
 \subsubsection{Takeaway 3: Load-Balancing Works}
 
-The auxiliary loss keeps expert utilization balanced within 0.85$$\times$.
+The auxiliary loss keeps expert utilization balanced within 0.85$\times$.
 
 \subsection{When to Use REAP-MoE}
 
@@ -1301,7 +1301,7 @@ For DistilBERT:
 Params & 66.95M & 66.4MM & 66.4M \\
 Accuracy & 90.71\% & 90.02\% & -0.69\% \\
 VRAM & 183 MB & 554 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.3 s$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1318,7 +1318,7 @@ Time & 1.90 s & 1.42x s & 2.3 s$$\times$ \\
 Shazeer (2017) & Noisy top-k & Dense & None \\
 Switch & Top-1 & Dense & None \\
 GShard & Top-2 & Dense & None \\
-\textbf{REAP-MoE} & \textbf{Noisy top-k} & \textbf{SVD} & \textbf{~4$$\times$/expert} \\
+\textbf{REAP-MoE} & \textbf{Noisy top-k} & \textbf{SVD} & \textbf{~4$\times$/expert} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1326,7 +1326,7 @@ GShard & Top-2 & Dense & None \\
 \subsection{Deployment Considerations}
 
 \subsubsection{Storage}
-REAP-MoE increases storage by ~2$$\times$ vs baseline. Not suitable for edge 
+REAP-MoE increases storage by ~2$\times$ vs baseline. Not suitable for edge 
 deployment without further compression.
 
 \subsubsection{Latency}
@@ -1472,7 +1472,7 @@ GPT-2 & 52.41\% & 66.4M & 380 MB \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{SVD reduces expert params} by ~4$$\times$.
+\item \textbf{SVD reduces expert params} by ~4$\times$.
 \item \textbf{Aux loss prevents collapse.}
 \item \textbf{Zero-init stabilizes training.}
 \item \textbf{Parameter growth is real} -- REAP-MoE is a re-architecture, not a
@@ -2096,9 +2096,9 @@ Accuracy & 52.41\% \\
 \toprule
 \textbf{k} & \textbf{DistilBERT} & \textbf{FLOPs} \\
 \midrule
-1 & 86.4\% & 1$$\times$ \\
-2 & 86.4\% & 2$$\times$ \\
-4 & 86.4\% & 4$$\times$ \\
+1 & 86.4\% & 1$\times$ \\
+2 & 86.4\% & 2$\times$ \\
+4 & 86.4\% & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2160,7 +2160,7 @@ done
 
 \textbf{Goal.} Compare with dense experts.
 
-\textbf{Result.} Params 8$$\times$ original; OOM on 12-layer models.
+\textbf{Result.} Params 8$\times$ original; OOM on 12-layer models.
 
 \textbf{Conclusion.} SVD is necessary for parameter control.
 
@@ -2168,7 +2168,7 @@ done
 
 \textbf{Goal.} More experts.
 
-\textbf{Result.} Params 3$$\times$ original; OOM.
+\textbf{Result.} Params 3$\times$ original; OOM.
 
 \textbf{Conclusion.} E = 8 is a practical upper limit on 8 GB GPU.
 
@@ -2176,7 +2176,7 @@ done
 
 \textbf{Goal.} More experts per token.
 
-\textbf{Result.} 4$$\times$ FLOPs; no accuracy improvement.
+\textbf{Result.} 4$\times$ FLOPs; no accuracy improvement.
 
 \textbf{Conclusion.} k = 2 is optimal.
 
@@ -2311,7 +2311,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 

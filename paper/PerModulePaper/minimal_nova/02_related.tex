@@ -61,15 +61,15 @@ MinimalNOVA supports GQA via \texttt{repeat\_kv} at attention time.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} \\
 \midrule
-DistilBERT & Distillation & 1.6$$\times$ & Yes (from scratch) \\
-TinyBERT & Distillation & 7$$\times$ & Yes \\
-SparseGPT & Pruning & 2-4$$\times$ & No \\
-Wanda & Pruning & 2$$\times$ & No \\
-AWQ & Quantization & 4$$\times$ & No \\
-GPTQ & Quantization & 4$$\times$ & No \\
-A3 & Low-rank + diagonal & 5$$\times$ & LoRA \\
-AASVD & Low-rank + full cov & 5$$\times$ & LoRA \\
-\textbf{MinimalNOVA} & \textbf{Low-rank + energy-adaptive} & \textbf{50\%$$\times$} & \textbf{LoRA} \\
+DistilBERT & Distillation & 1.6$\times$ & Yes (from scratch) \\
+TinyBERT & Distillation & 7$\times$ & Yes \\
+SparseGPT & Pruning & 2-4$\times$ & No \\
+Wanda & Pruning & 2$\times$ & No \\
+AWQ & Quantization & 4$\times$ & No \\
+GPTQ & Quantization & 4$\times$ & No \\
+A3 & Low-rank + diagonal & 5$\times$ & LoRA \\
+AASVD & Low-rank + full cov & 5$\times$ & LoRA \\
+\textbf{MinimalNOVA} & \textbf{Low-rank + energy-adaptive} & \textbf{50\%$\times$} & \textbf{LoRA} \\
 \bottomrule
 \end{tabular}
 \end{table}

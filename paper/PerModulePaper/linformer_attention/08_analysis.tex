@@ -14,7 +14,7 @@ than $L$.
 \subsubsection{Diagonal Init Accelerates Convergence}
 
 \textbf{Figure 8.2} compares loss curves with diagonal vs Gaussian init. 
-Diagonal init converges \textbf{84.5$$\times$} faster.
+Diagonal init converges \textbf{84.5$\times$} faster.
 
 \subsubsection{Causal Fallback Preserves Correctness}
 
@@ -67,9 +67,9 @@ For $L = 512$, $k = 64$, $d_h = 64$:
 \toprule
 \textbf{Operation} & \textbf{FLOPs} \\
 \midrule
-Standard QK\^{}T & $512^2 \cdot 64 = 1.7 \times 10^7$ \\
-Linformer QK \^{}T & $512 \cdot 64 \cdot 64 = 2.1 \times 10^6$ \\
-\textbf{Speedup} & \textbf{8$$\times$} \\
+Standard QK^T & $512^2 \cdot 64 = 1.7 \times 10^7$ \\
+Linformer QK ^T & $512 \cdot 64 \cdot 64 = 2.1 \times 10^6$ \\
+\textbf{Speedup} & \textbf{8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,7 +78,7 @@ For $L = 1024$:
 \begin{itemize}
 \item Standard: $6.7 \times 10^7$
 \item Linformer: $4.2 \times 10^6$
-\item \textbf{Speedup:} 16$$\times$
+\item \textbf{Speedup:} 16$\times$
 
 \end{itemize}
 \subsection{Failure Modes}
@@ -96,7 +96,7 @@ This wastes parameters.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Diagonal init is critical} (converges 84.5$$\times$ faster).
+\item \textbf{Diagonal init is critical} (converges 84.5$\times$ faster).
 \item \textbf{Causal fallback is essential} for decoders.
 \item \textbf{$k = 64$ is a good default.}
 \item \textbf{Encoders benefit; decoders don't} (due to fallback).

@@ -12,17 +12,17 @@ space without losing its expressive power?**
 One classical approach is to view attention as a discretization of the 
 continuous non-local integral operator:
 
-\begin{equation}
+\[
 (\mathcal{K} f)(x) = \int_\Omega k(x, y) f(y) \, dy
-\end{equation}
+\]
 
 where $k(x, y)$ is a kernel and $\Omega$ is the domain. Petrov-Galerkin 
 methods approximate such operators by projecting onto finite-dimensional 
 subspaces:
 
-\begin{equation}
+\[
 \mathcal{K} \approx \Phi \, K_{\Phi \Phi} \, \Phi^\top
-\end{equation}
+\]
 
 where $\Phi \in \mathbb{R}^{N \times r}$ is a basis and $K_{\Phi \Phi}$ is 
 the projected kernel matrix.
@@ -35,10 +35,10 @@ the projected kernel matrix.
 Given a pretrained transformer with hidden size $d$ and $H$ heads, we seek 
 a modified attention function $\mathcal{A}'$ such that:
 
-\begin{equation}
+\[
 \mathcal{A}'(Q, K, V) \approx \mathcal{A}(Q, K, V), \quad
 \text{Cost}(\mathcal{A}') = \mathcal{O}(Nr^2), \quad r \ll N
-\end{equation}
+\]
 
 We do not require retraining of base weights; LoRA adapters provide 
 recovery capacity.
@@ -50,12 +50,12 @@ We propose \textbf{Galerkin Attention}, which:
 \begin{enumerate}
 \item \textbf{Projects} $Q, K, V$ onto an orthonormal DCT basis $\Phi \in \mathbb{R}^{N \times r}$:
   $$
-  Q\_\Phi = \Phi\^{}\top Q, \quad K\_\Phi = \Phi\^{}\top K, \quad V\_\Phi = \Phi\^{}\top V
+  Q\_\Phi = \Phi^\top Q, \quad K\_\Phi = \Phi^\top K, \quad V\_\Phi = \Phi^\top V
   $$
 
 \item \textbf{Computes attention} in the reduced basis space:
   $$
-  O\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) V\_\Phi
+  O\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi^\top}{\sqrt{d}}\right) V\_\Phi
   $$
 
 \item \textbf{Reconstructs} to the original sequence length:

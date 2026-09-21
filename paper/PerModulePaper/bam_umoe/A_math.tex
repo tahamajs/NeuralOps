@@ -7,22 +7,22 @@ attention's forward pass.
 
 \textbf{Proof.} The MoE branch output is:
 
-\begin{equation}
+\[
 \text{MoE}(X) = \sum_{j=1}^{k} \text{scores}_j \cdot E_{\text{out}}[\text{topk\_idx}_j]
-\end{equation}
+\]
 
 where each $E_\text{out}[e] = \text{Expert}_e(X)$. By the zero-init of 
 $W_2^{(e)}$ and $b_2^{(e)}$:
 
-\begin{equation}
+\[
 \text{Expert}_e(X) = 0 \cdot \text{GELU}(W_1^{(e)} X + b_1^{(e)}) + 0 = 0
-\end{equation}
+\]
 
 Therefore $\text{MoE}(X) = 0$ for all $X$. So:
 
-\begin{equation}
+\[
 V' = V + \alpha \cdot g_\text{gate} \cdot 0 = V
-\end{equation}
+\]
 
 The attention then reduces to the pretrained attention with base weights 
 $W_Q, W_K, W_V, W_O$ (copied exactly). The forward pass matches. $\square$
@@ -35,9 +35,9 @@ layer) is nonzero at step 0.
 \textbf{Proof sketch.} The task loss depends on $\text{MoE}(X)$, which depends 
 on $W_2^{(e)}$ (multiplied by $\text{GELU}(W_1^{(e)} X)$). At $W_2^{(e)} = 0$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial W_1^{(e)}} \propto \frac{\partial \mathcal{L}}{\partial \text{MoE}} \cdot \frac{\partial \text{MoE}}{\partial W_2^{(e)}} \cdot \frac{\partial W_2^{(e)}}{\partial W_1^{(e)}}
-\end{equation}
+\]
 
 The last term is nonzero (since $W_2^{(e)}$ multiplies $\text{GELU}(W_1^{(e)} X)$). 
 So gradient flows despite $W_2^{(e)} = 0$. $\square$
@@ -46,9 +46,9 @@ So gradient flows despite $W_2^{(e)} = 0$. $\square$
 
 \textbf{Derivation.} Following Switch Transformer:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
-\end{equation}
+\]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
 mean router probability for expert $e$.
@@ -56,15 +56,15 @@ mean router probability for expert $e$.
 \textbf{Minimum.} $\mathcal{L}_\text{aux}$ is minimized when $f_e = 1/E$ and 
 $P_e = 1/E$ for all $e$:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{aux}^\text{min} = E \cdot \sum_{e=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot \frac{1}{E} = 1
-\end{equation}
+\]
 
 \textbf{Maximum.} If all tokens route to expert 0 ($f_0 = 1$, $P_0 = 1$), then:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{aux}^\text{max} = E \cdot 1 \cdot 1 = E
-\end{equation}
+\]
 
 So $\mathcal{L}_\text{aux} \in [1, E]$.
 
@@ -91,9 +91,9 @@ Gate bias & 1 \\
 
 For $d = 768$, $E = 8$: 
 
-\begin{equation}
+\[
 4 \cdot 768^2 \cdot 8 = 18{,}874{,}368 \text{ params}
-\end{equation}
+\]
 
 Wait -- hidden = \texttt{output\_dim \textit{ expert\_multiplier = 768 } 2 = 1536}. Each 
 expert: $d \cdot 1536 + 1536 \cdot d = 2 \cdot 768 \cdot 1536 = 2{,}359{,}296$. 

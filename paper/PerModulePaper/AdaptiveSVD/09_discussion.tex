@@ -73,10 +73,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 45 MB & \textbf{3.0$$\times$} \\
-Params & 66.95M & 22000000M & \textbf{3.0$$\times$} \\
-VRAM & 183 MB & 130 MB & \textbf{2.1$$\times$} \\
-Inference time & 1.90 s & 2.3 s & 1.2$$\times$ \\
+Disk (FP16) & 134 MB & 45 MB & \textbf{3.0$\times$} \\
+Params & 66.95M & 22000000M & \textbf{3.0$\times$} \\
+VRAM & 183 MB & 130 MB & \textbf{2.1$\times$} \\
+Inference time & 1.90 s & 2.3 s & 1.2$\times$ \\
 Accuracy & 90.71\% & 88.0\% & -2.7\% \\
 Compression time & -- & 15 s \& Fast \\
 \bottomrule
@@ -95,11 +95,11 @@ compression speed.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Calibration} \\
 \midrule
-ALBERT \& Sharing & 3.5$$\times$ & 89.4\% \& Retrain \\
-DistilBERT \& Distill & 1.6$$\times$ & 90.7\% \& Retrain \\
-A3 \& Low-rank & 2.1$$\times$ & 85.5 \& Data \\
-AASVD \& Low-rank & 2.1$$\times$ & 85.0 \& Data \\
-\textbf{Adaptive SVD} \& Low-rank & \textbf{3.0$$\times$} & \textbf{88.0} & \textbf{None} \\
+ALBERT \& Sharing & 3.5$\times$ & 89.4\% \& Retrain \\
+DistilBERT \& Distill & 1.6$\times$ & 90.7\% \& Retrain \\
+A3 \& Low-rank & 2.1$\times$ & 85.5 \& Data \\
+AASVD \& Low-rank & 2.1$\times$ & 85.0 \& Data \\
+\textbf{Adaptive SVD} \& Low-rank & \textbf{3.0$\times$} & \textbf{88.0} & \textbf{None} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -110,7 +110,7 @@ AASVD \& Low-rank & 2.1$$\times$ & 85.0 \& Data \\
 Same disk savings as A3/AASVD.
 
 \subsubsection{Latency}
-Two matmuls + adapter = ~1.2$$\times$ slower than baseline. On CPU, 
+Two matmuls + adapter = ~1.2$\times$ slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 \subsubsection{Compatibility}

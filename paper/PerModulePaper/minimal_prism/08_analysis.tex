@@ -110,9 +110,9 @@ Figure 8.4 shows accuracy vs $\eta$ for all models.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{Ratio} \\
 \midrule
-Fixed rank 32 & 83.5 & 32 & 32$$\times$ \\
-Fixed rank 64 & 84.8 & 64 & 32$$\times$ \\
-\textbf{Energy 0.95} & \textbf{85.44} & 0.85 & \textbf{50\%$$\times$} \\
+Fixed rank 32 & 83.5 & 32 & 32$\times$ \\
+Fixed rank 64 & 84.8 & 64 & 32$\times$ \\
+\textbf{Energy 0.95} & \textbf{85.44} & 0.85 & \textbf{50\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -173,9 +173,9 @@ MinimalPRISM's inference is \textbf{faster} than dense attention:
 \toprule
 \textbf{Config} & \textbf{FLOPs} & \textbf{Relative} \\
 \midrule
-Dense $768 \times 768$ & 1.18M & 1.00$$\times$ \\
-Factorized $r=64$ & 196K & \textbf{0.167$$\times$} \\
-Factorized $r=128$ & 393K & 0.333$$\times$ \\
+Dense $768 \times 768$ & 1.18M & 1.00$\times$ \\
+Factorized $r=64$ & 196K & \textbf{0.167$\times$} \\
+Factorized $r=128$ & 393K & 0.333$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

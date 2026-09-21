@@ -11,7 +11,7 @@ s_t = f_t \odot s_{t-1} + g_t
 \]
 
 where $f_t \in \mathbb{R}^d$ is the forget (decay) vector and $g\_t \in 
-\mathbb{R}\^{}d$ is the input. This is a \textbf{first-order linear recurrence}.
+\mathbb{R}^d$ is the input. This is a \textbf{first-order linear recurrence}.
 
 \textbf{Complexity.} Time is $\mathcal{O}(L d)$; memory is $\mathcal{O}(d)$ (or 
 $\mathcal{O}(L d)$ for the outputs). Compare to attention's $\mathcal{O}(L^2 d)$.

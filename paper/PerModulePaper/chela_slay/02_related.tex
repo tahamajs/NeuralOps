@@ -20,10 +20,10 @@ via Nystr m landmarks. \textbf{Luna} (Ma et al., 2021) uses random projections.
 \textbf{Rahimi \& Recht (2007)} showed that kernel functions can be approximated 
 via random Fourier features:
 
-\begin{equation}
+\[
 k(x, y) \approx \phi(x)^\top \phi(y), \quad
 \phi(x) = \frac{1}{\sqrt{F}} \left[ \cos(\omega_1 \cdot x), \sin(\omega_1 \cdot x), \dots \right]
-\end{equation}
+\]
 
 with $\omega_i \sim \mathcal{N}(0, 1)$. \textbf{Yat-Kernel} (Zhang et al., 2024) 
 extends this with a $\cos + \sin$ concatenation and a $1/F^{1/4}$ scaling. 

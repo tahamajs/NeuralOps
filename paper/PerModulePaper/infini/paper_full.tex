@@ -1,4 +1,4 @@
-\title{\textbf{Infini-Attention: Compressive Memory with Sliding-Window Local Attention for Transformer Inference}
+\title{\textbf{Infini-Attention: Compressive Memory with Sliding-Window Local Attention for Transformer Inference}}
 
 \author{Anonymous authors}
 
@@ -302,7 +302,7 @@ Infini-Attention replaces MHSA with a two-branch block:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -448,8 +448,8 @@ $-\infty$ would freeze the memory. $-5$ is a good compromise.
 
 \textbf{Algorithm 1:} Infini-Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, window W
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, window W
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)                  Frozen W + LoRA
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -525,15 +525,15 @@ For $W = d_c = 128$ and $L = 4096$:
 \toprule
 \textbf{Method} & \textbf{Relative time} \\
 \midrule
-Full MHSA & 1.00$$\times$ \\
-Sliding window & 0.031$$\times$ \\
-\textbf{Infini-Attention} & \textbf{0.062$$\times$} \\
+Full MHSA & 1.00$\times$ \\
+Sliding window & 0.031$\times$ \\
+\textbf{Infini-Attention} & \textbf{0.062$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The memory roughly doubles the cost of pure sliding window, but is still 
-~16$$\times$ cheaper than full attention.
+~16$\times$ cheaper than full attention.
 
 \subsection{Parameter Analysis}
 
@@ -569,7 +569,7 @@ $N_\ell = 6$):
 \midrule
 Memory & 98,304 & 589,824 \\
 Gate & 1 & 6 \\
-LoRA (all 4) & 4 $$\times$ 24,576 = 98,304 & 589,824 \\
+LoRA (all 4) & 4 $\times$ 24,576 = 98,304 & 589,824 \\
 \textbf{Total} & \textbf{196,609} & \textbf{1,179,654} \\
 \bottomrule
 \end{tabular}
@@ -1107,10 +1107,10 @@ GPT-2 & Infini & 2.3 s s & 0.85 & 580 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-nha & 90.25\% & FAIL & 78.78\% & 1.01$$\times$ \\
-eat & 90.25\% & 0.00\% & 78.78\% & 1.01$$\times$ \\
-\textbf{infini} & \textbf{90.25} & \textbf{56.54} & \textbf{51.26} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+eat & 90.25\% & 0.00\% & 78.78\% & 1.01$\times$ \\
+\textbf{infini} & \textbf{90.25} & \textbf{56.54} & \textbf{51.26} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1140,10 +1140,10 @@ GPT-2 & PASS & 51.26 & 32 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/infini_distilbert_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{infini}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{infini}.}
 \label{fig:results_infini}
 \end{figure}
 
@@ -1296,7 +1296,7 @@ complementary:
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failure \\
 Overfitting & Train >> val acc & Memory too large \\
 NaN & Loss = NaN & Memory scale too large \\
-Slow & >5$$\times$ latency & Extra matmuls \\
+Slow & >5$\times$ latency & Extra matmuls \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1328,7 +1328,7 @@ Parameter count increases by ~48.5\%\% due to memory + LoRA.
 
 For $L \gg W + d_c$, Infini-Attention is $\mathcal{O}(L(W + d_c))$ vs 
 baseline $\mathcal{O}(L^2)$. For $L = 4096$, $W = d_c = 128$, this is 
-\textbf{16$$\times$ faster} in attention.
+\textbf{16$\times$ faster} in attention.
 
 \subsubsection{Takeaway 3: $\beta$ Init is Critical}
 
@@ -1378,7 +1378,7 @@ For DistilBERT at L=128:
 \midrule
 Params & 66.95M & 66.4MM & +48.5\%\% \\
 VRAM & 183 MB & 353 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 \bottomrule
 \end{tabular}
@@ -1393,7 +1393,7 @@ Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Infini} & \textbf{Change} \\
 \midrule
-Time (est.) & ~30 s & ~3 s & 10$$\times$ faster \\
+Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1557,9 +1557,9 @@ preserving pretrained behavior at start.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & -0.46\% & +48.5\%\% & 2.1$$\times$ \\
-RoBERTa & -22.02\% & +48.5\%\% & 2.1$$\times$ \\
-GPT-2 & -28.10\% & +48.5\%\% & 2.1$$\times$ \\
+DistilBERT & -0.46\% & +48.5\%\% & 2.1$\times$ \\
+RoBERTa & -22.02\% & +48.5\%\% & 2.1$\times$ \\
+GPT-2 & -28.10\% & +48.5\%\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2308,7 +2308,7 @@ done
 
 \textbf{Goal.} Skip the window mask.
 
-\textbf{Result.} No parameter or latency benefit, but 3$$\times$ slower.
+\textbf{Result.} No parameter or latency benefit, but 3$\times$ slower.
 
 \textbf{Conclusion.} Window is essential for the efficiency claim.
 
@@ -2324,7 +2324,7 @@ done
 
 \textbf{Goal.} Use K memory matrices per head.
 
-\textbf{Result.} K$$\times$ parameter increase, <0.5\% accuracy improvement.
+\textbf{Result.} K$\times$ parameter increase, <0.5\% accuracy improvement.
 
 \textbf{Conclusion.} Single memory is sufficient.
 
@@ -2346,7 +2346,7 @@ done
 
 \textbf{Goal.} Learn $\beta$ per head instead of per layer.
 
-\textbf{Result.} Marginal improvement (<0.2\%), 12$$\times$ parameters.
+\textbf{Result.} Marginal improvement (<0.2\%), 12$\times$ parameters.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -2498,7 +2498,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

@@ -1,4 +1,4 @@
-\title{\textbf{Gated DeltaNet: Associative State Recurrence with Input-Dependent Exponential Decay}
+\title{\textbf{Gated DeltaNet: Associative State Recurrence with Input-Dependent Exponential Decay}}
 
 \author{Anonymous authors}
 
@@ -49,14 +49,14 @@ We seek an attention mechanism $\mathcal{A}$ with the following properties:
 \item \textbf{Delta Rule update} (Widrow--Hoff, 1960): correct the state by the error
   between the predicted value and the observed value:
   $$
-  S\_t = S\_{t-1} + K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  S\_t = S\_{t-1} + K\_t^\top (V\_t - K\_t S\_{t-1})
   \tag{1.2}
   $$
 
 \item \textbf{Input-dependent gating:} replace fixed step size with learnable
   $\alpha_t, \beta_t \in (0, 1)$:
   $$
-  S\_t = \beta\_t S\_{t-1} + \alpha\_t K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  S\_t = \beta\_t S\_{t-1} + \alpha\_t K\_t^\top (V\_t - K\_t S\_{t-1})
   \tag{1.3}
   $$
 
@@ -75,7 +75,7 @@ We seek an attention mechanism $\mathcal{A}$ with the following properties:
 \item \textbf{A chunked implementation} that is exact (not approximate) but uses
   nested Python loops.
 \item \textbf{An honest evaluation} reporting that the implementation is
-  \textbf{~45$$\times$ slower} than baseline on DistilBERT and exceeds memory on larger
+  \textbf{~45$\times$ slower} than baseline on DistilBERT and exceeds memory on larger
   models.
 \item \textbf{A negative result:} the algorithm is not the bottleneck; the
   implementation is.
@@ -307,9 +307,9 @@ Linear attention (state-based) & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
 \end{tabular}
 \end{table}
 
-For $d = 64$ and $L = 128$, linear attention does $\sim 128 \times 64\^{}2 = 
-524K$ FLOPs vs standard attention's $\sim 128\^{}2 \times 64 = 1M$ FLOPs. 
-So linear attention is \textbf{~2$$\times$ fewer FLOPs} but with worse GPU utilization.
+For $d = 64$ and $L = 128$, linear attention does $\sim 128 \times 64^2 = 
+524K$ FLOPs vs standard attention's $\sim 128^2 \times 64 = 1M$ FLOPs. 
+So linear attention is \textbf{~2$\times$ fewer FLOPs} but with worse GPU utilization.
 
 \subsection{Notation Summary}
 
@@ -514,8 +514,8 @@ beyond $W_Z$.
 
 \textbf{Algorithm 1:} Gated DeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, chunk_size C
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V;  Z $\leftarrow$ X W_Z
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -560,8 +560,8 @@ SiLU gating & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
 
 \textbf{For $L = 128$, $d = 64$:}
 \begin{itemize}
-\item FLOPs: Gated DeltaNet is ~2$$\times$ fewer.
-\item Wall-clock: Gated DeltaNet is \textbf{~45$$\times$ slower} due to Python loops.
+\item FLOPs: Gated DeltaNet is ~2$\times$ fewer.
+\item Wall-clock: Gated DeltaNet is \textbf{~45$\times$ slower} due to Python loops.
 
 \end{itemize}
 \subsection{Parameter Analysis}
@@ -589,7 +589,7 @@ $\beta$ projection & $d \cdot H$ \\
 \item Z projection: +589,824 params per layer
 \item $\alpha, \beta$: +18,432 per layer
 \item LoRA: +589,824 per layer
-\item \textbf{Total: +1.2M per layer $$\times$ 6 layers = +7.2M (+10.7\%)}
+\item \textbf{Total: +1.2M per layer $\times$ 6 layers = +7.2M (+10.7\%)}
 
 \end{itemize}
 The \textbf{Z projection is the largest overhead}. It is not present in baseline 
@@ -773,7 +773,7 @@ Each \texttt{for} iteration involves:
 \item Python dispatch (~1-2  s)
 
 \end{itemize}
-For 256 iterations $$\times$ 5 ops = ~1280 kernel launches per forward.
+For 256 iterations $\times$ 5 ops = ~1280 kernel launches per forward.
 
 \subsubsection{Gradient Checkpointing Overhead}
 
@@ -804,7 +804,7 @@ Replace Python loops with a \textbf{fused Triton or CUDA kernel}:
 \item Inner token loop: use shared memory for state, unroll with \texttt{\#pragma unroll}.
 
 \end{itemize}
-Expected speedup: \textbf{50-100$$\times$}, bringing Gated DeltaNet to parity with 
+Expected speedup: \textbf{50-100$\times$}, bringing Gated DeltaNet to parity with 
 baseline attention.
 
 
@@ -1024,14 +1024,14 @@ GPT-2 & \textbf{GatedDeltaNet} & -- & -- & \textbf{PASS} & -- \\
 \toprule
 \textbf{Model} & \textbf{Baseline (ms/step)} & \textbf{GatedDeltaNet (ms/step)} & \textbf{Slowdown} \\
 \midrule
-DistilBERT & 400 & \textbf{84.5} & \textbf{84.5$$\times$} \\
+DistilBERT & 400 & \textbf{84.5} & \textbf{84.5$\times$} \\
 RoBERTa & 800 & (OOM) & -- \\
 GPT-2 & 850 & (OOM) & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} GatedDeltaNet is \textbf{~84.5$$\times$ slower} than baseline 
+\textbf{Observation.} GatedDeltaNet is \textbf{~84.5$\times$ slower} than baseline 
 on DistilBERT, despite having lower theoretical FLOPs. This is due to Python 
 loop overhead (Section 8).
 
@@ -1053,7 +1053,7 @@ O projection & 589,824 & 589,824 & 0 \\
 \textbf{Z projection} & \textbf{0} & \textbf{589,824} & \textbf{+589,824} \\
 \textbf{$\alpha$ projection} & 0 & 9,216 & +9,216 \\
 \textbf{$\beta$ projection} & 0 & 9,216 & +9,216 \\
-LoRA (per proj) & 0 & 24,576 $$\times$ 5 & +122,880 \\
+LoRA (per proj) & 0 & 24,576 $\times$ 5 & +122,880 \\
 \textbf{Per layer total} & 2,359,296 & 3,539,904 & \textbf{+1,180,608} \\
 \textbf{6-layer total} & 14,155,776 & 21,239,424 & \textbf{+7,083,648} \\
 \bottomrule
@@ -1080,7 +1080,7 @@ GPT-2 & 793 MB & \textbf{OOM} \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Even on DistilBERT, peak VRAM increases by \textbf{380 MB$$\times$}. 
+\textbf{Observation.} Even on DistilBERT, peak VRAM increases by \textbf{380 MB$\times$}. 
 On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 \subsection{Ablation: Chunk Size}
@@ -1186,10 +1186,10 @@ Step  Loss
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/gated_delta_net_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{gated_delta_net}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gated_delta_net}.}
 \label{fig:results_gated_delta_net}
 \end{figure}
 
@@ -1214,7 +1214,7 @@ for c in range(num_chunks):              # outer
 For $L = 128$, \texttt{chunk\_size = 8}:
 \begin{itemize}
 \item Outer: 16 iterations
-\item Inner: 16 $$\times$ 8 = 128 iterations
+\item Inner: 16 $\times$ 8 = 128 iterations
 \item \textbf{Total: 144 Python-level iterations}
 
 \end{itemize}
@@ -1230,18 +1230,18 @@ launches a CUDA kernel. \textbf{~600 kernel launches per forward.}
 \toprule
 \textbf{Operation} & \textbf{Launch time} & \textbf{Per forward (L=128)} \\
 \midrule
-Q/K/V projections & 3 $$\times$ 10  s & 30  s \\
-RoPE & 2 $$\times$ 5  s & 10  s \\
-Gating & 4 $$\times$ 5  s & 20  s \\
-\textbf{Recurrence} & \textbf{~600 $$\times$ 8  s} & \textbf{~4800  s} \\
-SiLU & 2 $$\times$ 5  s & 10  s \\
+Q/K/V projections & 3 $\times$ 10  s & 30  s \\
+RoPE & 2 $\times$ 5  s & 10  s \\
+Gating & 4 $\times$ 5  s & 20  s \\
+\textbf{Recurrence} & \textbf{~600 $\times$ 8  s} & \textbf{~4800  s} \\
+SiLU & 2 $\times$ 5  s & 10  s \\
 Output projection & 10  s & 10  s \\
 \textbf{Total} &  & \textbf{~4880  s = 4.9 ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Baseline attention: ~400  s per forward. \textbf{Gated DeltaNet is 12$$\times$ slower} 
+Baseline attention: ~400  s per forward. \textbf{Gated DeltaNet is 12$\times$ slower} 
 just from kernel launches.
 
 \subsubsection{Gradient Checkpointing Overhead}
@@ -1318,9 +1318,9 @@ with:
 \textbf{Implementation} & \textbf{Language} & \textbf{Speed} \\
 \midrule
 \textbf{Ours} & Pure PyTorch & Slow (this paper) \\
-Mamba (Gu \& Dao, 2023) & CUDA & ~10$$\times$ faster than attention \\
-GLA (Yang et al., 2024) & Triton & ~5$$\times$ faster than attention \\
-DeltaNet (Yang et al., 2024) & Triton & ~3$$\times$ faster than attention \\
+Mamba (Gu \& Dao, 2023) & CUDA & ~10$\times$ faster than attention \\
+GLA (Yang et al., 2024) & Triton & ~5$\times$ faster than attention \\
+DeltaNet (Yang et al., 2024) & Triton & ~3$\times$ faster than attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1338,15 +1338,15 @@ A Triton kernel could:
 \item Use \texttt{tl.dot} for matmuls (tensor cores)
 
 \end{itemize}
-Expected speedup: \textbf{20-50$$\times$}.
+Expected speedup: \textbf{20-50$\times$}.
 
 \subsubsection{Custom CUDA Kernel}
 
-A hand-tuned CUDA kernel could achieve another 2-3$$\times$ on top of Triton.
+A hand-tuned CUDA kernel could achieve another 2-3$\times$ on top of Triton.
 
 \subsubsection{Removing Gradient Checkpointing}
 
-If memory allows, disabling checkpointing gives \textbf{~2$$\times$ speedup}.
+If memory allows, disabling checkpointing gives \textbf{~2$\times$ speedup}.
 
 \subsection{Ablation: What Contributes to Slowdown?}
 
@@ -1413,7 +1413,7 @@ the implementation, not the algorithm.
 
 \subsubsection{Takeaway 2: Implementation Matters}
 
-A 45$$\times$ slowdown from Python loops is not a fundamental limitation -- it is 
+A 45$\times$ slowdown from Python loops is not a fundamental limitation -- it is 
 an engineering gap. Fused kernels (Triton, CUDA) would close it.
 
 \subsubsection{Takeaway 3: Memory Is Also a Constraint}
@@ -1495,8 +1495,8 @@ For DistilBERT on RTX 4070:
 \textbf{Metric} & \textbf{Baseline} & \textbf{GatedDeltaNet} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
-Per-step time & 0.4 s & 14.2 ms s & \textbf{84.5$$\times$} \\
-Peak VRAM & 183 MB & 416 MB MB & 2.1$$\times$ \\
+Per-step time & 0.4 s & 14.2 ms s & \textbf{84.5$\times$} \\
+Peak VRAM & 183 MB & 416 MB MB & 2.1$\times$ \\
 Params & 66.9M & 66.4MM & +48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -1539,7 +1539,7 @@ Params & 66.9M & 66.4MM & +48.5\%\% \\
 \item \textbf{Complexity analysis is necessary but not sufficient.} A slow
   implementation of a fast algorithm is still slow.
 \item \textbf{Python loops are the enemy.} Always measure wall-clock time.
-\item \textbf{The gap between theory and practice can be 10-100$$\times$.}
+\item \textbf{The gap between theory and practice can be 10-100$\times$.}
 
 \end{enumerate}
 
@@ -1549,7 +1549,7 @@ Params & 66.9M & 66.4MM & +48.5\%\% \\
 
 \subsection{Implementation Bottleneck (Primary)}
 
-The pure-PyTorch implementation is \textbf{~84.5$$\times$ slower} than baseline 
+The pure-PyTorch implementation is \textbf{~84.5$\times$ slower} than baseline 
 attention. This is the \textbf{dominant limitation} and prevents practical 
 deployment.
 
@@ -1568,7 +1568,7 @@ resulting in OOM. This prevents evaluation on these models.
 \subsection{No Fusion Available}
 
 We did not implement a fused kernel in this work. The implementation uses 
-\texttt{torch.utils.checkpoint} for memory but at 2$$\times$ compute cost.
+\texttt{torch.utils.checkpoint} for memory but at 2$\times$ compute cost.
 
 \subsection{Parameter Overhead}
 
@@ -1686,7 +1686,7 @@ GPT-2 & -- & OOM & -- \\
 
 \begin{itemize}
 \item \textbf{Implement a Triton kernel} for \texttt{chunked\_delta\_rule\_scan} (expected
-  speedup: 20-50$$\times$).
+  speedup: 20-50$\times$).
 \item \textbf{Profile memory} to identify redundant allocations.
 \item \textbf{Cache the state} across chunks (avoid re-initialization).
 
@@ -2135,7 +2135,7 @@ Output projection & $L H d_h d$ \\
 
 \textbf{Baseline attention FLOPs}: $\sim 4 L^2 d_h + \dots \approx \mathcal{O}(L^2 d)$.
 
-For $L = 128$ and $d = 64$: linear has ~2$$\times$ fewer FLOPs.
+For $L = 128$ and $d = 64$: linear has ~2$\times$ fewer FLOPs.
 
 \subsection{A.8 Wall-Clock Complexity}
 
@@ -2590,7 +2590,7 @@ done
 
 \subsection{D.1 Slow Implementation}
 
-\textbf{The primary negative result.} Gated DeltaNet is ~84.5$$\times$ slower 
+\textbf{The primary negative result.} Gated DeltaNet is ~84.5$\times$ slower 
 than baseline on DistilBERT despite having fewer FLOPs.
 
 \subsubsection{D.1.1 Attempted Fixes}
@@ -2603,7 +2603,7 @@ than baseline on DistilBERT despite having fewer FLOPs.
 \textbf{Fix} & \textbf{Result} \\
 \midrule
 Larger chunk size & Marginal improvement \\
-Disable gradient checkpointing & 2$$\times$ faster but OOM \\
+Disable gradient checkpointing & 2$\times$ faster but OOM \\
 Reduce batch size & Slower per epoch \\
 FP16 state & Numerical instability \\
 Prune chunks & No speedup \\
@@ -2740,7 +2740,7 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \item \textbf{Python loops kill performance.} Even $\mathcal{O}(L)$ algorithms can
   be slower than $\mathcal{O}(L^2)$ with poor implementation.
 \item \textbf{Gradient checkpointing is expensive.} It doubles compute.
-\item \textbf{State memory is a real constraint.} $d^2$ per head $$\times$ $H$ heads $$\times$ $B$
+\item \textbf{State memory is a real constraint.} $d^2$ per head $\times$ $H$ heads $\times$ $B$
   batch = large.
 \item \textbf{Fused kernels are not optional.} They are required for deployment.
 
@@ -2748,8 +2748,8 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \subsection{D.8 What Would Make This Work?}
 
 \begin{enumerate}
-\item \textbf{Triton kernel} for the recurrence (expected 20-50$$\times$ speedup).
-\item \textbf{Custom CUDA kernel} for further 2-3$$\times$ speedup.
+\item \textbf{Triton kernel} for the recurrence (expected 20-50$\times$ speedup).
+\item \textbf{Custom CUDA kernel} for further 2-3$\times$ speedup.
 \item \textbf{Memory-efficient checkpointing} (recompute only the state, not the
   full activations).
 \item \textbf{Mixed precision} (FP32 state, FP16 elsewhere).
@@ -2764,13 +2764,13 @@ Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
 \toprule
 \textbf{Implementation} & \textbf{Speed} & \textbf{Reference} \\
 \midrule
-Yang et al. (2024), Triton & ~3$$\times$ faster than attention & Published \\
-\textbf{Ours, PyTorch} & \textbf{~45$$\times$ slower} & This paper \\
+Yang et al. (2024), Triton & ~3$\times$ faster than attention & Published \\
+\textbf{Ours, PyTorch} & \textbf{~45$\times$ slower} & This paper \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{The 135$$\times$ gap is entirely implementation overhead.}
+\textbf{The 135$\times$ gap is entirely implementation overhead.}
 
 \subsection{D.10 Recommendations for Future Work}
 

@@ -6,7 +6,7 @@
 RALA augments standard linear attention with three components:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B $$\times$ L $$\times$ d}
+    Input X $\in$ R^{B $\times$ L $\times$ d}
             |
              
     +-----------------------------+
@@ -149,8 +149,8 @@ to $\mathcal{O}(\log L)$ depth and dramatically improve throughput.
 
 \textbf{Algorithm 1:} RALA forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      LoRA projections
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -207,10 +207,10 @@ RALA adds:
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{Total (DistilBERT)} \\
 \midrule
-$U$ & $H \cdot d \cdot r$ & 6 layers $$\times$ 6,144 = 36,864 \\
+$U$ & $H \cdot d \cdot r$ & 6 layers $\times$ 6,144 = 36,864 \\
 $V$ & $H \cdot d \cdot r$ & 36,864 \\
 $\alpha$ & 1 & 6 \\
-LoRA ($4$ proj $$\times$ $r_L$) & $4 \cdot 2 r_L d$ & 6 layers $$\times$ 98,304 = 589,824 \\
+LoRA ($4$ proj $\times$ $r_L$) & $4 \cdot 2 r_L d$ & 6 layers $\times$ 98,304 = 589,824 \\
 \textbf{Total added} &  & \textbf{~663,558} \\
 \textbf{Percentage} &  & \textbf{+0.99\%} \\
 \bottomrule

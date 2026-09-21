@@ -177,8 +177,8 @@ beyond $W_Z$.
 
 \textbf{Algorithm 1:} Gated DeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, chunk_size C
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V;  Z $\leftarrow$ X W_Z
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -223,8 +223,8 @@ SiLU gating & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
 
 \textbf{For $L = 128$, $d = 64$:}
 \begin{itemize}
-\item FLOPs: Gated DeltaNet is ~2$$\times$ fewer.
-\item Wall-clock: Gated DeltaNet is \textbf{~45$$\times$ slower} due to Python loops.
+\item FLOPs: Gated DeltaNet is ~2$\times$ fewer.
+\item Wall-clock: Gated DeltaNet is \textbf{~45$\times$ slower} due to Python loops.
 
 \end{itemize}
 \subsection{Parameter Analysis}
@@ -252,7 +252,7 @@ $\beta$ projection & $d \cdot H$ \\
 \item Z projection: +589,824 params per layer
 \item $\alpha, \beta$: +18,432 per layer
 \item LoRA: +589,824 per layer
-\item \textbf{Total: +1.2M per layer $$\times$ 6 layers = +7.2M (+10.7\%)}
+\item \textbf{Total: +1.2M per layer $\times$ 6 layers = +7.2M (+10.7\%)}
 
 \end{itemize}
 The \textbf{Z projection is the largest overhead}. It is not present in baseline 

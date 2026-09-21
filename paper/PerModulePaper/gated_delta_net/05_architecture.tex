@@ -174,7 +174,7 @@ Each \texttt{for} iteration involves:
 \item Python dispatch (~1-2  s)
 
 \end{itemize}
-For 256 iterations $$\times$ 5 ops = ~1280 kernel launches per forward.
+For 256 iterations $\times$ 5 ops = ~1280 kernel launches per forward.
 
 \subsubsection{Gradient Checkpointing Overhead}
 
@@ -205,7 +205,7 @@ Replace Python loops with a \textbf{fused Triton or CUDA kernel}:
 \item Inner token loop: use shared memory for state, unroll with \texttt{\#pragma unroll}.
 
 \end{itemize}
-Expected speedup: \textbf{50-100$$\times$}, bringing Gated DeltaNet to parity with 
+Expected speedup: \textbf{50-100$\times$}, bringing Gated DeltaNet to parity with 
 baseline attention.
 
 

@@ -88,7 +88,7 @@ starting point for LoRA recovery.
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
 50 LoRA recovery steps at residual rank 16. 
-Adaptive SVD achieves parameter reductions of \textbf{3.0$$\times$--2.5$$\times$} 
+Adaptive SVD achieves parameter reductions of \textbf{3.0$\times$--2.5$\times$} 
 with accuracy drops of only \textbf{-2.7\%---3.9\%}. The method 
 additionally supports \textbf{T5 relative attention bias}, \textbf{GQA}, and \textbf{RoPE}, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 

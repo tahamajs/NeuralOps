@@ -15,7 +15,7 @@ steps before the attention computation:
 The overall pipeline:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
                
     +-----------------------+
@@ -145,10 +145,10 @@ scores = scores.masked_fill(causal_mask, -inf)
 
 \textbf{Algorithm 1:} TCA forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$$\times$L$$\times$d}
-        attention_mask $\in$ {0,1}^{B$$\times$L}
+Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
+        attention_mask $\in$ {0,1}^{B$\times$L}
         position_ids
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: Q, K $\leftarrow$ RoPE(Q, K, position_ids)

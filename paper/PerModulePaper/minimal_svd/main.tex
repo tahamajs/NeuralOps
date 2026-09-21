@@ -62,7 +62,7 @@ matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ is factorized as
 $W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r}$ 
 and $V \in \mathbb{R}^{r \times d_\text{in}}$. The parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
-\textbf{50\%$$\times$} reduction per projection on DistilBERT at rank $r = 32$.
+\textbf{50\%$\times$} reduction per projection on DistilBERT at rank $r = 32$.
 
 The core novelty is \textbf{spectral energy-adaptive rank selection}: instead of 
 fixing $r$ uniformly across layers, MinimalSVD computes the cumulative 
@@ -80,7 +80,7 @@ GPT-2 (causal with Conv1D), and Qwen3.5 (GQA + RoPE) -- via architecture-aware
 weight extraction, Frobenius norm validation, and LoRA recovery.
 
 On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
-energy $\eta = 45.2$, MinimalSVD achieves \textbf{50\%$$\times$--2.1$$\times$} 
+energy $\eta = 45.2$, MinimalSVD achieves \textbf{50\%$\times$--2.1$\times$} 
 parameter reduction with accuracy drops of only \textbf{-1.83\%--+1.49\%} 
 after 50 LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{380 MB\%}.

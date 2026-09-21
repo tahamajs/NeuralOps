@@ -11,9 +11,9 @@ We evaluate \texttt{come} across three canonical language understanding tasks us
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 84.52\% & 0.8475 & 1.24$$\times$ & -- & 274.3 MB & 140198 & 3.38 s \\
-MNLI & PASS & 56.80\% & 0.5379 & 1.24$$\times$ & -- & 255.3 MB & 67886 & 16.28 s \\
-AG News & PASS & 91.50\% & 0.9104 & 1.24$$\times$ & -- & 277.0 MB & 118606 & 5.34 s \\
+SST-2 & PASS & 84.52\% & 0.8475 & 1.24$\times$ & -- & 274.3 MB & 140198 & 3.38 s \\
+MNLI & PASS & 56.80\% & 0.5379 & 1.24$\times$ & -- & 255.3 MB & 67886 & 16.28 s \\
+AG News & PASS & 91.50\% & 0.9104 & 1.24$\times$ & -- & 277.0 MB & 118606 & 5.34 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{come} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 53,960,454 & -12,996,094 (-19.41\%) & 593,670 & 1 & 0 \\
 Execution profiling demonstrates that \texttt{come} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/come_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{come}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{come}.}
 \label{fig:results_come}
 \end{figure}

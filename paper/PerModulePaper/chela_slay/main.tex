@@ -77,7 +77,7 @@ The linear stream combines three components:
   mapping:
   
   $$
-  \phi(x) = \frac{1}{F\^{}{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
+  \phi(x) = \frac{1}{F^{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
   $$
   
   producing a $2F$-dimensional positive feature vector.
@@ -99,7 +99,7 @@ GPT-2 (baseline 79.36\%) using 50 LoRA recovery steps.
   $(\text{B}, \text{H}, L, 2F, d_h)$ intermediate, which for
   $L = 128$, $F = 128$, $d_h = 64$ is roughly
   \textbf{8192 MB} per layer at FP32.
-\item \textbf{Speed.} On SST-2 ($L = 128$), CHELA-SLAY is \textbf{2.2$$\times$ slower}
+\item \textbf{Speed.} On SST-2 ($L = 128$), CHELA-SLAY is \textbf{2.2$\times$ slower}
   than baseline because both dense and linear streams are computed
   simultaneously, and the cumsum has overhead.
 

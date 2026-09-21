@@ -1,4 +1,4 @@
-\title{\textbf{HALO-ReGLA: Hybrid Dense-Linear Attention with Rectified Gated Linear Attention}
+\title{\textbf{HALO-ReGLA: Hybrid Dense-Linear Attention with Rectified Gated Linear Attention}}
 
 \author{Anonymous authors}
 
@@ -14,11 +14,11 @@ emerged to reduce this cost:
 
 \begin{enumerate}
 \item \textbf{Dense softmax attention} $\mathcal{A}\_\text{dense}(Q, K, V) =
-  \text{softmax}(QK\^{}\top / \sqrt{d}) V$. This preserves the expressive power
+  \text{softmax}(QK^\top / \sqrt{d}) V$. This preserves the expressive power
   of exact attention but requires materializing an $L \times L$ matrix.
 
 \item \textbf{Linear attention} $\mathcal{A}\_\text{lin}(Q, K, V) =
-  \phi(Q) (\phi(K)\^{}\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
+  \phi(Q) (\phi(K)^\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
   $\phi$. This reduces complexity to $\mathcal{O}(L)$ but trades quality.
 
 \end{enumerate}
@@ -75,7 +75,7 @@ Linear Attention), which:
 \item \textbf{Preserves causality via prefix sums.} For causal models, the linear
   branch uses a cumulative-sum formulation:
   $$
-  O\_i\^{}\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j\^{}\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
+  O\_i^\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j^\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
   $$
 
 \end{enumerate}
@@ -202,9 +202,9 @@ Architectures \& Limited & \textbf{BERT, RoBERTa, GPT-2, Qwen} \\
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 \mathcal{A}_\text{dense}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
 
@@ -214,9 +214,9 @@ For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 Replace softmax with a kernel $\phi: \mathbb{R}^{d_h} \to \mathbb{R}^m$:
 
-\begin{equation}
+\[
 \mathcal{A}_\text{lin}(Q, K, V) = \frac{\phi(Q) \left(\phi(K)^\top V\right)}{\phi(Q) \left(\phi(K)^\top \mathbf{1}\right)}
-\end{equation}
+\]
 
 where $\mathbf{1} \in \mathbb{R}^L$ is a vector of ones.
 
@@ -225,18 +225,18 @@ where $\mathbf{1} \in \mathbb{R}^L$ is a vector of ones.
 \textbf{Non-causal.} Direct computation via $\phi(K)^\top V \in \mathbb{R}^{m \times d_h}$.
 
 \textbf{Causal.} Use prefix sums:
-\begin{equation}
+\[
 \text{Num}_i = \phi(Q_i) \cdot \sum_{j \le i} \phi(K_j) V_j^\top, \quad
 \text{Den}_i = \phi(Q_i) \cdot \sum_{j \le i} \phi(K_j)
-\end{equation}
+\]
 
 \subsection{Rectified Kernel}
 
 We use $\phi(x) = \mathrm{elu}(x) + 1$ where:
 
-\begin{equation}
+\[
 \mathrm{elu}(x) = \begin{cases} x \& x > 0 \\ \alpha (e^x - 1) \& x \leq 0 \end{cases}
-\end{equation}
+\]
 
 with $\alpha = 1$. This kernel:
 
@@ -254,9 +254,9 @@ terms, hence positive. This avoids division by zero or negative denominators.
 
 For causal linear attention, we compute:
 
-\begin{equation}
+\[
 \text{cum}_i = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{m \times d_h}
-\end{equation}
+\]
 
 This is a \textbf{cumulative sum} over the sequence dimension, which we implement 
 via \texttt{torch.cumsum}. The complexity is $\mathcal{O}(L m d_h)$ memory and time.
@@ -269,15 +269,15 @@ formulation is needed.
 
 We use a per-head sigmoid gate:
 
-\begin{equation}
+\[
 g_{h,i} = \sigma\!\left(w_h^\top x_i + b_h\right) \in (0, 1)
-\end{equation}
+\]
 
 The output is a convex combination:
 
-\begin{equation}
+\[
 O_i = g_{h,i} \cdot O_i^\text{dense} + (1 - g_{h,i}) \cdot O_i^\text{lin}
-\end{equation}
+\]
 
 \textbf{Interpretation.} $g \approx 1$ $\to$ dense attention; $g \approx 0$ $\to$ linear 
 attention; intermediate $\to$ smooth mix.
@@ -286,10 +286,10 @@ attention; intermediate $\to$ smooth mix.
 
 GQA (Ainslie et al., 2023) reduces $H_{kv} < H$ and repeats KV heads:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times H_{kv} \times L \times d_h}, \quad
 \tilde{K}, \tilde{V} = \text{repeat\_kv}(K, V, H / H_{kv})
-\end{equation}
+\]
 
 HALO-ReGLA supports GQA via \texttt{repeat\_kv} before attention computation.
 
@@ -297,9 +297,9 @@ HALO-ReGLA supports GQA via \texttt{repeat\_kv} before attention computation.
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
-\begin{equation}
+\[
 \tilde{Q}_i = Q_i \cos(\theta_i) + \mathrm{rot}(Q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 HALO-ReGLA applies RoPE to Q, K before both branches.
 
@@ -307,9 +307,9 @@ HALO-ReGLA applies RoPE to Q, K before both branches.
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
-\end{equation}
+\]
 
 with $B = 0$ at initialization. HALO-ReGLA uses LoRA to adapt the frozen 
 projections.
@@ -339,7 +339,7 @@ per-head gates:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-        Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+        Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
                  |
         +--------+--------+
                            
@@ -363,11 +363,11 @@ per-head gates:
 
 Standard softmax attention with causal masking and padding:
 
-\begin{equation}
+\[
 S_{ij} = \frac{Q_i^\top K_j}{\sqrt{d_h}}, \quad
 S_{ij} \leftarrow S_{ij} + \text{mask}_{ij}, \quad
 O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
 
@@ -383,9 +383,9 @@ Rectified kernel attention with cumulative sums for causality:
 
 \subsubsection{Feature Map}
 
-\begin{equation}
+\[
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
-\end{equation}
+\]
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
 
@@ -393,17 +393,17 @@ Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
 
 For each position $i$:
 
-\begin{equation}
+\[
 \text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{d_h \times d_h}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{den}^{(i)} = \sum_{j \le i} \phi(K_j) \in \mathbb{R}^{d_h}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{den}^{(i)} + \epsilon}
-\end{equation}
+\]
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
 
@@ -411,18 +411,18 @@ where $\epsilon = 10^{-5}$ prevents division by zero.
 
 For encoders (bidirectional), we use the same formulas without cumsum:
 
-\begin{equation}
+\[
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdot \sum_j \phi(K_j) + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Padding Handling}
 
 We zero out padding keys before the cumsum:
 
-\begin{equation}
+\[
 \phi(K_j) \leftarrow \phi(K_j) \cdot \text{valid}_j, \quad
 V_j \leftarrow V_j \cdot \text{valid}_j
-\end{equation}
+\]
 
 This ensures padding contributes nothing to numerator or denominator.
 
@@ -430,9 +430,9 @@ This ensures padding contributes nothing to numerator or denominator.
 
 The cumsum is computed in FP32 to avoid overflow:
 
-\begin{equation}
+\[
 \text{cum}^{(i)} = \text{cumsum}(\phi(K) V^\top).\text{float}()
-\end{equation}
+\]
 
 We cast back to the model dtype after cumsum.
 
@@ -442,22 +442,22 @@ We cast back to the model dtype after cumsum.
 
 For each head $h$, a linear projection computes the gate logit:
 
-\begin{equation}
+\[
 \text{logit}_{h,i} = w_h^\top x_i + b_h
-\end{equation}
+\]
 
 where $x_i \in \mathbb{R}^d$ is the input hidden state at position $i$. The 
 gate is:
 
-\begin{equation}
+\[
 g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
-\end{equation}
+\]
 
 \subsubsection{Output}
 
-\begin{equation}
+\[
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
@@ -492,10 +492,10 @@ streams, which matches empirical observations that some heads are local
 
 \textbf{Algorithm 1:} HALO-ReGLA forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings
         is_causal
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q, K, V $\leftarrow$ proj(hidden_states)
  2: Q, K $\leftarrow$ apply_rope(Q, K, position_embeddings)
@@ -600,9 +600,9 @@ ELU kernel is heuristic but works well in practice.
 
 \textbf{Claim.} The gate converges to a stationary point where:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial g_h} = 0 \Rightarrow O^\text{dense}_h = O^\text{lin}_h
-\end{equation}
+\]
 
 or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
 
@@ -1118,9 +1118,9 @@ NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid \\
 \toprule
 \textbf{$L$} & \textbf{Dense} & \textbf{HALO} & \textbf{Speedup} \\
 \midrule
-128 & 4.2 s & 5.5 s & 0.76$$\times$ \\
-512 & 4.8 s & 6.0 s & 0.80$$\times$ \\
-2048 & 8.5 s & 7.5 s & 1.13$$\times$ \\
+128 & 4.2 s & 5.5 s & 0.76$\times$ \\
+512 & 4.8 s & 6.0 s & 0.80$\times$ \\
+2048 & 8.5 s & 7.5 s & 1.13$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1139,10 +1139,10 @@ NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/halo_regla_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{HALO}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{HALO}.}
 \label{fig:results_halo}
 \end{figure}
 
@@ -1254,7 +1254,7 @@ out[0, i].sum().backward()
 assert x.grad[0, i+1:].abs().max() < 1e-6
 \end{lstlisting}
 
-\textbf{Result.} ✅ Verified on all three models
+\textbf{Result.} \checkmark Verified on all three models
 
 \subsection{Attention Mass Analysis}
 
@@ -1344,7 +1344,7 @@ HALO-ReGLA computes both streams. To realize speedup:
 \item Convert to pure linear inference.
 
 \end{enumerate}
-Expected speedup: up to 3$$\times$ if all heads convert.
+Expected speedup: up to 3$\times$ if all heads convert.
 
 \subsection{When to Use HALO-ReGLA}
 
@@ -1788,15 +1788,15 @@ attention.
 
 \textbf{Proof.} For position $i$, causal linear attention is:
 
-\begin{equation}
+\[
 O_i = \frac{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j) V_j}{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j)}
-\end{equation}
+\]
 
 Factoring out $\phi(Q_i)$:
 
-\begin{equation}
+\[
 O_i = \frac{\phi(Q_i)^\top \sum_{j \le i} \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_{j \le i} \phi(K_j)}
-\end{equation}
+\]
 
 The cumulative sums $\text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top$ 
 and $\text{den}^{(i)} = \sum_{j \le i} \phi(K_j)$ are computed via \texttt{cumsum}. 
@@ -1820,15 +1820,15 @@ In both cases, $\phi(x) > 0$. $\square$
 
 The gradient of the loss w.r.t. the gate logit $z = w^\top x + b$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial z} = \frac{\partial \mathcal{L}}{\partial g} \cdot g(1 - g)
-\end{equation}
+\]
 
 where:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial g} = \nabla_O \mathcal{L} \cdot (O^\text{dense} - O^\text{lin})
-\end{equation}
+\]
 
 \subsection{A.4 Fusion Interpolation}
 
@@ -1841,9 +1841,9 @@ convex combination for $g \in [0, 1]$.
 
 For a batch of $B$ sequences of length $L$ with $H$ heads and head dim $d_h$:
 
-\begin{equation}
+\[
 \text{Memory} = B H L d_h^2 \cdot \text{bytes}
-\end{equation}
+\]
 
 For $B = 8, H = 12, L = 512, d_h = 64$: $8 \times 12 \times 512 \times 64^2 \times 2 = 4$ GB. 
 
@@ -1854,9 +1854,9 @@ inference.
 
 \textbf{Claim.} The fusion error is bounded by:
 
-\begin{equation}
+\[
 \|O - O^\text{dense}\| \leq (1 - g) \cdot \|O^\text{lin} - O^\text{dense}\|
-\end{equation}
+\]
 
 \textbf{Proof.} $O - O^\text{dense} = (1 - g)(O^\text{lin} - O^\text{dense})$. 
 Taking norms gives (A.6). $\square$

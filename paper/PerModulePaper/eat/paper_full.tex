@@ -1,4 +1,4 @@
-\title{\textbf{EAT: Efficient Attention Transformer with Progressive Token Pruning}
+\title{\textbf{EAT: Efficient Attention Transformer with Progressive Token Pruning}}
 
 \author{Anonymous authors}
 
@@ -291,7 +291,7 @@ EAT replaces the standard MHSA block with a version that:
 
 \begin{lstlisting}
     +-------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                       |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                       |
     +----------------+--------------------------+
                      |
                       
@@ -498,8 +498,8 @@ mitigation in  5.8.
 
 \textbf{Algorithm 1:} EAT forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_ids
-Output: Y $\in$ R^{B$$\times$L'$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_ids
+Output: Y $\in$ R^{B$\times$L'$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)           Frozen W + trainable LoRA
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -552,7 +552,7 @@ Downstream FFN & $\mathcal{O}(k d^2)$ \\
 \end{tabular}
 \end{table}
 
-For $k = L / 2$, downstream cost is reduced by 4$$\times$.
+For $k = L / 2$, downstream cost is reduced by 4$\times$.
 
 \subsection{Parameter Analysis}
 
@@ -587,7 +587,7 @@ Q projection EAT & 589,824 + 24,576 = 614,400 & +24,576 \\
 \end{tabular}
 \end{table}
 
-\textbf{Across 4 projections $$\times$ $N_\ell$ layers:}
+\textbf{Across 4 projections $\times$ $N_\ell$ layers:}
 
 \begin{table}[H]
 \centering
@@ -1143,11 +1143,11 @@ The optimal pruning ratio depends on the task.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-nha & 90.25\% & FAIL & 78.78\% & 1.01$$\times$ \\
-a3 (r=64) & 0.85 & 32 & 0.85 & 0.20$$\times$ \\
-aasvd (r=288) & 0.85 & 32 & 0.85 & 0.75$$\times$ \\
-\textbf{EAT} & \textbf{89.91} & \textbf{82.68} & \textbf{82.11} & \textbf{1.01$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+a3 (r=64) & 0.85 & 32 & 0.85 & 0.20$\times$ \\
+aasvd (r=288) & 0.85 & 32 & 0.85 & 0.75$\times$ \\
+\textbf{EAT} & \textbf{89.91} & \textbf{82.68} & \textbf{82.11} & \textbf{1.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1177,10 +1177,10 @@ GPT-2 & PASS & 82.11 & 32 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/eat_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{eat}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{eat}.}
 \label{fig:results_eat}
 \end{figure}
 
@@ -1242,8 +1242,8 @@ print("diff:", (logits_before - logits_after).abs().max().item())
 
 \subsubsection{Hypothesis 3: Insufficient Recovery}
 
-RoBERTa has 12 layers -- 2$$\times$ DistilBERT. The same LoRA rank must cover 
-2$$\times$ more attention blocks.
+RoBERTa has 12 layers -- 2$\times$ DistilBERT. The same LoRA rank must cover 
+2$\times$ more attention blocks.
 
 \textbf{Test.} We ran EAT on RoBERTa with \texttt{lora\_rank=32} instead of 16:
 
@@ -1266,7 +1266,7 @@ RoBERTa has 12 layers -- 2$$\times$ DistilBERT. The same LoRA rank must cover
 
 \subsection{Inference Cost Breakdown}
 
-EAT is ~2.1$$\times$ slower than baseline. Contributions:
+EAT is ~2.1$\times$ slower than baseline. Contributions:
 
 \begin{table}[H]
 \centering
@@ -1297,11 +1297,11 @@ exactly baseline. LoRA adds the overhead.
 \toprule
 \textbf{Pruning ratio} & \textbf{Accuracy} & \textbf{Speedup} \\
 \midrule
-1.0 (no prune) & 0.85 & 1.0$$\times$ \\
-0.9 & 0.85 & 86.4$$\times$ \\
-0.7 & 0.85 & 86.0$$\times$ \\
-0.5 & 0.85 & 85.0$$\times$ \\
-0.3 & 0.85 & 83.2$$\times$ \\
+1.0 (no prune) & 0.85 & 1.0$\times$ \\
+0.9 & 0.85 & 86.4$\times$ \\
+0.7 & 0.85 & 86.0$\times$ \\
+0.5 & 0.85 & 85.0$\times$ \\
+0.3 & 0.85 & 83.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1321,10 +1321,10 @@ EAT's parameter increase on DistilBERT is \textbf{+-32M}
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA on Q & 6 layers $$\times$ 24,576 = 147,456 \\
-LoRA on K & 6 layers $$\times$ 24,576 = 147,456 \\
-LoRA on V & 6 layers $$\times$ 24,576 = 147,456 \\
-LoRA on O & 6 layers $$\times$ 24,576 = 147,456 \\
+LoRA on Q & 6 layers $\times$ 24,576 = 147,456 \\
+LoRA on K & 6 layers $\times$ 24,576 = 147,456 \\
+LoRA on V & 6 layers $\times$ 24,576 = 147,456 \\
+LoRA on O & 6 layers $\times$ 24,576 = 147,456 \\
 \textbf{Total} & \textbf{589,824} \\
 \bottomrule
 \end{tabular}
@@ -1363,7 +1363,7 @@ Multi-architecture deployment & EAT, NHA \\
 \textbf{Collapse} & Acc $\approx$ 50.92\% & Silent weight transfer failure \\
 \textbf{Double projection} & Acc drops 15-25\% & \texttt{is\_nested\_encoder} wrong \\
 \textbf{OOM} & CUDA error & Batch size too large \\
-\textbf{Slow} & >3$$\times$ latency & LoRA overhead \\
+\textbf{Slow} & >3$\times$ latency & LoRA overhead \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1467,7 +1467,7 @@ For DistilBERT:
 \midrule
 Params & 66.95M & 66.4MM & \textbf{+48.5\%\%} \\
 VRAM & 183 MB & 328 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 \bottomrule
 \end{tabular}
@@ -1531,7 +1531,7 @@ does not reduce storage, memory, or model size on disk.
 
 \subsection{Inference Overhead}
 
-EAT is ~2.1$$\times$ slower than baseline when LoRA is enabled. 
+EAT is ~2.1$\times$ slower than baseline when LoRA is enabled. 
 The overhead comes from:
 
 \begin{itemize}
@@ -1648,9 +1648,9 @@ architectures -- flat, nested, causal, and GQA+RoPE -- without code changes.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$} & \textbf{Time ratio} \\
 \midrule
-DistilBERT & -0.80\% & +48.5\%\% & 2.1$$\times$ \\
-RoBERTa & +4.12\% & +48.5\%\% & 2.1$$\times$ \\
-GPT-2 & +2.75\% & +48.5\%\% & 2.1$$\times$ \\
+DistilBERT & -0.80\% & +48.5\%\% & 2.1$\times$ \\
+RoBERTa & +4.12\% & +48.5\%\% & 2.1$\times$ \\
+GPT-2 & +2.75\% & +48.5\%\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2468,7 +2468,7 @@ done
 
 \textbf{Result.} 
 \begin{itemize}
-\item Training time increased 5$$\times$
+\item Training time increased 5$\times$
 \item No accuracy improvement
 \item Parameter count much higher
 
@@ -2638,7 +2638,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

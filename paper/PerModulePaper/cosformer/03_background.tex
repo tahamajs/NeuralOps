@@ -5,9 +5,9 @@
 
 Standard scaled dot-product attention:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
-\end{equation}
+\]
 
 \textbf{Properties:}
 \begin{itemize}
@@ -21,15 +21,15 @@ Standard scaled dot-product attention:
 
 Replacing softmax with a kernel factorization:
 
-\begin{equation}
+\[
 \exp(q^\top k) \approx \phi(q)^\top \phi(k), \quad \phi: \mathbb{R}^d \to \mathbb{R}^m
-\end{equation}
+\]
 
 allows rewriting attention as:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\sum_j \phi(q_i)^\top \phi(k_j) V_j}{\sum_j \phi(q_i)^\top \phi(k_j)} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) V_j}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 \textbf{Complexity.} The sums $\sum_j \phi(k_j) V_j$ and $\sum_j \phi(k_j)$ are 
 $\mathcal{O}(L m d)$, independent of the query position. Precomputed once, 
@@ -63,22 +63,22 @@ summarization), linear attention underperforms softmax.
 
 Cosformer adds cosine/sine modulation:
 
-\begin{equation}
+\[
 \tilde{\phi}(q_i) = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
 \tilde{\phi}'(q_i) = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
-\end{equation}
+\]
 
 Then the attention becomes:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) V_j + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j) V_j}{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j)}
-\end{equation}
+\]
 
 \textbf{Why it works.} The identity:
 
-\begin{equation}
+\[
 \cos(\theta_i - \theta_j) = \cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j
-\end{equation}
+\]
 
 means the sum $\tilde{\phi}(q_i)^\top \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \tilde{\phi}'(k_j)$ 
 equals $\phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)$. The 

@@ -1,4 +1,4 @@
-\title{\textbf{FlashAttention-3 Wrapper: Hardware-Optimized Exact Attention with Graceful SDPA Fallback}
+\title{\textbf{FlashAttention-3 Wrapper: Hardware-Optimized Exact Attention with Graceful SDPA Fallback}}
 
 \author{Anonymous authors}
 
@@ -25,11 +25,11 @@ backward rather than stored. This gives:
 
 \begin{itemize}
 \item \textbf{Memory:} $\mathcal{O}(L)$ instead of $\mathcal{O}(L^2)$.
-\item \textbf{Throughput:} 2-4$$\times$ faster than standard attention on Hopper GPUs.
+\item \textbf{Throughput:} 2-4$\times$ faster than standard attention on Hopper GPUs.
 
 \end{itemize}
 \textbf{FP8 support.} FlashAttention-3 adds FP8 (e4m3) tensor core utilization, 
-achieving another 2$$\times$ on H100/H200.
+achieving another 2$\times$ on H100/H200.
 
 \subsection{The Deployment Problem}
 
@@ -134,10 +134,10 @@ recomputation for attention, reducing memory from $\mathcal{O}(L^2)$ to
 $\mathcal{O}(L)$ while being faster due to reduced HBM traffic.
 
 \textbf{FlashAttention-2.} Dao (2023) improves parallelism and work partitioning, 
-achieving ~2$$\times$ over v1.
+achieving ~2$\times$ over v1.
 
 \textbf{FlashAttention-3.} Dao et al. (2024) add TMA (Hopper), warp-specialized 
-asynchronous execution, and FP8 support, achieving ~2$$\times$ over v2 on H100.
+asynchronous execution, and FP8 support, achieving ~2$\times$ over v2 on H100.
 
 \textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\_dot\_product\_attention}, 
 which auto-selects between a math path, a memory-efficient path, and 
@@ -265,10 +265,10 @@ Over FlashAttention-2, v3 adds:
   from HBM to shared memory, freeing the SM for computation.
 \item \textbf{Warp specialization.} Producer-consumer model where some warps handle
   memory while others compute.
-\item \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$$\times$ throughput.
+\item \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
 
 \end{enumerate}
-\textbf{Result.} ~2$$\times$ throughput over v2 on H100.
+\textbf{Result.} ~2$\times$ throughput over v2 on H100.
 
 \subsection{PyTorch SDPA}
 
@@ -475,7 +475,7 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, None
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)
@@ -524,8 +524,8 @@ SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$$\times$ over 
-naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$$\times$.
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 
 \subsection{Parameter Analysis}
 
@@ -981,17 +981,17 @@ full & 90.71\% & 0 & Baseline \\
 \item \textbf{Accuracy:} matches baseline.
 \item \textbf{Parameters:} +66.4M\%.
 \item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
-\item \textbf{Runtime on H100:} estimated 2-4$$\times$ faster (not tested).
+\item \textbf{Runtime on H100:} estimated 2-4$\times$ faster (not tested).
 \end{itemize}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/flash3_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{flash3}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{flash3}.}
 \label{fig:results_flash3}
 \end{figure}
 
@@ -1150,7 +1150,7 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{H100/H200 inference} -- FA3 gives 2-4$$\times$ throughput
+\item \textbf{H100/H200 inference} -- FA3 gives 2-4$\times$ throughput
 \item \textbf{Long sequences} ($L \geq 2048$) -- memory savings substantial
 \item \textbf{Production serving} -- stable, exact attention
 
@@ -1190,8 +1190,8 @@ For DistilBERT on RTX 4070 (SDPA path):
 \midrule
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 66.4MM & +-32MM \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
-VRAM & 183 MB & 317 MB MB & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
+VRAM & 183 MB & 317 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2010,7 +2010,7 @@ Std & 0.85 & 32 & 0.85 \\
 \subsection{D.5 Unresolved Questions}
 
 \begin{enumerate}
-\item \textbf{H100 benchmarks:} Would FA3 be 2-4$$\times$ faster?
+\item \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
 \item \textbf{FP8 accuracy:} Real vs simulated?
 \item \textbf{Long context:} $L > 8192$ untested?
 \item \textbf{Training:} FA3 backward path untested?
@@ -2067,7 +2067,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

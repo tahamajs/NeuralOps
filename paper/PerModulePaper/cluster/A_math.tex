@@ -43,9 +43,9 @@ is bounded below by 0, the algorithm converges. $\square$
 
 The soft assignment with temperature $\tau$:
 
-\begin{equation}
+\[
 \text{assign}_{i,k} = \frac{\exp(Q_i \cdot C_k / (\sqrt{d_h} \tau))}{\sum_{k'} \exp(Q_i \cdot C_{k'} / (\sqrt{d_h} \tau))}
-\end{equation}
+\]
 
 \textbf{Limit.} As $\tau \to 0$, this becomes a hard assignment (one-hot). As 
 $\tau \to \infty$, it becomes uniform.
@@ -54,9 +54,9 @@ $\tau \to \infty$, it becomes uniform.
 
 \textbf{Statement.} The approximation error of ClusterFormer satisfies:
 
-\begin{equation}
+\[
 \|\text{Output}_\text{CF} - \text{Output}_\text{exact}\|_F \leq f(\text{K-means distortion})
-\end{equation}
+\]
 
 where $f$ is monotone increasing. We do not provide a tight bound; see 
 empirical analysis in Section 8.
@@ -67,9 +67,9 @@ empirical analysis in Section 8.
 
 \textbf{Proof.} We use exact causal attention for decoders (Section 5.4):
 
-\begin{equation}
+\[
 \text{Attn}_i = \sum_{j \leq i} \alpha_{ij} V_j
-\end{equation}
+\]
 
 Only keys with $j \leq i$ contribute. Causality is preserved. $\square$
 

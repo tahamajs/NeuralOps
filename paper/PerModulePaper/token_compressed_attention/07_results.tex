@@ -24,7 +24,7 @@ GPT-2 & \textbf{TCA} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & 50\% & 571 MB M
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item KV sequence length reduced from 128 to \textbf{0.85} (~50\%$$\times$ reduction).
+\item KV sequence length reduced from 128 to \textbf{0.85} (~50\%$\times$ reduction).
 \item Attention compute reduced by \textbf{12.5\%}.
 \item Accuracy drop of \textbf{-39.79\%} on DistilBERT.
 
@@ -159,10 +159,10 @@ $\Delta$ & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Speedup} \\
 \midrule
-128 & 85.0 s & 84.0 s & 84.8$$\times$ \\
-256 & 85.5 s & 84.8 s & 85.6$$\times$ \\
-512 & 86.0 s & 85.6 s & 86.2$$\times$ \\
-1024 & 86.4 s & 86.4 s & 86.4$$\times$ \\
+128 & 85.0 s & 84.0 s & 84.8$\times$ \\
+256 & 85.5 s & 84.8 s & 85.6$\times$ \\
+512 & 86.0 s & 85.6 s & 86.2$\times$ \\
+1024 & 86.4 s & 86.4 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -203,9 +203,9 @@ StreamingLLM-style & 0.85 & 32 & 0.85 & No \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/token_compressed_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{token_compressed_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{token_compressed_attention}.}
 \label{fig:results_token_compressed_attention}
 \end{figure}

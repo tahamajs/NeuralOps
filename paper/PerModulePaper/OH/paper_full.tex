@@ -1,4 +1,4 @@
-\title{\textbf{OHA: Optimized Hybrid Attention with Sequence-Compressed Global Context}
+\title{\textbf{OHA: Optimized Hybrid Attention with Sequence-Compressed Global Context}}
 
 \author{Anonymous authors}
 
@@ -63,24 +63,24 @@ OHA replaces MHSA with a two-branch block:
 \end{enumerate}
 The compressed summary is computed by \textbf{soft-attention pooling}:
 
-\begin{equation}
+\[
 C_K = \text{softmax}(W_k^\text{comp} X, \text{dim}=L) \cdot K \in \mathbb{R}^{B \times d_c \times d}
-\end{equation}
+\]
 
 where $W_k^\text{comp} \in \mathbb{R}^{d \times d_c}$ produces pooling weights. 
 Similarly for $C_V$.
 
 The global branch attends to these compressed summaries:
 
-\begin{equation}
+\[
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
-\end{equation}
+\]
 
 The two branches are fused via a per-head gate:
 
-\begin{equation}
+\[
 \text{output} = \gamma \odot \text{LocalAttn} + (1 - \gamma) \odot \text{GlobalAttn}
-\end{equation}
+\]
 
 with $\gamma = \sigma(W_g X) \in [0, 1]^{B \times H}$.
 
@@ -216,15 +216,15 @@ input-adaptive.
 
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\end{equation}
+\]
 
 with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
-\begin{equation}
+\[
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{equation}
+\]
 
 \textbf{Complexity:} $\mathcal{O}(L^2 d)$.
 
@@ -232,9 +232,9 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 Restrict attention to a window of size $W$:
 
-\begin{equation}
+\[
 \text{SWA}(X)_i = \text{softmax}\!\left(\frac{Q_i K_{[i-W:i+W]}^\top}{\sqrt{d_h}}\right) V_{[i-W:i+W]}
-\end{equation}
+\]
 
 For causal models, the window is one-sided. Complexity: $\mathcal{O}(L W d)$.
 
@@ -244,10 +244,10 @@ Given a sequence $X \in \mathbb{R}^{B \times L \times d}$ and a learnable
 projection $W_p \in \mathbb{R}^{d \times d_c}$, the soft-attention pooled 
 representation is:
 
-\begin{equation}
+\[
 \text{Pool}_j = \sum_{i=1}^{L} \alpha_{ij} X_i, \qquad
 \alpha_{ij} = \frac{\exp(W_{p,j}^\top X_i)}{\sum_{i'=1}^L \exp(W_{p,j}^\top X_{i'})}
-\end{equation}
+\]
 
 for $j = 1, \dots, d_c$.
 
@@ -259,9 +259,9 @@ representation $\text{Pool}_j$ is a weighted average of tokens.
 
 Given two branches (local and global), we combine them via a gate:
 
-\begin{equation}
+\[
 \text{output} = \gamma \odot \text{local} + (1 - \gamma) \odot \text{global}
-\end{equation}
+\]
 
 with $\gamma = \sigma(W_g X) \in [0, 1]$.
 
@@ -305,7 +305,7 @@ OHA replaces MHSA with a two-branch block:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -347,17 +347,17 @@ OHA replaces MHSA with a two-branch block:
 
 For causal models:
 
-\begin{equation}
+\[
 M_{ij}^\text{local} = \begin{cases} 0 \& j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
-\end{equation}
+\]
 
 For bidirectional: symmetric.
 
 \subsubsection{Local Attention}
 
-\begin{equation}
+\[
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
-\end{equation}
+\]
 
 \textbf{Complexity:} $\mathcal{O}(L W d)$.
 
@@ -367,20 +367,20 @@ For bidirectional: symmetric.
 
 We introduce two learnable projections:
 
-\begin{equation}
+\[
 W_k^\text{comp} \in \mathbb{R}^{d \times d_c}, \qquad
 W_v^\text{comp} \in \mathbb{R}^{d \times d_c}
-\end{equation}
+\]
 
 These produce compression weights:
 
-\begin{equation}
+\[
 P_K = \text{softmax}\!\left(X W_k^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
-\end{equation}
+\]
 
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
 a distribution over the $L$ tokens.
@@ -389,19 +389,19 @@ a distribution over the $L$ tokens.
 
 The compressed keys and values are:
 
-\begin{equation}
+\[
 C_K = K^\top P_K \in \mathbb{R}^{B \times d_c \times d_h H}, \qquad
 C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
-\end{equation}
+\]
 
 \textbf{Interpretation.} Each of the $d_c$ summary slots is a weighted average of 
 the sequence's keys (or values). The weights are data-dependent.
 
 \subsubsection{Global Attention}
 
-\begin{equation}
+\[
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
-\end{equation}
+\]
 
 The softmax is over $d_c$ slots. This is the same shape as full attention 
 but with $L$ replaced by $d_c$.
@@ -412,9 +412,9 @@ but with $L$ replaced by $d_c$.
 
 For causal models, the compression must not leak future information:
 
-\begin{equation}
+\[
 C_{K, j} = \frac{\sum_{i \leq \text{pos}(j)} \exp(\cdots) K_i}{\sum_{i \leq \text{pos}(j)} \exp(\cdots)}
-\end{equation}
+\]
 
 where $\text{pos}(j)$ is a monotonic mapping from slot index to position.
 
@@ -429,25 +429,25 @@ global_scores = global_scores.masked_fill(~causal_global, -1e4)
 
 \subsubsection{The Gate}
 
-\begin{equation}
+\[
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
-\end{equation}
+\]
 
 with $W_g \in \mathbb{R}^{d \times H}$.
 
 \subsubsection{Fusion}
 
-\begin{equation}
+\[
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
 We initialize the gate bias to $2.0$:
 
-\begin{equation}
+\[
 \sigma(2.0) \approx 0.88
-\end{equation}
+\]
 
 So the model starts by favoring the local branch. As training progresses, 
 the gate adapts.
@@ -461,8 +461,8 @@ destabilize training.
 
 \textbf{Algorithm 1:} OHA forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, W, d_c
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, W, d_c
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -487,7 +487,7 @@ Output: Y $\in$ R^{B$$\times$L$$\times$d}
 21: out_global $\leftarrow$ P_global C_V
 22:
 23: # Gating
-24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$$\times$L$$\times$H}
+24: $\gamma$ $\leftarrow$ sigmoid(W_g X)  $\in$ R^{B$\times$L$\times$H}
 25: combined $\leftarrow$ $\gamma$   out_local + (1-$\gamma$)   out_global
 26:
 27: combined $\leftarrow$ concat_heads(combined)
@@ -535,7 +535,7 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
 \]
 
-\textbf{~43$$\times$ faster} in attention.
+\textbf{~43$\times$ faster} in attention.
 
 \subsection{Parameter Analysis}
 
@@ -1063,10 +1063,10 @@ GPT-2 \& OHA & 8.8 s & 12900 & 870 MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-nha & 90.25\% \& FAIL & 78.78\% & 1.01$$\times$ \\
-infini & 89.5\% & 76.5\% & 77.5\% & 1.02$$\times$ \\
-\textbf{oha} & \textbf{89.2} & \textbf{76.5} & \textbf{77.8} & \textbf{1.01$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% \& FAIL & 78.78\% & 1.01$\times$ \\
+infini & 89.5\% & 76.5\% & 77.5\% & 1.02$\times$ \\
+\textbf{oha} & \textbf{89.2} & \textbf{76.5} & \textbf{77.8} & \textbf{1.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1096,10 +1096,10 @@ GPT-2 \& PASS & 77.8 & — \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/oha_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{OH}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{OH}.}
 \label{fig:results_oh}
 \end{figure}
 
@@ -1177,7 +1177,7 @@ summary.
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Some heads prefer local ($\gamma$→0.85), others global ($\gamma$→0.65)
+\textbf{Observation.} Some heads prefer local ($\gamma$$\rightarrow$0.85), others global ($\gamma$$\rightarrow$0.65)
 
 \subsection{Compression Quality}
 
@@ -1298,7 +1298,7 @@ LoRA & 42\% \\
 Crash during injection & \texttt{RuntimeError} \& Missing projection \\
 Collapse \& Acc $\approx$ 50.92\% \& Weight copy failed \\
 Overfitting \& Train >> val \& Gate/compress too large \\
-Slow & >3$$\times$ latency \& Extra matmuls \\
+Slow & >3$\times$ latency \& Extra matmuls \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1348,7 +1348,7 @@ projections + gate + LoRA.
 
 For $L \gg W + d_c$, OHA is $\mathcal{O}(L(W + d_c))$ vs baseline 
 $\mathcal{O}(L^2)$. For $L = 4096$, $W = 64$, $d_c = 32$, this is 
-\textbf{~43$$\times$ faster} in attention.
+\textbf{~43$\times$ faster} in attention.
 
 \subsubsection{Takeaway 3: Data-Dependent Compression}
 
@@ -1398,7 +1398,7 @@ For DistilBERT at L=128:
 \midrule
 Params & 66.95M & 67895114M & +1.40\% \\
 VRAM & 183 MB & 215 MB & +32 \\
-Time & 1.90 s & 4.2 s & 2.2$$\times$ \\
+Time & 1.90 s & 4.2 s & 2.2$\times$ \\
 Accuracy & 90.71\% & 89.2\% & -1.51\% \\
 \bottomrule
 \end{tabular}
@@ -1413,7 +1413,7 @@ Accuracy & 90.71\% & 89.2\% & -1.51\% \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{OHA} & \textbf{Change} \\
 \midrule
-Time (est.) & ~30 s & ~3 s & 10$$\times$ faster \\
+Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1557,9 +1557,9 @@ data-adaptive.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & -1.51\% & +1.40\% & 2.2$$\times$ \\
-RoBERTa & -2.06\% & +1.51\% & 2.1$$\times$ \\
-GPT-2 & -1.56\% & +1.51\% & 2.1$$\times$ \\
+DistilBERT & -1.51\% & +1.40\% & 2.2$\times$ \\
+RoBERTa & -2.06\% & +1.51\% & 2.1$\times$ \\
+GPT-2 & -1.56\% & +1.51\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2380,7 +2380,7 @@ dropped by 3.5\%.
 
 \textbf{Goal.} Combine Infini-Attention's memory with OHA's compression.
 
-\textbf{Result.} 2$$\times$ parameters, no improvement.
+\textbf{Result.} 2$\times$ parameters, no improvement.
 
 \subsection{D.3 Failed Hyperparameters}
 

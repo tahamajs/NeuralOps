@@ -14,9 +14,9 @@ $d^2$ to $2 r d$.
 
 \textbf{Standard SVD compression} treats each projection independently:
 
-\begin{equation}
+\[
 W_Q \to U_{Q,r} V_{Q,r}, \quad W_K \to U_{K,r} V_{K,r}, \quad W_V \to U_{V,r} V_{V,r}, \quad W_O \to U_{O,r} V_{O,r}
-\end{equation}
+\]
 
 This costs $4 \cdot 2 r d = 8 r d$ parameters.
 
@@ -31,10 +31,10 @@ Given a pretrained transformer $\mathcal{M}$ with hidden dimension $d$ and
 head dimension $d_h$, we seek compressed projections 
 $\{W_Q, W_K, W_V, W_O\}$ such that:
 
-\begin{equation}
+\[
 \text{Cost}(\mathcal{A}') \ll 4 d^2, \qquad
 \mathcal{A}' \approx \mathcal{A}
-\end{equation}
+\]
 
 subject to:
 
@@ -50,23 +50,23 @@ subject to:
 
 We stack the Q, K, V projections:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(d + 2 d_{kv}) \times d}
-\end{equation}
+\]
 
 where $d_{kv} = H_{kv} \cdot d_h$ for grouped-query attention.
 
 We then compute a single SVD:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 and truncate to rank $r$:
 
-\begin{equation}
+\[
 W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{QKV, r}^\top
-\end{equation}
+\]
 
 \textbf{Advantages:}
 
@@ -80,9 +80,9 @@ W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{
 \end{enumerate}
 We apply separate SVD to the output projection $W_O \in \mathbb{R}^{d \times d_h H}$:
 
-\begin{equation}
+\[
 W_O \approx U_{O, r} \Sigma_{O, r}^{1/2} \cdot \Sigma_{O, r}^{1/2} V_{O, r}^\top
-\end{equation}
+\]
 
 \subsection{Contributions}
 

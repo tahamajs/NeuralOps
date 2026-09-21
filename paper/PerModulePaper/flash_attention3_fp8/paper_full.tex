@@ -1,4 +1,4 @@
-\title{\textbf{FlashAttention-3 FP8: Low-Precision 8-bit Attention with Hardware-Aware Fallback}
+\title{\textbf{FlashAttention-3 FP8: Low-Precision 8-bit Attention with Hardware-Aware Fallback}}
 
 \author{Anonymous authors}
 
@@ -9,8 +9,8 @@
 \subsection{Motivation}
 
 The memory cost of attention has been a bottleneck for transformer inference 
-since Vaswani et al. (2017). The intermediate attention matrix $Q K\^{}\top \in 
-\mathbb{R}\^{}{L \times L}$ requires $\mathcal{O}(L\^{}2)$ memory, which for 
+since Vaswani et al. (2017). The intermediate attention matrix $Q K^\top \in 
+\mathbb{R}^{L \times L}$ requires $\mathcal{O}(L^2)$ memory, which for 
 $L = 8192$ and 16-bit precision is 128 MB per head -- infeasible for 
 long-context applications.
 
@@ -272,7 +272,7 @@ E5M2 & 1 / 5 / 2 & 57344 & ~1\% \\
 \end{table}
 
 \textbf{FP8 tensor cores.} Only Hopper (H100, H200) and Ada (RTX 4090, L40) expose 
-FP8 tensor cores with 2$$\times$ throughput over FP16. On Ampere (A100, RTX 30-series) 
+FP8 tensor cores with 2$\times$ throughput over FP16. On Ampere (A100, RTX 30-series) 
 and earlier, FP8 is only a storage format, not a compute format.
 
 \textbf{Detection.} PyTorch exposes the FP8 dtype as \texttt{torch.float8\_e4m3fn} 
@@ -594,7 +594,7 @@ add:
 
 per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
 
-\textbf{Total overhead (DistilBERT):} 4 projections $$\times$ 6 layers $$\times$ 24,576 = 
+\textbf{Total overhead (DistilBERT):} 4 projections $\times$ 6 layers $\times$ 24,576 = 
 \textbf{589,824 params} (+0.88\%).
 
 \textbf{This is not a compression method.}
@@ -603,8 +603,8 @@ per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
 
 \textbf{Algorithm 1:} FlashAttention3FP8 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      With LoRA
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -1124,9 +1124,9 @@ increases because LoRA adapters are added to frozen base weights.
 \toprule
 \textbf{Model} & \textbf{Time (baseline)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (baseline)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 1335 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 380 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 380 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 1335 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 380 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1294,9 +1294,9 @@ Based on the FlashAttention-3 paper (Shah et al., 2024):
 \toprule
 \textbf{Configuration} & \textbf{Speedup over FP16} \\
 \midrule
-FP16 FlashAttention-2 & 1.0$$\times$ \\
-FP8 FlashAttention-3 (H100 SXM) & ~1.8$$\times$ \\
-FP8 FlashAttention-3 (H100 PCIe) & ~1.5$$\times$ \\
+FP16 FlashAttention-2 & 1.0$\times$ \\
+FP8 FlashAttention-3 (H100 SXM) & ~1.8$\times$ \\
+FP8 FlashAttention-3 (H100 PCIe) & ~1.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1426,7 +1426,7 @@ Since FP8 is unavailable, we analyze the SDPA path:
 \toprule
 \textbf{Operation} & \textbf{Kernel launches} \\
 \midrule
-Q/K/V projection ($$\times$3) & 3 \\
+Q/K/V projection ($\times$3) & 3 \\
 RoPE (if applicable) & 2 \\
 repeat\_kv (if GQA) & 2 \\
 SDPA & 1 \\
@@ -1548,8 +1548,8 @@ PyTorch SDPA & No & -- & None \\
 \midrule
 Accuracy & same & same (LoRA preserved) \\
 Params & 66.9M & +0.88\% \\
-Speed on H100 & 1.0$$\times$ & ~1.8$$\times$ (expected) \\
-Speed on RTX 4070 & 1.0$$\times$ & 1.0$$\times$ \\
+Speed on H100 & 1.0$\times$ & ~1.8$\times$ (expected) \\
+Speed on RTX 4070 & 1.0$\times$ & 1.0$\times$ \\
 Portability & Limited & Full \\
 \bottomrule
 \end{tabular}

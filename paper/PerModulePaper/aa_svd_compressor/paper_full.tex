@@ -1,4 +1,4 @@
-\title{\textbf{Aa Svd Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}
+\title{\textbf{Aa Svd Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation}}
 
 \author{Anonymous authors}
 
@@ -147,9 +147,9 @@ The \texttt{AASVD} module executes a structured transformation replacing monolit
 \subsubsection{Streaming Activation Covariance}
 \label{sec:activation_covariance}
 The AASVD compressor estimates the input activation covariance $C_X$ using a streaming exponential moving average (EMA):
-\begin{equation}
+\[
 C_X^{(t)} = \beta C_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum_{i=1}^B X_i^\top X_i
-\end{equation}
+\]
 where $\beta = 0.90$ is the momentum coefficient and $B$ is the batch size. This $\mathcal{O}(d^2)$ streaming formulation avoids materializing the full $\mathcal{O}(N d^2)$ activation buffer in memory.
 
 The empirical covariance is used to precondition the weight matrix before Singular Value Decomposition:
@@ -163,69 +163,69 @@ The preconditioning transformation $C_X^{1/2}$ concentrates low-rank capacity on
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
-\begin{equation}
+\[
 Z = X W^\top + b
-\end{equation}
+\]
 
 \subsubsection{Low-Rank Bilinear Factorization}
 Under low-rank compression, weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is factored into matrices $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
-\begin{equation}
+\[
 \hat{W} = U_r V_r
-\end{equation}
+\]
 
 \subsubsection{Factorized Forward Execution}
 The forward evaluation transforms from monolithic matrix multiplication into two lightweight steps:
-\begin{equation}
+\[
 \tilde{Z} = (X V_r^\top) U_r^\top + b
-\end{equation}
+\]
 
 \subsubsection{Cumulative Spectral Energy}
 Rank selection is governed by cumulative squared singular values:
-\begin{equation}
+\[
 \mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}
-\end{equation}
+\]
 
 \subsubsection{Energy-Thresholded Optimal Rank}
 For target energy threshold $\tau \in (0, 1)$, the optimal rank $r^*$ satisfies:
-\begin{equation}
+\[
 r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
-\begin{equation}
+\[
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Initialization}
 Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
-\begin{equation}
+\[
 A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
-\end{equation}
+\]
 
 \subsubsection{Relative Frobenius Reconstruction Error}
 Post-compression parameter distortion is evaluated against the uncompressed matrix:
-\begin{equation}
+\[
 \delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Automated Guardrail Decision Rule}
 Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
-\begin{equation}
+\[
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
-\end{equation}
+\]
 
 \subsubsection{Attention Kernel Normalization}
 In linear attention formulations, outputs are computed via associative reduction:
-\begin{equation}
+\[
 O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Head Projection Partitioning}
 Multi-head attention projections decompose into parallel heads:
-\begin{equation}
+\[
 W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}
-\end{equation}
+\]
 
 \subsection{Detailed Algorithmic Execution Trace}
 
@@ -268,9 +268,9 @@ if recon_err > max_error_ceiling or torch.isnan(recon_err):
 \subsection{Complexity and FLOPs Analysis}
 \subsubsection{Computational Complexity Breakdown}
 Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
-\begin{equation}
+\[
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
-\end{equation}
+\]
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
 \begin{align}
 \rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\
@@ -640,9 +640,9 @@ As foundation architectures extend sequence context windows from $2{,}048$ to $1
 Cross-backbone compatibility enables versatile serving across edge and cloud environments. On edge devices, compact models avoid out-of-memory faults, while in datacenter clusters, lower VRAM requirements permit higher concurrency and reduced operating costs.
 
 \subsection{Energy Efficiency and Carbon Footprint Quantification}
-Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5$\times$ to $10$\times$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
+Training and serving large language models consumes gigawatt-hours of electrical energy across global datacenter infrastructures. The carbon footprint of model inference is predominantly dictated by memory subsystem energy expenditure. In modern high-bandwidth memory (HBM3) architectures, reading a 16-bit parameter from off-chip DRAM to on-chip registers consumes approximately $5	imes$ to $10	imes$ more energy ($~20$ pJ per byte) than performing a floating-point multiply-accumulate (MAC) operation ($~2$ pJ per FP16 MAC).
 
-By reducing parameter storage by $2.5$\times$ to $3.0$\times$, \texttt{aasvdcompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
+By reducing parameter storage by $2.5	imes$ to $3.0	imes$, \texttt{aasvdcompressor} directly decreases DRAM byte-read cycles. Over sustained production serving of millions of queries daily, this efficiency translates into measurable kilowatt-hour reductions and lower operational carbon intensity.
 
 
 \section{Limitations and Failure Modes}
@@ -751,7 +751,7 @@ Decomposing each projection at rank $r$ reduces parameter count to:
 \[
 P_{\text{compressed}} = r \left( d_{\text{in}} + H_Q d_h \right) + 2 r \left( d_{\text{in}} + \frac{H_Q}{G} d_h \right) + r \left( H_Q d_h + d_{\text{in}} \right)
 \]
-When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2$\times$ on KV projections.
+When $G = 8$ and $r = d_h$, the compression factor exceeds $4.2	imes$ on KV projections.
 
 \subsection*{Spectral Radius and Numerical Conditioning in Deep Cascades}
 In a deep cascade of $L$ factorized transformer layers, the composite operator maps hidden representation $X_0$ to $X_L$. Let $W^{(l)}_r = U^{(l)}_r V^{(l)}_r$ denote the compressed weight operator at layer $l \in \{1, \dots, L\}$. The end-to-end forward transformation is given by the recursive recurrence:
@@ -899,13 +899,13 @@ We record per-operation step latencies across standard forward-pass submodules i
 \toprule
 \textbf{Submodule Phase} & \textbf{DistilBERT (ms)} & \textbf{RoBERTa (ms)} & \textbf{GPT-2 (ms)} & \textbf{Speedup} \\
 \midrule
-Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0$\times$ \\
-Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0$\times$ \\
-Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84$\times$ \\
-FFN Projections & 4.12 & 8.90 & 9.10 & $1.0$\times$ \\
-Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0$\times$ \\
+Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0	imes$ \\
+Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0	imes$ \\
+Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84	imes$ \\
+FFN Projections & 4.12 & 8.90 & 9.10 & $1.0	imes$ \\
+Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0	imes$ \\
 \midrule
-\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$$\times$} \\
+\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$\times$} \\
 \bottomrule
 \end{tabular}
 \caption{Detailed wall-clock execution latency across attention and feed-forward sublayers.}
@@ -966,7 +966,7 @@ Evaluating factorized models on sequence lengths $L > 2048$ without position int
 \section*{Appendix E. Broader Impact and Datacenter Sustainability}\addcontentsline{toc}{section}{Appendix E}
 
 \subsection*{E.1 Datacenter Power and Carbon Accounting}
-By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8$\times$.
+By compressing model parameters and diminishing memory bandwidth demands during autoregressive generation, this architecture reduces GPU power dissipation by up to $2.8	imes$.
 
 \subsection*{E.2 Lifecycle Carbon Accounting and Data Center Scalability}
 The global environmental footprint of AI deployment is increasingly dominated by continuous inference workloads. Operating a 12-layer transformer model on high-utilization inference servers consumes an average of $350$ Watts per GPU. By reducing DRAM access frequency via weight compression, power draw during token generation drops by $28\%$, avoiding an estimated $1.2$ metric tons of $\text{CO}_2$ emissions per server rack annually.
@@ -983,7 +983,7 @@ On embedded and edge accelerator platforms (such as NVIDIA Jetson AGX Orin and A
 By curtailing total parameter footprint and substituting memory-bound dense GEMMs with compute-bound factorized projections, the proposed method reduces average chip thermal dissipation by $4.2^\circ\text{C}$ under continuous load. This temperature reduction prevents thermal throttle interventions, enabling sustained real-time performance on battery-powered edge hardware.
 
 \subsection*{E.6 Energy Consumption Modeling Across Computational Precisions}
-Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100$\times$ to $200$\times$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
+Energy dissipation during transformer inference is dominated by off-chip DRAM access, which consumes approximately $100	imes$ to $200	imes$ more energy per operation than on-chip SRAM register arithmetic. Specifically, moving a 32-bit floating-point value from external LPDDR/HBM DRAM requires approximately $20\,\text{pJ}$, whereas an on-chip Multiply-Accumulate (MAC) operation requires only $0.1\,\text{pJ}$.
 
 \begin{table}[H]
 \centering
@@ -992,11 +992,11 @@ Energy dissipation during transformer inference is dominated by off-chip DRAM ac
 \toprule
 \textbf{Hardware Architecture} & \textbf{Precision} & \textbf{Memory Access (pJ)} & \textbf{ALU Operation (pJ)} & \textbf{Energy Reduction} \\
 \midrule
-Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0$\times$) \\
-Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84$\times$ \\
-Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0$\times$) \\
-Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91$\times$ \\
-Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40$\times$ \\
+Data Center GPU (A100) & FP32 & 20.0 & 0.10 & Baseline ($1.0	imes$) \\
+Data Center GPU (A100) & Factorized FP16 & 6.2 & 0.05 & $2.84	imes$ \\
+Edge Accelerator (Orin) & FP32 & 24.5 & 0.12 & Baseline ($1.0	imes$) \\
+Edge Accelerator (Orin) & Factorized FP16 & 7.8 & 0.06 & $2.91	imes$ \\
+Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40	imes$ \\
 \bottomrule
 \end{tabular}
 \caption{Energy consumption breakdown per token evaluation across hardware tiers.}

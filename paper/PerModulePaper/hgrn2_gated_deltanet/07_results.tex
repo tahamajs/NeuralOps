@@ -52,18 +52,18 @@ GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & 0.85 & 84.8$$\times$ \\
-256 & 3.50 & 0.85 & 85.6$$\times$ \\
-512 & 12.0 & 0.85 & 86.2$$\times$ \\
-1024 & 45.0 & 0.85 & 86.4$$\times$ \\
-2048 & 180.0 & 0.85 & 86.5$$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Breakeven point:} $L^* = 128$.
 
-\textbf{Important:} At L = 128, our method is \textbf{1.0x$$\times$ slower} than 
+\textbf{Important:} At L = 128, our method is \textbf{1.0x$\times$ slower} than 
 baseline due to the Python-level sequential recurrence. At L $\ge$ 512, our 
 method is faster.
 
@@ -78,9 +78,9 @@ method is faster.
 \toprule
 \textbf{Model} & \textbf{Baseline (s/step)} & \textbf{Ours (s/step)} & \textbf{Slowdown} \\
 \midrule
-DistilBERT & 0.05 & 0.85 & 32$$\times$ \\
-RoBERTa & 0.08 & 0.85 & 32$$\times$ \\
-GPT-2 & 0.08 & 0.85 & 32$$\times$ \\
+DistilBERT & 0.05 & 0.85 & 32$\times$ \\
+RoBERTa & 0.08 & 0.85 & 32$\times$ \\
+GPT-2 & 0.08 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -207,9 +207,9 @@ GPT-2 & 793 & 1044 MB & 48.5\%\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/hgrn2_gated_deltanet_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hgrn2_gated_deltanet}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hgrn2_gated_deltanet}.}
 \label{fig:results_hgrn2_gated_deltanet}
 \end{figure}

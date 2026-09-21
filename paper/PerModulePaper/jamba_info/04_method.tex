@@ -14,7 +14,7 @@ The branches are fused by a learned scalar gate.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -167,9 +167,9 @@ will add the penalty.
 
 \textbf{Algorithm 1:} JambaInfo forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q1, K1 $\leftarrow$ W_q1(X), W_k1(X)
  2: Q2, K2 $\leftarrow$ W_q2(X), W_k2(X)
@@ -211,7 +211,7 @@ out\_proj & $O(L d^2)$ & $d^2$ \\
 \end{tabular}
 \end{table}
 
-Compared to baseline ($4 d^2$), we have ~2$$\times$ more parameters.
+Compared to baseline ($4 d^2$), we have ~2$\times$ more parameters.
 
 \subsection{Parameter Analysis}
 
@@ -224,7 +224,7 @@ For $d = 768$, $b = 256$:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{JambaInfo} \\
 \midrule
-Q, K, V, O & 4$$\times$589,824 = 2.36M & -- \\
+Q, K, V, O & 4$\times$589,824 = 2.36M & -- \\
 W\_q1, W\_k1 & -- & 1.18M \\
 W\_q2, W\_k2 & -- & 1.18M \\
 W\_v & -- & 0.59M \\

@@ -16,7 +16,7 @@ per-head gates:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-        Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+        Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
                  |
         +--------+--------+
                            
@@ -40,11 +40,11 @@ per-head gates:
 
 Standard softmax attention with causal masking and padding:
 
-\begin{equation}
+\[
 S_{ij} = \frac{Q_i^\top K_j}{\sqrt{d_h}}, \quad
 S_{ij} \leftarrow S_{ij} + \text{mask}_{ij}, \quad
 O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
 
@@ -60,9 +60,9 @@ Rectified kernel attention with cumulative sums for causality:
 
 \subsubsection{Feature Map}
 
-\begin{equation}
+\[
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
-\end{equation}
+\]
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
 
@@ -70,17 +70,17 @@ Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
 
 For each position $i$:
 
-\begin{equation}
+\[
 \text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{d_h \times d_h}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{den}^{(i)} = \sum_{j \le i} \phi(K_j) \in \mathbb{R}^{d_h}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{den}^{(i)} + \epsilon}
-\end{equation}
+\]
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
 
@@ -88,18 +88,18 @@ where $\epsilon = 10^{-5}$ prevents division by zero.
 
 For encoders (bidirectional), we use the same formulas without cumsum:
 
-\begin{equation}
+\[
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdot \sum_j \phi(K_j) + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Padding Handling}
 
 We zero out padding keys before the cumsum:
 
-\begin{equation}
+\[
 \phi(K_j) \leftarrow \phi(K_j) \cdot \text{valid}_j, \quad
 V_j \leftarrow V_j \cdot \text{valid}_j
-\end{equation}
+\]
 
 This ensures padding contributes nothing to numerator or denominator.
 
@@ -107,9 +107,9 @@ This ensures padding contributes nothing to numerator or denominator.
 
 The cumsum is computed in FP32 to avoid overflow:
 
-\begin{equation}
+\[
 \text{cum}^{(i)} = \text{cumsum}(\phi(K) V^\top).\text{float}()
-\end{equation}
+\]
 
 We cast back to the model dtype after cumsum.
 
@@ -119,22 +119,22 @@ We cast back to the model dtype after cumsum.
 
 For each head $h$, a linear projection computes the gate logit:
 
-\begin{equation}
+\[
 \text{logit}_{h,i} = w_h^\top x_i + b_h
-\end{equation}
+\]
 
 where $x_i \in \mathbb{R}^d$ is the input hidden state at position $i$. The 
 gate is:
 
-\begin{equation}
+\[
 g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
-\end{equation}
+\]
 
 \subsubsection{Output}
 
-\begin{equation}
+\[
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
@@ -169,10 +169,10 @@ streams, which matches empirical observations that some heads are local
 
 \textbf{Algorithm 1:} HALO-ReGLA forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings
         is_causal
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q, K, V $\leftarrow$ proj(hidden_states)
  2: Q, K $\leftarrow$ apply_rope(Q, K, position_embeddings)
@@ -277,9 +277,9 @@ ELU kernel is heuristic but works well in practice.
 
 \textbf{Claim.} The gate converges to a stationary point where:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial g_h} = 0 \Rightarrow O^\text{dense}_h = O^\text{lin}_h
-\end{equation}
+\]
 
 or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
 

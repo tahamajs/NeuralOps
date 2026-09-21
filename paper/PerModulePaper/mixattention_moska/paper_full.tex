@@ -1,4 +1,4 @@
-\title{\textbf{FASA: Frequency/Variance-Aware Sparse Attention for Bidirectional Encoders}
+\title{\textbf{FASA: Frequency/Variance-Aware Sparse Attention for Bidirectional Encoders}}
 
 \author{Anonymous authors}
 
@@ -431,8 +431,8 @@ For $k = rL$ with $r = 0.5$: bidirectional scores reduce by factor 2.
 
 \textbf{Algorithm 1:} FASA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_causal, fasa_keep_ratio r
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_causal, fasa_keep_ratio r
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -864,9 +864,9 @@ GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (FASA)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (FASA)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 319 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 648 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 333 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 319 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 648 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 333 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1010,10 +1010,10 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/mixattention_moska_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{mixattention_moska}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mixattention_moska}.}
 \label{fig:results_mixattention_moska}
 \end{figure}
 
@@ -1152,19 +1152,19 @@ For DistilBERT on L=128:
 \textbf{Operation} & \textbf{Baseline} & \textbf{FASA (keep=0.5)} \\
 \midrule
 Q/K/V proj & 3 & 3 \\
-Score matrix & L$$\times$L = 16K & L$$\times$k = 8K \\
-Softmax & L$$\times$L & L$$\times$k \\
-Value matmul & L$$\times$L$$\times$d & L$$\times$k$$\times$d \\
+Score matrix & L$\times$L = 16K & L$\times$k = 8K \\
+Softmax & L$\times$L & L$\times$k \\
+Value matmul & L$\times$L$\times$d & L$\times$k$\times$d \\
 Output proj & 1 & 1 \\
 \textbf{Attention FLOPs} & \textbf{~2M} & \textbf{~1M} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Expected speedup} for the attention kernel: 2$$\times$. But other costs 
+\textbf{Expected speedup} for the attention kernel: 2$\times$. But other costs 
 (projections, gate computations, gather operations) dilute this.
 
-\textbf{Observed}: 2.3 s$$\times$ slowdown overall -- the pruning adds gather + 
+\textbf{Observed}: 2.3 s$\times$ slowdown overall -- the pruning adds gather + 
 topk overhead that outweighs the FLOP savings at short sequences.
 
 \subsection{Failure Mode Taxonomy}
@@ -1178,7 +1178,7 @@ topk overhead that outweighs the FLOP savings at short sequences.
 \midrule
 \textbf{No sparsification on GPT-2} & $\Delta$ $\approx$ 0\% & Causal path skips pruning \\
 \textbf{Accuracy drop on encoders} & -3 to -10\% & Variance misses important tokens \\
-\textbf{Slower than baseline} & ~2$$\times$ & Topk + gather overhead \\
+\textbf{Slower than baseline} & ~2$\times$ & Topk + gather overhead \\
 \textbf{Parameter increase} & +0.9-6\% & LoRA \\
 \bottomrule
 \end{tabular}
@@ -1291,8 +1291,8 @@ For DistilBERT on L=128:
 \midrule
 Accuracy & 90.71\% & 90.94\% & +0.23\% \\
 Params & 66.95M & 66.4MM & +48.5\%\% \\
-Time & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-VRAM & 183 MB & 319 MB MB & 2.1$$\times$ \\
+Time & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+VRAM & 183 MB & 319 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1308,10 +1308,10 @@ VRAM & 183 MB & 319 MB MB & 2.1$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Requires Attention?} \\
 \midrule
-Full attention & 90.71\% & 1.0$$\times$ & -- \\
-H2O & ~86.4\%\% & 0.6$$\times$ & Yes \\
-StreamingLLM & ~86.4\%\% & 0.6$$\times$ & No \\
-\textbf{FASA} & \textbf{90.94\%} & \textbf{2.3 s$$\times$} & \textbf{No} \\
+Full attention & 90.71\% & 1.0$\times$ & -- \\
+H2O & ~86.4\%\% & 0.6$\times$ & Yes \\
+StreamingLLM & ~86.4\%\% & 0.6$\times$ & No \\
+\textbf{FASA} & \textbf{90.94\%} & \textbf{2.3 s$\times$} & \textbf{No} \\
 \bottomrule
 \end{tabular}
 \end{table}

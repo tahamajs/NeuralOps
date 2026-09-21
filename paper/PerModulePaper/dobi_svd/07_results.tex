@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Eff. ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ \\
-DistilBERT & \textbf{Dobi-SVD} & \textbf{90.48} & -0.23 & 0.9079 & 66.4MM & \textbf{50\%$$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$$\times$ \\
-RoBERTa & \textbf{Dobi-SVD} & \textbf{74.54} & -4.02 & 0.7707 & 124.6MM & \textbf{2.1$$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$$\times$ \\
-GPT-2 & \textbf{Dobi-SVD} & \textbf{58.14} & -21.22 & 0.6256 & 124.4MM & \textbf{2.1$$\times$} \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ \\
+DistilBERT & \textbf{Dobi-SVD} & \textbf{90.48} & -0.23 & 0.9079 & 66.4MM & \textbf{50\%$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ \\
+RoBERTa & \textbf{Dobi-SVD} & \textbf{74.54} & -4.02 & 0.7707 & 124.6MM & \textbf{2.1$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ \\
+GPT-2 & \textbf{Dobi-SVD} & \textbf{58.14} & -21.22 & 0.6256 & 124.4MM & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,10 +113,10 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-256 & 32 & 2.1$$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+256 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{$\tau_g$} & \textbf{$r_\text{eff}$} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-0.1 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.3 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.5 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.7 & 0.85 & 86.4\% & 2.1$$\times$ \\
+0.1 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.3 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.5 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.7 & 0.85 & 86.4\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,11 +189,11 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Rank learned?} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & -- \\
-MinimalSVD & 0.85 & 2.1$$\times$ &  \\
-SVD-LLM V2 & 0.85 & 2.1$$\times$ &  \\
-MLA & 0.85 & 2.1$$\times$ &  \\
-\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$$\times$} & \textbf{ } \\
+full & 90.71\% & 1.00$\times$ & -- \\
+MinimalSVD & 0.85 & 2.1$\times$ &  \\
+SVD-LLM V2 & 0.85 & 2.1$\times$ &  \\
+MLA & 0.85 & 2.1$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$\times$} & \textbf{ } \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -238,9 +238,9 @@ GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 & 0.85\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/dobi_svd_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{dobi_svd}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{dobi_svd}.}
 \label{fig:results_dobi_svd}
 \end{figure}

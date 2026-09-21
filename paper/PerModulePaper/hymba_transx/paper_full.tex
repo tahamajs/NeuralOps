@@ -1,4 +1,4 @@
-\title{\textbf{HymbaTransX: A Hybrid Differential Attention and State Space Model Block}
+\title{\textbf{HymbaTransX: A Hybrid Differential Attention and State Space Model Block}}
 
 \author{Anonymous authors}
 
@@ -316,7 +316,7 @@ A \textbf{learned scalar gate} $\alpha$ blends them.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -492,9 +492,9 @@ we log a warning and keep the Kaiming-initialized default. This is a
 
 \textbf{Algorithm 1:} HymbaTransX forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         position_embeddings (optional)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q1 $\leftarrow$ W_q1(X);  K1 $\leftarrow$ W_k1(X)
  2: Q2 $\leftarrow$ W_q2(X);  K2 $\leftarrow$ W_k2(X)
@@ -552,7 +552,7 @@ For $d = 768$, per layer:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{HymbaTransX} \\
 \midrule
-Q, K, V, O & 4 $$\times$ 589,824 = 2.36M & -- \\
+Q, K, V, O & 4 $\times$ 589,824 = 2.36M & -- \\
 W\_q1, W\_k1 & -- & 1.18M \\
 W\_q2, W\_k2 & -- & 1.18M \\
 W\_v & -- & 0.59M \\
@@ -1082,10 +1082,10 @@ GPT-2 & 0.27 & 0.85 & 0.85 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/hymba_transx_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hymba_transx}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hymba_transx}.}
 \label{fig:results_hymba_transx}
 \end{figure}
 
@@ -1281,7 +1281,7 @@ For DistilBERT:
 \midrule
 Params & 66.95M & 66.4M & +48.5\%\% \\
 Accuracy & 90.71\% & 49.08\% & -41.63\% \\
-Inference time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Inference time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Peak VRAM & 183 MB & 5947 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -1336,11 +1336,11 @@ HymbaTransX increases parameter count by ~66.4M\%.
 
 \subsection{Training Slower}
 
-The two Q-K pairs and SSM branch slow training by 84.5$$\times$.
+The two Q-K pairs and SSM branch slow training by 84.5$\times$.
 
 \subsection{Inference Latency}
 
-Inference is 84.5$$\times$ slower than baseline.
+Inference is 84.5$\times$ slower than baseline.
 
 \subsection{Cross-Attention Not Supported}
 
@@ -2353,7 +2353,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

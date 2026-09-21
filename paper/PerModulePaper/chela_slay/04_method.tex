@@ -44,9 +44,9 @@ Then blends them via an adaptive gate.
 
 Standard softmax attention:
 
-\begin{equation}
+\[
 O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}} + M\right) V
-\end{equation}
+\]
 
 where $M$ is the attention mask (padding or causal).
 
@@ -54,18 +54,18 @@ where $M$ is the attention mask (padding or causal).
 
 \subsubsection{Spherical Normalization}
 
-\begin{equation}
+\[
 \hat{Q} = \text{Normalize}(Q), \quad
 \hat{K} = \text{Normalize}(K)
-\end{equation}
+\]
 
 \subsubsection{Yat-Kernel Feature Map}
 
 For each head, we compute:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{F^{1/4}} \left[ \cos(x \Omega) \,\|\, \sin(x \Omega) \right]
-\end{equation}
+\]
 
 where $\Omega \in \mathbb{R}^{d_h \times F}$ is a fixed random projection.
 
@@ -73,27 +73,27 @@ where $\Omega \in \mathbb{R}^{d_h \times F}$ is a fixed random projection.
 
 \subsubsection{Linear Attention (Bidirectional)}
 
-\begin{equation}
+\[
 KV = \phi(\hat{K})^\top V, \quad
 Z = \sum_j \phi(\hat{K}_j)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O^\text{linear}_i = \frac{\phi(\hat{Q}_i) KV}{\phi(\hat{Q}_i) Z + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Linear Attention (Causal)}
 
 For decoders, we use a \textbf{cumulative sum} over the sequence:
 
-\begin{equation}
+\[
 S_t = \sum_{j \leq t} \phi(\hat{K}_j)^\top V_j, \quad
 Z_t = \sum_{j \leq t} \phi(\hat{K}_j)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O^\text{linear}_t = \frac{\phi(\hat{Q}_t) S_t}{\phi(\hat{Q}_t) Z_t + \epsilon}
-\end{equation}
+\]
 
 \textbf{Implementation.} We materialize $\phi(\hat{K})^\top V$ as a 
 $(\text{B}, \text{H}, L, 2F, d_h)$ tensor and apply \texttt{torch.cumsum} along 
@@ -111,32 +111,32 @@ For B=8, H=12, L=128, 2F=256, d\_h=64: ~2 billion floats (8 GB at FP32).
 
 A per-head, per-token gate:
 
-\begin{equation}
+\[
 g = \sigma(W_g X + b_g) \in \mathbb{R}^{B \times L \times H}
-\end{equation}
+\]
 
 \textbf{Initialization.} $W_g = 0$, $b_g = 5.0$.
 
 \textbf{Effect.} At step 0:
 
-\begin{equation}
+\[
 g = \sigma(5.0) \approx 0.993
-\end{equation}
+\]
 
 So the output is dominated by the dense stream (which preserves pretrained 
 behavior).
 
 \subsection{Fusion}
 
-\begin{equation}
+\[
 O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
-\end{equation}
+\]
 
 Then apply output projection:
 
-\begin{equation}
+\[
 Y = W_O O + b_O
-\end{equation}
+\]
 
 \subsection{Algorithm}
 
@@ -243,8 +243,8 @@ $B_\text{LoRA} = 0$), CHELA-SLAY output equals the pretrained baseline.
 \textbf{Proof sketch.} With $W_g = 0$, $g = \sigma(b_g)$ is constant per token. 
 The gate weight is $0.993$, so $g \approx 1$. The dense output 
 matches the pretrained attention (since base weights are copied and 
-LoRA = 0). The linear contribution is $(1 - g) \cdot O\^{}\text{linear} 
-\approx 0.007 \cdot O\^{}\text{linear}$. So the output is dominated by dense, 
+LoRA = 0). The linear contribution is $(1 - g) \cdot O^\text{linear} 
+\approx 0.007 \cdot O^\text{linear}$. So the output is dominated by dense, 
 approximately equal to baseline. $\square$
 
 \subsection{Weight Transfer}

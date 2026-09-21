@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Compression}
 
-ASVD reduces parameter count by 5.5$$\times$--5.0$$\times$ with modest 
+ASVD reduces parameter count by 5.5$\times$--5.0$\times$ with modest 
 accuracy drops (-0.34\%--+6.42\%).
 
 \subsubsection{Takeaway 2: Explicit $\Sigma$ is Valuable}
@@ -63,10 +63,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ASVD} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 12165730M & \textbf{5.5$$\times$} \\
-Disk & 134 MB & 24 MB & \textbf{5.5$$\times$} \\
-Inference VRAM & 183 MB & 344 MB MB & 0.66$$\times$ \\
-Inference time & 1.90 s & 2.4 s & 1.26$$\times$ \\
+Params & 66.95M & 12165730M & \textbf{5.5$\times$} \\
+Disk & 134 MB & 24 MB & \textbf{5.5$\times$} \\
+Inference VRAM & 183 MB & 344 MB MB & 0.66$\times$ \\
+Inference time & 1.90 s & 2.4 s & 1.26$\times$ \\
 Accuracy & 90.71\% & 90.37\% & -0.34\% \\
 \bottomrule
 \end{tabular}
@@ -75,7 +75,7 @@ Accuracy & 90.71\% & 90.37\% & -0.34\% \\
 \subsection{Comparison with Published ASVD Paper}
 
 The published ASVD paper (arXiv:2307.07382) reports compression ratios of 
-1.5-2$$\times$ on LLaMA-7B. Our implementation achieves 5.5$$\times$ on DistilBERT 
+1.5-2$\times$ on LLaMA-7B. Our implementation achieves 5.5$\times$ on DistilBERT 
 by using:
 
 \begin{itemize}
@@ -90,7 +90,7 @@ by using:
 
 \begin{enumerate}
 \item \textbf{ASVD compresses} base weights $\to$ smaller model.
-\item \textbf{Quantize} (INT8) $\to$ 2$$\times$ further reduction.
+\item \textbf{Quantize} (INT8) $\to$ 2$\times$ further reduction.
 \item \textbf{LoRA recovery} fine-tunes.
 
 \end{enumerate}

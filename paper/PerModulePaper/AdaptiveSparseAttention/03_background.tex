@@ -5,17 +5,17 @@
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 S = \frac{Q K^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 P = \text{softmax}(S) \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O = P V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $S$ and $P$ require $\mathcal{O}(L^2)$ memory. The two 
 matmuls require $\mathcal{O}(L^2 d_h)$ time. For $L = 1024$, $d_h = 64$, 
@@ -25,9 +25,9 @@ this is $\sim 67$M FLOPs per head per sequence.
 
 \textbf{Observation.} The softmax distribution $P$ is typically concentrated:
 
-\begin{equation}
+\[
 \sum_{j \in \text{top-}k} P_{ij} \gg 1 - \epsilon, \quad k \ll L
-\end{equation}
+\]
 
 \textbf{Empirical evidence.} \textbf{Figure 3.1} shows the cumulative attention mass 
 vs ranked keys for a middle GPT-2 layer. Top 10\% of keys capture 
@@ -40,9 +40,9 @@ of the output quality, at fraction $1 - \rho$ of the compute.
 
 For a score vector $s \in \mathbb{R}^L$, the top-$k$ selection produces:
 
-\begin{equation}
+\[
 \text{top-}k(s)_j = \begin{cases} s_j & \text{if } s_j \geq \tau \\ -\infty & \text{otherwise} \end{cases}
-\end{equation}
+\]
 
 where $\tau$ is the $k$-th largest value.
 
@@ -53,9 +53,9 @@ is zero almost everywhere. This is problematic for end-to-end training.
 
 \textbf{Sigmoid mask.} Given $\tau$, we can define:
 
-\begin{equation}
+\[
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right) \in (0, 1)
-\end{equation}
+\]
 
 so that $m_j \to 1$ for $s_j > \tau$ and $m_j \to 0$ for $s_j < \tau$. 
 As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$, recovering hard top-$k$.
@@ -63,9 +63,9 @@ As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$, recovering hard top-$k$.
 \textbf{Application in log space.} Instead of a multiplicative mask, we add a 
 log-mask to the scores:
 
-\begin{equation}
+\[
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
-\end{equation}
+\]
 
 This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) = 
 \text{softmax}(s) \cdot m / \sum m$.
@@ -74,17 +74,17 @@ This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) =
 
 The retention budget $k_h$ for head $h$ is:
 
-\begin{equation}
+\[
 k_h = \lfloor (1 - \rho_h) L \rfloor
-\end{equation}
+\]
 
 where $\rho_h \in [0, 1]$ is the head-specific sparsity ratio.
 
 \textbf{Learning $\rho_h$.} We parameterize via a scalar logit:
 
-\begin{equation}
+\[
 \rho_h = \sigma(\ell_h), \qquad \ell_h \in \mathbb{R}
-\end{equation}
+\]
 
 This is differentiable w.r.t. $\ell_h$, allowing gradient-based learning of 
 the sparsity budget.
@@ -93,22 +93,22 @@ the sparsity budget.
 
 To bound peak memory, we process the query dimension in chunks of size $C$:
 
-\begin{equation}
+\[
 O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 \textbf{Peak memory.} $\mathcal{O}(B H C L)$ instead of $\mathcal{O}(B H L^2)$.
 
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
-instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$$\times$ reduction.}
+instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$\times$ reduction.}
 
 \subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity 
 injection.

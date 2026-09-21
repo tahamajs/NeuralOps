@@ -5,18 +5,18 @@
 
 DCT-II basis:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
-\end{equation}
+\]
 
 After normalization:
 
-\begin{equation}
+\[
 \tilde{\Phi}_{n, k} = \begin{cases}
 \Phi_{n, k} / \sqrt{N} \& k = 0 \\
 \Phi_{n, k} \cdot \sqrt{2/N} \& k \geq 1
 \end{cases}
-\end{equation}
+\]
 
 Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
 
@@ -25,9 +25,9 @@ Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
 For a smooth function $f \in C^s([0, 1])$, truncation at $r$ basis 
 functions gives:
 
-\begin{equation}
+\[
 \|f - \Phi_r \Phi_r^\top f\|_{L^2} \leq C r^{-s}
-\end{equation}
+\]
 
 where $C$ depends on the smoothness. This bound does \textbf{not} apply to 
 non-smooth functions like trained attention kernels.
@@ -36,26 +36,26 @@ non-smooth functions like trained attention kernels.
 
 For orthonormal $\Phi_r$:
 
-\begin{equation}
+\[
 \|\Phi_r^\top f\|_F^2 \leq \|f\|_F^2
-\end{equation}
+\]
 
 with equality iff $f$ lies in the span of $\Phi_r$.
 
 The \textbf{expected} energy preserved for random $f \sim \mathcal{N}(0, I_N)$:
 
-\begin{equation}
+\[
 \mathbb{E}[\|\Phi_r^\top f\|^2] = r
-\end{equation}
+\]
 
 while $\mathbb{E}[\|f\|^2] = N$. So on average, only $r/N$ of energy 
 is preserved.
 
 The correction $\sqrt{N/r}$ restores average energy:
 
-\begin{equation}
+\[
 \mathbb{E}[\|\sqrt{N/r} \Phi_r \Phi_r^\top f\|^2] = N
-\end{equation}
+\]
 
 But this is only a \textbf{distributional} correction; individual samples may 
 overshoot or undershoot.
@@ -66,9 +66,9 @@ Trained attention weights often exhibit high entropy and sharp peaks. Let
 $\sigma^2$ denote the variance of the attention kernel $k(x, y)$ in the 
 $L^2$ sense. DCT truncation preserves:
 
-\begin{equation}
+\[
 \text{Preserved energy} \approx \frac{1}{1 + \sigma^2 r^2 / \pi^2}
-\end{equation}
+\]
 
 For small $\sigma$ (sharp peaks), preservation is poor.
 
@@ -76,9 +76,9 @@ For small $\sigma$ (sharp peaks), preservation is poor.
 
 For causal attention, the standard masked softmax preserves:
 
-\begin{equation}
+\[
 \frac{\partial O_i}{\partial X_j} = 0 \text{ for } j > i
-\end{equation}
+\]
 
 The Galerkin path does not preserve this and is therefore \textbf{not used} for 
 decoders.
@@ -87,9 +87,9 @@ decoders.
 
 Standard LoRA init:
 
-\begin{equation}
+\[
 A \sim \mathcal{N}(0, \sigma^2), \quad B = 0
-\end{equation}
+\]
 
 So $\Delta W = BA = 0$ at step 0, preserving base behavior exactly.
 

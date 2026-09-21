@@ -57,8 +57,8 @@ Attention FLOPs:
 
 Score net FLOPs: $2 B L (d \cdot 64 + 64) = 2 B L \cdot 65 (d/65 + 1)$
 
-For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L\^{}2 d\_h = 
-4 \cdot 10\^{}5 B L\^{}2$. Overhead ratio: ~$0.25 / L$. At $L = 128$: \textbf{~0.2\% overhead}.
+For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L^2 d\_h = 
+4 \cdot 10^5 B L^2$. Overhead ratio: ~$0.25 / L$. At $L = 128$: \textbf{~0.2\% overhead}.
 \begin{lstlisting}
 
 ---

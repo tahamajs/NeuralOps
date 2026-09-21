@@ -5,9 +5,9 @@
 
 \textbf{Claim.}
 
-\begin{equation}
+\[
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
-\end{equation}
+\]
 
 where:
 \begin{itemize}
@@ -19,24 +19,24 @@ where:
 \end{itemize}
 \textbf{Proof.}
 
-\begin{equation}
+\[
 \begin{aligned}
 \tilde{q}_i^\top \tilde{k}_j &= (\phi(q_i) \cos\theta_i)^\top (\phi(k_j) \cos\theta_j) \\
 &= \cos\theta_i \cos\theta_j \cdot \phi(q_i)^\top \phi(k_j)
 \end{aligned}
-\end{equation}
+\]
 
 Similarly:
 
-\begin{equation}
+\[
 \tilde{q}_i'^\top \tilde{k}_j' = \sin\theta_i \sin\theta_j \cdot \phi(q_i)^\top \phi(k_j)
-\end{equation}
+\]
 
 Sum:
 
-\begin{equation}
+\[
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = (\cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j) \cdot \phi(q_i)^\top \phi(k_j) = \cos(\theta_i - \theta_j) \cdot \phi(q_i)^\top \phi(k_j)
-\end{equation}
+\]
 
 $\square$
 
@@ -44,15 +44,15 @@ $\square$
 
 With $\theta_i = \pi i / (2 M)$, we have $\theta_i - \theta_j = \pi (i - j) / (2 M)$.
 
-\begin{equation}
+\[
 \cos(\theta_i - \theta_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
-\end{equation}
+\]
 
 \textbf{Decay rate.} For $|i - j| = k$:
 
-\begin{equation}
+\[
 \cos\!\left(\frac{\pi k}{2M}\right) \approx 1 - \frac{\pi^2 k^2}{8M^2}
-\end{equation}
+\]
 
 For $M = 512$ and $k = 128$: $\cos \approx 0.87$. \textbf{Slow decay.}
 
@@ -88,17 +88,17 @@ For $C \ll d$: $\mathcal{O}(L d^2)$.
 
 \textbf{ELU + 1 is not an RFF.} The approximation:
 
-\begin{equation}
+\[
 \text{elu}(q)^\top \text{elu}(k) + \|q\|_1 + \|k\|_1 + d \approx \exp(q^\top k)
-\end{equation}
+\]
 
 is only approximate. The error grows with $\|q\|$ and $\|k\|$.
 
 \textbf{Bounds.} For $\|q\|, \|k\| \leq R$:
 
-\begin{equation}
+\[
 \left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C_R
-\end{equation}
+\]
 
 where $C_R$ grows exponentially in $R$.
 
@@ -106,9 +106,9 @@ where $C_R$ grows exponentially in $R$.
 
 For the causal path:
 
-\begin{equation}
+\[
 \frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
-\end{equation}
+\]
 
 \textbf{Proof sketch.} Within a chunk, the causal mask zeros future contributions. 
 Across chunks, the state $(S, Z)$ only accumulates from processed chunks. 

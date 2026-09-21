@@ -105,7 +105,7 @@ out[0, i].sum().backward()
 assert x.grad[0, i+1:].abs().max() < 1e-6
 \end{lstlisting}
 
-\textbf{Result.} ✅ Verified on all three models
+\textbf{Result.} \checkmark Verified on all three models
 
 \subsection{Attention Mass Analysis}
 

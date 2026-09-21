@@ -1,4 +1,4 @@
-\title{\textbf{Adaptive Span Attention: Learned Per-Head Attention Windows via Differentiable Soft Ramps}
+\title{\textbf{Adaptive Span Attention: Learned Per-Head Attention Windows via Differentiable Soft Ramps}}
 
 \author{Anonymous authors}
 
@@ -52,16 +52,16 @@ spans via:
 \begin{enumerate}
 \item \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking
   function is:
-  \begin{equation}
+  \[
 g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
-\end{equation}
+\]
   where $d$ is the query-key distance. This is \textbf{piecewise linear} and
   \textbf{differentiable} in $z_h$.
 
 \item \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
-  \begin{equation}
+  \[
 z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
-\end{equation}
+\]
 
 \item \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages
   the model to \textbf{shrink} spans that are not needed. At initialization,
@@ -199,17 +199,17 @@ generalizes Sukhbaatar et al. (2019) to the current transformer ecosystem.
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 S = \frac{Q K^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 P = \text{softmax}(S) \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O = P V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L^2)$ memory and time.
 
@@ -217,9 +217,9 @@ O = P V \in \mathbb{R}^{L \times d_h}
 
 \textbf{Fixed window.} Restrict attention to positions within distance $w$:
 
-\begin{equation}
+\[
 P_{ij} = 0 \quad \text{if } |i - j| > w
-\end{equation}
+\]
 
 For a causal model, $P_{ij} = 0$ for $j > i$ or $i - j > w$.
 
@@ -233,9 +233,9 @@ For a causal model, $P_{ij} = 0$ for $j > i$ or $i - j > w$.
 
 \textbf{Soft ramp.} Instead of hard cutoff, use a \textbf{continuous ramp}:
 
-\begin{equation}
+\[
 g_z(d) = \text{clamp}\!\left(\frac{R + z - d}{R}, 0, 1\right)
-\end{equation}
+\]
 
 \begin{itemize}
 \item For $d \leq z$: $g_z(d) = 1$ (fully attend)
@@ -245,17 +245,17 @@ g_z(d) = \text{clamp}\!\left(\frac{R + z - d}{R}, 0, 1\right)
 \end{itemize}
 \textbf{Parameterization.} We use a scalar logit:
 
-\begin{equation}
+\[
 z = \sigma(\ell) \cdot S_\text{max}
-\end{equation}
+\]
 
 \subsection{Span Regularization}
 
 \textbf{L1 penalty.} To encourage small spans:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{span} = \lambda \sum_{h=1}^H z_h
-\end{equation}
+\]
 
 At initialization, $z_h \approx S_\text{max}$ and the penalty is large. During 
 training, the model shrinks $z_h$ to reduce the penalty, subject to preserving 
@@ -266,15 +266,15 @@ smaller spans.
 
 After applying the ramp mask:
 
-\begin{equation}
+\[
 \tilde{P}_{ij} = \frac{P_{ij} \cdot g_{z_h}(|i - j|)}{\sum_j P_{ij} \cdot g_{z_h}(|i - j|)}
-\end{equation}
+\]
 
 This renormalization ensures rows sum to 1. We implement this via:
 
-\begin{equation}
+\[
 \tilde{P} = \text{softmax}(S + \log(g_z))
-\end{equation}
+\]
 
 where we work in log space to avoid numerical issues.
 
@@ -282,9 +282,9 @@ where we work in log space to avoid numerical issues.
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ at initialization. ASA-Span uses LoRA to adapt the frozen 
 projections to the new span structure.
@@ -294,9 +294,9 @@ projections to the new span structure.
 T5 (Raffel et al., 2020) adds a learned bias based on bucketed relative 
 position:
 
-\begin{equation}
+\[
 S_{ij} \leftarrow S_{ij} + b_{\text{bucket}(i - j)}
-\end{equation}
+\]
 
 ASA-Span preserves this bias, applying the ramp \textbf{after} adding the bias.
 
@@ -326,7 +326,7 @@ with a \textbf{span-masked} variant:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+    Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
              |
               
     +------------------------------+
@@ -361,9 +361,9 @@ with a \textbf{span-masked} variant:
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The span is:
 
-\begin{equation}
+\[
 z_h = \sigma(\ell_h) \cdot S_\text{max}
-\end{equation}
+\]
 
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
 (hyperparameter).
@@ -372,9 +372,9 @@ where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span
 
 We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 
-\begin{equation}
+\[
 \ell_h^{(0)} = \log \frac{0.982}{1 - 0.982} \approx 4.0
-\end{equation}
+\]
 
 This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}$. 
 The span starts \textbf{nearly fully open} and shrinks during training via the 
@@ -391,18 +391,18 @@ lets the model decide which spans to shrink, based on task loss.
 
 Given query position $i$ and key position $j$, define the distance:
 
-\begin{equation}
+\[
 d_{ij} = \begin{cases} |i - j| & \text{if bidirectional} \\ \max(0, i - j) & \text{if causal} \end{cases}
-\end{equation}
+\]
 
 For causal models, keys after the query ($j > i$) are masked separately; 
 the ramp only applies to \textbf{past} keys.
 
 The ramp mask is:
 
-\begin{equation}
+\[
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-\end{equation}
+\]
 
 \subsubsection{Properties}
 
@@ -410,9 +410,9 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \item \textbf{Continuous:} $g_z$ is continuous in $z$ and $d$.
 \item \textbf{Piecewise-linear:} Three regimes (full, linear decay, zero).
 \item \textbf{Differentiable in $z$:}
-  \begin{equation}
+  \[
 \frac{\partial g\_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
-\end{equation}
+\]
 \item \textbf{Bounded:} $g_z \in [0, 1]$.
 
 \end{itemize}
@@ -420,9 +420,9 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 
 We compute the ramp in FP32 and apply in log space:
 
-\begin{equation}
+\[
 \tilde{S}_{ij} = S_{ij} + \log(g_{z_h}(d_{ij}) + \epsilon)
-\end{equation}
+\]
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
 
@@ -430,16 +430,16 @@ with $\epsilon = 10^{-8}$. Then standard softmax.
 
 After masking, the attention row does not sum to 1. We renormalize:
 
-\begin{equation}
+\[
 P_{ij} = \frac{\exp(\tilde{S}_{ij})}{\sum_j \exp(\tilde{S}_{ij})}
-\end{equation}
+\]
 
 This is equivalent to applying the ramp as a \textbf{multiplicative factor} before 
 softmax:
 
-\begin{equation}
+\[
 P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
-\end{equation}
+\]
 
 \subsection{Fast Path Optimization}
 
@@ -460,17 +460,17 @@ This avoids the $\mathcal{O}(H L^2)$ ramp allocation when unnecessary.
 
 We add to the loss:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
-\end{equation}
+\]
 
 \subsubsection{Effect}
 
 The gradient w.r.t. $\ell_h$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda \cdot S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
-\end{equation}
+\]
 
 always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up 
 when the model needs long-range context. The equilibrium depends on 
@@ -499,11 +499,11 @@ We use $\lambda = 0.01$ by default.
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
         span_logits   $\in$ R^H
         max_span S_max, ramp_size R
         attention_mask, is_causal
-Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 1:  span $\leftarrow$ sigmoid( ) * S_max                # (H,)
 2:
@@ -581,31 +581,31 @@ parameter count.
 
 For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j) : |i-j| > z} P_{ij} + \epsilon_R
-\end{equation}
+\]
 
 where $\epsilon_R$ is the ramp-induced error:
 
-\begin{equation}
+\[
 \epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
-\end{equation}
+\]
 
 \subsubsection{Head Span Heterogeneity}
 
 Empirically, spans converge to a bimodal distribution:
 
-\begin{equation}
+\[
 z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
-\end{equation}
+\]
 
 \subsubsection{Equilibrium of L1 Penalty}
 
 The equilibrium span satisfies:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
-\end{equation}
+\]
 
 The task loss derivative depends on the model, but in practice heads with 
 small gradients converge to small spans.
@@ -1159,11 +1159,11 @@ pruning.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn mem} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
-ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$$\times$ & 1.00$$\times$ \\
-\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \& Learned span & 1.00$$\times$ & 1.00$$\times$ \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse & 1.00$\times$ & 1.00$\times$ \\
+\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \& Learned span & 1.00$\times$ & 1.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1265,9 +1265,9 @@ The optimal $R$ balances differentiability with pruning.
 
 \textbf{Figure 8.5} shows correlation between learned span and attention entropy:
 
-\begin{equation}
+\[
 H(P_i) = -\sum_j P_{ij} \log P_{ij}
-\end{equation}
+\]
 
 \textbf{Observation.} Heads with \textbf{large spans} have \textbf{high entropy} (spread 
 attention); heads with \textbf{small spans} have \textbf{low entropy} (concentrated 
@@ -1926,29 +1926,29 @@ the function is continuous. $\square$
 
 Given $z = \sigma(\ell) \cdot S_\text{max}$:
 
-\begin{equation}
+\[
 \frac{\partial z}{\partial \ell} = \sigma(\ell)(1 - \sigma(\ell)) \cdot S_\text{max}
-\end{equation}
+\]
 
 Then:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell} = \frac{\partial \mathcal{L}}{\partial z} \cdot \sigma(\ell)(1 - \sigma(\ell)) \cdot S_\text{max}
-\end{equation}
+\]
 
 \subsection{A.3 L1 Penalty Effect}
 
 The L1 penalty adds:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{span} = \lambda \sum_h z_h = \lambda S_\text{max} \sum_h \sigma(\ell_h)
-\end{equation}
+\]
 
 Gradient:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
-\end{equation}
+\]
 
 Since $\sigma \in (0, 1)$, this is always positive. The gradient pushes 
 $\ell_h$ toward $-\infty$, hence $z_h \to 0$.
@@ -1957,22 +1957,22 @@ $\ell_h$ toward $-\infty$, hence $z_h \to 0$.
 
 \textbf{Claim.} At equilibrium, the span satisfies:
 
-\begin{equation}
+\[
 \left|\frac{\partial \mathcal{L}_\text{task}}{\partial z_h}\right| = \lambda
-\end{equation}
+\]
 
 \textbf{Proof.} The total gradient is:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial \ell_h} + \lambda S_\text{max} \sigma(\ell_h)(1 - \sigma(\ell_h)) = 0
-\end{equation}
+\]
 
 At equilibrium. Since $\partial z_h / \partial \ell_h = S_\text{max} \sigma(1-\sigma)$, 
 this simplifies to:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
-\end{equation}
+\]
 
 $\square$
 
@@ -1980,15 +1980,15 @@ $\square$
 
 \textbf{Claim.} For a head with span $z$ and ramp $R$:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j): |i-j| > z} P_{ij} + \epsilon_R
-\end{equation}
+\]
 
 where:
 
-\begin{equation}
+\[
 \epsilon_R \leq \max_{i,j} |1 - g_z(|i-j|)| \cdot \sum_j P_{ij}
-\end{equation}
+\]
 
 \textbf{Proof sketch.} The ramp down-weights distant scores. The total mass 
 removed is bounded by the sum over $|i-j| > z$ plus the ramp transition 
@@ -1998,9 +1998,9 @@ region. $\square$
 
 For hard window of size $w$:
 
-\begin{equation}
+\[
 P_{ij}^{\text{hard}} = \frac{\mathbb{1}[|i-j| \le w] \exp(S_{ij})}{\sum_j \mathbb{1}[|i-j| \le w] \exp(S_{ij})}
-\end{equation}
+\]
 
 The soft ramp approaches this as $R \to 0$. For finite $R$, the soft ramp 
 provides \textbf{smoother gradients} and \textbf{avoids boundary artifacts}.
@@ -2374,7 +2374,7 @@ done
 
 \textbf{Goal.} Modulate span by content (query-specific).
 
-\textbf{Result.} No improvement, 2$$\times$ slower.
+\textbf{Result.} No improvement, 2$\times$ slower.
 
 \textbf{Conclusion.} Distance-based span is sufficient.
 

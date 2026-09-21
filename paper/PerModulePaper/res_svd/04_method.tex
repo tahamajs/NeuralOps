@@ -7,7 +7,7 @@ Res-SVD Attention replaces each projection with a two-level decomposition.
 
 \begin{lstlisting}
     +--------------------------------------+
-    |  Original weight W $\in$ R^{m$$\times$n}         |
+    |  Original weight W $\in$ R^{m$\times$n}         |
     +----------------+---------------------+
                      |
                       
@@ -150,7 +150,7 @@ Residual LoRA & $4 \times 1536 = 6,144$ \\
 Bias & 768 \\
 \textbf{Total} & \textbf{31,504} \\
 Baseline & 589,824 \\
-\textbf{Ratio} & \textbf{~18.7$$\times$} \\
+\textbf{Ratio} & \textbf{~18.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -159,7 +159,7 @@ Baseline & 589,824 \\
 
 \textbf{Algorithm 1:} Res-SVD factorization
 \begin{lstlisting}
-Input:  Weight W $\in$ R^{m$$\times$n}, ranks r_b, r_r, scaling $\alpha$
+Input:  Weight W $\in$ R^{m$\times$n}, ranks r_b, r_r, scaling $\alpha$
 Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
 
 1:  U, $\Sigma$, V^T $\leftarrow$ SVD(W)
@@ -178,8 +178,8 @@ Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
 
 \textbf{Algorithm 2:} Res-SVD forward pass
 \begin{lstlisting}
-Input:  x $\in$ R^{B$$\times$L$$\times$n}, base (U_b, V_b), residual (B, A), bias b, $\alpha$
-Output: y $\in$ R^{B$$\times$L$$\times$m}
+Input:  x $\in$ R^{B$\times$L$\times$n}, base (U_b, V_b), residual (B, A), bias b, $\alpha$
+Output: y $\in$ R^{B$\times$L$\times$m}
 
 1: h_b $\leftarrow$ x @ V_b^T
 2: y_b $\leftarrow$ h_b @ U_b^T
@@ -207,7 +207,7 @@ Total & $\mathcal{O}(L n (r_b + r_r))$ & $\mathcal{O}(L (r_b + r_r))$ \\
 
 \textbf{Baseline:} $\mathcal{O}(L n m)$.
 
-For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$$\times$ reduction in projection FLOPs}.
+For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$\times$ reduction in projection FLOPs}.
 
 \subsection{Theoretical Notes}
 

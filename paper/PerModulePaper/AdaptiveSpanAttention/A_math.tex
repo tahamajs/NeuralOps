@@ -31,29 +31,29 @@ the function is continuous. $\square$
 
 Given $z = \sigma(\ell) \cdot S_\text{max}$:
 
-\begin{equation}
+\[
 \frac{\partial z}{\partial \ell} = \sigma(\ell)(1 - \sigma(\ell)) \cdot S_\text{max}
-\end{equation}
+\]
 
 Then:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell} = \frac{\partial \mathcal{L}}{\partial z} \cdot \sigma(\ell)(1 - \sigma(\ell)) \cdot S_\text{max}
-\end{equation}
+\]
 
 \subsection{A.3 L1 Penalty Effect}
 
 The L1 penalty adds:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{span} = \lambda \sum_h z_h = \lambda S_\text{max} \sum_h \sigma(\ell_h)
-\end{equation}
+\]
 
 Gradient:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
-\end{equation}
+\]
 
 Since $\sigma \in (0, 1)$, this is always positive. The gradient pushes 
 $\ell_h$ toward $-\infty$, hence $z_h \to 0$.
@@ -62,22 +62,22 @@ $\ell_h$ toward $-\infty$, hence $z_h \to 0$.
 
 \textbf{Claim.} At equilibrium, the span satisfies:
 
-\begin{equation}
+\[
 \left|\frac{\partial \mathcal{L}_\text{task}}{\partial z_h}\right| = \lambda
-\end{equation}
+\]
 
 \textbf{Proof.} The total gradient is:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial \ell_h} + \lambda S_\text{max} \sigma(\ell_h)(1 - \sigma(\ell_h)) = 0
-\end{equation}
+\]
 
 At equilibrium. Since $\partial z_h / \partial \ell_h = S_\text{max} \sigma(1-\sigma)$, 
 this simplifies to:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
-\end{equation}
+\]
 
 $\square$
 
@@ -85,15 +85,15 @@ $\square$
 
 \textbf{Claim.} For a head with span $z$ and ramp $R$:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j): |i-j| > z} P_{ij} + \epsilon_R
-\end{equation}
+\]
 
 where:
 
-\begin{equation}
+\[
 \epsilon_R \leq \max_{i,j} |1 - g_z(|i-j|)| \cdot \sum_j P_{ij}
-\end{equation}
+\]
 
 \textbf{Proof sketch.} The ramp down-weights distant scores. The total mass 
 removed is bounded by the sum over $|i-j| > z$ plus the ramp transition 
@@ -103,9 +103,9 @@ region. $\square$
 
 For hard window of size $w$:
 
-\begin{equation}
+\[
 P_{ij}^{\text{hard}} = \frac{\mathbb{1}[|i-j| \le w] \exp(S_{ij})}{\sum_j \mathbb{1}[|i-j| \le w] \exp(S_{ij})}
-\end{equation}
+\]
 
 The soft ramp approaches this as $R \to 0$. For finite $R$, the soft ramp 
 provides \textbf{smoother gradients} and \textbf{avoids boundary artifacts}.

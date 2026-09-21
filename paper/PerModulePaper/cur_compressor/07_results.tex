@@ -11,9 +11,9 @@ We evaluate \texttt{cur\_compressor} across three canonical language understandi
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 90.71\% & 0.9109 & 1.00$$\times$ & -- & 324.5 MB & 108711 & 12.20 s \\
-MNLI & PASS & 81.80\% & 0.8175 & 1.00$$\times$ & -- & 305.3 MB & 37636 & 22.42 s \\
-AG News & PASS & 94.70\% & 0.9433 & 1.00$$\times$ & -- & 327.2 MB & 75322 & 17.52 s \\
+SST-2 & PASS & 90.71\% & 0.9109 & 1.00$\times$ & -- & 324.5 MB & 108711 & 12.20 s \\
+MNLI & PASS & 81.80\% & 0.8175 & 1.00$\times$ & -- & 305.3 MB & 37636 & 22.42 s \\
+AG News & PASS & 94.70\% & 0.9433 & 1.00$\times$ & -- & 327.2 MB & 75322 & 17.52 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{cur\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 66,956,548 & +0 (+0.00\%) & 593,668 & 0 & 0 \\
 Execution profiling demonstrates that \texttt{cur\_compressor} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/cur_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{cur_compressor}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cur_compressor}.}
 \label{fig:results_cur_compressor}
 \end{figure}

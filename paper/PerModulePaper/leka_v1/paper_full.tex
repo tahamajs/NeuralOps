@@ -1,4 +1,4 @@
-\title{\textbf{LEKAv1: Linear-Time Efficient Kernel Attention with Random Fourier Features}
+\title{\textbf{LEKAv1: Linear-Time Efficient Kernel Attention with Random Fourier Features}}
 
 \author{Anonymous authors}
 
@@ -409,7 +409,7 @@ LEKAv1 replaces standard attention with a kernel approximation pipeline:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
                
       Q/K/V Projection
@@ -587,8 +587,8 @@ This provides a per-layer gain that can be adjusted during recovery.
 
 \textbf{Algorithm 1:} LEKAv1 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
  2: reshape to (B, H, L, d_h)
@@ -953,12 +953,12 @@ Single seed (42).
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$$\times$ \\
-DistilBERT & \textbf{LEKAv1} & \textbf{51.03} & -39.68 & 0.6753 & 0.85 & 50\%$$\times$ \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$$\times$ \\
-RoBERTa & \textbf{LEKAv1} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & 2.1$$\times$ \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$$\times$ \\
-GPT-2 & \textbf{LEKAv1} & \textbf{49.31} & -30.05 & 0.865 & 0.85 & 2.1$$\times$ \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT & \textbf{LEKAv1} & \textbf{51.03} & -39.68 & 0.6753 & 0.85 & 50\%$\times$ \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa & \textbf{LEKAv1} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & 2.1$\times$ \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 & \textbf{LEKAv1} & \textbf{49.31} & -30.05 & 0.865 & 0.85 & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -992,11 +992,11 @@ GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{LEKAv1} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & 0.85 & 84.8$$\times$ \\
-256 & 3.50 & 0.85 & 85.6$$\times$ \\
-512 & 12.0 & 0.85 & 86.2$$\times$ \\
-1024 & 45.0 & 0.85 & 86.4$$\times$ \\
-2048 & 180.0 & 0.85 & 86.5$$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1141,10 +1141,10 @@ GPT-2 & 0.85 & 0.85 \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/leka_v1_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{leka_v1}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v1}.}
 \label{fig:results_leka_v1}
 \end{figure}
 
@@ -1264,10 +1264,10 @@ optimization.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Speed @ L=1024} \\
 \midrule
-full & 90.71\% & 1$$\times$ \\
-Linear Transformer & 0.85 & 84.5$$\times$ \\
-Performer & 0.85 & 84.5$$\times$ \\
-\textbf{LEKAv1} & \textbf{51.03} & \textbf{84.5$$\times$} \\
+full & 90.71\% & 1$\times$ \\
+Linear Transformer & 0.85 & 84.5$\times$ \\
+Performer & 0.85 & 84.5$\times$ \\
+\textbf{LEKAv1} & \textbf{51.03} & \textbf{84.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1359,8 +1359,8 @@ For DistilBERT:
 \midrule
 Accuracy & 90.71\% & 51.03\% & -39.68\% \\
 Total params & 66.95M & 66.4M & +48.5\%\% \\
-Inference @ L=128 & 1.90 s & 0.85 s & 84.8$$\times$ \\
-Inference @ L=2048 & 180 s & 0.85 s & 86.5$$\times$ \\
+Inference @ L=128 & 1.90 s & 0.85 s & 84.8$\times$ \\
+Inference @ L=2048 & 180 s & 0.85 s & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1488,9 +1488,9 @@ head-wise LayerNorm for stability, and supports GQA and RoPE.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Speed @ L=2048} \\
 \midrule
-DistilBERT & -39.68\% & +48.5\%\% & 86.5$$\times$ \\
-RoBERTa & -27.64\% & +48.5\%\% & 84.5$$\times$ \\
-GPT-2 & -30.05\% & +48.5\%\% & 84.5$$\times$ \\
+DistilBERT & -39.68\% & +48.5\%\% & 86.5$\times$ \\
+RoBERTa & -27.64\% & +48.5\%\% & 84.5$\times$ \\
+GPT-2 & -30.05\% & +48.5\%\% & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1603,9 +1603,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Speed @ L=1024} \\
 \midrule
-DistilBERT & 51.03\% & 84.5$$\times$ \\
-RoBERTa & 50.92\% & 84.5$$\times$ \\
-GPT-2 & 49.31\% & 84.5$$\times$ \\
+DistilBERT & 51.03\% & 84.5$\times$ \\
+RoBERTa & 50.92\% & 84.5$\times$ \\
+GPT-2 & 49.31\% & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1827,7 +1827,7 @@ For decoders, we need cumulative sums:
 This is computed in $\mathcal{O}(L)$ via \texttt{torch.cumsum} on the outer product.
 
 \textbf{Memory.} The outer product has shape $(B, H, L, 2F, d_h)$. For 
-$L = 128$, this is ~1.6$$\times$10  elements at FP32 = 640 MB.
+$L = 128$, this is ~1.6$\times$10  elements at FP32 = 640 MB.
 
 \subsection{A.6 Preservation Gate}
 
@@ -1856,7 +1856,7 @@ decrease when $x$ is more important.
 \textbf{Component} & \textbf{Params} \\
 \midrule
 Q/K/V/O (frozen) & $4 d^2$ \\
-LoRA ($$\times$4) & $4 \cdot 2 r_L d$ \\
+LoRA ($\times$4) & $4 \cdot 2 r_L d$ \\
 Random projection (per head) & $H d_h F$ \\
 LayerNorm & $2 d_h$ \\
 Gates & 2 \\
@@ -2318,7 +2318,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

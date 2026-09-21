@@ -14,7 +14,7 @@ cascade doesn't apply.
 
 \subsubsection{Takeaway 3: Overhead is Significant}
 
-The three-branch cascade adds ~2.3 s$$\times$ latency compared to baseline.
+The three-branch cascade adds ~2.3 s$\times$ latency compared to baseline.
 
 \subsection{When to Use NASC}
 
@@ -31,7 +31,7 @@ The three-branch cascade adds ~2.3 s$$\times$ latency compared to baseline.
 \begin{itemize}
 \item \textbf{Encoders} (dense path by default).
 \item \textbf{Long sequences} ($L > 512$ for RFF cumsum OOM).
-\item \textbf{Latency-critical} inference (~2.3 s$$\times$ slower).
+\item \textbf{Latency-critical} inference (~2.3 s$\times$ slower).
 \item \textbf{When you need per-token adaptive gating.}
 
 \end{itemize}
@@ -69,8 +69,8 @@ For GPT-2 on L=128:
 \midrule
 Accuracy & 79.36\% & 85.32\% & +5.96\% \\
 Params & 124.44M & 124.4MM & +48.5\%\% \\
-Time & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
-VRAM & 793 MB & 344 MB MB & 2.1$$\times$ \\
+Time & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
+VRAM & 793 MB & 344 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,10 +86,10 @@ VRAM & 793 MB & 344 MB MB & 2.1$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Notes} \\
 \midrule
-Full attention & 79.36\% & 1.0$$\times$ & Baseline \\
-FlashAttention-2 & ~79\% & 1.1$$\times$ & Faster \\
-Cosformer & 0.85\% & 4.9$$\times$ slower & Linear attention \\
-\textbf{NASC} & \textbf{85.32\%} & \textbf{2.3 s$$\times$} & 3-branch cascade \\
+Full attention & 79.36\% & 1.0$\times$ & Baseline \\
+FlashAttention-2 & ~79\% & 1.1$\times$ & Faster \\
+Cosformer & 0.85\% & 4.9$\times$ slower & Linear attention \\
+\textbf{NASC} & \textbf{85.32\%} & \textbf{2.3 s$\times$} & 3-branch cascade \\
 \bottomrule
 \end{tabular}
 \end{table}

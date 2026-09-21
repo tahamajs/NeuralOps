@@ -1,4 +1,4 @@
-\title{\textbf{Squeezing Heads: Head-Aware Knowledge Distillation via LoRA-Wrapped Attention}
+\title{\textbf{Squeezing Heads: Head-Aware Knowledge Distillation via LoRA-Wrapped Attention}}
 
 \author{Anonymous authors}
 
@@ -49,9 +49,9 @@ a modified module $\mathcal{A}'$ such that:
 \textbf{Squeezing Heads} replaces each attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
-\end{equation}
+\]
 
 where:
 \begin{itemize}
@@ -204,17 +204,17 @@ GQA-aware &  &  &  &  \\
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{equation}
+\]
 
 \textbf{Parameter count.} $W_Q, W_K, W_V \in \mathbb{R}^{d \times d}$, 
 $W_O \in \mathbb{R}^{d \times d}$. Total: $4 d^2$.
@@ -235,9 +235,9 @@ Empirical findings:
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 where $A \in \mathbb{R}^{r_L \times d}$, $B \in \mathbb{R}^{d \times r_L}$, 
 $B = 0$ at initialization. Only $A, B$ are trained.
@@ -254,9 +254,9 @@ $B = 0$ at initialization. Only $A, B$ are trained.
 GQA (Ainslie et al., 2023) uses $H_{kv} < H$ KV heads. When the source 
 attention has more heads than the target, we pool:
 
-\begin{equation}
-W_K^{(\text{target})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\end{equation}
+\[
+{W_K^{(\text{target})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+\]
 
 where $r = H_\text{source} / H_\text{target}$.
 
@@ -264,9 +264,9 @@ where $r = H_\text{source} / H_\text{target}$.
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
-\begin{equation}
+\[
 \tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 Squeezing Heads preserves RoPE through the wrapper.
 
@@ -274,9 +274,9 @@ Squeezing Heads preserves RoPE through the wrapper.
 
 When reducing head dimension from $d_h$ to $d_h / s$:
 
-\begin{equation}
-W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h/s, :}
-\end{equation}
+\[
+W_Q^{(\text{new})} = {W_Q^{(\text{old})}}_{:d_h/s, :}
+\]
 
 We preserve the \textbf{leading} $d_h / s$ rows, corresponding to the principal 
 components of the head.
@@ -296,15 +296,15 @@ components of the head.
 Squeezing Heads replaces each pretrained attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
 
-\begin{equation}
+\[
 \text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
-\end{equation}
+\]
 
 The forward pass is:
 
-\begin{equation}
+\[
 y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
-\end{equation}
+\]
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
 adapters (trainable), and $b$ is the bias (frozen).
@@ -332,9 +332,9 @@ adapters (trainable), and $b$ is the bias (frozen).
 
 For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 
-\begin{equation}
+\[
 y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
-\end{equation}
+\]
 
 \textbf{Complexity.}
 
@@ -366,15 +366,15 @@ LoRA & $r_L (d_\text{in} + d_\text{out})$ & $B L r_L (d_\text{in} + d_\text{out}
 To reduce head dimension from $d_h$ to $d_h'$, we slice the leading rows 
 of $W_Q, W_K, W_V$:
 
-\begin{equation}
-W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
-\end{equation}
+\[
+W_Q^{(\text{new})} = {W_Q^{(\text{old})}}_{:d_h' H, :}
+\]
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
 
-\begin{equation}
-W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
-\end{equation}
+\[
+W_O^{(\text{new})} = {W_O^{(\text{old})}}_{:, :d_h' H}
+\]
 
 \textbf{Why leading?} The leading dimensions correspond to the principal 
 components of the learned representation, based on the order of head 
@@ -388,9 +388,9 @@ recover the discarded directions.
 When the source attention has $H_\text{source}$ KV heads and the target has 
 $H_\text{target} < H_\text{source}$:
 
-\begin{equation}
-W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\end{equation}
+\[
+{W_K^{(\text{pool})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+\]
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
 heads in group $g$.
@@ -419,9 +419,9 @@ Output: SqueezingHeadsDistiller instance
 
 \textbf{Algorithm 2:} Squeezing Heads forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q $\leftarrow$ LoRALinear_q(hidden_states)
  2: K $\leftarrow$ LoRALinear_k(hidden_states)
@@ -463,15 +463,15 @@ Storage & $4 d^2$ & $4 d^2$ + $4 r_L d$ \\
 
 If we reduce head dimension from $d_h$ to $d_h'$:
 
-\begin{equation}
+\[
 \text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
-\end{equation}
+\]
 
 \textbf{Example.} $d_h = 64 \to d_h' = 32$, $r_L = 16$:
 
-\begin{equation}
+\[
 \text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
-\end{equation}
+\]
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.
 
@@ -723,7 +723,7 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \midrule
 LoRA rank $r_L$ & 16 \\
 LoRA alpha $\alpha$ & 32 \\
-Head-dim reduction $s$ & 1.0$$\times$ \\
+Head-dim reduction $s$ & 1.0$\times$ \\
 Target head\_dim $d_h'$ & 64 \\
 \bottomrule
 \end{tabular}
@@ -854,10 +854,10 @@ GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB &
 \toprule
 \textbf{$s$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Param ratio} \\
 \midrule
-1.0 (base) & 90.25 & 76.8 & 77.5 & 1.00$$\times$ \\
-1.5 & 89.5 & 75.5 & 76.5 & 1.5$$\times$ \\
-2.0 & 88.0 & 74.0 & 74.5 & 2.0$$\times$ \\
-2.5 & 85.5 & 71.5 & 72.0 & 2.5$$\times$ \\
+1.0 (base) & 90.25 & 76.8 & 77.5 & 1.00$\times$ \\
+1.5 & 89.5 & 75.5 & 76.5 & 1.5$\times$ \\
+2.0 & 88.0 & 74.0 & 74.5 & 2.0$\times$ \\
+2.5 & 85.5 & 71.5 & 72.0 & 2.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -873,9 +873,9 @@ GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB &
 \toprule
 \textbf{Model} & \textbf{Baseline trainable} & \textbf{SH trainable} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 589824 & 113$$\times$ \\
-RoBERTa & 124.6M & 1179648 & 105$$\times$ \\
-GPT-2 & 124.4M & 1179648 & 105$$\times$ \\
+DistilBERT & 66.9M & 589824 & 113$\times$ \\
+RoBERTa & 124.6M & 1179648 & 105$\times$ \\
+GPT-2 & 124.4M & 1179648 & 105$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -986,7 +986,7 @@ LoRA gain & 0.5 & 0.3 & 0.4 \\
 \begin{itemize}
 \item \textbf{Accuracy:} -0.46\%---1.9\% drop.
 \item \textbf{Trainable params:} ~1\% of full.
-\item \textbf{Head-dim reduction:} up to 1.0$$\times$ without major loss.
+\item \textbf{Head-dim reduction:} up to 1.0$\times$ without major loss.
 \item \textbf{LoRA recovery:} 0.5\% gain over baseline.
 \item \textbf{All models pass quality gate.}
 \end{itemize}
@@ -995,10 +995,10 @@ LoRA gain & 0.5 & 0.3 & 0.4 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/squeezing_heads_distill_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{SqueezingHeadsAttentionDistillationLayer}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{SqueezingHeadsAttentionDistillationLayer}.}
 \label{fig:results_squeezingheadsattentiondistillationlayer}
 \end{figure}
 
@@ -1078,7 +1078,7 @@ $W_O$ & 16 \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Prune 50\% heads & 78.0 & 68.0 & 70.0 \\
-SH dim-reduce 2$$\times$ & \textbf{88.0} & \textbf{74.0} & \textbf{74.5} \\
+SH dim-reduce 2$\times$ & \textbf{88.0} & \textbf{74.0} & \textbf{74.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1179,7 +1179,7 @@ by head-dim reduction.
 
 \subsubsection{Takeaway 2: Head-Dim Reduction Works}
 
-Reducing head dimension by 2$$\times$ gives ~2$$\times$ parameter 
+Reducing head dimension by 2$\times$ gives ~2$\times$ parameter 
 reduction with acceptable loss.
 
 \subsubsection{Takeaway 3: Drop-In Wrapper}
@@ -1371,9 +1371,9 @@ and allows head-dim reduction with LoRA recovery.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Trainable} & \textbf{Head-dim reduction} \\
 \midrule
-DistilBERT & -0.46\% & 113$$\times$ & 1.0$$\times$ \\
-RoBERTa & -1.8\% & 105$$\times$ & 1.0$$\times$ \\
-GPT-2 & -1.9\% & 105$$\times$ & 1.0$$\times$ \\
+DistilBERT & -0.46\% & 113$\times$ & 1.0$\times$ \\
+RoBERTa & -1.8\% & 105$\times$ & 1.0$\times$ \\
+GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1382,7 +1382,7 @@ GPT-2 & -1.9\% & 105$$\times$ & 1.0$$\times$ \\
 
 \begin{enumerate}
 \item \textbf{LoRA recovers most accuracy} lost by head-dim reduction.
-\item \textbf{Trainable params reduced by ~100$$\times$.}
+\item \textbf{Trainable params reduced by ~100$\times$.}
 \item \textbf{Drop-in wrapper} -- no architecture change.
 \item \textbf{Multi-architecture support} with RoPE, GQA, causality.
 \item \textbf{Beats head pruning} by not discarding information.
@@ -1665,17 +1665,17 @@ GPT-2 & 77.5\% $\pm$ 1\% & ~1179648 \\
 
 For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
-\begin{equation}
+\[
 W = W_0 + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 where $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \times d_\text{in}}$, and $B = 0$ at initialization.
 
 \textbf{Forward:}
 
-\begin{equation}
+\[
 y = W x = W_0 x + \frac{\alpha}{r_L} B A x
-\end{equation}
+\]
 
 \textbf{Parameter count:} $r_L (d_\text{in} + d_\text{out})$.
 
@@ -1693,7 +1693,7 @@ matching the baseline. $\square$
 information in the last $d_h - d_h'$ dimensions.
 
 \textbf{Proof sketch.} The output of a head is:
-\begin{equation}
+\[
 o = \text{softmax}(\ldots) V
 \]
 where $V$ has dimension $d_h$. Truncating to $d_h'$ reduces the output to 
@@ -1713,8 +1713,8 @@ $\square$
 Given $H_\text{source}$ source KV heads with $H_\text{source} > H_\text{target}$:
 
 \[
-W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\end{equation}
+{W_K^{(\text{pool})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+\]
 
 where $r = H_\text{source} / H_\text{target}$.
 
@@ -1740,15 +1740,15 @@ $W_O$ & $d_h H \cdot d$ & $d_h' H \cdot d$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Reduction factor:} $s $\times$.
+\textbf{Reduction factor:} $s\times$.
 
 \subsection{A.7 Numerical Stability}
 
 Attention scores computed in FP32:
 
-\begin{equation}
+\[
 S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
-\end{equation}
+\]
 
 Softmax in FP32, then cast back to model dtype.
 \begin{lstlisting}
@@ -1887,7 +1887,7 @@ Ensure \texttt{weight.requires\_grad = False} but \texttt{lora\_A/B.requires\_gr
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 LoRA rank & 16 \\
-Head-dim reduction & 1.0$$\times$ \\
+Head-dim reduction & 1.0$\times$ \\
 Accuracy & 90.25\% \\
 F1 & 0.9055 \\
 Trainable params & 589824 \\
@@ -2077,7 +2077,7 @@ done
 
 \textbf{Goal.} Train full model after head-dim reduction.
 
-\textbf{Result.} Similar to LoRA but 100$$\times$ more compute.
+\textbf{Result.} Similar to LoRA but 100$\times$ more compute.
 
 \textbf{Conclusion.} LoRA is more efficient.
 

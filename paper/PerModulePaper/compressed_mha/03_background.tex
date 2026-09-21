@@ -4,17 +4,17 @@
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
 where $W_Q \in \mathbb{R}^{d \times H \cdot d_h}$, $W_K, W_V \in \mathbb{R}^{d \times H_{kv} \cdot d_h}$.
 
 The output projection:
 
-\begin{equation}
+\[
 \text{Out} = \text{Attn}(Q, K, V) W_O
-\end{equation}
+\]
 
 where $W_O \in \mathbb{R}^{H \cdot d_h \times d}$.
 
@@ -36,26 +36,26 @@ $W_O$ & $H d_h \times d$ & $d H d_h$ \\
 \end{table}
 
 For standard MHA ($H = H_{kv}$):
-\begin{equation}
+\[
 \text{Total} = 4 d^2
-\end{equation}
+\]
 
 \subsection{Singular Value Decomposition}
 
 For $W \in \mathbb{R}^{m \times n}$:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 where $U \in \mathbb{R}^{m \times m}$, $\Sigma \in \mathbb{R}^{m \times n}$ diagonal, 
 $V \in \mathbb{R}^{n \times n}$ orthogonal.
 
 \textbf{Truncated SVD.} Rank-$r$ approximation:
 
-\begin{equation}
+\[
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\end{equation}
+\]
 
 \textbf{Error.} $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
@@ -63,9 +63,9 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
 
 For numerical stability, distribute $\Sigma^{1/2}$:
 
-\begin{equation}
+\[
 W_r = \underbrace{U_{:, :r} \Sigma_{:r, :r}^{1/2}}_{U_r'} \underbrace{\Sigma_{:r, :r}^{1/2} V_{:r, :}^\top}_{V_r'}
-\end{equation}
+\]
 
 Both factors have balanced magnitude.
 
@@ -73,15 +73,15 @@ Both factors have balanced magnitude.
 
 Instead of separate SVD per projection, we stack:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
-\end{equation}
+\]
 
 Then:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 \textbf{Key property.} The right factor $V_{QKV}$ is a \textbf{single basis} for the 
 input space, shared across Q, K, V.
@@ -93,9 +93,9 @@ same input features drive all three. A joint SVD captures this correlation.
 
 LoRA (Hu et al., 2021) adds trainable low-rank deltas:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ initially. Applied to both QKV and output branches.
 
@@ -103,17 +103,17 @@ with $B = 0$ initially. Applied to both QKV and output branches.
 
 For $H_{kv} < H$:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
-\end{equation}
+\]
 
 Expanded to $H$ heads via \texttt{repeat\_kv}.
 
 \subsection{Rotary Position Embeddings (RoPE)}
 
-\begin{equation}
+\[
 \tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 Applied to $Q, K$ after projection.
 

@@ -17,7 +17,7 @@ y_lora = F.linear(F.linear(x, self.B), self.A)
 return y_svd + y_lora + self.bias
 \end{lstlisting}
 
-Expected speedup: 2-4$$\times$.
+Expected speedup: 2-4$\times$.
 
 \subsection{`raise RuntimeError` in `copy\_weights`}
 

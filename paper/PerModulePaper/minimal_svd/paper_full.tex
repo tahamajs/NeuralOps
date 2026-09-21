@@ -1,4 +1,4 @@
-\title{\textbf{MinimalSVD: Energy-Adaptive Low-Rank Factorization for Efficient Transformer Attention}
+\title{\textbf{MinimalSVD: Energy-Adaptive Low-Rank Factorization for Efficient Transformer Attention}}
 
 \author{Anonymous authors}
 
@@ -223,15 +223,15 @@ each.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} & \textbf{Calibration} \\
 \midrule
-DistilBERT & Distillation & 1.6$$\times$ & Yes & -- \\
-TinyBERT & Distillation & 7$$\times$ & Yes & -- \\
-SparseGPT & Pruning & 2-4$$\times$ & No & Required \\
-Wanda & Pruning & 2$$\times$ & No & Required \\
-AWQ & Quantization & 4$$\times$ & No & Required \\
-GPTQ & Quantization & 4$$\times$ & No & Required \\
-A3 & Low-rank + diagonal Fisher & 5$$\times$ & LoRA & Required \\
-AASVD & Low-rank + full covariance & 5$$\times$ & LoRA & Required \\
-\textbf{MinimalSVD} & \textbf{Low-rank + energy} & \textbf{50\%$$\times$} & \textbf{LoRA} & \textbf{Not required} \\
+DistilBERT & Distillation & 1.6$\times$ & Yes & -- \\
+TinyBERT & Distillation & 7$\times$ & Yes & -- \\
+SparseGPT & Pruning & 2-4$\times$ & No & Required \\
+Wanda & Pruning & 2$\times$ & No & Required \\
+AWQ & Quantization & 4$\times$ & No & Required \\
+GPTQ & Quantization & 4$\times$ & No & Required \\
+A3 & Low-rank + diagonal Fisher & 5$\times$ & LoRA & Required \\
+AASVD & Low-rank + full covariance & 5$\times$ & LoRA & Required \\
+\textbf{MinimalSVD} & \textbf{Low-rank + energy} & \textbf{50\%$\times$} & \textbf{LoRA} & \textbf{Not required} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -452,7 +452,7 @@ adaptively per layer based on spectral energy.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $$\times$ d_in}           |
+   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
    +--------------------+-------------------------+
                         |
                          
@@ -492,7 +492,7 @@ where:
 \begin{itemize}
 \item \texttt{down: nn.Linear(d\_in, r, bias=False)} -- stores $V_r \in \mathbb{R}^{r \times d_\text{in}}$
 \item \texttt{up: nn.Linear(r, d\_out, bias=True)} -- stores $U_r \in \mathbb{R}^{d_\text{out} \times r}$
-\item \texttt{LoRA(x) = (x A\^{}\top) B\^{}\top \cdot s} -- optional adapter
+\item \texttt{LoRA(x) = (x A^\top) B^\top \cdot s} -- optional adapter
 
 \end{itemize}
 \subsubsection{Parameter Count}
@@ -520,10 +520,10 @@ Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$$\times$ \\
-r=64 & 98,304 & \textbf{6.00$$\times$} \\
-r=128 & 196,608 & 3.00$$\times$ \\
-r=64 + LoRA r=16 & 122,880 & 4.80$$\times$ \\
+Original & 589,824 & 1.00$\times$ \\
+r=64 & 98,304 & \textbf{6.00$\times$} \\
+r=128 & 196,608 & 3.00$\times$ \\
+r=64 + LoRA r=16 & 122,880 & 4.80$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -538,7 +538,7 @@ Given weight $W$ and hyperparameters $r_\text{max}$ (cap) and $\eta$ (energy):
 \item Compute SVD: $W = U \Sigma V^\top$.
 \item Compute cumulative energy:
   $$
-  E(r) = \frac{\sum\_{i=1}\^{}{r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2}
+  E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
   \tag{4.3}
   $$
 \item Find the smallest $r$ with $E(r) \geq \eta$:
@@ -1230,12 +1230,12 @@ All experiments use seed 42. Single-seed due to compute budget.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{MinimalSVD} & \textbf{88.88} & -1.83 & 0.8921 & 2.0x & \textbf{50\%$$\times$} & 286 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{MinimalSVD} & \textbf{79.36} & +0.80 & 0.8065 & 0.85 & \textbf{2.1$$\times$} & 581 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{MinimalSVD} & \textbf{80.85} & +1.49 & 0.8262 & 0.85 & \textbf{2.1$$\times$} & 320 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{MinimalSVD} & \textbf{88.88} & -1.83 & 0.8921 & 2.0x & \textbf{50\%$\times$} & 286 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{MinimalSVD} & \textbf{79.36} & +0.80 & 0.8065 & 0.85 & \textbf{2.1$\times$} & 581 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{MinimalSVD} & \textbf{80.85} & +1.49 & 0.8262 & 0.85 & \textbf{2.1$\times$} & 320 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1243,8 +1243,8 @@ GPT-2 & \textbf{MinimalSVD} & \textbf{80.85} & +1.49 & 0.8262 & 0.85 & \textbf{2
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item Parameter reduction: 50\%$$\times$ (DistilBERT), 2.1$$\times$ (RoBERTa),
-  2.1$$\times$ (GPT-2).
+\item Parameter reduction: 50\%$\times$ (DistilBERT), 2.1$\times$ (RoBERTa),
+  2.1$\times$ (GPT-2).
 \item Accuracy drop: -1.83\%, +0.80\%, +1.49\%.
 \item VRAM reduction: 380 MB\% average.
 
@@ -1260,9 +1260,9 @@ GPT-2 & \textbf{MinimalSVD} & \textbf{80.85} & +1.49 & 0.8262 & 0.85 & \textbf{2
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1276,10 +1276,10 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{MinimalSVD} & \textbf{Ratio} \\
 \midrule
-q\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-k\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-v\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-out\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
+q\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+k\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+v\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+out\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1363,11 +1363,11 @@ GPT-2 & MinimalSVD & 2.3 s s & 0.85 & 320 MB MB \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-384 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+384 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1440,10 +1440,10 @@ GPT-2 & MinimalSVD & 2.3 s s & 0.85 & 320 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-minimal\_nova & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-minimal\_prism & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-\textbf{MinimalSVD} & \textbf{88.88} & \textbf{50\%$$\times$} & \textbf{79.36} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+minimal\_nova & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+minimal\_prism & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+\textbf{MinimalSVD} & \textbf{88.88} & \textbf{50\%$\times$} & \textbf{79.36} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1482,7 +1482,7 @@ GPT-2 & 0.85 s & 84.5 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction:} 50\%$$\times$--2.1$$\times$
+\item \textbf{Parameter reduction:} 50\%$\times$--2.1$\times$
 \item \textbf{Accuracy drop:} -1.83\%--+1.49\%
 \item \textbf{VRAM reduction:} 380 MB\%
 \item \textbf{All three models pass quality gate.}
@@ -1492,10 +1492,10 @@ GPT-2 & 0.85 s & 84.5 s & \textbf{0.85 s} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/minimal_svd_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{minimal_svd}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_svd}.}
 \label{fig:results_minimal_svd}
 \end{figure}
 
@@ -1612,9 +1612,9 @@ Figure 8.4 shows accuracy vs $\eta$ for all models.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{Ratio} \\
 \midrule
-Fixed rank 32 & 83.5 & 32 & 32$$\times$ \\
-Fixed rank 64 & 84.8 & 64 & 32$$\times$ \\
-\textbf{Energy 0.95} & \textbf{88.88} & 0.85 & \textbf{50\%$$\times$} \\
+Fixed rank 32 & 83.5 & 32 & 32$\times$ \\
+Fixed rank 64 & 84.8 & 64 & 32$\times$ \\
+\textbf{Energy 0.95} & \textbf{88.88} & 0.85 & \textbf{50\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1636,7 +1636,7 @@ accuracy at similar compression.
 Energy-adaptive rank &  &  &  \\
 LoRA recovery &  &  &  \\
 Accuracy & 88.88\% & 0.85\% & 0.85\% \\
-Ratio & 50\%$$\times$ & 32$$\times$ & 32$$\times$ \\
+Ratio & 50\%$\times$ & 32$\times$ & 32$\times$ \\
 Code lines & ~280 & ~500 & ~550 \\
 Pre-test &  &  &  \\
 Injection-time nested detection &  &  &  \\
@@ -1661,9 +1661,9 @@ MinimalSVD's inference is \textbf{faster} than dense attention:
 \toprule
 \textbf{Config} & \textbf{FLOPs} & \textbf{Relative} \\
 \midrule
-Dense $768 \times 768$ & 1.18M & 1.00$$\times$ \\
-Factorized $r=64$ & 196K & \textbf{0.167$$\times$} \\
-Factorized $r=128$ & 393K & 0.333$$\times$ \\
+Dense $768 \times 768$ & 1.18M & 1.00$\times$ \\
+Factorized $r=64$ & 196K & \textbf{0.167$\times$} \\
+Factorized $r=128$ & 393K & 0.333$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1711,7 +1711,7 @@ Factorized $r=128$ & 393K & 0.333$$\times$ \\
 
 \subsubsection{Takeaway 1: Real Compression}
 
-MinimalSVD reduces attention parameters by \textbf{50\%$$\times$--2.1$$\times$} with 
+MinimalSVD reduces attention parameters by \textbf{50\%$\times$--2.1$\times$} with 
 accuracy drops of \textbf{-1.83\%--+1.49\%}. Genuine reduction in model 
 size.
 
@@ -1773,10 +1773,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{MinimalSVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
-VRAM & 183 MB & 286 MB MB & \textbf{2.1$$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+VRAM & 183 MB & 286 MB MB & \textbf{2.1$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$\times$} \\
 Accuracy & 90.71\% & 88.88\% & -1.83\% \\
 \bottomrule
 \end{tabular}
@@ -1791,13 +1791,13 @@ Accuracy & 90.71\% & 88.88\% & -1.83\% \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT (from scratch) & -- & 3.5$$\times$ & 89.4\% \\
-DistilBERT (distill) & -- & 1.6$$\times$ & 90.7\% \\
-A3 & Required & 2.1$$\times$ & 86.4\%\% \\
-AASVD & Required & 2.1$$\times$ & 86.4\%\% \\
-MinimalNOVA & None & 2.1$$\times$ & 86.4\%\% \\
-MinimalPRISM & None & 2.1$$\times$ & 86.4\%\% \\
-\textbf{MinimalSVD} & \textbf{None} & \textbf{50\%$$\times$} & \textbf{88.88\%} \\
+ALBERT (from scratch) & -- & 3.5$\times$ & 89.4\% \\
+DistilBERT (distill) & -- & 1.6$\times$ & 90.7\% \\
+A3 & Required & 2.1$\times$ & 86.4\%\% \\
+AASVD & Required & 2.1$\times$ & 86.4\%\% \\
+MinimalNOVA & None & 2.1$\times$ & 86.4\%\% \\
+MinimalPRISM & None & 2.1$\times$ & 86.4\%\% \\
+\textbf{MinimalSVD} & \textbf{None} & \textbf{50\%$\times$} & \textbf{88.88\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1982,9 +1982,9 @@ selected per layer based on spectral energy.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -1.83\% & \textbf{50\%$$\times$} & -380 MB\% \\
-RoBERTa & +0.80\% & \textbf{2.1$$\times$} & -380 MB\% \\
-GPT-2 & +1.49\% & \textbf{2.1$$\times$} & -380 MB\% \\
+DistilBERT & -1.83\% & \textbf{50\%$\times$} & -380 MB\% \\
+RoBERTa & +0.80\% & \textbf{2.1$\times$} & -380 MB\% \\
+GPT-2 & +1.49\% & \textbf{2.1$\times$} & -380 MB\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2148,9 +2148,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 88.88\% $\pm$ 1\% & 50\%$$\times$ \\
-RoBERTa & 79.36\% $\pm$ 1\% & 2.1$$\times$ \\
-GPT-2 & 80.85\% $\pm$ 1\% & 2.1$$\times$ \\
+DistilBERT & 88.88\% $\pm$ 1\% & 50\%$\times$ \\
+RoBERTa & 79.36\% $\pm$ 1\% & 2.1$\times$ \\
+GPT-2 & 80.85\% $\pm$ 1\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2736,7 +2736,7 @@ if w_norm < 1e-4:
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Accuracy & 88.88\% \\
 F1 & 0.8921 \\
 Precision & 0.85 \\
@@ -2761,7 +2761,7 @@ Avg rank & 32 \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 79.36\% \\
 F1 & 0.8065 \\
 Peak VRAM & 581 MB MB \\
@@ -2782,7 +2782,7 @@ Avg rank & 32 \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 80.85\% \\
 F1 & 0.8262 \\
 Peak VRAM & 320 MB MB \\
@@ -2813,11 +2813,11 @@ Avg rank & 32 \\
 
 \subsection{C.5 Effective Rank Distribution (RoBERTa)}
 
-(12 layers $$\times$ 4 projections)
+(12 layers $\times$ 4 projections)
 
 \subsection{C.6 Effective Rank Distribution (GPT-2)}
 
-(12 layers $$\times$ 4 projections)
+(12 layers $\times$ 4 projections)
 
 \subsection{C.7 Reconstruction Error (DistilBERT)}
 
@@ -2847,11 +2847,11 @@ Avg rank & 32 \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-384 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+384 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2944,10 +2944,10 @@ Step  Loss
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-MinimalNOVA & 0.85\% & 32$$\times$ & 32\% & 32$$\times$ \\
-MinimalPRISM & 0.85\% & 32$$\times$ & 32\% & 32$$\times$ \\
-\textbf{MinimalSVD} & \textbf{88.88\%} & \textbf{50\%$$\times$} & \textbf{79.36\%} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+MinimalNOVA & 0.85\% & 32$\times$ & 32\% & 32$\times$ \\
+MinimalPRISM & 0.85\% & 32$\times$ & 32\% & 32$\times$ \\
+\textbf{MinimalSVD} & \textbf{88.88\%} & \textbf{50\%$\times$} & \textbf{79.36\%} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2991,7 +2991,7 @@ MinimalPRISM & 0.85\% & 32$$\times$ & 32\% & 32$$\times$ \\
 
 \textbf{Goal.} Use $r = \min(d_\text{in}, d_\text{out})$ to avoid any loss.
 
-\textbf{Result.} No parameter reduction (ratio = 1.0$$\times$).
+\textbf{Result.} No parameter reduction (ratio = 1.0$\times$).
 
 \textbf{Conclusion.} Useless.
 
@@ -3196,7 +3196,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 

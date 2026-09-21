@@ -64,7 +64,7 @@ mechanisms within a single drop-in replacement for multi-head self-attention:
 
 \begin{enumerate}
 \item \textbf{SVD-factorized projections:} $W_Q, W_K, W_V, W_O$ stored as $U V^\top$
-  with rank $r$, reducing projection parameters by factor ~50\%$$\times$ at
+  with rank $r$, reducing projection parameters by factor ~50\%$\times$ at
   $r = 32$.
 \item \textbf{Kernelized linear attention:} $\phi(x) = \text{ELU}(x) + 1$ feature map,
   enabling the identity
@@ -90,7 +90,7 @@ with peak VRAM reductions of \textbf{380 MB\%}.
 
 Unlike attention-replacement methods that add parameters (NHA, EAT, OHA, 
 Infini-Attention, SVD-Mamba), SVD-Linear Attention \textbf{reduces} parameter count 
-by factor 50\%$$\times$--2.1$$\times$. LoRA adapters add a small number of 
+by factor 50\%$\times$--2.1$\times$. LoRA adapters add a small number of 
 recovery parameters on top.
 
 \textbf{Keywords:} linear attention, SVD factorization, exponential decay, 

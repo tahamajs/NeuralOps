@@ -14,7 +14,7 @@ A \textbf{learned scalar gate} $\alpha$ blends them.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -190,9 +190,9 @@ we log a warning and keep the Kaiming-initialized default. This is a
 
 \textbf{Algorithm 1:} HymbaTransX forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         position_embeddings (optional)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q1 $\leftarrow$ W_q1(X);  K1 $\leftarrow$ W_k1(X)
  2: Q2 $\leftarrow$ W_q2(X);  K2 $\leftarrow$ W_k2(X)
@@ -250,7 +250,7 @@ For $d = 768$, per layer:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{HymbaTransX} \\
 \midrule
-Q, K, V, O & 4 $$\times$ 589,824 = 2.36M & -- \\
+Q, K, V, O & 4 $\times$ 589,824 = 2.36M & -- \\
 W\_q1, W\_k1 & -- & 1.18M \\
 W\_q2, W\_k2 & -- & 1.18M \\
 W\_v & -- & 0.59M \\

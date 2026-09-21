@@ -11,9 +11,9 @@ We evaluate \texttt{mamba\_shedder} across three canonical language understandin
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 90.71\% & 0.9109 & 1.00$$\times$ & 0.4834 & 302.9 MB & 45802 & 5.34 s \\
-MNLI & PASS & 81.70\% & 0.8164 & 1.00$$\times$ & 0.4836 & 304.5 MB & 52499 & 6.41 s \\
-AG News & PASS & 94.80\% & 0.9441 & 1.00$$\times$ & 0.4804 & 326.5 MB & 107985 & 7.57 s \\
+SST-2 & PASS & 90.71\% & 0.9109 & 1.00$\times$ & 0.4834 & 302.9 MB & 45802 & 5.34 s \\
+MNLI & PASS & 81.70\% & 0.8164 & 1.00$\times$ & 0.4836 & 304.5 MB & 52499 & 6.41 s \\
+AG News & PASS & 94.80\% & 0.9441 & 1.00$\times$ & 0.4804 & 326.5 MB & 107985 & 7.57 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{mamba\_shedder} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 66,956,548 & +0 (+0.00\%) & 593,668 & 0 & 0 \\
 Execution profiling demonstrates that \texttt{mamba\_shedder} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/mamba_shedder_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{mamba_shedder}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mamba_shedder}.}
 \label{fig:results_mamba_shedder}
 \end{figure}

@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp. Layers} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{MinimalNOVA} & \textbf{88.65} & -2.06 & 0.8896 & 2.0x & \textbf{50\%$$\times$} & 286 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{MinimalNOVA} & \textbf{79.82} & +1.26 & 0.8124 & 0.85 & \textbf{2.1$$\times$} & 581 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{MinimalNOVA} & \textbf{79.36} & +0.00 & 0.8207 & 0.85 & \textbf{2.1$$\times$} & 320 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{MinimalNOVA} & \textbf{88.65} & -2.06 & 0.8896 & 2.0x & \textbf{50\%$\times$} & 286 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{MinimalNOVA} & \textbf{79.82} & +1.26 & 0.8124 & 0.85 & \textbf{2.1$\times$} & 581 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{MinimalNOVA} & \textbf{79.36} & +0.00 & 0.8207 & 0.85 & \textbf{2.1$\times$} & 320 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,8 +25,8 @@ GPT-2 & \textbf{MinimalNOVA} & \textbf{79.36} & +0.00 & 0.8207 & 0.85 & \textbf{
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 50\%$$\times$ on DistilBERT, 2.1$$\times$ on
-  RoBERTa, 2.1$$\times$ on GPT-2.
+\item \textbf{Parameter reduction:} 50\%$\times$ on DistilBERT, 2.1$\times$ on
+  RoBERTa, 2.1$\times$ on GPT-2.
 \item \textbf{Accuracy drop:} -2.06\%, +1.26\%, +0.00\%.
 \item \textbf{VRAM reduction:} 380 MB\% average.
 
@@ -42,9 +42,9 @@ GPT-2 & \textbf{MinimalNOVA} & \textbf{79.36} & +0.00 & 0.8207 & 0.85 & \textbf{
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,10 +58,10 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{MinimalNOVA} & \textbf{Ratio} \\
 \midrule
-q\_lin & 589,824 & 0.85 & 32$$\times$ \\
-k\_lin & 589,824 & 0.85 & 32$$\times$ \\
-v\_lin & 589,824 & 0.85 & 32$$\times$ \\
-out\_lin & 589,824 & 0.85 & 32$$\times$ \\
+q\_lin & 589,824 & 0.85 & 32$\times$ \\
+k\_lin & 589,824 & 0.85 & 32$\times$ \\
+v\_lin & 589,824 & 0.85 & 32$\times$ \\
+out\_lin & 589,824 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -144,11 +144,11 @@ GPT-2 & MinimalNOVA & 2.3 s s & 0.85 & 320 MB MB \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-384 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+384 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -220,11 +220,11 @@ GPT-2 & MinimalNOVA & 2.3 s s & 0.85 & 320 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-a3 & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-aasvd & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-sdrm & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-\textbf{MinimalNOVA} & \textbf{88.65} & \textbf{50\%$$\times$} & \textbf{79.82} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+a3 & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+aasvd & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+sdrm & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+\textbf{MinimalNOVA} & \textbf{88.65} & \textbf{50\%$\times$} & \textbf{79.82} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -260,7 +260,7 @@ GPT-2 & 0.85 s & 84.5 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction:} 50\%$$\times$--2.1$$\times$
+\item \textbf{Parameter reduction:} 50\%$\times$--2.1$\times$
 \item \textbf{Accuracy drop:} -2.06\%--+0.00\%
 \item \textbf{VRAM reduction:} 380 MB\%
 \item \textbf{All three models pass quality gate.}
@@ -270,9 +270,9 @@ GPT-2 & 0.85 s & 84.5 s & \textbf{0.85 s} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/minimal_nova_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{minimal_nova}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_nova}.}
 \label{fig:results_minimal_nova}
 \end{figure}

@@ -1,4 +1,4 @@
-\title{\textbf{HGRN2-GatedDeltaNet: A Hybrid Linear Recurrent Attention Module for Efficient Long-Context Transformers}
+\title{\textbf{HGRN2-GatedDeltaNet: A Hybrid Linear Recurrent Attention Module for Efficient Long-Context Transformers}}
 
 \author{Anonymous authors}
 
@@ -307,7 +307,7 @@ the two branches per token.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -450,8 +450,8 @@ This prevents injecting a random output projection.
 
 \textbf{Algorithm 1:} HGRN2-GatedDeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Y_hgrn $\leftarrow$ HGRN2Branch(X)                   Sequential O(L)
  2: Y_delta $\leftarrow$ DeltaNetBranch(X)               Sequential O(L)
@@ -924,18 +924,18 @@ GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & 0.85 & 84.8$$\times$ \\
-256 & 3.50 & 0.85 & 85.6$$\times$ \\
-512 & 12.0 & 0.85 & 86.2$$\times$ \\
-1024 & 45.0 & 0.85 & 86.4$$\times$ \\
-2048 & 180.0 & 0.85 & 86.5$$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Breakeven point:} $L^* = 128$.
 
-\textbf{Important:} At L = 128, our method is \textbf{1.0x$$\times$ slower} than 
+\textbf{Important:} At L = 128, our method is \textbf{1.0x$\times$ slower} than 
 baseline due to the Python-level sequential recurrence. At L $\ge$ 512, our 
 method is faster.
 
@@ -950,9 +950,9 @@ method is faster.
 \toprule
 \textbf{Model} & \textbf{Baseline (s/step)} & \textbf{Ours (s/step)} & \textbf{Slowdown} \\
 \midrule
-DistilBERT & 0.05 & 0.85 & 32$$\times$ \\
-RoBERTa & 0.08 & 0.85 & 32$$\times$ \\
-GPT-2 & 0.08 & 0.85 & 32$$\times$ \\
+DistilBERT & 0.05 & 0.85 & 32$\times$ \\
+RoBERTa & 0.08 & 0.85 & 32$\times$ \\
+GPT-2 & 0.08 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1079,10 +1079,10 @@ GPT-2 & 793 & 1044 MB & 48.5\%\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/hgrn2_gated_deltanet_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hgrn2_gated_deltanet}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hgrn2_gated_deltanet}.}
 \label{fig:results_hgrn2_gated_deltanet}
 \end{figure}
 
@@ -1172,11 +1172,11 @@ happens because baseline's $\mathcal{O}(L^2)$ term dominates.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speed @ L=128} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1$$\times$ \\
-Linear Transformer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
-Performer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
-Mamba (est.) & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
-\textbf{HGRN2-GDN} & \textbf{53.56} & \textbf{52.98} & \textbf{51.03} & \textbf{0.5$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1$\times$ \\
+Linear Transformer & 0.85 & 32 & 0.85 & 84.5$\times$ \\
+Performer & 0.85 & 32 & 0.85 & 84.5$\times$ \\
+Mamba (est.) & 0.85 & 32 & 0.85 & 84.5$\times$ \\
+\textbf{HGRN2-GDN} & \textbf{53.56} & \textbf{52.98} & \textbf{51.03} & \textbf{0.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1245,7 +1245,7 @@ attention. For long-context deployment, this is a genuine win.
 
 \subsubsection{Takeaway 2: Short-Sequence Slowdown}
 
-At $L = 128$, our method is \textbf{1.0x$$\times$ slower}. This is a significant 
+At $L = 128$, our method is \textbf{1.0x$\times$ slower}. This is a significant 
 limitation for standard benchmarks.
 
 \subsubsection{Takeaway 3: Two Branches Beat One}
@@ -1294,7 +1294,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & 53.56\% & -37.15\% \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Inference time & 45s & 0.85s & 86.4$$\times$ \\
+Inference time & 45s & 0.85s & 86.4$\times$ \\
 Peak VRAM & 380 MB MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -1306,8 +1306,8 @@ The main limitation is the Python loop. A \textbf{fused Triton kernel} could
 eliminate the loop overhead, potentially giving:
 
 \begin{itemize}
-\item 3-5$$\times$ speedup at L = 128.
-\item 10-20$$\times$ at L = 1024.
+\item 3-5$\times$ speedup at L = 128.
+\item 10-20$\times$ at L = 1024.
 
 \end{itemize}
 This is a clear avenue for future work.
@@ -1350,7 +1350,7 @@ layer. This is a substantial limitation.
 
 \subsection{Short-Sequence Slowdown}
 
-At L = 128 (SST-2 standard), our method is \textbf{1.0x$$\times$ slower} than 
+At L = 128 (SST-2 standard), our method is \textbf{1.0x$\times$ slower} than 
 baseline. This limits applicability to standard benchmarks.
 
 \subsection{Python Loop}
@@ -1450,9 +1450,9 @@ of standard attention.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} & \textbf{Speed @ L=1024} \\
 \midrule
-DistilBERT & -37.15\% & +48.5\%\% & 1.0x$$\times$ & 86.4$$\times$ \\
-RoBERTa & -25.58\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
-GPT-2 & -28.33\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
+DistilBERT & -37.15\% & +48.5\%\% & 1.0x$\times$ & 86.4$\times$ \\
+RoBERTa & -25.58\% & +48.5\%\% & 84.5$\times$ & 84.5$\times$ \\
+GPT-2 & -28.33\% & +48.5\%\% & 84.5$\times$ & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1595,9 +1595,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} \\
 \midrule
-DistilBERT & 53.56\% & +48.5\%\% & 1.0x$$\times$ \\
-RoBERTa & 52.98\% & +48.5\%\% & 84.5$$\times$ \\
-GPT-2 & 51.03\% & +48.5\%\% & 84.5$$\times$ \\
+DistilBERT & 53.56\% & +48.5\%\% & 1.0x$\times$ \\
+RoBERTa & 52.98\% & +48.5\%\% & 84.5$\times$ \\
+GPT-2 & 51.03\% & +48.5\%\% & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1841,7 +1841,7 @@ Baseline attention: $\mathcal{O}(L^2 d)$.
 
 \textbf{Ratio:} $\mathcal{O}(L^2 d) / \mathcal{O}(L d^2) = \mathcal{O}(L/d)$.
 
-For $L = 4096$ and $d = 768$: ~5$$\times$ asymptotic speedup.
+For $L = 4096$ and $d = 768$: ~5$\times$ asymptotic speedup.
 
 \subsection{A.6 Breakeven Analysis}
 
@@ -2113,11 +2113,11 @@ F1 & 0.6743 \\
 \toprule
 \textbf{L} & \textbf{DistilBERT base} & \textbf{DistilBERT ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 s & 0.85 s & 84.8$$\times$ \\
-256 & 3.50 s & 0.85 s & 85.6$$\times$ \\
-512 & 12.0 s & 0.85 s & 86.2$$\times$ \\
-1024 & 45.0 s & 0.85 s & 86.4$$\times$ \\
-2048 & 180.0 s & 0.85 s & 86.5$$\times$ \\
+128 & 1.90 s & 0.85 s & 84.8$\times$ \\
+256 & 3.50 s & 0.85 s & 85.6$\times$ \\
+512 & 12.0 s & 0.85 s & 86.2$\times$ \\
+1024 & 45.0 s & 0.85 s & 86.4$\times$ \\
+2048 & 180.0 s & 0.85 s & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2360,7 +2360,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

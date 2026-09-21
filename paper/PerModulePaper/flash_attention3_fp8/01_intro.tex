@@ -4,8 +4,8 @@
 \subsection{Motivation}
 
 The memory cost of attention has been a bottleneck for transformer inference 
-since Vaswani et al. (2017). The intermediate attention matrix $Q K\^{}\top \in 
-\mathbb{R}\^{}{L \times L}$ requires $\mathcal{O}(L\^{}2)$ memory, which for 
+since Vaswani et al. (2017). The intermediate attention matrix $Q K^\top \in 
+\mathbb{R}^{L \times L}$ requires $\mathcal{O}(L^2)$ memory, which for 
 $L = 8192$ and 16-bit precision is 128 MB per head -- infeasible for 
 long-context applications.
 

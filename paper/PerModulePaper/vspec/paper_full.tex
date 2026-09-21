@@ -1,4 +1,4 @@
-\title{\textbf{VSpec++: Variational Spectral Token-Adaptive Attention}
+\title{\textbf{VSpec++: Variational Spectral Token-Adaptive Attention}}
 
 \author{Anonymous authors}
 
@@ -353,14 +353,14 @@ VSpec++ replaces standard attention with:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
                
       +---------------+
       | Token Router  |
       | (top-k + CLS) |
       +-------+-------+
-              | X_routed (B$$\times$k$$\times$d)
+              | X_routed (B$\times$k$\times$d)
        +------+------+
                       
     +------+ +------+ +------+
@@ -373,7 +373,7 @@ VSpec++ replaces standard attention with:
        +--------+--------+
                 |
                  
-        Attention $$\times$ HeadGate(h)
+        Attention $\times$ HeadGate(h)
                 |
                  
           Po(go)  $\leftarrow$ SVD + Spectral Gate
@@ -553,8 +553,8 @@ Y = \text{scatter}(Y_\text{routed}, \mathcal{S})
 
 \textbf{Algorithm 1:} VSpec++ forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: if nested_encoder: S $\leftarrow$ arange(L); k $\leftarrow$ L
  2: else:              s $\leftarrow$ saliency(X)
@@ -570,7 +570,7 @@ Output: Y $\in$ R^{B$$\times$L$$\times$d}
 12: Q $\leftarrow$ Pq(X_r, g_q);  K $\leftarrow$ Pk(X_r, g_k);  V $\leftarrow$ Pv(X_r, g_v)
 13: Q, K $\leftarrow$ RoPE(Q, K, pos)
 14: if GQA: K, V $\leftarrow$ repeat_kv
-15: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h $$\times$ h
+15: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h $\times$ h
 16: A $\leftarrow$ softmax(scores + masks)
 17: C $\leftarrow$ A V
 18: Y_r $\leftarrow$ Po(C, g_q)
@@ -590,7 +590,7 @@ Per block:
 \textbf{Component} & \textbf{Time} & \textbf{Params} \\
 \midrule
 Router & $O(L d)$ & $O(d)$ \\
-Spectral gates ($$\times$3) & $O(d \cdot 2r)$ & $O(dr)$ \\
+Spectral gates ($\times$3) & $O(d \cdot 2r)$ & $O(dr)$ \\
 Head gate & $O(d H)$ & $O(dH)$ \\
 Q/K/V proj & $O(k d r)$ & $3 \cdot 2 d r$ \\
 Attention & $O(k^2 d)$ & 0 \\
@@ -612,21 +612,21 @@ For $d = 768$, $r = 128$, $H = 12$, $\rho = 0.75$:
 \midrule
 SVD factors (Q/K/V/O) & $4 \times 2 \times 768 \times 128 = 786K$ \\
 Gates & ~150K \\
-LoRA & ~4 $$\times$ 16 $$\times$ 768 $$\times$ 2 = 98K \\
+LoRA & ~4 $\times$ 16 $\times$ 768 $\times$ 2 = 98K \\
 Router & ~25K \\
 \textbf{Total} & ~1.06M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-vs baseline $4 d^2 = 2.36M$ $\to$ \textbf{2.2$$\times$ reduction}.
+vs baseline $4 d^2 = 2.36M$ $\to$ \textbf{2.2$\times$ reduction}.
 
 \subsection{Training}
 
 Trainable:
 \begin{itemize}
 \item Router MLP.
-\item Spectral gates (3 $$\times$ MLP).
+\item Spectral gates (3 $\times$ MLP).
 \item Head gate MLP.
 \item LoRA adapters ($A, B$ on each projection).
 
@@ -968,12 +968,12 @@ Single seed (42).
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$$\times$ \\
-DistilBERT & \textbf{VSpec++} & \textbf{87.5} & -3.2 & 0.875 & 1070000 & \textbf{2.2$$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$$\times$ \\
-RoBERTa & \textbf{VSpec++} & \textbf{75.0} & -3.6 & 0.750 & 1070000 & \textbf{2.2$$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$$\times$ \\
-GPT-2 & \textbf{VSpec++} & \textbf{77.0} & -2.4 & 0.770 & 1070000 & \textbf{2.2$$\times$} \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT & \textbf{VSpec++} & \textbf{87.5} & -3.2 & 0.875 & 1070000 & \textbf{2.2$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa & \textbf{VSpec++} & \textbf{75.0} & -3.6 & 0.750 & 1070000 & \textbf{2.2$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 & \textbf{VSpec++} & \textbf{77.0} & -2.4 & 0.770 & 1070000 & \textbf{2.2$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1078,11 +1078,11 @@ Without (h=1) & 86.5 & 74.2 & 75.8 \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-32 & 83.0 & 4.5$$\times$ & 70.0 & 4.5$$\times$ \\
-64 & 86.0 & 3.0$$\times$ & 73.0 & 3.0$$\times$ \\
-128 & 87.5 & 2.2$$\times$ & 75.0 & 2.2$$\times$ \\
-192 & 87.8 & 1.7$$\times$ & 75.2 & 1.7$$\times$ \\
-256 & 87.9 & 1.4$$\times$ & 75.3 & 1.4$$\times$ \\
+32 & 83.0 & 4.5$\times$ & 70.0 & 4.5$\times$ \\
+64 & 86.0 & 3.0$\times$ & 73.0 & 3.0$\times$ \\
+128 & 87.5 & 2.2$\times$ & 75.0 & 2.2$\times$ \\
+192 & 87.8 & 1.7$\times$ & 75.2 & 1.7$\times$ \\
+256 & 87.9 & 1.4$\times$ & 75.3 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1146,7 +1146,7 @@ GPT-2 & 0.91 & 0.84 & 0.75 \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Compression:} attention parameters reduce by 2.2$$\times$.
+\item \textbf{Compression:} attention parameters reduce by 2.2$\times$.
 \item \textbf{Accuracy:} drops -3.2\%---2.4\%.
 \item \textbf{All three gates contribute} to accuracy.
 \item \textbf{Variational sampling helps} by 0.3\% over deterministic.
@@ -1154,10 +1154,10 @@ GPT-2 & 0.91 & 0.84 & 0.75 \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/vspec_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{vspec}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{vspec}.}
 \label{fig:results_vspec}
 \end{figure}
 
@@ -1250,11 +1250,11 @@ kept regardless of position.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 2.36M \\
-SOA Fused & 88.5 & 1.92$$\times$ & 1228800 \\
-Adaptive SVD & 88.0 & 2.4$$\times$ & 983040 \\
-TCA & 88.0 & 1.00$$\times$ & 2360000 \\
-\textbf{VSpec++} & \textbf{87.5} & \textbf{2.2$$\times$} & \textbf{1070000} \\
+full & 90.71\% & 1.00$\times$ & 2.36M \\
+SOA Fused & 88.5 & 1.92$\times$ & 1228800 \\
+Adaptive SVD & 88.0 & 2.4$\times$ & 983040 \\
+TCA & 88.0 & 1.00$\times$ & 2360000 \\
+\textbf{VSpec++} & \textbf{87.5} & \textbf{2.2$\times$} & \textbf{1070000} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1329,7 +1329,7 @@ generalization by 0.3\%.
 
 \subsubsection{Takeaway 3: Real Parameter Reduction}
 
-The SVD factorization provides 2.2$$\times$ parameter reduction on 
+The SVD factorization provides 2.2$\times$ parameter reduction on 
 attention projections.
 
 \subsection{When to Use VSpec++}
@@ -1375,10 +1375,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{VSpec++} & \textbf{Change} \\
 \midrule
-Attention params & 2.36M & 1070000 & \textbf{2.2$$\times$} \\
+Attention params & 2.36M & 1070000 & \textbf{2.2$\times$} \\
 Total params & 66.95M & 68000000 & +1.5\% \\
 Accuracy & 90.71\% & 87.5\% & -3.2\% \\
-Inference time & 1.90 s & 2.2 s & 1.16$$\times$ \\
+Inference time & 1.90 s & 2.2 s & 1.16$\times$ \\
 Peak VRAM & 183 MB & 195 MB & +6.6\% \\
 \bottomrule
 \end{tabular}
@@ -1503,7 +1503,7 @@ See Appendix E.
 
 We presented \textbf{VSpec++}, a variational spectral attention module that 
 combines token routing, variational spectral gating, and head gating with 
-SVD-factorized projections. The method achieves \textbf{2.2$$\times$--2.2$$\times$} 
+SVD-factorized projections. The method achieves \textbf{2.2$\times$--2.2$\times$} 
 attention parameter reduction with \textbf{-3.2\%---2.4\%} accuracy 
 loss on SST-2.
 
@@ -1516,9 +1516,9 @@ loss on SST-2.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -3.2\% & \textbf{2.2$$\times$} & -15\% \\
-RoBERTa & -3.6\% & \textbf{2.2$$\times$} & -15\% \\
-GPT-2 & -2.4\% & \textbf{2.2$$\times$} & -15\% \\
+DistilBERT & -3.2\% & \textbf{2.2$\times$} & -15\% \\
+RoBERTa & -3.6\% & \textbf{2.2$\times$} & -15\% \\
+GPT-2 & -2.4\% & \textbf{2.2$\times$} & -15\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1646,9 +1646,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Attention Ratio} \\
 \midrule
-DistilBERT & 87.5\% & 2.2$$\times$ \\
-RoBERTa & 75.0\% & 2.2$$\times$ \\
-GPT-2 & 77.0\% & 2.2$$\times$ \\
+DistilBERT & 87.5\% & 2.2$\times$ \\
+RoBERTa & 75.0\% & 2.2$\times$ \\
+GPT-2 & 77.0\% & 2.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2135,7 +2135,7 @@ Total params before & 66,955,010 \\
 Total params after & 68000000 \\
 Attention params before & 2,359,296 \\
 Attention params after & 1070000 \\
-Attention ratio & 2.2$$\times$ \\
+Attention ratio & 2.2$\times$ \\
 Accuracy & 87.5\% \\
 F1 & 0.875 \\
 Peak VRAM & 195 MB \\
@@ -2193,11 +2193,11 @@ Mean $h$ & 0.84 \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-32 & 83.0 & 4.5$$\times$ & 70.0 & 4.5$$\times$ \\
-64 & 86.0 & 3.0$$\times$ & 73.0 & 3.0$$\times$ \\
-128 & 87.5 & 2.2$$\times$ & 75.0 & 2.2$$\times$ \\
-192 & 87.8 & 1.7$$\times$ & 75.2 & 1.7$$\times$ \\
-256 & 87.9 & 1.4$$\times$ & 75.3 & 1.4$$\times$ \\
+32 & 83.0 & 4.5$\times$ & 70.0 & 4.5$\times$ \\
+64 & 86.0 & 3.0$\times$ & 73.0 & 3.0$\times$ \\
+128 & 87.5 & 2.2$\times$ & 75.0 & 2.2$\times$ \\
+192 & 87.8 & 1.7$\times$ & 75.2 & 1.7$\times$ \\
+256 & 87.9 & 1.4$\times$ & 75.3 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

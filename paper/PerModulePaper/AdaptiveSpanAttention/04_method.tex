@@ -17,7 +17,7 @@ with a \textbf{span-masked} variant:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+    Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
              |
               
     +------------------------------+
@@ -52,9 +52,9 @@ with a \textbf{span-masked} variant:
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The span is:
 
-\begin{equation}
+\[
 z_h = \sigma(\ell_h) \cdot S_\text{max}
-\end{equation}
+\]
 
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
 (hyperparameter).
@@ -63,9 +63,9 @@ where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span
 
 We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 
-\begin{equation}
+\[
 \ell_h^{(0)} = \log \frac{0.982}{1 - 0.982} \approx 4.0
-\end{equation}
+\]
 
 This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}$. 
 The span starts \textbf{nearly fully open} and shrinks during training via the 
@@ -82,18 +82,18 @@ lets the model decide which spans to shrink, based on task loss.
 
 Given query position $i$ and key position $j$, define the distance:
 
-\begin{equation}
+\[
 d_{ij} = \begin{cases} |i - j| & \text{if bidirectional} \\ \max(0, i - j) & \text{if causal} \end{cases}
-\end{equation}
+\]
 
 For causal models, keys after the query ($j > i$) are masked separately; 
 the ramp only applies to \textbf{past} keys.
 
 The ramp mask is:
 
-\begin{equation}
+\[
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-\end{equation}
+\]
 
 \subsubsection{Properties}
 
@@ -101,9 +101,9 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \item \textbf{Continuous:} $g_z$ is continuous in $z$ and $d$.
 \item \textbf{Piecewise-linear:} Three regimes (full, linear decay, zero).
 \item \textbf{Differentiable in $z$:}
-  \begin{equation}
+  \[
 \frac{\partial g\_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
-\end{equation}
+\]
 \item \textbf{Bounded:} $g_z \in [0, 1]$.
 
 \end{itemize}
@@ -111,9 +111,9 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 
 We compute the ramp in FP32 and apply in log space:
 
-\begin{equation}
+\[
 \tilde{S}_{ij} = S_{ij} + \log(g_{z_h}(d_{ij}) + \epsilon)
-\end{equation}
+\]
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
 
@@ -121,16 +121,16 @@ with $\epsilon = 10^{-8}$. Then standard softmax.
 
 After masking, the attention row does not sum to 1. We renormalize:
 
-\begin{equation}
+\[
 P_{ij} = \frac{\exp(\tilde{S}_{ij})}{\sum_j \exp(\tilde{S}_{ij})}
-\end{equation}
+\]
 
 This is equivalent to applying the ramp as a \textbf{multiplicative factor} before 
 softmax:
 
-\begin{equation}
+\[
 P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}
-\end{equation}
+\]
 
 \subsection{Fast Path Optimization}
 
@@ -151,17 +151,17 @@ This avoids the $\mathcal{O}(H L^2)$ ramp allocation when unnecessary.
 
 We add to the loss:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda \sum_{h=1}^H z_h
-\end{equation}
+\]
 
 \subsubsection{Effect}
 
 The gradient w.r.t. $\ell_h$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{span}}{\partial \ell_h} = \lambda \cdot S_\text{max} \cdot \sigma(\ell_h)(1 - \sigma(\ell_h))
-\end{equation}
+\]
 
 always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up 
 when the model needs long-range context. The equilibrium depends on 
@@ -190,11 +190,11 @@ We use $\lambda = 0.01$ by default.
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
         span_logits   $\in$ R^H
         max_span S_max, ramp_size R
         attention_mask, is_causal
-Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 1:  span $\leftarrow$ sigmoid( ) * S_max                # (H,)
 2:
@@ -272,31 +272,31 @@ parameter count.
 
 For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{(i,j) : |i-j| > z} P_{ij} + \epsilon_R
-\end{equation}
+\]
 
 where $\epsilon_R$ is the ramp-induced error:
 
-\begin{equation}
+\[
 \epsilon_R \leq \frac{R}{\sum_j g_z(d_{ij}) \exp(S_{ij})} \cdot \sum_j \exp(S_{ij})
-\end{equation}
+\]
 
 \subsubsection{Head Span Heterogeneity}
 
 Empirically, spans converge to a bimodal distribution:
 
-\begin{equation}
+\[
 z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \text{if head is global} \end{cases}
-\end{equation}
+\]
 
 \subsubsection{Equilibrium of L1 Penalty}
 
 The equilibrium span satisfies:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}_\text{task}}{\partial z_h} + \lambda = 0
-\end{equation}
+\]
 
 The task loss derivative depends on the model, but in practice heads with 
 small gradients converge to small spans.

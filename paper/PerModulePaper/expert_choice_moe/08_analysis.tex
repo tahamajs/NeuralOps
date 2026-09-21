@@ -99,7 +99,7 @@ For $d = 768$, $E = 8$:
 \tag{8.2}
 \]
 
-This is \textbf{8$$\times$ the entire attention block} ($4 d^2 = 2.36$M).
+This is \textbf{8$\times$ the entire attention block} ($4 d^2 = 2.36$M).
 
 \begin{table}[H]
 \centering
@@ -126,7 +126,7 @@ LoRA & 0.098M \\
 \toprule
 \textbf{Case} & \textbf{Reason} & \textbf{Fix} \\
 \midrule
-OOM & 8 experts $$\times$ 2-layer MLP & Reduce E \\
+OOM & 8 experts $\times$ 2-layer MLP & Reduce E \\
 Slow & Python loop over experts & Batch experts \\
 Unstable & No zero-init & Add zero-init \\
 Underutilization & CF < 0.5 & Increase CF \\

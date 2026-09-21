@@ -1,4 +1,4 @@
-\title{\textbf{Progressive Token Pruning: Learnable Token Selection for Efficient Transformer Attention}
+\title{\textbf{Progressive Token Pruning: Learnable Token Selection for Efficient Transformer Attention}}
 
 \author{Anonymous authors}
 
@@ -370,7 +370,7 @@ attention with a pruned $L \times k$ attention:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-    X $\in$ R^{B $$\times$ L $$\times$ d}
+    X $\in$ R^{B $\times$ L $\times$ d}
           |
           +------------------+
                               
@@ -596,10 +596,10 @@ For nested encoders (RoBERTa/BERT), we skip $W_O$:
 
 \textbf{Algorithm 1:} PTP forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings, is_causal
         keep_ratio  
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: # 1. Score tokens
  2: s $\leftarrow$ sigmoid(MLP(hidden_states))          # (B, L)
@@ -1073,10 +1073,10 @@ GPT-2 & \textbf{PTP} & \textbf{77.5} & 0.85 & 0.865 & \textbf{0.85\%} & 380 MB M
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} & \textbf{Speedup} \\
 \midrule
-DistilBERT & full & 183 MB & 1.90 s & 1.00$$\times$ \\
-DistilBERT & PTP & 380 MB MB & 1.42x s & \textbf{1.42x$$\times$} \\
-GPT-2 & full & 793 MB & 4.20 s & 1.00$$\times$ \\
-GPT-2 & PTP & 380 MB MB & 2.3 s s & \textbf{84.5$$\times$} \\
+DistilBERT & full & 183 MB & 1.90 s & 1.00$\times$ \\
+DistilBERT & PTP & 380 MB MB & 1.42x s & \textbf{1.42x$\times$} \\
+GPT-2 & full & 793 MB & 4.20 s & 1.00$\times$ \\
+GPT-2 & PTP & 380 MB MB & 2.3 s s & \textbf{84.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1092,11 +1092,11 @@ GPT-2 & PTP & 380 MB MB & 2.3 s s & \textbf{84.5$$\times$} \\
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speedup} \\
 \midrule
-0.5 & 32 & 32 & 32 & 2.0$$\times$ \\
-0.7 & 32 & 32 & 32 & 1.4$$\times$ \\
-0.8 & 32 & 32 & 32 & 1.25$$\times$ \\
-0.9 & 32 & 32 & 32 & 1.11$$\times$ \\
-0.95 & 32 & 32 & 32 & 1.05$$\times$ \\
+0.5 & 32 & 32 & 32 & 2.0$\times$ \\
+0.7 & 32 & 32 & 32 & 1.4$\times$ \\
+0.8 & 32 & 32 & 32 & 1.25$\times$ \\
+0.9 & 32 & 32 & 32 & 1.11$\times$ \\
+0.95 & 32 & 32 & 32 & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1187,11 +1187,11 @@ Without & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Speedup} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.0$$\times$ \\
-PoWER-BERT & 0.85 & 32 & 0.85 & Attn-heuristic & 1.4$$\times$ \\
-LTP & 0.85 & 32 & 0.85 & Learned threshold & 1.4$$\times$ \\
-Token Merging & 0.85 & 32 & 0.85 & Merge & 1.5$$\times$ \\
-\textbf{PTP} & \textbf{86.4} & \textbf{78.2} & \textbf{77.5} & \textbf{MLP top-k} & \textbf{1.42x$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.0$\times$ \\
+PoWER-BERT & 0.85 & 32 & 0.85 & Attn-heuristic & 1.4$\times$ \\
+LTP & 0.85 & 32 & 0.85 & Learned threshold & 1.4$\times$ \\
+Token Merging & 0.85 & 32 & 0.85 & Merge & 1.5$\times$ \\
+\textbf{PTP} & \textbf{86.4} & \textbf{78.2} & \textbf{77.5} & \textbf{MLP top-k} & \textbf{1.42x$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1247,7 +1247,7 @@ Token Merging & 0.85 & 32 & 0.85 & Merge & 1.5$$\times$ \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops 0.85\%--0.85\%.
-\item \textbf{Speedup:} 1.42x$$\times$--84.5$$\times$ at $\rho = 0.5$.
+\item \textbf{Speedup:} 1.42x$\times$--84.5$\times$ at $\rho = 0.5$.
 \item \textbf{[CLS] preservation:} essential.
 \item \textbf{Score network:} learns content-word importance.
 \item \textbf{All models pass quality gate.}
@@ -1432,7 +1432,7 @@ If all tokens are padding, we clamp to first token.
 
 \subsubsection{Takeaway 1: Token Pruning is Effective}
 
-At $\rho = 0.5$, PTP achieves \textbf{1.42x$$\times$} speedup with 
+At $\rho = 0.5$, PTP achieves \textbf{1.42x$\times$} speedup with 
 only \textbf{0.85\%} accuracy drop.
 
 \subsubsection{Takeaway 2: [CLS] Preservation is Essential}
@@ -1490,10 +1490,10 @@ For DistilBERT at $L = 128$:
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{Speedup} & \textbf{VRAM} \\
 \midrule
-Baseline & 90.71\% & 1.00$$\times$ & 183 MB \\
-$\rho = 0.5$ & 32\% & 2.00$$\times$ & 380 MB MB \\
-$\rho = 0.7$ & 32\% & 1.43$$\times$ & 450 MB MB \\
-$\rho = 0.8$ & \textbf{86.4\%} & \textbf{1.42x$$\times$} & 380 MB MB \\
+Baseline & 90.71\% & 1.00$\times$ & 183 MB \\
+$\rho = 0.5$ & 32\% & 2.00$\times$ & 380 MB MB \\
+$\rho = 0.7$ & 32\% & 1.43$\times$ & 450 MB MB \\
+$\rho = 0.8$ & \textbf{86.4\%} & \textbf{1.42x$\times$} & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1629,9 +1629,9 @@ small MLP, retains the top-$k$ fraction, and preserves [CLS] and causality.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Speedup} & \textbf{Kept} \\
 \midrule
-DistilBERT & 0.85\% & 1.42x$$\times$ & 0.85\% \\
-RoBERTa & 0.85\% & 84.5$$\times$ & 0.85\% \\
-GPT-2 & 0.85\% & 84.5$$\times$ & 0.85\% \\
+DistilBERT & 0.85\% & 1.42x$\times$ & 0.85\% \\
+RoBERTa & 0.85\% & 84.5$\times$ & 0.85\% \\
+GPT-2 & 0.85\% & 84.5$\times$ & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2189,7 +2189,7 @@ F1 & 86.2 \\
 Kept ratio & 0.85\% \\
 Peak VRAM & 380 MB MB \\
 Inference time & 1.42x s \\
-Speedup & 1.42x$$\times$ \\
+Speedup & 1.42x$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2206,7 +2206,7 @@ Speedup & 1.42x$$\times$ \\
 Accuracy & 78.2\% \\
 F1 & 0.865 \\
 Kept & 0.85\% \\
-Speedup & 84.5$$\times$ \\
+Speedup & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2223,7 +2223,7 @@ Speedup & 84.5$$\times$ \\
 Accuracy & 77.5\% \\
 F1 & 0.865 \\
 Kept & 0.85\% \\
-Speedup & 84.5$$\times$ \\
+Speedup & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2237,11 +2237,11 @@ Speedup & 84.5$$\times$ \\
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speedup} \\
 \midrule
-0.5 & 32 & 32 & 32 & 2.0$$\times$ \\
-0.7 & 32 & 32 & 32 & 1.43$$\times$ \\
-0.8 & 32 & 32 & 32 & 1.25$$\times$ \\
-0.9 & 32 & 32 & 32 & 1.11$$\times$ \\
-0.95 & 32 & 32 & 32 & 1.05$$\times$ \\
+0.5 & 32 & 32 & 32 & 2.0$\times$ \\
+0.7 & 32 & 32 & 32 & 1.43$\times$ \\
+0.8 & 32 & 32 & 32 & 1.25$\times$ \\
+0.9 & 32 & 32 & 32 & 1.11$\times$ \\
+0.95 & 32 & 32 & 32 & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2378,7 +2378,7 @@ done
 
 \textbf{Goal.} Different T for each query.
 
-\textbf{Result.} No improvement, 3$$\times$ slower (loop).
+\textbf{Result.} No improvement, 3$\times$ slower (loop).
 
 \textbf{Conclusion.} Shared T suffices.
 
@@ -2553,7 +2553,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

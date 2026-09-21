@@ -170,7 +170,7 @@ Output scale & 0 & 1 \\
 \begin{itemize}
 \item Gate: $768 \times 12 + 12 = 9{,}228$
 \item Long-memory: $768^2 + 768 = 590{,}592$
-\item LoRA per projection: $2 \times 16 \times 768 = 24{,}576$ $$\times$ 4 = 98,304
+\item LoRA per projection: $2 \times 16 \times 768 = 24{,}576$ $\times$ 4 = 98,304
 \item \textbf{Total per layer: ~698,124}
 
 \end{itemize}
@@ -203,8 +203,8 @@ For $W \ll L$: GoldFinch is $\mathcal{O}(L d^2)$ -- linear in $L$.
 
 \textbf{Algorithm 1:} GoldFinch-AHN forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, W (window)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, W (window)
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)

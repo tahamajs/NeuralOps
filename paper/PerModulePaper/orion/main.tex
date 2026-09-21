@@ -65,7 +65,7 @@ a hybrid attention mechanism that combines three orthogonal ideas:
 attention modules in our framework (e.g., NHA, NASC, GoldFinch), ORION 
 \textbf{genuinely reduces parameter count}: each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
 is replaced by a product $W_\text{up} W_\text{down}$ with intermediate rank 
-$r = 64$, achieving ~6$$\times$ reduction for $768 \times 768$ projections and ~9.6$$\times$ 
+$r = 64$, achieving ~6$\times$ reduction for $768 \times 768$ projections and ~9.6$\times$ 
 for $768 \times 3072$ FFN-like projections.
 
 We evaluate ORION on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 

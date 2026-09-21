@@ -7,7 +7,7 @@ approximation plus LoRA residual. \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
     +----------------------------------------+
-    |  Original weight W $\in$ R^{m$$\times$n}           |
+    |  Original weight W $\in$ R^{m$\times$n}           |
     +----------------+-----------------------+
                      |
                       
@@ -90,8 +90,8 @@ y = \text{up}(\text{down}(x)) + \frac{\alpha}{r_L} B A x
 
 where:
 \begin{itemize}
-\item \texttt{down(x) = x V\_r\^{}\top} (down-projection, no bias)
-\item \texttt{up(z) = z U\_r\^{}\top + b} (up-projection, with bias)
+\item \texttt{down(x) = x V\_r^\top} (down-projection, no bias)
+\item \texttt{up(z) = z U\_r^\top + b} (up-projection, with bias)
 \item \texttt{B A x} (LoRA branch)
 
 \end{itemize}
@@ -177,8 +177,8 @@ For $d = 768$, $r = 32$, $r_L = 16$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Baseline & 589,824 & 1.00$$\times$ \\
-MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$$\times$} \\
+Baseline & 589,824 & 1.00$\times$ \\
+MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -187,7 +187,7 @@ MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$$\times$} \\
 
 \textbf{Algorithm 1:} MinimalAURORA factorization
 \begin{lstlisting}
-Input:  W $\in$ R^{m$$\times$n}, $\epsilon$, r_max, r_L
+Input:  W $\in$ R^{m$\times$n}, $\epsilon$, r_max, r_L
 Output: FactorisedLinear with frozen base + trainable LoRA
 
 1:  U, $\Sigma$, V^T $\leftarrow$ svd(W)

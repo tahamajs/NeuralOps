@@ -1,4 +1,4 @@
-\title{\textbf{NHA: Native Hybrid Attention with Local Windows and Global Random Fourier Features}
+\title{\textbf{NHA: Native Hybrid Attention with Local Windows and Global Random Fourier Features}}
 
 \author{Anonymous authors}
 
@@ -319,7 +319,7 @@ gate:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-        Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+        Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
                  |
         +--------+--------+
                            
@@ -446,25 +446,25 @@ Initialize $S = 0$, $Z = 0$. For each chunk $[start, end)$:
 \begin{enumerate}
 \item Compute intra-chunk causal scores:
   $$
-  A\^{}\text{intra} = \phi(Q\_c) \phi(K\_c)\^{}\top \odot \text{tril}(1)
+  A^\text{intra} = \phi(Q\_c) \phi(K\_c)^\top \odot \text{tril}(1)
   \tag{4.7}
   $$
 
 \item Compute inter-chunk contribution:
   $$
-  O\^{}\text{inter} = \phi(Q\_c) S
+  O^\text{inter} = \phi(Q\_c) S
   \tag{4.8}
   $$
 
 \item Combine:
   $$
-  O\_c = \frac{A\^{}\text{intra} V\_c + O\^{}\text{inter}}{(A\^{}\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
+  O\_c = \frac{A^\text{intra} V\_c + O^\text{inter}}{(A^\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
   \tag{4.9}
   $$
 
 \item Update state:
   $$
-  S \leftarrow S + \phi(K\_c)\^{}\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
+  S \leftarrow S + \phi(K\_c)^\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
   \tag{4.10}
   $$
 
@@ -527,10 +527,10 @@ Empirically, per-token works as well as per-head for our tasks.
 
 \textbf{Algorithm 1:} NHA forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings, is_causal
         window_size w, rff_features m
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q, K, V $\leftarrow$ proj(hidden_states)
  2: Q, K $\leftarrow$ apply_rope(Q, K, position_embeddings)
@@ -1151,9 +1151,9 @@ HALO-ReGLA & 0.85 & 32 & 0.85 & Hybrid & $\mathcal{O}(L^2)$ \\
 \toprule
 \textbf{$L$} & \textbf{Dense} & \textbf{NHA} & \textbf{Speedup} \\
 \midrule
-128 & 0.85 s & 0.85 s & 0.85$$\times$ \\
-512 & 0.85 s & 0.85 s & 0.85$$\times$ \\
-2048 & 0.85 s & 0.85 s & 0.85$$\times$ \\
+128 & 0.85 s & 0.85 s & 0.85$\times$ \\
+512 & 0.85 s & 0.85 s & 0.85$\times$ \\
+2048 & 0.85 s & 0.85 s & 0.85$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1176,10 +1176,10 @@ HALO-ReGLA & 0.85 & 32 & 0.85 & Hybrid & $\mathcal{O}(L^2)$ \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/nha_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{nha}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{nha}.}
 \label{fig:results_nha}
 \end{figure}
 
@@ -1496,7 +1496,7 @@ quality.
 
 \subsection{No Speedup at Short $L$}
 
-At $L = 128$, NHA is 2.1$$\times$ slower than baseline due to dual 
+At $L = 128$, NHA is 2.1$\times$ slower than baseline due to dual 
 streams.
 
 \subsection{Single Seed}
@@ -2293,7 +2293,7 @@ done
 
 \textbf{Goal.} Replace token-level gate with per-head gate.
 
-\textbf{Result.} No improvement, 3$$\times$ more parameters.
+\textbf{Result.} No improvement, 3$\times$ more parameters.
 
 \textbf{Conclusion.} Token-level is sufficient.
 
@@ -2478,7 +2478,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

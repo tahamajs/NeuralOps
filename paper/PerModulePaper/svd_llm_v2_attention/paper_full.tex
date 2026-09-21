@@ -1,4 +1,4 @@
-\title{\textbf{SVD-LLM V2: Explicit Low-Rank Factorization with Trainable Recovery for Transformer Attention Compression}
+\title{\textbf{SVD-LLM V2: Explicit Low-Rank Factorization with Trainable Recovery for Transformer Attention Compression}}
 
 \author{Anonymous authors}
 
@@ -125,7 +125,7 @@ SVD-LLM V2 is a continuation of the \textbf{SVD-LLM} line:
 \textbf{Version} & \textbf{Main features} \\
 \midrule
 SVD-LLM V1 & Basic SVD compression \\
-\textbf{SVD-LLM V2} & Explicit U/$\Sigma$/V\^{}H + LoRA + multi-arch hardening \\
+\textbf{SVD-LLM V2} & Explicit U/$\Sigma$/V^H + LoRA + multi-arch hardening \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -222,13 +222,13 @@ mean-pooling of K and V weights.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} & \textbf{Interpretable?} \\
 \midrule
-DistilBERT & Distillation & 1.6$$\times$ & Yes & No \\
-SparseGPT & Pruning & 2-4$$\times$ & No & Partial \\
-AWQ & Quantization & 4$$\times$ & No & No \\
-A3 & Low-rank + Fisher & 5$$\times$ & LoRA & No \\
-AASVD & Low-rank + covariance & 5$$\times$ & LoRA & No \\
-MinimalSVD & Low-rank + energy & 3-6$$\times$ & LoRA & No \\
-\textbf{SVD-LLM V2} & \textbf{Low-rank + explicit $\Sigma$} & \textbf{50\%$$\times$} & \textbf{LoRA} & \textbf{Yes} \\
+DistilBERT & Distillation & 1.6$\times$ & Yes & No \\
+SparseGPT & Pruning & 2-4$\times$ & No & Partial \\
+AWQ & Quantization & 4$\times$ & No & No \\
+A3 & Low-rank + Fisher & 5$\times$ & LoRA & No \\
+AASVD & Low-rank + covariance & 5$\times$ & LoRA & No \\
+MinimalSVD & Low-rank + energy & 3-6$\times$ & LoRA & No \\
+\textbf{SVD-LLM V2} & \textbf{Low-rank + explicit $\Sigma$} & \textbf{50\%$\times$} & \textbf{LoRA} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -244,7 +244,7 @@ SVD-LLM V2 differs from prior work along three axes:
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{SVD-LLM V2} \\
 \midrule
-\textbf{Factorization} & Symmetric & \textbf{Explicit (U, $\Sigma$, V\^{}H)} \\
+\textbf{Factorization} & Symmetric & \textbf{Explicit (U, $\Sigma$, V^H)} \\
 \textbf{Interpretability} & Limited & \textbf{Full} \\
 \textbf{Downstream flexibility} & Low & \textbf{High} \\
 \bottomrule
@@ -447,7 +447,7 @@ recovery.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $$\times$ d_in}           |
+   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
    +--------------------+-------------------------+
                         |
                          
@@ -460,9 +460,9 @@ recovery.
                          
    +----------------------------------------------+
    |  Store explicitly:                            |
-   |  U  $\in$ R^{d_out $$\times$ r}                           |
+   |  U  $\in$ R^{d_out $\times$ r}                           |
    |  $\Sigma$  $\in$ R^r (diagonal)                          |
-   |  V^H $\in$ R^{r $$\times$ d_in}                           |
+   |  V^H $\in$ R^{r $\times$ d_in}                           |
    +--------------------+-------------------------+
                         |
                          
@@ -502,13 +502,13 @@ Where \texttt{*} is one of \texttt{query}, \texttt{key}, \texttt{value}, \texttt
 \textbf{Config} & \textbf{Params} \\
 \midrule
 Original & 589,824 \\
-Explicit (U + $\Sigma$ + V\^{}H) & $768 \times 128 + 128 + 128 \times 768 = 196{,}736$ \\
-Ratio & \textbf{3.0$$\times$} \\
+Explicit (U + $\Sigma$ + V^H) & $768 \times 128 + 128 + 128 \times 768 = 196{,}736$ \\
+Ratio & \textbf{3.0$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-With rank 64: \textbf{6.0$$\times$} reduction.
+With rank 64: \textbf{6.0$\times$} reduction.
 
 \subsection{The `\_project` Helper}
 
@@ -1133,12 +1133,12 @@ All experiments use seed 42.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{SVD-LLM V2} & \textbf{81.88} & -8.83 & 0.8260 & 2.0x & \textbf{50\%$$\times$} & 289 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{SVD-LLM V2} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 339 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{SVD-LLM V2} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 478 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{SVD-LLM V2} & \textbf{81.88} & -8.83 & 0.8260 & 2.0x & \textbf{50\%$\times$} & 289 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{SVD-LLM V2} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 339 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{SVD-LLM V2} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 478 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1154,9 +1154,9 @@ GPT-2 & \textbf{SVD-LLM V2} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1170,10 +1170,10 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{SVD-LLM V2} & \textbf{Ratio} \\
 \midrule
-q\_lin & 589,824 & 0.85 & 32$$\times$ \\
-k\_lin & 589,824 & 0.85 & 32$$\times$ \\
-v\_lin & 589,824 & 0.85 & 32$$\times$ \\
-out\_lin & 589,824 & 0.85 & 32$$\times$ \\
+q\_lin & 589,824 & 0.85 & 32$\times$ \\
+k\_lin & 589,824 & 0.85 & 32$\times$ \\
+v\_lin & 589,824 & 0.85 & 32$\times$ \\
+out\_lin & 589,824 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1275,10 +1275,10 @@ GPT-2 & SVD-LLM V2 & 2.3 s s & 0.85 & 478 MB MB \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1353,10 +1353,10 @@ FP16 sensitivity.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-minimal\_svd & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-minimal\_prism & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-\textbf{SVD-LLM V2} & \textbf{81.88} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+minimal\_svd & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+minimal\_prism & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+\textbf{SVD-LLM V2} & \textbf{81.88} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1392,7 +1392,7 @@ GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction:} 50\%$$\times$--2.1$$\times$
+\item \textbf{Parameter reduction:} 50\%$\times$--2.1$\times$
 \item \textbf{Accuracy drop:} -8.83\%---28.44\%
 \item \textbf{VRAM reduction:} 380 MB\%
 \item \textbf{Explicit $\Sigma$ storage:} interpretable and composable
@@ -1403,10 +1403,10 @@ GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/svd_llm_v2_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{svd_llm_v2_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_llm_v2_attention}.}
 \label{fig:results_svd_llm_v2_attention}
 \end{figure}
 
@@ -1553,9 +1553,9 @@ SVD only, no LoRA & 0.85 & 0.85 \\
 \toprule
 \textbf{Config} & \textbf{FLOPs} & \textbf{Relative} \\
 \midrule
-Dense 768$$\times$768 & 1.18M & 1.00$$\times$ \\
-Explicit r=64 & 196K & \textbf{0.167$$\times$} \\
-Explicit r=128 & 393K & 0.333$$\times$ \\
+Dense 768$\times$768 & 1.18M & 1.00$\times$ \\
+Explicit r=64 & 196K & \textbf{0.167$\times$} \\
+Explicit r=128 & 393K & 0.333$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1578,7 +1578,7 @@ Interpretable $\Sigma$ &  &  & \textbf{ } \\
 Pre-test &  &  &  \\
 GQA pooling &  &  &  \\
 Accuracy & 0.85 & 0.85 & 81.88 \\
-Ratio & 32$$\times$ & 32$$\times$ & 50\%$$\times$ \\
+Ratio & 32$\times$ & 32$\times$ & 50\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1624,7 +1624,7 @@ SVD-LLM V2 adds explicit $\Sigma$ storage for downstream flexibility.
 
 \subsubsection{Takeaway 1: Real Compression}
 
-SVD-LLM V2 reduces attention parameters by \textbf{50\%$$\times$--2.1$$\times$} with 
+SVD-LLM V2 reduces attention parameters by \textbf{50\%$\times$--2.1$\times$} with 
 accuracy drops of \textbf{-8.83\%---28.44\%}.
 
 \subsubsection{Takeaway 2: Interpretable Compression}
@@ -1683,10 +1683,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{SVD-LLM V2} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
-VRAM & 183 MB & 289 MB MB & \textbf{2.1$$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+VRAM & 183 MB & 289 MB MB & \textbf{2.1$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$\times$} \\
 Accuracy & 90.71\% & 81.88\% & -8.83\% \\
 \bottomrule
 \end{tabular}
@@ -1701,12 +1701,12 @@ Accuracy & 90.71\% & 81.88\% & -8.83\% \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Interpretable} \\
 \midrule
-ALBERT & -- & 3.5$$\times$ & 89.4\% & No \\
-DistilBERT & -- & 1.6$$\times$ & 90.7\% & No \\
-AWQ & Required & 4$$\times$ & 90.5\% & No \\
-A3 & Required & 5$$\times$ & 86.4\%\% & No \\
-MinimalPRISM & None & 2.1$$\times$ & 86.4\%\% & No \\
-\textbf{SVD-LLM V2} & \textbf{None} & \textbf{50\%$$\times$} & \textbf{81.88\%} & \textbf{Yes} \\
+ALBERT & -- & 3.5$\times$ & 89.4\% & No \\
+DistilBERT & -- & 1.6$\times$ & 90.7\% & No \\
+AWQ & Required & 4$\times$ & 90.5\% & No \\
+A3 & Required & 5$\times$ & 86.4\%\% & No \\
+MinimalPRISM & None & 2.1$\times$ & 86.4\%\% & No \\
+\textbf{SVD-LLM V2} & \textbf{None} & \textbf{50\%$\times$} & \textbf{81.88\%} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1863,9 +1863,9 @@ hardening with pre-test, injection-time nested detection, and GQA pooling.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -8.83\% & \textbf{50\%$$\times$} & -380 MB\% \\
-RoBERTa & -27.64\% & \textbf{2.1$$\times$} & -380 MB\% \\
-GPT-2 & -28.44\% & \textbf{2.1$$\times$} & -380 MB\% \\
+DistilBERT & -8.83\% & \textbf{50\%$\times$} & -380 MB\% \\
+RoBERTa & -27.64\% & \textbf{2.1$\times$} & -380 MB\% \\
+GPT-2 & -28.44\% & \textbf{2.1$\times$} & -380 MB\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2027,9 +2027,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 81.88\% $\pm$ 1\% & 50\%$$\times$ \\
-RoBERTa & 50.92\% $\pm$ 1\% & 2.1$$\times$ \\
-GPT-2 & 50.92\% $\pm$ 1\% & 2.1$$\times$ \\
+DistilBERT & 81.88\% $\pm$ 1\% & 50\%$\times$ \\
+RoBERTa & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
+GPT-2 & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2573,7 +2573,7 @@ When \texttt{w\_k.shape[0] != self.kv\_head\_size}, must mean-pool.
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Accuracy & 81.88\% \\
 F1 & 0.8260 \\
 Precision & 0.85 \\
@@ -2598,7 +2598,7 @@ Avg rank & 32 \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 F1 & 0.6748 \\
 Peak VRAM & 339 MB MB \\
@@ -2619,7 +2619,7 @@ Avg rank & 32 \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 F1 & 0.6748 \\
 Peak VRAM & 478 MB MB \\
@@ -2650,11 +2650,11 @@ Avg rank & 32 \\
 
 \subsection{C.5 Effective Rank Distribution (RoBERTa)}
 
-(12 layers $$\times$ 4 projections)
+(12 layers $\times$ 4 projections)
 
 \subsection{C.6 Effective Rank Distribution (GPT-2)}
 
-(12 layers $$\times$ 4 projections)
+(12 layers $\times$ 4 projections)
 
 \subsection{C.7 Singular Value Statistics}
 
@@ -2703,10 +2703,10 @@ O & 84.5 & 84.5 & 84.5 & 84.5 \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2999,7 +2999,7 @@ See  11.7.
 None.
 
 \subsection{E.7 Funding}
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 We thank the anonymous reviewers and the compute cluster administrators for their support.

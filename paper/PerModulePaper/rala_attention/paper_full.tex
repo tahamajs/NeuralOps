@@ -1,4 +1,4 @@
-\title{\textbf{RALA: Rank-Augmented Linear Attention with a Softplus Kernel}
+\title{\textbf{RALA: Rank-Augmented Linear Attention with a Softplus Kernel}}
 
 \author{Anonymous authors}
 
@@ -278,7 +278,7 @@ construction ($M = U V^\top$ with $U, V \in \mathbb{R}^{d \times r}$), then
 $M_r = M$.
 
 In RALA, we parameterize $M_h = U_h V_h^\top$ directly with $U\_h, V\_h \in 
-\mathbb{R}\^{}{d \times r}$.
+\mathbb{R}^{d \times r}$.
 
 \subsection{LoRA}
 
@@ -310,7 +310,7 @@ from the pretrained attention and LoRA adapters initialized to zero.
 RALA augments standard linear attention with three components:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B $$\times$ L $$\times$ d}
+    Input X $\in$ R^{B $\times$ L $\times$ d}
             |
              
     +-----------------------------+
@@ -453,8 +453,8 @@ to $\mathcal{O}(\log L)$ depth and dramatically improve throughput.
 
 \textbf{Algorithm 1:} RALA forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      LoRA projections
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -511,10 +511,10 @@ RALA adds:
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{Total (DistilBERT)} \\
 \midrule
-$U$ & $H \cdot d \cdot r$ & 6 layers $$\times$ 6,144 = 36,864 \\
+$U$ & $H \cdot d \cdot r$ & 6 layers $\times$ 6,144 = 36,864 \\
 $V$ & $H \cdot d \cdot r$ & 36,864 \\
 $\alpha$ & 1 & 6 \\
-LoRA ($4$ proj $$\times$ $r_L$) & $4 \cdot 2 r_L d$ & 6 layers $$\times$ 98,304 = 589,824 \\
+LoRA ($4$ proj $\times$ $r_L$) & $4 \cdot 2 r_L d$ & 6 layers $\times$ 98,304 = 589,824 \\
 \textbf{Total added} &  & \textbf{~663,558} \\
 \textbf{Percentage} &  & \textbf{+0.99\%} \\
 \bottomrule
@@ -957,9 +957,9 @@ because of LoRA adapters and the augmentation matrices.
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{RALA} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1074,7 +1074,7 @@ nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
 \item RALA is a \textbf{linear attention replacement}, not a compressor.
 \item Accuracy drop: -30.62\%, -27.76\%, -28.44\%.
 \item Parameter increase: +48.5\%\%.
-\item Inference time: 2.3 s$$\times$ (due to sequential prefix scan).
+\item Inference time: 2.3 s$\times$ (due to sequential prefix scan).
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}
@@ -1082,10 +1082,10 @@ nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/rala_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{rala_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{rala_attention}.}
 \label{fig:results_rala_attention}
 \end{figure}
 
@@ -1134,7 +1134,7 @@ for i in range(seq_len):    # 128 iterations
     ...
 \end{lstlisting}
 
-\textbf{Kernel launches.} For $L = 128$ and 12 heads $$\times$ 12 layers, this is 
+\textbf{Kernel launches.} For $L = 128$ and 12 heads $\times$ 12 layers, this is 
 $128 \times 4 \times 144 = 73{,}728$ kernel launches per forward pass.
 
 \textbf{Comparison.} PyTorch SDPA uses 1--2 kernel launches per attention call.
@@ -1479,7 +1479,7 @@ variant that combines a softplus kernel with a per-head low-rank augmentation
 and a scalar gate. RALA preserves accuracy within \textbf{-30.62\%} on 
 DistilBERT, \textbf{-27.76\%} on RoBERTa, and \textbf{-28.44\%} on GPT-2, but 
 increases parameter count by \textbf{48.5\%\%} and slows inference by 
-\textbf{2.3 s$$\times$}.
+\textbf{2.3 s$\times$}.
 
 \subsection{Results Recap}
 
@@ -1490,9 +1490,9 @@ increases parameter count by \textbf{48.5\%\%} and slows inference by
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{Time} \\
 \midrule
-DistilBERT & 60.09\% & -30.62\% & +48.5\%\% & 2.3 s$$\times$ \\
-RoBERTa & 50.80\% & -27.76\% & +48.5\%\% & 2.3 s$$\times$ \\
-GPT-2 & 50.92\% & -28.44\% & +48.5\%\% & 2.3 s$$\times$ \\
+DistilBERT & 60.09\% & -30.62\% & +48.5\%\% & 2.3 s$\times$ \\
+RoBERTa & 50.80\% & -27.76\% & +48.5\%\% & 2.3 s$\times$ \\
+GPT-2 & 50.92\% & -28.44\% & +48.5\%\% & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1915,7 +1915,7 @@ The elu+1 kernel is:
 \textbf{Parallel (Blelloch, 1990).} $\mathcal{O}(\log L)$ depth, $\mathcal{O}(L)$ 
 total work.
 
-For $L = 128$: sequential is 128 steps; parallel is 7 steps. **~18$$\times$ more 
+For $L = 128$: sequential is 128 steps; parallel is 7 steps. **~18$\times$ more 
 efficient.**
 \begin{lstlisting}
 
@@ -2442,7 +2442,7 @@ RALA does not introduce new risks beyond those of the base models.
 \end{itemize}
 \subsection{E.6 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.7 Acknowledgments}
 

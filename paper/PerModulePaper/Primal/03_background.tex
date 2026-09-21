@@ -5,13 +5,13 @@
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 A = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = A V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $A$ requires $\mathcal{O}(L^2)$ memory; the two matmuls 
 require $\mathcal{O}(L^2 d_h)$ time.
@@ -21,9 +21,9 @@ require $\mathcal{O}(L^2 d_h)$ time.
 For a symmetric PSD kernel matrix $K \in \mathbb{R}^{L \times L}$, the Nystr m 
 method selects $m$ landmark rows/columns and approximates:
 
-\begin{equation}
+\[
 K \approx C W^{-1} C^\top
-\end{equation}
+\]
 
 where:
 
@@ -37,9 +37,9 @@ The approximation is exact when $K$ has rank $\le m$.
 \textbf{Application to attention.} With $K_\text{attn} = \text{softmax}(QK^\top / \sqrt{d_h})$, 
 the Nystr mform is:
 
-\begin{equation}
+\[
 A \approx \tilde{A} = \begin{pmatrix} A_{Q, L_m} \\ A_{L_m, L_m} \\ A_{L_m, Q} \end{pmatrix}
-\end{equation}
+\]
 
 where $L_m$ indexes $m$ landmarks.
 
@@ -72,9 +72,9 @@ the primal form with asymmetric factors.
 For a matrix $A \in \mathbb{R}^{m \times n}$, the Moore--Penrose pseudoinverse 
 $A^+ \in \mathbb{R}^{n \times m}$ satisfies:
 
-\begin{equation}
+\[
 A A^+ A = A, \qquad A^+ A A^+ = A^+, \qquad (A A^+)^\top = A A^+, \qquad (A^+ A)^\top = A^+ A
-\end{equation}
+\]
 
 \textbf{Computation.} For $A = U \Sigma V^\top$, $A^+ = V \Sigma^+ U^\top$ where 
 $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
@@ -83,17 +83,17 @@ $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
 
 Schulz (1933) proposed the iteration:
 
-\begin{equation}
+\[
 X_{t+1} = X_t (2I - A X_t)
-\end{equation}
+\]
 
 which converges to $A^{-1}$ \textbf{quadratically} if $\|I - A X_0\| < 1$.
 
 \textbf{Convergence.} Let $E_t = I - A X_t$. Then:
 
-\begin{equation}
+\[
 E_{t+1} = (I - A X_{t+1}) = (I - A X_t (2I - A X_t)) = E_t^2
-\end{equation}
+\]
 
 so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 
@@ -104,9 +104,9 @@ so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 We use LoRA to recover quality after attention replacement.
 

@@ -75,7 +75,7 @@ fusion**:
   stabilizes masked attention:
   
   $$
-  \text{softpick}(x)\_i = \text{ReLU}\!\left(\frac{e\^{}{(x\_i - m)/T} - e\^{}{-m/T}}{\sum\_j \text{ReLU}(e\^{}{(x\_j - m)/T} - e\^{}{-m/T})}\right)
+  \text{softpick}(x)\_i = \text{ReLU}\!\left(\frac{e^{(x\_i - m)/T} - e^{-m/T}}{\sum\_j \text{ReLU}(e^{(x\_j - m)/T} - e^{-m/T})}\right)
   $$
 \item \textbf{Local-global fusion.} A learned per-head gate blends a **local
   sliding-window attention\textbf{ with the }global landmark attention**.

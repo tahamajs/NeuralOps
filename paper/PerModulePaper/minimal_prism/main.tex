@@ -63,7 +63,7 @@ $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ is factorized as
 $W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r}$ 
 and $V \in \mathbb{R}^{r \times d_\text{in}}$. This reduces parameter count 
 from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
-a \textbf{50\%$$\times$} reduction per projection on DistilBERT at rank 
+a \textbf{50\%$\times$} reduction per projection on DistilBERT at rank 
 $r = 32$.
 
 Our central contribution is \textbf{spectral energy-adaptive rank selection}. Instead 
@@ -84,7 +84,7 @@ and Qwen3.5 (GQA + RoPE) -- with:
 (vi) safe abort with pre-test on the first layer.
 
 On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
-energy $\eta = 45.2$, MinimalPRISM achieves \textbf{50\%$$\times$--2.1$$\times$} 
+energy $\eta = 45.2$, MinimalPRISM achieves \textbf{50\%$\times$--2.1$\times$} 
 parameter reduction with accuracy drops of only \textbf{-5.27\%---28.44\%} 
 after 50 LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{380 MB\%}.

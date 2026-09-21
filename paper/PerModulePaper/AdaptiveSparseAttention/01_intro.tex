@@ -6,9 +6,9 @@
 Standard softmax attention (Vaswani et al., 2017) computes, for each of $H$ 
 heads and each pair of positions $(i, j)$, a score:
 
-\begin{equation}
+\[
 s_{ij}^{(h)} = \frac{(Q^{(h)} x_i)^\top (K^{(h)} x_j)}{\sqrt{d_h}}
-\end{equation}
+\]
 
 producing an $L \times L$ score matrix per head. This is $\mathcal{O}(L^2 d_h)$ 
 in time and $\mathcal{O}(L^2)$ in memory -- the dominant cost for long sequences.
@@ -44,10 +44,10 @@ existing methods suffer from two problems:
 Given attention score matrix $S \in \mathbb{R}^{L \times L}$ per head, we 
 seek a sparse approximation $\tilde{S}$ such that:
 
-\begin{equation}
+\[
 \tilde{S} \approx S, \qquad
 \text{supp}(\tilde{S}) \ll L^2
-\end{equation}
+\]
 
 We impose the following constraints:
 
@@ -67,24 +67,24 @@ problems above simultaneously:
 \begin{enumerate}
 \item \textbf{Learnable per-head budget.} Each head maintains a scalar logit
   $\ell_h \in \mathbb{R}$. Its retention budget is:
-  \begin{equation}
+  \[
 k\_h = \lfloor (1 - \sigma(\ell\_h)) \cdot L \rfloor
-\end{equation}
+\]
   where $\sigma$ is the sigmoid. This makes the budget a **continuous,
   differentiable** function of a single parameter.
 
 \item \textbf{Soft top-$k$ masking.} Hard top-$k$ selection is replaced by a soft
   mask:
-  \begin{equation}
+  \[
 \tilde{s}\_{ij} = s\_{ij} + \log \sigma\!\left(\frac{s\_{ij} - \tau\_h}{T}\right)
-\end{equation}
+\]
   where $\tau_h$ is the $k_h$-th largest score for head $h$ and $T = 0.1$
   is a temperature. As $T \to 0$, this converges to hard top-$k$; for finite
   $T$, it is smooth and differentiable.
 
 \item \textbf{Chunked computation.} To bound memory, the query dimension is
   processed in chunks of 64. This keeps peak VRAM at $\mathcal{O}(B H \cdot
-  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L\^{}2)$.
+  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L^2)$.
 
 \end{enumerate}
 \subsection{Contributions}

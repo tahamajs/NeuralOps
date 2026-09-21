@@ -15,7 +15,7 @@ sparse variant that:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-   Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+   Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
             |
              
    +------------------------------+
@@ -51,23 +51,23 @@ sparse variant that:
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The sparsity ratio is:
 
-\begin{equation}
+\[
 \rho_h = \sigma(\ell_h) \in (0, 1)
-\end{equation}
+\]
 
 The retention budget is:
 
-\begin{equation}
+\[
 k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
 We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
-\begin{equation}
+\[
 \ell_h^{(0)} = \text{logit}(\rho_0) = \log \frac{\rho_0}{1 - \rho_0}
-\end{equation}
+\]
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
@@ -75,9 +75,9 @@ For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
 The gradient of the loss w.r.t. $\ell_h$ is:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \frac{\partial \mathcal{L}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 The floor operation in (4.2) is non-differentiable; in practice we use 
 $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
@@ -89,9 +89,9 @@ $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
 For each (batch, head, query) triple, we compute the top-$k_h$ threshold 
 $\tau$ as the $k_h$-th largest score:
 
-\begin{equation}
+\[
 \tau_{b, h, i} = \text{topk}_{k_h}(s_{b, h, i, :})
-\end{equation}
+\]
 
 This is computed via \texttt{torch.sort} followed by indexing at position $k_h - 1$.
 
@@ -99,15 +99,15 @@ This is computed via \texttt{torch.sort} followed by indexing at position $k_h -
 
 Given threshold $\tau$, we define the mask:
 
-\begin{equation}
+\[
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
-\end{equation}
+\]
 
 where $T = 0.1$ is a temperature. The masked score is:
 
-\begin{equation}
+\[
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
-\end{equation}
+\]
 
 with $\epsilon = 10^{-8}$ for numerical stability.
 
@@ -133,10 +133,10 @@ to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
         sparsity_logits   $\in$ R^H
         T (temperature), C (chunk size)
-Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 1:    $\leftarrow$ sigmoid( )                        # (H,)
 2:  k $\leftarrow$ floor((1 -  ) * L)                # (H,)
@@ -189,7 +189,7 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \end{table}
 
 For $C = 64$ and $L = 512$, memory is reduced by 
-\textbf{8$$\times$}. Time is unchanged (we still compute all scores); 
+\textbf{8$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys -- this is a possible future extension.
 
@@ -221,9 +221,9 @@ reduce total parameter count.
 
 For a head with sparsity $\rho$, the approximation error is:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{j \notin \text{top-}k} P_j + \epsilon_T
-\end{equation}
+\]
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 
@@ -232,9 +232,9 @@ where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 Let $\rho_h^{(T)}$ be the learned sparsity for head $h$ after convergence. 
 Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 
-\begin{equation}
+\[
 \rho_h^{(T)} \approx \begin{cases} 0.05 & \text{if head is critical} \\ 0.85 & \text{if head is redundant} \end{cases}
-\end{equation}
+\]
 
 This matches the head-pruning literature.
 
@@ -242,9 +242,9 @@ This matches the head-pruning literature.
 
 With chunk size $C$:
 
-\begin{equation}
+\[
 \text{Peak memory} \leq B H C L \cdot \text{bytes}
-\end{equation}
+\]
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.

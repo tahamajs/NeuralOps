@@ -68,7 +68,7 @@ Q, K, V are computed by splitting \texttt{in\_proj\_weight} into three equal par
 \textbf{Aspect} & \textbf{BERT/DistilBERT} & \textbf{`nn.MultiheadAttention`} \\
 \midrule
 Q/K/V storage & Three separate linears & One fused \texttt{in\_proj\_weight} \\
-Weight shapes & \texttt{(d, d) $$\times$ 3} & \texttt{(3d, d)} \\
+Weight shapes & \texttt{(d, d) $\times$ 3} & \texttt{(3d, d)} \\
 Bias & Three separate & One fused \\
 Output & \texttt{out\_lin} or \texttt{output.dense} & \texttt{out\_proj} \\
 \bottomrule

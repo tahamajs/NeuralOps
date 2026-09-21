@@ -32,7 +32,7 @@ U \in \mathbb{R}^{d \times r}, \quad V \in \mathbb{R}^{r \times d}, \quad r \ll 
 \]
 
 The parameter count drops from $d^2$ to $r(d + d) = 2rd$. The **reduction 
-factor\textbf{ is $d / 2r$. For $d = 768$ and $r = 64$, this is }6$$\times$**. Classical 
+factor\textbf{ is $d / 2r$. For $d = 768$ and $r = 64$, this is }6$\times$**. Classical 
 SVD (Eckart--Young, 1936) gives the optimal rank-$r$ approximation in 
 Frobenius norm.
 
@@ -88,7 +88,7 @@ of a transformer layer. It has three key components:
 \item \textbf{Energy-adaptive rank.} Instead of fixing $r$, we choose:
 
   $$
-  r\_\ell = \min\!\left(r\_\text{max}, \left|\left\{i : \sum\_{j \leq i} \sigma\_j\^{}2 < \eta \sum\_j \sigma\_j\^{}2\right\}\right| + 1\right)
+  r\_\ell = \min\!\left(r\_\text{max}, \left|\left\{i : \sum\_{j \leq i} \sigma\_j^2 < \eta \sum\_j \sigma\_j^2\right\}\right| + 1\right)
   \tag{1.4}
   $$
 
@@ -99,7 +99,7 @@ of a transformer layer. It has three key components:
   frozen and LoRA adapters $A, B$ are added:
 
   $$
-  y = (x V\^{}\top) U\^{}\top + (x A\^{}\top) B\^{}\top \cdot s + b
+  y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
   \tag{1.5}
   $$
 

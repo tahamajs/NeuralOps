@@ -136,22 +136,22 @@ p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
 \toprule
 \textbf{Component} & \textbf{Original} & \textbf{ORION} \\
 \midrule
-Q (768$$\times$768, r=64) & 589,824 & 98,304 \\
-K (768$$\times$768, r=64) & 589,824 & 98,304 \\
-V (768$$\times$768, r=64) & 589,824 & 98,304 \\
-O (768$$\times$768, r=64) & 589,824 & 98,304 \\
-LoRA (r=16, $$\times$4) & 0 & 98,304 \\
+Q (768$\times$768, r=64) & 589,824 & 98,304 \\
+K (768$\times$768, r=64) & 589,824 & 98,304 \\
+V (768$\times$768, r=64) & 589,824 & 98,304 \\
+O (768$\times$768, r=64) & 589,824 & 98,304 \\
+LoRA (r=16, $\times$4) & 0 & 98,304 \\
 RFF & 0 & 0 (frozen, but not persisted) \\
 \textbf{Per layer} & \textbf{2,359,296} & \textbf{393,216} \\
-\textbf{Ratio} & 1.00$$\times$ & \textbf{6.0$$\times$ reduction} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{6.0$\times$ reduction} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Impact per model (DistilBERT):}
 \begin{itemize}
-\item Original attention params: 6 $$\times$ 2.36M = 14.2M
-\item ORION attention params: 6 $$\times$ 393K = 2.36M
+\item Original attention params: 6 $\times$ 2.36M = 14.2M
+\item ORION attention params: 6 $\times$ 393K = 2.36M
 \item \textbf{Savings: 11.8M params (~18\% of model)}
 
 \end{itemize}
@@ -164,7 +164,7 @@ RFF & 0 & 0 (frozen, but not persisted) \\
 \toprule
 \textbf{Operation} & \textbf{Baseline} & \textbf{ORION} \\
 \midrule
-Q/K/V projections & 3 & 6 (2$$\times$ for factorized) \\
+Q/K/V projections & 3 & 6 (2$\times$ for factorized) \\
 Attention & 1 & ~4 (kernel + full) \\
 Output projection & 1 & 2 \\
 Fusion & 0 & 1 \\
@@ -173,7 +173,7 @@ Fusion & 0 & 1 \\
 \end{tabular}
 \end{table}
 
-\textbf{~2.5$$\times$ more kernel launches} $\to$ slower despite fewer parameters.
+\textbf{~2.5$\times$ more kernel launches} $\to$ slower despite fewer parameters.
 
 \subsection{Failure Mode Taxonomy}
 
@@ -187,7 +187,7 @@ Fusion & 0 & 1 \\
 \textbf{\texttt{copy\_weights} raises} & Injection aborts & UniversalAdapter failure \\
 \textbf{\texttt{rff\_proj} not persisted} & Train/test mismatch & \texttt{persistent=False} \\
 \textbf{Masked row collapse} & Zero attention & Softpick denominator = 0 \\
-\textbf{Slower than baseline} & ~2.3 s$$\times$ & More kernel launches \\
+\textbf{Slower than baseline} & ~2.3 s$\times$ & More kernel launches \\
 \textbf{Rank over-pruning} & Accuracy loss & Energy threshold too low \\
 \bottomrule
 \end{tabular}
@@ -230,7 +230,7 @@ Reduction & ~60\% & ~32\% \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{ORION genuinely reduces parameters} (~6$$\times$) while preserving accuracy.
+\item \textbf{ORION genuinely reduces parameters} (~6$\times$) while preserving accuracy.
 \item \textbf{The \texttt{copy\_weights} bug} is a robustness concern, not a collapse
   cause (due to the outer try/except).
 \item \textbf{\texttt{rff\_proj} persistence} is a bug that would cause train/test

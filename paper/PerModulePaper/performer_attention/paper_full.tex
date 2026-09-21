@@ -1,4 +1,4 @@
-\title{\textbf{Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+) for Pretrained Transformers}
+\title{\textbf{Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+) for Pretrained Transformers}}
 
 \author{Anonymous authors}
 
@@ -491,8 +491,8 @@ shows as \texttt{missing\_key}. Defaults to 1.0 (harmless), but its presence bre
 
 \textbf{Algorithm 1:} PerformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: Q $\leftarrow$ Q * d^{-0.25};  K $\leftarrow$ K * d^{-0.25}
@@ -915,9 +915,9 @@ GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (Performer)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (Performer)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 1320 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 413 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 380 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 1320 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 413 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1037,10 +1037,10 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/performer_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{performer_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{performer_attention}.}
 \label{fig:results_performer_attention}
 \end{figure}
 
@@ -1233,7 +1233,7 @@ feature map with orthogonal random features is well-founded.
 \subsubsection{Takeaway 2: Numerical Stability is Essential}
 
 The max-subtraction and clamp tricks are necessary for FP16. Without them, 
-\texttt{exp($\omega$\^{}T x - ||x|| /2)} overflows.
+\texttt{exp($\omega$^T x - ||x|| /2)} overflows.
 
 \subsubsection{Takeaway 3: The Docstring Lies}
 
@@ -1293,8 +1293,8 @@ For DistilBERT on L=128:
 \midrule
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 Params & 66.95M & 66.4MM & +48.5\%\% \\
-Time & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-VRAM & 183 MB & 1320 MB MB & 380 MB$$\times$ \\
+Time & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+VRAM & 183 MB & 1320 MB MB & 380 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1310,10 +1310,10 @@ VRAM & 183 MB & 1320 MB MB & 380 MB$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Notes} \\
 \midrule
-Full attention & 90.71\% & 1.0$$\times$ & Baseline \\
-FlashAttention-2 & ~90\% & 1.1$$\times$ & Exact, fast \\
-Cosformer & 0.85\% & 4.9$$\times$ slower & cos/sin reweighting \\
-\textbf{Performer} & \textbf{50.92\%} & \textbf{2.3 s$$\times$} & FAVOR+ \\
+Full attention & 90.71\% & 1.0$\times$ & Baseline \\
+FlashAttention-2 & ~90\% & 1.1$\times$ & Exact, fast \\
+Cosformer & 0.85\% & 4.9$\times$ slower & cos/sin reweighting \\
+\textbf{Performer} & \textbf{50.92\%} & \textbf{2.3 s$\times$} & FAVOR+ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2004,7 +2004,7 @@ Returns input unchanged.
 
 \subsubsection{B.7.1 Feature Map Overflows Without Stabilization}
 
-Without max-subtraction: \texttt{exp($\omega$\^{}T x)} overflows for \texttt{||x|| > 5}.
+Without max-subtraction: \texttt{exp($\omega$^T x)} overflows for \texttt{||x|| > 5}.
 
 \subsubsection{B.7.2 Injection Raises}
 

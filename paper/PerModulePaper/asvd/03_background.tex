@@ -5,9 +5,9 @@
 
 For any $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 with $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ 
 orthogonal, and $\Sigma \in \mathbb{R}^{m \times n}$ diagonal with 
@@ -15,37 +15,37 @@ $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 
 \textbf{Truncated SVD.} Keeping the top-$r$ singular values gives:
 
-\begin{equation}
+\[
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\end{equation}
+\]
 
 with error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
 \textbf{Rank-$r$ approximation.} For a matrix of rank $r$, the factorization 
 requires $r(m + n + 1)$ parameters, vs $mn$ for the full matrix. For 
-$m = n = 768$ and $r = 64$: 98,368 vs 589,824 -- a \textbf{6$$\times$} reduction.
+$m = n = 768$ and $r = 64$: 98,368 vs 589,824 -- a \textbf{6$\times$} reduction.
 
 \subsection{Activation-Aware Weighting}
 
 For a linear layer $y = Wx + b$, the reconstruction error is:
 
-\begin{equation}
+\[
 \mathbb{E}_x[\|Wx - W_r x\|_2^2] = \text{Tr}[(W - W_r) C_X (W - W_r)^\top]
-\end{equation}
+\]
 
 where $C_X = \mathbb{E}[x x^\top]$ is the input covariance.
 
 Under a \textbf{diagonal} assumption $C_X = \text{diag}(F_1, \dots, F_n)$:
 
-\begin{equation}
+\[
 \mathbb{E}_x[\|Wx - W_r x\|_2^2] = \|(W - W_r) \text{diag}(\sqrt{F})\|_F^2
-\end{equation}
+\]
 
 So the weighted problem reduces to unweighted SVD on the transformed matrix:
 
-\begin{equation}
+\[
 W_\text{weighted} = W \cdot \text{diag}(\sqrt{F})
-\end{equation}
+\]
 
 \textbf{Energy proxy.} We estimate $F_i = \mathbb{E}[x_i^2]$ from calibration 
 activations. This is the "activation energy" per input dimension.
@@ -55,9 +55,9 @@ activations. This is the "activation energy" per input dimension.
 Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, the cumulative 
 energy at rank $r$ is:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2}
-\end{equation}
+\]
 
 \textbf{Energy thresholding.} Choose the minimal $r$ such that $E(r) \geq \varepsilon$. 
 Typical $\varepsilon \in [0.90, 0.99]$.
@@ -69,9 +69,9 @@ less compression.
 
 For validation:
 
-\begin{equation}
+\[
 \text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|_F}{\|W\|_F + \epsilon}
-\end{equation}
+\]
 
 Threshold $\tau$: typically 0.10 (tight) to 0.50 (permissive). ASVD 
 defaults to $\tau = 0.20$.
@@ -80,18 +80,18 @@ defaults to $\tau = 0.20$.
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $A \in \mathbb{R}^{r_L \times n}$, $B \in \mathbb{R}^{m \times r_L}$, 
 $B = 0$ at initialization.
 
 \textbf{In ASVD.} The factorized layer with LoRA computes:
 
-\begin{equation}
+\[
 y = (x V^\top \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
-\end{equation}
+\]
 
 \subsection{Notation Summary}
 

@@ -60,8 +60,8 @@ For DistilBERT on H100, L = 2048:
 \midrule
 Accuracy & 90.71\% & 90.71\% & ~0 \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Time & 180 s & 2.3 s & 84.5$$\times$ \\
-VRAM & 12 MB & 380 MB & 380 MB$$\times$ \\
+Time & 180 s & 2.3 s & 84.5$\times$ \\
+VRAM & 12 MB & 380 MB & 380 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,11 +75,11 @@ VRAM & 12 MB & 380 MB & 380 MB$$\times$ \\
 \toprule
 \textbf{Method} & \textbf{Speedup} & \textbf{Exact} & \textbf{Params} \\
 \midrule
-LoRA (recovery only) & 1$$\times$ &  & +small \\
-FlashAttention-3 & 3-6$$\times$ &  & +small \\
-SDPA & 1$$\times$ &  & 0 \\
-Linear attention & 1-2$$\times$ (long) &  & depends \\
-MoE & 1$$\times$ &  & +large \\
+LoRA (recovery only) & 1$\times$ &  & +small \\
+FlashAttention-3 & 3-6$\times$ &  & +small \\
+SDPA & 1$\times$ &  & 0 \\
+Linear attention & 1-2$\times$ (long) &  & depends \\
+MoE & 1$\times$ &  & +large \\
 \bottomrule
 \end{tabular}
 \end{table}

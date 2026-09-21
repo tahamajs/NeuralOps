@@ -4,9 +4,9 @@
 
 For any matrix $W \in \mathbb{R}^{m \times n}$:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 where $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ are 
 orthogonal, and $\Sigma \in \mathbb{R}^{m \times n}$ is diagonal with 
@@ -14,18 +14,18 @@ non-negative singular values $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 
 \textbf{Truncated SVD.} The best rank-$k$ approximation in Frobenius norm:
 
-\begin{equation}
+\[
 W_k = U_{:, :k} \Sigma_{:k, :k} V_{:k, :}^\top
-\end{equation}
+\]
 
 with error $\|W - W_k\|_F = \sqrt{\sum_{i > k} \sigma_i^2}$.
 
 \textbf{Symmetric factorization.} We split $\Sigma^{1/2}$ between the two factors:
 
-\begin{equation}
+\[
 U_k' = U_{:, :k} \Sigma_{:k, :k}^{1/2}, \quad
 V_k' = \Sigma_{:k, :k}^{1/2} V_{:k, :}^\top
-\end{equation}
+\]
 
 so that $W_k = U_k' V_k'$ and both factors have balanced magnitude.
 
@@ -33,17 +33,17 @@ so that $W_k = U_k' V_k'$ and both factors have balanced magnitude.
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{equation}
+\]
 
 \textbf{Parameter count.} $4 d^2$ total for Q, K, V, O.
 
@@ -51,10 +51,10 @@ Q = X W_Q, \quad K = X W_K, \quad V = X W_V
 
 GQA reduces the number of KV heads:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}, \quad
 H_{kv} < H
-\end{equation}
+\]
 
 KV heads are repeated $H / H_{kv}$ times before attention.
 
@@ -64,9 +64,9 @@ KV heads are repeated $H / H_{kv}$ times before attention.
 
 RoPE rotates Q, K by position-dependent angles:
 
-\begin{equation}
+\[
 \tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 RoPE applies after projection. Our factorization composes with RoPE because 
 we only modify the projection weights, not the rotation.
@@ -75,9 +75,9 @@ we only modify the projection weights, not the rotation.
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $A \in \mathbb{R}^{r_L \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r_L}$, 
 and $B = 0$ initially.
@@ -87,9 +87,9 @@ provides recovery capacity without changing the factorized structure.
 
 \subsection{Frobenius Reconstruction Error}
 
-\begin{equation}
+\[
 \text{err}(W, UV) = \frac{\|W - UV\|_F}{\|W\|_F + \epsilon}
-\end{equation}
+\]
 
 Used to validate each factorized projection before injection.
 

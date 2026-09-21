@@ -1,4 +1,4 @@
-\title{\textbf{Cosformer: Linear Attention with Cosine-Based Positional Reweighting for Pretrained Transformers}
+\title{\textbf{Cosformer: Linear Attention with Cosine-Based Positional Reweighting for Pretrained Transformers}}
 
 \author{Anonymous authors}
 
@@ -11,9 +11,9 @@
 Transformer self-attention computes pairwise interactions between all tokens 
 in a sequence:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
-\end{equation}
+\]
 
 The intermediate attention matrix $A = \text{softmax}(QK^\top / \sqrt{d})$ 
 requires $\mathcal{O}(L^2)$ time and memory. For $L = 4096$ and 16-bit 
@@ -23,9 +23,9 @@ inference.
 \textbf{Linear attention} replaces softmax with a kernel feature map 
 $\phi(\cdot)$ such that the attention can be decomposed:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) \approx \frac{\phi(Q_i)^\top \sum_j \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_j \phi(K_j)}
-\end{equation}
+\]
 
 The sums $\sum_j \phi(K_j) V_j^\top$ and $\sum_j \phi(K_j)$ can be computed 
 once with $\mathcal{O}(L)$ complexity, then queried per-token.
@@ -40,16 +40,16 @@ spreads attention uniformly.
 Qin et al. (2022) propose Cosformer, which recovers locality by 
 \textbf{reweighting} the key and query features with cosine/sine of position:
 
-\begin{equation}
+\[
 \tilde{q}_i = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
 \tilde{q}'_i = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
-\end{equation}
+\]
 
 The attention output becomes:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\sum_j \tilde{q}_i^\top \tilde{k}_j V_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j' V_j}{\sum_j \tilde{q}_i^\top \tilde{k}_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j'}
-\end{equation}
+\]
 
 The cosine/sine weights decay with position, giving nearby tokens higher 
 weights -- mimicking softmax's locality.
@@ -64,7 +64,7 @@ transformers. Key features:
 \item \textbf{Two computational paths:}
 \end{enumerate}
 \begin{itemize}
-\item \textbf{Encoder:} associative accumulation via \texttt{KV = K\^{}T V} matmul.
+\item \textbf{Encoder:} associative accumulation via \texttt{KV = K^T V} matmul.
 \item \textbf{Decoder:} chunked prefix-sum with \texttt{chunk\_size = 32}.
 \end{itemize}
 \begin{enumerate}
@@ -210,9 +210,9 @@ architectures.
 
 Standard scaled dot-product attention:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
-\end{equation}
+\]
 
 \textbf{Properties:}
 \begin{itemize}
@@ -226,15 +226,15 @@ Standard scaled dot-product attention:
 
 Replacing softmax with a kernel factorization:
 
-\begin{equation}
+\[
 \exp(q^\top k) \approx \phi(q)^\top \phi(k), \quad \phi: \mathbb{R}^d \to \mathbb{R}^m
-\end{equation}
+\]
 
 allows rewriting attention as:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\sum_j \phi(q_i)^\top \phi(k_j) V_j}{\sum_j \phi(q_i)^\top \phi(k_j)} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) V_j}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 \textbf{Complexity.} The sums $\sum_j \phi(k_j) V_j$ and $\sum_j \phi(k_j)$ are 
 $\mathcal{O}(L m d)$, independent of the query position. Precomputed once, 
@@ -268,22 +268,22 @@ summarization), linear attention underperforms softmax.
 
 Cosformer adds cosine/sine modulation:
 
-\begin{equation}
+\[
 \tilde{\phi}(q_i) = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
 \tilde{\phi}'(q_i) = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
-\end{equation}
+\]
 
 Then the attention becomes:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) V_j + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j) V_j}{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j)}
-\end{equation}
+\]
 
 \textbf{Why it works.} The identity:
 
-\begin{equation}
+\[
 \cos(\theta_i - \theta_j) = \cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j
-\end{equation}
+\]
 
 means the sum $\tilde{\phi}(q_i)^\top \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \tilde{\phi}'(k_j)$ 
 equals $\phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)$. The 
@@ -383,12 +383,12 @@ and cosine/sine reweighting.
 
 We support two feature maps:
 
-\begin{equation}
+\[
 \phi(x) = \begin{cases}
 \text{elu}(x) + 1 & \text{(default)} \\
 \text{softplus}(x) & \text{(alternative)}
 \end{cases}
-\end{equation}
+\]
 
 Both are non-negative, deterministic, and cheap.
 
@@ -402,22 +402,22 @@ accuracy. ELU + 1 is deterministic and works well in practice.
 
 For sequence length $N$ and max position $M = \max(\text{max\_seq\_len}, N)$:
 
-\begin{equation}
+\[
 \theta_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
-\end{equation}
+\]
 
 The cosine and sine factors are:
 
-\begin{equation}
+\[
 c_i = \cos(\theta_i), \quad s_i = \sin(\theta_i)
-\end{equation}
+\]
 
 Applied to $Q, K$:
 
-\begin{equation}
+\[
 \tilde{Q} = Q \odot c, \quad \tilde{Q}' = Q \odot s, \quad
 \tilde{K} = K \odot c, \quad \tilde{K}' = K \odot s
-\end{equation}
+\]
 
 Broadcasting: $c, s \in \mathbb{R}^{1 \times 1 \times N \times 1}$, 
 $Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
@@ -426,25 +426,25 @@ $Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
 
 For bidirectional attention:
 
-\begin{equation}
+\[
 \begin{aligned}
 KV_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
 KV_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
 Z_c &= \sum_j \tilde{K}_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
 Z_s &= \sum_j \tilde{K}'_j \in \mathbb{R}^{B \times H \times 1 \times d}
 \end{aligned}
-\end{equation}
+\]
 
 The output:
 
-\begin{equation}
+\[
 \text{num} = \tilde{Q} KV_c + \tilde{Q}' KV_s, \quad
 \text{den} = \tilde{Q} Z_c^\top + \tilde{Q}' Z_s^\top + \epsilon
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{context} = \frac{\text{num}}{\text{den}}
-\end{equation}
+\]
 
 \textbf{Complexity.} Each matmul is $\mathcal{O}(L d^2)$ or $\mathcal{O}(d^2 L)$. 
 Total: $\mathcal{O}(L d^2)$ time, $\mathcal{O}(d^2)$ memory for the state.
@@ -467,32 +467,32 @@ For causal attention:
 \end{itemize}
 \textbf{Intra-chunk:}
 
-\begin{equation}
+\[
 \text{num}_\text{intra} = \text{masked}(\tilde{Q}_c \tilde{K}_c^\top) V_c
-\end{equation}
+\]
 
 \textbf{Inter-chunk:}
 
-\begin{equation}
+\[
 \text{num}_\text{inter} = \tilde{Q}_c S_c + \tilde{Q}_c' S_s
-\end{equation}
+\]
 
 \textbf{State update:}
 
-\begin{equation}
+\[
 S_c \mathrel{+}= \tilde{K}_c^\top V_c, \quad
 Z_c \mathrel{+}= \tilde{K}_c^\top \mathbf{1}
-\end{equation}
+\]
 
 The output for chunk $c$:
 
-\begin{equation}
+\[
 \text{context}_c = \frac{\text{num}_\text{intra} + \text{num}_\text{inter}}{\text{den}_\text{intra} + \text{den}_\text{inter} + \epsilon}
-\end{equation}
+\]
 
 \textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
 Each iteration does a small matmul. Total wall-clock: dominated by 4 kernel 
-launches per chunk $$\times$ 2 chunks.
+launches per chunk $\times$ 2 chunks.
 
 \subsection{Weight Transfer}
 
@@ -542,7 +542,7 @@ O projection & $d^2$ & $d^2$ + LoRA \\
 
 \textbf{Example (DistilBERT, $r = 16$, $d = 768$):}
 
-Per block: $4 \cdot 768\^{}2 + 4 \cdot 16 \cdot 1536 = 2{,}359{,}296 + 98{,}304 
+Per block: $4 \cdot 768^2 + 4 \cdot 16 \cdot 1536 = 2{,}359{,}296 + 98{,}304 
 = 2{,}457{,}600$.
 
 $\Delta$\% per block: $+4.17\%$.
@@ -567,9 +567,9 @@ Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
 
 \textbf{For $L = 128$, $d = 64$:}
 \begin{itemize}
-\item Cosformer: ~128 $$\times$ 64  = 524K operations per head.
-\item Baseline: ~128  $$\times$ 64 = 1M operations per head.
-\item \textbf{Cosformer has ~2$$\times$ fewer FLOPs.}
+\item Cosformer: ~128 $\times$ 64  = 524K operations per head.
+\item Baseline: ~128  $\times$ 64 = 1M operations per head.
+\item \textbf{Cosformer has ~2$\times$ fewer FLOPs.}
 
 \end{itemize}
 \textbf{Wall-clock:} Cosformer has overhead from:
@@ -583,8 +583,8 @@ Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
 
 \textbf{Algorithm 1:} CosformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, chunk_size C
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -621,9 +621,9 @@ Output: Y $\in$ R^{B$$\times$L$$\times$d}
 ELU + 1 is \textbf{not} a good approximation of $\exp(q^\top k)$. The 
 approximation error is bounded by:
 
-\begin{equation}
+\[
 \left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon_\text{ELU}
-\end{equation}
+\]
 
 where $\epsilon_\text{ELU}$ grows with $\|q\|$ and $\|k\|$.
 
@@ -635,9 +635,9 @@ approximately.
 
 The Cosformer reweighting gives:
 
-\begin{equation}
+\[
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
-\end{equation}
+\]
 
 The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$ 
 (approximately). This restores locality.
@@ -646,9 +646,9 @@ The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$
 
 The causal path preserves causality:
 
-\begin{equation}
+\[
 \frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
-\end{equation}
+\]
 
 because intra-chunk scores are masked and inter-chunk uses only 
 previously-processed state.
@@ -1042,7 +1042,7 @@ Single seed (42). No multi-seed runs.
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s & PASS \\
 DistilBERT & \textbf{Cosformer} & \textbf{77.75} & \textbf{-12.96} & 0.7651 & +5.73\% & 3.5 & PASS \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s & PASS \\
-RoBERTa & \textbf{Cosformer} & \textbf{58.72} & \textbf{-19.84} & 0.6629 & +5.84\% & 7.5 & PASS_LOW \\
+RoBERTa & \textbf{Cosformer} & \textbf{58.72} & \textbf{-19.84} & 0.6629 & +5.84\% & 7.5 & PASS\_LOW \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s & PASS \\
 GPT-2 & \textbf{Cosformer} & \textbf{70.18} & \textbf{-9.18} & 0.7510 & +1.76\% & 20.5 & PASS \\
 \bottomrule
@@ -1088,9 +1088,9 @@ GPT-2 & 124,441,344 & 126630020 & +2188676 & +1.76\% \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & 3.5 s & 1.84$$\times$ & 183 MB & 335 MB MB \\
-RoBERTa & 4.1 s & 7.5 s & 1.83$$\times$ & 712 MB & 659 MB MB \\
-GPT-2 & 4.2 s & 20.5 s & 4.88$$\times$ & 793 MB & 1283 MB MB \\
+DistilBERT & 1.9 s & 3.5 s & 1.84$\times$ & 183 MB & 335 MB MB \\
+RoBERTa & 4.1 s & 7.5 s & 1.83$\times$ & 712 MB & 659 MB MB \\
+GPT-2 & 4.2 s & 20.5 s & 4.88$\times$ & 793 MB & 1283 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1219,10 +1219,10 @@ most of the baseline accuracy at modest overhead.
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/cosformer_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{cosformer}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cosformer}.}
 \label{fig:results_cosformer}
 \end{figure}
 
@@ -1282,7 +1282,7 @@ The dedicated encoder path uses \textbf{associative accumulation} -- 4 matmuls,
 no Python loops. The decoder path uses \textbf{chunked prefix-sum} with 
 \texttt{chunk\_size = 32} -- 4 Python iterations for $L=128$.
 
-\textbf{Compare with GatedDeltaNet:} Its chunk size is 8, giving 16 outer $$\times$ 8 inner = 128 Python iterations. Cosformer has 4 $$\times$ 32 = 128 inner operations but batched in matmuls.
+\textbf{Compare with GatedDeltaNet:} Its chunk size is 8, giving 16 outer $\times$ 8 inner = 128 Python iterations. Cosformer has 4 $\times$ 32 = 128 inner operations but batched in matmuls.
 
 \subsection{RoBERTa's Instability}
 
@@ -1340,7 +1340,7 @@ Output proj & 1 & 1 \\
 \end{tabular}
 \end{table}
 
-30 kernel launches vs 6. \textbf{5$$\times$ more launches} $\to$ 5$$\times$ slower.
+30 kernel launches vs 6. \textbf{5$\times$ more launches} $\to$ 5$\times$ slower.
 
 \subsection{Memory Efficiency}
 
@@ -1406,8 +1406,8 @@ Max weight & 0.45 & 0.18 \\
 \textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
 \midrule
 \textbf{RoBERTa collapse} & Acc $\approx$ 50\% & Nested + cos/sin mismatch \\
-\textbf{GPT-2 slowdown} & 5$$\times$ slower & Chunked Python loop \\
-\textbf{VRAM increase} & 1.3-1.5$$\times$ & Extra tensors \\
+\textbf{GPT-2 slowdown} & 5$\times$ slower & Chunked Python loop \\
+\textbf{VRAM increase} & 1.3-1.5$\times$ & Extra tensors \\
 \textbf{Parameter increase} & +0.9-4\% & LoRA \\
 \bottomrule
 \end{tabular}
@@ -1422,10 +1422,10 @@ Max weight & 0.45 & 0.18 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Speed} & \textbf{Params} \\
 \midrule
-baseline & 90.71\% & 1.0$$\times$ & 0 \\
-FlashAttention-2 & 90.71\% & 1.1$$\times$ & 0 \\
-Cosformer & 77.75\% & 1.84$$\times$ & +5.73\% \\
-A3 (SVD) & 88.5\% & 0.8$$\times$ & \textbf{-60\%} \\
+baseline & 90.71\% & 1.0$\times$ & 0 \\
+FlashAttention-2 & 90.71\% & 1.1$\times$ & 0 \\
+Cosformer & 77.75\% & 1.84$\times$ & +5.73\% \\
+A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1435,7 +1435,7 @@ A3 (SVD) & 88.5\% & 0.8$$\times$ & \textbf{-60\%} \\
 \begin{enumerate}
 \item \textbf{Cosformer is a reasonable linear attention.} Locality recovery works.
 \item \textbf{Encoder path is clean} -- no Python loops.
-\item \textbf{Decoder path has overhead} -- chunked scan is 5$$\times$ slower.
+\item \textbf{Decoder path has overhead} -- chunked scan is 5$\times$ slower.
 \item \textbf{RoBERTa is problematic} -- nested + reweighting causes instability.
 \item \textbf{Parameter count increases} -- LoRA adds ~1-4\%.
 \end{enumerate}
@@ -1493,7 +1493,7 @@ Is the model a flat encoder? -- Yes -- Use Cosformer
   |
   No
    
-Is the model a decoder? -- Yes -- Consider but expect 3-5$$\times$ slowdown
+Is the model a decoder? -- Yes -- Consider but expect 3-5$\times$ slowdown
   |
   No
    
@@ -1517,8 +1517,8 @@ For DistilBERT on RTX 4070:
 \midrule
 Accuracy & 90.71\% & 77.75\% & -12.96\% \\
 Params & 66.9M & 70791394M & +5.73\% \\
-Time & 1.9 s & 3.5 s & 1.84$$\times$ \\
-VRAM & 183 MB & 335 MB MB & 1.31$$\times$ \\
+Time & 1.9 s & 3.5 s & 1.84$\times$ \\
+VRAM & 183 MB & 335 MB MB & 1.31$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1534,10 +1534,10 @@ VRAM & 183 MB & 335 MB MB & 1.31$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Params} \\
 \midrule
-FlashAttention-2 & ~90\% & 1.1$$\times$ & 0 \\
-A3 (SVD) & 88.5\% & 0.8$$\times$ & \textbf{-60\%} \\
-NHA & 90.25\% & 0.6$$\times$ & +0.88\% \\
-\textbf{Cosformer} & \textbf{77.75\%} & \textbf{1.84$$\times$} & \textbf{+5.73\%} \\
+FlashAttention-2 & ~90\% & 1.1$\times$ & 0 \\
+A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
+NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
+\textbf{Cosformer} & \textbf{77.75\%} & \textbf{1.84$\times$} & \textbf{+5.73\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1573,7 +1573,7 @@ NHA & 90.25\% & 0.6$$\times$ & +0.88\% \\
 \begin{itemize}
 \item For flat encoders: likely fine.
 \item For nested encoders: tune first.
-\item For decoders: expect 3-5$$\times$ slowdown.
+\item For decoders: expect 3-5$\times$ slowdown.
 \end{itemize}
 \begin{lstlisting}
 
@@ -1601,7 +1601,7 @@ We did not fully resolve this.
 
 \subsection{Decoder Overhead}
 
-The chunked prefix-sum adds ~5$$\times$ overhead compared to baseline SDPA. This 
+The chunked prefix-sum adds ~5$\times$ overhead compared to baseline SDPA. This 
 limits the practical advantage of linear attention.
 
 \subsection{Parameter Count Increases}
@@ -1696,7 +1696,7 @@ GPT-2 & Decoder & 70.18\% & -9.18\% & 20.5 s \\
 
 \begin{enumerate}
 \item \textbf{Cosformer preserves most of the baseline accuracy} on flat encoders.
-\item \textbf{Decoder overhead is significant} (~4.88$$\times$).
+\item \textbf{Decoder overhead is significant} (~4.88$\times$).
 \item \textbf{RoBERTa needs hyperparameter tuning} (LR, reweighting).
 \item \textbf{Not a compression method} -- adds LoRA parameters.
 
@@ -1827,7 +1827,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
 \midrule
 DistilBERT & 77.75\% $\pm$ 2\% & PASS \\
-RoBERTa & 58.72\% $\pm$ 3\% & PASS_LOW \\
+RoBERTa & 58.72\% $\pm$ 3\% & PASS\_LOW \\
 GPT-2 & 70.18\% $\pm$ 2\% & PASS \\
 \bottomrule
 \end{tabular}
@@ -2008,9 +2008,9 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 
 \textbf{Claim.}
 
-\begin{equation}
+\[
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
-\end{equation}
+\]
 
 where:
 \begin{itemize}
@@ -2022,24 +2022,24 @@ where:
 \end{itemize}
 \textbf{Proof.}
 
-\begin{equation}
+\[
 \begin{aligned}
 \tilde{q}_i^\top \tilde{k}_j &= (\phi(q_i) \cos\theta_i)^\top (\phi(k_j) \cos\theta_j) \\
 &= \cos\theta_i \cos\theta_j \cdot \phi(q_i)^\top \phi(k_j)
 \end{aligned}
-\end{equation}
+\]
 
 Similarly:
 
-\begin{equation}
+\[
 \tilde{q}_i'^\top \tilde{k}_j' = \sin\theta_i \sin\theta_j \cdot \phi(q_i)^\top \phi(k_j)
-\end{equation}
+\]
 
 Sum:
 
-\begin{equation}
+\[
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = (\cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j) \cdot \phi(q_i)^\top \phi(k_j) = \cos(\theta_i - \theta_j) \cdot \phi(q_i)^\top \phi(k_j)
-\end{equation}
+\]
 
 $\square$
 
@@ -2047,15 +2047,15 @@ $\square$
 
 With $\theta_i = \pi i / (2 M)$, we have $\theta_i - \theta_j = \pi (i - j) / (2 M)$.
 
-\begin{equation}
+\[
 \cos(\theta_i - \theta_j) = \cos\!\left(\frac{\pi (i-j)}{2M}\right)
-\end{equation}
+\]
 
 \textbf{Decay rate.} For $|i - j| = k$:
 
-\begin{equation}
+\[
 \cos\!\left(\frac{\pi k}{2M}\right) \approx 1 - \frac{\pi^2 k^2}{8M^2}
-\end{equation}
+\]
 
 For $M = 512$ and $k = 128$: $\cos \approx 0.87$. \textbf{Slow decay.}
 
@@ -2091,17 +2091,17 @@ For $C \ll d$: $\mathcal{O}(L d^2)$.
 
 \textbf{ELU + 1 is not an RFF.} The approximation:
 
-\begin{equation}
+\[
 \text{elu}(q)^\top \text{elu}(k) + \|q\|_1 + \|k\|_1 + d \approx \exp(q^\top k)
-\end{equation}
+\]
 
 is only approximate. The error grows with $\|q\|$ and $\|k\|$.
 
 \textbf{Bounds.} For $\|q\|, \|k\| \leq R$:
 
-\begin{equation}
+\[
 \left|(\text{elu}(q)+1)^\top(\text{elu}(k)+1) - e^{q^\top k}\right| \leq C_R
-\end{equation}
+\]
 
 where $C_R$ grows exponentially in $R$.
 
@@ -2109,9 +2109,9 @@ where $C_R$ grows exponentially in $R$.
 
 For the causal path:
 
-\begin{equation}
+\[
 \frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
-\end{equation}
+\]
 
 \textbf{Proof sketch.} Within a chunk, the causal mask zeros future contributions. 
 Across chunks, the state $(S, Z)$ only accumulates from processed chunks. 
@@ -2310,7 +2310,7 @@ Params (after) & 131923074 \\
 Peak VRAM & 659 MB MB \\
 Inference time & 7.5 s \\
 Path & Encoder (nested) \\
-Status & PASS_LOW \\
+Status & PASS\_LOW \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2475,7 +2475,7 @@ Cosformer adds 1-4\% parameters. Not a compression method.
 \begin{enumerate}
 \item \textbf{Cosformer is a reasonable baseline.} Not a breakthrough, but works.
 \item \textbf{RoBERTa is difficult.} Nested structure + reweighting = instability.
-\item \textbf{Decoder overhead matters.} Chunked scan adds 5$$\times$.
+\item \textbf{Decoder overhead matters.} Chunked scan adds 5$\times$.
 \item \textbf{Locality recovery works.} Cos/sin reweighting helps.
 
 \end{enumerate}

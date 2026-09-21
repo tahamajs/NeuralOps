@@ -6,7 +6,7 @@
 We presented \textbf{SALT} (Singular Value Adaptation with Low-Rank Tuning), a 
 parameterization that replaces each weight $W$ with a truncated SVD plus 
 trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
-SALT reduces stored parameters by \textbf{48.2\%$$\times$--32$$\times$} 
+SALT reduces stored parameters by \textbf{48.2\%$\times$--32$\times$} 
 while preserving accuracy within \textbf{0.85\%}.
 
 \subsection{Results Recap}
@@ -18,9 +18,9 @@ while preserving accuracy within \textbf{0.85\%}.
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params} & \textbf{Storage} \\
 \midrule
-DistilBERT & 80.28\% & -10.43\% & 48.2\%$$\times$ & 256 MB MB \\
-RoBERTa & 50.92\% & -27.64\% & 32$$\times$ & 84.5 MB \\
-GPT-2 & 50.92\% & -28.44\% & 32$$\times$ & 84.5 MB \\
+DistilBERT & 80.28\% & -10.43\% & 48.2\%$\times$ & 256 MB MB \\
+RoBERTa & 50.92\% & -27.64\% & 32$\times$ & 84.5 MB \\
+GPT-2 & 50.92\% & -28.44\% & 32$\times$ & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,7 +28,7 @@ GPT-2 & 50.92\% & -28.44\% & 32$$\times$ & 84.5 MB \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{SALT reduces total parameters} by 12$$\times$ at rank 16.
+\item \textbf{SALT reduces total parameters} by 12$\times$ at rank 16.
 \item \textbf{Accuracy is preserved} within 1\%.
 \item \textbf{Inference memory is unchanged} -- this is a limitation.
 \item \textbf{A fused forward pass would realize the memory benefit.}

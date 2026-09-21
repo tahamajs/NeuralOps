@@ -11,7 +11,7 @@ Parameter count increases by ~48.5\%\% due to memory + LoRA.
 
 For $L \gg W + d_c$, Infini-Attention is $\mathcal{O}(L(W + d_c))$ vs 
 baseline $\mathcal{O}(L^2)$. For $L = 4096$, $W = d_c = 128$, this is 
-\textbf{16$$\times$ faster} in attention.
+\textbf{16$\times$ faster} in attention.
 
 \subsubsection{Takeaway 3: $\beta$ Init is Critical}
 
@@ -61,7 +61,7 @@ For DistilBERT at L=128:
 \midrule
 Params & 66.95M & 66.4MM & +48.5\%\% \\
 VRAM & 183 MB & 353 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 \bottomrule
 \end{tabular}
@@ -76,7 +76,7 @@ Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Infini} & \textbf{Change} \\
 \midrule
-Time (est.) & ~30 s & ~3 s & 10$$\times$ faster \\
+Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 \bottomrule
 \end{tabular}
 \end{table}

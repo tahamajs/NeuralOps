@@ -35,7 +35,7 @@ loss, this is the approach.
 \item \textbf{When long-range dependencies matter.} Use full attention or real
   recurrent mechanisms.
 \item \textbf{When parameter budget is tight.} +5-6\% is significant.
-\item \textbf{When latency is critical.} ~2$$\times$ slowdown.
+\item \textbf{When latency is critical.} ~2$\times$ slowdown.
 
 \end{itemize}
 \subsection{Decision Flowchart}
@@ -72,8 +72,8 @@ For DistilBERT:
 \midrule
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 Params & 66.95M & 66.4MM & +48.5\%\% \\
-Time & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-VRAM & 183 MB & 353 MB MB & 2.1$$\times$ \\
+Time & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+VRAM & 183 MB & 353 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,10 +89,10 @@ VRAM & 183 MB & 353 MB MB & 2.1$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Params} \\
 \midrule
-Baseline & 90.71\% & 1.0$$\times$ & 0 \\
-Longformer & ~89\% & 0.8$$\times$ & 0 \\
-Cosformer & 0.85\% & 2.3 s$$\times$ & +5.7\% \\
-\textbf{GoldFinch} & \textbf{50.92\%} & \textbf{2.3 s$$\times$} & \textbf{+48.5\%\%} \\
+Baseline & 90.71\% & 1.0$\times$ & 0 \\
+Longformer & ~89\% & 0.8$\times$ & 0 \\
+Cosformer & 0.85\% & 2.3 s$\times$ & +5.7\% \\
+\textbf{GoldFinch} & \textbf{50.92\%} & \textbf{2.3 s$\times$} & \textbf{+48.5\%\%} \\
 \bottomrule
 \end{tabular}
 \end{table}

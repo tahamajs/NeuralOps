@@ -68,8 +68,8 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 \subsubsection{Qwen3.5 (GQA-native)}
 
 \begin{lstlisting}
-q_proj: Linear(1024, 2048)   # 8 heads $$\times$ 256
-k_proj: Linear(1024, 512)    # 2 heads $$\times$ 256
+q_proj: Linear(1024, 2048)   # 8 heads $\times$ 256
+k_proj: Linear(1024, 512)    # 2 heads $\times$ 256
 v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 \end{lstlisting}
@@ -177,14 +177,14 @@ For $d = 768$, $H = 12$, $d_h = 64$, $G = 6$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
-MHA & 2,359,296 & 1.00$$\times$ \\
-GQA (G=6) & 1,769,472 & \textbf{1.33$$\times$} \\
-MQA & 1,179,648 & 2.00$$\times$ \\
+MHA & 2,359,296 & 1.00$\times$ \\
+GQA (G=6) & 1,769,472 & \textbf{1.33$\times$} \\
+MQA & 1,179,648 & 2.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Note.} GQA reduces parameters modestly (1.33$$\times$ at $G = H/2$). The primary 
+\textbf{Note.} GQA reduces parameters modestly (1.33$\times$ at $G = H/2$). The primary 
 benefit is \textbf{KV cache} reduction at inference.
 
 \subsection{Registry}

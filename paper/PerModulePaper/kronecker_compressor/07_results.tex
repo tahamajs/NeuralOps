@@ -11,9 +11,9 @@ We evaluate \texttt{kronecker\_compressor} across three canonical language under
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 72.13\% & 0.7197 & 1.93$$\times$ & -- & 257.1 MB & 20643 & 24.89 s \\
-MNLI & PASS & 39.00\% & 0.3851 & 1.93$$\times$ & -- & 259.3 MB & 22656 & 55.65 s \\
-AG News & PASS & 75.80\% & 0.7442 & 1.93$$\times$ & -- & 294.1 MB & 43505 & 32.61 s \\
+SST-2 & PASS & 72.13\% & 0.7197 & 1.93$\times$ & -- & 257.1 MB & 20643 & 24.89 s \\
+MNLI & PASS & 39.00\% & 0.3851 & 1.93$\times$ & -- & 259.3 MB & 22656 & 55.65 s \\
+AG News & PASS & 75.80\% & 0.7442 & 1.93$\times$ & -- & 294.1 MB & 43505 & 32.61 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{kronecker\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 34,663,684 & -32,292,864 (-48.23\%) & 1,327,104 & 0 & 0 \
 Execution profiling demonstrates that \texttt{kronecker\_compressor} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/kronecker_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{kronecker_compressor}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{kronecker_compressor}.}
 \label{fig:results_kronecker_compressor}
 \end{figure}

@@ -8,15 +8,15 @@
 Let $s \in \mathbb{R}^L$ be a score vector, $\tau$ the $k$-th largest 
 value, and $m_j = \sigma((s_j - \tau) / T)$. Define:
 
-\begin{equation}
+\[
 \tilde{p}_j = \frac{\exp(s_j + \log m_j)}{\sum_i \exp(s_i + \log m_i)} = \frac{m_j \exp(s_j)}{\sum_i m_i \exp(s_i)}
-\end{equation}
+\]
 
 versus the hard top-$k$ softmax:
 
-\begin{equation}
+\[
 p_j^{\text{hard}} = \frac{\mathbb{1}[s_j \ge \tau] \exp(s_j)}{\sum_i \mathbb{1}[s_i \ge \tau] \exp(s_i)}
-\end{equation}
+\]
 
 \subsubsection{A.1.2 Error Bound}
 
@@ -30,9 +30,9 @@ Thus $\tilde{p} \to p^{\text{hard}}$. $\square$
 
 For finite $T$, the error in each component is bounded by:
 
-\begin{equation}
+\[
 |p_j^{\text{hard}} - \tilde{p}_j| \leq e^{-|s_j - \tau| / T} \cdot \text{const}
-\end{equation}
+\]
 
 \subsection{A.2 Per-Head Sparsity Gradient}
 
@@ -40,9 +40,9 @@ For finite $T$, the error in each component is bounded by:
 
 The gradient of the loss w.r.t. logit $\ell_h$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \sum_{b, i} \frac{\partial \mathcal{L}}{\partial \tau_{b, h, i}} \cdot \frac{\partial \tau_{b, h, i}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 \subsubsection{A.2.2 Threshold Gradient}
 
@@ -52,23 +52,23 @@ the classical sense.
 
 \textbf{Straight-through estimator.} We approximate:
 
-\begin{equation}
+\[
 \frac{\partial \tau}{\partial k_h} \approx -|\tau^{(k)} - \tau^{(k+1)}|
-\end{equation}
+\]
 
 where $\tau^{(k)}$ is the $k$-th largest score.
 
 \subsubsection{A.2.3 Budget Gradient}
 
-\begin{equation}
+\[
 \frac{\partial k_h}{\partial \rho_h} \approx -L
-\end{equation}
+\]
 
 Combining:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} \approx -L \cdot \sum_{b, i} \frac{\partial \mathcal{L}}{\partial \tau_{b, h, i}} \cdot |\tau^{(k)} - \tau^{(k+1)}| \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 \subsection{A.3 Chunked Memory Analysis}
 
@@ -92,15 +92,15 @@ of $\mathcal{L}$. $\square$
 
 The entropy of the softmax distribution is:
 
-\begin{equation}
+\[
 H(p) = -\sum_j p_j \log p_j
-\end{equation}
+\]
 
 For the masked softmax $\tilde{p}$:
 
-\begin{equation}
+\[
 H(\tilde{p}) \approx H(p) - \sum_j p_j \log m_j
-\end{equation}
+\]
 
 For $m_j \ll 1$, $\log m_j < 0$, so $H(\tilde{p}) < H(p)$. Sparsity reduces 
 entropy.

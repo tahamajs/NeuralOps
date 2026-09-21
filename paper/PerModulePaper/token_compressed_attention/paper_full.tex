@@ -1,4 +1,4 @@
-\title{\textbf{TokenCompressedAttention: Learnable Token Selection for Efficient Transformer Inference}
+\title{\textbf{TokenCompressedAttention: Learnable Token Selection for Efficient Transformer Inference}}
 
 \author{Anonymous authors}
 
@@ -302,7 +302,7 @@ steps before the attention computation:
 The overall pipeline:
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
                
     +-----------------------+
@@ -432,10 +432,10 @@ scores = scores.masked_fill(causal_mask, -inf)
 
 \textbf{Algorithm 1:} TCA forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$$\times$L$$\times$d}
-        attention_mask $\in$ {0,1}^{B$$\times$L}
+Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
+        attention_mask $\in$ {0,1}^{B$\times$L}
         position_ids
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: Q, K $\leftarrow$ RoPE(Q, K, position_ids)
@@ -916,7 +916,7 @@ GPT-2 & \textbf{TCA} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & 50\% & 571 MB M
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item KV sequence length reduced from 128 to \textbf{0.85} (~50\%$$\times$ reduction).
+\item KV sequence length reduced from 128 to \textbf{0.85} (~50\%$\times$ reduction).
 \item Attention compute reduced by \textbf{12.5\%}.
 \item Accuracy drop of \textbf{-39.79\%} on DistilBERT.
 
@@ -1051,10 +1051,10 @@ $\Delta$ & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Speedup} \\
 \midrule
-128 & 85.0 s & 84.0 s & 84.8$$\times$ \\
-256 & 85.5 s & 84.8 s & 85.6$$\times$ \\
-512 & 86.0 s & 85.6 s & 86.2$$\times$ \\
-1024 & 86.4 s & 86.4 s & 86.4$$\times$ \\
+128 & 85.0 s & 84.0 s & 84.8$\times$ \\
+256 & 85.5 s & 84.8 s & 85.6$\times$ \\
+512 & 86.0 s & 85.6 s & 86.2$\times$ \\
+1024 & 86.4 s & 86.4 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1095,10 +1095,10 @@ StreamingLLM-style & 0.85 & 32 & 0.85 & No \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/token_compressed_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{token_compressed_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{token_compressed_attention}.}
 \label{fig:results_token_compressed_attention}
 \end{figure}
 
@@ -1189,15 +1189,15 @@ For a single attention layer at $L = 128$, $k = 64$:
 \toprule
 \textbf{Operation} & \textbf{Baseline} & \textbf{TCA} & \textbf{Ratio} \\
 \midrule
-QK\^{}T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$$\times$ \\
-Softmax & $L^2$ & $L \cdot k$ & 2.0$$\times$ \\
-AV & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$$\times$ \\
+QK^T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
+Softmax & $L^2$ & $L \cdot k$ & 2.0$\times$ \\
+AV & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
 Score net & 0 & $L d_h \cdot 64$ & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Overall: ~12.5$$\times$ reduction.
+Overall: ~12.5$\times$ reduction.
 
 \subsection{Failure Modes}
 
@@ -1318,7 +1318,7 @@ For DistilBERT at L = 512:
 \midrule
 Params & 66.95M & 66.4MM & +6.3\% \\
 KV cache & 0.85 & 0.85 & -50\% \\
-Inference time & 0.85 s & 0.85 s & 2.1$$\times$ \\
+Inference time & 0.85 s & 0.85 s & 2.1$\times$ \\
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
 \end{tabular}
@@ -1364,7 +1364,7 @@ At long L, KV cache dominates memory. TCA's 50\% reduction means:
 
 \subsubsection{Combined with Quantization}
 
-TCA + INT8 $\to$ \textbf{~8$$\times$ total reduction} in KV footprint.
+TCA + INT8 $\to$ \textbf{~8$\times$ total reduction} in KV footprint.
 
 \subsection{Open Questions}
 
@@ -1871,8 +1871,8 @@ Attention FLOPs:
 
 Score net FLOPs: $2 B L (d \cdot 64 + 64) = 2 B L \cdot 65 (d/65 + 1)$
 
-For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L\^{}2 d\_h = 
-4 \cdot 10\^{}5 B L\^{}2$. Overhead ratio: ~$0.25 / L$. At $L = 128$: \textbf{~0.2\% overhead}.
+For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L^2 d\_h = 
+4 \cdot 10^5 B L^2$. Overhead ratio: ~$0.25 / L$. At $L = 128$: \textbf{~0.2\% overhead}.
 \begin{lstlisting}
 
 ---
@@ -2249,7 +2249,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

@@ -12,11 +12,11 @@ GQA's savings come from three sources:
 \toprule
 \textbf{Source} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{Reduction} \\
 \midrule
-KV cache (per token, per layer) & 36.9 KB & 18.4 KB & 2.0$$\times$ \\
-K projection FLOPs & $N d H d_h$ & $N d (H/2) d_h$ & 2.0$$\times$ \\
-V projection FLOPs & Same & Same & 2.0$$\times$ \\
-Attention FLOPs & $N^2 H d_h$ & $N^2 H d_h$ & 1.0$$\times$ \\
-Output proj FLOPs & $N H d_h d$ & $N H d_h d$ & 1.0$$\times$ \\
+KV cache (per token, per layer) & 36.9 KB & 18.4 KB & 2.0$\times$ \\
+K projection FLOPs & $N d H d_h$ & $N d (H/2) d_h$ & 2.0$\times$ \\
+V projection FLOPs & Same & Same & 2.0$\times$ \\
+Attention FLOPs & $N^2 H d_h$ & $N^2 H d_h$ & 1.0$\times$ \\
+Output proj FLOPs & $N H d_h d$ & $N H d_h d$ & 1.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,11 +58,11 @@ gracefully:
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Avg accuracy drop} \\
 \midrule
-6 & 2.0$$\times$ & 2.5\% \\
-4 & 3.0$$\times$ & 4.0\% \\
-3 & 4.0$$\times$ & 5.5\% \\
-2 & 6.0$$\times$ & 8.0\% \\
-1 & 12.0$$\times$ & 13.0\% \\
+6 & 2.0$\times$ & 2.5\% \\
+4 & 3.0$\times$ & 4.0\% \\
+3 & 4.0$\times$ & 5.5\% \\
+2 & 6.0$\times$ & 8.0\% \\
+1 & 12.0$\times$ & 13.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,9 +123,9 @@ $H / G$.
 \textbf{Figure 8.4} shows inference latency vs sequence length. GQA gives:
 
 \begin{itemize}
-\item $L = 512$: 1.05$$\times$ speedup
-\item $L = 2048$: 1.15$$\times$ speedup
-\item $L = 8192$: 1.40$$\times$ speedup
+\item $L = 512$: 1.05$\times$ speedup
+\item $L = 2048$: 1.15$\times$ speedup
+\item $L = 8192$: 1.40$\times$ speedup
 
 \end{itemize}
 The speedup grows with sequence length because KV cache access dominates 
@@ -141,7 +141,7 @@ at long $L$.
 \textbf{Optimization} & \textbf{Compatible?} & \textbf{Notes} \\
 \midrule
 INT8 quantization &  & Multiplicative savings \\
-KV quantization &  & GQA + 4-bit KV = 8$$\times$ savings \\
+KV quantization &  & GQA + 4-bit KV = 8$\times$ savings \\
 Flash Attention &  & GQA is compatible \\
 Paged Attention &  & Used by vLLM \\
 A3 / AASVD compression &  & Orthogonal \\
@@ -189,7 +189,7 @@ before. This is preserved in our implementation.
 \begin{enumerate}
 \item \textbf{KV cache reduction:} exactly $H / G$ at all sequence lengths.
 \item \textbf{Quality loss:} small ($<$ 3\%) at $G = H/2$.
-\item \textbf{Knee of curve:} $G = H/4$ (4$$\times$ reduction, modest quality loss).
+\item \textbf{Knee of curve:} $G = H/4$ (4$\times$ reduction, modest quality loss).
 \item \textbf{RoBERTa most sensitive:} head specialization.
 \item \textbf{Compatible with quantization} for multiplicative savings.
 \end{enumerate}

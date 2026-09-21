@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Compression}
 
-SVD-Linear reduces parameter count by 50\%$$\times$--2.1$$\times$.
+SVD-Linear reduces parameter count by 50\%$\times$--2.1$\times$.
 
 \subsubsection{Takeaway 2: Real Speedup}
 
@@ -23,7 +23,7 @@ The \texttt{step\_recurrent} API enables production-grade streaming inference.
 \item \textbf{Long sequences} ($N > 512$)
 \item \textbf{Streaming inference} (autoregressive)
 \item \textbf{Compression-constrained deployment}
-\item \textbf{Combined with quantization} for 16--24$$\times$ compression
+\item \textbf{Combined with quantization} for 16--24$\times$ compression
 
 \end{itemize}
 \subsubsection{Not Recommended}
@@ -60,9 +60,9 @@ For DistilBERT at N=128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{SVD-Linear} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
 VRAM & 183 MB & 2818 MB MB & -48.5\%\% \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 80.73\% & -9.98\% \\
 \bottomrule
 \end{tabular}
@@ -80,10 +80,10 @@ approximation + compression).
 \toprule
 \textbf{Method} & \textbf{Feature map} & \textbf{Decay} & \textbf{Compression} & \textbf{Params} \\
 \midrule
-Linear Transformer & ELU+1 & No & No & 1.00$$\times$ \\
-Performer & Random features & No & No & 1.00$$\times$ \\
-RetNet & ELU+1 & Fixed & No & 1.00$$\times$ \\
-\textbf{SVD-Linear} & ELU+1 & \textbf{Learned} & \textbf{SVD} & \textbf{50\%$$\times$} \\
+Linear Transformer & ELU+1 & No & No & 1.00$\times$ \\
+Performer & Random features & No & No & 1.00$\times$ \\
+RetNet & ELU+1 & Fixed & No & 1.00$\times$ \\
+\textbf{SVD-Linear} & ELU+1 & \textbf{Learned} & \textbf{SVD} & \textbf{50\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{$H_{KV}$} & \textbf{KV ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & MHA & 90.71\% & -- & 0.9099 & 12 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{GQA} & \textbf{88.5} & -2.2 & 0.885 & 6 & \textbf{2.0$$\times$} & 150 MB \\
-RoBERTa & MHA & 78.56\% & -- & 0.8124 & 12 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{GQA} & \textbf{75.5} & -3.1 & 0.755 & 6 & \textbf{2.0$$\times$} & 650 MB \\
-GPT-2 & MHA & 79.36\% & -- & 0.7978 & 12 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{GQA} & \textbf{77.0} & -2.4 & 0.770 & 6 & \textbf{2.0$$\times$} & 700 MB \\
+DistilBERT & MHA & 90.71\% & -- & 0.9099 & 12 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{GQA} & \textbf{88.5} & -2.2 & 0.885 & 6 & \textbf{2.0$\times$} & 150 MB \\
+RoBERTa & MHA & 78.56\% & -- & 0.8124 & 12 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{GQA} & \textbf{75.5} & -3.1 & 0.755 & 6 & \textbf{2.0$\times$} & 650 MB \\
+GPT-2 & MHA & 79.36\% & -- & 0.7978 & 12 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{GQA} & \textbf{77.0} & -2.4 & 0.770 & 6 & \textbf{2.0$\times$} & 700 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,9 +52,9 @@ GPT-2 & MQA & 3.1 & 3.1 & 25 \\
 \toprule
 \textbf{Model} & \textbf{MHA params} & \textbf{GQA params} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 66,955,010 & 64000000 & 1.05$$\times$ \\
-RoBERTa & 124,647,170 & 119000000 & 1.05$$\times$ \\
-GPT-2 & 124,441,344 & 118500000 & 1.05$$\times$ \\
+DistilBERT & 66,955,010 & 64000000 & 1.05$\times$ \\
+RoBERTa & 124,647,170 & 119000000 & 1.05$\times$ \\
+GPT-2 & 124,441,344 & 118500000 & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,12 +89,12 @@ GPT-2 & GQA & 4.6 s & 24500 & 700 MB \\
 \toprule
 \textbf{$G$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{KV ratio} \\
 \midrule
-12 (MHA) & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-6 (H/2) & 88.5 & 75.5 & 77.0 & 2.00$$\times$ \\
-4 (H/3) & 87.0 & 73.0 & 75.5 & 3.00$$\times$ \\
-3 (H/4) & 85.5 & 71.0 & 73.5 & 4.00$$\times$ \\
-2 (H/6) & 83.0 & 68.0 & 70.0 & 6.00$$\times$ \\
-1 (MQA) & 78.0 & 62.0 & 65.0 & 12.0$$\times$ \\
+12 (MHA) & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+6 (H/2) & 88.5 & 75.5 & 77.0 & 2.00$\times$ \\
+4 (H/3) & 87.0 & 73.0 & 75.5 & 3.00$\times$ \\
+3 (H/4) & 85.5 & 71.0 & 73.5 & 4.00$\times$ \\
+2 (H/6) & 83.0 & 68.0 & 70.0 & 6.00$\times$ \\
+1 (MQA) & 78.0 & 62.0 & 65.0 & 12.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -158,15 +158,15 @@ NHA & 90.25\% & FAIL & 78.78\% & Attention \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{KV cache:} reduced by 2.0$$\times$--2.0$$\times$.
+\item \textbf{KV cache:} reduced by 2.0$\times$--2.0$\times$.
 \item \textbf{Accuracy:} drops only -2.2\%---2.4\%.
-\item \textbf{Parameter reduction:} modest (1.05$$\times$--1.05$$\times$).
+\item \textbf{Parameter reduction:} modest (1.05$\times$--1.05$\times$).
 \item \textbf{All models pass quality gate.}
 \end{itemize}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/gqa_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{gqa}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gqa}.}
 \label{fig:results_gqa}
 \end{figure}

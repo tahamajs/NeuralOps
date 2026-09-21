@@ -31,13 +31,13 @@ We record per-operation step latencies across standard forward-pass submodules i
 \toprule
 \textbf{Submodule Phase} & \textbf{DistilBERT (ms)} & \textbf{RoBERTa (ms)} & \textbf{GPT-2 (ms)} & \textbf{Speedup} \\
 \midrule
-Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0$\times$ \\
-Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0$\times$ \\
-Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84$\times$ \\
-FFN Projections & 4.12 & 8.90 & 9.10 & $1.0$\times$ \\
-Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0$\times$ \\
+Embedding Lookup & 0.42 & 0.81 & 0.78 & $1.0	imes$ \\
+Dense Attention GEMM & 3.84 & 8.12 & 8.45 & $1.0	imes$ \\
+Factorized Attention GEMM & 1.35 & 2.94 & 3.08 & $2.84	imes$ \\
+FFN Projections & 4.12 & 8.90 & 9.10 & $1.0	imes$ \\
+Residual Addition \& Norm & 0.35 & 0.68 & 0.72 & $1.0	imes$ \\
 \midrule
-\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$$\times$} \\
+\textbf{Total Layer Step} & \textbf{6.08 (vs 9.15)} & \textbf{13.34 (vs 19.31)} & \textbf{13.73 (vs 19.83)} & \textbf{1.45--1.51$\times$} \\
 \bottomrule
 \end{tabularx}
 \caption{Detailed wall-clock execution latency across attention and feed-forward sublayers.}

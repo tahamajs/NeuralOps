@@ -1,4 +1,4 @@
-\title{\textbf{UnifiedRoPE: A Portable Rotary Position Embedding Attention Module for Multi-Architecture Transformers}
+\title{\textbf{UnifiedRoPE: A Portable Rotary Position Embedding Attention Module for Multi-Architecture Transformers}}
 
 \author{Anonymous authors}
 
@@ -392,7 +392,7 @@ single \texttt{nn.Module}. It provides:
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input X $\in$ R^{B $$\times$ L $$\times$ d}                     |
+   |  Input X $\in$ R^{B $\times$ L $\times$ d}                     |
    +--------------------+-------------------------+
                         |
         +---------------+---------------+
@@ -1122,9 +1122,9 @@ GPT-2 & \textbf{UnifiedRoPE} & \textbf{57.45} & -21.91 & 0.6536 & 124.4MM & 2.3 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{1.00$$\times$} \\
-RoBERTa & 124,647,170 & 66.4M & \textbf{1.00$$\times$} \\
-GPT-2 & 124,441,344 & 66.4M & \textbf{1.00$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{1.00$\times$} \\
+RoBERTa & 124,647,170 & 66.4M & \textbf{1.00$\times$} \\
+GPT-2 & 124,441,344 & 66.4M & \textbf{1.00$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1302,7 +1302,7 @@ Nystr mformer & 0.85 & Compute \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter count preserved} (1.00$$\times$).
+\item \textbf{Parameter count preserved} (1.00$\times$).
 \item \textbf{Accuracy:} -2.75\%---21.91\% drop.
 \item \textbf{RoPE correctness verified.}
 \item \textbf{All four architectures supported.}
@@ -1312,10 +1312,10 @@ Nystr mformer & 0.85 & Compute \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/rope_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{unified_rope}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{unified_rope}.}
 \label{fig:results_unified_rope}
 \end{figure}
 
@@ -1468,9 +1468,9 @@ UnifiedRoPE adds \textbf{two operations} relative to baseline:
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{UnifiedRoPE} & \textbf{Overhead} \\
 \midrule
-DistilBERT & 1.90 s & 1.42x s & 2.1$$\times$ \\
-RoBERTa & 4.10 s & 2.3 s s & 2.1$$\times$ \\
-GPT-2 & 4.20 s & 2.3 s s & 2.1$$\times$ \\
+DistilBERT & 1.90 s & 1.42x s & 2.1$\times$ \\
+RoBERTa & 4.10 s & 2.3 s s & 2.1$\times$ \\
+GPT-2 & 4.20 s & 2.3 s s & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1588,9 +1588,9 @@ For DistilBERT:
 \textbf{Metric} & \textbf{Baseline} & \textbf{UnifiedRoPE} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 87.96\% & -2.75\% \\
-Params & 66.95M & 66.95M & 1.00$$\times$ \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
-VRAM & 183 MB & 341 MB MB & 2.1$$\times$ \\
+Params & 66.95M & 66.95M & 1.00$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
+VRAM & 183 MB & 341 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1748,9 +1748,9 @@ as a substrate for other compression techniques.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params} & \textbf{Time $\Delta$} \\
 \midrule
-DistilBERT & -2.75\% & 1.00$$\times$ & 2.1$$\times$ \\
-RoBERTa & -14.23\% & 1.00$$\times$ & 2.1$$\times$ \\
-GPT-2 & -21.91\% & 1.00$$\times$ & 2.1$$\times$ \\
+DistilBERT & -2.75\% & 1.00$\times$ & 2.1$\times$ \\
+RoBERTa & -14.23\% & 1.00$\times$ & 2.1$\times$ \\
+GPT-2 & -21.91\% & 1.00$\times$ & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1905,9 +1905,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params} \\
 \midrule
-DistilBERT & 87.96\% $\pm$ 1\% & 1.00$$\times$ \\
-RoBERTa & 64.33\% $\pm$ 1\% & 1.00$$\times$ \\
-GPT-2 & 57.45\% $\pm$ 1\% & 1.00$$\times$ \\
+DistilBERT & 87.96\% $\pm$ 1\% & 1.00$\times$ \\
+RoBERTa & 64.33\% $\pm$ 1\% & 1.00$\times$ \\
+GPT-2 & 57.45\% $\pm$ 1\% & 1.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2685,7 +2685,7 @@ See  11.7.
 None.
 
 \subsection{E.7 Funding}
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 We thank the anonymous reviewers and the compute cluster administrators for their support.

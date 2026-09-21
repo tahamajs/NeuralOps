@@ -1,4 +1,4 @@
-\title{\textbf{PHANTOM: Parameter-Hashed Attention with Token-wise Orthogonal Mapping}
+\title{\textbf{PHANTOM: Parameter-Hashed Attention with Token-wise Orthogonal Mapping}}
 
 \author{Anonymous authors}
 
@@ -11,7 +11,7 @@
 Transformer attention is expensive in two orthogonal ways. First, the 
 projection matrices $W_Q, W_K, W_V, W_O$ are dense and consume the majority 
 of model parameters. For DistilBERT, these four matrices contain 
-\textbf{4 $$\times$ 768  = 2.36M parameters per layer}, or 14.2M across six layers. Second, 
+\textbf{4 $\times$ 768  = 2.36M parameters per layer}, or 14.2M across six layers. Second, 
 the attention matrix $Q K^\top$ scales quadratically with sequence length 
 $L$, requiring $\mathcal{O}(L^2)$ memory and time.
 
@@ -408,7 +408,7 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
 
 \begin{lstlisting}
    +--------------------------------------------------+
-   |  Input: hidden_states $\in$ R^{B$$\times$L$$\times$d}                |
+   |  Input: hidden_states $\in$ R^{B$\times$L$\times$d}                |
    +-------------------+------------------------------+
                        |
                         
@@ -436,7 +436,7 @@ PHANTOM replaces standard transformer attention with a two-stage compression:
                        |
                         
    +--------------------------------------------------+
-   |  Output: y $\in$ R^{B$$\times$L$$\times$d}                           |
+   |  Output: y $\in$ R^{B$\times$L$\times$d}                           |
    +--------------------------------------------------+
 \end{lstlisting}
 
@@ -469,9 +469,9 @@ For $d_\text{in} = d_\text{out} = 768$ and $r = 16$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.0$$\times$ \\
-PHANTOM (r=16) & 24,576 & \textbf{24$$\times$} \\
-PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$$\times$} \\
+Original & 589,824 & 1.0$\times$ \\
+PHANTOM (r=16) & 24,576 & \textbf{24$\times$} \\
+PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -579,24 +579,24 @@ For each of $R_\ell$ rounds:
 \item Normalize each column of $A^{(r)}$ to unit norm.
 \item Compute hash codes:
   $$
-  h\_Q\^{}{(r)} = \sum\_{i=1}\^{}{k} 2\^{}{i-1} \cdot \mathbb{1}\left[\left(Q\_\text{norm} \cdot A\^{}{(r)}\right)\_i > 0\right]
+  h\_Q^{(r)} = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}\left[\left(Q\_\text{norm} \cdot A^{(r)}\right)\_i > 0\right]
   \tag{4.14}
   $$
   $$
-  h\_K\^{}{(r)} = \sum\_{i=1}\^{}{k} 2\^{}{i-1} \cdot \mathbb{1}\left[\left(K\_\text{norm} \cdot A\^{}{(r)}\right)\_i > 0\right]
+  h\_K^{(r)} = \sum\_{i=1}^{k} 2^{i-1} \cdot \mathbb{1}\left[\left(K\_\text{norm} \cdot A^{(r)}\right)\_i > 0\right]
   \tag{4.15}
   $$
   where $Q_\text{norm}, K_\text{norm}$ are L2-normalized query/key matrices.
 
 \item Compute the boolean match matrix:
   $$
-  M\^{}{(r)}\_{ij} = \mathbb{1}[h\_{Q,i}\^{}{(r)} = h\_{K,j}\^{}{(r)}]
+  M^{(r)}\_{ij} = \mathbb{1}[h\_{Q,i}^{(r)} = h\_{K,j}^{(r)}]
   \tag{4.16}
   $$
 
 \item Always add the diagonal (self-attention):
   $$
-  M\^{}{(r)} \leftarrow M\^{}{(r)} \lor I
+  M^{(r)} \leftarrow M^{(r)} \lor I
   \tag{4.17}
   $$
 
@@ -667,7 +667,7 @@ $\tau_s$ & 1.0 & Standard softpick temperature \\
 
 With $k = 4$ bits, the number of buckets per round is $2^4 = 16$. The average 
 bucket size is roughly $L / 16$, so sparse attention cost is 
-$\mathcal{O}(L^2 / 16)$ -- a 16$$\times$ reduction.
+$\mathcal{O}(L^2 / 16)$ -- a 16$\times$ reduction.
 
 \subsection{Rectified Softpick}
 
@@ -700,8 +700,8 @@ masking), which would otherwise produce a zero row.
 
 \textbf{Algorithm 1:} PHANTOM forward pass
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B$$\times$L$$\times$d}, mask
-Output: y $\in$ R^{B$$\times$L$$\times$d}
+Input:  hidden_states $\in$ R^{B$\times$L$\times$d}, mask
+Output: y $\in$ R^{B$\times$L$\times$d}
 
 1:  # Phase 1: CUR projections
 2:  Q $\leftarrow$ CUR_q(hidden_states)
@@ -762,7 +762,7 @@ $W_K$ & 589,824 & 24,576 \\
 $W_V$ & 589,824 & 24,576 \\
 $W_O$ & 589,824 & 24,576 \\
 \textbf{Total per layer} & 2,359,296 & \textbf{98,304} \\
-\textbf{Ratio} & 1.00$$\times$ & \textbf{24$$\times$} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{24$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -794,8 +794,8 @@ For $L = 128$, $k = 4$, $B \approx 8$:
 \toprule
 \textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
 \midrule
-Attention & 128  = 16,384 ops & 4 $$\times$ 128 $$\times$ 8 = 4,096 ops \\
-\textbf{Speedup} & -- & \textbf{4$$\times$} \\
+Attention & 128  = 16,384 ops & 4 $\times$ 128 $\times$ 8 = 4,096 ops \\
+\textbf{Speedup} & -- & \textbf{4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -803,7 +803,7 @@ Attention & 128  = 16,384 ops & 4 $$\times$ 128 $$\times$ 8 = 4,096 ops \\
 \subsubsection{Memory Complexity}
 
 Attention matrix memory reduces from $\mathcal{O}(B H L^2)$ to 
-$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$$\times$ reduction.
+$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$\times$ reduction.
 
 \subsection{Theoretical Notes}
 
@@ -1283,12 +1283,12 @@ All experiments use seed 42. No multi-seed due to compute budget.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{PHANTOM} & \textbf{72.59} & -18.12 & 0.7668 & 2.0x & \textbf{50\%$$\times$} & 328 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{PHANTOM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 375 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 501 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{PHANTOM} & \textbf{72.59} & -18.12 & 0.7668 & 2.0x & \textbf{50\%$\times$} & 328 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{PHANTOM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 375 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 501 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1296,8 +1296,8 @@ GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} \textbf{50\%$$\times$} on DistilBERT,
-  \textbf{2.1$$\times$} on RoBERTa, \textbf{2.1$$\times$} on GPT-2.
+\item \textbf{Parameter reduction:} \textbf{50\%$\times$} on DistilBERT,
+  \textbf{2.1$\times$} on RoBERTa, \textbf{2.1$\times$} on GPT-2.
 \item \textbf{Accuracy:} drops \textbf{-18.12\%} on DistilBERT.
 \item \textbf{VRAM:} reduces by \textbf{380 MB\%}.
 
@@ -1313,9 +1313,9 @@ GPT-2 & \textbf{PHANTOM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{PHANTOM} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1329,11 +1329,11 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{PHANTOM} & \textbf{Ratio} \\
 \midrule
-\texttt{q\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
-\texttt{k\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
-\texttt{v\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
-\texttt{out\_lin} & 589,824 & 24,576 & \textbf{24$$\times$} \\
-\textbf{Total} & 2,359,296 & \textbf{98,304} & \textbf{24$$\times$} \\
+\texttt{q\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{k\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{v\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{out\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\textbf{Total} & 2,359,296 & \textbf{98,304} & \textbf{24$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1369,9 +1369,9 @@ O & 32 & 32 & 32 \\
 \toprule
 \textbf{Model} & \textbf{Avg bucket} & \textbf{Max bucket} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 64 & 0.85 & \textbf{32$$\times$} \\
-RoBERTa & 0.85 & 0.85 & \textbf{32$$\times$} \\
-GPT-2 & 0.85 & 0.85 & \textbf{32$$\times$} \\
+DistilBERT & 64 & 0.85 & \textbf{32$\times$} \\
+RoBERTa & 0.85 & 0.85 & \textbf{32$\times$} \\
+GPT-2 & 0.85 & 0.85 & \textbf{32$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1408,10 +1408,10 @@ GPT-2 & PHANTOM & 2.3 s s & 0.85 & 501 MB MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-8 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-16 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-32 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-64 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+8 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+16 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+32 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+64 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1503,10 +1503,10 @@ No LoRA recovery & 0.85 & 0.85 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-A3 & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-AASVD & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-\textbf{PHANTOM} & \textbf{72.59} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+A3 & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+AASVD & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+\textbf{PHANTOM} & \textbf{72.59} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1532,7 +1532,7 @@ GPT-2 & 0.85 s & 0.85 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item Compression ratio: \textbf{50\%$$\times$--2.1$$\times$}
+\item Compression ratio: \textbf{50\%$\times$--2.1$\times$}
 \item Accuracy drop: \textbf{-18.12\%---28.44\%}
 \item VRAM reduction: \textbf{380 MB\%}
 \item All models pass quality gate
@@ -1542,10 +1542,10 @@ GPT-2 & 0.85 s & 0.85 s & \textbf{0.85 s} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/phantom_distilbert_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{phantom}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{phantom}.}
 \label{fig:results_phantom}
 \end{figure}
 
@@ -1628,10 +1628,10 @@ CUR + LSH & 0.85 & 0.85 \\
 \toprule
 \textbf{Rounds} & \textbf{Accuracy} & \textbf{Compute} \\
 \midrule
-1 & 0.85 & 1$$\times$ \\
-2 & 0.85 & 2$$\times$ \\
-4 & 0.85 & 4$$\times$ \\
-8 & 0.85 & 8$$\times$ \\
+1 & 0.85 & 1$\times$ \\
+2 & 0.85 & 2$\times$ \\
+4 & 0.85 & 4$\times$ \\
+8 & 0.85 & 8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1673,7 +1673,7 @@ Projection & SVD & CUR \\
 Weighting & Covariance & Leverage \\
 Attention & Dense & LSH sparse \\
 Rank 16 accuracy & 0.85 & 72.59 \\
-Compression ratio & 2.1$$\times$ & \textbf{50\%$$\times$} \\
+Compression ratio & 2.1$\times$ & \textbf{50\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1790,7 +1790,7 @@ dominant signal.
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 32$): LSH overhead dominates
-\item \textbf{Latency-critical} applications: 4 rounds = 4$$\times$ attention compute
+\item \textbf{Latency-critical} applications: 4 rounds = 4$\times$ attention compute
 \item \textbf{Very small models} (<10M): overhead too large
 
 \end{itemize}
@@ -1820,10 +1820,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{PHANTOM} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
-VRAM & 183 MB & 328 MB MB & \textbf{2.1$$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+VRAM & 183 MB & 328 MB MB & \textbf{2.1$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$\times$} \\
 Accuracy & 90.71\% & 72.59\% & -18.12\% \\
 \bottomrule
 \end{tabular}
@@ -1840,10 +1840,10 @@ Accuracy & 90.71\% & 72.59\% & -18.12\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT & Sharing & 3.5$$\times$ & 89.4\% \\
-AASVD & Low-rank & 2.1$$\times$ & 86.4\%\% \\
-SparseGPT & Pruning & 2$$\times$ & 86.4\%\% \\
-\textbf{PHANTOM} & CUR + LSH & \textbf{50\%$$\times$} & \textbf{72.59\%} \\
+ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
+AASVD & Low-rank & 2.1$\times$ & 86.4\%\% \\
+SparseGPT & Pruning & 2$\times$ & 86.4\%\% \\
+\textbf{PHANTOM} & CUR + LSH & \textbf{50\%$\times$} & \textbf{72.59\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1861,12 +1861,12 @@ PHANTOM's main benefit is storage. For 100M params:
 \end{itemize}
 \subsubsection{Latency}
 
-Multi-round LSH adds ~4$$\times$ attention compute. On GPU, matmul-dominated so 
+Multi-round LSH adds ~4$\times$ attention compute. On GPU, matmul-dominated so 
 effect is small.
 
 \subsubsection{Memory}
 
-Attention memory reduced by \textbf{32$$\times$} due to bucket sparsity.
+Attention memory reduced by \textbf{32$\times$} due to bucket sparsity.
 
 \subsection{Open Questions}
 
@@ -1940,7 +1940,7 @@ All experiments on RTX 4070 Laptop. Not tested on:
 \end{itemize}
 \subsection{Multi-Round LSH Overhead}
 
-4 rounds $$\times$ attention = 4$$\times$ attention compute. For short sequences 
+4 rounds $\times$ attention = 4$\times$ attention compute. For short sequences 
 ($L < 32$), this may dominate.
 
 \subsection{Bucket Imbalance}
@@ -2002,7 +2002,7 @@ Compression is dual-use. See Appendix E.
 We presented \textbf{PHANTOM} (Parameter-Hashed Attention with Token-wise 
 Orthogonal Mapping), which combines \textbf{leverage-score CUR factorization} for 
 projection compression with \textbf{multi-round angular LSH} for sparse attention. 
-The method achieves \textbf{50\%$$\times$--2.1$$\times$} parameter reduction with 
+The method achieves \textbf{50\%$\times$--2.1$\times$} parameter reduction with 
 \textbf{-18.12\%---28.44\%} accuracy drop on SST-2.
 
 \subsection{Results Recap}
@@ -2014,9 +2014,9 @@ The method achieves \textbf{50\%$$\times$--2.1$$\times$} parameter reduction wit
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -18.12\% & \textbf{50\%$$\times$} & -380 MB\% \\
-RoBERTa & -27.64\% & \textbf{2.1$$\times$} & -380 MB\% \\
-GPT-2 & -28.44\% & \textbf{2.1$$\times$} & -380 MB\% \\
+DistilBERT & -18.12\% & \textbf{50\%$\times$} & -380 MB\% \\
+RoBERTa & -27.64\% & \textbf{2.1$\times$} & -380 MB\% \\
+GPT-2 & -28.44\% & \textbf{2.1$\times$} & -380 MB\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2183,9 +2183,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 72.59\% $\pm$ 1\% & 50\%$$\times$ \\
-RoBERTa & 50.92\% $\pm$ 1\% & 2.1$$\times$ \\
-GPT-2 & 50.92\% $\pm$ 1\% & 2.1$$\times$ \\
+DistilBERT & 72.59\% $\pm$ 1\% & 50\%$\times$ \\
+RoBERTa & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
+GPT-2 & 50.92\% $\pm$ 1\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2689,7 +2689,7 @@ Expected output: \texttt{PHANTOMAttention}.
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Accuracy & 72.59\% \\
 F1 & 0.7668 \\
 Precision & 0.85 \\
@@ -2716,7 +2716,7 @@ Compression time & 66.4M s \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 ... & ... \\
 \bottomrule
@@ -2734,7 +2734,7 @@ Accuracy & 50.92\% \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 ... & ... \\
 \bottomrule
@@ -2789,10 +2789,10 @@ Accuracy & 50.92\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-8 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-16 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-32 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
-64 & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ & 32 & 2.1$$\times$ \\
+8 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+16 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+32 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
+64 & 32 & 2.1$\times$ & 32 & 2.1$\times$ & 32 & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2960,7 +2960,7 @@ We tried different hash functions per head. Result: no improvement.
 
 \subsubsection{D.2.3 Dense Fallback Attention}
 
-We tried mixing LSH attention with dense attention. Result: no gain, 2$$\times$ slower.
+We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ slower.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -2973,9 +2973,9 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$$\times$ 
 \toprule
 \textbf{Rounds} & \textbf{DistilBERT} & \textbf{Time} \\
 \midrule
-1 & 0.85 & 1.0$$\times$ \\
-4 & 0.85 & 4.0$$\times$ \\
-16 & 0.85 & 16$$\times$ (diminishing) \\
+1 & 0.85 & 1.0$\times$ \\
+4 & 0.85 & 4.0$\times$ \\
+16 & 0.85 & 16$\times$ (diminishing) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2989,11 +2989,11 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$$\times$ 
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
 \midrule
-4 & 60$$\times$ & 32 (too aggressive) \\
-8 & 30$$\times$ & 32 \\
-16 & 15$$\times$ & 32 \\
-32 & 8$$\times$ & 32 \\
-64 & 4$$\times$ & 32 \\
+4 & 60$\times$ & 32 (too aggressive) \\
+8 & 30$\times$ & 32 \\
+16 & 15$\times$ & 32 \\
+32 & 8$\times$ & 32 \\
+64 & 4$\times$ & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3127,7 +3127,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 

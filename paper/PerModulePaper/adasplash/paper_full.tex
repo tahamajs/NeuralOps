@@ -1,4 +1,4 @@
-\title{\textbf{AdaSplash: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations and Local Sliding-Window Masking}
+\title{\textbf{AdaSplash: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations and Local Sliding-Window Masking}}
 
 \author{Anonymous authors}
 
@@ -468,8 +468,8 @@ with $\tau$ chosen so that $\sum_i p_i = 1$.
 
 \textbf{Algorithm 1:} $\alpha$-Entmax via bisection
 \begin{lstlisting}
-Input: scores s $\in$ R^{B$$\times$H$$\times$L_q$$\times$L_k}, $\alpha$, valid_mask, n_iter
-Output: p $\in$ R^{B$$\times$H$$\times$L_q$$\times$L_k} with sum_i p_i = 1
+Input: scores s $\in$ R^{B$\times$H$\times$L_q$\times$L_k}, $\alpha$, valid_mask, n_iter
+Output: p $\in$ R^{B$\times$H$\times$L_q$\times$L_k} with sum_i p_i = 1
 
 1:  if |$\alpha$ - 1| < $\epsilon$:                          Softmax case
 2:      return softmax(s, masked)
@@ -641,7 +641,7 @@ AdaSplash + LoRA & $d_\text{in} d_\text{out} + r_L (d_\text{in} + d_\text{out})$
 \end{table}
 
 For $d = 768$, $r_L = 16$: each projection adds $16 \times 1536 = 24{,}576$ 
-parameters. Across 4 projections $$\times$ $N_l$ layers: significant addition.
+parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
 
 \textbf{AdaSplash is not a compression method.}
 
@@ -675,10 +675,10 @@ If a projection has near-zero norm, we raise an error and skip injection.
 
 \textbf{Algorithm 2:} AdaSplash forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$$\times$L$$\times$d}
+Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
         attention_mask, position_embeddings
         hyperparameters $\alpha$, W, S, r_L
-Output: output Y $\in$ R^{B$$\times$L$$\times$d}
+Output: output Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q^T + (X A_Q^T) B_Q^T
  2: K $\leftarrow$ X W_K^T + (X A_K^T) B_K^T
@@ -729,7 +729,7 @@ Output projection & $O(L d^2)$ \\
 \end{table}
 
 \textbf{Compared to softmax:} AdaSplash adds $n_\text{iter} \times L^2$ operations 
-for entmax bisection. For $n_\text{iter} = 25$, this is ~25$$\times$ 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25$\times$ 
 slower attention.
 
 \textbf{For causal decoders with splash masking,} the mask restricts nonzero 
@@ -1152,7 +1152,7 @@ Trainable params \& LoRA only \\
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 2 tensors per projection $$\times$ 4 projections $$\times$ $N_l$ 
+\textbf{Trainable tensor count:} 2 tensors per projection $\times$ 4 projections $\times$ $N_l$ 
 layers = 8$N_l$ tensors.
 
 \subsection{Evaluation Metrics}
@@ -1277,9 +1277,9 @@ GPT-2 & \textbf{AdaSplash} & \textbf{78.78} & -0.58 & 0.7891 & 125.63M & 810 MB 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AdaSplash} & \textbf{Change} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$$\times$ \\
-RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$$\times$ \\
-GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$$\times$ \\
+DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$\times$ \\
+RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$\times$ \\
+GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1329,7 +1329,7 @@ GPT-2 \& AdaSplash & 8.0 & 16000 & 810 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$$\times$ 
+\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$\times$ 
 due to the entmax bisection (25 iterations per attention call).
 
 \subsection{Ablation: $\alpha$ Parameter}
@@ -1490,10 +1490,10 @@ GPT-2 & 128 & 76 \\
 \item \textbf{Not a compression method.}
 \end{itemize}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/adasplash_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{adasplash}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{adasplash}.}
 \label{fig:results_adasplash}
 \end{figure}
 
@@ -1621,7 +1621,7 @@ sparsity.
 
 \subsection{Inference Cost Breakdown}
 
-AdaSplash is \textbf{slower} than baseline by 1.9$$\times$. This comes from:
+AdaSplash is \textbf{slower} than baseline by 1.9$\times$. This comes from:
 
 \begin{enumerate}
 \item \textbf{Entmax bisection:} 25 iterations of the same computation.
@@ -1712,7 +1712,7 @@ No systematic failures observed.
 \begin{enumerate}
 \item \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
 \item \textbf{Attention sinks are essential} for stability.
-\item \textbf{Entmax bisection is the slowdown} (25$$\times$ overhead vs softmax).
+\item \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
 \item \textbf{Sparsity is uniform across layers} -- no layer-specific tuning needed.
 \item \textbf{Parameter count increases} due to LoRA -- this is not compression.
 \end{enumerate}
@@ -1791,7 +1791,7 @@ For DistilBERT on SST-2:
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 Params & 66.95M & 67549448M & +594438 \\
 VRAM & 183 MB & 195 MB & +12 \\
-Inference time & 1.90 s & 3.5 s & 1.84$$\times$ \\
+Inference time & 1.90 s & 3.5 s & 1.84$\times$ \\
 Attention sparsity & 0\% & 42\% & +40\% \\
 \bottomrule
 \end{tabular}
@@ -1808,11 +1808,11 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Sparse} & \textbf{Latency} \\
 \midrule
-Softmax \& Baseline & 0\% \& No & 1$$\times$ \\
-Longformer \& Local & 0\% \& No & ~1$$\times$ \\
-Performer \& Kernel & +linear \& No & ~1$$\times$ \\
-Sparsemax \& Activation & 0\% \& Yes & ~5$$\times$ \\
-\textbf{AdaSplash} & \textbf{Activation + Local} & \textbf{+1\%} & \textbf{Yes} & \textbf{~1.9$$\times$} \\
+Softmax \& Baseline & 0\% \& No & 1$\times$ \\
+Longformer \& Local & 0\% \& No & ~1$\times$ \\
+Performer \& Kernel & +linear \& No & ~1$\times$ \\
+Sparsemax \& Activation & 0\% \& Yes & ~5$\times$ \\
+\textbf{AdaSplash} & \textbf{Activation + Local} & \textbf{+1\%} & \textbf{Yes} & \textbf{~1.9$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1823,7 +1823,7 @@ Sparsemax \& Activation & 0\% \& Yes & ~5$$\times$ \\
 AdaSplash increases storage slightly due to LoRA.
 
 \subsubsection{Latency}
-~1.9$$\times$ slower. Acceptable for research; not for production.
+~1.9$\times$ slower. Acceptable for research; not for production.
 
 \subsubsection{Interpretability}
 Sparse attention maps can be visualized directly.
@@ -1871,7 +1871,7 @@ AdaSplash should avoid describing it as "compression".
 
 \subsection{Inference Latency}
 
-AdaSplash is \textbf{slower} than softmax attention by ~1.9$$\times$:
+AdaSplash is \textbf{slower} than softmax attention by ~1.9$\times$:
 
 \begin{itemize}
 \item Entmax bisection: 25 iterations of the same computation
@@ -2944,7 +2944,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Adaptive sparsity per head.
 
-\textbf{Result.} No improvement over uniform $\alpha$ = 1.5; 2$$\times$ slower.
+\textbf{Result.} No improvement over uniform $\alpha$ = 1.5; 2$\times$ slower.
 
 \textbf{Conclusion.} Uniform $\alpha$ is sufficient.
 
@@ -3081,7 +3081,7 @@ Hybrid softmax+entmax \& Stability \& No improvement \\
 \subsection{D.7 Unresolved Questions}
 
 \begin{enumerate}
-\item \textbf{Fused CUDA kernel:} Would speedup by 10-20$$\times$?
+\item \textbf{Fused CUDA kernel:} Would speedup by 10-20$\times$?
 \item \textbf{Learned $\alpha$ per head:} Would it help?
 \item \textbf{Sparse hardware:} Real 2:4 speedup?
 \item \textbf{Long context:} Does AdaSplash scale to L = 4096?

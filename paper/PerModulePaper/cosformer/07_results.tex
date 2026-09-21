@@ -15,7 +15,7 @@
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s & PASS \\
 DistilBERT & \textbf{Cosformer} & \textbf{77.75} & \textbf{-12.96} & 0.7651 & +5.73\% & 3.5 & PASS \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s & PASS \\
-RoBERTa & \textbf{Cosformer} & \textbf{58.72} & \textbf{-19.84} & 0.6629 & +5.84\% & 7.5 & PASS_LOW \\
+RoBERTa & \textbf{Cosformer} & \textbf{58.72} & \textbf{-19.84} & 0.6629 & +5.84\% & 7.5 & PASS\_LOW \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s & PASS \\
 GPT-2 & \textbf{Cosformer} & \textbf{70.18} & \textbf{-9.18} & 0.7510 & +1.76\% & 20.5 & PASS \\
 \bottomrule
@@ -61,9 +61,9 @@ GPT-2 & 124,441,344 & 126630020 & +2188676 & +1.76\% \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & 3.5 s & 1.84$$\times$ & 183 MB & 335 MB MB \\
-RoBERTa & 4.1 s & 7.5 s & 1.83$$\times$ & 712 MB & 659 MB MB \\
-GPT-2 & 4.2 s & 20.5 s & 4.88$$\times$ & 793 MB & 1283 MB MB \\
+DistilBERT & 1.9 s & 3.5 s & 1.84$\times$ & 183 MB & 335 MB MB \\
+RoBERTa & 4.1 s & 7.5 s & 1.83$\times$ & 712 MB & 659 MB MB \\
+GPT-2 & 4.2 s & 20.5 s & 4.88$\times$ & 793 MB & 1283 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -192,9 +192,9 @@ most of the baseline accuracy at modest overhead.
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/cosformer_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{cosformer}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cosformer}.}
 \label{fig:results_cosformer}
 \end{figure}

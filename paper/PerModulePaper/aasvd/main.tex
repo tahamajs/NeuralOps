@@ -76,7 +76,7 @@ AASVD replaces each \texttt{nn.Linear} with a structural \texttt{SVDLinear} modu
 $y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
 RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
-\textbf{4.0$$\times$--3.5$$\times$} compression ratios with accuracy drops of only 
+\textbf{4.0$\times$--3.5$\times$} compression ratios with accuracy drops of only 
 \textbf{-5.7\%---6.4\%} on SST-2 after 50 LoRA recovery 
 steps. Peak inference VRAM decreases by \textbf{40\%}. We provide a 
 production-hardened implementation with Frobenius validation, automatic 

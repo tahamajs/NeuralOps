@@ -34,7 +34,7 @@ intact. The modification consists of four components:
 The number of KV heads $G$ satisfies $1 \le G \le H$. Two natural choices:
 
 \begin{itemize}
-\item \textbf{Default:} $G = H / 2$ (2$$\times$ KV cache reduction).
+\item \textbf{Default:} $G = H / 2$ (2$\times$ KV cache reduction).
 \item \textbf{Aggressive:} $G = H / 4$ or $G = 1$ (MQA).
 
 \end{itemize}
@@ -127,9 +127,9 @@ Output: GQA weights
 
 \textbf{Algorithm 2:} GQA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B $$\times$ N $$\times$ d}
+Input:  X $\in$ R^{B $\times$ N $\times$ d}
         attention_mask
-Output: Y $\in$ R^{B $$\times$ N $$\times$ d}
+Output: Y $\in$ R^{B $\times$ N $\times$ d}
 
 1:  Q $\leftarrow$ X W_Q            # (B, N, H, d_h)
 2:  K $\leftarrow$ X W_K            # (B, N, G, d_h)

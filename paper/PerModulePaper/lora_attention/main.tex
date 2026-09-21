@@ -68,8 +68,8 @@ RoBERTa (nested), GPT-2 (Conv1D), and Qwen3.5 (GQA + RoPE).
 We are explicit that \textbf{this module does not reduce parameter count} -- LoRA 
 adapters add $r_L (2d + 2H d_h)$ parameters per layer on top of the frozen 
 $4 d^2$ base projection parameters. What it does reduce is:
-(i) \textbf{trainable parameters} by a factor of roughly \textbf{$TRAIN_REDUCTION$$\times$$},
-(ii) \textbf{training memory} by a factor of roughly \textbf{$MEM_REDUCTION$$\times$$}, and
+(i) \textbf{trainable parameters} by a factor of roughly \textbf{$TRAIN_REDUCTION$\times$$},
+(ii) \textbf{training memory} by a factor of roughly \textbf{$MEM_REDUCTION$\times$$}, and
 (iii) \textbf{training time}.
 
 On SST-2, LoRA Attention achieves \textbf{89.91\%} on DistilBERT 

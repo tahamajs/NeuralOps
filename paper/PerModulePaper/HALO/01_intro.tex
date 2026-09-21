@@ -9,11 +9,11 @@ emerged to reduce this cost:
 
 \begin{enumerate}
 \item \textbf{Dense softmax attention} $\mathcal{A}\_\text{dense}(Q, K, V) =
-  \text{softmax}(QK\^{}\top / \sqrt{d}) V$. This preserves the expressive power
+  \text{softmax}(QK^\top / \sqrt{d}) V$. This preserves the expressive power
   of exact attention but requires materializing an $L \times L$ matrix.
 
 \item \textbf{Linear attention} $\mathcal{A}\_\text{lin}(Q, K, V) =
-  \phi(Q) (\phi(K)\^{}\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
+  \phi(Q) (\phi(K)^\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
   $\phi$. This reduces complexity to $\mathcal{O}(L)$ but trades quality.
 
 \end{enumerate}
@@ -70,7 +70,7 @@ Linear Attention), which:
 \item \textbf{Preserves causality via prefix sums.} For causal models, the linear
   branch uses a cumulative-sum formulation:
   $$
-  O\_i\^{}\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j\^{}\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
+  O\_i^\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j^\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
   $$
 
 \end{enumerate}

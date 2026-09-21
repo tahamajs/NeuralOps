@@ -1,4 +1,4 @@
-\title{\textbf{NASC: NEXUS-AEGIS Spectral Cascade Attention for Hybrid Transformer Inference}
+\title{\textbf{NASC: NEXUS-AEGIS Spectral Cascade Attention for Hybrid Transformer Inference}}
 
 \author{Anonymous authors}
 
@@ -518,8 +518,8 @@ Gate & $O(L d)$ & $O(d)$ \\
 
 \textbf{Algorithm 1:} NASC forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, is_decoder, is_cross, W, B_s, k, F
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, is_cross, W, B_s, k, F
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -937,9 +937,9 @@ GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (NASC)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (NASC)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 323 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 396 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 344 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 323 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 396 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 344 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1080,10 +1080,10 @@ a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/nasc_attention_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{nasc_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{nasc_attention}.}
 \label{fig:results_nasc_attention}
 \end{figure}
 
@@ -1223,7 +1223,7 @@ For GPT-2 on $L = 128$:
 \midrule
 Q/K/V proj & 3 & 3 \\
 Local window & 1 & ~1 \\
-Sparse block & 0 & ~8 (4 iterations $$\times$ 2 ops) \\
+Sparse block & 0 & ~8 (4 iterations $\times$ 2 ops) \\
 Global RFF & 0 & ~3 \\
 Gate & 0 & 2 \\
 Fusion & 0 & 2 \\
@@ -1233,7 +1233,7 @@ Output proj & 1 & 1 \\
 \end{tabular}
 \end{table}
 
-\textbf{~3$$\times$ more kernel launches} $\to$ NASC is slower.
+\textbf{~3$\times$ more kernel launches} $\to$ NASC is slower.
 
 \subsection{Failure Mode Taxonomy}
 
@@ -1285,7 +1285,7 @@ cascade doesn't apply.
 
 \subsubsection{Takeaway 3: Overhead is Significant}
 
-The three-branch cascade adds ~2.3 s$$\times$ latency compared to baseline.
+The three-branch cascade adds ~2.3 s$\times$ latency compared to baseline.
 
 \subsection{When to Use NASC}
 
@@ -1302,7 +1302,7 @@ The three-branch cascade adds ~2.3 s$$\times$ latency compared to baseline.
 \begin{itemize}
 \item \textbf{Encoders} (dense path by default).
 \item \textbf{Long sequences} ($L > 512$ for RFF cumsum OOM).
-\item \textbf{Latency-critical} inference (~2.3 s$$\times$ slower).
+\item \textbf{Latency-critical} inference (~2.3 s$\times$ slower).
 \item \textbf{When you need per-token adaptive gating.}
 
 \end{itemize}
@@ -1340,8 +1340,8 @@ For GPT-2 on L=128:
 \midrule
 Accuracy & 79.36\% & 85.32\% & +5.96\% \\
 Params & 124.44M & 124.4MM & +48.5\%\% \\
-Time & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
-VRAM & 793 MB & 344 MB MB & 2.1$$\times$ \\
+Time & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
+VRAM & 793 MB & 344 MB MB & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1357,10 +1357,10 @@ VRAM & 793 MB & 344 MB MB & 2.1$$\times$ \\
 \toprule
 \textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Notes} \\
 \midrule
-Full attention & 79.36\% & 1.0$$\times$ & Baseline \\
-FlashAttention-2 & ~79\% & 1.1$$\times$ & Faster \\
-Cosformer & 0.85\% & 4.9$$\times$ slower & Linear attention \\
-\textbf{NASC} & \textbf{85.32\%} & \textbf{2.3 s$$\times$} & 3-branch cascade \\
+Full attention & 79.36\% & 1.0$\times$ & Baseline \\
+FlashAttention-2 & ~79\% & 1.1$\times$ & Faster \\
+Cosformer & 0.85\% & 4.9$\times$ slower & Linear attention \\
+\textbf{NASC} & \textbf{85.32\%} & \textbf{2.3 s$\times$} & 3-branch cascade \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1444,7 +1444,7 @@ RFF projection ($dF$), gate ($3d$), and LoRA all add parameters.
 
 \subsection{Inference Overhead}
 
-NASC is slower than baseline (~2.3 s$$\times$) at L=128.
+NASC is slower than baseline (~2.3 s$\times$) at L=128.
 
 \subsection{Task Coverage}
 
@@ -1518,7 +1518,7 @@ GPT-2 & \textbf{Cascade} & 85.32\% & +5.96\% & 2.3 s s \\
 \item \textbf{Batch-level gate is a simplification.} Per-token would be more
   adaptive.
 \item \textbf{Encoder default is dense.} Cascade is decoder-only by default.
-\item \textbf{Overhead is significant.} ~2.3 s$$\times$ slower.
+\item \textbf{Overhead is significant.} ~2.3 s$\times$ slower.
 \item \textbf{RFF causal cumsum is memory-heavy.} OOM at long sequences.
 
 \end{enumerate}

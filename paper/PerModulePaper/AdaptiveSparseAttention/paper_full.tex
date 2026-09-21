@@ -1,4 +1,4 @@
-\title{\textbf{Adaptive Sparse Attention: Learned Per-Head Sparsity for Efficient Transformer Inference}
+\title{\textbf{Adaptive Sparse Attention: Learned Per-Head Sparsity for Efficient Transformer Inference}}
 
 \author{Anonymous authors}
 
@@ -11,9 +11,9 @@
 Standard softmax attention (Vaswani et al., 2017) computes, for each of $H$ 
 heads and each pair of positions $(i, j)$, a score:
 
-\begin{equation}
+\[
 s_{ij}^{(h)} = \frac{(Q^{(h)} x_i)^\top (K^{(h)} x_j)}{\sqrt{d_h}}
-\end{equation}
+\]
 
 producing an $L \times L$ score matrix per head. This is $\mathcal{O}(L^2 d_h)$ 
 in time and $\mathcal{O}(L^2)$ in memory -- the dominant cost for long sequences.
@@ -49,10 +49,10 @@ existing methods suffer from two problems:
 Given attention score matrix $S \in \mathbb{R}^{L \times L}$ per head, we 
 seek a sparse approximation $\tilde{S}$ such that:
 
-\begin{equation}
+\[
 \tilde{S} \approx S, \qquad
 \text{supp}(\tilde{S}) \ll L^2
-\end{equation}
+\]
 
 We impose the following constraints:
 
@@ -72,24 +72,24 @@ problems above simultaneously:
 \begin{enumerate}
 \item \textbf{Learnable per-head budget.} Each head maintains a scalar logit
   $\ell_h \in \mathbb{R}$. Its retention budget is:
-  \begin{equation}
+  \[
 k\_h = \lfloor (1 - \sigma(\ell\_h)) \cdot L \rfloor
-\end{equation}
+\]
   where $\sigma$ is the sigmoid. This makes the budget a **continuous,
   differentiable** function of a single parameter.
 
 \item \textbf{Soft top-$k$ masking.} Hard top-$k$ selection is replaced by a soft
   mask:
-  \begin{equation}
+  \[
 \tilde{s}\_{ij} = s\_{ij} + \log \sigma\!\left(\frac{s\_{ij} - \tau\_h}{T}\right)
-\end{equation}
+\]
   where $\tau_h$ is the $k_h$-th largest score for head $h$ and $T = 0.1$
   is a temperature. As $T \to 0$, this converges to hard top-$k$; for finite
   $T$, it is smooth and differentiable.
 
 \item \textbf{Chunked computation.} To bound memory, the query dimension is
   processed in chunks of 64. This keeps peak VRAM at $\mathcal{O}(B H \cdot
-  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L\^{}2)$.
+  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L^2)$.
 
 \end{enumerate}
 \subsection{Contributions}
@@ -237,17 +237,17 @@ special training procedures.
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 S = \frac{Q K^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 P = \text{softmax}(S) \in \mathbb{R}^{L \times L}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O = P V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $S$ and $P$ require $\mathcal{O}(L^2)$ memory. The two 
 matmuls require $\mathcal{O}(L^2 d_h)$ time. For $L = 1024$, $d_h = 64$, 
@@ -257,9 +257,9 @@ this is $\sim 67$M FLOPs per head per sequence.
 
 \textbf{Observation.} The softmax distribution $P$ is typically concentrated:
 
-\begin{equation}
+\[
 \sum_{j \in \text{top-}k} P_{ij} \gg 1 - \epsilon, \quad k \ll L
-\end{equation}
+\]
 
 \textbf{Empirical evidence.} \textbf{Figure 3.1} shows the cumulative attention mass 
 vs ranked keys for a middle GPT-2 layer. Top 10\% of keys capture 
@@ -272,9 +272,9 @@ of the output quality, at fraction $1 - \rho$ of the compute.
 
 For a score vector $s \in \mathbb{R}^L$, the top-$k$ selection produces:
 
-\begin{equation}
+\[
 \text{top-}k(s)_j = \begin{cases} s_j & \text{if } s_j \geq \tau \\ -\infty & \text{otherwise} \end{cases}
-\end{equation}
+\]
 
 where $\tau$ is the $k$-th largest value.
 
@@ -285,9 +285,9 @@ is zero almost everywhere. This is problematic for end-to-end training.
 
 \textbf{Sigmoid mask.} Given $\tau$, we can define:
 
-\begin{equation}
+\[
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right) \in (0, 1)
-\end{equation}
+\]
 
 so that $m_j \to 1$ for $s_j > \tau$ and $m_j \to 0$ for $s_j < \tau$. 
 As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$, recovering hard top-$k$.
@@ -295,9 +295,9 @@ As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$, recovering hard top-$k$.
 \textbf{Application in log space.} Instead of a multiplicative mask, we add a 
 log-mask to the scores:
 
-\begin{equation}
+\[
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
-\end{equation}
+\]
 
 This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) = 
 \text{softmax}(s) \cdot m / \sum m$.
@@ -306,17 +306,17 @@ This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) =
 
 The retention budget $k_h$ for head $h$ is:
 
-\begin{equation}
+\[
 k_h = \lfloor (1 - \rho_h) L \rfloor
-\end{equation}
+\]
 
 where $\rho_h \in [0, 1]$ is the head-specific sparsity ratio.
 
 \textbf{Learning $\rho_h$.} We parameterize via a scalar logit:
 
-\begin{equation}
+\[
 \rho_h = \sigma(\ell_h), \qquad \ell_h \in \mathbb{R}
-\end{equation}
+\]
 
 This is differentiable w.r.t. $\ell_h$, allowing gradient-based learning of 
 the sparsity budget.
@@ -325,22 +325,22 @@ the sparsity budget.
 
 To bound peak memory, we process the query dimension in chunks of size $C$:
 
-\begin{equation}
+\[
 O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 \textbf{Peak memory.} $\mathcal{O}(B H C L)$ instead of $\mathcal{O}(B H L^2)$.
 
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
-instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$$\times$ reduction.}
+instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$\times$ reduction.}
 
 \subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity 
 injection.
@@ -369,7 +369,7 @@ sparse variant that:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-   Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+   Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
             |
              
    +------------------------------+
@@ -405,23 +405,23 @@ sparse variant that:
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The sparsity ratio is:
 
-\begin{equation}
+\[
 \rho_h = \sigma(\ell_h) \in (0, 1)
-\end{equation}
+\]
 
 The retention budget is:
 
-\begin{equation}
+\[
 k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
-\end{equation}
+\]
 
 \subsubsection{Initialization}
 
 We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
-\begin{equation}
+\[
 \ell_h^{(0)} = \text{logit}(\rho_0) = \log \frac{\rho_0}{1 - \rho_0}
-\end{equation}
+\]
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
@@ -429,9 +429,9 @@ For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
 The gradient of the loss w.r.t. $\ell_h$ is:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \frac{\partial \mathcal{L}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 The floor operation in (4.2) is non-differentiable; in practice we use 
 $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
@@ -443,9 +443,9 @@ $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
 For each (batch, head, query) triple, we compute the top-$k_h$ threshold 
 $\tau$ as the $k_h$-th largest score:
 
-\begin{equation}
+\[
 \tau_{b, h, i} = \text{topk}_{k_h}(s_{b, h, i, :})
-\end{equation}
+\]
 
 This is computed via \texttt{torch.sort} followed by indexing at position $k_h - 1$.
 
@@ -453,15 +453,15 @@ This is computed via \texttt{torch.sort} followed by indexing at position $k_h -
 
 Given threshold $\tau$, we define the mask:
 
-\begin{equation}
+\[
 m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
-\end{equation}
+\]
 
 where $T = 0.1$ is a temperature. The masked score is:
 
-\begin{equation}
+\[
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
-\end{equation}
+\]
 
 with $\epsilon = 10^{-8}$ for numerical stability.
 
@@ -487,10 +487,10 @@ to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
-Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Input:  Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
         sparsity_logits   $\in$ R^H
         T (temperature), C (chunk size)
-Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 1:    $\leftarrow$ sigmoid( )                        # (H,)
 2:  k $\leftarrow$ floor((1 -  ) * L)                # (H,)
@@ -543,7 +543,7 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \end{table}
 
 For $C = 64$ and $L = 512$, memory is reduced by 
-\textbf{8$$\times$}. Time is unchanged (we still compute all scores); 
+\textbf{8$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys -- this is a possible future extension.
 
@@ -575,9 +575,9 @@ reduce total parameter count.
 
 For a head with sparsity $\rho$, the approximation error is:
 
-\begin{equation}
+\[
 \|P - \tilde{P}\|_1 \leq \sum_{j \notin \text{top-}k} P_j + \epsilon_T
-\end{equation}
+\]
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 
@@ -586,9 +586,9 @@ where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 Let $\rho_h^{(T)}$ be the learned sparsity for head $h$ after convergence. 
 Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 
-\begin{equation}
+\[
 \rho_h^{(T)} \approx \begin{cases} 0.05 & \text{if head is critical} \\ 0.85 & \text{if head is redundant} \end{cases}
-\end{equation}
+\]
 
 This matches the head-pruning literature.
 
@@ -596,9 +596,9 @@ This matches the head-pruning literature.
 
 With chunk size $C$:
 
-\begin{equation}
+\[
 \text{Peak memory} \leq B H C L \cdot \text{bytes}
-\end{equation}
+\]
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.
@@ -715,9 +715,9 @@ for q_start in range(0, L, C):
 
 T5 uses a learned bias added to scores:
 
-\begin{equation}
+\[
 s_{ij} = \frac{Q_i \cdot K_j}{\sqrt{d_h}} + b_{i-j}
-\end{equation}
+\]
 
 where $b$ is a learned embedding of bucketed relative positions. ASA preserves 
 this by computing the bias before the top-$k$ threshold.
@@ -1103,10 +1103,10 @@ larger is too soft.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
-\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \& Sparse & 1.00$$\times$ & \textbf{2$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
+\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \& Sparse & 1.00$\times$ & \textbf{2$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1138,7 +1138,7 @@ Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
 \begin{itemize}
 \item \textbf{Accuracy:} drops only -2.2\%---2.9\%.
 \item \textbf{Sparsity:} learned per-head budgets are heterogeneous.
-\item \textbf{VRAM:} reduced by 8$$\times$ via chunking.
+\item \textbf{VRAM:} reduced by 8$\times$ via chunking.
 \item \textbf{No parameter reduction} -- sparsity is compute-only.
 \item \textbf{All models pass quality gate.}
 \end{itemize}
@@ -1147,10 +1147,10 @@ Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/adaptive_sparse_attention_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{AdaptiveSparseAttention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{AdaptiveSparseAttention}.}
 \label{fig:results_adaptivesparseattention}
 \end{figure}
 
@@ -1316,7 +1316,7 @@ Head redundancy insufficient
 \item \textbf{Per-head budgets are bimodal}: dense vs sparse.
 \item \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
 \item \textbf{$T = 0.1$} is the optimal temperature.
-\item \textbf{Chunking reduces memory} by 8$$\times$.
+\item \textbf{Chunking reduces memory} by 8$\times$.
 \item \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
 \end{enumerate}
 \begin{lstlisting}
@@ -1524,9 +1524,9 @@ peak memory.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & 0.42 & -8$$\times$ \\
-RoBERTa & -2.6\% & 0.45 & -8$$\times$ \\
-GPT-2 & -2.9\% & 0.48 & -8$$\times$ \\
+DistilBERT & -2.2\% & 0.42 & -8$\times$ \\
+RoBERTa & -2.6\% & 0.45 & -8$\times$ \\
+GPT-2 & -2.9\% & 0.48 & -8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1827,15 +1827,15 @@ GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
 Let $s \in \mathbb{R}^L$ be a score vector, $\tau$ the $k$-th largest 
 value, and $m_j = \sigma((s_j - \tau) / T)$. Define:
 
-\begin{equation}
+\[
 \tilde{p}_j = \frac{\exp(s_j + \log m_j)}{\sum_i \exp(s_i + \log m_i)} = \frac{m_j \exp(s_j)}{\sum_i m_i \exp(s_i)}
-\end{equation}
+\]
 
 versus the hard top-$k$ softmax:
 
-\begin{equation}
+\[
 p_j^{\text{hard}} = \frac{\mathbb{1}[s_j \ge \tau] \exp(s_j)}{\sum_i \mathbb{1}[s_i \ge \tau] \exp(s_i)}
-\end{equation}
+\]
 
 \subsubsection{A.1.2 Error Bound}
 
@@ -1849,9 +1849,9 @@ Thus $\tilde{p} \to p^{\text{hard}}$. $\square$
 
 For finite $T$, the error in each component is bounded by:
 
-\begin{equation}
+\[
 |p_j^{\text{hard}} - \tilde{p}_j| \leq e^{-|s_j - \tau| / T} \cdot \text{const}
-\end{equation}
+\]
 
 \subsection{A.2 Per-Head Sparsity Gradient}
 
@@ -1859,9 +1859,9 @@ For finite $T$, the error in each component is bounded by:
 
 The gradient of the loss w.r.t. logit $\ell_h$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} = \sum_{b, i} \frac{\partial \mathcal{L}}{\partial \tau_{b, h, i}} \cdot \frac{\partial \tau_{b, h, i}}{\partial k_h} \cdot \frac{\partial k_h}{\partial \rho_h} \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 \subsubsection{A.2.2 Threshold Gradient}
 
@@ -1871,23 +1871,23 @@ the classical sense.
 
 \textbf{Straight-through estimator.} We approximate:
 
-\begin{equation}
+\[
 \frac{\partial \tau}{\partial k_h} \approx -|\tau^{(k)} - \tau^{(k+1)}|
-\end{equation}
+\]
 
 where $\tau^{(k)}$ is the $k$-th largest score.
 
 \subsubsection{A.2.3 Budget Gradient}
 
-\begin{equation}
+\[
 \frac{\partial k_h}{\partial \rho_h} \approx -L
-\end{equation}
+\]
 
 Combining:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial \ell_h} \approx -L \cdot \sum_{b, i} \frac{\partial \mathcal{L}}{\partial \tau_{b, h, i}} \cdot |\tau^{(k)} - \tau^{(k+1)}| \cdot \rho_h (1 - \rho_h)
-\end{equation}
+\]
 
 \subsection{A.3 Chunked Memory Analysis}
 
@@ -1911,15 +1911,15 @@ of $\mathcal{L}$. $\square$
 
 The entropy of the softmax distribution is:
 
-\begin{equation}
+\[
 H(p) = -\sum_j p_j \log p_j
-\end{equation}
+\]
 
 For the masked softmax $\tilde{p}$:
 
-\begin{equation}
+\[
 H(\tilde{p}) \approx H(p) - \sum_j p_j \log m_j
-\end{equation}
+\]
 
 For $m_j \ll 1$, $\log m_j < 0$, so $H(\tilde{p}) < H(p)$. Sparsity reduces 
 entropy.

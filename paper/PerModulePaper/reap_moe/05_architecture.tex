@@ -184,9 +184,9 @@ Because the framework replaces only the attention module, the original FFN
 still runs. This means:
 
 \begin{itemize}
-\item \textbf{Effective capacity:} 2$$\times$ (MoE + original FFN)
-\item \textbf{Parameters:} ~2$$\times$ (MoE + original FFN)
-\item \textbf{Compute:} ~2$$\times$ (attention + MoE + FFN)
+\item \textbf{Effective capacity:} 2$\times$ (MoE + original FFN)
+\item \textbf{Parameters:} ~2$\times$ (MoE + original FFN)
+\item \textbf{Compute:} ~2$\times$ (attention + MoE + FFN)
 
 \end{itemize}
 For a cleaner integration, the FFN should be removed. We leave this as 

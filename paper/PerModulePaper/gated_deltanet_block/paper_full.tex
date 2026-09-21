@@ -1,4 +1,4 @@
-\title{\textbf{Gated DeltaNet Block: A Block-Level Wrapper for Hybrid Attention-Replacement}
+\title{\textbf{Gated DeltaNet Block: A Block-Level Wrapper for Hybrid Attention-Replacement}}
 
 \author{Anonymous authors}
 
@@ -278,7 +278,7 @@ Q, K, V are computed by splitting \texttt{in\_proj\_weight} into three equal par
 \textbf{Aspect} & \textbf{BERT/DistilBERT} & \textbf{`nn.MultiheadAttention`} \\
 \midrule
 Q/K/V storage & Three separate linears & One fused \texttt{in\_proj\_weight} \\
-Weight shapes & \texttt{(d, d) $$\times$ 3} & \texttt{(3d, d)} \\
+Weight shapes & \texttt{(d, d) $\times$ 3} & \texttt{(3d, d)} \\
 Bias & Three separate & One fused \\
 Output & \texttt{out\_lin} or \texttt{output.dense} & \texttt{out\_proj} \\
 \bottomrule
@@ -429,7 +429,7 @@ except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
 \item For RoBERTa (nested), \texttt{w\_q.shape = (768, 768)} but only if we extract from
   \texttt{self.query}. \texttt{in\_proj\_weight.shape = (2304, 768)}. \textbf{Copy succeeds.}
 \item For GPT-2, \texttt{c\_attn.weight} is \texttt{(768, 2304)} (Conv1D). After transpose
-  \texttt{(2304, 768)}. Split gives \texttt{(768, 768) $$\times$ 3}. Concat gives \texttt{(2304, 768)}.
+  \texttt{(2304, 768)}. Split gives \texttt{(768, 768) $\times$ 3}. Concat gives \texttt{(2304, 768)}.
   \textbf{Copy succeeds.}
 \item \textbf{But \texttt{out\_proj}:} For DistilBERT, \texttt{out\_lin.weight = (768, 768)} and
   \texttt{out\_proj.weight = (768, 768)}. \textbf{Copy succeeds.}
@@ -510,8 +510,8 @@ Residual + LN & $\mathcal{O}(Ld)$ & $\mathcal{O}(Ld)$ \\
 
 \textbf{Algorithm 1:} GatedDeltaNetBlock forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, use_full_attention
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, use_full_attention
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: if use_full_attention:
 2:     A $\leftarrow$ nn.MultiheadAttention(X, X, X)
@@ -1096,10 +1096,10 @@ Step  Loss
 
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/gated_deltanet_block_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{gated_deltanet_block}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gated_deltanet_block}.}
 \label{fig:results_gated_deltanet_block}
 \end{figure}
 
@@ -1259,7 +1259,7 @@ projections. Even with correct concatenation, the resulting attention is
 \textbf{LN mismatch} & $\pm$0.85\% accuracy & Fresh LN \\
 \textbf{Silent transfer} & Random attention & \texttt{try/except: pass} \\
 \textbf{Non-causal MHA} & Wrong for GPT-2 & Missing mask \\
-\textbf{GatedDeltaNet slow} & 84.5$$\times$ slowdown & Python loops \\
+\textbf{GatedDeltaNet slow} & 84.5$\times$ slowdown & Python loops \\
 \textbf{OOM on 12-layer} & CUDA error & State memory \\
 \bottomrule
 \end{tabular}
@@ -1486,7 +1486,7 @@ different from the behavior on DistilBERT.
 \subsection{Slow GatedDeltaNet Path}
 
 The \texttt{use\_full\_attention=False} path uses GatedDeltaNet, which is 
-\textbf{~84.5$$\times$ slower} than baseline.
+\textbf{~84.5$\times$ slower} than baseline.
 
 \subsection{OOM on 12-Layer Models}
 

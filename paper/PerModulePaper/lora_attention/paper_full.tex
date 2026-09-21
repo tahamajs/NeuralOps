@@ -1,4 +1,4 @@
-\title{\textbf{LoRA Attention: Production-Hardened Parameter-Efficient Attention Fine-Tuning Across Four Transformer Architectures}
+\title{\textbf{LoRA Attention: Production-Hardened Parameter-Efficient Attention Fine-Tuning Across Four Transformer Architectures}}
 
 \author{Anonymous authors}
 
@@ -25,7 +25,7 @@ B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
 \]
 
 with $r_L \ll \min(d, k)$. For $r_L = 16$ and $d = 768$, this reduces 
-trainable parameters per projection by \textbf{~48$$\times$}.
+trainable parameters per projection by \textbf{~48$\times$}.
 
 \textbf{Why attention?} Most existing LoRA implementations focus on the FFN 
 because it contains most parameters. However, attention projections contain 
@@ -275,15 +275,15 @@ $W_O$ & 589,824 & 24,576 \\
 \end{tabular}
 \end{table}
 
-\textbf{Reduction:} ~24$$\times$ fewer trainable parameters.
+\textbf{Reduction:} ~24$\times$ fewer trainable parameters.
 
 \subsection{Memory Savings}
 
 Full fine-tuning requires:
 \begin{itemize}
-\item Gradients: \texttt{params $$\times$ 2 bytes} (FP16)
-\item AdamW state: \texttt{params $$\times$ 8 bytes} (two FP32 moments)
-\item Total: \texttt{params $$\times$ 10 bytes}
+\item Gradients: \texttt{params $\times$ 2 bytes} (FP16)
+\item AdamW state: \texttt{params $\times$ 8 bytes} (two FP32 moments)
+\item Total: \texttt{params $\times$ 10 bytes}
 
 \end{itemize}
 For DistilBERT attention (14.2M params):
@@ -292,7 +292,7 @@ For DistilBERT attention (14.2M params):
 \item LoRA FT: ~1 MB
 
 \end{itemize}
-\textbf{Total reduction: ~100$$\times$}
+\textbf{Total reduction: ~100$\times$}
 
 \subsection{Multi-Architecture Weight Formats}
 
@@ -533,8 +533,8 @@ self.is_nested_encoder = bool(is_nested)
 
 \textbf{Algorithm 1:} LoRA Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ q_proj(X)                         base + LoRA
  2: K $\leftarrow$ k_proj(X)                         base + LoRA
@@ -1048,7 +1048,7 @@ GPT-2 & \textbf{LoRA Attn} & \textbf{51.26} & -28.10 & 0.6763 & 0.85 & 123.5M \\
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Trainable parameters reduced by ~2.1$$\times$.}
+\item \textbf{Trainable parameters reduced by ~2.1$\times$.}
 \item \textbf{Accuracy preserved} within -0.80\%.
 \item \textbf{Zero inference overhead} after merging.
 
@@ -1231,7 +1231,7 @@ Pruning (50\%) & 0.85 & 0.85 & +32\% \\
 \subsection{Summary}
 
 \begin{itemize}
-\item Trainable parameters reduced by \textbf{2.1$$\times$}
+\item Trainable parameters reduced by \textbf{2.1$\times$}
 \item Accuracy preserved within \textbf{-0.80\%}
 \item Zero inference overhead after merging
 \item Effective recovery mechanism for compression
@@ -1241,10 +1241,10 @@ Pruning (50\%) & 0.85 & 0.85 & +32\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/lora_attention_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{lora_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lora_attention}.}
 \label{fig:results_lora_attention}
 \end{figure}
 
@@ -1400,8 +1400,8 @@ Slow convergence & Extremely low LR & Hyperparameter & Increase LR \\
 
 \subsubsection{Takeaway 1: LoRA Reduces Training Cost}
 
-Trainable parameters reduced by \textbf{2.1$$\times$}. Training memory 
-reduced by \textbf{2.1$$\times$}. This makes fine-tuning feasible on consumer 
+Trainable parameters reduced by \textbf{2.1$\times$}. Training memory 
+reduced by \textbf{2.1$\times$}. This makes fine-tuning feasible on consumer 
 GPUs.
 
 \subsubsection{Takeaway 2: Attention LoRA is Effective}
@@ -1653,7 +1653,7 @@ GPT-2 & -28.10\% & 0.85 &  \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Trainable parameters reduced by 2.1$$\times$.}
+\item \textbf{Trainable parameters reduced by 2.1$\times$.}
 \item \textbf{Attention LoRA outperforms FFN LoRA} for classification.
 \item \textbf{Merge preserves accuracy} to numerical precision.
 \item \textbf{Effective recovery mechanism for compression} -- 90\%+ recovery.
@@ -2328,7 +2328,7 @@ python run_all_4_lora_attention.py --lora_rank 16 --lora_alpha 32
 
 \textbf{Goal.} $r_L = 256$.
 
-\textbf{Result.} No improvement, 4$$\times$ more params.
+\textbf{Result.} No improvement, 4$\times$ more params.
 
 \textbf{Conclusion.} Rank 16 is sufficient.
 
@@ -2439,7 +2439,7 @@ Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
 \end{itemize}
 \textbf{Comparison:}
 \begin{itemize}
-\item Full FT: ~10$$\times$ more energy
+\item Full FT: ~10$\times$ more energy
 \item LoRA: energy proportional to rank
 
 \end{itemize}
@@ -2469,7 +2469,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

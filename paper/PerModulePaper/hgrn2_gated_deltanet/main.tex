@@ -85,7 +85,7 @@ RoBERTa (baseline 32\%), and \textbf{51.03\%} on GPT-2 (baseline
 \textbf{Crucially, we are explicit about the trade-offs:} the module **does not 
 reduce parameter count*\textit{ -- in fact, it }increases* parameters by 
 \textbf{48.5\%\%} due to LoRA and the gate. Additionally, the current 
-implementation \textbf{runs 1.0x$$\times$ slower than baseline} on short 
+implementation \textbf{runs 1.0x$\times$ slower than baseline} on short 
 sequences (L = 128) due to a Python-level sequential recurrence. The 
 advantage of HGRN2-GatedDeltaNet appears only at long sequence lengths 
 ($L \geq 128$), where the $\mathcal{O}(L)$ scaling dominates.

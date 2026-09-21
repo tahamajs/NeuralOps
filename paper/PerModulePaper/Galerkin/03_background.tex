@@ -5,9 +5,9 @@
 
 For input $X \in \mathbb{R}^{B \times N \times d}$, attention computes:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V
-\end{equation}
+\]
 
 where $Q = XW_Q$, $K = XW_K$, $V = XW_V$.
 
@@ -17,17 +17,17 @@ where $Q = XW_Q$, $K = XW_K$, $V = XW_V$.
 
 The DCT-II basis is defined as:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right), \quad
 n = 0, \dots, N-1, \quad k = 0, \dots, N-1
-\end{equation}
+\]
 
 with normalization:
 
-\begin{equation}
+\[
 \Phi_{n, 0} \to \frac{1}{\sqrt{N}} \Phi_{n, 0}, \quad
 \Phi_{n, k} \to \sqrt{\frac{2}{N}} \Phi_{n, k} \text{ for } k \geq 1
-\end{equation}
+\]
 
 The full DCT basis $\Phi \in \mathbb{R}^{N \times N}$ is orthonormal: 
 $\Phi^\top \Phi = I_N$.
@@ -44,26 +44,26 @@ $\Phi_r^\top \Phi_r = I_r$.
 
 Consider the continuous integral operator:
 
-\begin{equation}
+\[
 (\mathcal{K} f)(x) = \int_0^1 k(x, y) f(y) \, dy
-\end{equation}
+\]
 
 Let $\{\phi_1, \dots, \phi_r\}$ be an orthonormal basis of a subspace 
 $\mathcal{V}_r \subset L^2([0, 1])$. The Galerkin approximation is:
 
-\begin{equation}
+\[
 \mathcal{K}_r = \sum_{i, j = 1}^r K_{ij} \phi_i \otimes \phi_j
-\end{equation}
+\]
 
 where $K_{ij} = \langle \phi_i, \mathcal{K} \phi_j \rangle$.
 
 \textbf{Discretization.} For a discrete sequence of length $N$, the Galerkin 
 approximation becomes:
 
-\begin{equation}
+\[
 \mathcal{K}_r = \Phi_r \, K_r \, \Phi_r^\top, \quad
 K_r \in \mathbb{R}^{r \times r}
-\end{equation}
+\]
 
 with $\Phi_r \in \mathbb{R}^{N \times r}$ being the discrete basis.
 
@@ -71,9 +71,9 @@ with $\Phi_r \in \mathbb{R}^{N \times r}$ being the discrete basis.
 
 After replacing attention, we freeze base weights and train LoRA adapters:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $A \in \mathbb{R}^{r_L \times k}$, $B \in \mathbb{R}^{d \times r_L}$, 
 $B = 0$ at init.

@@ -1,4 +1,4 @@
-\title{\textbf{Mamba-Inspired Gated State-Space Attention: A Drop-In Replacement for Multi-Head Attention}
+\title{\textbf{Mamba-Inspired Gated State-Space Attention: A Drop-In Replacement for Multi-Head Attention}}
 
 \author{Anonymous authors}
 
@@ -618,8 +618,8 @@ progresses, $\alpha$ can shift toward 1.0 if the SSM output improves.
 
 \textbf{Algorithm 1:} Mamba-Inspired Gated SSM Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, is_decoder
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: X $\leftarrow$ RoPE(X) if position_embeddings provided
  2: proj $\leftarrow$ in_proj(X)                          [B, L, 2d]
@@ -1303,10 +1303,10 @@ No decay ($\gamma = 1$) & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{Mamba SSM} & \textbf{Ratio} \\
 \midrule
-64 & 84.5 & 0.85 & 84.1$$\times$ \\
-128 & 84.5 & 0.85 & 84.8$$\times$ \\
-256 & 84.5 & 0.85 & 85.6$$\times$ \\
-512 & 84.5 & 0.85 & 86.2$$\times$ \\
+64 & 84.5 & 0.85 & 84.1$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1346,10 +1346,10 @@ nasc & 90.71\% & 64.56\% & 78.44\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/moba_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{moba}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{moba}.}
 \label{fig:results_moba}
 \end{figure}
 
@@ -2338,10 +2338,10 @@ Step  Loss
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{Mamba} & \textbf{Ratio} \\
 \midrule
-64 & 84.5 & 0.85 & 84.1$$\times$ \\
-128 & 84.5 & 0.85 & 84.8$$\times$ \\
-256 & 84.5 & 0.85 & 85.6$$\times$ \\
-512 & 84.5 & 0.85 & 86.2$$\times$ \\
+64 & 84.5 & 0.85 & 84.1$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2516,7 +2516,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

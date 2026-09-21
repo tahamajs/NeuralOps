@@ -6,9 +6,9 @@
 Transformer self-attention computes pairwise interactions between all tokens 
 in a sequence:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
-\end{equation}
+\]
 
 The intermediate attention matrix $A = \text{softmax}(QK^\top / \sqrt{d})$ 
 requires $\mathcal{O}(L^2)$ time and memory. For $L = 4096$ and 16-bit 
@@ -18,9 +18,9 @@ inference.
 \textbf{Linear attention} replaces softmax with a kernel feature map 
 $\phi(\cdot)$ such that the attention can be decomposed:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) \approx \frac{\phi(Q_i)^\top \sum_j \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_j \phi(K_j)}
-\end{equation}
+\]
 
 The sums $\sum_j \phi(K_j) V_j^\top$ and $\sum_j \phi(K_j)$ can be computed 
 once with $\mathcal{O}(L)$ complexity, then queried per-token.
@@ -35,16 +35,16 @@ spreads attention uniformly.
 Qin et al. (2022) propose Cosformer, which recovers locality by 
 \textbf{reweighting} the key and query features with cosine/sine of position:
 
-\begin{equation}
+\[
 \tilde{q}_i = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
 \tilde{q}'_i = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
-\end{equation}
+\]
 
 The attention output becomes:
 
-\begin{equation}
+\[
 \text{Attn}(Q_i, K, V) = \frac{\sum_j \tilde{q}_i^\top \tilde{k}_j V_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j' V_j}{\sum_j \tilde{q}_i^\top \tilde{k}_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j'}
-\end{equation}
+\]
 
 The cosine/sine weights decay with position, giving nearby tokens higher 
 weights -- mimicking softmax's locality.
@@ -59,7 +59,7 @@ transformers. Key features:
 \item \textbf{Two computational paths:}
 \end{enumerate}
 \begin{itemize}
-\item \textbf{Encoder:} associative accumulation via \texttt{KV = K\^{}T V} matmul.
+\item \textbf{Encoder:} associative accumulation via \texttt{KV = K^T V} matmul.
 \item \textbf{Decoder:} chunked prefix-sum with \texttt{chunk\_size = 32}.
 \end{itemize}
 \begin{enumerate}

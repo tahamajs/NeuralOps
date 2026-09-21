@@ -1,4 +1,4 @@
-\title{\textbf{LEKAv2: Linear-Time Efficient Kernel Attention with Landmark Distillation}
+\title{\textbf{LEKAv2: Linear-Time Efficient Kernel Attention with Landmark Distillation}}
 
 \author{Anonymous authors}
 
@@ -319,7 +319,7 @@ LEKAv2 replaces standard attention with a hybrid pipeline:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
          Q/K/V Projection (frozen + LoRA)
               |
@@ -502,8 +502,8 @@ With $g_h^{(0)} \approx 0.12$, the local branch dominates initially.
 
 \textbf{Algorithm 1:} LEKAv2 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
  2: reshape to (B, H, L, d_h)
@@ -964,11 +964,11 @@ GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{LEKAv2} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & 0.85 & 84.8$$\times$ \\
-256 & 3.50 & 0.85 & 85.6$$\times$ \\
-512 & 12.0 & 0.85 & 86.2$$\times$ \\
-1024 & 45.0 & 0.85 & 86.4$$\times$ \\
-2048 & 180.0 & 0.85 & 86.5$$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1153,10 +1153,10 @@ GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/leka_v2_distilbert_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{leka_v2}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v2}.}
 \label{fig:results_leka_v2}
 \end{figure}
 
@@ -1372,8 +1372,8 @@ For DistilBERT at   = 0.25:
 \midrule
 Accuracy & 90.71\% & 86.01\% & -4.70\% \\
 Total params & 66.95M & 66.4M & +48.5\%\% \\
-Inference @ L=128 & 1.90 s & 0.85 s & 84.8$$\times$ \\
-Inference @ L=1024 & 45.0 s & 0.85 s & 86.4$$\times$ \\
+Inference @ L=128 & 1.90 s & 0.85 s & 84.8$\times$ \\
+Inference @ L=1024 & 45.0 s & 0.85 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2394,7 +2394,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

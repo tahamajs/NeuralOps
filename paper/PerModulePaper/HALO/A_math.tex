@@ -8,15 +8,15 @@ attention.
 
 \textbf{Proof.} For position $i$, causal linear attention is:
 
-\begin{equation}
+\[
 O_i = \frac{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j) V_j}{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j)}
-\end{equation}
+\]
 
 Factoring out $\phi(Q_i)$:
 
-\begin{equation}
+\[
 O_i = \frac{\phi(Q_i)^\top \sum_{j \le i} \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_{j \le i} \phi(K_j)}
-\end{equation}
+\]
 
 The cumulative sums $\text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top$ 
 and $\text{den}^{(i)} = \sum_{j \le i} \phi(K_j)$ are computed via \texttt{cumsum}. 
@@ -40,15 +40,15 @@ In both cases, $\phi(x) > 0$. $\square$
 
 The gradient of the loss w.r.t. the gate logit $z = w^\top x + b$:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial z} = \frac{\partial \mathcal{L}}{\partial g} \cdot g(1 - g)
-\end{equation}
+\]
 
 where:
 
-\begin{equation}
+\[
 \frac{\partial \mathcal{L}}{\partial g} = \nabla_O \mathcal{L} \cdot (O^\text{dense} - O^\text{lin})
-\end{equation}
+\]
 
 \subsection{A.4 Fusion Interpolation}
 
@@ -61,9 +61,9 @@ convex combination for $g \in [0, 1]$.
 
 For a batch of $B$ sequences of length $L$ with $H$ heads and head dim $d_h$:
 
-\begin{equation}
+\[
 \text{Memory} = B H L d_h^2 \cdot \text{bytes}
-\end{equation}
+\]
 
 For $B = 8, H = 12, L = 512, d_h = 64$: $8 \times 12 \times 512 \times 64^2 \times 2 = 4$ GB. 
 
@@ -74,9 +74,9 @@ inference.
 
 \textbf{Claim.} The fusion error is bounded by:
 
-\begin{equation}
+\[
 \|O - O^\text{dense}\| \leq (1 - g) \cdot \|O^\text{lin} - O^\text{dense}\|
-\end{equation}
+\]
 
 \textbf{Proof.} $O - O^\text{dense} = (1 - g)(O^\text{lin} - O^\text{dense})$. 
 Taking norms gives (A.6). $\square$

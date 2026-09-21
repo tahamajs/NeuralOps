@@ -1,4 +1,4 @@
-\title{\textbf{JambaInfo: Information-Bottlenecked Jamba Architecture with Concept-Compressed SSM}
+\title{\textbf{JambaInfo: Information-Bottlenecked Jamba Architecture with Concept-Compressed SSM}}
 
 \author{Anonymous authors}
 
@@ -296,7 +296,7 @@ The branches are fused by a learned scalar gate.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
        +------+------+
                       
@@ -449,9 +449,9 @@ will add the penalty.
 
 \textbf{Algorithm 1:} JambaInfo forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q1, K1 $\leftarrow$ W_q1(X), W_k1(X)
  2: Q2, K2 $\leftarrow$ W_q2(X), W_k2(X)
@@ -493,7 +493,7 @@ out\_proj & $O(L d^2)$ & $d^2$ \\
 \end{tabular}
 \end{table}
 
-Compared to baseline ($4 d^2$), we have ~2$$\times$ more parameters.
+Compared to baseline ($4 d^2$), we have ~2$\times$ more parameters.
 
 \subsection{Parameter Analysis}
 
@@ -506,7 +506,7 @@ For $d = 768$, $b = 256$:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{JambaInfo} \\
 \midrule
-Q, K, V, O & 4$$\times$589,824 = 2.36M & -- \\
+Q, K, V, O & 4$\times$589,824 = 2.36M & -- \\
 W\_q1, W\_k1 & -- & 1.18M \\
 W\_q2, W\_k2 & -- & 1.18M \\
 W\_v & -- & 0.59M \\
@@ -1013,10 +1013,10 @@ GPT-2 & 0.12 & 0.85 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/jamba_info_roberta_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{jamba_info}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{jamba_info}.}
 \label{fig:results_jamba_info}
 \end{figure}
 
@@ -1197,7 +1197,7 @@ For DistilBERT at $b = 256$:
 \midrule
 Params & 66.95M & 66.4M & +48.5\%\% \\
 Accuracy & 90.71\% & 89.68\% & -1.03\% \\
-Inference time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Inference time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Peak VRAM & 183 MB & 480 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -1251,11 +1251,11 @@ JambaInfo increases parameter count by ~66.4M\%.
 
 \subsection{Training Slower}
 
-~84.5$$\times$ slower than baseline.
+~84.5$\times$ slower than baseline.
 
 \subsection{Inference Latency}
 
-~84.5$$\times$ slower.
+~84.5$\times$ slower.
 
 \subsection{Cross-Attention Not Supported}
 
@@ -2135,7 +2135,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

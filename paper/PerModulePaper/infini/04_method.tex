@@ -15,7 +15,7 @@ Infini-Attention replaces MHSA with a two-branch block:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -161,8 +161,8 @@ $-\infty$ would freeze the memory. $-5$ is a good compromise.
 
 \textbf{Algorithm 1:} Infini-Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, window W
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, window W
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)                  Frozen W + LoRA
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -238,15 +238,15 @@ For $W = d_c = 128$ and $L = 4096$:
 \toprule
 \textbf{Method} & \textbf{Relative time} \\
 \midrule
-Full MHSA & 1.00$$\times$ \\
-Sliding window & 0.031$$\times$ \\
-\textbf{Infini-Attention} & \textbf{0.062$$\times$} \\
+Full MHSA & 1.00$\times$ \\
+Sliding window & 0.031$\times$ \\
+\textbf{Infini-Attention} & \textbf{0.062$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The memory roughly doubles the cost of pure sliding window, but is still 
-~16$$\times$ cheaper than full attention.
+~16$\times$ cheaper than full attention.
 
 \subsection{Parameter Analysis}
 
@@ -282,7 +282,7 @@ $N_\ell = 6$):
 \midrule
 Memory & 98,304 & 589,824 \\
 Gate & 1 & 6 \\
-LoRA (all 4) & 4 $$\times$ 24,576 = 98,304 & 589,824 \\
+LoRA (all 4) & 4 $\times$ 24,576 = 98,304 & 589,824 \\
 \textbf{Total} & \textbf{196,609} & \textbf{1,179,654} \\
 \bottomrule
 \end{tabular}

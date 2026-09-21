@@ -58,24 +58,24 @@ OHA replaces MHSA with a two-branch block:
 \end{enumerate}
 The compressed summary is computed by \textbf{soft-attention pooling}:
 
-\begin{equation}
+\[
 C_K = \text{softmax}(W_k^\text{comp} X, \text{dim}=L) \cdot K \in \mathbb{R}^{B \times d_c \times d}
-\end{equation}
+\]
 
 where $W_k^\text{comp} \in \mathbb{R}^{d \times d_c}$ produces pooling weights. 
 Similarly for $C_V$.
 
 The global branch attends to these compressed summaries:
 
-\begin{equation}
+\[
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
-\end{equation}
+\]
 
 The two branches are fused via a per-head gate:
 
-\begin{equation}
+\[
 \text{output} = \gamma \odot \text{LocalAttn} + (1 - \gamma) \odot \text{GlobalAttn}
-\end{equation}
+\]
 
 with $\gamma = \sigma(W_g X) \in [0, 1]^{B \times H}$.
 

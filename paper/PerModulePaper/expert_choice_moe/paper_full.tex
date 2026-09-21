@@ -1,4 +1,4 @@
-\title{\textbf{ExpertChoiceMoEAttention: Expert-Choice Routing Inside Multi-Head Attention}
+\title{\textbf{ExpertChoiceMoEAttention: Expert-Choice Routing Inside Multi-Head Attention}}
 
 \author{Anonymous authors}
 
@@ -746,7 +746,7 @@ The MoE operates on \texttt{all\_head\_size = num\_heads * head\_dim}. This equa
 hidden dimension for standard attention.
 
 \textbf{For GQA models}, \texttt{kv\_head\_size < all\_head\_size}. But the attention output 
-is always \texttt{all\_head\_size} (Q heads $$\times$ head dim). So the MoE input dimension 
+is always \texttt{all\_head\_size} (Q heads $\times$ head dim). So the MoE input dimension 
 is always \texttt{all\_head\_size = d}.
 
 \subsection{Dynamic Dimension Adaptation}
@@ -1224,10 +1224,10 @@ BAM-UMoE (token-choice) & 0.85 & 32 & 0.85 & 84.5 \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/expert_choice_moe_gpt2_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{expert_choice_moe}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{expert_choice_moe}.}
 \label{fig:results_expert_choice_moe}
 \end{figure}
 
@@ -1333,7 +1333,7 @@ For $d = 768$, $E = 8$:
 \tag{8.2}
 \]
 
-This is \textbf{8$$\times$ the entire attention block} ($4 d^2 = 2.36$M).
+This is \textbf{8$\times$ the entire attention block} ($4 d^2 = 2.36$M).
 
 \begin{table}[H]
 \centering
@@ -1360,7 +1360,7 @@ LoRA & 0.098M \\
 \toprule
 \textbf{Case} & \textbf{Reason} & \textbf{Fix} \\
 \midrule
-OOM & 8 experts $$\times$ 2-layer MLP & Reduce E \\
+OOM & 8 experts $\times$ 2-layer MLP & Reduce E \\
 Slow & Python loop over experts & Batch experts \\
 Unstable & No zero-init & Add zero-init \\
 Underutilization & CF < 0.5 & Increase CF \\
@@ -2003,8 +2003,8 @@ indices. $\square$
 \textbf{Claim.} If $W_2^{(e)} = 0$ and $b_2^{(e)} = 0$ for all $e$, then 
 $\text{MoE\_out} = 0$.
 
-\textbf{Proof.} Each expert output: $\text{Expert}\_e(\mathbf{x}) = W\_2\^{}{(e)} 
-\text{GELU}(\cdot) + b\_2\^{}{(e)} = 0$. So $\text{MoE\_out} = 0$. $\square$
+\textbf{Proof.} Each expert output: $\text{Expert}\_e(\mathbf{x}) = W\_2^{(e)} 
+\text{GELU}(\cdot) + b\_2^{(e)} = 0$. So $\text{MoE\_out} = 0$. $\square$
 
 \subsection{A.6 Gate Saturation}
 
@@ -2470,7 +2470,7 @@ We tested MoE without the gate. Result: unstable training.
 2 & 0.85 & Too few \\
 4 & 0.85 & Marginal \\
 8 & 0.85 & Good \\
-16 & 0.85 & Marginal gain, 2$$\times$ params \\
+16 & 0.85 & Marginal gain, 2$\times$ params \\
 32 & OOM & -- \\
 \bottomrule
 \end{tabular}
@@ -2568,7 +2568,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

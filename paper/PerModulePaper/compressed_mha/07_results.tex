@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{Compressed MHA} & \textbf{50.92} & -39.79 & 0.6748 & 48.5M & \textbf{1.38$$\times$} & 291 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{Compressed MHA} & \textbf{50.92} & -27.64 & 0.6748 & 95.0M & \textbf{1.31$$\times$} & 575 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \textbf{1.31$$\times$} & 471 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{Compressed MHA} & \textbf{50.92} & -39.79 & 0.6748 & 48.5M & \textbf{1.38$\times$} & 291 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{Compressed MHA} & \textbf{50.92} & -27.64 & 0.6748 & 95.0M & \textbf{1.31$\times$} & 575 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \textbf{1.31$\times$} & 471 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,9 +40,9 @@ GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \te
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Reduction} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 48500000 & \textbf{1.38$$\times$} & Joint QKV + LoRA \\
-RoBERTa & 124,647,170 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
-GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
+DistilBERT & 66,955,010 & 48500000 & \textbf{1.38$\times$} & Joint QKV + LoRA \\
+RoBERTa & 124,647,170 & 95000000 & \textbf{1.31$\times$} & Joint QKV + LoRA \\
+GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$\times$} & Joint QKV + LoRA \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,12 +58,12 @@ GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Reduction} \\
 \midrule
-$W_Q$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_K$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_V$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_O$ & 589,824 & 98304 & 6.0$$\times$ \\
+$W_Q$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_K$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_V$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_O$ & 589,824 & 98304 & 6.0$\times$ \\
 LoRA & 0 & 73,728 & -- \\
-\textbf{Total} & 2,359,296 & \textbf{467072} & \textbf{5.05$$\times$} \\
+\textbf{Total} & 2,359,296 & \textbf{467072} & \textbf{5.05$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,11 +98,11 @@ GPT-2 & Compressed & 4.6 s & 24500 & 471 MB MB \\
 \toprule
 \textbf{$r_{qkv} = r_{out}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 82.0 & 4.5$$\times$ & 68.0 & 70.5 \\
-64 & 89.5 & 1.38$$\times$ & 76.5 & 78.0 \\
-128 & 90.0 & 1.10$$\times$ & 77.5 & 78.8 \\
-256 & 90.5 & 1.03$$\times$ & 78.0 & 79.0 \\
-384 & 90.6 & 1.00$$\times$ & 78.2 & 79.2 \\
+32 & 82.0 & 4.5$\times$ & 68.0 & 70.5 \\
+64 & 89.5 & 1.38$\times$ & 76.5 & 78.0 \\
+128 & 90.0 & 1.10$\times$ & 77.5 & 78.8 \\
+256 & 90.5 & 1.03$\times$ & 78.0 & 79.0 \\
+384 & 90.6 & 1.00$\times$ & 78.2 & 79.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -195,10 +195,10 @@ The fix restores full accuracy.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-A3 & 88.5 & 5.0$$\times$ & 75.5 & 4.5$$\times$ \\
-AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
-\textbf{Compressed MHA} & \textbf{50.92} & \textbf{1.38$$\times$} & \textbf{50.92} & \textbf{1.31$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+A3 & 88.5 & 5.0$\times$ & 75.5 & 4.5$\times$ \\
+AASVD & 88.0 & 4.8$\times$ & 75.0 & 4.3$\times$ \\
+\textbf{Compressed MHA} & \textbf{50.92} & \textbf{1.38$\times$} & \textbf{50.92} & \textbf{1.31$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,7 +206,7 @@ AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
 \subsection{Summary}
 
 \begin{itemize}
-\item Parameter reduction: \textbf{1.38$$\times$--1.31$$\times$}
+\item Parameter reduction: \textbf{1.38$\times$--1.31$\times$}
 \item Accuracy drop: \textbf{-39.79\%---28.44\%}
 \item Nested detection fix restores DistilBERT accuracy.
 \end{itemize}
@@ -215,9 +215,9 @@ AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/compressed_mha_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{compressed_mha}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{compressed_mha}.}
 \label{fig:results_compressed_mha}
 \end{figure}

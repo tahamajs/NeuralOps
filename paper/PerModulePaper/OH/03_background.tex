@@ -5,15 +5,15 @@
 
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\end{equation}
+\]
 
 with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
-\begin{equation}
+\[
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{equation}
+\]
 
 \textbf{Complexity:} $\mathcal{O}(L^2 d)$.
 
@@ -21,9 +21,9 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 Restrict attention to a window of size $W$:
 
-\begin{equation}
+\[
 \text{SWA}(X)_i = \text{softmax}\!\left(\frac{Q_i K_{[i-W:i+W]}^\top}{\sqrt{d_h}}\right) V_{[i-W:i+W]}
-\end{equation}
+\]
 
 For causal models, the window is one-sided. Complexity: $\mathcal{O}(L W d)$.
 
@@ -33,10 +33,10 @@ Given a sequence $X \in \mathbb{R}^{B \times L \times d}$ and a learnable
 projection $W_p \in \mathbb{R}^{d \times d_c}$, the soft-attention pooled 
 representation is:
 
-\begin{equation}
+\[
 \text{Pool}_j = \sum_{i=1}^{L} \alpha_{ij} X_i, \qquad
 \alpha_{ij} = \frac{\exp(W_{p,j}^\top X_i)}{\sum_{i'=1}^L \exp(W_{p,j}^\top X_{i'})}
-\end{equation}
+\]
 
 for $j = 1, \dots, d_c$.
 
@@ -48,9 +48,9 @@ representation $\text{Pool}_j$ is a weighted average of tokens.
 
 Given two branches (local and global), we combine them via a gate:
 
-\begin{equation}
+\[
 \text{output} = \gamma \odot \text{local} + (1 - \gamma) \odot \text{global}
-\end{equation}
+\]
 
 with $\gamma = \sigma(W_g X) \in [0, 1]$.
 

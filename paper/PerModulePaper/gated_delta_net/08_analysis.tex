@@ -18,7 +18,7 @@ for c in range(num_chunks):              # outer
 For $L = 128$, \texttt{chunk\_size = 8}:
 \begin{itemize}
 \item Outer: 16 iterations
-\item Inner: 16 $$\times$ 8 = 128 iterations
+\item Inner: 16 $\times$ 8 = 128 iterations
 \item \textbf{Total: 144 Python-level iterations}
 
 \end{itemize}
@@ -34,18 +34,18 @@ launches a CUDA kernel. \textbf{~600 kernel launches per forward.}
 \toprule
 \textbf{Operation} & \textbf{Launch time} & \textbf{Per forward (L=128)} \\
 \midrule
-Q/K/V projections & 3 $$\times$ 10  s & 30  s \\
-RoPE & 2 $$\times$ 5  s & 10  s \\
-Gating & 4 $$\times$ 5  s & 20  s \\
-\textbf{Recurrence} & \textbf{~600 $$\times$ 8  s} & \textbf{~4800  s} \\
-SiLU & 2 $$\times$ 5  s & 10  s \\
+Q/K/V projections & 3 $\times$ 10  s & 30  s \\
+RoPE & 2 $\times$ 5  s & 10  s \\
+Gating & 4 $\times$ 5  s & 20  s \\
+\textbf{Recurrence} & \textbf{~600 $\times$ 8  s} & \textbf{~4800  s} \\
+SiLU & 2 $\times$ 5  s & 10  s \\
 Output projection & 10  s & 10  s \\
 \textbf{Total} &  & \textbf{~4880  s = 4.9 ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Baseline attention: ~400  s per forward. \textbf{Gated DeltaNet is 12$$\times$ slower} 
+Baseline attention: ~400  s per forward. \textbf{Gated DeltaNet is 12$\times$ slower} 
 just from kernel launches.
 
 \subsubsection{Gradient Checkpointing Overhead}
@@ -122,9 +122,9 @@ with:
 \textbf{Implementation} & \textbf{Language} & \textbf{Speed} \\
 \midrule
 \textbf{Ours} & Pure PyTorch & Slow (this paper) \\
-Mamba (Gu \& Dao, 2023) & CUDA & ~10$$\times$ faster than attention \\
-GLA (Yang et al., 2024) & Triton & ~5$$\times$ faster than attention \\
-DeltaNet (Yang et al., 2024) & Triton & ~3$$\times$ faster than attention \\
+Mamba (Gu \& Dao, 2023) & CUDA & ~10$\times$ faster than attention \\
+GLA (Yang et al., 2024) & Triton & ~5$\times$ faster than attention \\
+DeltaNet (Yang et al., 2024) & Triton & ~3$\times$ faster than attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,15 +142,15 @@ A Triton kernel could:
 \item Use \texttt{tl.dot} for matmuls (tensor cores)
 
 \end{itemize}
-Expected speedup: \textbf{20-50$$\times$}.
+Expected speedup: \textbf{20-50$\times$}.
 
 \subsubsection{Custom CUDA Kernel}
 
-A hand-tuned CUDA kernel could achieve another 2-3$$\times$ on top of Triton.
+A hand-tuned CUDA kernel could achieve another 2-3$\times$ on top of Triton.
 
 \subsubsection{Removing Gradient Checkpointing}
 
-If memory allows, disabling checkpointing gives \textbf{~2$$\times$ speedup}.
+If memory allows, disabling checkpointing gives \textbf{~2$\times$ speedup}.
 
 \subsection{Ablation: What Contributes to Slowdown?}
 

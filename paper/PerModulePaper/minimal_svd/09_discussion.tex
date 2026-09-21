@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Compression}
 
-MinimalSVD reduces attention parameters by \textbf{50\%$$\times$--2.1$$\times$} with 
+MinimalSVD reduces attention parameters by \textbf{50\%$\times$--2.1$\times$} with 
 accuracy drops of \textbf{-1.83\%--+1.49\%}. Genuine reduction in model 
 size.
 
@@ -67,10 +67,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{MinimalSVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$$\times$} \\
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
-VRAM & 183 MB & 286 MB MB & \textbf{2.1$$\times$} \\
-Time & 1.90 s & 1.42x s & \textbf{2.1$$\times$} \\
+Disk (FP16) & 134 MB & 0.85 MB & \textbf{2.1$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+VRAM & 183 MB & 286 MB MB & \textbf{2.1$\times$} \\
+Time & 1.90 s & 1.42x s & \textbf{2.1$\times$} \\
 Accuracy & 90.71\% & 88.88\% & -1.83\% \\
 \bottomrule
 \end{tabular}
@@ -85,13 +85,13 @@ Accuracy & 90.71\% & 88.88\% & -1.83\% \\
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT (from scratch) & -- & 3.5$$\times$ & 89.4\% \\
-DistilBERT (distill) & -- & 1.6$$\times$ & 90.7\% \\
-A3 & Required & 2.1$$\times$ & 86.4\%\% \\
-AASVD & Required & 2.1$$\times$ & 86.4\%\% \\
-MinimalNOVA & None & 2.1$$\times$ & 86.4\%\% \\
-MinimalPRISM & None & 2.1$$\times$ & 86.4\%\% \\
-\textbf{MinimalSVD} & \textbf{None} & \textbf{50\%$$\times$} & \textbf{88.88\%} \\
+ALBERT (from scratch) & -- & 3.5$\times$ & 89.4\% \\
+DistilBERT (distill) & -- & 1.6$\times$ & 90.7\% \\
+A3 & Required & 2.1$\times$ & 86.4\%\% \\
+AASVD & Required & 2.1$\times$ & 86.4\%\% \\
+MinimalNOVA & None & 2.1$\times$ & 86.4\%\% \\
+MinimalPRISM & None & 2.1$\times$ & 86.4\%\% \\
+\textbf{MinimalSVD} & \textbf{None} & \textbf{50\%$\times$} & \textbf{88.88\%} \\
 \bottomrule
 \end{tabular}
 \end{table}

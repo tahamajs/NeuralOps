@@ -76,16 +76,16 @@ This spreads initial centroids uniformly across the valid sequence.
 We run \textbf{3 iterations} of standard Lloyd's algorithm:
 
 \textbf{Assignment:}
-\begin{equation}
+\[
 a_{b,h,i} = \arg\min_{k \in [K]} \|Q_{b,h,i} - C_{b,h,k}\|_2^2
-\end{equation}
+\]
 
 Implemented via \texttt{torch.cdist} on FP32 for numerical stability.
 
 \textbf{Update:}
-\begin{equation}
+\[
 C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
-\end{equation}
+\]
 
 Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
 their previous centroid.
@@ -104,17 +104,17 @@ Empirically, 3 iterations are enough for attention clustering:
 
 For each centroid $C_k$, compute attention to all keys:
 
-\begin{equation}
+\[
 \text{scores}_{b,h,k,j} = \frac{C_{b,h,k} \cdot K_{b,h,j}}{\sqrt{d_h}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \alpha_{b,h,k,j} = \text{softmax}_j(\text{scores}_{b,h,k,j})
-\end{equation}
+\]
 
-\begin{equation}
+\[
 V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ -- linear in $L$!
 
@@ -127,15 +127,15 @@ scores are restricted to $j \leq$ some threshold. See Section 5.4.
 
 Each query is assigned to centroids via soft attention:
 
-\begin{equation}
+\[
 \text{assign}_{b,h,i,k} = \text{softmax}_k\!\left(\frac{Q_{b,h,i} \cdot C_{b,h,k}}{\sqrt{d_h} \cdot \tau}\right)
-\end{equation}
+\]
 
 with learnable temperature $\tau$. The global context is:
 
-\begin{equation}
+\[
 \text{Global}_{b,h,i} = \sum_k \text{assign}_{b,h,i,k} \cdot V_{\text{cent}, b,h,k}
-\end{equation}
+\]
 
 \textbf{Why temperature?} Small $\tau$ sharpens the assignment toward the 
 nearest centroid (harder clustering); large $\tau$ softens it. We initialize 
@@ -151,13 +151,13 @@ logit is masked to $-\infty$, ensuring no query attends to it.
 Clustering captures global structure but can miss fine-grained local 
 dependencies. We add a sliding-window attention branch:
 
-\begin{equation}
+\[
 \text{scores}^\text{local}_{b,h,i,j} = \frac{Q_{b,h,i} \cdot K_{b,h,j}}{\sqrt{d_h}} \cdot \mathbf{1}[|i - j| \leq W]
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Local}_{b,h,i} = \sum_{j: |i-j| \leq W} \text{softmax}_j(\text{scores}^\text{local}) \cdot V_{b,h,j}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L \cdot W \cdot d_h)$.
 
@@ -165,9 +165,9 @@ dependencies. We add a sliding-window attention branch:
 
 The final output is:
 
-\begin{equation}
+\[
 \text{Output} = (1 - \sigma(\alpha)) \cdot \text{Global} + \sigma(\alpha) \cdot \text{Local}
-\end{equation}
+\]
 
 where $\alpha \in \mathbb{R}$ is a \textbf{learnable scalar} initialized to 0 
 (so $\sigma(0) = 0.5$, giving 50/50 blend at start).
@@ -179,7 +179,7 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
  1: Q $\leftarrow$ LoRALinear_Q(X)                         Frozen base + LoRA
@@ -315,9 +315,9 @@ distribution over centroids. It approximates the attention over tokens by
 grouping tokens. The approximation error is bounded by the K-means 
 distortion:
 
-\begin{equation}
+\[
 \epsilon \leq \sum_i \|Q_i - C_{a_i}\|_2^2
-\end{equation}
+\]
 
 See Appendix A.5 for details.
 

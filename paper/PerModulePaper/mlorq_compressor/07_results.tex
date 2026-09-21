@@ -11,9 +11,9 @@ We evaluate \texttt{mlorq\_compressor} across three canonical language understan
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 90.14\% & 0.9055 & 1.00$$\times$ & 0.0423 & 360.8 MB & 49279 & 6.80 s \\
-MNLI & PASS & 80.60\% & 0.8054 & 1.00$$\times$ & 0.0415 & 362.4 MB & 52353 & 9.77 s \\
-AG News & PASS & 94.40\% & 0.9405 & 1.00$$\times$ & 0.0418 & 384.3 MB & 100092 & 9.85 s \\
+SST-2 & PASS & 90.14\% & 0.9055 & 1.00$\times$ & 0.0423 & 360.8 MB & 49279 & 6.80 s \\
+MNLI & PASS & 80.60\% & 0.8054 & 1.00$\times$ & 0.0415 & 362.4 MB & 52353 & 9.77 s \\
+AG News & PASS & 94.40\% & 0.9405 & 1.00$\times$ & 0.0418 & 384.3 MB & 100092 & 9.85 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{mlorq\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 66,956,548 & +0 (+0.00\%) & 593,668 & 36 & 0 \\
 Execution profiling demonstrates that \texttt{mlorq\_compressor} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/mlorq_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{mlorq_compressor}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mlorq_compressor}.}
 \label{fig:results_mlorq_compressor}
 \end{figure}

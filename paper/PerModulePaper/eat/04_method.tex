@@ -15,7 +15,7 @@ EAT replaces the standard MHSA block with a version that:
 
 \begin{lstlisting}
     +-------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                       |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                       |
     +----------------+--------------------------+
                      |
                       
@@ -222,8 +222,8 @@ mitigation in  5.8.
 
 \textbf{Algorithm 1:} EAT forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_ids
-Output: Y $\in$ R^{B$$\times$L'$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_ids
+Output: Y $\in$ R^{B$\times$L'$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)           Frozen W + trainable LoRA
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -276,7 +276,7 @@ Downstream FFN & $\mathcal{O}(k d^2)$ \\
 \end{tabular}
 \end{table}
 
-For $k = L / 2$, downstream cost is reduced by 4$$\times$.
+For $k = L / 2$, downstream cost is reduced by 4$\times$.
 
 \subsection{Parameter Analysis}
 
@@ -311,7 +311,7 @@ Q projection EAT & 589,824 + 24,576 = 614,400 & +24,576 \\
 \end{tabular}
 \end{table}
 
-\textbf{Across 4 projections $$\times$ $N_\ell$ layers:}
+\textbf{Across 4 projections $\times$ $N_\ell$ layers:}
 
 \begin{table}[H]
 \centering

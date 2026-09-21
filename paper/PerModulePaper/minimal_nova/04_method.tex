@@ -19,7 +19,7 @@ adaptively per layer based on spectral energy.
 
 \begin{lstlisting}
        +------------------------------------------+
-       |  Input weight W $\in$ R^{d_out $$\times$ d_in}       |
+       |  Input weight W $\in$ R^{d_out $\times$ d_in}       |
        +----------------+-------------------------+
                         |
                          
@@ -63,7 +63,7 @@ where:
 \begin{itemize}
 \item \texttt{down: nn.Linear(d\_in, r)} -- down-projection, weights $V_r \in \mathbb{R}^{r \times d_\text{in}}$
 \item \texttt{up: nn.Linear(r, d\_out)} -- up-projection, weights $U_r \in \mathbb{R}^{d_\text{out} \times r}$
-\item \texttt{LoRA(x) = (x A\^{}\top) B\^{}\top \cdot s} -- optional adapter
+\item \texttt{LoRA(x) = (x A^\top) B^\top \cdot s} -- optional adapter
 
 \end{itemize}
 \subsubsection{Parameter Count}
@@ -91,10 +91,10 @@ Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$$\times$ \\
-r=64 & 98,304 & \textbf{6.00$$\times$} \\
-r=128 & 196,608 & 3.00$$\times$ \\
-r=64 + LoRA r=16 & 122,880 & 4.80$$\times$ \\
+Original & 589,824 & 1.00$\times$ \\
+r=64 & 98,304 & \textbf{6.00$\times$} \\
+r=128 & 196,608 & 3.00$\times$ \\
+r=64 + LoRA r=16 & 122,880 & 4.80$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

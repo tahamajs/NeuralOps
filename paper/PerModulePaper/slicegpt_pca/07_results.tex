@@ -11,9 +11,9 @@ We evaluate \texttt{slicegpt\_pca} across three canonical language understanding
 \toprule
 \textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
 \midrule
-SST-2 & PASS & 91.06\% & 0.9137 & 1.00$$\times$ & 0.9787 & 302.9 MB & 54049 & 34.82 s \\
-MNLI & PASS & 81.50\% & 0.8145 & 1.00$$\times$ & 0.9790 & 304.5 MB & 174628 & 28.83 s \\
-AG News & PASS & 94.60\% & 0.9422 & 1.00$$\times$ & 0.9804 & 326.5 MB & 87378 & 51.63 s \\
+SST-2 & PASS & 91.06\% & 0.9137 & 1.00$\times$ & 0.9787 & 302.9 MB & 54049 & 34.82 s \\
+MNLI & PASS & 81.50\% & 0.8145 & 1.00$\times$ & 0.9790 & 304.5 MB & 174628 & 28.83 s \\
+AG News & PASS & 94.60\% & 0.9422 & 1.00$\times$ & 0.9804 & 326.5 MB & 87378 & 51.63 s \\
 \bottomrule
 \end{tabular}
 \caption{Empirical evaluation of \texttt{slicegpt\_pca} across SST-2, MNLI, and AG News on DistilBERT-base.}
@@ -43,9 +43,9 @@ AG News & 66,956,548 & 66,956,548 & +0 (+0.00\%) & 593,668 & 0 & 0 \\
 Execution profiling demonstrates that \texttt{slicegpt\_pca} executes within the hardware constraints of standard cloud accelerators. Peak VRAM consumption remains strictly bounded, and end-to-end latency reflects low-overhead runtime execution without unbounded memory fragmentation.
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/slicegpt_pca_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{slicegpt_pca}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{slicegpt_pca}.}
 \label{fig:results_slicegpt_pca}
 \end{figure}

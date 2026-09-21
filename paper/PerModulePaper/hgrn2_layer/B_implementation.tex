@@ -78,7 +78,7 @@ nn.init.constant_(self.forget_gate.bias, -2.5)
 \end{lstlisting}
 
 \textbf{Why -2.5?} \texttt{softplus(-2.5) $\approx$ 0.076}. So \texttt{log f = -0.076}, 
-\texttt{f = e\^{}{-0.076} $\approx$ 0.93}. This means the state retains 93\% of its value 
+\texttt{f = e^{-0.076} $\approx$ 0.93}. This means the state retains 93\% of its value 
 per step -- slow decay.
 
 \subsection{B.4 Input Modulation}

@@ -5,23 +5,23 @@
 For a weight matrix $W$ with SVD $W = U \Sigma V^\top$, the energy captured 
 by rank $r$ is:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_{i} \sigma_i^2}
-\end{equation}
+\]
 
 We select $r^* = \min \{ r : E(r) \geq \eta \}$.
 
 \textbf{Claim.} The Frobenius error after rank-$r^*$ truncation is bounded by:
 
-\begin{equation}
+\[
 \|W - W_{r^*}\|_F \leq \sqrt{1 - \eta} \cdot \|W\|_F
-\end{equation}
+\]
 
 \textbf{Proof.} By definition of $E(r^*)$:
 
-\begin{equation}
+\[
 \sum_{i > r^*} \sigma_i^2 = (1 - E(r^*)) \|W\|_F^2 \leq (1 - \eta) \|W\|_F^2
-\end{equation}
+\]
 
 Taking square roots gives (A.2). $\square$
 
@@ -30,9 +30,9 @@ Taking square roots gives (A.2). $\square$
 For an encoder with $H_\text{local}$ local heads and $H_\text{global}$ 
 global heads:
 
-\begin{equation}
+\[
 \text{FLOPs} = B \cdot L \cdot d_h \cdot (H_\text{local} \cdot W + H_\text{global} \cdot F)
-\end{equation}
+\]
 
 For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 
@@ -40,35 +40,35 @@ For fixed $W, F, H_\text{local}, H_\text{global}$, this is linear in $L$.
 
 For query at position $i$, the window mask is:
 
-\begin{equation}
+\[
 \text{mask}_{ij} = \mathbb{1}[(i - W/2) \leq j \leq (i + W/2)]
-\end{equation}
+\]
 
 Causal variant:
 
-\begin{equation}
+\[
 \text{mask}_{ij}^\text{causal} = \mathbb{1}[i - W/2 \leq j \leq i]
-\end{equation}
+\]
 
 \subsection{A.4 Kernel Linear Attention}
 
 RFF feature map:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} x)
-\end{equation}
+\]
 
 Attention output:
 
-\begin{equation}
+\[
 \text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 \textbf{Zero-sum keys.} Subtract mean:
 
-\begin{equation}
+\[
 \tilde{k}_j = k_j - \bar{k}
-\end{equation}
+\]
 
 Then $\phi(\tilde{k}_j)$ is centered around 1.
 
@@ -76,17 +76,17 @@ Then $\phi(\tilde{k}_j)$ is centered around 1.
 
 The V5 stable softmax:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}}
-\end{equation}
+\]
 
 This is always numerically stable (uses \texttt{F.softmax} which subtracts max).
 
 The V4 (broken) version:
 
-\begin{equation}
+\[
 \text{softpick}_\text{V4}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
-\end{equation}
+\]
 
 \textbf{Failure case.} If $m < 0$, then $e^{-m/T} > 1$, and 
 $\text{ReLU}(e^{(x_i - m)/T} - e^{-m/T}) = 0$ for all $i$ (since 

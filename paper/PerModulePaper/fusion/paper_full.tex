@@ -1,4 +1,4 @@
-\title{\textbf{FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path}
+\title{\textbf{FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path}}
 
 \author{Anonymous authors}
 
@@ -518,7 +518,7 @@ For $L = 512, B = 64, K = 4$:
 \begin{itemize}
 \item Short: $512^2 = 262$K
 \item Long: $4 \times 512 \times 64 = 131$K
-\item \textbf{Reduction: 2$$\times$}
+\item \textbf{Reduction: 2$\times$}
 
 \end{itemize}
 For $L = 4096, B = 64, K = 4$:
@@ -526,7 +526,7 @@ For $L = 4096, B = 64, K = 4$:
 \begin{itemize}
 \item Short: $16.7$M
 \item Long: $1.05$M
-\item \textbf{Reduction: 16$$\times$}
+\item \textbf{Reduction: 16$\times$}
 
 \end{itemize}
 \subsection{Parameter Analysis}
@@ -990,10 +990,10 @@ full & 90.71\% & 0 & No & -- \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fusion_attn_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{fusion}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{fusion}.}
 \label{fig:results_fusion}
 \end{figure}
 
@@ -1033,12 +1033,12 @@ $L = 128$, the module's sparsity machinery is silent.
 \toprule
 \textbf{$L$} & \textbf{Softmax (FLOPs)} & \textbf{FUSIONATTN (FLOPs)} & \textbf{Speedup} \\
 \midrule
-64 & 4096 & 4096 (short) & 1$$\times$ \\
-128 & 16384 & 16384 (short) & 1$$\times$ \\
-256 & 65536 & 32768 & 2$$\times$ \\
-512 & 262144 & 65536 & 4$$\times$ \\
-1024 & 1.05M & 131K & 8$$\times$ \\
-4096 & 16.8M & 1.05M & \textbf{16$$\times$} \\
+64 & 4096 & 4096 (short) & 1$\times$ \\
+128 & 16384 & 16384 (short) & 1$\times$ \\
+256 & 65536 & 32768 & 2$\times$ \\
+512 & 262144 & 65536 & 4$\times$ \\
+1024 & 1.05M & 131K & 8$\times$ \\
+4096 & 16.8M & 1.05M & \textbf{16$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1174,7 +1174,7 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 65K & \textbf{4$$\times$ reduction} \\
+Attention FLOPs & 262K & 65K & \textbf{4$\times$ reduction} \\
 Accuracy & 90.71\% & 86.4\% & 0.85\% \\
 Params & 66.9M & 66.4MM & +-32MM \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
@@ -1926,9 +1926,9 @@ Accuracy & 77.5\% \\
 \toprule
 \textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-32 & 0.85 & 0.5$$\times$ \\
-64 & 0.85 & 1.0$$\times$ \\
-128 & 0.85 & 2.0$$\times$ \\
+32 & 0.85 & 0.5$\times$ \\
+64 & 0.85 & 1.0$\times$ \\
+128 & 0.85 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1942,9 +1942,9 @@ Accuracy & 77.5\% \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-2 & 0.85 & 0.5$$\times$ \\
-4 & 0.85 & 1.0$$\times$ \\
-8 & 0.85 & 2.0$$\times$ \\
+2 & 0.85 & 0.5$\times$ \\
+4 & 0.85 & 1.0$\times$ \\
+8 & 0.85 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2121,7 +2121,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

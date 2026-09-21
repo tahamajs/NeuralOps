@@ -103,7 +103,7 @@ except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
 \item For RoBERTa (nested), \texttt{w\_q.shape = (768, 768)} but only if we extract from
   \texttt{self.query}. \texttt{in\_proj\_weight.shape = (2304, 768)}. \textbf{Copy succeeds.}
 \item For GPT-2, \texttt{c\_attn.weight} is \texttt{(768, 2304)} (Conv1D). After transpose
-  \texttt{(2304, 768)}. Split gives \texttt{(768, 768) $$\times$ 3}. Concat gives \texttt{(2304, 768)}.
+  \texttt{(2304, 768)}. Split gives \texttt{(768, 768) $\times$ 3}. Concat gives \texttt{(2304, 768)}.
   \textbf{Copy succeeds.}
 \item \textbf{But \texttt{out\_proj}:} For DistilBERT, \texttt{out\_lin.weight = (768, 768)} and
   \texttt{out\_proj.weight = (768, 768)}. \textbf{Copy succeeds.}
@@ -184,8 +184,8 @@ Residual + LN & $\mathcal{O}(Ld)$ & $\mathcal{O}(Ld)$ \\
 
 \textbf{Algorithm 1:} GatedDeltaNetBlock forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, use_full_attention
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, use_full_attention
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1: if use_full_attention:
 2:     A $\leftarrow$ nn.MultiheadAttention(X, X, X)

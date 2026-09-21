@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{MinimalPRISM} & \textbf{85.44} & -5.27 & 0.8670 & 2.0x & \textbf{50\%$$\times$} & 293 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{MinimalPRISM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 339 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{MinimalPRISM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$$\times$} & 495 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{MinimalPRISM} & \textbf{85.44} & -5.27 & 0.8670 & 2.0x & \textbf{50\%$\times$} & 293 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{MinimalPRISM} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 339 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{MinimalPRISM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textbf{2.1$\times$} & 495 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,8 +25,8 @@ GPT-2 & \textbf{MinimalPRISM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textb
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item Parameter reduction: 50\%$$\times$ (DistilBERT), 2.1$$\times$ (RoBERTa),
-  2.1$$\times$ (GPT-2).
+\item Parameter reduction: 50\%$\times$ (DistilBERT), 2.1$\times$ (RoBERTa),
+  2.1$\times$ (GPT-2).
 \item Accuracy drop: -5.27\%, -27.64\%, -28.44\%.
 \item VRAM reduction: 380 MB\% average.
 
@@ -42,9 +42,9 @@ GPT-2 & \textbf{MinimalPRISM} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & \textb
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} & 0.85 \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} & 0.85 \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,10 +58,10 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} & 0.85 \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{MinimalPRISM} & \textbf{Ratio} \\
 \midrule
-q\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-k\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-v\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
-out\_lin (768$$\times$768) & 589,824 & 0.85 & 32$$\times$ \\
+q\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+k\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+v\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
+out\_lin (768$\times$768) & 589,824 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,11 +145,11 @@ GPT-2 & MinimalPRISM & 2.3 s s & 0.85 & 495 MB MB \\
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 32 & 2.1$$\times$ & 32 & 32 \\
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-384 & 32 & 2.1$$\times$ & 32 & 32 \\
+32 & 32 & 2.1$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+384 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -222,11 +222,11 @@ GPT-2 & MinimalPRISM & 2.3 s s & 0.85 & 495 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-a3 & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-aasvd & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-minimal\_nova & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-\textbf{MinimalPRISM} & \textbf{85.44} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+a3 & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+aasvd & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+minimal\_nova & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+\textbf{MinimalPRISM} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -262,7 +262,7 @@ GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction:} 50\%$$\times$--2.1$$\times$
+\item \textbf{Parameter reduction:} 50\%$\times$--2.1$\times$
 \item \textbf{Accuracy drop:} -5.27\%---28.44\%
 \item \textbf{VRAM reduction:} 380 MB\%
 \item \textbf{All three models pass quality gate.}
@@ -272,9 +272,9 @@ GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/minimal_prism_distilbert_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{minimal_prism}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{minimal_prism}.}
 \label{fig:results_minimal_prism}
 \end{figure}

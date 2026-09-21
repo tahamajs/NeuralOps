@@ -9,7 +9,7 @@ achieving accuracy within -27.75\% of baseline on DistilBERT.
 
 \subsubsection{Takeaway 2: Short Sequences are Slow}
 
-At L = 128, our method is \textbf{1.0x$$\times$ slower} than baseline due to Python 
+At L = 128, our method is \textbf{1.0x$\times$ slower} than baseline due to Python 
 chunk loops.
 
 \subsubsection{Takeaway 3: Parameters Increase}
@@ -58,7 +58,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & 62.96\% & -27.75\% \\
 Params & 66.95M & 66.4M & +48.5\%\% \\
-Time & 45 s & 0.85 s & 86.4$$\times$ \\
+Time & 45 s & 0.85 s & 86.4$\times$ \\
 VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -67,7 +67,7 @@ VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
 \subsection{Fused Kernel Opportunity}
 
 A \textbf{fused Triton kernel} for the chunked scan could eliminate the Python 
-loop. Expected speedup: 3-5$$\times$ at L = 128.
+loop. Expected speedup: 3-5$\times$ at L = 128.
 
 \subsection{Broader Impact}
 

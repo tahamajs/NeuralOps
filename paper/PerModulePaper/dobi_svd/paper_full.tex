@@ -1,4 +1,4 @@
-\title{\textbf{Dobi-SVD: Differentiable Low-Rank Factorization with Learnable Spectral Gating}
+\title{\textbf{Dobi-SVD: Differentiable Low-Rank Factorization with Learnable Spectral Gating}}
 
 \author{Anonymous authors}
 
@@ -396,7 +396,7 @@ where:
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $$\times$ d_in}           |
+   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
    +--------------------+-------------------------+
                         |
                          
@@ -479,9 +479,9 @@ Dobi-SVD at rank $r$ & $r d_\text{in} + d_\text{out} r + r$ \\
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00$$\times$ \\
-Dobi-SVD $r=128$ & 196,736 & 3.00$$\times$ \\
-Dobi-SVD $r=64$ & 98,368 & 6.00$$\times$ \\
+Original & 589,824 & 1.00$\times$ \\
+Dobi-SVD $r=128$ & 196,736 & 3.00$\times$ \\
+Dobi-SVD $r=64$ & 98,368 & 6.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1119,12 +1119,12 @@ All experiments use seed 42.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Eff. ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ \\
-DistilBERT & \textbf{Dobi-SVD} & \textbf{90.48} & -0.23 & 0.9079 & 66.4MM & \textbf{50\%$$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$$\times$ \\
-RoBERTa & \textbf{Dobi-SVD} & \textbf{74.54} & -4.02 & 0.7707 & 124.6MM & \textbf{2.1$$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$$\times$ \\
-GPT-2 & \textbf{Dobi-SVD} & \textbf{58.14} & -21.22 & 0.6256 & 124.4MM & \textbf{2.1$$\times$} \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ \\
+DistilBERT & \textbf{Dobi-SVD} & \textbf{90.48} & -0.23 & 0.9079 & 66.4MM & \textbf{50\%$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ \\
+RoBERTa & \textbf{Dobi-SVD} & \textbf{74.54} & -4.02 & 0.7707 & 124.6MM & \textbf{2.1$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ \\
+GPT-2 & \textbf{Dobi-SVD} & \textbf{58.14} & -21.22 & 0.6256 & 124.4MM & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1220,10 +1220,10 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & 32 & 2.1$$\times$ & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 \\
-256 & 32 & 2.1$$\times$ & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 \\
+256 & 32 & 2.1$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1258,10 +1258,10 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{$\tau_g$} & \textbf{$r_\text{eff}$} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-0.1 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.3 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.5 & 0.85 & 86.4\% & 2.1$$\times$ \\
-0.7 & 0.85 & 86.4\% & 2.1$$\times$ \\
+0.1 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.3 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.5 & 0.85 & 86.4\% & 2.1$\times$ \\
+0.7 & 0.85 & 86.4\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1296,11 +1296,11 @@ GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Rank learned?} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & -- \\
-MinimalSVD & 0.85 & 2.1$$\times$ &  \\
-SVD-LLM V2 & 0.85 & 2.1$$\times$ &  \\
-MLA & 0.85 & 2.1$$\times$ &  \\
-\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$$\times$} & \textbf{ } \\
+full & 90.71\% & 1.00$\times$ & -- \\
+MinimalSVD & 0.85 & 2.1$\times$ &  \\
+SVD-LLM V2 & 0.85 & 2.1$\times$ &  \\
+MLA & 0.85 & 2.1$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$\times$} & \textbf{ } \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1345,10 +1345,10 @@ GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 & 0.85\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/dobi_svd_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{dobi_svd}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{dobi_svd}.}
 \label{fig:results_dobi_svd}
 \end{figure}
 
@@ -1442,8 +1442,8 @@ GPT-2 & 32 & 0.85 & 46.0\%\% \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Effective r} & \textbf{Ratio} \\
 \midrule
-Fixed $r=128$ & 86.0 & 128 & 2.1$$\times$ \\
-Dobi ($\tau$\_g=0.5) & 90.48 & 32 & 50\%$$\times$ \\
+Fixed $r=128$ & 86.0 & 128 & 2.1$\times$ \\
+Dobi ($\tau$\_g=0.5) & 90.48 & 32 & 50\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1620,10 +1620,10 @@ For DistilBERT on RTX 4070:
 \textbf{Metric} & \textbf{Baseline} & \textbf{Dobi} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 90.48\% & -0.23\% \\
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
 Effective rank & -- & 32 & -- \\
-VRAM & 183 MB & 311 MB MB & 2.1$$\times$ \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+VRAM & 183 MB & 311 MB MB & 2.1$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1812,9 +1812,9 @@ retraining.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Nominal $r$} & \textbf{Effective $r$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & -0.23\% & 32 & 32 & \textbf{50\%$$\times$} \\
-RoBERTa & -4.02\% & 32 & 0.85 & \textbf{2.1$$\times$} \\
-GPT-2 & -21.22\% & 32 & 0.85 & \textbf{2.1$$\times$} \\
+DistilBERT & -0.23\% & 32 & 32 & \textbf{50\%$\times$} \\
+RoBERTa & -4.02\% & 32 & 0.85 & \textbf{2.1$\times$} \\
+GPT-2 & -21.22\% & 32 & 0.85 & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2495,7 +2495,7 @@ This ensures recovery training does not touch fallback layers.
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Effective ratio & 50\%$$\times$ \\
+Effective ratio & 50\%$\times$ \\
 Accuracy & 90.48\% \\
 F1 & 0.9079 \\
 Precision & 0.85 \\
@@ -2521,7 +2521,7 @@ Compressed layers & 2.0x \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 66.4M \\
-Effective ratio & 2.1$$\times$ \\
+Effective ratio & 2.1$\times$ \\
 Accuracy & 74.54\% \\
 F1 & 0.7707 \\
 Peak VRAM & 530 MB MB \\
@@ -2543,7 +2543,7 @@ Compressed layers & 0.85 \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 66.4M \\
-Effective ratio & 2.1$$\times$ \\
+Effective ratio & 2.1$\times$ \\
 Accuracy & 58.14\% \\
 F1 & 0.6256 \\
 Peak VRAM & 636 MB MB \\
@@ -2599,10 +2599,10 @@ Compressed layers & 0.85 \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Effective $r_\text{eff}$} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & 32 & 2.1$$\times$ & 32 & 32 & 32 \\
-128 & 32 & 2.1$$\times$ & 32 & 32 & 32 \\
-192 & 32 & 2.1$$\times$ & 32 & 32 & 32 \\
-256 & 32 & 2.1$$\times$ & 32 & 32 & 32 \\
+64 & 32 & 2.1$\times$ & 32 & 32 & 32 \\
+128 & 32 & 2.1$\times$ & 32 & 32 & 32 \\
+192 & 32 & 2.1$\times$ & 32 & 32 & 32 \\
+256 & 32 & 2.1$\times$ & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2830,10 +2830,10 @@ Adaptive gate bias & Convergence & No change \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Learned rank?} \\
 \midrule
-MinimalSVD & 0.85 & 2.1$$\times$ &  \\
-SVD-LLM V2 & 0.85 & 2.1$$\times$ &  \\
-MLA & 0.85 & 2.1$$\times$ &  \\
-\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$$\times$} & \textbf{ } \\
+MinimalSVD & 0.85 & 2.1$\times$ &  \\
+SVD-LLM V2 & 0.85 & 2.1$\times$ &  \\
+MLA & 0.85 & 2.1$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$\times$} & \textbf{ } \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2899,7 +2899,7 @@ See  11.7.
 None.
 
 \subsection{E.7 Funding}
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgments}
 We thank the anonymous reviewers and the compute cluster administrators for their support.

@@ -4,13 +4,13 @@
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
 
@@ -19,31 +19,31 @@ Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
 Local window attention restricts each query to a window of size $W$ around 
 it:
 
-\begin{equation}
+\[
 \text{Attn}_\text{local}(q_i, K, V) = \sum_{j : |i - j| \leq W/2} \alpha_{ij} v_j
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L \cdot W \cdot d_h)$.
 
 For decoders, the causal variant restricts to $j \leq i$:
 
-\begin{equation}
+\[
 \text{Attn}_\text{local, causal}(q_i, K, V) = \sum_{j : i - W/2 \leq j \leq i} \alpha_{ij} v_j
-\end{equation}
+\]
 
 \subsection{Kernel Linear Attention}
 
 Kernel attention factorizes the softmax kernel:
 
-\begin{equation}
+\[
 e^{q \cdot k} \approx \phi(q)^\top \phi(k)
-\end{equation}
+\]
 
 The output becomes:
 
-\begin{equation}
+\[
 \text{Out}_\text{kernel}(q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\end{equation}
+\]
 
 Complexity: $\mathcal{O}(L \cdot F \cdot d_h)$ where $F$ is the feature 
 dimension.
@@ -52,9 +52,9 @@ dimension.
 
 For RFF:
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(W_\text{rff} x\right)
-\end{equation}
+\]
 
 where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
 
@@ -62,9 +62,9 @@ where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
 
 Zero-sum keys (Katharopoulos et al., 2020) subtract the mean:
 
-\begin{equation}
+\[
 \tilde{K} = K - \bar{K}
-\end{equation}
+\]
 
 This improves the approximation for positive-definite kernels.
 
@@ -72,36 +72,36 @@ This improves the approximation for positive-definite kernels.
 
 For decoders, the cumulative sum formulation:
 
-\begin{equation}
+\[
 S_i = \sum_{j \leq i} \phi(k_j) v_j^\top, \quad
 Z_i = \sum_{j \leq i} \phi(k_j)
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Out}_i = \frac{\phi(q_i)^\top S_i}{\phi(q_i)^\top Z_i}
-\end{equation}
+\]
 
 \subsection{Singular Value Decomposition}
 
 For $W \in \mathbb{R}^{m \times n}$:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 Truncated at rank $r$:
 
-\begin{equation}
+\[
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\end{equation}
+\]
 
 \subsection{Energy-Based Rank Selection}
 
 The \textbf{energy fraction} captured by rank $r$:
 
-\begin{equation}
+\[
 \text{Energy}(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
-\end{equation}
+\]
 
 We select $r^* = \min \{ r : \text{Energy}(r) \geq \eta \}$.
 
@@ -111,9 +111,9 @@ For $\eta = 0.95$: $r^*$ captures 95\% of the weight energy.
 
 LoRA parameterizes weight updates:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A, \quad B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
-\end{equation}
+\]
 
 with $B = 0$ at initialization.
 
@@ -121,9 +121,9 @@ with $B = 0$ at initialization.
 
 Modern models (Qwen, LLaMA) use $H_{kv} < H$:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
-\end{equation}
+\]
 
 Expanded to $H$ via \texttt{repeat\_kv}.
 
@@ -131,26 +131,26 @@ Expanded to $H$ via \texttt{repeat\_kv}.
 
 RoPE rotates $Q, K$:
 
-\begin{equation}
+\[
 \tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 \subsection{Softpick (Fixed)}
 
 The original AEGIS used a ReLU-based softpick:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
-\end{equation}
+\]
 
 where $m = \max_j x_j$. \textbf{Problem:} When $m \leq 0$ (all-masked rows), 
 this returns all zeros, causing attention collapse.
 
 AEGIS-V5 replaces this with a stable softmax:
 
-\begin{equation}
+\[
 \text{softpick}(x)_i = \frac{e^{x_i / T}}{\sum_j e^{x_j / T}}
-\end{equation}
+\]
 
 which is always numerically stable.
 \begin{lstlisting}

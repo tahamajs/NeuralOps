@@ -36,9 +36,9 @@ The \texttt{AASVD} module executes a structured transformation replacing monolit
 \subsubsection{Streaming Activation Covariance}
 \label{sec:activation_covariance}
 The AASVD compressor estimates the input activation covariance $C_X$ using a streaming exponential moving average (EMA):
-\begin{equation}
+\[
 C_X^{(t)} = \beta C_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum_{i=1}^B X_i^\top X_i
-\end{equation}
+\]
 where $\beta = 0.90$ is the momentum coefficient and $B$ is the batch size. This $\mathcal{O}(d^2)$ streaming formulation avoids materializing the full $\mathcal{O}(N d^2)$ activation buffer in memory.
 
 The empirical covariance is used to precondition the weight matrix before Singular Value Decomposition:
@@ -52,69 +52,69 @@ The preconditioning transformation $C_X^{1/2}$ concentrates low-rank capacity on
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
-\begin{equation}
+\[
 Z = X W^\top + b
-\end{equation}
+\]
 
 \subsubsection{Low-Rank Bilinear Factorization}
 Under low-rank compression, weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is factored into matrices $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
-\begin{equation}
+\[
 \hat{W} = U_r V_r
-\end{equation}
+\]
 
 \subsubsection{Factorized Forward Execution}
 The forward evaluation transforms from monolithic matrix multiplication into two lightweight steps:
-\begin{equation}
+\[
 \tilde{Z} = (X V_r^\top) U_r^\top + b
-\end{equation}
+\]
 
 \subsubsection{Cumulative Spectral Energy}
 Rank selection is governed by cumulative squared singular values:
-\begin{equation}
+\[
 \mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}
-\end{equation}
+\]
 
 \subsubsection{Energy-Thresholded Optimal Rank}
 For target energy threshold $\tau \in (0, 1)$, the optimal rank $r^*$ satisfies:
-\begin{equation}
+\[
 r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge \tau \right\}
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
-\begin{equation}
+\[
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Initialization}
 Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
-\begin{equation}
+\[
 A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
-\end{equation}
+\]
 
 \subsubsection{Relative Frobenius Reconstruction Error}
 Post-compression parameter distortion is evaluated against the uncompressed matrix:
-\begin{equation}
+\[
 \delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Automated Guardrail Decision Rule}
 Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
-\begin{equation}
+\[
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
-\end{equation}
+\]
 
 \subsubsection{Attention Kernel Normalization}
 In linear attention formulations, outputs are computed via associative reduction:
-\begin{equation}
+\[
 O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Head Projection Partitioning}
 Multi-head attention projections decompose into parallel heads:
-\begin{equation}
+\[
 W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}
-\end{equation}
+\]
 
 \subsection{Detailed Algorithmic Execution Trace}
 
@@ -157,9 +157,9 @@ if recon_err > max_error_ceiling or torch.isnan(recon_err):
 \subsection{Complexity and FLOPs Analysis}
 \subsubsection{Computational Complexity Breakdown}
 Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
-\begin{equation}
+\[
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
-\end{equation}
+\]
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
 \begin{align}
 \rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\

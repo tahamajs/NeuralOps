@@ -1,4 +1,4 @@
-\title{\textbf{Linformer Attention: Production-Hardened Low-Rank Sequence Projection for Transformers}
+\title{\textbf{Linformer Attention: Production-Hardened Low-Rank Sequence Projection for Transformers}}
 
 \author{Anonymous authors}
 
@@ -501,8 +501,8 @@ case.
 
 \textbf{Algorithm 1:} Linformer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, k, L_max
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, k, L_max
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
  2: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
@@ -1159,10 +1159,10 @@ No fallback (incorrect) & 0.85 & 2.3 s s \\
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{Linformer} & \textbf{Speedup} \\
 \midrule
-128 & 84.5 & 0.85 & 84.8$$\times$ \\
-256 & 84.5 & 0.85 & 85.6$$\times$ \\
-512 & 84.5 & 0.85 & 86.2$$\times$ \\
-1024 & 84.5 & 0.85 & 86.4$$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
+1024 & 84.5 & 0.85 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1179,10 +1179,10 @@ No fallback (incorrect) & 0.85 & 2.3 s s \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/linformer_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{linformer_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{linformer_attention}.}
 \label{fig:results_linformer_attention}
 \end{figure}
 
@@ -1203,7 +1203,7 @@ than $L$.
 \subsubsection{Diagonal Init Accelerates Convergence}
 
 \textbf{Figure 8.2} compares loss curves with diagonal vs Gaussian init. 
-Diagonal init converges \textbf{84.5$$\times$} faster.
+Diagonal init converges \textbf{84.5$\times$} faster.
 
 \subsubsection{Causal Fallback Preserves Correctness}
 
@@ -1256,9 +1256,9 @@ For $L = 512$, $k = 64$, $d_h = 64$:
 \toprule
 \textbf{Operation} & \textbf{FLOPs} \\
 \midrule
-Standard QK\^{}T & $512^2 \cdot 64 = 1.7 \times 10^7$ \\
-Linformer QK \^{}T & $512 \cdot 64 \cdot 64 = 2.1 \times 10^6$ \\
-\textbf{Speedup} & \textbf{8$$\times$} \\
+Standard QK^T & $512^2 \cdot 64 = 1.7 \times 10^7$ \\
+Linformer QK ^T & $512 \cdot 64 \cdot 64 = 2.1 \times 10^6$ \\
+\textbf{Speedup} & \textbf{8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1267,7 +1267,7 @@ For $L = 1024$:
 \begin{itemize}
 \item Standard: $6.7 \times 10^7$
 \item Linformer: $4.2 \times 10^6$
-\item \textbf{Speedup:} 16$$\times$
+\item \textbf{Speedup:} 16$\times$
 
 \end{itemize}
 \subsection{Failure Modes}
@@ -1285,7 +1285,7 @@ This wastes parameters.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Diagonal init is critical} (converges 84.5$$\times$ faster).
+\item \textbf{Diagonal init is critical} (converges 84.5$\times$ faster).
 \item \textbf{Causal fallback is essential} for decoders.
 \item \textbf{$k = 64$ is a good default.}
 \item \textbf{Encoders benefit; decoders don't} (due to fallback).
@@ -2129,7 +2129,7 @@ complexity.
 
 \subsubsection{D.2.2 Per-Head E, F}
 
-Different E, F per head. Result: 12$$\times$ params, <0.5\% improvement.
+Different E, F per head. Result: 12$\times$ params, <0.5\% improvement.
 
 \subsubsection{D.2.3 Learned L\_max}
 
@@ -2238,7 +2238,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

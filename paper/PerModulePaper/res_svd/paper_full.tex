@@ -1,4 +1,4 @@
-\title{\textbf{Res-SVD Attention: Spectral Residual Low-Rank Factorization for Attention Projections}
+\title{\textbf{Res-SVD Attention: Spectral Residual Low-Rank Factorization for Attention Projections}}
 
 \author{Anonymous authors}
 
@@ -37,7 +37,7 @@ we seek a compressed model $\mathcal{M}'$ such that:
 \begin{enumerate}
 \item Each projection is stored as a sum of two low-rank factors:
   $$
-  W \approx U\_b V\_b\^{}\top + \alpha B A
+  W \approx U\_b V\_b^\top + \alpha B A
   \tag{1.1}
   $$
   with $r_b + r_r \ll \min(d_\text{in}, d_\text{out})$.
@@ -269,7 +269,7 @@ Res-SVD Attention replaces each projection with a two-level decomposition.
 
 \begin{lstlisting}
     +--------------------------------------+
-    |  Original weight W $\in$ R^{m$$\times$n}         |
+    |  Original weight W $\in$ R^{m$\times$n}         |
     +----------------+---------------------+
                      |
                       
@@ -412,7 +412,7 @@ Residual LoRA & $4 \times 1536 = 6,144$ \\
 Bias & 768 \\
 \textbf{Total} & \textbf{31,504} \\
 Baseline & 589,824 \\
-\textbf{Ratio} & \textbf{~18.7$$\times$} \\
+\textbf{Ratio} & \textbf{~18.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -421,7 +421,7 @@ Baseline & 589,824 \\
 
 \textbf{Algorithm 1:} Res-SVD factorization
 \begin{lstlisting}
-Input:  Weight W $\in$ R^{m$$\times$n}, ranks r_b, r_r, scaling $\alpha$
+Input:  Weight W $\in$ R^{m$\times$n}, ranks r_b, r_r, scaling $\alpha$
 Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
 
 1:  U, $\Sigma$, V^T $\leftarrow$ SVD(W)
@@ -440,8 +440,8 @@ Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
 
 \textbf{Algorithm 2:} Res-SVD forward pass
 \begin{lstlisting}
-Input:  x $\in$ R^{B$$\times$L$$\times$n}, base (U_b, V_b), residual (B, A), bias b, $\alpha$
-Output: y $\in$ R^{B$$\times$L$$\times$m}
+Input:  x $\in$ R^{B$\times$L$\times$n}, base (U_b, V_b), residual (B, A), bias b, $\alpha$
+Output: y $\in$ R^{B$\times$L$\times$m}
 
 1: h_b $\leftarrow$ x @ V_b^T
 2: y_b $\leftarrow$ h_b @ U_b^T
@@ -469,7 +469,7 @@ Total & $\mathcal{O}(L n (r_b + r_r))$ & $\mathcal{O}(L (r_b + r_r))$ \\
 
 \textbf{Baseline:} $\mathcal{O}(L n m)$.
 
-For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$$\times$ reduction in projection FLOPs}.
+For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$\times$ reduction in projection FLOPs}.
 
 \subsection{Theoretical Notes}
 
@@ -825,12 +825,12 @@ python run_all_4_res_svd.py \
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{Res-SVD} & \textbf{89.56} & -1.15 & 0.9016 & \textbf{50\%$$\times$} & 298 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{Res-SVD} & \textbf{76.61} & -1.95 & 0.7910 & \textbf{2.1$$\times$} & 594 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{Res-SVD} & \textbf{71.33} & -8.03 & 0.7760 & \textbf{2.1$$\times$} & 336 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{Res-SVD} & \textbf{89.56} & -1.15 & 0.9016 & \textbf{50\%$\times$} & 298 MB MB & 1.42x s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{Res-SVD} & \textbf{76.61} & -1.95 & 0.7910 & \textbf{2.1$\times$} & 594 MB MB & 2.3 s s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{Res-SVD} & \textbf{71.33} & -8.03 & 0.7760 & \textbf{2.1$\times$} & 336 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -846,9 +846,9 @@ GPT-2 & \textbf{Res-SVD} & \textbf{71.33} & -8.03 & 0.7760 & \textbf{2.1$$\times
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After Res-SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -867,7 +867,7 @@ Residual LoRA & 6,144 \\
 Bias & 768 \\
 \textbf{Total per projection} & \textbf{31,504} \\
 Baseline per projection & 589,824 \\
-\textbf{Ratio} & \textbf{18.7$$\times$} \\
+\textbf{Ratio} & \textbf{18.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -904,10 +904,10 @@ GPT-2 & Res-SVD & 2.3 s s & 0.85 & 336 MB MB \\
 \toprule
 \textbf{$r_b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-8 & 0.85 & 0.85 & 0.85 & 25$$\times$ \\
-16 & 0.85 & 0.85 & 0.85 & 18.7$$\times$ \\
-32 & 0.85 & 0.85 & 0.85 & 14$$\times$ \\
-64 & 0.85 & 0.85 & 0.85 & 8$$\times$ \\
+8 & 0.85 & 0.85 & 0.85 & 25$\times$ \\
+16 & 0.85 & 0.85 & 0.85 & 18.7$\times$ \\
+32 & 0.85 & 0.85 & 0.85 & 14$\times$ \\
+64 & 0.85 & 0.85 & 0.85 & 8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -983,10 +983,10 @@ initialization. Differences arise during training.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ & 79.36\% & 1.00$$\times$ \\
-asvd ($r=32$) & 88.5\% & 12$$\times$ & 75.5\% & 11$$\times$ & 76.8\% & 11$$\times$ \\
-aasvd ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$ \\
-\textbf{res\_svd} & \textbf{89.56} & \textbf{50\%$$\times$} & \textbf{76.61} & \textbf{2.1$$\times$} & \textbf{71.33} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
+aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+\textbf{res\_svd} & \textbf{89.56} & \textbf{50\%$\times$} & \textbf{76.61} & \textbf{2.1$\times$} & \textbf{71.33} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -998,10 +998,10 @@ aasvd ($r=64$) & 88.5\% & 5$$\times$ & 75.5\% & 5$$\times$ & 76.8\% & 5$$\times$
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/res_svd_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{res_svd}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{res_svd}.}
 \label{fig:results_res_svd}
 \end{figure}
 
@@ -1139,7 +1139,7 @@ baseline.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Res-SVD is a real compressor.} Parameters reduce by 50\%$$\times$.
+\item \textbf{Res-SVD is a real compressor.} Parameters reduce by 50\%$\times$.
 \item \textbf{Spectral initialization is equivalent to rank-$(r_b+r_r)$ SVD} at start.
 \item \textbf{Only the residual is trained}, making the base frozen.
 \item \textbf{Silent injection failure} is a risk.
@@ -1156,7 +1156,7 @@ baseline.
 
 \subsubsection{Takeaway 1: Real Compression}
 
-Res-SVD reduces parameters by 50\%$$\times$.
+Res-SVD reduces parameters by 50\%$\times$.
 
 \subsubsection{Takeaway 2: Two-Level Structure}
 
@@ -1198,9 +1198,9 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Res-SVD} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
 VRAM & 183 MB & 298 MB MB & -48.5\%\% \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 89.56\% & -1.15\% \\
 \bottomrule
 \end{tabular}
@@ -1215,10 +1215,10 @@ Accuracy & 90.71\% & 89.56\% & -1.15\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2} \\
 \midrule
-ASVD & SVD & 12$$\times$ & 88.5\% \\
-AASVD & SVD + cov & 5$$\times$ & 88.5\% \\
-A3 & SVD + Fisher & 6$$\times$ & 88.5\% \\
-\textbf{Res-SVD} & \textbf{Two-level SVD} & \textbf{50\%$$\times$} & \textbf{89.56\%} \\
+ASVD & SVD & 12$\times$ & 88.5\% \\
+AASVD & SVD + cov & 5$\times$ & 88.5\% \\
+A3 & SVD + Fisher & 6$\times$ & 88.5\% \\
+\textbf{Res-SVD} & \textbf{Two-level SVD} & \textbf{50\%$\times$} & \textbf{89.56\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1340,9 +1340,9 @@ spectral-init LoRA.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & -1.15\% & \textbf{50\%$$\times$} \\
-RoBERTa & -1.95\% & \textbf{2.1$$\times$} \\
-GPT-2 & -8.03\% & \textbf{2.1$$\times$} \\
+DistilBERT & -1.15\% & \textbf{50\%$\times$} \\
+RoBERTa & -1.95\% & \textbf{2.1$\times$} \\
+GPT-2 & -8.03\% & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1350,7 +1350,7 @@ GPT-2 & -8.03\% & \textbf{2.1$$\times$} \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Real compression} of ~50\%$$\times$.
+\item \textbf{Real compression} of ~50\%$\times$.
 \item \textbf{Two-level decomposition} equivalent to equal-rank SVD at init.
 \item \textbf{Spectral initialization} ensures optimal start.
 \item \textbf{Silent injection failure} requires caller attention.
@@ -1471,9 +1471,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 89.56\% & 50\%$$\times$ \\
-RoBERTa & 76.61\% & 2.1$$\times$ \\
-GPT-2 & 71.33\% & 2.1$$\times$ \\
+DistilBERT & 89.56\% & 50\%$\times$ \\
+RoBERTa & 76.61\% & 2.1$\times$ \\
+GPT-2 & 71.33\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1835,7 +1835,7 @@ RoBERTa requires identity init of output projection.
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Base rank & 32 \\
 Residual rank & 16 \\
 Accuracy & 89.56\% \\
@@ -1857,7 +1857,7 @@ Inference time & 1.42x s \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 76.61\% \\
 \bottomrule
 \end{tabular}
@@ -1874,7 +1874,7 @@ Accuracy & 76.61\% \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 71.33\% \\
 \bottomrule
 \end{tabular}
@@ -2172,7 +2172,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

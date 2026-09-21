@@ -1,4 +1,4 @@
-\title{\textbf{LEKAv3: Linear-Time Efficient Kernel Attention with Value-Scored Landmarks}
+\title{\textbf{LEKAv3: Linear-Time Efficient Kernel Attention with Value-Scored Landmarks}}
 
 \author{Anonymous authors}
 
@@ -542,8 +542,8 @@ shift toward local.
 
 \textbf{Algorithm 1:} LEKAv3 forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
 2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
@@ -1195,10 +1195,10 @@ multi-scale & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{$L$} & \textbf{Standard} & \textbf{LEKAv3} & \textbf{Speedup} \\
 \midrule
-128 & 84.5 s & 0.85 s & 84.8$$\times$ \\
-256 & 84.5 s & 0.85 s & 85.6$$\times$ \\
-512 & 84.5 s & 0.85 s & 86.2$$\times$ \\
-1024 & 84.5 s & 0.85 s & 86.4$$\times$ \\
+128 & 84.5 s & 0.85 s & 84.8$\times$ \\
+256 & 84.5 s & 0.85 s & 85.6$\times$ \\
+512 & 84.5 s & 0.85 s & 86.2$\times$ \\
+1024 & 84.5 s & 0.85 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1234,10 +1234,10 @@ nasc & 90.71\% & 64.56\% & 78.44\% \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/leka_v3_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{leka_v3}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v3}.}
 \label{fig:results_leka_v3}
 \end{figure}
 
@@ -1335,10 +1335,10 @@ All models pass.
 \toprule
 \textbf{$L$} & \textbf{Standard} & \textbf{LEKAv3} & \textbf{Ratio} \\
 \midrule
-128 & 0.865 & 0.865 & 84.0$$\times$ \\
-256 & 84.5 & 0.85 & 84.8$$\times$ \\
-512 & 84.5 & 0.85 & 85.6$$\times$ \\
-1024 & 0.865 & 0.865 & 86.4$$\times$ \\
+128 & 0.865 & 0.865 & 84.0$\times$ \\
+256 & 84.5 & 0.85 & 84.8$\times$ \\
+512 & 84.5 & 0.85 & 85.6$\times$ \\
+1024 & 0.865 & 0.865 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1433,7 +1433,7 @@ For DistilBERT at $L = 512$:
 \midrule
 Params & 66.95M & 66.4MM & +7.5\% \\
 Attention FLOPs & 1.0 & 2.1$\times$ & -48.5\%\% \\
-Inference time & 1.9 s & 1.42x s & 2.1$$\times$ \\
+Inference time & 1.9 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 70.53\% & -20.18\% \\
 \bottomrule
 \end{tabular}
@@ -2141,7 +2141,7 @@ Without \texttt{anchor\_boost}, \texttt{[CLS]} may be dropped, hurting classific
 \subsubsection{B.5.4 W\_corr Memory}
 
 $W_\text{corr}$ is $H \times d_h \times d_h$. For $H = 12, d_h = 64$, 
-this is 49K params per layer $$\times$ 12 layers = ~590K for RoBERTa.
+this is 49K params per layer $\times$ 12 layers = ~590K for RoBERTa.
 \begin{lstlisting}
 
 ---
@@ -2463,7 +2463,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

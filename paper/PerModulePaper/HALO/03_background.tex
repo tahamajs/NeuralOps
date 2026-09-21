@@ -5,9 +5,9 @@
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\begin{equation}
+\[
 \mathcal{A}_\text{dense}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{L \times d_h}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
 
@@ -17,9 +17,9 @@ For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 Replace softmax with a kernel $\phi: \mathbb{R}^{d_h} \to \mathbb{R}^m$:
 
-\begin{equation}
+\[
 \mathcal{A}_\text{lin}(Q, K, V) = \frac{\phi(Q) \left(\phi(K)^\top V\right)}{\phi(Q) \left(\phi(K)^\top \mathbf{1}\right)}
-\end{equation}
+\]
 
 where $\mathbf{1} \in \mathbb{R}^L$ is a vector of ones.
 
@@ -28,18 +28,18 @@ where $\mathbf{1} \in \mathbb{R}^L$ is a vector of ones.
 \textbf{Non-causal.} Direct computation via $\phi(K)^\top V \in \mathbb{R}^{m \times d_h}$.
 
 \textbf{Causal.} Use prefix sums:
-\begin{equation}
+\[
 \text{Num}_i = \phi(Q_i) \cdot \sum_{j \le i} \phi(K_j) V_j^\top, \quad
 \text{Den}_i = \phi(Q_i) \cdot \sum_{j \le i} \phi(K_j)
-\end{equation}
+\]
 
 \subsection{Rectified Kernel}
 
 We use $\phi(x) = \mathrm{elu}(x) + 1$ where:
 
-\begin{equation}
+\[
 \mathrm{elu}(x) = \begin{cases} x \& x > 0 \\ \alpha (e^x - 1) \& x \leq 0 \end{cases}
-\end{equation}
+\]
 
 with $\alpha = 1$. This kernel:
 
@@ -57,9 +57,9 @@ terms, hence positive. This avoids division by zero or negative denominators.
 
 For causal linear attention, we compute:
 
-\begin{equation}
+\[
 \text{cum}_i = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{m \times d_h}
-\end{equation}
+\]
 
 This is a \textbf{cumulative sum} over the sequence dimension, which we implement 
 via \texttt{torch.cumsum}. The complexity is $\mathcal{O}(L m d_h)$ memory and time.
@@ -72,15 +72,15 @@ formulation is needed.
 
 We use a per-head sigmoid gate:
 
-\begin{equation}
+\[
 g_{h,i} = \sigma\!\left(w_h^\top x_i + b_h\right) \in (0, 1)
-\end{equation}
+\]
 
 The output is a convex combination:
 
-\begin{equation}
+\[
 O_i = g_{h,i} \cdot O_i^\text{dense} + (1 - g_{h,i}) \cdot O_i^\text{lin}
-\end{equation}
+\]
 
 \textbf{Interpretation.} $g \approx 1$ $\to$ dense attention; $g \approx 0$ $\to$ linear 
 attention; intermediate $\to$ smooth mix.
@@ -89,10 +89,10 @@ attention; intermediate $\to$ smooth mix.
 
 GQA (Ainslie et al., 2023) reduces $H_{kv} < H$ and repeats KV heads:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times H_{kv} \times L \times d_h}, \quad
 \tilde{K}, \tilde{V} = \text{repeat\_kv}(K, V, H / H_{kv})
-\end{equation}
+\]
 
 HALO-ReGLA supports GQA via \texttt{repeat\_kv} before attention computation.
 
@@ -100,9 +100,9 @@ HALO-ReGLA supports GQA via \texttt{repeat\_kv} before attention computation.
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
-\begin{equation}
+\[
 \tilde{Q}_i = Q_i \cos(\theta_i) + \mathrm{rot}(Q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 HALO-ReGLA applies RoPE to Q, K before both branches.
 
@@ -110,9 +110,9 @@ HALO-ReGLA applies RoPE to Q, K before both branches.
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
-\end{equation}
+\]
 
 with $B = 0$ at initialization. HALO-ReGLA uses LoRA to adapt the frozen 
 projections.

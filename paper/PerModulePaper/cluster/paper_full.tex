@@ -1,4 +1,4 @@
-\title{\textbf{ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window}
+\title{\textbf{ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window}}
 
 \author{Anonymous authors}
 
@@ -10,9 +10,9 @@
 The softmax attention operation computes a pairwise score between every 
 query and every key:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 This requires $\mathcal{O}(L^2 d)$ time and $\mathcal{O}(L^2)$ memory for 
 sequence length $L$. For $L = 4096$ (a common long-context setting), the 
@@ -82,27 +82,27 @@ producing $K$ centroids $C \in \mathbb{R}^{B \times H \times K \times d_h}$.
 \textbf{Step 2: Centroid-to-key attention.} Compute attention from each centroid 
 to all keys:
 
-\begin{equation}
+\[
 V_{\text{cent}} = \text{softmax}\!\left(\frac{C K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{B \times H \times K \times d_h}
-\end{equation}
+\]
 
 This costs $\mathcal{O}(K L d_h)$ -- linear in $L$.
 
 \textbf{Step 3: Redistribute.} Assign each query to its nearest centroid and 
 collect the corresponding context:
 
-\begin{equation}
+\[
 \text{Global}(Q) = \text{softmax}\!\left(\frac{Q C^\top}{\sqrt{d_h} \cdot \tau}\right) V_{\text{cent}}
-\end{equation}
+\]
 
 where $\tau$ is a learnable temperature.
 
 To capture local structure missed by clustering, we add a sliding-window 
 attention branch and blend via a learnable gate $\alpha$:
 
-\begin{equation}
+\[
 \text{Output} = (1 - \alpha) \cdot \text{Global}(Q) + \alpha \cdot \text{Local}(Q)
-\end{equation}
+\]
 
 \subsection{Contributions}
 
@@ -233,23 +233,23 @@ ClusterFormer is unique in combining:
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V \in \mathbb{R}^{B \times L \times d}
-\end{equation}
+\]
 
 Standard attention:
 
-\begin{equation}
+\[
 \text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 \subsection{K-Means Clustering}
 
 Given $L$ points $x_1, \dots, x_L \in \mathbb{R}^d$, K-means minimizes:
 
-\begin{equation}
+\[
 \mathcal{L}(C) = \sum_{i=1}^{L} \min_{k \in [K]} \|x_i - c_k\|_2^2
-\end{equation}
+\]
 
 Lloyd's algorithm alternates:
 
@@ -283,9 +283,9 @@ ClusterFormer is fully differentiable:
 
 A generic linear attention reformulation:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \frac{\phi(Q) \sum_j \phi(K_j) V_j^\top}{\phi(Q) \sum_j \phi(K_j)}
-\end{equation}
+\]
 
 for some feature map $\phi$. If $\phi$ has dimension $m$, complexity is 
 $\mathcal{O}(L m d)$.
@@ -297,9 +297,9 @@ and computes attention from $K$ centroids to keys.
 
 LoRA (Hu et al., 2021) parameterizes:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at init}
-\end{equation}
+\]
 
 \subsection{Notation Summary}
 
@@ -386,16 +386,16 @@ This spreads initial centroids uniformly across the valid sequence.
 We run \textbf{3 iterations} of standard Lloyd's algorithm:
 
 \textbf{Assignment:}
-\begin{equation}
+\[
 a_{b,h,i} = \arg\min_{k \in [K]} \|Q_{b,h,i} - C_{b,h,k}\|_2^2
-\end{equation}
+\]
 
 Implemented via \texttt{torch.cdist} on FP32 for numerical stability.
 
 \textbf{Update:}
-\begin{equation}
+\[
 C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
-\end{equation}
+\]
 
 Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
 their previous centroid.
@@ -414,17 +414,17 @@ Empirically, 3 iterations are enough for attention clustering:
 
 For each centroid $C_k$, compute attention to all keys:
 
-\begin{equation}
+\[
 \text{scores}_{b,h,k,j} = \frac{C_{b,h,k} \cdot K_{b,h,j}}{\sqrt{d_h}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \alpha_{b,h,k,j} = \text{softmax}_j(\text{scores}_{b,h,k,j})
-\end{equation}
+\]
 
-\begin{equation}
+\[
 V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ -- linear in $L$!
 
@@ -437,15 +437,15 @@ scores are restricted to $j \leq$ some threshold. See Section 5.4.
 
 Each query is assigned to centroids via soft attention:
 
-\begin{equation}
+\[
 \text{assign}_{b,h,i,k} = \text{softmax}_k\!\left(\frac{Q_{b,h,i} \cdot C_{b,h,k}}{\sqrt{d_h} \cdot \tau}\right)
-\end{equation}
+\]
 
 with learnable temperature $\tau$. The global context is:
 
-\begin{equation}
+\[
 \text{Global}_{b,h,i} = \sum_k \text{assign}_{b,h,i,k} \cdot V_{\text{cent}, b,h,k}
-\end{equation}
+\]
 
 \textbf{Why temperature?} Small $\tau$ sharpens the assignment toward the 
 nearest centroid (harder clustering); large $\tau$ softens it. We initialize 
@@ -461,13 +461,13 @@ logit is masked to $-\infty$, ensuring no query attends to it.
 Clustering captures global structure but can miss fine-grained local 
 dependencies. We add a sliding-window attention branch:
 
-\begin{equation}
+\[
 \text{scores}^\text{local}_{b,h,i,j} = \frac{Q_{b,h,i} \cdot K_{b,h,j}}{\sqrt{d_h}} \cdot \mathbf{1}[|i - j| \leq W]
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Local}_{b,h,i} = \sum_{j: |i-j| \leq W} \text{softmax}_j(\text{scores}^\text{local}) \cdot V_{b,h,j}
-\end{equation}
+\]
 
 \textbf{Complexity.} $\mathcal{O}(L \cdot W \cdot d_h)$.
 
@@ -475,9 +475,9 @@ dependencies. We add a sliding-window attention branch:
 
 The final output is:
 
-\begin{equation}
+\[
 \text{Output} = (1 - \sigma(\alpha)) \cdot \text{Global} + \sigma(\alpha) \cdot \text{Local}
-\end{equation}
+\]
 
 where $\alpha \in \mathbb{R}$ is a \textbf{learnable scalar} initialized to 0 
 (so $\sigma(0) = 0.5$, giving 50/50 blend at start).
@@ -489,7 +489,7 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
  1: Q $\leftarrow$ LoRALinear_Q(X)                         Frozen base + LoRA
@@ -625,9 +625,9 @@ distribution over centroids. It approximates the attention over tokens by
 grouping tokens. The approximation error is bounded by the K-means 
 distortion:
 
-\begin{equation}
+\[
 \epsilon \leq \sum_i \|Q_i - C_{a_i}\|_2^2
-\end{equation}
+\]
 
 See Appendix A.5 for details.
 
@@ -927,9 +927,9 @@ GPT-2 & \textbf{ClusterFormer} & \textbf{87.96} & +8.60 & 0.8850 & 397 MB & 4.80
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{$\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 67.55M & +589826M & 0.99$$\times$ \\
-RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$$\times$ \\
-GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$$\times$ \\
+DistilBERT & 66.9M & 67.55M & +589826M & 0.99$\times$ \\
+RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$\times$ \\
+GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -950,7 +950,7 @@ GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$$\times$ \\
 \midrule
 Baseline & $2L^2 d_h$ & 2.1M & 33.6M \\
 ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
-\textbf{Speedup} & -- & \textbf{2.7$$\times$} & \textbf{4.7$$\times$} \\
+\textbf{Speedup} & -- & \textbf{2.7$\times$} & \textbf{4.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -964,11 +964,11 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6$$\times$ \\
-8 & 89.5 & 77.0 & 78.5 & 4$$\times$ \\
-\textbf{16} & \textbf{90.02} & \textbf{72.02} & \textbf{87.96} & \textbf{2.7$$\times$} \\
-32 & 90.05 & 77.6 & 79.0 & 1.9$$\times$ \\
-64 & 90.15 & 77.7 & 79.05 & 1.4$$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
+\textbf{16} & \textbf{90.02} & \textbf{72.02} & \textbf{87.96} & \textbf{2.7$\times$} \\
+32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -999,10 +999,10 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & 89.0 & 1$$\times$ \\
-\textbf{3} & \textbf{90.02} & \textbf{3$$\times$} \\
-5 & 89.95 & 5$$\times$ \\
-10 & 89.98 & 10$$\times$ \\
+1 & 89.0 & 1$\times$ \\
+\textbf{3} & \textbf{90.02} & \textbf{3$\times$} \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1081,10 +1081,10 @@ High entropy and usage of many clusters indicate good diversity.
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/cluster_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{cluster}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cluster}.}
 \label{fig:results_cluster}
 \end{figure}
 
@@ -1121,11 +1121,11 @@ baseline and ClusterFormer on GPT-2.
 \toprule
 \textbf{$L$} & \textbf{Baseline (ms)} & \textbf{ClusterFormer (ms)} & \textbf{Speedup} \\
 \midrule
-64 & 2.1 & 2.4 & 0.88$$\times$ \\
-128 & 4.2 & 3.8 & 1.10$$\times$ \\
-256 & 12.5 & 6.9 & 1.81$$\times$ \\
-512 & 44.2 & 15.3 & \textbf{2.89$$\times$} \\
-1024 & 172.8 & 32.1 & \textbf{5.38$$\times$} \\
+64 & 2.1 & 2.4 & 0.88$\times$ \\
+128 & 4.2 & 3.8 & 1.10$\times$ \\
+256 & 12.5 & 6.9 & 1.81$\times$ \\
+512 & 44.2 & 15.3 & \textbf{2.89$\times$} \\
+1024 & 172.8 & 32.1 & \textbf{5.38$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1292,10 +1292,10 @@ For DistilBERT at $L=256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 6.7M & 2.4M & \textbf{2.8$$\times$ reduction} \\
+Attention FLOPs & 6.7M & 2.4M & \textbf{2.8$\times$ reduction} \\
 Accuracy & 90.71\% & 90.02\% & -0.69\% \\
 Params & 66.9M & 67.55M & +589826M \\
-Wall time & 4.2 ms & 3.8 ms & 1.10$$\times$ \\
+Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1457,9 +1457,9 @@ temperature and blend scalars.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{FLOPs reduction ($L=256$)} \\
 \midrule
-DistilBERT & -0.69\% & ~2.7$$\times$ \\
-RoBERTa & -6.54\% & ~2.7$$\times$ \\
-GPT-2 & +8.60\% & ~2.7$$\times$ \\
+DistilBERT & -0.69\% & ~2.7$\times$ \\
+RoBERTa & -6.54\% & ~2.7$\times$ \\
+GPT-2 & +8.60\% & ~2.7$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1800,9 +1800,9 @@ is bounded below by 0, the algorithm converges. $\square$
 
 The soft assignment with temperature $\tau$:
 
-\begin{equation}
+\[
 \text{assign}_{i,k} = \frac{\exp(Q_i \cdot C_k / (\sqrt{d_h} \tau))}{\sum_{k'} \exp(Q_i \cdot C_{k'} / (\sqrt{d_h} \tau))}
-\end{equation}
+\]
 
 \textbf{Limit.} As $\tau \to 0$, this becomes a hard assignment (one-hot). As 
 $\tau \to \infty$, it becomes uniform.
@@ -1811,9 +1811,9 @@ $\tau \to \infty$, it becomes uniform.
 
 \textbf{Statement.} The approximation error of ClusterFormer satisfies:
 
-\begin{equation}
+\[
 \|\text{Output}_\text{CF} - \text{Output}_\text{exact}\|_F \leq f(\text{K-means distortion})
-\end{equation}
+\]
 
 where $f$ is monotone increasing. We do not provide a tight bound; see 
 empirical analysis in Section 8.
@@ -1824,9 +1824,9 @@ empirical analysis in Section 8.
 
 \textbf{Proof.} We use exact causal attention for decoders (Section 5.4):
 
-\begin{equation}
+\[
 \text{Attn}_i = \sum_{j \leq i} \alpha_{ij} V_j
-\end{equation}
+\]
 
 Only keys with $j \leq i$ contribute. Causality is preserved. $\square$
 
@@ -2046,11 +2046,11 @@ Accuracy & 87.96\% \\
 \toprule
 \textbf{K} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6.4$$\times$ \\
-8 & 89.5 & 77.0 & 78.5 & 3.2$$\times$ \\
-16 & 90.02 & 72.02 & 87.96 & 1.6$$\times$ \\
-32 & 90.05 & 77.6 & 79.0 & 0.8$$\times$ \\
-64 & 90.15 & 77.7 & 79.05 & 0.4$$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6.4$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 3.2$\times$ \\
+16 & 90.02 & 72.02 & 87.96 & 1.6$\times$ \\
+32 & 90.05 & 77.6 & 79.0 & 0.8$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 0.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2081,10 +2081,10 @@ Accuracy & 87.96\% \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time} \\
 \midrule
-1 & 89.0 & 1$$\times$ \\
-3 & 90.02 & 3$$\times$ \\
-5 & 89.95 & 5$$\times$ \\
-10 & 89.98 & 10$$\times$ \\
+1 & 89.0 & 1$\times$ \\
+3 & 90.02 & 3$\times$ \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2135,7 +2135,7 @@ Accuracy & 87.96\% \\
 
 \subsubsection{D.1.6 10+ K-Means Iterations}
 
-\textbf{Result.} No improvement, 3$$\times$ slower. 3 iterations suffice.
+\textbf{Result.} No improvement, 3$\times$ slower. 3 iterations suffice.
 
 \subsection{D.2 Failed Hyperparameters}
 

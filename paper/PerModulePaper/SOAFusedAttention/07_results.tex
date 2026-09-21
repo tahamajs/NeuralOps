@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$$\times$ \\
-DistilBERT & \textbf{SOA Fused} & \textbf{81.31} & -9.40 & 0.8191 & 1228800 & \textbf{1.92$$\times$} \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$$\times$ \\
-RoBERTa & \textbf{SOA Fused} & \textbf{50.92} & -27.64 & 0.6748 & 1228800 & \textbf{1.92$$\times$} \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$$\times$ \\
-GPT-2 & \textbf{SOA Fused} & \textbf{50.92} & -28.44 & 0.6748 & 1228800 & \textbf{1.92$$\times$} \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT & \textbf{SOA Fused} & \textbf{81.31} & -9.40 & 0.8191 & 1228800 & \textbf{1.92$\times$} \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa & \textbf{SOA Fused} & \textbf{50.92} & -27.64 & 0.6748 & 1228800 & \textbf{1.92$\times$} \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 & \textbf{SOA Fused} & \textbf{50.92} & -28.44 & 0.6748 & 1228800 & \textbf{1.92$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,7 +24,7 @@ GPT-2 & \textbf{SOA Fused} & \textbf{50.92} & -28.44 & 0.6748 & 1228800 & \textb
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Attention parameters reduce by 1.92$$\times$} (DistilBERT at $k = 128$).
+\item \textbf{Attention parameters reduce by 1.92$\times$} (DistilBERT at $k = 128$).
 \item \textbf{Accuracy drop is only -9.40\%} -- recoverable.
 \item \textbf{VRAM decreases by 10\%.}
 
@@ -56,11 +56,11 @@ GPT-2 & 124,441,344 & 121000000 & -2.9\% \\
 \toprule
 \textbf{Projection} & \textbf{Baseline} & \textbf{Ours} & \textbf{Ratio} \\
 \midrule
-$W_Q$ & 589,824 & 196608 & 3.0$$\times$ \\
-$W_K$ & 589,824 & 196608 & 3.0$$\times$ \\
-$W_V$ & 589,824 & 196608 & 3.0$$\times$ \\
-$W_O$ & 589,824 & 589824 & 1.0$$\times$ \\
-\textbf{Total} & 2,359,296 & 1228800 & \textbf{1.92$$\times$} \\
+$W_Q$ & 589,824 & 196608 & 3.0$\times$ \\
+$W_K$ & 589,824 & 196608 & 3.0$\times$ \\
+$W_V$ & 589,824 & 196608 & 3.0$\times$ \\
+$W_O$ & 589,824 & 589824 & 1.0$\times$ \\
+\textbf{Total} & 2,359,296 & 1228800 & \textbf{1.92$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -112,11 +112,11 @@ GPT-2 & 4.20 s & 4.6 s & 486 MB \\
 \toprule
 \textbf{$k$} & \textbf{Ratio} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 12$$\times$ & 80.0 & 32 & 32 \\
-64 & 6$$\times$ & 86.0 & 32 & 32 \\
-128 & 3$$\times$ & \textbf{81.31} & \textbf{50.92} & \textbf{50.92} \\
-192 & 2$$\times$ & 89.0 & 32 & 32 \\
-384 & 1$$\times$ & 90.5 & 32 & 32 \\
+32 & 12$\times$ & 80.0 & 32 & 32 \\
+64 & 6$\times$ & 86.0 & 32 & 32 \\
+128 & 3$\times$ & \textbf{81.31} & \textbf{50.92} & \textbf{50.92} \\
+192 & 2$\times$ & 89.0 & 32 & 32 \\
+384 & 1$\times$ & 90.5 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -166,7 +166,7 @@ GPT-2 & 4.20 s & 4.6 s & 486 MB \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Compression:} 1.92$$\times$--1.92$$\times$ on attention projections.
+\item \textbf{Compression:} 1.92$\times$--1.92$\times$ on attention projections.
 \item \textbf{Accuracy:} -9.40\%---28.44\% drop.
 \item \textbf{VRAM:} 10\% reduction.
 \item \textbf{No calibration data required.}
@@ -174,9 +174,9 @@ GPT-2 & 4.20 s & 4.6 s & 486 MB \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/soafusedattention_roberta_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{SOAFusedAttention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{SOAFusedAttention}.}
 \label{fig:results_soafusedattention}
 \end{figure}

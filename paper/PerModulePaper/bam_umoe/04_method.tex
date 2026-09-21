@@ -34,7 +34,7 @@ The forward pass:
         |              |      |   top-2)     |
         |              |      +------+-------+
         |              |             |
-        |              |                $$\times$ 0.1 $$\times$ $\sigma$(gate)
+        |              |                $\times$ 0.1 $\times$ $\sigma$(gate)
         |              |        +---------+
         |              |        | Add     |
         |              |        | to V    |
@@ -61,9 +61,9 @@ The forward pass:
 
 For each projection $P \in \{Q, K, V, O\}$, we use a \texttt{LoRALinear} module:
 
-\begin{equation}
+\[
 \text{Proj}_P(X) = X W_P^\top + (X A_P^\top) B_P^\top \cdot s + b_P
-\end{equation}
+\]
 
 where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and 
 $s = \alpha/r_L$ is the LoRA scaling.
@@ -78,13 +78,13 @@ Base weights are copied exactly from the pretrained attention via
 The MoE branch produces a refinement signal of shape 
 $(B, L, H \cdot d_h)$:
 
-\begin{equation}
+\[
 \text{MoE}(X) = \text{TopK-Gate}(X) \cdot \text{Experts}(X)
-\end{equation}
+\]
 
 Concretely:
 
-\begin{equation}
+\[
 \begin{aligned}
 X_\text{norm} &= \text{LayerNorm}(X) \\
 \logits &= \text{Router}(X_\text{norm}) \in \mathbb{R}^{B \times L \times E} \\
@@ -93,15 +93,15 @@ X_\text{norm} &= \text{LayerNorm}(X) \\
 E_\text{out} &= \text{stack}([\text{Expert}_e(X) \text{ for } e \in [E]]) \\
 \text{MoE}(X) &= \sum_{j=1}^{k} \text{scores}_j \cdot E_\text{out}[\text{topk\_idx}_j]
 \end{aligned}
-\end{equation}
+\]
 
 \subsubsection{Expert Architecture}
 
 Each expert is a 2-layer MLP:
 
-\begin{equation}
+\[
 \text{Expert}_e(X) = W_2^{(e)} \cdot \text{GELU}(W_1^{(e)} X + b_1^{(e)}) + b_2^{(e)}
-\end{equation}
+\]
 
 with $W_1^{(e)} \in \mathbb{R}^{(2d) \times d}$ and 
 $W_2^{(e)} \in \mathbb{R}^{d \times (2d)}$.
@@ -110,9 +110,9 @@ $W_2^{(e)} \in \mathbb{R}^{d \times (2d)}$.
 
 \textbf{Critical.} We initialize:
 
-\begin{equation}
+\[
 W_2^{(e)} = 0, \quad b_2^{(e)} = 0 \quad \forall e
-\end{equation}
+\]
 
 This ensures $\text{Expert}_e(X) = 0$ for all inputs, so 
 $\text{MoE}(X) = 0$ at step 0.
@@ -121,9 +121,9 @@ $\text{MoE}(X) = 0$ at step 0.
 
 We add the Switch/GShard load-balancing loss:
 
-\begin{equation}
+\[
 \mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
-\end{equation}
+\]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
@@ -133,9 +133,9 @@ $\lambda_\text{aux} = 0.01$ (default 0.01).
 
 The MoE output is reshaped and added to $V$:
 
-\begin{equation}
+\[
 V' = V + \alpha \cdot \text{MoE}(X)
-\end{equation}
+\]
 
 with $\alpha = 0.1$ (fixed). The 0.1 scaling keeps the MoE contribution 
 conservative -- even after training, the MoE never dominates the base.
@@ -146,17 +146,17 @@ conservative -- even after training, the MoE never dominates the base.
 
 A learnable scalar gate:
 
-\begin{equation}
+\[
 g_\text{gate} = \sigma(b_g), \quad b_g \in \mathbb{R}
-\end{equation}
+\]
 
 initialized to $b_g = -3.0$, so $g_\text{gate} \approx 0.047$ at start.
 
 The final MoE contribution:
 
-\begin{equation}
+\[
 \text{MoE}_\text{final}(X) = g_\text{gate} \cdot \text{MoE}(X)
-\end{equation}
+\]
 
 \textbf{Rationale.} Even with zero-init, the MoE branch's gradient at step 0 is 
 nonzero (since backprop through $W_2^{(e)} = 0$ gives nonzero gradient for 
@@ -167,9 +167,9 @@ drift.
 
 The final forward pass:
 
-\begin{equation}
+\[
 V' = V + \alpha \cdot g_\text{gate} \cdot \text{MoE}(X)
-\end{equation}
+\]
 
 At step 0, $W_2^{(e)} = 0 \Rightarrow \text{MoE}(X) = 0 \Rightarrow V' = V$. 
 Exact preservation.
@@ -178,9 +178,9 @@ Exact preservation.
 
 The output projection follows the standard pattern:
 
-\begin{equation}
+\[
 Y = \text{Attn}(Q, K, V') W_O^\top + b_O
-\end{equation}
+\]
 
 with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied 
 (the outer \texttt{output.dense} performs it).
@@ -189,8 +189,8 @@ with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}, aux_loss
+Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
 
 1:  Q $\leftarrow$ LoRALinear_Q(X)                          Frozen base + LoRA
 2:  K $\leftarrow$ LoRALinear_K(X)
@@ -236,7 +236,7 @@ Output proj & $O(L d^2)$ \\
 \end{tabular}
 \end{table}
 
-The MoE branch adds $O(L d^2)$ per layer (since 2 experts $$\times$ 2-layer MLP 
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
 \subsubsection{Parameter Count}
@@ -259,10 +259,10 @@ Total experts & $8 d^2 E$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $E = 8$: \textbf{8 $$\times$ 768  $$\times$ 8 $\approx$ 37.7M params per layer}.
+For $d = 768$, $E = 8$: \textbf{8 $\times$ 768  $\times$ 8 $\approx$ 37.7M params per layer}.
 
 \textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
-66.9M model. Parameter count \textbf{increases by ~4.4$$\times$}.
+66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}
 \begin{lstlisting}

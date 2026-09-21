@@ -79,7 +79,7 @@ $\mathcal{O}(L)$ in both time and memory, our PyTorch reference
 implementation uses two nested Python loops (outer over chunks, inner over 
 tokens within a chunk), which dominates wall-clock time. On DistilBERT with 
 $L = 128$, one recovery step takes ~14.2 ms seconds -- approximately 
-\textbf{84.5$$\times$ slower} than baseline attention. RoBERTa and GPT-2 
+\textbf{84.5$\times$ slower} than baseline attention. RoBERTa and GPT-2 
 (12 layers) exceed our GPU memory budget. We report these results as an 
 honest assessment of the \textbf{implementation bottleneck} and identify the 
 required fix (fused CUDA kernel or Triton JIT).

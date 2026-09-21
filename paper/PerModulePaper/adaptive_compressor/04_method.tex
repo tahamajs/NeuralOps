@@ -35,13 +35,13 @@ The \texttt{AdaptiveRanks} module executes a structured transformation replacing
 \subsubsection{Activation Covariance Whitening}
 \label{sec:covariance_whitening}
 The core algorithmic feature of \texttt{AdaptiveRanks} is preconditioning projection matrices by the empirical activation covariance $\operatorname{Cov}(X)$ collected over calibration tokens:
-\begin{equation}
+\[
 \operatorname{Cov}(X) = \frac{1}{N} \sum_{i=1}^N X_i^\top X_i
-\end{equation}
+\]
 To ensure numerical stability across layers with ill-conditioned activation distributions, we regularize the covariance matrix:
-\begin{equation}
+\[
 \operatorname{Cov}_{\text{reg}}(X) = \operatorname{Cov}(X) + \lambda_{\text{reg}} I, \quad \lambda_{\text{reg}} = \max(10^{-4} \cdot \bar{\sigma}_{\text{diag}}, 10^{-6})
-\end{equation}
+\]
 We compute the symmetric square-root and inverse square-root via symmetric eigendecomposition ($\operatorname{eigh}$):
 \begin{align}
 \operatorname{Cov}_{\text{reg}}(X) &= Q \Lambda Q^\top, \quad \tilde{\lambda}_i = \max(\lambda_i, 10^{-6}) \\
@@ -49,87 +49,87 @@ We compute the symmetric square-root and inverse square-root via symmetric eigen
 \operatorname{Cov}(X)^{-1/2} &= Q \operatorname{diag}\left(\frac{1}{\sqrt{\tilde{\lambda}_1}}, \dots, \frac{1}{\sqrt{\tilde{\lambda}_d}}\right) Q^\top
 \end{align}
 The weight matrix is whitened before singular value decomposition:
-\begin{equation}
+\[
 M = W \cdot \operatorname{Cov}(X)^{1/2}
-\end{equation}
+\]
 where $M$ concentrates representational energy along principal activation directions.
 
 \subsubsection{Energy-Thresholded Adaptive Rank Selection}
 \label{sec:adaptive_rank_selection}
 Following singular value decomposition $\operatorname{SVD}(M) = U \Sigma V^\top$, \texttt{AdaptiveRanks} dynamically determines the target rank $r^*$ according to cumulative singular value energy thresholding at $\tau = 0.92$:
-\begin{equation}
+\[
 \mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^\rho \sigma_j^2}
-\end{equation}
+\]
 The optimal target rank satisfies:
-\begin{equation}
+\[
 r^* = \min \left\{ r \in \mathbb{N} : \mathcal{E}(r) \ge 0.92 \right\}
-\end{equation}
+\]
 subject to an architectural minimum rank floor:
-\begin{equation}
+\[
 r_{\min} = \max\left(16, \lfloor 0.15 \cdot \min(d_{\text{in}}, d_{\text{out}})\rfloor, \lfloor 0.10 \cdot d_{\text{out}}\rfloor\right)
-\end{equation}
+\]
 and bounded by non-expansion constraints:
-\begin{equation}
+\[
 r_{\max} = \min\left(\min(d_{\text{in}}, d_{\text{out}}) - 1, \left\lfloor 0.75 \cdot \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}\right\rfloor\right)
-\end{equation}
+\]
 The factor matrices are obtained through symmetric square-root splitting and coordinate restoration:
-\begin{equation}
+\[
 U_r = U_{:, :r^*} \Sigma_{:r^*}^{1/2}, \quad V_r = \left(\Sigma_{:r^*}^{1/2} V_{:, :r^*}^\top\right) \cdot \operatorname{Cov}(X)^{-1/2}
-\end{equation}
+\]
 
 \subsubsection{Linear Projection Mapping}
 Let $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$ denote activation inputs. Standard linear projection computes:
-\begin{equation}
+\[
 Z = X W^\top + b
-\end{equation}
+\]
 
 \subsubsection{Low-Rank Bilinear Factorization}
 Under low-rank compression, weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is factored into matrices $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$ and $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$:
-\begin{equation}
+\[
 \hat{W} = U_r V_r
-\end{equation}
+\]
 
 \subsubsection{Factorized Forward Execution}
 The forward evaluation transforms from monolithic matrix multiplication into two lightweight steps:
-\begin{equation}
+\[
 \tilde{Z} = (X V_r^\top) U_r^\top + b
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Injection}
 To recover expressive capacity lost during aggressive compression, trainable low-rank adapters are attached:
-\begin{equation}
+\[
 Y = X \hat{W}^\top + \frac{\alpha}{r_{\text{lora}}} (X A^\top) B^\top + b
-\end{equation}
+\]
 
 \subsubsection{Residual Adapter Initialization}
 Following standard low-rank adaptation conventions~\citep{hu2022lora}, the adapter weights are initialized to ensure exact zero-residual behavior at initialization:
-\begin{equation}
+\[
 A \sim \operatorname{Uniform}(-\sqrt{k}, \sqrt{k}), \quad k = \frac{1}{d_{\text{in}}}, \quad B = 0 \implies B A = 0
-\end{equation}
+\]
 
 \subsubsection{Relative Frobenius Reconstruction Error}
 Post-compression parameter distortion is evaluated against the uncompressed matrix:
-\begin{equation}
+\[
 \delta_{\text{rel}}(W, \hat{W}) = \frac{\|W - \hat{W}\|_F}{\|W\|_F + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Automated Guardrail Decision Rule}
 Should the relative reconstruction error breach pre-specified safety threshold $\delta_{\text{max}} = 0.50$:
-\begin{equation}
+\[
 \operatorname{Module}(W) = \begin{cases} \hat{W} + \frac{\alpha}{r} B A & \text{if } \delta_{\text{rel}} \le \delta_{\text{max}} \text{ and } \operatorname{isfinite}(\hat{W}) \\ W & \text{otherwise (safety fallback)} \end{cases}
-\end{equation}
+\]
 
 \subsubsection{Attention Kernel Normalization}
 In linear attention formulations, outputs are computed via associative reduction:
-\begin{equation}
+\[
 O_t = \frac{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) (\phi(K_s)^\top V_s)}{\sum_{s=1}^{t} \exp(-\gamma (t-s)) \phi(Q_t) \phi(K_s)^\top + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Head Projection Partitioning}
 Multi-head attention projections decompose into parallel heads:
-\begin{equation}
+\[
 W_Q = [W_Q^{(1)}; W_Q^{(2)}; \dots; W_Q^{(H)}], \quad W_Q^{(h)} \in \mathbb{R}^{d \times d_{\text{in}}}
-\end{equation}
+\]
 
 \subsection{Detailed Algorithmic Execution Trace}
 
@@ -179,9 +179,9 @@ if recon_err > max_error_ceiling or torch.isnan(recon_err):
 \subsection{Complexity and FLOPs Analysis}
 \subsubsection{Computational Complexity Breakdown}
 Evaluating a dense linear projection of dimension $d_{\text{in}} \times d_{\text{out}}$ requires $2 d_{\text{in}} d_{\text{out}}$ FLOPs per sequence token. For low-rank compressed factorization at rank $r$, the sequential forward evaluation requires:
-\begin{equation}
+\[
 \text{FLOPs}_{\text{factorized}} = 2 N d_{\text{in}} r + 2 N r d_{\text{out}} = 2 N r (d_{\text{in}} + d_{\text{out}})
-\end{equation}
+\]
 The theoretical FLOP reduction ratio $\rho_{\text{FLOPs}}$ is therefore:
 \begin{align}
 \rho_{\text{FLOPs}} &= \frac{2 N d_{\text{in}} d_{\text{out}}}{2 N r (d_{\text{in}} + d_{\text{out}})} = \frac{d_{\text{in}} d_{\text{out}}}{r (d_{\text{in}} + d_{\text{out}})} \\

@@ -64,7 +64,7 @@ per layer. We introduce \textbf{MinimalNOVA} (\textbf{Min}imal \textbf{N}ative \
 that factorizes each matrix as $W \approx U V$ with $U \in \mathbb{R}^{d \times r}$ 
 and $V \in \mathbb{R}^{r \times d}$, achieving parameter count 
 $r(d + d) = 2rd$ instead of $d^2$. For $d = 768$ and $r = 64$, this yields a 
-\textbf{6$$\times$ parameter reduction per projection} while maintaining accuracy within 
+\textbf{6$\times$ parameter reduction per projection} while maintaining accuracy within 
 \textbf{-2.06\%} on SST-2.
 
 Our key novelty is \textbf{energy-adaptive rank selection}: instead of fixing 
@@ -83,7 +83,7 @@ families (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with:
 (v) LoRA adapters initialized to zero for recovery fine-tuning.
 
 On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = 32$ and energy 
-$\eta = 45.2$, MinimalNOVA achieves \textbf{50\%$$\times$--2.1$$\times$} 
+$\eta = 45.2$, MinimalNOVA achieves \textbf{50\%$\times$--2.1$\times$} 
 parameter reduction with accuracy drops of only \textbf{-2.06\%--+0.00\%} 
 after 50 LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{380 MB\%}.

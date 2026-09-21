@@ -1,4 +1,4 @@
-\title{\textbf{Compressed MHA: Joint Truncated SVD for Multi-Architecture Attention Compression}
+\title{\textbf{Compressed MHA: Joint Truncated SVD for Multi-Architecture Attention Compression}}
 
 \author{Anonymous authors}
 
@@ -19,9 +19,9 @@ $d^2$ to $2 r d$.
 
 \textbf{Standard SVD compression} treats each projection independently:
 
-\begin{equation}
+\[
 W_Q \to U_{Q,r} V_{Q,r}, \quad W_K \to U_{K,r} V_{K,r}, \quad W_V \to U_{V,r} V_{V,r}, \quad W_O \to U_{O,r} V_{O,r}
-\end{equation}
+\]
 
 This costs $4 \cdot 2 r d = 8 r d$ parameters.
 
@@ -36,10 +36,10 @@ Given a pretrained transformer $\mathcal{M}$ with hidden dimension $d$ and
 head dimension $d_h$, we seek compressed projections 
 $\{W_Q, W_K, W_V, W_O\}$ such that:
 
-\begin{equation}
+\[
 \text{Cost}(\mathcal{A}') \ll 4 d^2, \qquad
 \mathcal{A}' \approx \mathcal{A}
-\end{equation}
+\]
 
 subject to:
 
@@ -55,23 +55,23 @@ subject to:
 
 We stack the Q, K, V projections:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(d + 2 d_{kv}) \times d}
-\end{equation}
+\]
 
 where $d_{kv} = H_{kv} \cdot d_h$ for grouped-query attention.
 
 We then compute a single SVD:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 and truncate to rank $r$:
 
-\begin{equation}
+\[
 W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{QKV, r}^\top
-\end{equation}
+\]
 
 \textbf{Advantages:}
 
@@ -85,9 +85,9 @@ W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{
 \end{enumerate}
 We apply separate SVD to the output projection $W_O \in \mathbb{R}^{d \times d_h H}$:
 
-\begin{equation}
+\[
 W_O \approx U_{O, r} \Sigma_{O, r}^{1/2} \cdot \Sigma_{O, r}^{1/2} V_{O, r}^\top
-\end{equation}
+\]
 
 \subsection{Contributions}
 
@@ -206,17 +206,17 @@ smaller compressed matrices than independent SVD.
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\end{equation}
+\]
 
 where $W_Q \in \mathbb{R}^{d \times H \cdot d_h}$, $W_K, W_V \in \mathbb{R}^{d \times H_{kv} \cdot d_h}$.
 
 The output projection:
 
-\begin{equation}
+\[
 \text{Out} = \text{Attn}(Q, K, V) W_O
-\end{equation}
+\]
 
 where $W_O \in \mathbb{R}^{H \cdot d_h \times d}$.
 
@@ -238,26 +238,26 @@ $W_O$ & $H d_h \times d$ & $d H d_h$ \\
 \end{table}
 
 For standard MHA ($H = H_{kv}$):
-\begin{equation}
+\[
 \text{Total} = 4 d^2
-\end{equation}
+\]
 
 \subsection{Singular Value Decomposition}
 
 For $W \in \mathbb{R}^{m \times n}$:
 
-\begin{equation}
+\[
 W = U \Sigma V^\top
-\end{equation}
+\]
 
 where $U \in \mathbb{R}^{m \times m}$, $\Sigma \in \mathbb{R}^{m \times n}$ diagonal, 
 $V \in \mathbb{R}^{n \times n}$ orthogonal.
 
 \textbf{Truncated SVD.} Rank-$r$ approximation:
 
-\begin{equation}
+\[
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\end{equation}
+\]
 
 \textbf{Error.} $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
@@ -265,9 +265,9 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
 
 For numerical stability, distribute $\Sigma^{1/2}$:
 
-\begin{equation}
+\[
 W_r = \underbrace{U_{:, :r} \Sigma_{:r, :r}^{1/2}}_{U_r'} \underbrace{\Sigma_{:r, :r}^{1/2} V_{:r, :}^\top}_{V_r'}
-\end{equation}
+\]
 
 Both factors have balanced magnitude.
 
@@ -275,15 +275,15 @@ Both factors have balanced magnitude.
 
 Instead of separate SVD per projection, we stack:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
-\end{equation}
+\]
 
 Then:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 \textbf{Key property.} The right factor $V_{QKV}$ is a \textbf{single basis} for the 
 input space, shared across Q, K, V.
@@ -295,9 +295,9 @@ same input features drive all three. A joint SVD captures this correlation.
 
 LoRA (Hu et al., 2021) adds trainable low-rank deltas:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $B = 0$ initially. Applied to both QKV and output branches.
 
@@ -305,17 +305,17 @@ with $B = 0$ initially. Applied to both QKV and output branches.
 
 For $H_{kv} < H$:
 
-\begin{equation}
+\[
 K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
-\end{equation}
+\]
 
 Expanded to $H$ heads via \texttt{repeat\_kv}.
 
 \subsection{Rotary Position Embeddings (RoPE)}
 
-\begin{equation}
+\[
 \tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
-\end{equation}
+\]
 
 Applied to $Q, K$ after projection.
 
@@ -440,9 +440,9 @@ w_o = src.o_proj.weight
 
 We concatenate along the output dimension:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix}
-\end{equation}
+\]
 
 Shape: $[H d_h + 2 H_{kv} d_h, d]$.
 
@@ -450,42 +450,42 @@ Shape: $[H d_h + 2 H_{kv} d_h, d]$.
 
 Compute the full SVD:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 Truncate to rank $r_{qkv}$:
 
-\begin{equation}
+\[
 r_{qkv} = \min(\text{rank\_qkv}, H d_h + 2 H_{kv} d_h, d)
-\end{equation}
+\]
 
 Store the factors:
 
-\begin{equation}
+\[
 U_{QKV, r} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times r_{qkv}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 S_{QKV, r} \in \mathbb{R}^{r_{qkv}}, \quad
 V_{QKV, r} \in \mathbb{R}^{r_{qkv} \times d}
-\end{equation}
+\]
 
 \subsubsection{Forward Pass}
 
 Given input $X$:
 
-\begin{equation}
+\[
 \text{Proj}_1 = X V_{QKV, r}^\top \in \mathbb{R}^{B \times N \times r_{qkv}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Proj}_2 = \text{Proj}_1 \cdot \text{diag}(S_{QKV, r}) \in \mathbb{R}^{B \times N \times r_{qkv}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{QKV} = \text{Proj}_2 U_{QKV, r}^\top \in \mathbb{R}^{B \times N \times (H d_h + 2 H_{kv} d_h)}
-\end{equation}
+\]
 
 Then split into Q, K, V.
 
@@ -507,42 +507,42 @@ $U_{QKV, r}$ & $r_{qkv} \cdot (H d_h + 2 H_{kv} d_h)$ \\
 \end{table}
 
 For $H = H_{kv}$:
-\begin{equation}
+\[
 \text{Total}_{QKV} = r_{qkv} (2d + 2 d_h) = 2 r_{qkv} (d + d_h)
-\end{equation}
+\]
 
 \subsection{Separate O SVD}
 
 The output projection $W_O \in \mathbb{R}^{d \times H d_h}$ gets its own SVD:
 
-\begin{equation}
+\[
 W_O = U_O \Sigma_O V_O^\top
-\end{equation}
+\]
 
 Truncate to rank $r_{out}$:
 
-\begin{equation}
+\[
 r_{out} = \min(\text{rank\_out}, d, H d_h)
-\end{equation}
+\]
 
 Forward:
 
-\begin{equation}
+\[
 \text{Out}_1 = \text{Context} V_{O, r}^\top \in \mathbb{R}^{B \times N \times r_{out}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Out}_2 = \text{Out}_1 \cdot \text{diag}(S_{O, r}) \in \mathbb{R}^{B \times N \times r_{out}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{Out} = \text{Out}_2 U_{O, r}^\top + b_O \in \mathbb{R}^{B \times N \times d}
-\end{equation}
+\]
 
 \textbf{Parameter count:}
-\begin{equation}
+\[
 \text{Total}_O = r_{out} (d + H d_h) + r_{out}
-\end{equation}
+\]
 
 \subsection{LoRA Recovery}
 
@@ -550,21 +550,21 @@ Both branches have LoRA adapters:
 
 \subsubsection{QKV LoRA}
 
-\begin{equation}
+\[
 \text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} \cdot X
-\end{equation}
+\]
 
 Added to the SVD output:
 
-\begin{equation}
+\[
 \text{QKV}_\text{final} = \text{QKV}_\text{SVD} + \text{QKV}_\text{LoRA}
-\end{equation}
+\]
 
 \subsubsection{Output LoRA}
 
-\begin{equation}
+\[
 \text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \cdot \text{Context}
-\end{equation}
+\]
 
 Added after SVD output.
 
@@ -590,8 +590,8 @@ $B_O$ & $d \cdot r_L$ \\
 
 \textbf{Algorithm 1:} Compressed MHA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Proj_1 $\leftarrow$ X @ Vh_qkv^T
  2: Proj_2 $\leftarrow$ Proj_1 * S_qkv
@@ -682,7 +682,7 @@ Compressed QKV & $2 \cdot 384 \cdot 832 = 638,976$ \\
 Compressed O & $384 \cdot 832 = 319,488$ \\
 LoRA & $16 \cdot 1664 = 26,624$ \\
 \textbf{Total compressed} & ~985,088 \\
-\textbf{Reduction} & \textbf{2.4$$\times$} \\
+\textbf{Reduction} & \textbf{2.4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -692,7 +692,7 @@ For $r_{qkv} = r_{out} = 64$:
 \item Compressed QKV: $2 \cdot 64 \cdot 832 = 106,496$
 \item Compressed O: $64 \cdot 832 = 53,248$
 \item LoRA: 26,624
-\item \textbf{Total:} ~186,368 $\to$ \textbf{12.7$$\times$ reduction}
+\item \textbf{Total:} ~186,368 $\to$ \textbf{12.7$\times$ reduction}
 
 \end{itemize}
 \subsubsection{Inference Complexity}
@@ -736,9 +736,9 @@ joint SVD recovers $V$ as the dominant right singular vectors. $\square$
 
 For the joint SVD:
 
-\begin{equation}
+\[
 \|W_{QKV} - U_{QKV, r} \Sigma_r V_{QKV, r}^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
-\end{equation}
+\]
 
 \subsubsection{Causality}
 
@@ -1166,12 +1166,12 @@ Single seed (42). Limitation stated in Section 10.
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{Compressed MHA} & \textbf{50.92} & -39.79 & 0.6748 & 48.5M & \textbf{1.38$$\times$} & 291 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{Compressed MHA} & \textbf{50.92} & -27.64 & 0.6748 & 95.0M & \textbf{1.31$$\times$} & 575 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \textbf{1.31$$\times$} & 471 MB MB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{Compressed MHA} & \textbf{50.92} & -39.79 & 0.6748 & 48.5M & \textbf{1.38$\times$} & 291 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{Compressed MHA} & \textbf{50.92} & -27.64 & 0.6748 & 95.0M & \textbf{1.31$\times$} & 575 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \textbf{1.31$\times$} & 471 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1195,9 +1195,9 @@ GPT-2 & \textbf{Compressed MHA} & \textbf{50.92} & -28.44 & 0.6748 & 95.0M & \te
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Reduction} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 48500000 & \textbf{1.38$$\times$} & Joint QKV + LoRA \\
-RoBERTa & 124,647,170 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
-GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
+DistilBERT & 66,955,010 & 48500000 & \textbf{1.38$\times$} & Joint QKV + LoRA \\
+RoBERTa & 124,647,170 & 95000000 & \textbf{1.31$\times$} & Joint QKV + LoRA \\
+GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$\times$} & Joint QKV + LoRA \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1213,12 +1213,12 @@ GPT-2 & 124,441,344 & 95000000 & \textbf{1.31$$\times$} & Joint QKV + LoRA \\
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Reduction} \\
 \midrule
-$W_Q$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_K$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_V$ & 589,824 & 98304 & 6.0$$\times$ \\
-$W_O$ & 589,824 & 98304 & 6.0$$\times$ \\
+$W_Q$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_K$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_V$ & 589,824 & 98304 & 6.0$\times$ \\
+$W_O$ & 589,824 & 98304 & 6.0$\times$ \\
 LoRA & 0 & 73,728 & -- \\
-\textbf{Total} & 2,359,296 & \textbf{467072} & \textbf{5.05$$\times$} \\
+\textbf{Total} & 2,359,296 & \textbf{467072} & \textbf{5.05$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1253,11 +1253,11 @@ GPT-2 & Compressed & 4.6 s & 24500 & 471 MB MB \\
 \toprule
 \textbf{$r_{qkv} = r_{out}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & 82.0 & 4.5$$\times$ & 68.0 & 70.5 \\
-64 & 89.5 & 1.38$$\times$ & 76.5 & 78.0 \\
-128 & 90.0 & 1.10$$\times$ & 77.5 & 78.8 \\
-256 & 90.5 & 1.03$$\times$ & 78.0 & 79.0 \\
-384 & 90.6 & 1.00$$\times$ & 78.2 & 79.2 \\
+32 & 82.0 & 4.5$\times$ & 68.0 & 70.5 \\
+64 & 89.5 & 1.38$\times$ & 76.5 & 78.0 \\
+128 & 90.0 & 1.10$\times$ & 77.5 & 78.8 \\
+256 & 90.5 & 1.03$\times$ & 78.0 & 79.0 \\
+384 & 90.6 & 1.00$\times$ & 78.2 & 79.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1350,10 +1350,10 @@ The fix restores full accuracy.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
-A3 & 88.5 & 5.0$$\times$ & 75.5 & 4.5$$\times$ \\
-AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
-\textbf{Compressed MHA} & \textbf{50.92} & \textbf{1.38$$\times$} & \textbf{50.92} & \textbf{1.31$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+A3 & 88.5 & 5.0$\times$ & 75.5 & 4.5$\times$ \\
+AASVD & 88.0 & 4.8$\times$ & 75.0 & 4.3$\times$ \\
+\textbf{Compressed MHA} & \textbf{50.92} & \textbf{1.38$\times$} & \textbf{50.92} & \textbf{1.31$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1361,7 +1361,7 @@ AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
 \subsection{Summary}
 
 \begin{itemize}
-\item Parameter reduction: \textbf{1.38$$\times$--1.31$$\times$}
+\item Parameter reduction: \textbf{1.38$\times$--1.31$\times$}
 \item Accuracy drop: \textbf{-39.79\%---28.44\%}
 \item Nested detection fix restores DistilBERT accuracy.
 \end{itemize}
@@ -1370,10 +1370,10 @@ AASVD & 88.0 & 4.8$$\times$ & 75.0 & 4.3$$\times$ \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/compressed_mha_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{compressed_mha}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{compressed_mha}.}
 \label{fig:results_compressed_mha}
 \end{figure}
 
@@ -1517,7 +1517,7 @@ O SVD up & $128 \cdot 64 \cdot 768 = 6.3M$ \\
 \end{tabular}
 \end{table}
 
-\textbf{~8$$\times$ reduction in projection FLOPs} for $r = 64$.
+\textbf{~8$\times$ reduction in projection FLOPs} for $r = 64$.
 
 \subsection{Failure Modes}
 
@@ -1614,7 +1614,7 @@ For DistilBERT with rank 64:
 \textbf{Metric} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Change} \\
 \midrule
 Params & 66.95M & 48.5M & \textbf{-27.5\%} \\
-Attention params & 14.2M & 5.2M & \textbf{2.7$$\times$} \\
+Attention params & 14.2M & 5.2M & \textbf{2.7$\times$} \\
 Peak VRAM & 183 MB & 291 MB MB & -18\% \\
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
@@ -1642,7 +1642,7 @@ AASVD & Feature & No & Yes & 88.0 \\
 
 \subsubsection{Memory}
 
-Compression ratio 1.38$$\times$ reduces both disk and VRAM footprint.
+Compression ratio 1.38$\times$ reduces both disk and VRAM footprint.
 
 \subsubsection{Latency}
 
@@ -1781,7 +1781,7 @@ Dual-use. See Appendix E.
 
 We presented \textbf{Compressed MHA}, a joint SVD compression method for 
 transformer attention. By sharing an input basis across Q, K, V via joint 
-SVD and separately factorizing W\_O, we achieve \textbf{1.38$$\times$--1.31$$\times$} 
+SVD and separately factorizing W\_O, we achieve \textbf{1.38$\times$--1.31$\times$} 
 parameter reduction on attention projections.
 
 \subsection{Results Recap}
@@ -1793,9 +1793,9 @@ parameter reduction on attention projections.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -39.79\% & \textbf{1.38$$\times$} & -18\% \\
-RoBERTa & -27.64\% & \textbf{1.31$$\times$} & -380 MB\% \\
-GPT-2 & -28.44\% & \textbf{1.31$$\times$} & -380 MB\% \\
+DistilBERT & -39.79\% & \textbf{1.38$\times$} & -18\% \\
+RoBERTa & -27.64\% & \textbf{1.31$\times$} & -380 MB\% \\
+GPT-2 & -28.44\% & \textbf{1.31$\times$} & -380 MB\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1944,9 +1944,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 50.92\% $\pm$ 1\% & 1.38$$\times$ \\
-RoBERTa & 50.92\% $\pm$ 1\% & 1.31$$\times$ \\
-GPT-2 & 50.92\% $\pm$ 1\% & 1.31$$\times$ \\
+DistilBERT & 50.92\% $\pm$ 1\% & 1.38$\times$ \\
+RoBERTa & 50.92\% $\pm$ 1\% & 1.31$\times$ \\
+GPT-2 & 50.92\% $\pm$ 1\% & 1.31$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2092,21 +2092,21 @@ GPT-2 & 50.92\% $\pm$ 1\% & 1.31$$\times$ \\
 
 Given $W_Q, W_K, W_V$, stack:
 
-\begin{equation}
+\[
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
-\end{equation}
+\]
 
 Full SVD:
 
-\begin{equation}
+\[
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\end{equation}
+\]
 
 Truncate to rank $r$:
 
-\begin{equation}
+\[
 W_{QKV} \approx U_r \Sigma_r V_r^\top
-\end{equation}
+\]
 
 with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
@@ -2114,10 +2114,10 @@ with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
 Distribute $\Sigma^{1/2}$:
 
-\begin{equation}
+\[
 U_r' = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
 V_r' = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
-\end{equation}
+\]
 
 Store:
 \begin{itemize}
@@ -2128,9 +2128,9 @@ Store:
 \end{itemize}
 \textbf{Forward:}
 
-\begin{equation}
+\[
 \text{QKV} = \left((X V_{QKV, r}^\top) \cdot S_{QKV, r}\right) U_{QKV, r}^\top
-\end{equation}
+\]
 
 \subsection{A.3 Parameter Count}
 
@@ -2149,21 +2149,21 @@ $U_{QKV, r}$ & $(H d_h + 2 H_{kv} d_h) \times r$ & $r (H d_h + 2 H_{kv} d_h)$ \\
 \end{table}
 
 For $H = H_{kv}$, $d_h = d/H$:
-\begin{equation}
+\[
 \text{Total} = r d + r + r (d + 2 d_h) = r(2d + 2 d_h) + r
-\end{equation}
+\]
 
 \subsection{A.4 Comparison with Independent SVD}
 
 Independent:
-\begin{equation}
+\[
 \text{Params}_\text{indep} = 2 r d \cdot 3 = 6 r d
-\end{equation}
+\]
 
 Joint:
-\begin{equation}
+\[
 \text{Params}_\text{joint} = 2 r (d + d_h) + r
-\end{equation}
+\]
 
 For $d = 768$, $d_h = 64$:
 \begin{itemize}
@@ -2177,29 +2177,29 @@ For $d = 768$, $d_h = 64$:
 
 For $W_O \in \mathbb{R}^{d \times H d_h}$:
 
-\begin{equation}
+\[
 W_O = U_O \Sigma_O V_O^\top
-\end{equation}
+\]
 
 Truncate to $r_{out}$:
 
-\begin{equation}
+\[
 W_O \approx U_{O, r} \Sigma_{O, r} V_{O, r}^\top
-\end{equation}
+\]
 
 \subsection{A.6 LoRA on Both Branches}
 
 QKV LoRA:
 
-\begin{equation}
+\[
 \text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} X
-\end{equation}
+\]
 
 Output LoRA:
 
-\begin{equation}
+\[
 \text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \text{Context}
-\end{equation}
+\]
 
 Both have $B = 0$ at initialization.
 
@@ -2207,15 +2207,15 @@ Both have $B = 0$ at initialization.
 
 By Eckart-Young:
 
-\begin{equation}
+\[
 \|W_{QKV} - W_{QKV, r}\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}
-\end{equation}
+\]
 
 The energy fraction:
 
-\begin{equation}
+\[
 E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
-\end{equation}
+\]
 
 We can choose $r$ such that $E(r) \geq \eta$.
 
@@ -2223,9 +2223,9 @@ We can choose $r$ such that $E(r) \geq \eta$.
 
 Standard triangular mask before softmax:
 
-\begin{equation}
+\[
 \text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
-\end{equation}
+\]
 
 \subsection{A.9 Nested Encoder Correctness}
 
@@ -2386,7 +2386,7 @@ pretrained model.
 \midrule
 Params before & 66,955,010 \\
 Params after & 48500000 \\
-Ratio & 1.38$$\times$ \\
+Ratio & 1.38$\times$ \\
 Accuracy & 50.92\% \\
 F1 & 0.6748 \\
 Peak VRAM & 291 MB MB \\
@@ -2408,7 +2408,7 @@ rank\_out & 64 \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 95000000 \\
-Ratio & 1.31$$\times$ \\
+Ratio & 1.31$\times$ \\
 Accuracy & 50.92\% \\
 \bottomrule
 \end{tabular}
@@ -2425,7 +2425,7 @@ Accuracy & 50.92\% \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 95000000 \\
-Ratio & 1.31$$\times$ \\
+Ratio & 1.31$\times$ \\
 Accuracy & 50.92\% \\
 \bottomrule
 \end{tabular}

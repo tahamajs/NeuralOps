@@ -74,9 +74,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 55.50\% $\pm$ 2\% & 48.2\%$$\times$ \\
-RoBERTa & 50.92\% $\pm$ 3\% & 45.1\%$$\times$ \\
-GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$$\times$ \\
+DistilBERT & 55.50\% $\pm$ 2\% & 48.2\%$\times$ \\
+RoBERTa & 50.92\% $\pm$ 3\% & 45.1\%$\times$ \\
+GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,7 +90,7 @@ for name, mod in model.named_modules():
     if hasattr(mod, 'down') and hasattr(mod, 'up'):
         orig = mod.in_features * mod.out_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
-        print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$$\times$)")
+        print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$\times$)")
 \end{lstlisting}
 
 \subsubsection{Check Head Split}

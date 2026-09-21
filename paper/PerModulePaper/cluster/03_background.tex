@@ -4,23 +4,23 @@
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\begin{equation}
+\[
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V \in \mathbb{R}^{B \times L \times d}
-\end{equation}
+\]
 
 Standard attention:
 
-\begin{equation}
+\[
 \text{Attn}(X) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 \subsection{K-Means Clustering}
 
 Given $L$ points $x_1, \dots, x_L \in \mathbb{R}^d$, K-means minimizes:
 
-\begin{equation}
+\[
 \mathcal{L}(C) = \sum_{i=1}^{L} \min_{k \in [K]} \|x_i - c_k\|_2^2
-\end{equation}
+\]
 
 Lloyd's algorithm alternates:
 
@@ -54,9 +54,9 @@ ClusterFormer is fully differentiable:
 
 A generic linear attention reformulation:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \frac{\phi(Q) \sum_j \phi(K_j) V_j^\top}{\phi(Q) \sum_j \phi(K_j)}
-\end{equation}
+\]
 
 for some feature map $\phi$. If $\phi$ has dimension $m$, complexity is 
 $\mathcal{O}(L m d)$.
@@ -68,9 +68,9 @@ and computes attention from $K$ centroids to keys.
 
 LoRA (Hu et al., 2021) parameterizes:
 
-\begin{equation}
+\[
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at init}
-\end{equation}
+\]
 
 \subsection{Notation Summary}
 

@@ -15,14 +15,14 @@ VSpec++ replaces standard attention with:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
                
       +---------------+
       | Token Router  |
       | (top-k + CLS) |
       +-------+-------+
-              | X_routed (B$$\times$k$$\times$d)
+              | X_routed (B$\times$k$\times$d)
        +------+------+
                       
     +------+ +------+ +------+
@@ -35,7 +35,7 @@ VSpec++ replaces standard attention with:
        +--------+--------+
                 |
                  
-        Attention $$\times$ HeadGate(h)
+        Attention $\times$ HeadGate(h)
                 |
                  
           Po(go)  $\leftarrow$ SVD + Spectral Gate
@@ -215,8 +215,8 @@ Y = \text{scatter}(Y_\text{routed}, \mathcal{S})
 
 \textbf{Algorithm 1:} VSpec++ forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, position_embeddings
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: if nested_encoder: S $\leftarrow$ arange(L); k $\leftarrow$ L
  2: else:              s $\leftarrow$ saliency(X)
@@ -232,7 +232,7 @@ Output: Y $\in$ R^{B$$\times$L$$\times$d}
 12: Q $\leftarrow$ Pq(X_r, g_q);  K $\leftarrow$ Pk(X_r, g_k);  V $\leftarrow$ Pv(X_r, g_v)
 13: Q, K $\leftarrow$ RoPE(Q, K, pos)
 14: if GQA: K, V $\leftarrow$ repeat_kv
-15: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h $$\times$ h
+15: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h $\times$ h
 16: A $\leftarrow$ softmax(scores + masks)
 17: C $\leftarrow$ A V
 18: Y_r $\leftarrow$ Po(C, g_q)
@@ -252,7 +252,7 @@ Per block:
 \textbf{Component} & \textbf{Time} & \textbf{Params} \\
 \midrule
 Router & $O(L d)$ & $O(d)$ \\
-Spectral gates ($$\times$3) & $O(d \cdot 2r)$ & $O(dr)$ \\
+Spectral gates ($\times$3) & $O(d \cdot 2r)$ & $O(dr)$ \\
 Head gate & $O(d H)$ & $O(dH)$ \\
 Q/K/V proj & $O(k d r)$ & $3 \cdot 2 d r$ \\
 Attention & $O(k^2 d)$ & 0 \\
@@ -274,21 +274,21 @@ For $d = 768$, $r = 128$, $H = 12$, $\rho = 0.75$:
 \midrule
 SVD factors (Q/K/V/O) & $4 \times 2 \times 768 \times 128 = 786K$ \\
 Gates & ~150K \\
-LoRA & ~4 $$\times$ 16 $$\times$ 768 $$\times$ 2 = 98K \\
+LoRA & ~4 $\times$ 16 $\times$ 768 $\times$ 2 = 98K \\
 Router & ~25K \\
 \textbf{Total} & ~1.06M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-vs baseline $4 d^2 = 2.36M$ $\to$ \textbf{2.2$$\times$ reduction}.
+vs baseline $4 d^2 = 2.36M$ $\to$ \textbf{2.2$\times$ reduction}.
 
 \subsection{Training}
 
 Trainable:
 \begin{itemize}
 \item Router MLP.
-\item Spectral gates (3 $$\times$ MLP).
+\item Spectral gates (3 $\times$ MLP).
 \item Head gate MLP.
 \item LoRA adapters ($A, B$ on each projection).
 

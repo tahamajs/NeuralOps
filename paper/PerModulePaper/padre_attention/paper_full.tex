@@ -1,4 +1,4 @@
-\title{\textbf{PADRe: Polynomial Attention with Dropout Regularization for Multi-Architecture Transformers}
+\title{\textbf{PADRe: Polynomial Attention with Dropout Regularization for Multi-Architecture Transformers}}
 
 \author{Anonymous authors}
 
@@ -573,9 +573,9 @@ encoders and decoders, it's passed through \texttt{out\_proj}:
 
 \textbf{Algorithm 1:} PADRe forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
         order d, temperature T, is_decoder
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ q_proj(X); K $\leftarrow$ k_proj(X); V $\leftarrow$ v_proj(X)
  2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
@@ -1106,10 +1106,10 @@ GPT-2 & PADRe & 2.3 s s & 0.85 & 569 MB MB \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/padre_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{padre_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{padre_attention}.}
 \label{fig:results_padre_attention}
 \end{figure}
 
@@ -2082,7 +2082,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 LLM Usage}
 

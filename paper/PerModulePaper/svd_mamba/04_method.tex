@@ -17,7 +17,7 @@ Fused by a gated combiner.
 
 \begin{lstlisting}
     +-----------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                          |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                          |
     +----------------+------------------------------+
                      |
         +------------+----------------+
@@ -105,7 +105,7 @@ matrix.
 
 \subsubsection{Input Projection}
 
-The hidden states are projected to a gated 2$$\times$inner dimension:
+The hidden states are projected to a gated 2$\times$inner dimension:
 
 \[
 {[}x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
@@ -240,8 +240,8 @@ The SSM is silent at start; the model behaves like the pretrained attention.
 
 \textbf{Algorithm 1:} SVD-Mamba forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: # Attention path
  2: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V_a $\leftarrow$ SVDLinear_V(X)
@@ -337,7 +337,7 @@ LoRA & ~100K & ~600K \\
 \end{table}
 
 \textbf{Net change:} baseline has ~1.77M per layer (Q/K/V/O). SVD-Mamba has 
-~5.3M. \textbf{~3$$\times$ parameter increase.}
+~5.3M. \textbf{~3$\times$ parameter increase.}
 
 \subsection{Theoretical Notes}
 

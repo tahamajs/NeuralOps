@@ -65,7 +65,7 @@ in pretrained transformers. Base SVD factors are frozen; trainable LoRA
 adapters on both the QKV and output branches provide recovery capacity.
 
 For a typical transformer with $d = 768$ and head dimension $d_h = 64$, the 
-default configuration achieves \textbf{1.38$$\times$} parameter reduction on 
+default configuration achieves \textbf{1.38$\times$} parameter reduction on 
 attention projections (from $4d^2$ to $2r(d + d_h)$ where $r$ is the SVD 
 rank). On SST-2, Compressed MHA achieves \textbf{50.92\%} on DistilBERT 
 (baseline 90.71\%, $\Delta$ = -39.79), \textbf{50.92\%} on RoBERTa (baseline 

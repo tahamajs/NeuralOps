@@ -1,4 +1,4 @@
-\title{\textbf{SVD-Mamba: SVD-Factorized Selective State Space Attention for Transformers}
+\title{\textbf{SVD-Mamba: SVD-Factorized Selective State Space Attention for Transformers}}
 
 \author{Anonymous authors}
 
@@ -372,7 +372,7 @@ Fused by a gated combiner.
 
 \begin{lstlisting}
     +-----------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                          |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                          |
     +----------------+------------------------------+
                      |
         +------------+----------------+
@@ -460,7 +460,7 @@ matrix.
 
 \subsubsection{Input Projection}
 
-The hidden states are projected to a gated 2$$\times$inner dimension:
+The hidden states are projected to a gated 2$\times$inner dimension:
 
 \[
 {[}x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
@@ -595,8 +595,8 @@ The SSM is silent at start; the model behaves like the pretrained attention.
 
 \textbf{Algorithm 1:} SVD-Mamba forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: # Attention path
  2: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V_a $\leftarrow$ SVDLinear_V(X)
@@ -692,7 +692,7 @@ LoRA & ~100K & ~600K \\
 \end{table}
 
 \textbf{Net change:} baseline has ~1.77M per layer (Q/K/V/O). SVD-Mamba has 
-~5.3M. \textbf{~3$$\times$ parameter increase.}
+~5.3M. \textbf{~3$\times$ parameter increase.}
 
 \subsection{Theoretical Notes}
 
@@ -1155,7 +1155,7 @@ LoRA & ~100K \\
 \end{tabular}
 \end{table}
 
-\textbf{Baseline} per layer: ~1.77M. \textbf{Increase:} ~2$$\times$.
+\textbf{Baseline} per layer: ~1.77M. \textbf{Increase:} ~2$\times$.
 
 \subsection{Efficiency Profile}
 
@@ -1282,11 +1282,11 @@ GPT-2 & SVD-Mamba & 2.3 s s & 0.85 & 883 MB MB \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-aasvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.20$$\times$ \\
-nha & 90.25\% & FAIL & 78.78\% & 1.01$$\times$ \\
-oha & 89.2\% & 76.5\% & 77.8\% & 1.02$$\times$ \\
-\textbf{svd\_mamba} & \textbf{50.92} & \textbf{50.92} & \textbf{50.23} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+aasvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.20$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+oha & 89.2\% & 76.5\% & 77.8\% & 1.02$\times$ \\
+\textbf{svd\_mamba} & \textbf{50.92} & \textbf{50.92} & \textbf{50.23} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1316,10 +1316,10 @@ GPT-2 & PASS & 50.23 & 32 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/svd_mamba_distilbert_loss_curve.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{svd_mamba}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_mamba}.}
 \label{fig:results_svd_mamba}
 \end{figure}
 
@@ -1487,7 +1487,7 @@ LoRA & 0 & 2.3 s ms \\
 \midrule
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failed \\
 NaN in SSM & Loss = NaN & Overflow in scan \\
-Slower than baseline & >3$$\times$ latency & Extra paths \\
+Slower than baseline & >3$\times$ latency & Extra paths \\
 Parameter bloat & +66.4M\% & SSM + gating \\
 \bottomrule
 \end{tabular}
@@ -1585,7 +1585,7 @@ For DistilBERT at L=128:
 \midrule
 Params & 66.95M & 66.4MM & +48.5\%\% \\
 VRAM & 183 MB & 639 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
 \end{tabular}
@@ -1726,9 +1726,9 @@ bias $-7$ to keep the SSM silent at start.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & -39.79\% & +48.5\%\% & 2.1$$\times$ \\
-RoBERTa & -27.64\% & +48.5\%\% & 2.1$$\times$ \\
-GPT-2 & -29.13\% & +48.5\%\% & 2.1$$\times$ \\
+DistilBERT & -39.79\% & +48.5\%\% & 2.1$\times$ \\
+RoBERTa & -27.64\% & +48.5\%\% & 2.1$\times$ \\
+GPT-2 & -29.13\% & +48.5\%\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2478,7 +2478,7 @@ done
 
 \textbf{Goal.} More SSM capacity.
 
-\textbf{Result.} Marginal accuracy improvement, 4$$\times$ more parameters.
+\textbf{Result.} Marginal accuracy improvement, 4$\times$ more parameters.
 
 \textbf{Conclusion.} $d_\text{state} = 16$ is a good default.
 
@@ -2502,7 +2502,7 @@ done
 
 \textbf{Goal.} Ensemble of SSMs.
 
-\textbf{Result.} 2$$\times$ SSM params, no improvement.
+\textbf{Result.} 2$\times$ SSM params, no improvement.
 
 \subsubsection{D.2.3 Shared SSM Across Layers}
 
@@ -2654,7 +2654,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

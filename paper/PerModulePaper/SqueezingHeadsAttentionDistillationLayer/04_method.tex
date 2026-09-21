@@ -6,15 +6,15 @@
 Squeezing Heads replaces each pretrained attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
 
-\begin{equation}
+\[
 \text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
-\end{equation}
+\]
 
 The forward pass is:
 
-\begin{equation}
+\[
 y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
-\end{equation}
+\]
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
 adapters (trainable), and $b$ is the bias (frozen).
@@ -42,9 +42,9 @@ adapters (trainable), and $b$ is the bias (frozen).
 
 For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 
-\begin{equation}
+\[
 y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
-\end{equation}
+\]
 
 \textbf{Complexity.}
 
@@ -76,15 +76,15 @@ LoRA & $r_L (d_\text{in} + d_\text{out})$ & $B L r_L (d_\text{in} + d_\text{out}
 To reduce head dimension from $d_h$ to $d_h'$, we slice the leading rows 
 of $W_Q, W_K, W_V$:
 
-\begin{equation}
-W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
-\end{equation}
+\[
+W_Q^{(\text{new})} = {W_Q^{(\text{old})}}_{:d_h' H, :}
+\]
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
 
-\begin{equation}
-W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
-\end{equation}
+\[
+W_O^{(\text{new})} = {W_O^{(\text{old})}}_{:, :d_h' H}
+\]
 
 \textbf{Why leading?} The leading dimensions correspond to the principal 
 components of the learned representation, based on the order of head 
@@ -98,9 +98,9 @@ recover the discarded directions.
 When the source attention has $H_\text{source}$ KV heads and the target has 
 $H_\text{target} < H_\text{source}$:
 
-\begin{equation}
-W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\end{equation}
+\[
+{W_K^{(\text{pool})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+\]
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
 heads in group $g$.
@@ -129,9 +129,9 @@ Output: SqueezingHeadsDistiller instance
 
 \textbf{Algorithm 2:} Squeezing Heads forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q $\leftarrow$ LoRALinear_q(hidden_states)
  2: K $\leftarrow$ LoRALinear_k(hidden_states)
@@ -173,15 +173,15 @@ Storage & $4 d^2$ & $4 d^2$ + $4 r_L d$ \\
 
 If we reduce head dimension from $d_h$ to $d_h'$:
 
-\begin{equation}
+\[
 \text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
-\end{equation}
+\]
 
 \textbf{Example.} $d_h = 64 \to d_h' = 32$, $r_L = 16$:
 
-\begin{equation}
+\[
 \text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
-\end{equation}
+\]
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.
 

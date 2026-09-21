@@ -4,7 +4,7 @@
 
 \subsubsection{Takeaway 1: Real Compression, Zero-Shot}
 
-SOA Fused Attention \textbf{reduces} attention parameters by \textbf{1.92$$\times$} 
+SOA Fused Attention \textbf{reduces} attention parameters by \textbf{1.92$\times$} 
 without requiring any calibration data. This is a significant practical 
 advantage over A3 and AASVD.
 
@@ -57,9 +57,9 @@ For DistilBERT at $k = 128$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-Attention params & 2.36M & 1228800 & \textbf{1.92$$\times$} \\
+Attention params & 2.36M & 1228800 & \textbf{1.92$\times$} \\
 Total params & 66.95M & 65536000 & -2.1\% \\
-Inference time & 1.90 s & 2.1 s & 1.1$$\times$ \\
+Inference time & 1.90 s & 2.1 s & 1.1$\times$ \\
 Accuracy & 90.71\% & 81.31\% & -9.40\% \\
 \bottomrule
 \end{tabular}
@@ -76,7 +76,7 @@ SOA Fused Attention composes with:
 \item \textbf{FFN compression} (A3/AASVD): compresses the other half of the block.
 
 \end{itemize}
-A combined pipeline could achieve \textbf{4-5$$\times$ total compression} with the same 
+A combined pipeline could achieve \textbf{4-5$\times$ total compression} with the same 
 accuracy recovery strategy.
 
 \subsection{Broader Impact}

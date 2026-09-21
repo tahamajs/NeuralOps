@@ -16,7 +16,7 @@ gate:
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
-        Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
+        Q, K, V $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
                  |
         +--------+--------+
                            
@@ -143,25 +143,25 @@ Initialize $S = 0$, $Z = 0$. For each chunk $[start, end)$:
 \begin{enumerate}
 \item Compute intra-chunk causal scores:
   $$
-  A\^{}\text{intra} = \phi(Q\_c) \phi(K\_c)\^{}\top \odot \text{tril}(1)
+  A^\text{intra} = \phi(Q\_c) \phi(K\_c)^\top \odot \text{tril}(1)
   \tag{4.7}
   $$
 
 \item Compute inter-chunk contribution:
   $$
-  O\^{}\text{inter} = \phi(Q\_c) S
+  O^\text{inter} = \phi(Q\_c) S
   \tag{4.8}
   $$
 
 \item Combine:
   $$
-  O\_c = \frac{A\^{}\text{intra} V\_c + O\^{}\text{inter}}{(A\^{}\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
+  O\_c = \frac{A^\text{intra} V\_c + O^\text{inter}}{(A^\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
   \tag{4.9}
   $$
 
 \item Update state:
   $$
-  S \leftarrow S + \phi(K\_c)\^{}\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
+  S \leftarrow S + \phi(K\_c)^\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
   \tag{4.10}
   $$
 
@@ -224,10 +224,10 @@ Empirically, per-token works as well as per-head for our tasks.
 
 \textbf{Algorithm 1:} NHA forward
 \begin{lstlisting}
-Input:  hidden_states $\in$ R^{B $$\times$ L $$\times$ d}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
         attention_mask, position_embeddings, is_causal
         window_size w, rff_features m
-Output: output $\in$ R^{B $$\times$ L $$\times$ d}
+Output: output $\in$ R^{B $\times$ L $\times$ d}
 
  1: Q, K, V $\leftarrow$ proj(hidden_states)
  2: Q, K $\leftarrow$ apply_rope(Q, K, position_embeddings)

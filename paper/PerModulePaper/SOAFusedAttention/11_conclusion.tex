@@ -5,7 +5,7 @@
 We presented \textbf{SOA Fused Attention}, a zero-shot low-rank factorization of 
 attention projections. The method replaces Q, K, V with factorized pairs 
 initialized from the truncated SVD of the pretrained weights, achieving 
-\textbf{1.92$$\times$--1.92$$\times$} parameter reduction on attention projections 
+\textbf{1.92$\times$--1.92$\times$} parameter reduction on attention projections 
 without any calibration data.
 
 \subsection{Results Recap}
@@ -17,9 +17,9 @@ without any calibration data.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -9.40\% & \textbf{1.92$$\times$} & -10\% \\
-RoBERTa & -27.64\% & \textbf{1.92$$\times$} & -10\% \\
-GPT-2 & -28.44\% & \textbf{1.92$$\times$} & -10\% \\
+DistilBERT & -9.40\% & \textbf{1.92$\times$} & -10\% \\
+RoBERTa & -27.64\% & \textbf{1.92$\times$} & -10\% \\
+GPT-2 & -28.44\% & \textbf{1.92$\times$} & -10\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,7 +30,7 @@ GPT-2 & -28.44\% & \textbf{1.92$$\times$} & -10\% \\
 \item \textbf{Zero-shot SVD works} -- no calibration needed.
 \item \textbf{$W_O$ should stay} -- factorizing it compounds error.
 \item \textbf{LoRA recovers} 5.5\% of the accuracy drop.
-\item \textbf{Attention parameters reduce by 1.92$$\times$.}
+\item \textbf{Attention parameters reduce by 1.92$\times$.}
 
 \end{enumerate}
 \subsection{Future Work}

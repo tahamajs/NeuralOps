@@ -11,7 +11,7 @@ the implementation, not the algorithm.
 
 \subsubsection{Takeaway 2: Implementation Matters}
 
-A 45$$\times$ slowdown from Python loops is not a fundamental limitation -- it is 
+A 45$\times$ slowdown from Python loops is not a fundamental limitation -- it is 
 an engineering gap. Fused kernels (Triton, CUDA) would close it.
 
 \subsubsection{Takeaway 3: Memory Is Also a Constraint}
@@ -93,8 +93,8 @@ For DistilBERT on RTX 4070:
 \textbf{Metric} & \textbf{Baseline} & \textbf{GatedDeltaNet} & \textbf{Change} \\
 \midrule
 Accuracy & 90.71\% & 50.92\% & -39.79\% \\
-Per-step time & 0.4 s & 14.2 ms s & \textbf{84.5$$\times$} \\
-Peak VRAM & 183 MB & 416 MB MB & 2.1$$\times$ \\
+Per-step time & 0.4 s & 14.2 ms s & \textbf{84.5$\times$} \\
+Peak VRAM & 183 MB & 416 MB MB & 2.1$\times$ \\
 Params & 66.9M & 66.4MM & +48.5\%\% \\
 \bottomrule
 \end{tabular}
@@ -137,6 +137,6 @@ Params & 66.9M & 66.4MM & +48.5\%\% \\
 \item \textbf{Complexity analysis is necessary but not sufficient.} A slow
   implementation of a fast algorithm is still slow.
 \item \textbf{Python loops are the enemy.} Always measure wall-clock time.
-\item \textbf{The gap between theory and practice can be 10-100$$\times$.}
+\item \textbf{The gap between theory and practice can be 10-100$\times$.}
 
 \end{enumerate}

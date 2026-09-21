@@ -4,16 +4,16 @@
 
 \subsubsection{Takeaway 1: MoE Increases Capacity}
 
-REAP-MoE with $E = 8$ experts provides ~8$$\times$ effective FFN capacity, at ~2$$\times$ 
+REAP-MoE with $E = 8$ experts provides ~8$\times$ effective FFN capacity, at ~2$\times$ 
 parameter cost due to SVD compression.
 
 \subsubsection{Takeaway 2: SVD Reduces Bloat}
 
-Standard MoE with $E = 8$ would 8$$\times$ FFN params. SVD reduces this to ~1.5$$\times$.
+Standard MoE with $E = 8$ would 8$\times$ FFN params. SVD reduces this to ~1.5$\times$.
 
 \subsubsection{Takeaway 3: Load-Balancing Works}
 
-The auxiliary loss keeps expert utilization balanced within 0.85$$\times$.
+The auxiliary loss keeps expert utilization balanced within 0.85$\times$.
 
 \subsection{When to Use REAP-MoE}
 
@@ -45,7 +45,7 @@ For DistilBERT:
 Params & 66.95M & 66.4MM & 66.4M \\
 Accuracy & 90.71\% & 90.02\% & -0.69\% \\
 VRAM & 183 MB & 554 MB MB & 380 MB \\
-Time & 1.90 s & 1.42x s & 2.3 s$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -62,7 +62,7 @@ Time & 1.90 s & 1.42x s & 2.3 s$$\times$ \\
 Shazeer (2017) & Noisy top-k & Dense & None \\
 Switch & Top-1 & Dense & None \\
 GShard & Top-2 & Dense & None \\
-\textbf{REAP-MoE} & \textbf{Noisy top-k} & \textbf{SVD} & \textbf{~4$$\times$/expert} \\
+\textbf{REAP-MoE} & \textbf{Noisy top-k} & \textbf{SVD} & \textbf{~4$\times$/expert} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,7 +70,7 @@ GShard & Top-2 & Dense & None \\
 \subsection{Deployment Considerations}
 
 \subsubsection{Storage}
-REAP-MoE increases storage by ~2$$\times$ vs baseline. Not suitable for edge 
+REAP-MoE increases storage by ~2$\times$ vs baseline. Not suitable for edge 
 deployment without further compression.
 
 \subsubsection{Latency}

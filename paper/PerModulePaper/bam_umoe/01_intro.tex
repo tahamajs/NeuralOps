@@ -60,9 +60,9 @@ substantially; the goal is capacity expansion with stable recovery.
 BAM-UMoE augments the \textbf{value pathway} of attention with a top-$k$ MoE 
 branch:
 
-\begin{equation}
+\[
 V' = V_{\text{base}} + \alpha \cdot \text{MoE}(X)
-\end{equation}
+\]
 
 where $X$ is the input hidden states, $V_\text{base} = X W_V^\top$ is the 
 frozen base value projection, and MoE$(X)$ is a top-$k$ expert mixture 

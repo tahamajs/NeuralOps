@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & \textbf{Adaptive SVD} & \textbf{88.0} & -2.7 & 0.880 & 24 & \textbf{3.0$$\times$} & 130 MB \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & \textbf{Adaptive SVD} & \textbf{74.0} & -4.6 & 0.740 & 48 & \textbf{2.5$$\times$} & 550 MB \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$$\times$} & 600 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{Adaptive SVD} & \textbf{88.0} & -2.7 & 0.880 & 24 & \textbf{3.0$\times$} & 130 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{Adaptive SVD} & \textbf{74.0} & -4.6 & 0.740 & 48 & \textbf{2.5$\times$} & 550 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$\times$} & 600 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,8 +25,8 @@ GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 3.0$$\times$ on DistilBERT, 2.5$$\times$ on RoBERTa,
-  2.5$$\times$ on GPT-2.
+\item \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa,
+  2.5$\times$ on GPT-2.
 \item \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
 \item \textbf{VRAM:} reduces by 30\% on all models.
 \item \textbf{No calibration:} compression time is only 15--30 seconds.
@@ -43,9 +43,9 @@ GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 22000000 & \textbf{3.0$$\times$} \\
-RoBERTa & 124,647,170 & 50000000 & \textbf{2.5$$\times$} \\
-GPT-2 & 124,441,344 & 50000000 & \textbf{2.5$$\times$} \\
+DistilBERT & 66,955,010 & 22000000 & \textbf{3.0$\times$} \\
+RoBERTa & 124,647,170 & 50000000 & \textbf{2.5$\times$} \\
+GPT-2 & 124,441,344 & 50000000 & \textbf{2.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,10 +59,10 @@ GPT-2 & 124,441,344 & 50000000 & \textbf{2.5$$\times$} \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{Compressed} & \textbf{Rank $r_P$} & \textbf{Reduction} \\
 \midrule
-$W_Q$ & 589,824 & 196608 & 128 & 3.0$$\times$ \\
-$W_K$ & 589,824 & 196608 & 128 & 3.0$$\times$ \\
-$W_V$ & 589,824 & 98304 & 64 & 6.0$$\times$ \\
-$W_O$ & 589,824 & 98304 & 64 & 6.0$$\times$ \\
+$W_Q$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_K$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_V$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
+$W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,11 +145,11 @@ GPT-2 \& Adaptive SVD & 5.3 & 21000 & 600 \\
 \toprule
 \textbf{$\tau$} & \textbf{Avg rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.85 & 64 & 85 & 5.0$$\times$ & 70 & 71 \\
-0.90 & 90 & 87 & 3.5$$\times$ & 72 & 74 \\
-\textbf{0.92} & \textbf{105} & \textbf{88} & \textbf{3.0$$\times$} & \textbf{74} & \textbf{75.5} \\
-0.95 & 160 & 89 & 2.0$$\times$ & 75.5 & 77 \\
-0.99 & 350 & 90 & 1.2$$\times$ & 77 & 78.5 \\
+0.85 & 64 & 85 & 5.0$\times$ & 70 & 71 \\
+0.90 & 90 & 87 & 3.5$\times$ & 72 & 74 \\
+\textbf{0.92} & \textbf{105} & \textbf{88} & \textbf{3.0$\times$} & \textbf{74} & \textbf{75.5} \\
+0.95 & 160 & 89 & 2.0$\times$ & 75.5 & 77 \\
+0.99 & 350 & 90 & 1.2$\times$ & 77 & 78.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -234,11 +234,11 @@ that $\tau$ is the primary driver of rank selection.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 79.36\% \\
-\texttt{svd\_linear} (r=128) & 84 & 3.0$$\times$ & 70 & 72 \\
-\texttt{a3} & 85.5 & 2.8$$\times$ & 72 & 74 \\
-\texttt{aasvd} & 85.0 & 3.0$$\times$ & 72 & 73 \\
-\textbf{Adaptive SVD} & \textbf{88.0} & \textbf{3.0$$\times$} & \textbf{74.0} & \textbf{75.5} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
+\texttt{svd\_linear} (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
+\texttt{a3} & 85.5 & 2.8$\times$ & 72 & 74 \\
+\texttt{aasvd} & 85.0 & 3.0$\times$ & 72 & 73 \\
+\textbf{Adaptive SVD} & \textbf{88.0} & \textbf{3.0$\times$} & \textbf{74.0} & \textbf{75.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -261,13 +261,13 @@ GPT-2 & 20 s & 4 s & 6 s & \textbf{30 s} \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} No calibration, so compression is 5--10$$\times$ faster than 
+\textbf{Observation.} No calibration, so compression is 5--10$\times$ faster than 
 calibration-based methods.
 
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} 3.0$$\times$--2.5$$\times$
+\item \textbf{Compression ratio:} 3.0$\times$--2.5$\times$
 \item \textbf{Accuracy drop:} -2.7\%---3.9\%
 \item \textbf{VRAM reduction:} 30\%
 \item \textbf{Compression time:} 15--30 s

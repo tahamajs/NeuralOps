@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$$\times$ \\
-DistilBERT & \textbf{VSpec++} & \textbf{87.5} & -3.2 & 0.875 & 1070000 & \textbf{2.2$$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$$\times$ \\
-RoBERTa & \textbf{VSpec++} & \textbf{75.0} & -3.6 & 0.750 & 1070000 & \textbf{2.2$$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$$\times$ \\
-GPT-2 & \textbf{VSpec++} & \textbf{77.0} & -2.4 & 0.770 & 1070000 & \textbf{2.2$$\times$} \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT & \textbf{VSpec++} & \textbf{87.5} & -3.2 & 0.875 & 1070000 & \textbf{2.2$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa & \textbf{VSpec++} & \textbf{75.0} & -3.6 & 0.750 & 1070000 & \textbf{2.2$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 & \textbf{VSpec++} & \textbf{77.0} & -2.4 & 0.770 & 1070000 & \textbf{2.2$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,11 +121,11 @@ Without (h=1) & 86.5 & 74.2 & 75.8 \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-32 & 83.0 & 4.5$$\times$ & 70.0 & 4.5$$\times$ \\
-64 & 86.0 & 3.0$$\times$ & 73.0 & 3.0$$\times$ \\
-128 & 87.5 & 2.2$$\times$ & 75.0 & 2.2$$\times$ \\
-192 & 87.8 & 1.7$$\times$ & 75.2 & 1.7$$\times$ \\
-256 & 87.9 & 1.4$$\times$ & 75.3 & 1.4$$\times$ \\
+32 & 83.0 & 4.5$\times$ & 70.0 & 4.5$\times$ \\
+64 & 86.0 & 3.0$\times$ & 73.0 & 3.0$\times$ \\
+128 & 87.5 & 2.2$\times$ & 75.0 & 2.2$\times$ \\
+192 & 87.8 & 1.7$\times$ & 75.2 & 1.7$\times$ \\
+256 & 87.9 & 1.4$\times$ & 75.3 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,7 +189,7 @@ GPT-2 & 0.91 & 0.84 & 0.75 \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Compression:} attention parameters reduce by 2.2$$\times$.
+\item \textbf{Compression:} attention parameters reduce by 2.2$\times$.
 \item \textbf{Accuracy:} drops -3.2\%---2.4\%.
 \item \textbf{All three gates contribute} to accuracy.
 \item \textbf{Variational sampling helps} by 0.3\% over deterministic.
@@ -197,9 +197,9 @@ GPT-2 & 0.91 & 0.84 & 0.75 \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/vspec_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{vspec}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{vspec}.}
 \label{fig:results_vspec}
 \end{figure}

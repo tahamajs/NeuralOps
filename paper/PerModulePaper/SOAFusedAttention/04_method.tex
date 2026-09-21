@@ -18,16 +18,16 @@ critical for downstream accuracy.
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    Input X $\in$ R^{B$$\times$L$$\times$d}
+    Input X $\in$ R^{B$\times$L$\times$d}
               |
     +---------+---------+
                          
   q_down    k_down    v_down
-  (k$$\times$d)     (k$$\times$d)     (k$$\times$d)
+  (k$\times$d)     (k$\times$d)     (k$\times$d)
     |         |         |
                          
   q_up      k_up      v_up
-  (d$$\times$k)     (d$$\times$k)     (d$$\times$k)
+  (d$\times$k)     (d$\times$k)     (d$\times$k)
     |         |         |
                          
     Q         K         V
@@ -51,21 +51,21 @@ For each of Q, K, V:
 
 \textbf{Step 2:} Compute truncated SVD:
 
-\begin{equation}
+\[
 W \approx U_k \Sigma_k V_k^\top
-\end{equation}
+\]
 
 where $k$ is the target rank.
 
 \textbf{Step 3:} Split symmetrically:
 
-\begin{equation}
+\[
 \text{down.weight} = V_k^\top \in \mathbb{R}^{k \times d_\text{in}}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \text{up.weight} = U_k \Sigma_k \in \mathbb{R}^{d_\text{out} \times k}
-\end{equation}
+\]
 
 Note: we do NOT use $\Sigma^{1/2}$ on both sides; instead, we absorb $\Sigma_k$ 
 entirely into the up-projection. This is equivalent mathematically but 
@@ -79,9 +79,9 @@ slightly different numerically (all $\Sigma$ in one factor).
 
 The rank $k$ trades off compression and accuracy:
 
-\begin{equation}
+\[
 \text{Compression} = \frac{d^2}{2 k d} = \frac{d}{2k}
-\end{equation}
+\]
 
 \begin{table}[H]
 \centering
@@ -90,24 +90,24 @@ The rank $k$ trades off compression and accuracy:
 \toprule
 \textbf{$k$} & \textbf{$d = 768$ ratio} \\
 \midrule
-32 & 12$$\times$ \\
-64 & 6$$\times$ \\
-128 & 3$$\times$ \\
-192 & 2$$\times$ \\
-384 & 1$$\times$ \\
+32 & 12$\times$ \\
+64 & 6$\times$ \\
+128 & 3$\times$ \\
+192 & 2$\times$ \\
+384 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-We default to $k = 128$ (3$$\times$ reduction on Q/K/V, or 1.5$$\times$ on the full block).
+We default to $k = 128$ (3$\times$ reduction on Q/K/V, or 1.5$\times$ on the full block).
 
 \subsection{Output Projection Handling}
 
 $W_O$ is \textbf{not factorized}. Instead, we wrap it in a \texttt{LoRALinear}:
 
-\begin{equation}
+\[
 \text{out} = W_O \cdot \text{context} + b_O + \text{LoRA}(\text{context})
-\end{equation}
+\]
 
 \textbf{Why not factorize $W_O$?}
 
@@ -161,9 +161,9 @@ applies its rotation. This composes cleanly.
 
 \textbf{Algorithm 1:} SOA Fused Attention forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
         position_embeddings (optional)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ q_up(q_down(X))                       Factorized
  2: K $\leftarrow$ k_up(k_down(X))
@@ -204,7 +204,7 @@ O proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d^2)$ \\
 
 \textbf{Projection FLOPs reduction:} $\frac{3 d^2}{3 d k} = \frac{d}{k}$.
 
-For $d = 768$, $k = 128$: \textbf{6$$\times$ fewer projection FLOPs}.
+For $d = 768$, $k = 128$: \textbf{6$\times$ fewer projection FLOPs}.
 
 Attention is unchanged -- the quadratic term dominates at long L.
 
@@ -229,7 +229,7 @@ LoRA & 0 & $\sim 24,576$ & +small \\
 \end{tabular}
 \end{table}
 
-\textbf{Note.} We do not claim a 3$$\times$ overall reduction -- the true reduction is ~2$$\times$ 
+\textbf{Note.} We do not claim a 3$\times$ overall reduction -- the true reduction is ~2$\times$ 
 for the full attention block, because $W_O$ is not factorized.
 
 \subsection{Weight Transfer}

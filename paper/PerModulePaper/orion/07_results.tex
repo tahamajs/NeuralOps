@@ -12,12 +12,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Reduction} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$$\times$ & 1.9 s \\
-DistilBERT & \textbf{ORION} & \textbf{55.50} & \textbf{-35.21} & 0.6959 & \textbf{66.4MM} & \textbf{48.2\%$$\times$} & 1.42x \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.65M & 1.00$$\times$ & 4.1 s \\
-RoBERTa & \textbf{ORION} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & \textbf{124.6MM} & \textbf{45.1\%$$\times$} & 2.3 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.44M & 1.00$$\times$ & 4.2 s \\
-GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124.4MM} & \textbf{46.0\%$$\times$} & 2.3 s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ & 1.9 s \\
+DistilBERT & \textbf{ORION} & \textbf{55.50} & \textbf{-35.21} & 0.6959 & \textbf{66.4MM} & \textbf{48.2\%$\times$} & 1.42x \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.65M & 1.00$\times$ & 4.1 s \\
+RoBERTa & \textbf{ORION} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & \textbf{124.6MM} & \textbf{45.1\%$\times$} & 2.3 s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.44M & 1.00$\times$ & 4.2 s \\
+GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124.4MM} & \textbf{46.0\%$\times$} & 2.3 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,8 +25,8 @@ GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 48.2\%$$\times$ (DistilBERT), 45.1\%$$\times$ (RoBERTa),
-  46.0\%$$\times$ (GPT-2).
+\item \textbf{Parameter reduction:} 48.2\%$\times$ (DistilBERT), 45.1\%$\times$ (RoBERTa),
+  46.0\%$\times$ (GPT-2).
 \item \textbf{Accuracy drop:} -35.21\%, -27.64\%, -28.44\%.
 \item **ORION is the first module in our framework to combine real parameter
   reduction with competitive accuracy.**
@@ -43,11 +43,11 @@ GPT-2 & \textbf{ORION} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & \textbf{124
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{ORION} & \textbf{Reduction} \\
 \midrule
-q\_proj & 589,824 & 0.85 & 32$$\times$ \\
-k\_proj & 589,824 & 0.85 & 32$$\times$ \\
-v\_proj & 589,824 & 0.85 & 32$$\times$ \\
-out\_proj & 589,824 & 0.85 & 32$$\times$ \\
-\textbf{Attention total} & \textbf{2,359,296} & \textbf{0.85} & \textbf{32$$\times$} \\
+q\_proj & 589,824 & 0.85 & 32$\times$ \\
+k\_proj & 589,824 & 0.85 & 32$\times$ \\
+v\_proj & 589,824 & 0.85 & 32$\times$ \\
+out\_proj & 589,824 & 0.85 & 32$\times$ \\
+\textbf{Attention total} & \textbf{2,359,296} & \textbf{0.85} & \textbf{32$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -63,9 +63,9 @@ out\_proj & 589,824 & 0.85 & 32$$\times$ \\
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ORION)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ORION)} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ & 183 MB & 303 MB MB \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ & 712 MB & 590 MB MB \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 2263 MB MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 303 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 590 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 2263 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,9 +81,9 @@ GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ & 793 MB & 2263 MB MB \\
 \toprule
 \textbf{Energy} & \textbf{DistilBERT acc} & \textbf{Params} & \textbf{Reduction} \\
 \midrule
-0.90 & 0.85 & 0.85 & 32$$\times$ \\
-0.95 & 0.85 & 0.85 & 32$$\times$ \\
-0.99 & 0.85 & 0.85 & 32$$\times$ \\
+0.90 & 0.85 & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -200,18 +200,18 @@ nasc & 0.85 & 32 & 0.85 & +1.6\% \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} 55.50\% ($\Delta$ = -35.21), \textbf{48.2\%$$\times$} reduction
-\item \textbf{RoBERTa:} 50.92\% ($\Delta$ = -27.64), \textbf{45.1\%$$\times$} reduction
-\item \textbf{GPT-2:} 50.92\% ($\Delta$ = -28.44), \textbf{46.0\%$$\times$} reduction
+\item \textbf{DistilBERT:} 55.50\% ($\Delta$ = -35.21), \textbf{48.2\%$\times$} reduction
+\item \textbf{RoBERTa:} 50.92\% ($\Delta$ = -27.64), \textbf{45.1\%$\times$} reduction
+\item \textbf{GPT-2:} 50.92\% ($\Delta$ = -28.44), \textbf{46.0\%$\times$} reduction
 \end{itemize}
 \begin{lstlisting}
 
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/orion_roberta_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{orion}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{orion}.}
 \label{fig:results_orion}
 \end{figure}

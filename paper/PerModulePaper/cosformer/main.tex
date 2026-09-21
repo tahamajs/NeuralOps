@@ -72,8 +72,8 @@ adapters at rank $r = 16$ provide recovery capacity.
 We benchmark on SST-2 across three models. Cosformer achieves 
 \textbf{77.75\%} on DistilBERT (baseline 90.71\%, $\Delta$ = -12.96), 
 \textbf{58.72\%} on RoBERTa ($\Delta$ = -19.84), and \textbf{70.18\%} on GPT-2 
-($\Delta$ = -9.18). Inference time is \textbf{1.84$$\times$} baseline on 
-DistilBERT and \textbf{4.88$$\times$} on GPT-2. Unlike recent mechanisms that 
+($\Delta$ = -9.18). Inference time is \textbf{1.84$\times$} baseline on 
+DistilBERT and \textbf{4.88$\times$} on GPT-2. Unlike recent mechanisms that 
 collapse on encoders, Cosformer preserves most of the baseline accuracy 
 at a modest latency cost. We document the construction of the cosine/sine 
 reweighting, the chunked causal scan, and the exact failure modes we 

@@ -1,4 +1,4 @@
-\title{\textbf{Galerkin Attention: Petrov-Galerkin Projection onto Orthonormal Bases for Transformer Self-Attention}
+\title{\textbf{Galerkin Attention: Petrov-Galerkin Projection onto Orthonormal Bases for Transformer Self-Attention}}
 
 \author{Anonymous authors}
 
@@ -17,17 +17,17 @@ space without losing its expressive power?**
 One classical approach is to view attention as a discretization of the 
 continuous non-local integral operator:
 
-\begin{equation}
+\[
 (\mathcal{K} f)(x) = \int_\Omega k(x, y) f(y) \, dy
-\end{equation}
+\]
 
 where $k(x, y)$ is a kernel and $\Omega$ is the domain. Petrov-Galerkin 
 methods approximate such operators by projecting onto finite-dimensional 
 subspaces:
 
-\begin{equation}
+\[
 \mathcal{K} \approx \Phi \, K_{\Phi \Phi} \, \Phi^\top
-\end{equation}
+\]
 
 where $\Phi \in \mathbb{R}^{N \times r}$ is a basis and $K_{\Phi \Phi}$ is 
 the projected kernel matrix.
@@ -40,10 +40,10 @@ the projected kernel matrix.
 Given a pretrained transformer with hidden size $d$ and $H$ heads, we seek 
 a modified attention function $\mathcal{A}'$ such that:
 
-\begin{equation}
+\[
 \mathcal{A}'(Q, K, V) \approx \mathcal{A}(Q, K, V), \quad
 \text{Cost}(\mathcal{A}') = \mathcal{O}(Nr^2), \quad r \ll N
-\end{equation}
+\]
 
 We do not require retraining of base weights; LoRA adapters provide 
 recovery capacity.
@@ -55,12 +55,12 @@ We propose \textbf{Galerkin Attention}, which:
 \begin{enumerate}
 \item \textbf{Projects} $Q, K, V$ onto an orthonormal DCT basis $\Phi \in \mathbb{R}^{N \times r}$:
   $$
-  Q\_\Phi = \Phi\^{}\top Q, \quad K\_\Phi = \Phi\^{}\top K, \quad V\_\Phi = \Phi\^{}\top V
+  Q\_\Phi = \Phi^\top Q, \quad K\_\Phi = \Phi^\top K, \quad V\_\Phi = \Phi^\top V
   $$
 
 \item \textbf{Computes attention} in the reduced basis space:
   $$
-  O\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) V\_\Phi
+  O\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi^\top}{\sqrt{d}}\right) V\_\Phi
   $$
 
 \item \textbf{Reconstructs} to the original sequence length:
@@ -210,9 +210,9 @@ Random Synthesizer \& Random \& No & 66.9M & ~85\% \\
 
 For input $X \in \mathbb{R}^{B \times N \times d}$, attention computes:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V
-\end{equation}
+\]
 
 where $Q = XW_Q$, $K = XW_K$, $V = XW_V$.
 
@@ -222,17 +222,17 @@ where $Q = XW_Q$, $K = XW_K$, $V = XW_V$.
 
 The DCT-II basis is defined as:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right), \quad
 n = 0, \dots, N-1, \quad k = 0, \dots, N-1
-\end{equation}
+\]
 
 with normalization:
 
-\begin{equation}
+\[
 \Phi_{n, 0} \to \frac{1}{\sqrt{N}} \Phi_{n, 0}, \quad
 \Phi_{n, k} \to \sqrt{\frac{2}{N}} \Phi_{n, k} \text{ for } k \geq 1
-\end{equation}
+\]
 
 The full DCT basis $\Phi \in \mathbb{R}^{N \times N}$ is orthonormal: 
 $\Phi^\top \Phi = I_N$.
@@ -249,26 +249,26 @@ $\Phi_r^\top \Phi_r = I_r$.
 
 Consider the continuous integral operator:
 
-\begin{equation}
+\[
 (\mathcal{K} f)(x) = \int_0^1 k(x, y) f(y) \, dy
-\end{equation}
+\]
 
 Let $\{\phi_1, \dots, \phi_r\}$ be an orthonormal basis of a subspace 
 $\mathcal{V}_r \subset L^2([0, 1])$. The Galerkin approximation is:
 
-\begin{equation}
+\[
 \mathcal{K}_r = \sum_{i, j = 1}^r K_{ij} \phi_i \otimes \phi_j
-\end{equation}
+\]
 
 where $K_{ij} = \langle \phi_i, \mathcal{K} \phi_j \rangle$.
 
 \textbf{Discretization.} For a discrete sequence of length $N$, the Galerkin 
 approximation becomes:
 
-\begin{equation}
+\[
 \mathcal{K}_r = \Phi_r \, K_r \, \Phi_r^\top, \quad
 K_r \in \mathbb{R}^{r \times r}
-\end{equation}
+\]
 
 with $\Phi_r \in \mathbb{R}^{N \times r}$ being the discrete basis.
 
@@ -276,9 +276,9 @@ with $\Phi_r \in \mathbb{R}^{N \times r}$ being the discrete basis.
 
 After replacing attention, we freeze base weights and train LoRA adapters:
 
-\begin{equation}
+\[
 \Delta W = \frac{\alpha}{r_L} B A
-\end{equation}
+\]
 
 with $A \in \mathbb{R}^{r_L \times k}$, $B \in \mathbb{R}^{d \times r_L}$, 
 $B = 0$ at init.
@@ -358,16 +358,16 @@ Galerkin Attention has two paths:
 
 We construct the DCT-II basis $\Phi \in \mathbb{R}^{N \times r}$:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
 c_k, \quad c_k = \begin{cases} 1/\sqrt{N} \& k = 0 \\ \sqrt{2/N} \& k \geq 1 \end{cases}
-\end{equation}
+\]
 
 We then orthonormalize via QR to correct for numerical error:
 
-\begin{equation}
+\[
 \Phi \leftarrow Q \text{ where } \Phi + 10^{-4} I = Q R
-\end{equation}
+\]
 
 \subsection{Projection and Attention}
 
@@ -375,29 +375,29 @@ For each head:
 
 \begin{enumerate}
 \item \textbf{Project} Q, K, V onto the basis:
-  \begin{equation}
-Q\_\Phi = \Phi\^{}\top Q \in \mathbb{R}\^{}{B \times H \times r \times d}
-\end{equation}
+  \[
+Q\_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d}
+\]
   
 \item \textbf{Compute attention} in the reduced space:
-  \begin{equation}
-A\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) \in \mathbb{R}\^{}{B \times H \times r \times r}
-\end{equation}
+  \[
+A\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi^\top}{\sqrt{d}}\right) \in \mathbb{R}^{B \times H \times r \times r}
+\]
   
 \item \textbf{Apply to values:}
-  \begin{equation}
-O\_\Phi = A\_\Phi V\_\Phi \in \mathbb{R}\^{}{B \times H \times r \times d}
-\end{equation}
+  \[
+O\_\Phi = A\_\Phi V\_\Phi \in \mathbb{R}^{B \times H \times r \times d}
+\]
   
 \item \textbf{Reconstruct} to original space:
-  \begin{equation}
-O = \Phi O\_\Phi \in \mathbb{R}\^{}{B \times H \times N \times d}
-\end{equation}
+  \[
+O = \Phi O\_\Phi \in \mathbb{R}^{B \times H \times N \times d}
+\]
 
 \item \textbf{Energy correction:}
-  \begin{equation}
+  \[
 O \leftarrow O \cdot \sqrt{N / r}
-\end{equation}
+\]
 
 \end{enumerate}
 \subsection{Why the Energy Correction?}
@@ -416,12 +416,12 @@ uniform, the correction is exact.
 
 For causal models, we use standard attention with explicit causal masking:
 
-\begin{equation}
+\[
 \text{scores}_{ij} = \begin{cases}
 Q_i K_j^\top / \sqrt{d} \& j \leq i \\
 -\infty \& j > i
 \end{cases}
-\end{equation}
+\]
 
 This preserves the autoregressive property. The Galerkin path is \textbf{not} 
 used for decoders.
@@ -480,8 +480,8 @@ for short sequences.
 
 \textbf{Algorithm 1:} Galerkin Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, is_decoder
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Input:  X $\in$ R^{B$\times$N$\times$d}, is_decoder
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -509,9 +509,9 @@ The method is motivated by the following observation: for smooth attention
 kernels $k(x, y)$, projection onto the first $r$ DCT basis functions 
 preserves energy at rate:
 
-\begin{equation}
+\[
 \frac{\|\Phi_r^\top k\|_2}{\|k\|_2} \approx 1 - \mathcal{O}(r^{-2\alpha})
-\end{equation}
+\]
 
 where $\alpha$ is the smoothness parameter of $k$. For $C^\infty$ kernels, 
 the decay is super-polynomial.
@@ -859,7 +859,7 @@ Single seed (42). No multi-seed runs.
 DistilBERT \& full & 90.71\% & -- & 0.9099 \& PASS \\
 DistilBERT & \textbf{Galerkin} & \textbf{50.92} & \textbf{-39.79} & 0.6748 \& PASS \\
 RoBERTa \& full & 78.56\% & -- & 0.8124 \& PASS \\
-RoBERTa & \textbf{Galerkin} & \textbf{50.92} & \textbf{-27.64} & 0.6748 \& PASS_LOW \\
+RoBERTa & \textbf{Galerkin} & \textbf{50.92} & \textbf{-27.64} & 0.6748 \& PASS\_LOW \\
 GPT-2 \& full & 79.36\% & -- & 0.7978 \& PASS \\
 GPT-2 & \textbf{Galerkin} & \textbf{51.26} & \textbf{-28.10} & 0.6763 \& PASS \\
 \bottomrule
@@ -906,9 +906,9 @@ compression method.
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & 7.0 s & 3.7$$\times$ & 183 MB & 341 MB \\
-RoBERTa & 4.1 s & 13.1 s & 3.2$$\times$ & 712 MB & 672 MB \\
-GPT-2 & 4.2 s & 9.2 s & 2.2$$\times$ & 793 MB & 569 MB \\
+DistilBERT & 1.9 s & 7.0 s & 3.7$\times$ & 183 MB & 341 MB \\
+RoBERTa & 4.1 s & 13.1 s & 3.2$\times$ & 712 MB & 672 MB \\
+GPT-2 & 4.2 s & 9.2 s & 2.2$\times$ & 793 MB & 569 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1021,10 +1021,10 @@ hamming & 79.13\% & 50.92\% & 71.22\% & +0.88\% \\
 \end{itemize}
 
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/galerkin_attention_gpt2_loss_convergence.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{Galerkin}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{Galerkin}.}
 \label{fig:results_galerkin}
 \end{figure}
 
@@ -1042,9 +1042,9 @@ Three hypotheses, tested empirically.
 
 \textbf{Test.} Measure energy captured:
 
-\begin{equation}
+\[
 E(r) = \frac{\|\Phi_r^\top K\|_F^2}{\|K\|_F^2}
-\end{equation}
+\]
 
 for $r \in \{8, 16, 32, 64, 128\}$ on real DistilBERT activations.
 
@@ -1307,7 +1307,7 @@ For DistilBERT on RTX 4070:
 Accuracy & 90.71\% & 50.92\% & \textbf{-24.77\%} \\
 Params & 66.95M & 67544834 & +0.88\% \\
 Inference VRAM & 183 MB & 341 MB & +380 MB\% \\
-Inference time & 1.9 s & 7.0 s & 3.7$$\times$ \\
+Inference time & 1.9 s & 7.0 s & 3.7$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1586,7 +1586,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
 \midrule
 DistilBERT & 50.92\% $\pm$ 2\% \& PASS \\
-RoBERTa & 50.92\% $\pm$ 2\% \& PASS_LOW \\
+RoBERTa & 50.92\% $\pm$ 2\% \& PASS\_LOW \\
 GPT-2 & 51.26\% $\pm$ 1\% \& PASS \\
 \bottomrule
 \end{tabular}
@@ -1775,18 +1775,18 @@ print(f"Orthonormality error: {err}")  # Should be < 1e-5
 
 DCT-II basis:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
-\end{equation}
+\]
 
 After normalization:
 
-\begin{equation}
+\[
 \tilde{\Phi}_{n, k} = \begin{cases}
 \Phi_{n, k} / \sqrt{N} \& k = 0 \\
 \Phi_{n, k} \cdot \sqrt{2/N} \& k \geq 1
 \end{cases}
-\end{equation}
+\]
 
 Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
 
@@ -1795,9 +1795,9 @@ Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
 For a smooth function $f \in C^s([0, 1])$, truncation at $r$ basis 
 functions gives:
 
-\begin{equation}
+\[
 \|f - \Phi_r \Phi_r^\top f\|_{L^2} \leq C r^{-s}
-\end{equation}
+\]
 
 where $C$ depends on the smoothness. This bound does \textbf{not} apply to 
 non-smooth functions like trained attention kernels.
@@ -1806,26 +1806,26 @@ non-smooth functions like trained attention kernels.
 
 For orthonormal $\Phi_r$:
 
-\begin{equation}
+\[
 \|\Phi_r^\top f\|_F^2 \leq \|f\|_F^2
-\end{equation}
+\]
 
 with equality iff $f$ lies in the span of $\Phi_r$.
 
 The \textbf{expected} energy preserved for random $f \sim \mathcal{N}(0, I_N)$:
 
-\begin{equation}
+\[
 \mathbb{E}[\|\Phi_r^\top f\|^2] = r
-\end{equation}
+\]
 
 while $\mathbb{E}[\|f\|^2] = N$. So on average, only $r/N$ of energy 
 is preserved.
 
 The correction $\sqrt{N/r}$ restores average energy:
 
-\begin{equation}
+\[
 \mathbb{E}[\|\sqrt{N/r} \Phi_r \Phi_r^\top f\|^2] = N
-\end{equation}
+\]
 
 But this is only a \textbf{distributional} correction; individual samples may 
 overshoot or undershoot.
@@ -1836,9 +1836,9 @@ Trained attention weights often exhibit high entropy and sharp peaks. Let
 $\sigma^2$ denote the variance of the attention kernel $k(x, y)$ in the 
 $L^2$ sense. DCT truncation preserves:
 
-\begin{equation}
+\[
 \text{Preserved energy} \approx \frac{1}{1 + \sigma^2 r^2 / \pi^2}
-\end{equation}
+\]
 
 For small $\sigma$ (sharp peaks), preservation is poor.
 
@@ -1846,9 +1846,9 @@ For small $\sigma$ (sharp peaks), preservation is poor.
 
 For causal attention, the standard masked softmax preserves:
 
-\begin{equation}
+\[
 \frac{\partial O_i}{\partial X_j} = 0 \text{ for } j > i
-\end{equation}
+\]
 
 The Galerkin path does not preserve this and is therefore \textbf{not used} for 
 decoders.
@@ -1857,9 +1857,9 @@ decoders.
 
 Standard LoRA init:
 
-\begin{equation}
+\[
 A \sim \mathcal{N}(0, \sigma^2), \quad B = 0
-\end{equation}
+\]
 
 So $\Delta W = BA = 0$ at step 0, preserving base behavior exactly.
 
@@ -2053,7 +2053,7 @@ Params (after) & 132913922 \\
 Peak VRAM & 672 MB \\
 Inference time & 13.1 s \\
 Path \& Galerkin \\
-Status \& PASS_LOW \\
+Status \& PASS\_LOW \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2147,7 +2147,7 @@ Step  Loss
   "roberta": {
     "accuracy": 48.97,
     "path": "galerkin",
-    "status": "PASS_LOW"
+    "status": "PASS\_LOW"
   },
   "gpt2": {
     "accuracy": 79.36,

@@ -7,9 +7,9 @@ of $L \times L$ scores, making both time and memory $\mathcal{O}(L^2)$.
 \textbf{Linear attention} (Katharopoulos et al., 2020; Choromanski et al., 2021) 
 replaces the softmax with a kernel feature map $\phi$:
 
-\begin{equation}
+\[
 \text{Attn}(Q, K, V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) \phi(K)^\top \mathbf{1}}
-\end{equation}
+\]
 
 This is $\mathcal{O}(L)$ in both time and memory because the \textbf{associative} 
 product $\phi(K)^\top V$ can be precomputed once.
@@ -59,9 +59,9 @@ CHELA-SLAY computes two parallel streams:
 
 Standard softmax attention:
 
-\begin{equation}
+\[
 O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\end{equation}
+\]
 
 This is our anchor -- it preserves pretrained behavior.
 
@@ -70,27 +70,27 @@ This is our anchor -- it preserves pretrained behavior.
 We spherical-normalize Q, K, apply a Yat-Kernel feature map, and compute 
 linear attention:
 
-\begin{equation}
+\[
 \hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad
 \hat{K} = \frac{K}{\|K\|_2 + \epsilon}
-\end{equation}
+\]
 
-\begin{equation}
+\[
 \phi(x) = \frac{1}{F^{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
-\end{equation}
+\]
 
-\begin{equation}
+\[
 O^\text{linear} = \frac{\phi(\hat{Q}) \left[ \phi(\hat{K})^\top V \right]}{\phi(\hat{Q}) \left[ \phi(\hat{K})^\top \mathbf{1} \right] + \epsilon}
-\end{equation}
+\]
 
 \subsubsection{Adaptive Gate}
 
 A learnable per-head, per-token gate blends the two streams:
 
-\begin{equation}
+\[
 g = \sigma(W_g X + b_g), \quad
 \text{Output} = W_O \left( g \odot O^\text{dense} + (1 - g) \odot O^\text{linear} \right)
-\end{equation}
+\]
 
 We initialize $W_g = 0$ and $b_g = 5.0$, so 
 $g \approx 0.993$ at step 0 -- favoring the dense path.

@@ -1,4 +1,4 @@
-\title{\textbf{SALT: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Attention}
+\title{\textbf{SALT: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Attention}}
 
 \author{Anonymous authors}
 
@@ -77,7 +77,7 @@ So SALT starts as a rank-$r$ approximation of the pretrained weight.
 \begin{itemize}
 \item \textbf{A new parameterization} that combines truncated SVD with trainable
   singular-value modulation and a low-rank residual.
-\item \textbf{A 12$$\times$ parameter reduction} for 768$$\times$768 matrices at rank 16.
+\item \textbf{A 12$\times$ parameter reduction} for 768$\times$768 matrices at rank 16.
 \item \textbf{A complete implementation} supporting four transformer families with
   multi-architecture weight extraction.
 \item \textbf{An honest evaluation} showing that SALT preserves accuracy within
@@ -292,7 +292,7 @@ SALT ($U_r, \Sigma_r, V_r, \gamma, A, B$) & $2r(m + n) + 2r$ \\
 \item Full: 589,824
 \item Truncated SVD: 24,592
 \item LoRA: 24,576
-\item SALT: 49,184 $\to$ \textbf{~12$$\times$ reduction vs full}
+\item SALT: 49,184 $\to$ \textbf{~12$\times$ reduction vs full}
 
 \end{itemize}
 \subsection{Forward Pass Efficiency}
@@ -341,7 +341,7 @@ $d_\text{in}, d_\text{out}$ \& Input/output dims \\
 SALT replaces each linear projection $W$ with a three-component parameterization:
 
 \begin{lstlisting}
-    Weight W $\in$ R^{d_out $$\times$ d_in}
+    Weight W $\in$ R^{d_out $\times$ d_in}
             |
              
     +-------------------------+
@@ -496,7 +496,7 @@ $B$ & $(r, d_\text{in})$ \& Yes & $r \cdot d_\text{in}$ \\
 bias & $(d_\text{out},)$ \& Yes & $d_\text{out}$ \\
 \textbf{Total} &  &  & $2r(d_\text{out} + d_\text{in}) + 2r + d_\text{out}$ \\
 \textbf{Full W} &  &  & $d_\text{out} \cdot d_\text{in}$ \\
-\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$$\times$} \\
+\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -521,7 +521,7 @@ top-$r$.
 
 \textbf{Algorithm 1:} SALT initialization
 \begin{lstlisting}
-Input:  W $\in$ R^{d_out $$\times$ d_in}, bias b, rank r
+Input:  W $\in$ R^{d_out $\times$ d_in}, bias b, rank r
 Output: SALTLinear module
 
 1: U, S, Vt $\leftarrow$ svd(W, full_matrices=False)
@@ -538,8 +538,8 @@ Output: SALTLinear module
 
 \textbf{Algorithm 2:} SALT forward (naive)
 \begin{lstlisting}
-Input:  x $\in$ R^{B $$\times$ L $$\times$ d_in}
-Output: y $\in$ R^{B $$\times$ L $$\times$ d_out}
+Input:  x $\in$ R^{B $\times$ L $\times$ d_in}
+Output: y $\in$ R^{B $\times$ L $\times$ d_out}
 
 1: S_$\gamma$ $\leftarrow$ S * $\gamma$
 2: W_svd $\leftarrow$ (U * S_$\gamma$) @ Vt            (d_out, d_in)
@@ -959,11 +959,11 @@ Single seed 42.
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Storage} \\
 \midrule
 DistilBERT \& full & 90.71\% & -- & 0.9099 & -- & 134 MB \\
-DistilBERT & \textbf{salt} & \textbf{80.28} & -10.43 & 0.8102 & \textbf{48.2\%$$\times$} & 256 MB MB \\
+DistilBERT & \textbf{salt} & \textbf{80.28} & -10.43 & 0.8102 & \textbf{48.2\%$\times$} & 256 MB MB \\
 RoBERTa \& full & 78.56\% & -- & 0.8124 & -- & 249 MB \\
-RoBERTa & \textbf{salt} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{32$$\times$} & 84.5 MB \\
+RoBERTa & \textbf{salt} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
 GPT-2 \& full & 79.36\% & -- & 0.7978 & -- & 249 MB \\
-GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$$\times$} & 84.5 MB \\
+GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -971,10 +971,10 @@ GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$$\times$} 
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} 48.2\%$$\times$ (DistilBERT), 32$$\times$
-  (RoBERTa), 32$$\times$ (GPT-2).
+\item \textbf{Parameter reduction:} 48.2\%$\times$ (DistilBERT), 32$\times$
+  (RoBERTa), 32$\times$ (GPT-2).
 \item \textbf{Accuracy preservation:} within 0.85\%.
-\item \textbf{Storage reduction:} ~32$$\times$.
+\item \textbf{Storage reduction:} ~32$\times$.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -988,14 +988,14 @@ GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$$\times$} 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After SALT} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{48.2\%$$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{32$$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{32$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{48.2\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{32$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{32$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Per-layer breakdown (768$$\times$768 projection, r=16):}
+\textbf{Per-layer breakdown (768$\times$768 projection, r=16):}
 
 \begin{table}[H]
 \centering
@@ -1006,7 +1006,7 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{32$$\times$} \\
 \midrule
 Full W & 589,824 \\
 SALT total & 49,936 \\
-\textbf{Reduction} & \textbf{11.8$$\times$} \\
+\textbf{Reduction} & \textbf{11.8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1022,9 +1022,9 @@ SALT total & 49,936 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{SALT} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & 1.42x s & 2.3 s$$\times$ \\
-RoBERTa & 4.1 s & 2.3 s s & 2.3 s$$\times$ \\
-GPT-2 & 4.2 s & 2.3 s s & 2.3 s$$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1043,11 +1043,11 @@ reconstruction at each forward pass.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Params (per layer)} & \textbf{Reduction} \\
 \midrule
-4 & 32 & 12,336 & 47.8$$\times$ \\
-8 & 32 & 24,656 & 23.9$$\times$ \\
-16 & 32 & 49,296 & 12.0$$\times$ \\
-32 & 32 & 98,576 & 5.98$$\times$ \\
-64 & 32 & 197,136 & 2.99$$\times$ \\
+4 & 32 & 12,336 & 47.8$\times$ \\
+8 & 32 & 24,656 & 23.9$\times$ \\
+16 & 32 & 49,296 & 12.0$\times$ \\
+32 & 32 & 98,576 & 5.98$\times$ \\
+64 & 32 & 197,136 & 2.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1137,11 +1137,11 @@ a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction: 48.2\%$$\times$--32$$\times$}
-\item \textbf{Storage reduction: ~32$$\times$}
+\item \textbf{Parameter reduction: 48.2\%$\times$--32$\times$}
+\item \textbf{Storage reduction: ~32$\times$}
 \item \textbf{Accuracy preserved within 0.85\%}
 \item \textbf{Inference memory: unchanged}
-\item \textbf{Inference latency: 2.3 s$$\times$ (slightly slower)}
+\item \textbf{Inference latency: 2.3 s$\times$ (slightly slower)}
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}
@@ -1149,10 +1149,10 @@ a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/salt_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{salt}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{salt}.}
 \label{fig:results_salt}
 \end{figure}
 
@@ -1165,7 +1165,7 @@ a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
 SALT achieves two things simultaneously:
 
 \begin{enumerate}
-\item \textbf{Storage reduction:} the checkpoint is 12$$\times$ smaller.
+\item \textbf{Storage reduction:} the checkpoint is 12$\times$ smaller.
 \item \textbf{Inference memory:} unchanged.
 
 \end{enumerate}
@@ -1193,9 +1193,9 @@ Each forward pass now does:
 Compare to baseline: only step 3.
 
 \textbf{Extra FLOPs:} $2 d_\text{out} \cdot r \cdot d_\text{in}$ per layer per 
-forward. For 768$$\times$768 and r=16: 37,748,736 extra FLOPs per forward.
+forward. For 768$\times$768 and r=16: 37,748,736 extra FLOPs per forward.
 
-\textbf{Measured slowdown:} 2.3 s$$\times$ (from 1.42xs vs 1.9s).
+\textbf{Measured slowdown:} 2.3 s$\times$ (from 1.42xs vs 1.9s).
 
 \subsection{The Fused Alternative}
 
@@ -1213,7 +1213,7 @@ def forward(self, x):
 \textbf{Cost:} $\mathcal{O}(BL \cdot r \cdot (d_\text{out} + d_\text{in}))$ -- 
 significantly less than full.
 
-\textbf{Expected speedup:} 2-4$$\times$ on top of baseline (from FLOPs alone). But we did 
+\textbf{Expected speedup:} 2-4$\times$ on top of baseline (from FLOPs alone). But we did 
 not implement this. See  10.1.
 
 \subsection{Why Does Accuracy Hold?}
@@ -1309,7 +1309,7 @@ Same issue.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{SALT reduces storage by 12$$\times$} but not inference memory.
+\item \textbf{SALT reduces storage by 12$\times$} but not inference memory.
 \item \textbf{Naive forward is slow} due to reconstruction overhead.
 \item \textbf{Accuracy holds} because pretrained weights provide a good starting point.
 \item \textbf{$\gamma$ and AB provide complementary corrections.}
@@ -1327,7 +1327,7 @@ Same issue.
 
 \subsubsection{Takeaway 1: Real Parameter Reduction}
 
-Unlike LoRA, SALT \textbf{actually reduces} total parameters by 12$$\times$. This is a 
+Unlike LoRA, SALT \textbf{actually reduces} total parameters by 12$\times$. This is a 
 real benefit for storage-constrained deployment.
 
 \subsubsection{Takeaway 2: Inference Memory Unchanged}
@@ -1392,11 +1392,11 @@ Consider SALT + quantization
 \toprule
 \textbf{Method} & \textbf{Storage} & \textbf{Inference VRAM} & \textbf{Latency} \\
 \midrule
-Full & 100\% & 100\% & 1.0$$\times$ \\
-LoRA & 100\% & 100\% & 1.0$$\times$ \\
-SVD Comp & 10\% & 10\% (fused) & 0.5$$\times$ (fused) \\
-\textbf{SALT (naive)} & \textbf{8\%} & \textbf{100\%} & \textbf{1.2$$\times$} \\
-\textbf{SALT (fused)} & \textbf{8\%} & \textbf{10\%} & \textbf{0.5$$\times$ (expected)} \\
+Full & 100\% & 100\% & 1.0$\times$ \\
+LoRA & 100\% & 100\% & 1.0$\times$ \\
+SVD Comp & 10\% & 10\% (fused) & 0.5$\times$ (fused) \\
+\textbf{SALT (naive)} & \textbf{8\%} & \textbf{100\%} & \textbf{1.2$\times$} \\
+\textbf{SALT (fused)} & \textbf{8\%} & \textbf{10\%} & \textbf{0.5$\times$ (expected)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1430,7 +1430,7 @@ SVD Comp & 10\% & 10\% (fused) & 0.5$$\times$ (fused) \\
 \begin{enumerate}
 \item \textbf{Use SALT for storage, not for inference.}
 \item \textbf{Implement fused forward before latency-sensitive use.}
-\item \textbf{Combine with quantization for 24$$\times$ combined compression.}
+\item \textbf{Combine with quantization for 24$\times$ combined compression.}
 \item \textbf{Keep rank r $\ge$ 16} for stability.
 \end{enumerate}
 \begin{lstlisting}
@@ -1457,7 +1457,7 @@ y_lora = F.linear(F.linear(x, self.B), self.A)
 return y_svd + y_lora + self.bias
 \end{lstlisting}
 
-Expected speedup: 2-4$$\times$.
+Expected speedup: 2-4$\times$.
 
 \subsection{`raise RuntimeError` in `copy\_weights`}
 
@@ -1542,7 +1542,7 @@ This is \textbf{not}:
 We presented \textbf{SALT} (Singular Value Adaptation with Low-Rank Tuning), a 
 parameterization that replaces each weight $W$ with a truncated SVD plus 
 trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
-SALT reduces stored parameters by \textbf{48.2\%$$\times$--32$$\times$} 
+SALT reduces stored parameters by \textbf{48.2\%$\times$--32$\times$} 
 while preserving accuracy within \textbf{0.85\%}.
 
 \subsection{Results Recap}
@@ -1554,9 +1554,9 @@ while preserving accuracy within \textbf{0.85\%}.
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params} & \textbf{Storage} \\
 \midrule
-DistilBERT & 80.28\% & -10.43\% & 48.2\%$$\times$ & 256 MB MB \\
-RoBERTa & 50.92\% & -27.64\% & 32$$\times$ & 84.5 MB \\
-GPT-2 & 50.92\% & -28.44\% & 32$$\times$ & 84.5 MB \\
+DistilBERT & 80.28\% & -10.43\% & 48.2\%$\times$ & 256 MB MB \\
+RoBERTa & 50.92\% & -27.64\% & 32$\times$ & 84.5 MB \\
+GPT-2 & 50.92\% & -28.44\% & 32$\times$ & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1564,7 +1564,7 @@ GPT-2 & 50.92\% & -28.44\% & 32$$\times$ & 84.5 MB \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{SALT reduces total parameters} by 12$$\times$ at rank 16.
+\item \textbf{SALT reduces total parameters} by 12$\times$ at rank 16.
 \item \textbf{Accuracy is preserved} within 1\%.
 \item \textbf{Inference memory is unchanged} -- this is a limitation.
 \item \textbf{A fused forward pass would realize the memory benefit.}
@@ -1937,7 +1937,7 @@ For $m = n = 768$, $r = 16$:
 \tag{A.4}
 \]
 
-Full W = 589,824. Ratio = 11.99$$\times$.
+Full W = 589,824. Ratio = 11.99$\times$.
 
 \subsection{A.6 Inference Complexity}
 
@@ -1956,7 +1956,7 @@ T_\text{fused} = \mathcal{O}(BL r (d_\text{out} + d_\text{in}))
 \]
 
 \textbf{Ratio:} $T_\text{naive} / T_\text{fused} \approx \frac{d_\text{in} + d_\text{out}}{r (1 + 1/BL)}$. 
-For $B = 8, L = 128, r = 16$: ~100$$\times$ more FLOPs in the naive version (mostly 
+For $B = 8, L = 128, r = 16$: ~100$\times$ more FLOPs in the naive version (mostly 
 from the matmul, not reconstruction).
 
 \subsection{A.7 GQA Pooling}
@@ -2120,7 +2120,7 @@ Accuracy & 80.28\% \\
 F1 & 0.8102 \\
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Reduction & 48.2\%$$\times$ \\
+Reduction & 48.2\%$\times$ \\
 Storage (MB) & 256 MB \\
 Peak VRAM (MB) & 338 MB \\
 Inference time (s) & 1.42x \\
@@ -2141,7 +2141,7 @@ Accuracy & 50.92\% \\
 F1 & 0.6748 \\
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Reduction & 32$$\times$ \\
+Reduction & 32$\times$ \\
 Storage (MB) & 84.5 \\
 Peak VRAM (MB) & 339 MB \\
 Inference time (s) & 2.3 s \\
@@ -2162,7 +2162,7 @@ Accuracy & 50.92\% \\
 F1 & 0.6748 \\
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Reduction & 32$$\times$ \\
+Reduction & 32$\times$ \\
 Storage (MB) & 84.5 \\
 Peak VRAM (MB) & 583 MB \\
 Inference time (s) & 2.3 s \\
@@ -2179,11 +2179,11 @@ Inference time (s) & 2.3 s \\
 \toprule
 \textbf{Rank} & \textbf{Acc} & \textbf{Params/layer} & \textbf{Reduction} \\
 \midrule
-4 & 32 & 12,336 & 47.8$$\times$ \\
-8 & 32 & 24,656 & 23.9$$\times$ \\
-16 & 32 & 49,296 & 12.0$$\times$ \\
-32 & 32 & 98,576 & 5.98$$\times$ \\
-64 & 32 & 197,136 & 2.99$$\times$ \\
+4 & 32 & 12,336 & 47.8$\times$ \\
+8 & 32 & 24,656 & 23.9$\times$ \\
+16 & 32 & 49,296 & 12.0$\times$ \\
+32 & 32 & 98,576 & 5.98$\times$ \\
+64 & 32 & 197,136 & 2.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2302,9 +2302,9 @@ python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank 32
 
 \subsubsection{D.1.1 No Inference Speedup}
 
-\textbf{Hypothesis.} With SALT, inference would be 2-4$$\times$ faster due to low-rank.
+\textbf{Hypothesis.} With SALT, inference would be 2-4$\times$ faster due to low-rank.
 
-\textbf{Result.} Naive forward is \textbf{slower} (2.3 s$$\times$). Reconstruction 
+\textbf{Result.} Naive forward is \textbf{slower} (2.3 s$\times$). Reconstruction 
 overhead dominates.
 
 \textbf{Conclusion.} Need fused forward.

@@ -48,16 +48,16 @@ Galerkin Attention has two paths:
 
 We construct the DCT-II basis $\Phi \in \mathbb{R}^{N \times r}$:
 
-\begin{equation}
+\[
 \Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
 c_k, \quad c_k = \begin{cases} 1/\sqrt{N} \& k = 0 \\ \sqrt{2/N} \& k \geq 1 \end{cases}
-\end{equation}
+\]
 
 We then orthonormalize via QR to correct for numerical error:
 
-\begin{equation}
+\[
 \Phi \leftarrow Q \text{ where } \Phi + 10^{-4} I = Q R
-\end{equation}
+\]
 
 \subsection{Projection and Attention}
 
@@ -65,29 +65,29 @@ For each head:
 
 \begin{enumerate}
 \item \textbf{Project} Q, K, V onto the basis:
-  \begin{equation}
-Q\_\Phi = \Phi\^{}\top Q \in \mathbb{R}\^{}{B \times H \times r \times d}
-\end{equation}
+  \[
+Q\_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d}
+\]
   
 \item \textbf{Compute attention} in the reduced space:
-  \begin{equation}
-A\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) \in \mathbb{R}\^{}{B \times H \times r \times r}
-\end{equation}
+  \[
+A\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi^\top}{\sqrt{d}}\right) \in \mathbb{R}^{B \times H \times r \times r}
+\]
   
 \item \textbf{Apply to values:}
-  \begin{equation}
-O\_\Phi = A\_\Phi V\_\Phi \in \mathbb{R}\^{}{B \times H \times r \times d}
-\end{equation}
+  \[
+O\_\Phi = A\_\Phi V\_\Phi \in \mathbb{R}^{B \times H \times r \times d}
+\]
   
 \item \textbf{Reconstruct} to original space:
-  \begin{equation}
-O = \Phi O\_\Phi \in \mathbb{R}\^{}{B \times H \times N \times d}
-\end{equation}
+  \[
+O = \Phi O\_\Phi \in \mathbb{R}^{B \times H \times N \times d}
+\]
 
 \item \textbf{Energy correction:}
-  \begin{equation}
+  \[
 O \leftarrow O \cdot \sqrt{N / r}
-\end{equation}
+\]
 
 \end{enumerate}
 \subsection{Why the Energy Correction?}
@@ -106,12 +106,12 @@ uniform, the correction is exact.
 
 For causal models, we use standard attention with explicit causal masking:
 
-\begin{equation}
+\[
 \text{scores}_{ij} = \begin{cases}
 Q_i K_j^\top / \sqrt{d} \& j \leq i \\
 -\infty \& j > i
 \end{cases}
-\end{equation}
+\]
 
 This preserves the autoregressive property. The Galerkin path is \textbf{not} 
 used for decoders.
@@ -170,8 +170,8 @@ for short sequences.
 
 \textbf{Algorithm 1:} Galerkin Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, is_decoder
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Input:  X $\in$ R^{B$\times$N$\times$d}, is_decoder
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -199,9 +199,9 @@ The method is motivated by the following observation: for smooth attention
 kernels $k(x, y)$, projection onto the first $r$ DCT basis functions 
 preserves energy at rate:
 
-\begin{equation}
+\[
 \frac{\|\Phi_r^\top k\|_2}{\|k\|_2} \approx 1 - \mathcal{O}(r^{-2\alpha})
-\end{equation}
+\]
 
 where $\alpha$ is the smoothness parameter of $k$. For $C^\infty$ kernels, 
 the decay is super-polynomial.

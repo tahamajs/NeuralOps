@@ -1,4 +1,4 @@
-\title{\textbf{SVD-Linear Attention: Factorized Low-Rank Linear Attention with Exponential Decay Gating}
+\title{\textbf{SVD-Linear Attention: Factorized Low-Rank Linear Attention with Exponential Decay Gating}}
 
 \author{Anonymous authors}
 
@@ -92,7 +92,7 @@ between 1 and 1024 tokens, providing diverse temporal scales across heads.
 \item \textbf{Multi-architecture drop-in.} Same codebase handles flat, nested,
   causal, and GQA+RoPE models.
 \item \textbf{Honest reporting.} SVD-Linear Attention \textbf{reduces} parameter count
-  by 50\%$$\times$--2.1$$\times$. This is one of the few modules in our
+  by 50\%$\times$--2.1$\times$. This is one of the few modules in our
   benchmark suite that achieves real compression AND real speedup.
 
 \end{itemize}
@@ -318,7 +318,7 @@ W \approx U_{:, :r} \Sigma_{:r} V_{:r, :}^\top
 \]
 
 Parameter count: $r(m + n + 1)$ vs $mn$. For $m = n = 768$, $r = 32$: 
-$\sim$8$$\times$ reduction.
+$\sim$8	imes$ reduction.
 
 \subsection{Notation Summary}
 
@@ -339,7 +339,7 @@ whose projections are SVD-factorized.
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
@@ -384,7 +384,7 @@ where LoRA provides a trainable residual:
 \]
 
 \textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$ vs $d_\text{in} d_\text{out}$. 
-For $768 \times 768$, $r = 32$: \textbf{~11$$\times$ reduction}.
+For $768 \times 768$, $r = 32$: \textbf{~11$\times$ reduction}.
 
 \textbf{Initialization.} $U$ and $V$ are initialized orthogonally.
 
@@ -530,8 +530,8 @@ order, but reduces memory from $\mathcal{O}(N d_h^2)$ to $\mathcal{O}(d_h^2)$.
 
 \textbf{Algorithm 1:} SVD-Linear Attention batch forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$N$$\times$d}, attention_mask
-Output: Y $\in$ R^{B$$\times$N$$\times$d}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$N$\times$d}
 
  1: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V $\leftarrow$ SVDLinear_V(X)
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
@@ -554,8 +554,8 @@ Output: Y $\in$ R^{B$$\times$N$$\times$d}
 
 \textbf{Algorithm 2:} \texttt{step\_recurrent} (streaming)
 \begin{lstlisting}
-Input:  x_t $\in$ R^{B$$\times$d}, past_state (S, Z)
-Output: y_t $\in$ R^{B$$\times$d}, new_state
+Input:  x_t $\in$ R^{B$\times$d}, past_state (S, Z)
+Output: y_t $\in$ R^{B$\times$d}, new_state
 
 1: q $\leftarrow$ SVDLinear_Q(x_t); k $\leftarrow$ SVDLinear_K(x_t); v $\leftarrow$ SVDLinear_V(x_t)
 2:  _q $\leftarrow$ ELU(q) + 1;  _k $\leftarrow$ ELU(k) + 1
@@ -595,9 +595,9 @@ For $N = 512$, $d_h = 64$, $C = 64$:
 \toprule
 \textbf{Mode} & \textbf{Time} \\
 \midrule
-Softmax & 512  $$\times$ 64 $\approx$ 1.7 $$\times$ 10 \\
-SVD-Linear & 512 $$\times$ 64 $$\times$ 64 $\approx$ 2 $$\times$ 10 \\
-\textbf{Speedup} & \textbf{~8$$\times$} \\
+Softmax & 512  $\times$ 64 $\approx$ 1.7 $\times$ 10 \\
+SVD-Linear & 512 $\times$ 64 $\times$ 64 $\approx$ 2 $\times$ 10 \\
+\textbf{Speedup} & \textbf{~8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -628,15 +628,15 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r = 32$, $r_L = 16$, $N_\ell =
 \toprule
 \textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
 \midrule
-Q/K/V/O SVD & 4 $$\times$ 49,216 = 196,864 & 1,181,184 \\
-LoRA & 4 $$\times$ 24,576 = 98,304 & 589,824 \\
+Q/K/V/O SVD & 4 $\times$ 49,216 = 196,864 & 1,181,184 \\
+LoRA & 4 $\times$ 24,576 = 98,304 & 589,824 \\
 Decay gate & 9,228 & 55,368 \\
 \textbf{Total} & \textbf{304,396} & \textbf{1,826,376} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Baseline per layer: 2,359,296. \textbf{Reduction: ~50\%$$\times$}.
+Baseline per layer: 2,359,296. \textbf{Reduction: ~50\%$\times$}.
 
 \subsection{Theoretical Notes}
 
@@ -1040,12 +1040,12 @@ python run_all_4_svd_linear_attention.py \
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{SVD-Lin} & \textbf{80.73} & -9.98 & 0.8019 & \textbf{50\%$$\times$} & 2818 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{SVD-Lin} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$$\times$} & 483 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{SVD-Lin} & \textbf{77.5} & 0.85 & 0.865 & \textbf{2.1$$\times$} & 380 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{SVD-Lin} & \textbf{80.73} & -9.98 & 0.8019 & \textbf{50\%$\times$} & 2818 MB MB & 1.42x s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{SVD-Lin} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1$\times$} & 483 MB MB & 2.3 s s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{SVD-Lin} & \textbf{77.5} & 0.85 & 0.865 & \textbf{2.1$\times$} & 380 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1061,9 +1061,9 @@ GPT-2 & \textbf{SVD-Lin} & \textbf{77.5} & 0.85 & 0.865 & \textbf{2.1$$\times$} 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After SVD-Lin} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$$\times$} \\
-RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$$\times$} \\
-GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1077,11 +1077,11 @@ GPT-2 & 124,441,344 & 124.4M & \textbf{2.1$$\times$} \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{SVD-Lin} & \textbf{Ratio} \\
 \midrule
-Q & 589,824 & 49,184 & 12.0$$\times$ \\
-K & 589,824 & 49,184 & 12.0$$\times$ \\
-V & 589,824 & 49,184 & 12.0$$\times$ \\
-O & 589,824 & 49,184 & 12.0$$\times$ \\
-\textbf{Sum} & \textbf{2,359,296} & \textbf{196,736} & \textbf{12.0$$\times$} \\
+Q & 589,824 & 49,184 & 12.0$\times$ \\
+K & 589,824 & 49,184 & 12.0$\times$ \\
+V & 589,824 & 49,184 & 12.0$\times$ \\
+O & 589,824 & 49,184 & 12.0$\times$ \\
+\textbf{Sum} & \textbf{2,359,296} & \textbf{196,736} & \textbf{12.0$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1118,10 +1118,10 @@ GPT-2 & SVD-Lin & 2.3 s s & 0.85 & 380 MB MB \\
 \toprule
 \textbf{$N$} & \textbf{Baseline} & \textbf{SVD-Lin} & \textbf{Speedup} \\
 \midrule
-128 & 4.2 s & 84.0 & 84.8$$\times$ \\
-256 & 16.8 s & 84.8 & 85.6$$\times$ \\
-512 & 67 s & 85.6 & 86.2$$\times$ \\
-1024 & 268 s & 86.4 & 86.4$$\times$ \\
+128 & 4.2 s & 84.0 & 84.8$\times$ \\
+256 & 16.8 s & 84.8 & 85.6$\times$ \\
+512 & 67 s & 85.6 & 86.2$\times$ \\
+1024 & 268 s & 86.4 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1158,11 +1158,11 @@ $\mathcal{O}(N^2)$ for baseline.
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & 32 & 24$$\times$ & 32 & 32 \\
-16 & 32 & 16$$\times$ & 32 & 32 \\
-32 & 32 & 12$$\times$ & 32 & 32 \\
-64 & 32 & 8$$\times$ & 32 & 32 \\
-128 & 32 & 4$$\times$ & 32 & 32 \\
+8 & 32 & 24$\times$ & 32 & 32 \\
+16 & 32 & 16$\times$ & 32 & 32 \\
+32 & 32 & 12$\times$ & 32 & 32 \\
+64 & 32 & 8$\times$ & 32 & 32 \\
+128 & 32 & 4$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1213,8 +1213,8 @@ Channel-wise & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{Model} & \textbf{Batch time} & \textbf{Stream time} & \textbf{Speedup} \\
 \midrule
-DistilBERT & 0.85 s & 84.5 s & 32$$\times$ \\
-RoBERTa & 0.85 s & 84.5 s & 32$$\times$ \\
+DistilBERT & 0.85 s & 84.5 s & 32$\times$ \\
+RoBERTa & 0.85 s & 84.5 s & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1234,11 +1234,11 @@ $\mathcal{O}(N)$.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ & 79.36\% & 1.00$$\times$ \\
-aasvd & 88.5\% & 4.0$$\times$ & 75.5\% & 3.5$$\times$ & 76.8\% & 3.5$$\times$ \\
-rpc & 89.5\% & 1.01$$\times$ & 75.5\% & 1.01$$\times$ & 76.8\% & 1.01$$\times$ \\
-svd\_mamba & 85.5\% & 0.90$$\times$ & 72.5\% & 0.90$$\times$ & 73.2\% & 0.90$$\times$ \\
-\textbf{svd\_linear} & \textbf{80.73} & \textbf{50\%$$\times$} & \textbf{50.92} & \textbf{2.1$$\times$} & \textbf{77.5} & \textbf{2.1$$\times$} \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+aasvd & 88.5\% & 4.0$\times$ & 75.5\% & 3.5$\times$ & 76.8\% & 3.5$\times$ \\
+rpc & 89.5\% & 1.01$\times$ & 75.5\% & 1.01$\times$ & 76.8\% & 1.01$\times$ \\
+svd\_mamba & 85.5\% & 0.90$\times$ & 72.5\% & 0.90$\times$ & 73.2\% & 0.90$\times$ \\
+\textbf{svd\_linear} & \textbf{80.73} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1$\times$} & \textbf{77.5} & \textbf{2.1$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1268,10 +1268,10 @@ GPT-2 & PASS & 77.5 & 32 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/svd_linear_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{svd_linear_attention}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_linear_attention}.}
 \label{fig:results_svd_linear_attention}
 \end{figure}
 
@@ -1364,10 +1364,10 @@ values after recovery. Some heads have converged to short-term decay
 \toprule
 \textbf{$N$} & \textbf{Baseline time} & \textbf{SVD-Lin time} & \textbf{Actual speedup} & \textbf{Theory} \\
 \midrule
-128 & 4.2 s & 84.0 & 84.8$$\times$ & ~1$$\times$ \\
-256 & 16.8 s & 84.8 & 85.6$$\times$ & 2$$\times$ \\
-512 & 67 s & 85.6 & 86.2$$\times$ & 4$$\times$ \\
-1024 & 268 s & 86.4 & 86.4$$\times$ & 8$$\times$ \\
+128 & 4.2 s & 84.0 & 84.8$\times$ & ~1$\times$ \\
+256 & 16.8 s & 84.8 & 85.6$\times$ & 2$\times$ \\
+512 & 67 s & 85.6 & 86.2$\times$ & 4$\times$ \\
+1024 & 268 s & 86.4 & 86.4$\times$ & 8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1452,7 +1452,7 @@ $x > -1$. This ensures the denominator is positive.
 
 \begin{enumerate}
 \item \textbf{SVD-Linear is one of the few real compressors} in our suite.
-\item \textbf{Parameter reduction is ~50\%$$\times$} at $r = 32$.
+\item \textbf{Parameter reduction is ~50\%$\times$} at $r = 32$.
 \item \textbf{Complexity scales linearly}, unlike softmax attention.
 \item \textbf{Streaming via \texttt{step\_recurrent}} enables $\mathcal{O}(1)$ inference.
 \item \textbf{Decay gating adds no meaningful cost} but improves accuracy.
@@ -1469,7 +1469,7 @@ $x > -1$. This ensures the denominator is positive.
 
 \subsubsection{Takeaway 1: Real Compression}
 
-SVD-Linear reduces parameter count by 50\%$$\times$--2.1$$\times$.
+SVD-Linear reduces parameter count by 50\%$\times$--2.1$\times$.
 
 \subsubsection{Takeaway 2: Real Speedup}
 
@@ -1487,7 +1487,7 @@ The \texttt{step\_recurrent} API enables production-grade streaming inference.
 \item \textbf{Long sequences} ($N > 512$)
 \item \textbf{Streaming inference} (autoregressive)
 \item \textbf{Compression-constrained deployment}
-\item \textbf{Combined with quantization} for 16--24$$\times$ compression
+\item \textbf{Combined with quantization} for 16--24$\times$ compression
 
 \end{itemize}
 \subsubsection{Not Recommended}
@@ -1524,9 +1524,9 @@ For DistilBERT at N=128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{SVD-Linear} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 66.4MM & \textbf{50\%$$\times$} \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
 VRAM & 183 MB & 2818 MB MB & -48.5\%\% \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 80.73\% & -9.98\% \\
 \bottomrule
 \end{tabular}
@@ -1544,10 +1544,10 @@ approximation + compression).
 \toprule
 \textbf{Method} & \textbf{Feature map} & \textbf{Decay} & \textbf{Compression} & \textbf{Params} \\
 \midrule
-Linear Transformer & ELU+1 & No & No & 1.00$$\times$ \\
-Performer & Random features & No & No & 1.00$$\times$ \\
-RetNet & ELU+1 & Fixed & No & 1.00$$\times$ \\
-\textbf{SVD-Linear} & ELU+1 & \textbf{Learned} & \textbf{SVD} & \textbf{50\%$$\times$} \\
+Linear Transformer & ELU+1 & No & No & 1.00$\times$ \\
+Performer & Random features & No & No & 1.00$\times$ \\
+RetNet & ELU+1 & Fixed & No & 1.00$\times$ \\
+\textbf{SVD-Linear} & ELU+1 & \textbf{Learned} & \textbf{SVD} & \textbf{50\%$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1693,7 +1693,7 @@ Research-grade implementation. Known issues:
 We presented \textbf{SVD-Linear Attention}, a compression-and-efficiency module 
 combining SVD-factorized projections, kernelized linear attention, exponential 
 decay gating, and chunked parallel scan. The method reduces parameter count 
-by 50\%$$\times$ and attention complexity from $\mathcal{O}(N^2)$ to 
+by 50\%$\times$ and attention complexity from $\mathcal{O}(N^2)$ to 
 $\mathcal{O}(N)$.
 
 \subsection{Results Recap}
@@ -1705,9 +1705,9 @@ $\mathcal{O}(N)$.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param Ratio} & \textbf{Time Ratio (N=128)} \\
 \midrule
-DistilBERT & -9.98\% & \textbf{50\%$$\times$} & 2.1$$\times$ \\
-RoBERTa & -27.64\% & \textbf{2.1$$\times$} & 2.1$$\times$ \\
-GPT-2 & 0.85\% & \textbf{2.1$$\times$} & 2.1$$\times$ \\
+DistilBERT & -9.98\% & \textbf{50\%$\times$} & 2.1$\times$ \\
+RoBERTa & -27.64\% & \textbf{2.1$\times$} & 2.1$\times$ \\
+GPT-2 & 0.85\% & \textbf{2.1$\times$} & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1715,7 +1715,7 @@ GPT-2 & 0.85\% & \textbf{2.1$$\times$} & 2.1$$\times$ \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Real compression.} Parameters reduce by 50\%$$\times$--2.1$$\times$.
+\item \textbf{Real compression.} Parameters reduce by 50\%$\times$--2.1$\times$.
 \item \textbf{Real speedup.} Complexity scales linearly.
 \item \textbf{Streaming-ready.} \texttt{step\_recurrent} supports $\mathcal{O}(1)$ inference.
 \item \textbf{Multi-architecture.} Same code, four families.
@@ -1840,9 +1840,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 80.73\% & 50\%$$\times$ \\
-RoBERTa & 50.92\% & 2.1$$\times$ \\
-GPT-2 & 77.5\% & 2.1$$\times$ \\
+DistilBERT & 80.73\% & 50\%$\times$ \\
+RoBERTa & 50.92\% & 2.1$\times$ \\
+GPT-2 & 77.5\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2117,7 +2117,7 @@ For $d = 768$, $H = 12$, $r = 32$, $r_L = 16$:
 \end{itemize}
 Baseline: $4 \times 768 \times 768 = 2,359,296$.
 
-Ratio: $2,359,296 / 304,140 \approx 7.8$$\times$$. $\square$
+Ratio: $2,359,296 / 304,140 \approx 7.8$\times$$. $\square$
 
 \subsection{A.6 Decay Initialization}
 
@@ -2357,7 +2357,7 @@ skipped (applied externally).
 \midrule
 Params before & 66,955,010 \\
 Params after & 66.4M \\
-Ratio & 50\%$$\times$ \\
+Ratio & 50\%$\times$ \\
 Accuracy & 80.73\% \\
 F1 & 0.8019 \\
 Peak VRAM & 2818 MB MB \\
@@ -2378,7 +2378,7 @@ Mode & 0.85 \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124.6M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 50.92\% \\
 ... & ... \\
 \bottomrule
@@ -2396,7 +2396,7 @@ Accuracy & 50.92\% \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124.4M \\
-Ratio & 2.1$$\times$ \\
+Ratio & 2.1$\times$ \\
 Accuracy & 77.5\% \\
 ... & ... \\
 \bottomrule
@@ -2412,11 +2412,11 @@ Accuracy & 77.5\% \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & 32 & 24$$\times$ & 32 & 32 \\
-16 & 32 & 16$$\times$ & 32 & 32 \\
-32 & 32 & 12$$\times$ & 32 & 32 \\
-64 & 32 & 8$$\times$ & 32 & 32 \\
-128 & 32 & 4$$\times$ & 32 & 32 \\
+8 & 32 & 24$\times$ & 32 & 32 \\
+16 & 32 & 16$\times$ & 32 & 32 \\
+32 & 32 & 12$\times$ & 32 & 32 \\
+64 & 32 & 8$\times$ & 32 & 32 \\
+128 & 32 & 4$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2462,10 +2462,10 @@ Learned decay & 0.85 & 0.85 & 0.85 \\
 \toprule
 \textbf{$N$} & \textbf{Baseline} & \textbf{SVD-Lin} & \textbf{Speedup} \\
 \midrule
-128 & 4.2 s & 84.0 & 84.8$$\times$ \\
-256 & 16.8 s & 84.8 & 85.6$$\times$ \\
-512 & 67 s & 85.6 & 86.2$$\times$ \\
-1024 & 268 s & 86.4 & 86.4$$\times$ \\
+128 & 4.2 s & 84.0 & 84.8$\times$ \\
+256 & 16.8 s & 84.8 & 85.6$\times$ \\
+512 & 67 s & 85.6 & 86.2$\times$ \\
+1024 & 268 s & 86.4 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2565,7 +2565,7 @@ python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffi
 
 \textbf{Goal.} MLP-based  (x).
 
-\textbf{Result.} 3$$\times$ slower, <0.5\% gain.
+\textbf{Result.} 3$\times$ slower, <0.5\% gain.
 
 \subsubsection{D.2.2 Multiple Decay Scales}
 
@@ -2590,10 +2590,10 @@ python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffi
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} \\
 \midrule
-4 & 32 & 30$$\times$ \\
-8 & 32 & 24$$\times$ \\
-16 & 32 & 16$$\times$ \\
-32 & 32 & 12$$\times$ \\
+4 & 32 & 30$\times$ \\
+8 & 32 & 24$\times$ \\
+16 & 32 & 16$\times$ \\
+32 & 32 & 12$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2737,7 +2737,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

@@ -223,8 +223,8 @@ progresses, $\alpha$ can shift toward 1.0 if the SSM output improves.
 
 \textbf{Algorithm 1:} Mamba-Inspired Gated SSM Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, is_decoder
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: X $\leftarrow$ RoPE(X) if position_embeddings provided
  2: proj $\leftarrow$ in_proj(X)                          [B, L, 2d]

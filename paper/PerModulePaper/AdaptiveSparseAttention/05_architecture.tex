@@ -106,9 +106,9 @@ for q_start in range(0, L, C):
 
 T5 uses a learned bias added to scores:
 
-\begin{equation}
+\[
 s_{ij} = \frac{Q_i \cdot K_j}{\sqrt{d_h}} + b_{i-j}
-\end{equation}
+\]
 
 where $b$ is a learned embedding of bucketed relative positions. ASA preserves 
 this by computing the bias before the top-$k$ threshold.

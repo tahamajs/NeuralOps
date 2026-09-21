@@ -1,4 +1,4 @@
-\title{\textbf{RPC: Random Projection Compressed Attention for Transformers}
+\title{\textbf{RPC: Random Projection Compressed Attention for Transformers}}
 
 \author{Anonymous authors}
 
@@ -290,14 +290,14 @@ RPC replaces the standard attention score with a sketched version:
 
 \begin{lstlisting}
     +--------------------------------------------+
-    |  Input X $\in$ R^{B$$\times$L$$\times$d}                        |
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
     +----------------+---------------------------+
                      |
         +------------+------------+
                                    
     +----------+             +----------+
     | Q, K, V  |             | $\Omega$ $\in$ R^   |
-    | proj     |             | {d_h$$\times$r}  |
+    | proj     |             | {d_h$\times$r}  |
     +----+-----+             +----+-----+
          |                        |
                                    
@@ -426,9 +426,9 @@ Softmax & $\mathcal{O}(L^2 H)$ & $\mathcal{O}(L^2 H)$ \\
 \tag{4.6}
 \]
 
-For $d_h = 64, r = 32$: theoretical \textbf{2$$\times$ speedup}.
+For $d_h = 64, r = 32$: theoretical \textbf{2$\times$ speedup}.
 
-For $d_h = 64, r = 16$: theoretical \textbf{4$$\times$ speedup}.
+For $d_h = 64, r = 16$: theoretical \textbf{4$\times$ speedup}.
 
 \textbf{Memory.} RPC \textbf{does not reduce} memory; $S^{RPC}$ is still $L \times L$.
 
@@ -474,8 +474,8 @@ Proj buffer & 0 & 0 \\
 
 \textbf{Algorithm 1:} RPC forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask, $\Omega$ (fixed)
-Output: Y $\in$ R^{B$$\times$L$$\times$d}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, $\Omega$ (fixed)
+Output: Y $\in$ R^{B$\times$L$\times$d}
 
 1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)            (B, H, L, d_h)
 2:  K $\leftarrow$ W_K X + LoRA_K(X)
@@ -910,10 +910,10 @@ GPT-2 & RPC & 2.3 s s & 0.85 & 571 MB MB \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Theoretical speedup} \\
 \midrule
-8 & 32 & 32 & 32 & 8$$\times$ \\
-16 & 32 & 32 & 32 & 4$$\times$ \\
-32 & 32 & 32 & 32 & 2$$\times$ \\
-64 & 32 & 32 & 32 & 1$$\times$ \\
+8 & 32 & 32 & 32 & 8$\times$ \\
+16 & 32 & 32 & 32 & 4$\times$ \\
+32 & 32 & 32 & 32 & 2$\times$ \\
+64 & 32 & 32 & 32 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -951,10 +951,10 @@ sketching occurs.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
 \midrule
-full & 90.71\% & 78.56\% & 79.36\% & 1.00$$\times$ \\
-nha & 90.25\% & FAIL & 78.78\% & 1.01$$\times$ \\
-asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$$\times$ \\
-\textbf{rpc (r=32)} & \textbf{87.84} & \textbf{66.97} & \textbf{57.34} & \textbf{1.01$$\times$} \\
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$\times$ \\
+\textbf{rpc (r=32)} & \textbf{87.84} & \textbf{66.97} & \textbf{57.34} & \textbf{1.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -970,10 +970,10 @@ asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$$\times$ \\
 \toprule
 \textbf{Config} & \textbf{Theoretical} & \textbf{Measured} & \textbf{Gap} \\
 \midrule
-r=8 & 8$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
-r=16 & 4$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
-r=32 & 2$$\times$ & 0.85$$\times$ & 0.85$$\times$ \\
-r=64 & 1$$\times$ & 1$$\times$ & 0 \\
+r=8 & 8$\times$ & 0.85$\times$ & 0.85$\times$ \\
+r=16 & 4$\times$ & 0.85$\times$ & 0.85$\times$ \\
+r=32 & 2$\times$ & 0.85$\times$ & 0.85$\times$ \\
+r=64 & 1$\times$ & 1$\times$ & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1011,10 +1011,10 @@ GPT-2 & PASS & 57.34 & 32 \\
 ---
 \end{lstlisting}
 
-egin{figure}[H]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/rpc_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{rpc}.}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{rpc}.}
 \label{fig:results_rpc}
 \end{figure}
 
@@ -1155,7 +1155,7 @@ reduction.
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failure \\
 Low correlation & Acc drops moderately & Sketch rank too small \\
 Slow & Slower than baseline & Overhead dominates \\
-No memory gain & VRAM unchanged & Score matrix still L $$\times$ L \\
+No memory gain & VRAM unchanged & Score matrix still L $\times$ L \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1251,7 +1251,7 @@ For DistilBERT at L=128:
 \midrule
 Params & 66.95M & 66.4MM & +48.5\%\% \\
 VRAM & 183 MB & 334 MB MB & 0\% \\
-Time & 1.90 s & 1.42x s & 2.1$$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1$\times$ \\
 Accuracy & 90.71\% & 87.84\% & -2.87\% \\
 \bottomrule
 \end{tabular}
@@ -1266,7 +1266,7 @@ Accuracy & 90.71\% & 87.84\% & -2.87\% \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{RPC} & \textbf{Change} \\
 \midrule
-Time & ~15 s & ~8 s & 1.9$$\times$ faster \\
+Time & ~15 s & ~8 s & 1.9$\times$ faster \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1408,9 +1408,9 @@ full scores, reducing attention FLOPs.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & -2.87\% & +48.5\%\% & 2.1$$\times$ \\
-RoBERTa & -11.59\% & +48.5\%\% & 2.1$$\times$ \\
-GPT-2 & -22.02\% & +48.5\%\% & 2.1$$\times$ \\
+DistilBERT & -2.87\% & +48.5\%\% & 2.1$\times$ \\
+RoBERTa & -11.59\% & +48.5\%\% & 2.1$\times$ \\
+GPT-2 & -22.02\% & +48.5\%\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2046,10 +2046,10 @@ Accuracy & 57.34\% \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Theoretical speedup} \\
 \midrule
-8 & 32 & 32 & 32 & 8$$\times$ \\
-16 & 32 & 32 & 32 & 4$$\times$ \\
-32 & 32 & 32 & 32 & 2$$\times$ \\
-64 & 32 & 32 & 32 & 1$$\times$ \\
+8 & 32 & 32 & 32 & 8$\times$ \\
+16 & 32 & 32 & 32 & 4$\times$ \\
+32 & 32 & 32 & 32 & 2$\times$ \\
+64 & 32 & 32 & 32 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2097,11 +2097,11 @@ Accuracy & 57.34\% \\
 \toprule
 \textbf{$L$} & \textbf{Baseline time} & \textbf{RPC time (r=32)} & \textbf{Speedup} \\
 \midrule
-64 & 84.5 & 84.0 & 84.1$$\times$ \\
-128 & 1.90 s & 84.8 & 84.8$$\times$ \\
-256 & 85.5 & 85.6 & 85.6$$\times$ \\
-512 & 86.0 & 86.2 & 86.2$$\times$ \\
-1024 & 86.4 & 86.4 & 86.4$$\times$ \\
+64 & 84.5 & 84.0 & 84.1$\times$ \\
+128 & 1.90 s & 84.8 & 84.8$\times$ \\
+256 & 85.5 & 85.6 & 85.6$\times$ \\
+512 & 86.0 & 86.2 & 86.2$\times$ \\
+1024 & 86.4 & 86.4 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2355,7 +2355,7 @@ None.
 
 \subsection{E.7 Funding}
 
-This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+This research was supported by the Advanced Machine Learning \& Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 

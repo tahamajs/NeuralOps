@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Real Compression Works}
 
-AASVD achieves \textbf{4.0$$\times$--3.5$$\times$} parameter reduction with 
+AASVD achieves \textbf{4.0$\times$--3.5$\times$} parameter reduction with 
 accuracy drops of \textbf{-5.7\%---6.4\%}. This is a genuine reduction 
 in storage, memory, and load time.
 
@@ -27,7 +27,7 @@ task-specific calibration. This makes AASVD usable out-of-the-box.
 \begin{itemize}
 \item \textbf{Storage-constrained deployment} (mobile, edge, browser)
 \item \textbf{Load-time-sensitive applications}
-\item \textbf{Combined with quantization} for 8--16$$\times$ total compression
+\item \textbf{Combined with quantization} for 8--16$\times$ total compression
 \item \textbf{Base for further compression} (prune then AASVD)
 
 \end{itemize}
@@ -65,10 +65,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 33 MB & \textbf{4.0$$\times$} \\
-Params & 66.95M & 16000000M & \textbf{4.0$$\times$} \\
-VRAM & 183 MB & 120 MB & \textbf{0.66$$\times$} \\
-Time & 1.90 s & 2.5 s & \textbf{1.3$$\times$} \\
+Disk (FP16) & 134 MB & 33 MB & \textbf{4.0$\times$} \\
+Params & 66.95M & 16000000M & \textbf{4.0$\times$} \\
+VRAM & 183 MB & 120 MB & \textbf{0.66$\times$} \\
+Time & 1.90 s & 2.5 s & \textbf{1.3$\times$} \\
 Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \bottomrule
 \end{tabular}
@@ -83,10 +83,10 @@ Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT \& Sharing & 3.5$$\times$ & 89.4\% \\
-DistilBERT \& Distill & 1.6$$\times$ & 90.7\% \\
-A3 (r=64) \& Low-rank & 2.1$$\times$ & 86.4\%\% \\
-\textbf{AASVD (r=64)} \& Low-rank & \textbf{4.0$$\times$} & \textbf{85.0\%} \\
+ALBERT \& Sharing & 3.5$\times$ & 89.4\% \\
+DistilBERT \& Distill & 1.6$\times$ & 90.7\% \\
+A3 (r=64) \& Low-rank & 2.1$\times$ & 86.4\%\% \\
+\textbf{AASVD (r=64)} \& Low-rank & \textbf{4.0$\times$} & \textbf{85.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,7 +104,7 @@ AASVD's main benefit is storage. For 100M params:
 \end{itemize}
 \subsubsection{Latency}
 
-Factorized layers are ~1.3$$\times$ slower on GPU. On CPU, they may 
+Factorized layers are ~1.3$\times$ slower on GPU. On CPU, they may 
 be faster due to cache effects.
 
 \subsubsection{Batching}
