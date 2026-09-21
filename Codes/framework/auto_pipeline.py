@@ -29,9 +29,12 @@ os.makedirs(os.path.dirname(QUEUE_PATH), exist_ok=True)
 
 logger = logging.getLogger("auto_pipeline")
 logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8")
-file_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
-logger.addHandler(file_handler)
+try:
+    file_handler = logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8")
+    file_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
+    logger.addHandler(file_handler)
+except Exception:
+    pass
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(console_handler)
