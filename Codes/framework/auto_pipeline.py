@@ -508,6 +508,17 @@ def main_daemon(max_parallel_override: Optional[int] = None) -> None:
     active_processes: Dict[str, Tuple[subprocess.Popen, Dict[str, Any]]] = {}
     consecutive_failures = 0
 
+    # Recover any orphaned active jobs from previous daemon run
+    initial_state = read_queue()
+    orphaned = initial_state.get("active", [])
+    if orphaned:
+        logger.info(f"Re-queuing {len(orphaned)} orphaned jobs from previous run back to pending...")
+        for j in orphaned:
+            j["status"] = "pending"
+            initial_state.setdefault("jobs", []).append(j)
+        initial_state["active"] = []
+        write_queue(initial_state)
+
     while True:
         try:
             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
