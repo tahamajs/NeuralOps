@@ -1,0 +1,3 @@
+module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
+full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.186,5372.8,18.61,124439808,124439808,,2026-09-21T10:50:02
+swift_svd,PASS_DEGRADED,3295.81,21.71,3274.1,1.497,33.2,837.48,0.128,7815.3,12.8,124439808,83128320,,2026-09-21T10:56:16

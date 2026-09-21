@@ -1,0 +1,17 @@
+{
+  "module_name": "come",
+  "status": "PASS_DEGRADED",
+  "perplexity": 144.82,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 123.11,
+  "compression_rate": 1.264,
+  "compression_ratio_pct": 20.89,
+  "peak_vram_mb": 841.6,
+  "latency_ms_per_token": 0.142,
+  "throughput_tok_per_sec": 7061.9,
+  "elapsed_s": 14.16,
+  "total_params_before": 124439808,
+  "total_params_after": 98447620,
+  "error": "",
+  "timestamp": "2026-09-21T10:34:16"
+}

@@ -1,0 +1,17 @@
+{
+  "module_name": "aasvd",
+  "status": "PASS_DEGRADED",
+  "perplexity": 148.42,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 126.71,
+  "compression_rate": 1.0661,
+  "compression_ratio_pct": 6.2,
+  "peak_vram_mb": 902.95,
+  "latency_ms_per_token": 0.112,
+  "throughput_tok_per_sec": 8923.0,
+  "elapsed_s": 11.21,
+  "total_params_before": 124439808,
+  "total_params_after": 116722944,
+  "error": "",
+  "timestamp": "2026-09-21T10:31:03"
+}

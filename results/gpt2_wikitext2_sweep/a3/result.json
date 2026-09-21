@@ -1,0 +1,17 @@
+{
+  "module_name": "a3",
+  "status": "PASS_DEGRADED",
+  "perplexity": 218.4,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 196.69,
+  "compression_rate": 1.1034,
+  "compression_ratio_pct": 9.37,
+  "peak_vram_mb": 895.1,
+  "latency_ms_per_token": 0.266,
+  "throughput_tok_per_sec": 3757.3,
+  "elapsed_s": 26.62,
+  "total_params_before": 124439808,
+  "total_params_after": 112780032,
+  "error": "",
+  "timestamp": "2026-09-21T10:50:45"
+}
