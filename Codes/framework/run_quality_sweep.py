@@ -3312,6 +3312,10 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--cached_batches_dir", str(Path(args.output_dir or "results") / f"batch_cache_{args.dataset}"),
         "--defer_export",
     ]
+    if getattr(args, "max_error", None) is not None:
+        cmd.extend(["--max_error", str(args.max_error)])
+    if getattr(args, "rank_ratio", None) is not None:
+        cmd.extend(["--rank_ratio", str(args.rank_ratio)])
     if getattr(args, "force_rank", False):
         cmd.append("--force_rank")
     if args.dataset_dir is None:
