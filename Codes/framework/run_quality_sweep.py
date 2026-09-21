@@ -699,6 +699,14 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                 elif getattr(args, "target_attention_only", None) is not None:
                     setattr(model.config, "target_attention_only", args.target_attention_only)
 
+                if name in ("svd_llm", "svd_llm_compressor"):
+                    if getattr(args, "rank_ratio", None) is not None:
+                        setattr(model.config, "rank_ratio", args.rank_ratio)
+                    if getattr(args, "max_error", None) is not None:
+                        setattr(model.config, "max_error", args.max_error)
+                    if getattr(args, "lora_rank", None) is not None:
+                        setattr(model.config, "lora_rank", args.lora_rank)
+
                 if name in ("a3", "a3_compressor"):
                     a3_err = getattr(args, "a3_max_error", None)
                     if a3_err is None:
@@ -715,12 +723,12 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
             LOG.info("module=%s path=%s", name, path_name)
             num_svd_layers = sum(
                 1 for m in model.modules()
-                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear")
+                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "A3FactorizedLinear", "SVDLLMLinear")
                 or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3"))
                 or hasattr(m, "q_down")
             )
             LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-            if name in ("a3", "a3_compressor", "aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
+            if name in ("a3", "a3_compressor", "aasvd", "adasvd", "svd_llm", "svd_llm_compressor", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
                 try:
                     sdata = getattr(model, "compression_stats", {})
                     if not sdata and name in ("aasvd", "adasvd"):
@@ -1750,6 +1758,8 @@ def parse_args(argv=None):
                     help="SVD/projection rank for attention modules")
     ap.add_argument("--force_rank", action="store_true", default=False,
                     help="Strictly enforce the specified --rank dimension and disable adaptive rank search (STRS)")
+    ap.add_argument("--rank_ratio", type=float, default=None,
+                    help="Fixed parameter retention ratio R in (0, 1] for SVD-LLM (ICLR 2025)")
     ap.add_argument("--lora_rank", type=int, default=32,
                     help="LoRA rank for attention adapters")
     ap.add_argument("--asvd_dynamic_rank", action="store_true", default=True,
