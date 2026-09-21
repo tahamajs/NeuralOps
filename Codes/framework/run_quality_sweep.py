@@ -728,7 +728,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                 or hasattr(m, "q_down")
             )
             LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-            if name in ("a3", "a3_compressor", "aasvd", "adasvd", "svd_llm", "svd_llm_compressor", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
+            if name in ("aatc_xkv", "aatc_xkv_compressor", "a3", "a3_compressor", "aasvd", "adasvd", "svd_llm", "svd_llm_compressor", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
                 try:
                     sdata = getattr(model, "compression_stats", {})
                     if not sdata and name in ("aasvd", "adasvd"):
@@ -1787,6 +1787,8 @@ def parse_args(argv=None):
                     help="EMA beta momentum for AASVD covariance accumulation")
     ap.add_argument("--aasvd_fallback_to_original", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Fallback to original weights if reconstruction error exceeds threshold")
+    ap.add_argument("--group_size", type=int, default=3,
+                    help="Group size for cross-layer joint SVD in AATC-XKV")
     ap.add_argument("--defer_export", action="store_true", default=False,
                     help="Defer Hugging Face upload and Git commit to orchestrator script")
     ap.add_argument("--max_error", type=float, default=0.40,
@@ -3349,6 +3351,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
     if getattr(args, "kvtc_fallback_to_original", None) is not None:
         cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
+    if getattr(args, "group_size", None) is not None:
+        cmd.extend(["--group_size", str(args.group_size)])
     if getattr(args, "max_vram_fraction", None) is not None:
         cmd.extend(["--max_vram_fraction", str(args.max_vram_fraction)])
     if args.dataset_dir is None:
