@@ -224,7 +224,7 @@ class SVDLLMCompressor(BaseCompressor):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         calibration_texts: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -255,12 +255,36 @@ class SVDLLMCompressor(BaseCompressor):
             self.device = p.device if p is not None else torch.device("cpu")
 
         self.tokenizer = tokenizer
-        self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
+        if calibration_texts is not None:
+            self.calibration_texts = calibration_texts
+        else:
+            self.calibration_texts = self._load_calibration_data(n_samples=256)
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.layer_ranks: Dict[str, int] = {}
+
+    def _load_calibration_data(self, n_samples: int = 256) -> List[str]:
+        """
+        Load calibration samples from WikiText-2 (or Salesforce/wikitext fallback),
+        following SVD-LLM (ICLR 2025) paper protocol. Falls back to default corpus if offline.
+        """
+        try:
+            from datasets import load_dataset
+            try:
+                ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+            except Exception:
+                ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+            texts = [t.strip() for t in ds["text"] if t and len(t.strip()) > 50]
+            if len(texts) >= n_samples:
+                logger.info("Loaded %d calibration samples from WikiText-2 for SVD-LLM.", n_samples)
+                return texts[:n_samples]
+            elif texts:
+                return texts
+        except Exception as e:
+            logger.warning("Could not download WikiText-2 calibration dataset (%s); using default corpus.", e)
+        return DEFAULT_CALIBRATION_CORPUS
 
     def compute_rank_from_ratio(self, m: int, n: int, ratio: float) -> int:
         """
@@ -438,15 +462,19 @@ class SVDLLMCompressor(BaseCompressor):
             C_fp32 = C.float().to(device=W.device)
             C_sym = 0.5 * (C_fp32 + C_fp32.T)
             S = self._robust_cholesky(C_sym, n)
+            try:
+                S_inv = torch.linalg.pinv(S)
+            except Exception:
+                S_inv = torch.inverse(S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype))
             W_white = W_fp32 @ S
-            S_inv = torch.linalg.pinv(S)
         else:
-            # Unweighted fallback if covariance unavailable
+            # Identity whitening (standard SVD fallback if covariance unavailable)
+            S = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
+            S_inv = torch.eye(n, device=W.device, dtype=W_fp32.dtype)
             W_white = W_fp32
-            S_inv = torch.eye(n, device=W.device, dtype=torch.float32)
 
         U, Sigma, Vt = torch.linalg.svd(W_white, full_matrices=False)
-        r = max(1, min(target_rank, len(Sigma), m, n))
+        r = min(target_rank, min(m, n), U.size(1), Vt.size(0))
 
         U_r = U[:, :r]
         Sigma_r = Sigma[:r]
@@ -463,6 +491,35 @@ class SVDLLMCompressor(BaseCompressor):
 
         return W_u, W_v, error
 
+    def _compute_recovery_loss(self, batch_ids: torch.Tensor, batch_mask: torch.Tensor) -> Optional[torch.Tensor]:
+        """
+        Compute recovery training loss across both CausalLM and Sequence Classification architectures.
+        - CausalLM (GPT-2, LLaMA): cross-entropy autoregressive loss with labels=batch_ids.
+        - Sequence Classification (DistilBERT, RoBERTa): unsupervised entropy minimization over predicted logits.
+        """
+        try:
+            # 1. CausalLM path
+            if hasattr(self.model, "lm_head") or "causallm" in self.model.__class__.__name__.lower():
+                outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids)
+                loss = outputs.loss if hasattr(outputs, "loss") else None
+                if loss is None and isinstance(outputs, tuple):
+                    loss = outputs[0]
+                return loss
+
+            # 2. Sequence Classification / generic encoder path: entropy minimization
+            outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask)
+            logits = getattr(outputs, "logits", None)
+            if logits is None and isinstance(outputs, tuple):
+                logits = outputs[0]
+            if logits is not None and isinstance(logits, torch.Tensor) and logits.ndim >= 2:
+                probs = torch.softmax(logits.float(), dim=-1)
+                entropy = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
+                return entropy
+            return None
+        except Exception as e:
+            logger.debug("Error computing recovery loss: %s", e)
+            return None
+
     def _sequential_lora_recovery(self) -> None:
         """
         Execute 2-Stage Sequential LoRA fine-tuning (Section 3.2, Eq. 7):
@@ -476,6 +533,10 @@ class SVDLLMCompressor(BaseCompressor):
 
         logger.info("[SVD-LLM] Starting 2-Stage Sequential LoRA Recovery (%d steps/stage)...", self.recovery_steps)
         device = self.device
+
+        # Step 0: Freeze ALL model parameters (embeddings, layernorms, heads, and base weights)
+        for p in self.model.parameters():
+            p.requires_grad = False
 
         # Prepare calibration DataLoader
         encodings = self.tokenizer(
@@ -511,13 +572,7 @@ class SVDLLMCompressor(BaseCompressor):
                     batch_mask = batch_mask.to(device)
 
                     optimizer.zero_grad()
-                    try:
-                        outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids)
-                        loss = outputs.loss if hasattr(outputs, "loss") else None
-                        if loss is None and isinstance(outputs, tuple):
-                            loss = outputs[0]
-                    except Exception:
-                        loss = None
+                    loss = self._compute_recovery_loss(batch_ids, batch_mask)
 
                     if loss is not None and not torch.isnan(loss):
                         loss.backward()
@@ -526,6 +581,8 @@ class SVDLLMCompressor(BaseCompressor):
                     step += 1
 
         # Freeze all adapters after recovery
+        for p in self.model.parameters():
+            p.requires_grad = False
         for m in self.model.modules():
             if isinstance(m, SVDLLMLinear):
                 m.set_active_lora_stage(None)
@@ -578,9 +635,9 @@ class SVDLLMCompressor(BaseCompressor):
             self.layer_errors[name] = error
             self.layer_ranks[name] = r
 
-            # Fallback check
+            # In faithful SVD-LLM (ICLR 2025), fallback is not used; all target layers are compressed.
             if self.fallback_to_original and error > self.max_error:
-                logger.info("SVD-LLM layer %s error %.4f > max_error %.4f; skipping.", name, error, self.max_error)
+                logger.info("SVD-LLM layer %s error %.4f > max_error %.4f; skipping (fallback).", name, error, self.max_error)
                 self.fallback_layers.append(name)
                 continue
 
