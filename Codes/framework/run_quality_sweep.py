@@ -150,7 +150,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
             if hasattr(model, "config") and model.config is not None:
                 # Automatically propagate all parsed flags matching module name prefix or compressor keywords
                 for attr_name, attr_val in vars(args).items():
-                    if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "lora_rank", "lora_alpha", "sparsity", "use_fisher", "recalibrate_ln", "n_calib"):
+                    if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "force_rank", "lora_rank", "lora_alpha", "sparsity", "use_fisher", "recalibrate_ln", "n_calib"):
                         setattr(model.config, attr_name, attr_val)
                         # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
                         if attr_name.startswith(name + "_"):
@@ -1748,6 +1748,8 @@ def parse_args(argv=None):
                     help="Do not skip any requested modules even if already in summary.csv")
     ap.add_argument("--rank", type=int, default=None,
                     help="SVD/projection rank for attention modules")
+    ap.add_argument("--force_rank", action="store_true", default=False,
+                    help="Strictly enforce the specified --rank dimension and disable adaptive rank search (STRS)")
     ap.add_argument("--lora_rank", type=int, default=32,
                     help="LoRA rank for attention adapters")
     ap.add_argument("--asvd_dynamic_rank", action="store_true", default=True,
@@ -3300,6 +3302,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         "--cached_batches_dir", str(Path(args.output_dir or "results") / f"batch_cache_{args.dataset}"),
         "--defer_export",
     ]
+    if getattr(args, "force_rank", False):
+        cmd.append("--force_rank")
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
         

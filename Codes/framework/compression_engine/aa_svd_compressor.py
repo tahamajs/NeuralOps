@@ -246,7 +246,18 @@ class AASVDCompressor(BaseCompressor):
                 cfg, "aasvd_target_attention_only", getattr(cfg, "target_attention_only", target_attention_only)
             )
 
-        self.use_strs = kwargs.get("use_strs", True)
+        # Respect force_rank from kwargs, comp_config, or model.config
+        force_rank = kwargs.get("force_rank", False)
+        if cfg is not None and getattr(cfg, "force_rank", False):
+            force_rank = True
+        if getattr(getattr(model, "config", None), "force_rank", False):
+            force_rank = True
+
+        self.force_rank = bool(force_rank)
+        # If force_rank is requested, disable STRS so the explicit rank is strictly used
+        self.use_strs = kwargs.get("use_strs", not self.force_rank)
+        if self.force_rank:
+            self.use_strs = False
         self.strs_candidate_ranks = kwargs.get(
             "strs_candidate_ranks", [64, 96, 128, 192, 256, 384, 512]
         )
@@ -417,45 +428,56 @@ class AASVDCompressor(BaseCompressor):
             best_Ur = None
             best_Vr = None
 
-            cand_ranks = sorted(list(set(self.strs_candidate_ranks + [r]))) if getattr(self, "use_strs", True) else [r]
-            cand_ranks = [cr for cr in cand_ranks if cr <= max_allowed_rank and cr <= len(S)]
-
-            for test_r in cand_ranks:
-                sqrt_S = torch.sqrt(torch.clamp(S[:test_r], min=1e-12))
-                U_cand = (U[:, :test_r] * sqrt_S.unsqueeze(0))
-                V_cand = (sqrt_S.unsqueeze(1) * Vt[:test_r, :])
+            if not getattr(self, "use_strs", True):
+                # Strict explicit rank (e.g. --force_rank or --rank specified without STRS)
+                selected_r = min(r, len(S))
+                sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
+                best_Ur = (U[:, :selected_r] * sqrt_S.unsqueeze(0))
+                best_Vr = (sqrt_S.unsqueeze(1) * Vt[:selected_r, :])
                 if cov_inv_sqrt is not None:
-                    V_cand = torch.matmul(V_cand, cov_inv_sqrt)
-                W_cand = torch.matmul(U_cand, V_cand)
-                test_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+                    best_Vr = torch.matmul(best_Vr, cov_inv_sqrt)
+                W_cand = torch.matmul(best_Ur, best_Vr)
+                best_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+            else:
+                cand_ranks = sorted(list(set(self.strs_candidate_ranks + [r])))
+                cand_ranks = [cr for cr in cand_ranks if cr <= max_allowed_rank and cr <= len(S)]
 
-                if test_err < best_err:
-                    best_err = test_err
-                    selected_r = test_r
-                    best_Ur = U_cand
-                    best_Vr = V_cand
-
-                if test_err <= self.max_error:
-                    # Smallest rank satisfying target error bound
-                    selected_r = test_r
-                    best_err = test_err
-                    best_Ur = U_cand
-                    best_Vr = V_cand
-                    break
-
-            # If no candidate satisfied error < max_error, use break_even * 0.75
-            if best_err > self.max_error:
-                break_even_rank = int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))
-                target_r = max(1, min(break_even_rank, len(S)))
-                if target_r != selected_r:
-                    selected_r = target_r
-                    sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
-                    best_Ur = (U[:, :selected_r] * sqrt_S.unsqueeze(0))
-                    best_Vr = (sqrt_S.unsqueeze(1) * Vt[:selected_r, :])
+                for test_r in cand_ranks:
+                    sqrt_S = torch.sqrt(torch.clamp(S[:test_r], min=1e-12))
+                    U_cand = (U[:, :test_r] * sqrt_S.unsqueeze(0))
+                    V_cand = (sqrt_S.unsqueeze(1) * Vt[:test_r, :])
                     if cov_inv_sqrt is not None:
-                        best_Vr = torch.matmul(best_Vr, cov_inv_sqrt)
-                    W_cand = torch.matmul(best_Ur, best_Vr)
-                    best_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+                        V_cand = torch.matmul(V_cand, cov_inv_sqrt)
+                    W_cand = torch.matmul(U_cand, V_cand)
+                    test_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+
+                    if test_err < best_err:
+                        best_err = test_err
+                        selected_r = test_r
+                        best_Ur = U_cand
+                        best_Vr = V_cand
+
+                    if test_err <= self.max_error:
+                        # Smallest rank satisfying target error bound
+                        selected_r = test_r
+                        best_err = test_err
+                        best_Ur = U_cand
+                        best_Vr = V_cand
+                        break
+
+                # If no candidate satisfied error < max_error, use break_even * 0.75
+                if best_err > self.max_error:
+                    break_even_rank = int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))
+                    target_r = max(1, min(break_even_rank, len(S)))
+                    if target_r != selected_r:
+                        selected_r = target_r
+                        sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
+                        best_Ur = (U[:, :selected_r] * sqrt_S.unsqueeze(0))
+                        best_Vr = (sqrt_S.unsqueeze(1) * Vt[:selected_r, :])
+                        if cov_inv_sqrt is not None:
+                            best_Vr = torch.matmul(best_Vr, cov_inv_sqrt)
+                        W_cand = torch.matmul(best_Ur, best_Vr)
+                        best_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
 
             r = selected_r
             U_r = best_Ur
