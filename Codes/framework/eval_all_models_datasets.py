@@ -451,7 +451,7 @@ def apply_module_to_model(
     """
     orig_params = sum(p.numel() for p in model.parameters())
 
-    if not module_name or module_name.lower() in ("none", "baseline"):
+    if not module_name or module_name.lower() in ("none", "baseline", "dense", "full"):
         return model, 1.0
 
     # Module alias mappings
