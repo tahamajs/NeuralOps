@@ -1,754 +1,521 @@
 {
-  "max_parallel": 8,
+  "max_parallel": 3,
   "jobs": [
     {
-      "id": "adaptive_svd_mnli",
+      "id": "fwsvd_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 8 --output_suffix fwsvd64 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "aasvd_mnli_r32",
+      "id": "fwsvd_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r32 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd128 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "aasvd_mnli_r64",
+      "id": "fwsvd_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 256 --parallel 1 --batch_size 8 --output_suffix fwsvd256 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "aasvd_mnli_r128",
+      "id": "drone_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 32 --parallel 1 --batch_size 8 --output_suffix drone32 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "aasvd_mnli_r256",
+      "id": "drone_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r256 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 8 --output_suffix drone64 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "threshold_flip_group1",
+      "id": "drone_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybrid_svd orion block_transformer_hiba leka_v1 infini fusion_attn --lora_rank 16 --batch_size 8 --parallel 1 --output_suffix threshold_flip --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --parallel 1 --batch_size 8 --output_suffix drone128 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "drone_roberta_sst2",
+      "id": "drone_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 4 --output_suffix drone_rob64 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 256 --parallel 1 --batch_size 8 --output_suffix drone256 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "kmeans_roberta_sst2",
+      "id": "aasvd_r128_seed42",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix kmeans_rob --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed42 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "a3_roberta_sst2",
+      "id": "aasvd_r128_seed123",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 4 --output_suffix a3_rob --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed123 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "adaptive_roberta_sst2",
+      "id": "aasvd_r128_seed456",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 4 --output_suffix adaptive_rob --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed456 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "lora2_group2a",
+      "id": "aasvd_r128_seed789",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span adaptive_sparse chela_slay cluster fms fusion_attn halo_regla hamming hamming_attention infini kda kda_attention kronecker_tt_lora linformer --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupA --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed789 --fresh",
       "status": "pending",
       "retries": 0
     },
     {
-      "id": "lora2_group2b",
+      "id": "fwsvd_r128_seed42",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1 leka_v2 leka_v3 moba moe_deltakv_paged nasc nexus nha oha ptp qcqa rala simple_ssm --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupB --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed42 --fresh",
       "status": "pending",
       "retries": 0
     },
+    {
+      "id": "fwsvd_r128_seed123",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed123 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "fwsvd_r128_seed456",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed456 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "fwsvd_r128_seed789",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed789 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_r128_seed42",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix drone128_seed42 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_r128_seed123",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix drone128_seed123 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_r128_seed456",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix drone128_seed456 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_r128_seed789",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix drone128_seed789 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "fwsvd_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "drone_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --parallel 1 --batch_size 8 --output_suffix drone_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "a3_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 8 --output_suffix a3_sst2 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "kmeans_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 8 --output_suffix kmeans_sst2 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "adaptive_svd_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_sst2 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "adaptive_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 8 --output_suffix adaptive_sst2 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aasvd_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 4 --output_suffix aasvd_rob64 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "fwsvd_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 4 --output_suffix fwsvd_rob64 --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch1",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 10",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch2",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 10 20",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch3",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 20 30",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch4",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 30 40",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch5",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 40 50",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch6",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 50 60",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch7",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 60 70",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch8",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 70 80",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch9",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 80 90",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch10",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 90 100",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch11",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 100 110",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch12",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 110 120",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch13",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 120 130",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch14",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 130 140",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch15",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 140 150",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch16",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 150 160",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch17",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 160 170",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch18",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 170 180",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch19",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 180 190",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch20",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 190 200",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch21",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 200 210",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "process_papers_batch22",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [
     {
       "id": "hgrn2_outer_retry",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_outer --parallel 1 --batch_size 4 --output_suffix hgrn2_outer_retry --fresh",
-      "status": "pending",
-      "retries": 0
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:03:01"
     },
     {
       "id": "fail_rerun_group7",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer gqa performer_attention aegis_v2 mamba --recovery_steps 100 --parallel 1 --batch_size 4 --output_suffix fail_rerun --fresh",
-      "status": "pending",
-      "retries": 0
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:23:51"
     },
     {
-      "id": "nodata_verify_AdaptiveSVD",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "AdaptiveSVD",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_AdaptiveSVD",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792810",
-      "description": "Phase 3: First-time evaluation of NO_DATA module AdaptiveSVD"
-    },
-    {
-      "id": "nodata_verify_AdaptiveSpanAttention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "AdaptiveSpanAttention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_AdaptiveSpanAttention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792842",
-      "description": "Phase 3: First-time evaluation of NO_DATA module AdaptiveSpanAttention"
-    },
-    {
-      "id": "nodata_verify_AdaptiveSparseAttention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "AdaptiveSparseAttention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_AdaptiveSparseAttention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792850",
-      "description": "Phase 3: First-time evaluation of NO_DATA module AdaptiveSparseAttention"
-    },
-    {
-      "id": "nodata_verify_HALO",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "HALO",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_HALO",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792855",
-      "description": "Phase 3: First-time evaluation of NO_DATA module HALO"
-    },
-    {
-      "id": "nodata_verify_OH",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "OH",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_OH",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792859",
-      "description": "Phase 3: First-time evaluation of NO_DATA module OH"
-    },
-    {
-      "id": "nodata_verify_SqueezingHeadsAttentionDistillationLayer",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "SqueezingHeadsAttentionDistillationLayer",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_SqueezingHeadsAttentionDistillationLayer",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792863",
-      "description": "Phase 3: First-time evaluation of NO_DATA module SqueezingHeadsAttentionDistillationLayer"
-    },
-    {
-      "id": "nodata_verify_cr_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "cr_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_cr_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792867",
-      "description": "Phase 3: First-time evaluation of NO_DATA module cr_compressor"
-    },
-    {
-      "id": "nodata_verify_cur_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "cur_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_cur_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792871",
-      "description": "Phase 3: First-time evaluation of NO_DATA module cur_compressor"
-    },
-    {
-      "id": "nodata_verify_enlighten_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "enlighten_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_enlighten_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792875",
-      "description": "Phase 3: First-time evaluation of NO_DATA module enlighten_compressor"
-    },
-    {
-      "id": "nodata_verify_fusion",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "fusion",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_fusion",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792879",
-      "description": "Phase 3: First-time evaluation of NO_DATA module fusion"
-    },
-    {
-      "id": "nodata_verify_gfws_d_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "gfws_d_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_gfws_d_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792883",
-      "description": "Phase 3: First-time evaluation of NO_DATA module gfws_d_compressor"
-    },
-    {
-      "id": "nodata_verify_hashed_net_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "hashed_net_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_hashed_net_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792889",
-      "description": "Phase 3: First-time evaluation of NO_DATA module hashed_net_compressor"
-    },
-    {
-      "id": "nodata_verify_kronecker_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "kronecker_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_kronecker_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792893",
-      "description": "Phase 3: First-time evaluation of NO_DATA module kronecker_compressor"
-    },
-    {
-      "id": "nodata_verify_mlorq_compressor",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "mlorq_compressor",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_mlorq_compressor",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792897",
-      "description": "Phase 3: First-time evaluation of NO_DATA module mlorq_compressor"
-    },
-    {
-      "id": "nodata_verify_padre_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "padre_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_padre_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792900",
-      "description": "Phase 3: First-time evaluation of NO_DATA module padre_attention"
-    },
-    {
-      "id": "nodata_verify_pruning_utils",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "pruning_utils",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_pruning_utils",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792904",
-      "description": "Phase 3: First-time evaluation of NO_DATA module pruning_utils"
-    },
-    {
-      "id": "nodata_verify_qcqa_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "qcqa_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_qcqa_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792908",
-      "description": "Phase 3: First-time evaluation of NO_DATA module qcqa_attention"
-    },
-    {
-      "id": "nodata_verify_rala_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "rala_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_rala_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792911",
-      "description": "Phase 3: First-time evaluation of NO_DATA module rala_attention"
-    },
-    {
-      "id": "nodata_verify_routing_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "routing_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_routing_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792915",
-      "description": "Phase 3: First-time evaluation of NO_DATA module routing_attention"
-    },
-    {
-      "id": "nodata_verify_saes_svd",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "saes_svd",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_saes_svd",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792918",
-      "description": "Phase 3: First-time evaluation of NO_DATA module saes_svd"
-    },
-    {
-      "id": "nodata_verify_span_expanded_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "span_expanded_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_span_expanded_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792922",
-      "description": "Phase 3: First-time evaluation of NO_DATA module span_expanded_attention"
-    },
-    {
-      "id": "nodata_verify_token_compressed_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "token_compressed_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_token_compressed_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792925",
-      "description": "Phase 3: First-time evaluation of NO_DATA module token_compressed_attention"
-    },
-    {
-      "id": "nodata_verify_tpa_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "tpa_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_tpa_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792929",
-      "description": "Phase 3: First-time evaluation of NO_DATA module tpa_attention"
-    },
-    {
-      "id": "nodata_verify_vig_attention",
-      "type": "gpu_sweep",
-      "priority": 5,
-      "cmd": [
-        "python",
-        "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--model",
-        "models/distilbert_sst2",
-        "--dataset",
-        "sst2",
-        "--modules",
-        "vig_attention",
-        "--rank",
-        "128",
-        "--parallel",
-        "1",
-        "--batch_size",
-        "8",
-        "--output_suffix",
-        "nodata_verify_vig_attention",
-        "--fresh"
-      ],
-      "added_at": "2026-09-21T08:52:58.792933",
-      "description": "Phase 3: First-time evaluation of NO_DATA module vig_attention"
+      "id": "fwsvd_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 32 --parallel 1 --batch_size 8 --output_suffix fwsvd32 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:53:24"
     }
   ],
-  "active": [],
-  "completed": [],
+  "completed": [
+    {
+      "id": "aasvd_mnli_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:40:01"
+    },
+    {
+      "id": "aasvd_mnli_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:40:01"
+    },
+    {
+      "id": "aasvd_mnli_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r32 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:43:35"
+    },
+    {
+      "id": "adaptive_svd_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:43:35"
+    },
+    {
+      "id": "aasvd_mnli_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:45:13"
+    },
+    {
+      "id": "aasvd_mnli_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:45:59"
+    },
+    {
+      "id": "aasvd_mnli_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r256 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:46:47"
+    },
+    {
+      "id": "drone_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 4 --output_suffix drone_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:49:11"
+    },
+    {
+      "id": "kmeans_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix kmeans_rob --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:50:50"
+    },
+    {
+      "id": "a3_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 4 --output_suffix a3_rob --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:54:05"
+    },
+    {
+      "id": "adaptive_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 4 --output_suffix adaptive_rob --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:54:05"
+    },
+    {
+      "id": "threshold_flip_group1",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybrid_svd orion block_transformer_hiba leka_v1 infini fusion_attn --lora_rank 16 --batch_size 8 --parallel 1 --output_suffix threshold_flip --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:54:05"
+    },
+    {
+      "id": "lora2_group2a",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span adaptive_sparse chela_slay cluster fms fusion_attn halo_regla hamming hamming_attention infini kda kda_attention kronecker_tt_lora linformer --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupA --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:55:29"
+    },
+    {
+      "id": "lora2_group2b",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1 leka_v2 leka_v3 moba moe_deltakv_paged nasc nexus nha oha ptp qcqa rala simple_ssm --lora_rank 2 --batch_size 8 --parallel 1 --output_suffix lora2_groupB --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 07:56:15"
+    },
+    {
+      "id": "aasvd_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd32 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:32:55"
+    },
+    {
+      "id": "aasvd_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:38:06"
+    },
+    {
+      "id": "aasvd_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:43:12"
+    },
+    {
+      "id": "aasvd_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd256 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 08:48:20"
+    }
+  ],
   "failed": []
 }
