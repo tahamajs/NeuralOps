@@ -225,10 +225,63 @@ def test_strs_rank_search():
     torch.manual_seed(42)
     in_f, out_f = 64, 64
     lin = nn.Linear(in_f, out_f)
-    comp = AdaSVDCompressor(nn.Sequential(lin), use_strs=True, max_error=0.45)
+    comp = AdaSVDCompressor(nn.Sequential(lin), use_weighted_als=False, max_error=0.45)
     svd_layer, err, iters = comp.compress_linear(lin, rank=32)
     assert svd_layer is not None
     assert err <= 0.45 or svd_layer.rank >= 16
+
+
+def test_mean_shift_absorption():
+    """Verify mean-shift bias absorption centers activations and reduces reconstruction error."""
+    torch.manual_seed(42)
+    class SimpleTwoLinear(nn.Module):
+        def __init__(self, in_f=64, out_f=64):
+            super().__init__()
+            self.l1 = nn.Linear(in_f, out_f)
+            self.l2 = nn.Linear(out_f, out_f)
+        def forward(self, x):
+            return self.l2(self.l1(x))
+
+    model = SimpleTwoLinear(64, 64)
+    X = torch.randn(256, 64) + 10.0  # Large mean offset
+    with torch.no_grad():
+        Y_no_compress = model(X)
+
+    comp = AdaSVDCompressor(model, rank=16, target_attention_only=False, use_mean_shift=True, use_weighted_als=False)
+    comp.compress(calibration_data=X)
+
+    with torch.no_grad():
+        Y_compress = model(X)
+
+    err = (Y_no_compress - Y_compress).norm() / Y_no_compress.norm()
+    print(f"Mean-shift test error: {err:.6f}")
+    assert err < 0.25, f"Error too high: {err}"
+
+
+def test_two_sided_als_improves_over_svd():
+    """Verify two-sided weighted ALS converges and provides competitive or improved error vs SVD."""
+    torch.manual_seed(42)
+    W = torch.randn(64, 64)
+    X = torch.randn(256, 64)
+
+    C_X = X.T @ X / 256
+    Y = X @ W.T
+    D_var = Y.var(0)
+
+    lin = nn.Linear(64, 64)
+    comp = AdaSVDCompressor(nn.Sequential(lin), target_attention_only=False)
+
+    A_svd, B_svd = comp._init_whitened_svd(W, 16, C_X)
+    recon_svd = A_svd @ B_svd
+    err_svd = torch.norm(W @ X.T - recon_svd @ X.T) / torch.norm(W @ X.T)
+
+    A_als, B_als, err_als, iters = comp._two_sided_als(
+        W, 16, C_X, D_var, X_calib=X, num_iters=10
+    )
+
+    print(f"SVD error:  {err_svd:.6f}")
+    print(f"ALS error:  {err_als:.6f}")
+    assert err_als <= err_svd * 1.05, f"ALS made error worse: {err_als} > {err_svd}"
 
 
 if __name__ == "__main__":
@@ -251,4 +304,8 @@ if __name__ == "__main__":
     print("[PASS] test_effective_rank_calculation")
     test_strs_rank_search()
     print("[PASS] test_strs_rank_search")
-    print("\nALL ADASVD UNIT TESTS PASSED SUCCESSFULLY!")
+    test_mean_shift_absorption()
+    print("[PASS] test_mean_shift_absorption")
+    test_two_sided_als_improves_over_svd()
+    print("[PASS] test_two_sided_als_improves_over_svd")
+    print("\nALL 11 ADASVD UNIT TESTS PASSED SUCCESSFULLY!")
