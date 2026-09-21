@@ -91,14 +91,39 @@ Execution Settings:
 | **Params (Before)** | 66,955,010 | 66,955,010 | 66,955,010 | 66.96M |
 | **Params (After)** | 53,389,058 | 53,389,058 | 53,389,058 | **53.39M (-20.26%)** |
 
-### 4.2 Compression & Memory Savings Breakdown
+### 4.2 4-bit PCA-Quant Benchmark Results (Multi-Seed)
+
+Execution Settings:
+- Model: `distilbert-base-uncased` (Classification on `sst2`)
+- Batch size: 4, Precision: `fp16`, Parallel: 1, Recovery steps: 50
+- Compression target: Attention linear projections (24 layers total)
+- Max VRAM fraction cap: 50% (`--max_vram_fraction 0.50`)
+
+| Metric | Seed 42 | Seed 123 | Seed 456 | Mean ± Std |
+|---|:---:|:---:|:---:|:---:|
+| **Status** | **PASS** | **PASS** | **PASS** | **100% PASS** |
+| **Accuracy (%)** | 66.51 | 65.60 | 65.37 | **65.83 ± 0.60** |
+| **F1 Score** | 0.7470 | 0.7427 | 0.7414 | **0.7437 ± 0.0029** |
+| **F1 Macro** | 0.6260 | 0.6118 | 0.6086 | **0.6155 ± 0.0093** |
+| **Validation Loss** | 0.6026 | 0.6044 | 0.6051 | **0.6040 ± 0.0013** |
+| **Peak VRAM (MB)** | 384.55 | 384.55 | 384.55 | **384.55 ± 0.00** |
+| **Throughput (tok/s)**| 107,411.8 | 85,229.1 | 106,622.1 | **99,754.3 ± 12,586.2** |
+| **Avg Recon Error** | 0.3485 | 0.3485 | 0.3485 | **0.3485 ± 0.00** |
+| **Layers Compressed**| 24 / 24 | 24 / 24 | 24 / 24 | **24 / 24 (100%)** |
+| **Fallbacks** | 0 | 0 | 0 | **0** |
+| **Params (Before)** | 66,955,010 | 66,955,010 | 66,955,010 | 66.96M |
+| **Params (After)** | 53,389,058 | 53,389,058 | 53,389,058 | **53.39M (-20.26%)** |
+
+### 4.3 Compression & Memory Savings Breakdown
 - **Physical Byte Footprint:**
   - Uncompressed attention bytes: 267,824,136 bytes (~255.4 MB)
   - Compressed model physical bytes: 227,716,296 bytes (~217.2 MB)
   - Physical memory reduction: **14.98%** (due to embedding and classifier layers remaining dense FP16)
 - **Theoretical Entropy Bounds:**
-  - Average entropy across weights: **7.19 bits / symbol**
+  - Average entropy across weights: **7.19 bits / symbol** (8-bit)
   - Theoretical Shannon compression ratio: **2.23×**
+- **Quantization Trade-off (8-bit vs 4-bit):**
+  - Moving from 8-bit to 4-bit incurs only a minor **~1.72% drop in accuracy** (67.55% → 65.83%) while retaining full model stability across all seeds.
 
 ---
 
