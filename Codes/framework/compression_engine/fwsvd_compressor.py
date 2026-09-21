@@ -71,7 +71,7 @@ class FWSVDCompressor(BaseCompressor):
         model: nn.Module,
         tokenizer: Optional[Any] = None,
         rank: int = 64,
-        max_error: float = 0.85,
+        max_error: float = 0.50,
         fallback_to_original: bool = True,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,

@@ -246,6 +246,10 @@ class AASVDCompressor(BaseCompressor):
                 cfg, "aasvd_target_attention_only", getattr(cfg, "target_attention_only", target_attention_only)
             )
 
+        self.use_strs = kwargs.get("use_strs", True)
+        self.strs_candidate_ranks = kwargs.get(
+            "strs_candidate_ranks", [64, 96, 128, 192, 256, 384, 512]
+        )
         target_attention_only = kwargs.get(
             "target_attention_only", kwargs.get("aasvd_target_attention_only", target_attention_only)
         )
@@ -406,16 +410,57 @@ class AASVDCompressor(BaseCompressor):
             W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
             U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
 
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0))
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :])
+            # TASK 1: Sensitivity-Based Rank Search (STRS)
+            # Find smallest rank among candidates where error < max_error, otherwise break_even * 0.75
+            selected_r = r
+            best_err = float("inf")
+            best_Ur = None
+            best_Vr = None
 
-            # Unweight factors via C_X^{-1/2} to preserve original W space
-            if cov_inv_sqrt is not None:
-                V_r = torch.matmul(V_r, cov_inv_sqrt)
+            cand_ranks = sorted(list(set(self.strs_candidate_ranks + [r]))) if getattr(self, "use_strs", True) else [r]
+            cand_ranks = [cr for cr in cand_ranks if cr <= max_allowed_rank and cr <= len(S)]
 
-            W_recon = torch.matmul(U_r, V_r)
-            err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
+            for test_r in cand_ranks:
+                sqrt_S = torch.sqrt(torch.clamp(S[:test_r], min=1e-12))
+                U_cand = (U[:, :test_r] * sqrt_S.unsqueeze(0))
+                V_cand = (sqrt_S.unsqueeze(1) * Vt[:test_r, :])
+                if cov_inv_sqrt is not None:
+                    V_cand = torch.matmul(V_cand, cov_inv_sqrt)
+                W_cand = torch.matmul(U_cand, V_cand)
+                test_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+
+                if test_err < best_err:
+                    best_err = test_err
+                    selected_r = test_r
+                    best_Ur = U_cand
+                    best_Vr = V_cand
+
+                if test_err <= self.max_error:
+                    # Smallest rank satisfying target error bound
+                    selected_r = test_r
+                    best_err = test_err
+                    best_Ur = U_cand
+                    best_Vr = V_cand
+                    break
+
+            # If no candidate satisfied error < max_error, use break_even * 0.75
+            if best_err > self.max_error:
+                break_even_rank = int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))
+                target_r = max(1, min(break_even_rank, len(S)))
+                if target_r != selected_r:
+                    selected_r = target_r
+                    sqrt_S = torch.sqrt(torch.clamp(S[:selected_r], min=1e-12))
+                    best_Ur = (U[:, :selected_r] * sqrt_S.unsqueeze(0))
+                    best_Vr = (sqrt_S.unsqueeze(1) * Vt[:selected_r, :])
+                    if cov_inv_sqrt is not None:
+                        best_Vr = torch.matmul(best_Vr, cov_inv_sqrt)
+                    W_cand = torch.matmul(best_Ur, best_Vr)
+                    best_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
+
+            r = selected_r
+            U_r = best_Ur
+            V_r = best_Vr
+            err = best_err
 
             dtype = weight_tensor.dtype
             device = weight_tensor.device
@@ -544,7 +589,7 @@ class AASVDCompressor(BaseCompressor):
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
 
-                if svd_layer is None or err > self.max_error:
+                if svd_layer is None or (err > self.max_error and not getattr(self, "use_strs", True)):
                     if self.fallback_to_original:
                         logger.warning(
                             "AASVD reconstruction error %.4f on %s exceeded threshold %.4f. Skipping compression (fallback to original).",
