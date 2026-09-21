@@ -173,6 +173,44 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
                 })
                 existing_ids.add(jid)
 
+    # Check for GPT-2 WikiText-2 decoder causal LM evaluations
+    gpt2_model_path = os.path.join(ROOT_DIR, "models", "gpt2_wikitext")
+    if not os.path.exists(gpt2_model_path):
+        gpt2_model_path = os.path.join(ROOT_DIR, "models", "gpt2")
+    if os.path.exists(gpt2_model_path):
+        # Key causal decoder candidates
+        gpt2_candidates = [
+            "aasvd", "fwsvd", "drone", "svd_compressed", "vspec", 
+            "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"
+        ]
+        for mod in gpt2_candidates:
+            jid = f"gpt2_eval_{mod}"
+            if jid not in existing_ids:
+                new_jobs.append({
+                    "id": jid,
+                    "type": "gpu",
+                    "cmd": f"python -u Codes/framework/run_gpt2_sweep.py --model_path {gpt2_model_path} --modules {mod} --output_dir results/gpt2_wikitext2_sweep --stride 512",
+                    "status": "pending",
+                    "retries": 0,
+                })
+                existing_ids.add(jid)
+
+    # Check for MNLI sweeps for top compressors
+    mnli_model_path = os.path.join(ROOT_DIR, "models", "distilbert_mnli_full")
+    if os.path.exists(mnli_model_path):
+        top_compressors = ["svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"]
+        for mod in top_compressors:
+            jid = f"{mod}_mnli_sweep"
+            if jid not in existing_ids:
+                new_jobs.append({
+                    "id": jid,
+                    "type": "gpu",
+                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {mnli_model_path} --dataset mnli --modules {mod} --parallel 1 --batch_size 8 --output_suffix {mod}_mnli --fresh",
+                    "status": "pending",
+                    "retries": 0,
+                })
+                existing_ids.add(jid)
+
     # Check for papers batch processing
     if os.path.exists(PAPERS_DIR):
         papers = sorted([d for d in os.listdir(PAPERS_DIR) if os.path.isdir(os.path.join(PAPERS_DIR, d)) and not d.startswith("_")])
