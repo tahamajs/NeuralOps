@@ -1,47 +1,9 @@
 module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,latency_ms_per_token,throughput_tok_per_sec,perplexity,long_context_accuracy,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
 mla_attention,CRASH_NO_OUTPUT,0.0,0.0,,,,,18.160791899999822,0.0,,,,,,0,0,,1.0,,,,,,,,,Child produced no result file after 18.2s,,1789768044.084234
 moe_deltakv_paged,MODERATE_EXPANSION,49.08,0.0,0.3292,0.2454,0.5,0.7109,16.17,315.78,16822.17,7.61,16822.17,,,66955010,67569410,589824,1.0,0.0,0.0,0,0,,,0,589824,note: evaluated accuracy (49.08%) below chance threshold (56.00%); MODERATE_EXPANSION: base_before=66955010 base_after=66979586 base_delta=24576 (+0.04%) lora_excluded=589824,legacy_bert,2026-09-20T01:56:19.817339
-nasc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:04.017387
 nexus,MODERATE_EXPANSION,90.71,0.9105,0.907,0.9079,0.9067,0.3335,50.19,344.19,3949.67,32.41,3949.67,,,66955010,67560578,605568,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955010 base_after=66970754 base_delta=15744 (+0.02%) lora_excluded=589824,legacy_bert,2026-09-20T01:57:41.147344
-nha_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:26:43.878421
 nli_softmax,PASS,89.33,0.8905,0.8933,0.896,0.8941,0.2927,10.85,311.99,26344.46,4.86,26344.46,,,66955010,67544834,589824,1.0,0.0,0.0,0,0,,,0,589824,,legacy_bert,2026-09-20T01:58:23.380703
-nsa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:21.758164
-nystrom_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:27:42.605938
-optimized_hybrid_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:03.433177
-orion_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:23.928857
-padre_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:28:44.380949
-performer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:02.812739
-primal_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:23.271178
-projection_factorized_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:29:43.479546
-qcqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:03.783629
-rala_linear_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:23.519277
-reap_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:30:43.082220
-replace_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:02.946272
-res_svd_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:23.118561
-routing_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:31:43.957897
-rpc_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:04.166149
-salt,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:25.514370
-samba_m3,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:32:46.509518
-samba_moe,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:07.676490
 simple_ssm,MODERATE_EXPANSION,50.34,0.6002,0.4726,0.4989,0.4992,0.6955,20.48,342.54,17404.42,7.35,17404.42,,,66955010,67563266,516096,1.0,0.0,0.0,0,0,,,6,516096,note: evaluated accuracy (50.34%) below chance threshold (56.00%); MODERATE_EXPANSION: base_before=66955010 base_after=67047170 base_delta=92160 (+0.14%) lora_excluded=516096,legacy_bert,2026-09-20T02:02:45.189350
-smart_weighted_ensemble,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:33:48.725020
-soa_fused_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:08.937226
-span_expanded_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:28.533480
-spectraformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:34:48.016151
-spectron_attn,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:07.673534
-squeezing_heads_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:27.068588
-svd_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:35:46.493591
-svd_linear,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:06.122170
-svd_llm_v2_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:26.876733
-svd_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:36:47.398291
-svd_sequence_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:08.096075
-tlinformer_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:28.424370
-token_compressed_module,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:37:48.014703
-tp_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:08.073807
-upi_mamba,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:28.517680
-vig_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:38:48.023449
-wgqa_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:08.066274
-zeros_attention,CRASH,0.0,0.0,,,,,0.0,0.0,,,,,,0,0,,1.0,,,,,,,,,TypeError: argument of type 'NoneType' is not iterable,,2026-09-18T21:39:27.424135
 primal,PASS,81.1,0.8107,0.8107,0.8113,0.8106,0.5856,456.7,327.83,434.17,294.82,434.17,,,66955779,67545603,589824,1.0,0.0,0.0,6,0,,,6,589824,,legacy_bert,2026-09-19T23:22:14.613325
 inject_cosformer,MODERATE_EXPANSION,78.78,0.78,0.7876,0.791,0.7888,0.5907,14.4,323.71,19154.99,6.68,19154.99,,,66955010,67544840,589824,1.0,0.0,0.0,0,0,,,6,589824,MODERATE_EXPANSION: base_before=66955010 base_after=66955016 base_delta=6 (+0.00%) lora_excluded=589824,legacy_bert,2026-09-20T01:51:28.761357
 inject_hymba_transx,REJECTED_EXPANSION,47.1,0.4349,0.4349,0.5014,0.4742,1.0745,50.32,492.18,6162.44,,,,,66955779,89687049,1400838,1.0,0.0,0.0,0,0,,,12,1400832,NON_EXPANSION VIOLATION: before=66955779 after=89687049 delta=22731270 (+33.9%),legacy_bert,2026-09-19T14:38:53.834346
