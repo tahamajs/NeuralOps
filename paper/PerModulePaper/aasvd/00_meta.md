@@ -50,7 +50,7 @@ parameter space.
 
 AASVD replaces each `nn.Linear` with a structural `SVDLinear` module computing 
 $y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from 
-$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
+$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. AASVD is the only method achieving genuine compression at ranks $r \le 128$, where diagonal methods fail. On DistilBERT, 
 RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
 **4.0×–3.5×** compression ratios with accuracy drops of only 
 **-1.26%–+1.37%** on SST-2 after 50 LoRA recovery 

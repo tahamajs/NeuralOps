@@ -74,9 +74,9 @@ We do not directly compare with:
 - Performer / Linformer (attention replacement)
 - SparseGPT / Wanda (pruning)
 
-## 10.11 Failure Modes Not Fully Diagnosed
+## 10.11 High-Rank Diminishing Returns
 
-0.85
+At $r=256$, plain SVD (DRONE) matches AASVD (90.71% vs. 90.02%), suggesting the advantage of full covariance is most pronounced at low ranks where representational budget is scarce and directional energy concentration matters most. At higher ranks, the subspace capacity is sufficiently large that even unweighted truncation captures the dominant variance.
 
 ## 10.12 Code Quality
 

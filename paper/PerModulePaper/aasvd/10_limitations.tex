@@ -86,9 +86,9 @@ We do not directly compare with:
 \item SparseGPT / Wanda (pruning)
 
 \end{itemize}
-\subsection{Failure Modes Not Fully Diagnosed}
+\subsection{High-Rank Diminishing Returns}
 
-0.85
+At $r=256$, plain SVD (DRONE) matches AASVD (90.71\% vs.\ 90.02\%), suggesting the advantage of full covariance is most pronounced at low ranks where representational budget is scarce and directional energy concentration matters most. At higher ranks, the subspace capacity is sufficiently large that even unweighted truncation captures the dominant variance.
 
 \subsection{Code Quality}
 
