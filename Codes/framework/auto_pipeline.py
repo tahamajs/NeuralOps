@@ -468,7 +468,7 @@ def main_daemon() -> None:
             log_event("GPU", "", f"vram={vram_gb:.2f} GB, util={util:.1f}%, temp={temp:.1f} C")
 
             state = read_queue()
-            max_parallel = min(state.get("max_parallel", 2), 2)
+            max_parallel = min(state.get("max_parallel", 3), 3)
             pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
 
             # Auto-refill if queue is low
