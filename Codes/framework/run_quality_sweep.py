@@ -811,6 +811,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                             args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
                             optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
                             weight_decay=args.weight_decay, timeout=effective_timeout,
+                            span_lambda=float(getattr(args, "span_lambda", 0.0) or 0.0),
                         )
 
         total_params_after = sum(p.numel() for p in model.parameters())
@@ -1539,7 +1540,7 @@ def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_
     return batches
 
 
-def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600, precomputed_batches=None, optimizer_type="adamw", muon_lr=0.02, adam_lr=None, weight_decay=0.01):
+def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600, precomputed_batches=None, optimizer_type="adamw", muon_lr=0.02, adam_lr=None, weight_decay=0.01, span_lambda=0.0):
     """Fine-tune LoRA adapters and sequence classification head with adaptive batch size and timeout."""
     trainable = [p for p in model.parameters() if p.requires_grad]
     if not trainable:
@@ -1548,8 +1549,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     for p in trainable:
         if p.dtype != torch.float32:
             p.data = p.data.float()
-    LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e, optimizer=%s)",
-             sum(p.numel() for p in trainable), len(trainable), lr, optimizer_type)
+    LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e, optimizer=%s, span_lambda=%.4f)",
+             sum(p.numel() for p in trainable), len(trainable), lr, optimizer_type, span_lambda)
     if optimizer_type == "muon":
         from framework.trainer.optimizers import create_muon_adamw_optimizer
         adam_lr_val = adam_lr if adam_lr is not None else lr
@@ -1609,6 +1610,13 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
                 with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
                     out = model(**cx, labels=cy)
                     loss_chunk = out.loss * frac
+                    if span_lambda > 0:
+                        try:
+                            from framework.attentions.adaptive_span_attention import get_total_span_loss
+                            span_reg = get_total_span_loss(model, lambda_span=span_lambda)
+                            loss_chunk = loss_chunk + span_reg * frac
+                        except Exception:
+                            pass
 
                 if not torch.isfinite(out.loss):
                     had_nan = True
@@ -1784,6 +1792,8 @@ def parse_args(argv=None):
                     help="Maximum reconstruction error threshold for A3 before fallback")
     ap.add_argument("--a3_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict A3 compression to attention layers only")
+    ap.add_argument("--span_lambda", type=float, default=0.0,
+                    help="L1 regularization loss weight lambda for Adaptive Span attention")
     ap.add_argument("--adaptive_ranks_max_error", type=float, default=0.85,
                     help="Maximum relative Frobenius reconstruction error threshold for AdaptiveRanks")
     ap.add_argument("--adaptive_ranks_energy_threshold", type=float, default=0.92,
@@ -3319,6 +3329,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.extend(["--rank_ratio", str(args.rank_ratio)])
     if getattr(args, "force_rank", False):
         cmd.append("--force_rank")
+    if getattr(args, "span_lambda", None) is not None and getattr(args, "span_lambda", 0.0) > 0:
+        cmd.extend(["--span_lambda", str(args.span_lambda)])
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
     if getattr(args, "unknown_args", None):

@@ -33,6 +33,32 @@ from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
 
+def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Tensor:
+    r"""Compute total L1 span regularization loss across all AdaptiveSpanAttention modules in model.
+
+    L_span = \lambda \cdot \frac{1}{|M|} \sum_{m \in M} \frac{1}{H} \sum_{h=1}^H \frac{S_h}{S_{\max}}
+    """
+    span_losses = []
+    # Check cached list or search model modules
+    span_modules = getattr(model, "_adaptive_span_modules", None)
+    if span_modules is None:
+        span_modules = [m for m in model.modules() if isinstance(m, AdaptiveSpanAttention)]
+
+    for m in span_modules:
+        if hasattr(m, "get_span_regularization_loss"):
+            span_losses.append(m.get_span_regularization_loss(lambda_span=lambda_span))
+        elif hasattr(m, "current_span") and hasattr(m, "max_span"):
+            # Fallback normalized span loss
+            norm_span = m.current_span / max(1, m.max_span)
+            span_losses.append(lambda_span * norm_span.mean())
+
+    if not span_losses:
+        device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
+        return torch.tensor(0.0, device=device, requires_grad=True)
+
+    return torch.stack(span_losses).mean()
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -60,9 +86,17 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
+    seq_len = q.shape[-2]
+    if cos.shape[-2] < seq_len:
+        # Extend cos and sin along sequence dim by repeating the last slice
+        diff = seq_len - cos.shape[-2]
+        last_cos = cos[..., -1:, :]
+        last_sin = sin[..., -1:, :]
+        cos = torch.cat([cos, last_cos.expand(*cos.shape[:-2], diff, cos.shape[-1])], dim=-2)
+        sin = torch.cat([sin, last_sin.expand(*sin.shape[:-2], diff, sin.shape[-1])], dim=-2)
+    elif cos.shape[-2] > seq_len:
+        cos = cos[..., :seq_len, :]
+        sin = sin[..., :seq_len, :]
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -322,6 +356,14 @@ class AdaptiveSpanAttention(BaseAttention):
     def get_span_loss(self) -> torch.Tensor:
         """L1 regularization penalty on the span to encourage context pruning as in Sukhbaatar et al. (2019)."""
         return self.current_span.sum()
+
+    def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
+        r"""Compute normalized per-head L1 span penalty:
+        \lambda \cdot \frac{1}{H} \sum_{h=1}^H \frac{S_h}{S_{\max}} = \lambda \cdot \text{sigmoid}(\text{span\_logits}).\text{mean}()
+        """
+        # Normalized span in [0, 1] per head
+        norm_span = torch.sigmoid(self.span_logits)
+        return lambda_span * norm_span.mean()
 
     def _relative_position_bucket(
         self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
@@ -600,17 +642,24 @@ class AdaptiveSpanAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Softmax computation: always chunk FP16/BF16 to keep FP32 temporary memory bounded
+        # Softmax computation: guard against rows where all keys are masked (-inf / < -9000)
+        all_masked = (scores.max(dim=-1, keepdim=True).values < -9000.0)
+
         if scores.dtype in (torch.float16, torch.bfloat16):
             c_sz = 256
             attn = torch.empty_like(scores)
             for s_idx in range(0, N_q, c_sz):
                 e_idx = min(s_idx + c_sz, N_q)
-                attn[:, :, s_idx:e_idx, :] = torch.nan_to_num(
-                    F.softmax(scores[:, :, s_idx:e_idx, :].float(), dim=-1), nan=0.0
-                ).to(scores.dtype)
+                chunk_scores = scores[:, :, s_idx:e_idx, :].float()
+                chunk_soft = F.softmax(chunk_scores, dim=-1)
+                chunk_soft = torch.where(torch.isnan(chunk_soft), torch.zeros_like(chunk_soft), chunk_soft)
+                attn[:, :, s_idx:e_idx, :] = chunk_soft.to(scores.dtype)
         else:
-            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0)
+            raw_soft = F.softmax(scores.float(), dim=-1)
+            raw_soft = torch.where(torch.isnan(raw_soft), torch.zeros_like(raw_soft), raw_soft)
+            attn = raw_soft.to(scores.dtype)
+
+        attn = attn.masked_fill(all_masked, 0.0)
 
         # Differentiable Adaptive Span Soft Ramp (Sukhbaatar et al., 2019)
         # Continuous piecewise-linear masking: g_z(d) = clamp((R + z - d) / R, 0.0, 1.0)
@@ -632,9 +681,10 @@ class AdaptiveSpanAttention(BaseAttention):
                 ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
 
                 attn = attn * ramp
-                attn_sum = attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-                attn = attn / attn_sum
-                attn = torch.nan_to_num(attn, nan=0.0)
+                attn_sum = attn.sum(dim=-1, keepdim=True)
+                attn = torch.where(attn_sum > 1e-6, attn / attn_sum.clamp(min=1e-6), torch.zeros_like(attn))
+                attn = torch.where(torch.isnan(attn), torch.zeros_like(attn), attn)
+                attn = attn.masked_fill(all_masked, 0.0)
 
         attn = self.dropout(attn)
 
@@ -700,7 +750,7 @@ def inject_adaptive_span(
         layer_list = target.layers
 
     if layer_list is not None:
-        num_injected = 0
+        injected_blocks = []
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_adaptive_span(
@@ -712,8 +762,14 @@ def inject_adaptive_span(
                 **kwargs,
             )
             if res is not None:
-                num_injected += 1
-        return target if num_injected > 0 else None
+                injected_blocks.append(res)
+        if injected_blocks:
+            if hasattr(target, "_adaptive_span_modules"):
+                target._adaptive_span_modules.extend(injected_blocks)
+            else:
+                target._adaptive_span_modules = injected_blocks
+            return target
+        return None
 
     # 2. Single layer injection
     src_attn = old_attn
