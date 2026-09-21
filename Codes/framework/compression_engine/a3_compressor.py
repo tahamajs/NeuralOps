@@ -1,23 +1,22 @@
 """
-A3 Compressor: Activation-Aware Factorized SVD Compression with Fisher/Activation Energy Weighting and LayerNorm Recalibration.
+A3 Compressor: Activation-Aware Factorized SVD with Activation Energy
+Weighting and LayerNorm Recalibration.
 Registered in COMPRESSOR_REGISTRY as 'a3' and 'a3_compressor'.
 
-Mathematical Formulation:
-1. Online Streaming Activation Covariance & Empirical Fisher Diagonal Proxy (Activation Energy):
-   $$C_X = \\frac{1}{N} \\sum_{t=1}^N x_t x_t^\\top, \\quad F = \\mathbb{E}_{x \\sim \\mathcal{D}}[x^2] \\approx \\frac{1}{N} \\sum_{t=1}^N x_t^2$$
-   Computed in an online streaming fashion during calibration passes to ensure strictly O(D^2) memory overhead.
-2. Activation / Energy-Weighted SVD:
-   $$W_{\\text{weighted}} = W \\operatorname{diag}(\\sqrt{F + \\epsilon})$$
-   $$W_{\\text{weighted}} = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
-   Unweighted low-rank factors:
-   $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V_{:r, :}^\\top \\operatorname{diag}(1 / \\sqrt{F + \\epsilon})$$
-3. Reconstruction Validation & Enforcement:
-   $$\\text{rel\\_error} = \\frac{\\|W - U_r V_r\\|_F}{\\|W\\|_F + 10^{-8}} \\le \\tau$$
-   If relative error exceeds threshold $\\tau$ (default 0.20), the rank is stepped or compression strictly aborted to prevent silent model degradation.
-4. Structural Module Replacement:
-   $$y = (x V_r^\\top) U_r^\\top + b$$
-5. LayerNorm Recalibration:
-   $$\\gamma \\leftarrow \\gamma \\cdot \\frac{\\sigma_{\\text{target}}}{\\sigma_{\\text{current}}}$$
+Activation Energy Weighting (Second Moment E[x²]):
+Note: This is NOT the Fisher Information Matrix.
+Fisher requires output gradients, which we approximate
+with raw second moments for computational efficiency.
+
+Key Components:
+  1. Activation Energy Weighting: s_j = sqrt(E[x_j^2] + eps)
+     This measures input feature importance via second moments.
+     NOT Fisher Information (no backward pass).
+  2. Cholesky Whitening (optional): S = chol(C_X + eps*I)
+     Full covariance whitening, matching SVD-LLM.
+  3. STRS Rank Search: minimal rank r satisfying error bound.
+  4. LayerNorm Recalibration: gamma <- gamma * sigma_new/sigma_old.
+  5. Safety Fallback: revert to dense if error > threshold.
 """
 
 from __future__ import annotations
@@ -129,13 +128,6 @@ class A3FactorizedLinear(nn.Module):
         if self.lora_B is not None:
             self.lora_B.requires_grad = True
 
-    @property
-    def weight(self) -> torch.Tensor:
-        w = torch.matmul(self.U, self.V)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
-        return w
-
     def get_weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
         w = torch.matmul(self.U, self.V)
@@ -238,6 +230,11 @@ class A3Compressor(BaseCompressor):
         model: nn.Module,
         rank: int = 64,
         use_fisher: bool = True,
+        use_energy_weighting: Optional[bool] = None,
+        use_cholesky: bool = False,
+        allow_ln_failure: bool = False,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
         recalibrate_ln: bool = True,
         target_attention_only: bool = True,
         max_error: float = 0.50,
@@ -253,9 +250,43 @@ class A3Compressor(BaseCompressor):
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
+
+        # Scan CLI sys.argv for a3-specific flags
+        import sys
+        cli_cholesky = None
+        cli_energy = None
+        cli_rank = None
+        for _idx, _arg in enumerate(sys.argv):
+            if _arg in ("--a3_use_cholesky", "--use_cholesky") and _idx + 1 < len(sys.argv):
+                cli_cholesky = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--a3_use_cholesky=") or _arg.startswith("--use_cholesky="):
+                cli_cholesky = _arg.split("=")[1].lower() in ("true", "1", "yes")
+            elif _arg in ("--a3_use_energy_weighting", "--use_energy_weighting", "--a3_use_fisher", "--use_fisher") and _idx + 1 < len(sys.argv):
+                cli_energy = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--a3_use_energy_weighting=") or _arg.startswith("--a3_use_fisher="):
+                cli_energy = _arg.split("=")[1].lower() in ("true", "1", "yes")
+            elif _arg in ("--rank", "--a3_rank") and _idx + 1 < len(sys.argv):
+                try:
+                    cli_rank = int(sys.argv[_idx + 1])
+                except ValueError:
+                    pass
+
+        if use_energy_weighting is not None:
+            use_fisher = use_energy_weighting
+        if cli_energy is not None:
+            use_fisher = cli_energy
+        if cli_cholesky is not None:
+            use_cholesky = cli_cholesky
+        if cli_rank is not None:
+            rank = cli_rank
+
         if cfg is not None:
             rank = _cfg_get(cfg, "a3_rank", _cfg_get(cfg, "rank", rank))
-            use_fisher = _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher))
+            use_fisher = _cfg_get(cfg, "a3_use_energy_weighting", _cfg_get(cfg, "use_energy_weighting", _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher))))
+            use_cholesky = _cfg_get(cfg, "a3_use_cholesky", _cfg_get(cfg, "use_cholesky", use_cholesky))
+            allow_ln_failure = _cfg_get(cfg, "a3_allow_ln_failure", _cfg_get(cfg, "allow_ln_failure", allow_ln_failure))
+            lora_rank = _cfg_get(cfg, "a3_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank))
+            lora_alpha = _cfg_get(cfg, "a3_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha))
             recalibrate_ln = _cfg_get(cfg, "a3_recalibrate_ln", _cfg_get(cfg, "recalibrate_ln", recalibrate_ln))
             target_attention_only = _cfg_get(cfg, "a3_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
             max_error = _cfg_get(cfg, "a3_max_error", _cfg_get(cfg, "max_error", max_error))
@@ -265,7 +296,12 @@ class A3Compressor(BaseCompressor):
             n_calib = _cfg_get(cfg, "a3_n_calib", _cfg_get(cfg, "n_calib", n_calib))
 
         self.rank = max(1, int(rank))
-        self.use_fisher = bool(use_fisher)  # activation energy / empirical Fisher proxy
+        self.use_energy_weighting = bool(use_fisher)
+        self.use_fisher = bool(use_fisher)  # backwards-compatible alias
+        self.use_cholesky = bool(use_cholesky)
+        self.allow_ln_failure = bool(allow_ln_failure)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
         self.recalibrate_ln = bool(recalibrate_ln)
         self.target_attention_only = bool(target_attention_only)
         self.max_error = float(max_error)
@@ -288,18 +324,17 @@ class A3Compressor(BaseCompressor):
         self.skipped_layers: List[str] = []
         self.activations_cleared: bool = False
 
-    def _collect_activations_and_fisher(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def _collect_activations_and_energy(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
         """
-        Fix 1 (OOM Prevention): Collects activation covariance and empirical Fisher proxy
-        (activation energy E[x^2]) using online streaming accumulation.
-        Raw activations are never buffered in RAM.
+        Collects activation covariance (if use_cholesky) and Activation Energy (E[x^2])
+        using online streaming accumulation. Raw activations are never buffered in RAM.
         """
-        if not self.use_fisher and not self.recalibrate_ln:
+        if not self.use_energy_weighting and not self.recalibrate_ln and not self.use_cholesky:
             return {}, {}
 
         # Initialize running states
         cov_running: Dict[str, torch.Tensor] = {}
-        fisher_running: Dict[str, torch.Tensor] = {}
+        energy_running: Dict[str, torch.Tensor] = {}
         count_running: Dict[str, int] = {}
         hooks = []
 
@@ -314,16 +349,21 @@ class A3Compressor(BaseCompressor):
                         N_valid = x_valid.size(0)
 
                         if N_valid > 0:
-                            c_batch = torch.matmul(x_valid.T, x_valid)
                             f_batch = x_valid.pow(2).sum(dim=0)
 
-                            if name not in cov_running:
-                                cov_running[name] = c_batch.cpu()
-                                fisher_running[name] = f_batch.cpu()
+                            # Only compute full d x d covariance if Cholesky whitening is requested
+                            if self.use_cholesky:
+                                c_batch = torch.matmul(x_valid.T, x_valid)
+                                if name not in cov_running:
+                                    cov_running[name] = c_batch.cpu()
+                                else:
+                                    cov_running[name] += c_batch.cpu()
+
+                            if name not in energy_running:
+                                energy_running[name] = f_batch.cpu()
                                 count_running[name] = N_valid
                             else:
-                                cov_running[name] += c_batch.cpu()
-                                fisher_running[name] += f_batch.cpu()
+                                energy_running[name] += f_batch.cpu()
                                 count_running[name] += N_valid
             return hook
 
@@ -382,18 +422,116 @@ class A3Compressor(BaseCompressor):
             h.remove()
 
         cov_map: Dict[str, torch.Tensor] = {}
-        fisher_info: Dict[str, torch.Tensor] = {}
+        energy_map: Dict[str, torch.Tensor] = {}
         for name in count_running:
             n = max(count_running[name], 1)
-            cov_map[name] = cov_running[name] / n
-            # Activation energy (second moment proxy for Fisher): E[x^2]
-            fisher_info[name] = fisher_running[name] / n
+            if self.use_cholesky and name in cov_running:
+                cov_map[name] = cov_running[name] / n
+            # Activation energy (second moment): E[x^2]
+            if name in energy_running:
+                energy_map[name] = energy_running[name] / n
 
         self.activations_cleared = True
-        return cov_map, fisher_info
+        return cov_map, energy_map
 
     # Backward-compatibility alias
-    _collect_activations_and_energy = _collect_activations_and_fisher
+    _collect_activations_and_fisher = _collect_activations_and_energy
+
+    def _compute_activation_error(
+        self,
+        W: torch.Tensor,
+        W_r: torch.Tensor,
+        X: Optional[torch.Tensor] = None,
+        C_X: Optional[torch.Tensor] = None,
+    ) -> float:
+        """
+        Compute downstream activation error:
+            err = ||WX - W_r X||_F / (||WX||_F + 1e-9)
+        Falls back to covariance trace or parameter error if no X available.
+        """
+        if X is not None and X.numel() > 0:
+            X_t = X.to(device=W.device, dtype=W.dtype).t()
+            WX = torch.matmul(W, X_t)
+            WrX = torch.matmul(W_r, X_t)
+            num = torch.norm(WX - WrX, p="fro").item()
+            den = torch.norm(WX, p="fro").item()
+            return float(num / (den + 1e-9))
+        elif C_X is not None and C_X.shape == (W.shape[1], W.shape[1]):
+            C = C_X.to(device=W.device, dtype=W.dtype)
+            delta = W - W_r
+            num = torch.trace(delta @ C @ delta.t()).item()
+            den = torch.trace(W @ C @ W.t()).item()
+            if den > 1e-12:
+                return float(math.sqrt(max(0.0, num)) / (math.sqrt(den) + 1e-9))
+        # Fallback: parameter Frobenius
+        W_norm = torch.norm(W, p="fro").item()
+        if W_norm < 1e-12:
+            return 0.0
+        return float(torch.norm(W - W_r, p="fro").item() / (W_norm + 1e-9))
+
+    def _strs_search(
+        self,
+        W: torch.Tensor,
+        U: torch.Tensor,
+        S: torch.Tensor,
+        Vt: torch.Tensor,
+        scale: Optional[torch.Tensor],
+        S_inv: Optional[torch.Tensor],
+        use_cholesky: bool,
+        r_floor: int,
+        r_ceiling: int,
+        X: Optional[torch.Tensor] = None,
+        cov: Optional[torch.Tensor] = None,
+    ) -> Tuple[Tuple[torch.Tensor, torch.Tensor], float, int]:
+        """
+        Search Truncated Rank Search (STRS).
+        Evaluates candidate ranks on an adaptive grid to find the minimal rank
+        that satisfies the error bound.
+        """
+        candidates = [32, 64, 96, 128, 192, 256, 320, 384]
+        candidates = [c for c in candidates if r_floor <= c <= r_ceiling]
+        if not candidates or r_floor not in candidates:
+            candidates = sorted(list(set([r_floor] + candidates)))
+        candidates = [c for c in candidates if c <= r_ceiling and c <= S.shape[0]]
+        if not candidates:
+            candidates = [min(r_floor, S.shape[0])]
+
+        best_factors = None
+        best_err = float("inf")
+        best_r = candidates[0]
+
+        for cand_r in candidates:
+            sqrt_S = torch.sqrt(torch.clamp(S[:cand_r], min=1e-12))
+            U_r = U[:, :cand_r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:cand_r, :]
+            if use_cholesky and S_inv is not None:
+                V_r = V_r @ S_inv.to(device=V_r.device, dtype=V_r.dtype)
+            elif scale is not None:
+                V_r = V_r / scale.unsqueeze(0)
+
+            W_rec = torch.matmul(U_r, V_r)
+            err = self._compute_activation_error(W, W_rec, X, cov)
+            if err < best_err:
+                best_err = err
+                best_factors = (U_r, V_r)
+                best_r = cand_r
+            if err <= self.max_error:
+                return (U_r, V_r), err, cand_r
+
+        if best_factors is None:
+            cand_r = candidates[-1]
+            sqrt_S = torch.sqrt(torch.clamp(S[:cand_r], min=1e-12))
+            U_r = U[:, :cand_r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:cand_r, :]
+            if use_cholesky and S_inv is not None:
+                V_r = V_r @ S_inv.to(device=V_r.device, dtype=V_r.dtype)
+            elif scale is not None:
+                V_r = V_r / scale.unsqueeze(0)
+            best_factors = (U_r, V_r)
+            best_err = self._compute_activation_error(W, torch.matmul(U_r, V_r), X, cov)
+            best_r = cand_r
+
+        return best_factors, best_err, best_r
 
     def compress_linear(
         self,
@@ -403,6 +541,9 @@ class A3Compressor(BaseCompressor):
         fisher: Optional[torch.Tensor] = None,
         rank: Optional[int] = None,
         activation_energy: Optional[torch.Tensor] = None,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        X_for_error: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> Tuple[Optional[A3FactorizedLinear], float, int]:
         """
@@ -465,30 +606,60 @@ class A3Compressor(BaseCompressor):
         )
         r = max(1, min(int(r), in_f, out_f))
 
-        # 1. Compute diagonal weighting factor s (input dimension)
+        # 1. Compute weighting: Cholesky vs Activation Energy Diagonal
         scale = None
-        if self.use_fisher and fisher is not None:
+        S_inv = None
+        use_cholesky_this_layer = False
+
+        if self.use_cholesky and cov is not None and cov.shape == (in_f, in_f):
+            C_dev = cov.to(device=W.device, dtype=torch.float32)
+            eps = 1e-6 * torch.trace(C_dev).item() / max(1, in_f)
+            eye = torch.eye(in_f, device=W.device, dtype=torch.float32)
+            try:
+                S_white = torch.linalg.cholesky(C_dev + eps * eye)
+                S_inv = torch.linalg.inv(S_white)
+                W_w = W.float() @ S_white
+                use_cholesky_this_layer = True
+            except Exception as e:
+                logger.debug("Cholesky failed on %s (%s); falling back to diagonal.", name, e)
+                diag_c = torch.diag(cov).float()
+                scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
+                if self.normalize_scale:
+                    rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
+                    scale = scale / rms
+                scale = scale.clamp(min=1e-6).to(W.device)
+                W_w = W * scale.unsqueeze(0)
+                use_cholesky_this_layer = False
+        elif (self.use_energy_weighting or self.use_fisher) and fisher is not None:
             f = fisher.float()
             if f.ndim == 1 and f.shape[0] == in_f:
                 scale = torch.sqrt(f.clamp(min=1e-8) + 1e-6)
+            if scale is not None:
+                if self.normalize_scale:
+                    rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
+                    scale = scale / rms
+                # No upper clamp - outliers preserved; floor at 1e-6 prevents zero division
+                scale = scale.clamp(min=1e-6).to(W.device)
+                W_w = W * scale.unsqueeze(0)
+            else:
+                W_w = W
         elif cov is not None:
             diag_c = torch.diag(cov).float()
             if diag_c.ndim == 1 and diag_c.shape[0] == in_f:
                 scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
-
-        if scale is not None:
-            # Optional scale normalization via normalize_scale
-            if self.normalize_scale:
-                rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
-                scale = (scale / rms).clamp(min=1e-3, max=1e3).to(W.device)
+            if scale is not None:
+                if self.normalize_scale:
+                    rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
+                    scale = scale / rms
+                scale = scale.clamp(min=1e-6).to(W.device)
+                W_w = W * scale.unsqueeze(0)
             else:
-                scale = scale.clamp(min=1e-3, max=1e3).to(W.device)
-            W_w = W * scale.unsqueeze(0)
+                W_w = W
         else:
             logger.debug("No calibration data available for %s; falling back to unweighted SVD.", name)
             W_w = W
 
-        # Compute SVD on GPU if available for 2.5x-6x speedup, with graceful CPU fallback
+        # Compute SVD on GPU if available for speedup, with graceful CPU fallback
         try:
             use_cpu_svd = (in_f * out_f > 1_000_000) or not torch.cuda.is_available()
             if use_cpu_svd:
@@ -515,48 +686,37 @@ class A3Compressor(BaseCompressor):
             torch.cuda.empty_cache()
 
         norm_orig = torch.linalg.norm(W).item()
-        
-        # Calculate ceiling BEFORE the retry loop (Option A: max 320, below break-even)
+
+        # Calculate ceiling before search
         r_break_even = (in_f * out_f) / (in_f + out_f)
         r_ceiling = min(int(0.9 * r_break_even), 320)
         self._last_r_ceiling = max(getattr(self, "_last_r_ceiling", 0), r_ceiling)
-        current_r = min(r, r_ceiling)
-        best_layer_factors = None
-        best_err = float("inf")
-        best_r = current_r
 
-        # Only retry / increase rank if rank was not explicitly specified
-        retries = 0 if rank is not None else self.max_retries
-        for attempt in range(retries + 1):
-            clamped_r = min(current_r, S.shape[0], r_ceiling)
-            sqrt_S = torch.sqrt(torch.clamp(S[:clamped_r], min=1e-12))
-            U_r = U[:, :clamped_r] * sqrt_S.unsqueeze(0)
-            V_r = sqrt_S.unsqueeze(1) * Vt[:clamped_r, :]
-
-            # Unweight factors to preserve original W space
-            if scale is not None:
+        # STRS Rank Search: Evaluate candidate ranks and choose minimal rank meeting error
+        if rank is not None:
+            # Fixed rank specified by user
+            chosen_r = min(rank, r_ceiling, S.shape[0])
+            sqrt_S = torch.sqrt(torch.clamp(S[:chosen_r], min=1e-12))
+            U_r = U[:, :chosen_r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:chosen_r, :]
+            if use_cholesky_this_layer and S_inv is not None:
+                V_r = V_r @ S_inv.to(device=V_r.device, dtype=V_r.dtype)
+            elif scale is not None:
                 V_r = V_r / scale.unsqueeze(0)
+            best_layer_factors = (U_r, V_r)
+            best_r = chosen_r
+            best_err = self._compute_activation_error(W, torch.matmul(U_r, V_r), X_for_error, cov)
+        else:
+            r_floor = max(16, min(self.rank, r_ceiling))
+            best_layer_factors, best_err, best_r = self._strs_search(
+                W, U, S, Vt, scale, S_inv, use_cholesky_this_layer,
+                r_floor=r_floor,
+                r_ceiling=r_ceiling,
+                X=X_for_error,
+                cov=cov,
+            )
 
-            # Compute relative Frobenius reconstruction error
-            W_rec = torch.matmul(U_r, V_r)
-            rel_err = (torch.linalg.norm(W - W_rec).item()) / (norm_orig + 1e-8)
-
-            if rel_err < best_err:
-                best_err = rel_err
-                best_layer_factors = (U_r, V_r)
-                best_r = clamped_r
-
-            # Enforce strict parameter-reduction rank ceiling (never exceed break-even)
-            if rel_err <= self.max_error or clamped_r >= r_ceiling:
-                break
-
-            # Incrementally increase rank for next retry towards r_ceiling
-            if attempt < retries:
-                remaining = max(1, retries - attempt)
-                step = max(16, (r_ceiling - current_r) // remaining)
-                current_r = min(current_r + step, r_ceiling)
-
-        # After the loop, if error still > max_error at r_ceiling:
+        # Fallback decision
         if best_err > self.max_error:
             if self.fallback_to_original:
                 logger.warning(
@@ -567,28 +727,17 @@ class A3Compressor(BaseCompressor):
                 return None, best_err, r_ceiling
             else:
                 logger.warning(
-                    "A3 compression for %s exceeds max_error (%0.3f > %0.3f) at rank %d but fallback_to_original=False. Compressing anyway with error %0.4f.",
-                    name,
-                    best_err,
-                    self.max_error,
-                    best_r,
-                    best_err,
+                    "A3 compression for %s exceeds max_error (%0.3f > %0.3f) at rank %d but fallback_to_original=False. Compressing anyway.",
+                    name, best_err, self.max_error, best_r
                 )
 
-        # Check for LoRA parameters on wrapper module
-        lora_r = getattr(module, "lora_rank", getattr(module, "r", 0))
-        lora_a = getattr(module, "lora_alpha", 1.0)
-        has_lora = (
-            hasattr(module, "lora_A") and hasattr(module, "lora_B")
-        ) or (lora_r > 0)
+        # Handle explicit LoRA rank vs wrapper LoRA rank
+        wrapper_lora_rank = getattr(module, "lora_rank", getattr(module, "r", 0))
+        effective_lora_rank = max(lora_rank, wrapper_lora_rank, self.lora_rank)
+        effective_lora_alpha = max(lora_alpha, getattr(module, "lora_alpha", self.lora_alpha))
 
         # Construct factorized layer with Safe Device Initialization
         U_final, V_final = best_layer_factors
-        
-        # If the target module was already wrapped by PEFT (lora_A exists but is dropped by base_layer unwrapping),
-        # we instantiate lora_A/B in the factorized layer to keep it trainable.
-        # Plain linear layers without existing LoRA do not instantiate extra LoRA parameters.
-        effective_lora_rank = lora_r if has_lora else 0
 
         factorized_layer = A3FactorizedLinear(
             in_features=in_f,
@@ -598,7 +747,7 @@ class A3Compressor(BaseCompressor):
             dtype=dtype,
             device=device,
             lora_rank=effective_lora_rank,
-            lora_alpha=lora_a,
+            lora_alpha=effective_lora_alpha,
         )
         factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))
         factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
@@ -613,7 +762,10 @@ class A3Compressor(BaseCompressor):
                     bias.shape,
                 )
 
-        factorized_layer.reconstruction_error = best_err
+        W_rec_final = torch.matmul(U_final, V_final)
+        param_err = (torch.linalg.norm(W - W_rec_final).item()) / (norm_orig + 1e-8)
+        factorized_layer.reconstruction_error = param_err
+        factorized_layer.activation_error = best_err
         return factorized_layer, best_err, best_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
@@ -690,7 +842,10 @@ class A3Compressor(BaseCompressor):
             fisher = fisher_map.get(name, None)
 
             factorized_layer, rel_err, chosen_rank = self.compress_linear(
-                module, name=name, cov=cov, fisher=fisher
+                module, name=name, cov=cov, fisher=fisher,
+                activation_energy=fisher,
+                lora_rank=self.lora_rank,
+                lora_alpha=self.lora_alpha,
             )
 
             if factorized_layer is not None:
@@ -717,7 +872,7 @@ class A3Compressor(BaseCompressor):
                     p.requires_grad = False
                 self.skipped_layers.append(name)
 
-        # LayerNorm Recalibration - only execute if calibration data & tokenizer are present
+        # LayerNorm Recalibration - with strict error handling and allow_ln_failure
         if self.recalibrate_ln:
             has_calib_data = (
                 self.calibration_loader is not None
@@ -733,8 +888,14 @@ class A3Compressor(BaseCompressor):
                         calibration_texts=self.calibration_texts,
                         device=self.target_device,
                     )
+                    logger.info("LayerNorm recalibration succeeded.")
                 except Exception as e:
-                    logger.exception("LayerNorm recalibration notice: %s", e)
+                    logger.error("LayerNorm recalibration FAILED: %s", e)
+                    logger.error("Model may be in inconsistent state. Set allow_ln_failure=True to bypass.")
+                    if not self.allow_ln_failure:
+                        raise RuntimeError(
+                            f"LayerNorm recalibration failed: {e}; set allow_ln_failure=True to bypass."
+                        ) from e
             else:
                 logger.info("LayerNorm recalibration skipped: no calibration inputs provided.")
 
@@ -780,18 +941,30 @@ def a3_compressor_factory(
     comp_config: Any = None,
     rank: int = 64,
     use_fisher: bool = True,
+    use_energy_weighting: Optional[bool] = None,
+    use_cholesky: bool = False,
+    allow_ln_failure: bool = False,
+    lora_rank: int = 0,
+    lora_alpha: float = 1.0,
     recalibrate_ln: bool = True,
     **kwargs: Any,
 ) -> Any:
     """A3 compressor factory function returning (compressed_model, stats) or compressed_model."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    if use_energy_weighting is not None:
+        use_fisher = use_energy_weighting
+
     # Robust configuration extraction
     if comp_config is None:
         comp_config = getattr(model, "config", None)
 
     if comp_config is not None:
         r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", rank)))
-        u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)))
+        u_fish = _cfg_get(comp_config, "a3_use_energy_weighting", _cfg_get(comp_config, "use_energy_weighting", _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)))))
+        u_chol = _cfg_get(comp_config, "a3_use_cholesky", _cfg_get(comp_config, "use_cholesky", kwargs.get("use_cholesky", use_cholesky)))
+        allow_ln = _cfg_get(comp_config, "a3_allow_ln_failure", _cfg_get(comp_config, "allow_ln_failure", kwargs.get("allow_ln_failure", allow_ln_failure)))
+        l_rank = _cfg_get(comp_config, "a3_lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
+        l_alpha = _cfg_get(comp_config, "a3_lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", kwargs.get("recalibrate_ln", recalibrate_ln)))
         target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", True)))
         max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.50)))
@@ -800,7 +973,11 @@ def a3_compressor_factory(
         n_calib = _cfg_get(comp_config, "a3_n_calib", _cfg_get(comp_config, "n_calib", kwargs.get("n_calib", 500)))
     else:
         r = kwargs.get("rank", rank)
-        u_fish = kwargs.get("use_fisher", use_fisher)
+        u_fish = kwargs.get("use_energy_weighting", kwargs.get("use_fisher", use_fisher))
+        u_chol = kwargs.get("use_cholesky", use_cholesky)
+        allow_ln = kwargs.get("allow_ln_failure", allow_ln_failure)
+        l_rank = kwargs.get("lora_rank", lora_rank)
+        l_alpha = kwargs.get("lora_alpha", lora_alpha)
         recal_ln = kwargs.get("recalibrate_ln", recalibrate_ln)
         target_attn = kwargs.get("target_attention_only", True)
         max_err = kwargs.get("max_error", 0.50)
@@ -809,14 +986,21 @@ def a3_compressor_factory(
         n_calib = kwargs.get("n_calib", 500)
 
     # Pop keys that were already extracted to avoid "multiple values for argument" errors
-    for _key in ("rank", "use_fisher", "recalibrate_ln", "target_attention_only",
-                 "max_error", "fallback_to_original", "normalize_scale", "n_calib"):
+    for _key in ("rank", "use_fisher", "use_energy_weighting", "use_cholesky",
+                 "allow_ln_failure", "lora_rank", "lora_alpha", "recalibrate_ln",
+                 "target_attention_only", "max_error", "fallback_to_original",
+                 "normalize_scale", "n_calib"):
         kwargs.pop(_key, None)
 
     compressor = A3Compressor(
         model,
         rank=max(1, int(r)),
         use_fisher=u_fish,
+        use_energy_weighting=u_fish,
+        use_cholesky=u_chol,
+        allow_ln_failure=allow_ln,
+        lora_rank=l_rank,
+        lora_alpha=l_alpha,
         recalibrate_ln=recal_ln,
         target_attention_only=target_attn,
         max_error=max_err,
