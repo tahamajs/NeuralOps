@@ -106,8 +106,9 @@ class AdaSVDCompressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
-        use_weighted_als: bool = True,
+        use_weighted_als: bool = False,
         use_mean_shift: bool = True,
+        use_gating_d: bool = True,
         device: Optional[Union[str, torch.device]] = None,
         comp_config: Any = None,
         **kwargs: Any,
@@ -115,22 +116,30 @@ class AdaSVDCompressor(BaseCompressor):
         super().__init__(model, name="adasvd", **kwargs)
         cfg = comp_config or kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
-        # Check CLI args for explicit rank override
+        # Check CLI args for explicit rank override and boolean flags
         cli_rank = None
+        cli_use_gating_d = None
+        cli_use_weighted_als = None
         import sys
         for _idx, _arg in enumerate(sys.argv):
             if _arg in ("--rank", "--adasvd_rank") and _idx + 1 < len(sys.argv):
                 try:
                     cli_rank = int(sys.argv[_idx + 1])
-                    break
                 except ValueError:
                     pass
             elif _arg.startswith("--rank=") or _arg.startswith("--adasvd_rank="):
                 try:
                     cli_rank = int(_arg.split("=")[1])
-                    break
                 except ValueError:
                     pass
+            elif _arg in ("--adasvd_use_gating_d", "--use_gating_d") and _idx + 1 < len(sys.argv):
+                cli_use_gating_d = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--adasvd_use_gating_d=") or _arg.startswith("--use_gating_d="):
+                cli_use_gating_d = _arg.split("=")[1].lower() in ("true", "1", "yes")
+            elif _arg in ("--adasvd_use_weighted_als", "--use_weighted_als") and _idx + 1 < len(sys.argv):
+                cli_use_weighted_als = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--adasvd_use_weighted_als=") or _arg.startswith("--use_weighted_als="):
+                cli_use_weighted_als = _arg.split("=")[1].lower() in ("true", "1", "yes")
 
         self.rank = cli_rank if cli_rank is not None else _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", rank))
 
@@ -146,12 +155,21 @@ class AdaSVDCompressor(BaseCompressor):
             _cfg_get(cfg, "adasvd_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
         )
         self.min_rank = int(_cfg_get(cfg, "adasvd_min_rank", _cfg_get(cfg, "min_rank", min_rank)))
-        self.use_weighted_als = bool(
-            _cfg_get(cfg, "adasvd_use_weighted_als", _cfg_get(cfg, "use_weighted_als", use_weighted_als))
-        )
+        if cli_use_weighted_als is not None:
+            self.use_weighted_als = cli_use_weighted_als
+        else:
+            self.use_weighted_als = bool(
+                _cfg_get(cfg, "adasvd_use_weighted_als", _cfg_get(cfg, "use_weighted_als", use_weighted_als))
+            )
         self.use_mean_shift = bool(
             _cfg_get(cfg, "adasvd_use_mean_shift", _cfg_get(cfg, "use_mean_shift", use_mean_shift))
         )
+        if cli_use_gating_d is not None:
+            self.use_gating_d = cli_use_gating_d
+        else:
+            self.use_gating_d = bool(
+                _cfg_get(cfg, "adasvd_use_gating_d", _cfg_get(cfg, "use_gating_d", use_gating_d))
+            )
         self.target_modules = target_modules
 
         if tokenizer is None:
@@ -245,6 +263,46 @@ class AdaSVDCompressor(BaseCompressor):
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
+
+    @staticmethod
+    def _gelu_derivative_squared(y: torch.Tensor) -> torch.Tensor:
+        """
+        Compute (GELU'(y))^2 for each element.
+        GELU(y) = y * Φ(y), where Φ is standard normal CDF.
+        GELU'(y) = Φ(y) + y * φ(y), where φ is standard normal PDF.
+        """
+        import math
+        # Φ(y) = 0.5 * (1 + erf(y / sqrt(2)))
+        phi = 0.5 * (1.0 + torch.erf(y / math.sqrt(2.0)))
+        # φ(y) = exp(-y^2/2) / sqrt(2*pi)
+        pdf = torch.exp(-y ** 2 / 2.0) / math.sqrt(2.0 * math.pi)
+        gelu_prime = phi + y * pdf
+        return gelu_prime ** 2
+
+    def _is_followed_by_gelu(self, layer_name: str) -> bool:
+        """
+        Return True if this layer's output is directly followed by GELU.
+        In DistilBERT: ffn.lin1 is followed by GELU, ffn.lin2 is not.
+        In RoBERTa: intermediate.dense is followed by GELU.
+        In LLaMA/Qwen: gate_proj/up_proj are followed by SiLU (SwiGLU).
+        """
+        name_lower = layer_name.lower()
+
+        # DistilBERT FFN first linear
+        if "lin1" in name_lower:
+            return True
+        # RoBERTa intermediate
+        if "intermediate.dense" in name_lower:
+            return True
+        # LLaMA/Qwen gate and up projections (part of SwiGLU)
+        if "gate_proj" in name_lower or "up_proj" in name_lower:
+            return True
+        # BERT FFN
+        if "ffn" in name_lower and "lin1" in name_lower:
+            return True
+
+        # Everything else (attention, lin2, down_proj): no
+        return False
 
     @staticmethod
     def _compute_effective_rank(W: torch.Tensor) -> float:
@@ -398,7 +456,22 @@ class AdaSVDCompressor(BaseCompressor):
             if y_list:
                 cat_y = torch.cat(y_list, dim=0)
                 self.layer_out_means[name] = cat_y.mean(dim=0).cpu()
-                self.layer_out_vars[name] = cat_y.var(dim=0, unbiased=False).cpu()
+
+                # Determine if this layer is followed by GELU
+                is_followed_by_gelu = self.use_gating_d and self._is_followed_by_gelu(name)
+
+                if is_followed_by_gelu:
+                    # Gating-Aware D: E[(GELU'(Y))^2]
+                    gelu_sq = self._gelu_derivative_squared(cat_y)
+                    d_values = gelu_sq.mean(dim=0)
+                    logger.info(
+                        f"Gating-Aware D computed for {name} (mean={d_values.mean().item():.4f})"
+                    )
+                else:
+                    # Fallback: variance
+                    d_values = cat_y.var(dim=0, unbiased=False)
+
+                self.layer_out_vars[name] = d_values.cpu()
 
         return result
 
@@ -854,10 +927,13 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "adasvd_min_rank", _cfg_get(comp_config, "min_rank", 16)))
     use_weighted_als = kwargs.pop(
-        "use_weighted_als", _cfg_get(comp_config, "adasvd_use_weighted_als", _cfg_get(comp_config, "use_weighted_als", True))
+        "use_weighted_als", _cfg_get(comp_config, "adasvd_use_weighted_als", _cfg_get(comp_config, "use_weighted_als", False))
     )
     use_mean_shift = kwargs.pop(
         "use_mean_shift", _cfg_get(comp_config, "adasvd_use_mean_shift", _cfg_get(comp_config, "use_mean_shift", True))
+    )
+    use_gating_d = kwargs.pop(
+        "use_gating_d", _cfg_get(comp_config, "adasvd_use_gating_d", _cfg_get(comp_config, "use_gating_d", True))
     )
     tokenizer = kwargs.pop("tokenizer", _cfg_get(comp_config, "tokenizer", None))
     calibration_texts = kwargs.pop("calibration_texts", _cfg_get(comp_config, "calibration_texts", None))
@@ -876,6 +952,7 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
         calibration_texts=calibration_texts,
         use_weighted_als=use_weighted_als,
         use_mean_shift=use_mean_shift,
+        use_gating_d=use_gating_d,
         comp_config=comp_config,
         **kwargs,
     )
