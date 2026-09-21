@@ -325,6 +325,10 @@ def check_anomaly_status() -> None:
 
 def upload_models_to_hf() -> None:
     """Scans results directory for new PASS checkpoints and uploads them to HuggingFace."""
+    # Check rate limit cooldown (pause 1 hour after 429)
+    last_429 = getattr(upload_models_to_hf, "_last_429", 0)
+    if time.time() - last_429 < 3600:
+        return
     try:
         from huggingface_hub import HfApi, CommitOperationAdd
         api = HfApi()
@@ -440,7 +444,8 @@ library_name: transformers
                 err_str = str(up_err)
                 logger.warning(f"[HF_UPLOAD] Failed to upload {repo_id}: {err_str}")
                 if "429" in err_str or "rate limit" in err_str.lower():
-                    logger.warning("[HF_UPLOAD] Hugging Face repo creation rate limit reached (300/day). Pausing new repo creations until reset.")
+                    logger.warning("[HF_UPLOAD] Hugging Face repo creation rate limit reached (300/day). Pausing uploads for 1 hour.")
+                    setattr(upload_models_to_hf, "_last_429", time.time())
                     break
 
         # Save record of uploaded files
