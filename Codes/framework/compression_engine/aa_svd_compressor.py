@@ -229,6 +229,7 @@ class AASVDCompressor(BaseCompressor):
         device: Optional[Union[str, torch.device]] = None,
         target_modules: Optional[List[str]] = None,
         target_attention_only: bool = True,
+        force_rank: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
@@ -246,8 +247,8 @@ class AASVDCompressor(BaseCompressor):
                 cfg, "aasvd_target_attention_only", getattr(cfg, "target_attention_only", target_attention_only)
             )
 
-        # Respect force_rank from kwargs, comp_config, or model.config
-        force_rank = kwargs.get("force_rank", False)
+        # Respect force_rank from argument, kwargs, comp_config, or model.config
+        force_rank = force_rank or kwargs.get("force_rank", False)
         if cfg is not None and getattr(cfg, "force_rank", False):
             force_rank = True
         if getattr(getattr(model, "config", None), "force_rank", False):
