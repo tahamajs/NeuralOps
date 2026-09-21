@@ -1738,6 +1738,8 @@ def parse_args(argv=None):
     ap.add_argument("--adam_lr", type=float, default=5e-5, help="Learning rate for AdamW optimizer")
     ap.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     ap.add_argument("--batch_size", type=int, default=None)
+    ap.add_argument("--max_vram_fraction", type=float, default=None,
+                    help="Maximum fraction of GPU VRAM that PyTorch is allowed to allocate (e.g. 0.5 for 50%, 0.7 for 70%)")
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
     ap.add_argument("--freeze_clf", action="store_true", help="Freeze classifier head during recovery")
@@ -2212,10 +2214,12 @@ def parse_args(argv=None):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
-            # Dynamic VRAM allocation without artificial fraction clamp to avoid premature CUDA OOM
-            pass
-        except:
-            pass
+            # Dynamic VRAM allocation or explicit fraction limit to avoid taking all GPU memory
+            if getattr(args, "max_vram_fraction", None) is not None and 0.0 < args.max_vram_fraction <= 1.0:
+                torch.cuda.set_per_process_memory_fraction(float(args.max_vram_fraction))
+                LOG.info("Configured PyTorch per-process GPU memory fraction: %.1f%%", args.max_vram_fraction * 100.0)
+        except Exception as frac_err:
+            LOG.debug("Could not set memory fraction: %s", frac_err)
         
         try:
             free_bytes, total_bytes = torch.cuda.mem_get_info()
@@ -2252,12 +2256,15 @@ def run_single_module_main(args) -> dict:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
+            if getattr(args, "max_vram_fraction", None) is not None and 0.0 < args.max_vram_fraction <= 1.0:
+                torch.cuda.set_per_process_memory_fraction(float(args.max_vram_fraction))
+                LOG.info("Configured PyTorch per-process GPU memory fraction: %.1f%%", args.max_vram_fraction * 100.0)
             free_mem, _ = torch.cuda.mem_get_info()
             free_gb = free_mem / (1024 ** 3)
             if free_gb < 4.0:
                 LOG.warning("LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.", free_gb)
         except Exception as mem_err:
-            LOG.debug("Could not query GPU memory info: %s", mem_err)
+            LOG.debug("Could not query GPU memory info or set fraction: %s", mem_err)
     if args.output_dir is None:
         safe_model = Path(args.model).name.replace("-", "_").lower()
         args.output_dir = f"D:/SVD_Project/results/{safe_model}_{args.dataset}_sweep"
@@ -3342,6 +3349,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
     if getattr(args, "kvtc_fallback_to_original", None) is not None:
         cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
+    if getattr(args, "max_vram_fraction", None) is not None:
+        cmd.extend(["--max_vram_fraction", str(args.max_vram_fraction)])
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
     if getattr(args, "unknown_args", None):
