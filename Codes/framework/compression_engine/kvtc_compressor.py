@@ -307,7 +307,7 @@ class KVTCCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="kvtc", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
         self.cfg = cfg
         self.bits = int(_cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", bits)))
         self.pca_energy = float(_cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", pca_energy)))
@@ -672,19 +672,20 @@ class KVTCCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("pca_quant_factory")
 def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """KVTC compressor factory function."""
-    bits = kwargs.pop("bits", _cfg_get(comp_config, "kvtc_bits", _cfg_get(comp_config, "bits", 4)))
-    pca_energy = kwargs.pop("pca_energy", _cfg_get(comp_config, "kvtc_pca_energy", _cfg_get(comp_config, "pca_energy", 0.95)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "kvtc_max_error", _cfg_get(comp_config, "max_error", 0.50)))
-    fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "kvtc_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
-    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 16))
-    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    cfg = comp_config if comp_config is not None else getattr(model, "config", None)
+    bits = kwargs.pop("bits", _cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", 4)))
+    pca_energy = kwargs.pop("pca_energy", _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", 0.95)))
+    max_error = kwargs.pop("max_error", _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", 0.50)))
+    fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(cfg, "kvtc_fallback_to_original", _cfg_get(cfg, "fallback_to_original", True)))
+    lora_r = kwargs.pop("lora_r", _cfg_get(cfg, "lora_r", 16))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(cfg, "lora_alpha", 1.0))
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "kvtc_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(cfg, "kvtc_target_attention_only", _cfg_get(cfg, "target_attention_only", False)),
     )
     skip_attention_qkv = kwargs.pop(
         "skip_attention_qkv",
-        _cfg_get(comp_config, "skip_attention_qkv", True),
+        _cfg_get(cfg, "skip_attention_qkv", True),
     )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
