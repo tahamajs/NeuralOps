@@ -2165,6 +2165,7 @@ def parse_args(argv=None):
                 ap.set_defaults(**{k: v})
 
     args, unknown_args = ap.parse_known_args()
+    args.unknown_args = unknown_args
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     if unknown_args:
         LOG.info("Parsed %d module-specific extended arguments: %s", len(unknown_args), unknown_args)
@@ -3320,6 +3321,8 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.append("--force_rank")
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
+    if getattr(args, "unknown_args", None):
+        cmd.extend(args.unknown_args)
         
     log_path = Path(f"logs/isolated/{module_name}.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
