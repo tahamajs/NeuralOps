@@ -7,11 +7,11 @@
   "compression_rate": 1.0021,
   "compression_ratio_pct": 0.21,
   "peak_vram_mb": 917.04,
-  "latency_ms_per_token": 0.19,
-  "throughput_tok_per_sec": 5267.5,
-  "elapsed_s": 18.98,
+  "latency_ms_per_token": 0.077,
+  "throughput_tok_per_sec": 13029.5,
+  "elapsed_s": 7.67,
   "total_params_before": 124439808,
   "total_params_after": 124175616,
   "error": "",
-  "timestamp": "2026-09-21T10:54:13"
+  "timestamp": "2026-09-21T12:11:21"
 }
