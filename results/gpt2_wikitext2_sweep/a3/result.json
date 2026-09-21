@@ -1,17 +1,17 @@
 {
   "module_name": "a3",
   "status": "PASS_DEGRADED",
-  "perplexity": 218.4,
+  "perplexity": 194.03,
   "baseline_ppl": 21.71,
-  "delta_ppl": 196.69,
-  "compression_rate": 1.1034,
-  "compression_ratio_pct": 9.37,
-  "peak_vram_mb": 895.1,
-  "latency_ms_per_token": 0.189,
-  "throughput_tok_per_sec": 5297.1,
-  "elapsed_s": 18.88,
+  "delta_ppl": 172.32,
+  "compression_rate": 1.099,
+  "compression_ratio_pct": 9.01,
+  "peak_vram_mb": 894.64,
+  "latency_ms_per_token": 0.138,
+  "throughput_tok_per_sec": 7237.9,
+  "elapsed_s": 13.82,
   "total_params_before": 124439808,
-  "total_params_after": 112780032,
+  "total_params_after": 113233152,
   "error": "",
-  "timestamp": "2026-09-21T12:04:45"
+  "timestamp": "2026-09-21T13:52:49"
 }
