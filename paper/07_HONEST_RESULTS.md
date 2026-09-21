@@ -71,19 +71,40 @@ have not been evaluated at all.
 
 ---
 
-## Table 7.2 — AASVD Fairness Sweep (Corrected, force_rank)
+## Table 7.2 — AASVD Fairness Sweep (Verified, CSV-backed: `summary_fairness_forced_r*.csv`)
 
-*(Running on hadi-windows GPU — results will be appended when complete)*
+All three compressors evaluated at the **same rank** using `--force_rank` to disable adaptive rank selection.
+FWSVD/DRONE column shows what they actually achieve at each rank (many fall back to full rank).
 
-| Rank | Accuracy | Compression | Compressed Layers | Fallback Layers |
-|------|----------|-------------|-------------------|-----------------|
-| r=64 | 88.53% | 1.133× | 20/24 | 4/24 |
-| r=96 | 86.81% | 1.179× | 23/24 | 1/24 |
-| r=128| 88.07% | 1.164× | 24/24 | 0/24 |
-| r=256| 90.02% | 1.076× | 24/24 | 0/24 |
+| Rank | AASVD Acc | AASVD Comp | FWSVD Acc | FWSVD Comp | DRONE Acc | DRONE Comp | AASVD Layers | FWSVD Layers | DRONE Layers |
+|------|-----------|------------|-----------|------------|-----------|------------|:------------:|:------------:|:------------:|
+| r=64 | **88.53%** | **1.133×** | 90.60% | 1.000× | 90.60% | 1.000× | 16/24 | 0/24 | 0/24 |
+| r=96 | **86.81%** | **1.179×** | 90.60% | 1.000× | 90.60% | 1.000× | 23/24 | 0/24 | 0/24 |
+| r=128 | **88.07%** | **1.164×** | 90.60% | 1.000× | 90.60% | 1.000× | 24/24 | 0/24 | 0/24 |
+| r=192 | 87.96% | 1.118× | 90.60% | 1.032× | 89.33% | 1.071× | 24/24 | 7/24 | 15/24 |
+| r=256 | 90.02% | 1.076× | 88.99% | 1.066× | **90.71%** | 1.076× | 24/24 | 21/24 | 24/24 |
 
-**Key finding**: At r≤128, AASVD is the ONLY compressor that achieves genuine compression.
-FWSVD and DRONE fall back to full rank on all 24 layers.
+> [!IMPORTANT]
+> **At r≤128**: AASVD is the **ONLY** method with actual compression (ratio>1). FWSVD and DRONE 
+> fall back to full rank (ratio=1.000) on all 24/24 layers — they cannot compress at these ranks.
+> **At r=192**: FWSVD compresses 7/24 layers, DRONE 15/24. AASVD still leads in actual compression.
+> **At r=256**: DRONE matches AASVD's accuracy (90.71% vs 90.02%), but this is the only rank where competitors can compress.
+
+## Table 7.2b — SVD-LLM Baseline Comparison (DistilBERT/SST-2)
+
+*Source: `summary_svd_llm_r128.csv`*
+
+| Method | Accuracy | Compression | Layers Compressed | Notes |
+|--------|----------|-------------|-------------------|-------|
+| `aasvd` (r=128) | **88.07%** | **1.164×** | 24/24 | Only method compressing at r=128 |
+| `svd_llm` (r=128) | 90.94% | 1.000× | 0/24 | Falls back — no actual compression |
+| FWSVD (r=128) | 90.60% | 1.000× | 0/24 | Falls back |
+| DRONE (r=128) | 90.60% | 1.000× | 0/24 | Falls back |
+
+> [!NOTE]
+> SVD-LLM achieves baseline-level accuracy (90.94%) because it falls back on all layers at r=128.
+> GPT-2 SVD-LLM test confirms identical PPL to baseline (21.71) — the compressor is not activating.
+> Source: `results/gpt2_svd_llm_test/summary.csv`
 
 ---
 
