@@ -1,154 +1,15 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{AASVD: Activation-Aware SVD with Streaming EMA Covariance for Transformer Compression}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-
-\section{AASVD: Activation-Aware SVD with Streaming EMA Covariance for Transformer Compression}
-
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/compression\_engine/aasvd\_compressor.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Low-rank factorization of transformer weight matrices is a classical approach 
-to reducing model size and inference memory. However, standard truncated SVD 
-minimizes unweighted Frobenius error, treating every input dimension as equally 
-important. Transformer activations exhibit both \textbf{heterogeneous variance} 
-(some features are far more active than others) and **strong inter-feature 
-correlations**, both of which standard SVD ignores.
+\subsection{Motivation}
 
-We introduce \textbf{AASVD} (\textbf{A}ctivation-\textbf{A}ware \textbf{S}VD), which addresses this 
-by weighting the factorization through the empirical input activation 
-covariance matrix $C_X = \mathbb{E}[x x^\top]$. We accumulate $C_X$ using a 
-streaming Exponential Moving Average (EMA) over calibration batches, requiring 
-only $\mathcal{O}(d^2)$ CPU memory regardless of calibration set size. Each 
-weight $W$ is transformed as $W_\text{weighted} = W C_X^{1/2}$, factorized via 
-SVD, and the right factor is unweighted by $C_X^{-1/2}$ to recover the original 
-parameter space.
-
-AASVD replaces each \texttt{nn.Linear} with a structural \texttt{SVDLinear} module computing 
-$y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from 
-$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
-RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
-\textbf{4.0$$\times$--3.5$$\times$} compression ratios with accuracy drops of only 
-\textbf{-5.7\%---6.4\%} on SST-2 after 50 LoRA recovery 
-steps. Peak inference VRAM decreases by \textbf{40\%}. We provide a 
-production-hardened implementation with Frobenius validation, automatic 
-per-layer fallback, GPT-2 Conv1D support, and a bundled multi-domain 
-calibration corpus.
-
-\textbf{Keywords:} activation-aware compression, streaming covariance, EMA, low-rank 
-factorization, transformer efficiency
-
-
-
-\subsection{Lay Summary}
-
-Neural networks contain millions of numbers ("weights") that transform input 
-data. Many of these weights act on features that rarely change during real 
-usage, so they can be approximated without losing accuracy. AASVD identifies 
-which input features matter most by running the model on a small set of 
-example sentences and recording how active each feature becomes. It then 
-uses this information to compress the weights --- removing redundant directions 
-while preserving important ones. On three popular language models, AASVD 
-removes 60--80\% of the parameters with only 1--3\% loss in accuracy. This 
-makes models easier to store, load, and run on modest hardware.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
-
-Deploying transformer models in resource-constrained settings --- mobile 
-devices, edge hardware, or cost-sensitive inference services --- requires 
+Deploying transformer models in resource-constrained settings -- mobile 
+devices, edge hardware, or cost-sensitive inference services -- requires 
 reducing the storage, memory, and compute footprint of the model. A 
 standard transformer layer contains the bulk of its parameters in four 
 attention projections ($W_Q, W_K, W_V, W_O$) and two feed-forward matrices. 
@@ -166,16 +27,18 @@ sense, but the objective is misleading. The unweighted loss treats every
 input dimension as equally important, whereas real transformer activations 
 exhibit two critical properties that unweighted SVD ignores:
 
-1. \textbf{Heterogeneous variance.} Some input dimensions are highly active; 
-   others carry almost no signal. \textbf{Figure 1.1} shows the empirical variance 
-   across dimensions for a middle DistilBERT layer: the top 10\% of channels 
-   account for over \textbf{85\%} of total energy.
+\begin{enumerate}
+\item \textbf{Heterogeneous variance.} Some input dimensions are highly active;
+  others carry almost no signal. \textbf{Figure 1.1} shows the empirical variance
+  across dimensions for a middle DistilBERT layer: the top 10\% of channels
+  account for over \textbf{85\%} of total energy.
 
-2. \textbf{Inter-feature correlation.} Real activations are not independent 
-   across dimensions. Residual stream dimensions are correlated through the 
-   preceding LayerNorm and residual connections. Unweighted SVD ignores 
-   these correlations, wasting capacity on directions that rarely occur.
+\item \textbf{Inter-feature correlation.} Real activations are not independent
+  across dimensions. Residual stream dimensions are correlated through the
+  preceding LayerNorm and residual connections. Unweighted SVD ignores
+  these correlations, wasting capacity on directions that rarely occur.
 
+\end{enumerate}
 \textbf{Activation-aware compression} addresses both issues by reweighting the 
 factorization with a statistical summary of the input distribution. The 
 natural summary is the empirical input covariance:
@@ -189,7 +52,7 @@ Weights on high-variance or highly-correlated directions contribute more
 to the reconstruction error and should be approximated with higher fidelity. 
 This is the core insight behind AASVD.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer $\mathcal{M}$ with $N_l$ layers and a target 
 compression rank $r$, we seek a compressed model $\mathcal{M}'$ such that:
@@ -202,56 +65,52 @@ compression rank $r$, we seek a compressed model $\mathcal{M}'$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Parameter reduction:} $r(d_\text{in} + d_\text{out}) < d_\text{in} d_\text{out}$ for each layer.
-2. \textbf{Reconstruction bound:} $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau$.
-3. \textbf{Memory-bounded calibration:} statistics accumulated in $\mathcal{O}(d^2)$ memory.
-4. \textbf{No base retraining:} only LoRA adapters may be trained.
-5. \textbf{Deterministic fallback:} if error exceeds $\tau$, keep the original layer.
+\begin{enumerate}
+\item \textbf{Parameter reduction:} $r(d_\text{in} + d_\text{out}) < d_\text{in} d_\text{out}$ for each layer.
+\item \textbf{Reconstruction bound:} $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau$.
+\item \textbf{Memory-bounded calibration:} statistics accumulated in $\mathcal{O}(d^2)$ memory.
+\item \textbf{No base retraining:} only LoRA adapters may be trained.
+\item \textbf{Deterministic fallback:} if error exceeds $\tau$, keep the original layer.
 
-\subsection{1.3 Our Approach: AASVD}
+\end{enumerate}
+\subsection{Our Approach: AASVD}
 
 We propose \textbf{AASVD} (\textbf{A}ctivation-\textbf{A}ware \textbf{S}VD), which extends classical 
 SVD factorization with three components:
 
-1. \textbf{Full-covariance weighting.} We weight the SVD input space by 
-   $C_X^{1/2}$, capturing both variance and correlation, not just diagonal 
-   variance.
+\begin{enumerate}
+\item \textbf{Full-covariance weighting.} We weight the SVD input space by
+  $C_X^{1/2}$, capturing both variance and correlation, not just diagonal
+  variance.
 
-2. \textbf{Streaming EMA accumulation.} We maintain a running estimate of $C_X$ 
-   using exponential moving average over calibration batches, computed 
-   on CPU to prevent VRAM accumulation.
+\item \textbf{Streaming EMA accumulation.} We maintain a running estimate of $C_X$
+  using exponential moving average over calibration batches, computed
+  on CPU to prevent VRAM accumulation.
 
-3. \textbf{Bundled calibration corpus.} We ship a default multi-domain calibration 
-   corpus (English prose, code, mathematical text) so AASVD works out of the 
-   box even when no downstream data is available.
+\item \textbf{Bundled calibration corpus.} We ship a default multi-domain calibration
+  corpus (English prose, code, mathematical text) so AASVD works out of the
+  box even when no downstream data is available.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A streaming activation-aware SVD algorithm.} AASVD generalizes classical
-\end{itemize}
-  SVD with full-covariance weighting and provides a production-hardened 
-  implementation with EMA accumulation, safe fallback, and multi-architecture 
+  SVD with full-covariance weighting and provides a production-hardened
+  implementation with EMA accumulation, safe fallback, and multi-architecture
   support.
-\begin{itemize}
 \item \textbf{A structural replacement module.} We replace \texttt{nn.Linear} with a
-\end{itemize}
-  factorized \texttt{SVDLinear} achieving genuine parameter reduction from 
+  factorized \texttt{SVDLinear} achieving genuine parameter reduction from
   $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} We benchmark on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2, with ablations over rank, EMA $\beta$, and covariance usage.
-\begin{itemize}
 \item \textbf{A bundled calibration corpus.} A default 5-document, multi-domain corpus
-\end{itemize}
   that achieves near-optimal calibration without user-supplied data.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, weights, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on SVD, 
 covariance estimation, and EMA. Section 4 presents AASVD. Section 5 
@@ -265,12 +124,10 @@ Section 10 lists limitations. Section 11 concludes.
 \subsection{Notation}
 
 
-\clearpage
 
+\section{Related Work}
 
-\section{2. Related Work}
-
-\subsection{2.1 Low-Rank Matrix Factorization}
+\subsection{Low-Rank Matrix Factorization}
 
 \textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
 that the best rank-$r$ approximation of $W$ in Frobenius norm is the 
@@ -289,7 +146,7 @@ choice with a clear probabilistic interpretation.
 \textbf{Tensor decomposition.} Novikov et al. (2015) use tensor-train decomposition. 
 Ours uses matrix SVD with activation weighting, a different primitive.
 
-\subsection{2.2 Activation-Aware Compression}
+\subsection{Activation-Aware Compression}
 
 \textbf{AWQ.} Lin et al. (2023) observe that activation magnitude correlates 
 with weight importance and use it to scale weight quantization. AASVD 
@@ -304,7 +161,7 @@ but for the SVD input space.
 post-training quantization. Our covariance weighting is a first-order proxy 
 in the same spirit.
 
-\subsection{2.3 Streaming Statistics}
+\subsection{Streaming Statistics}
 
 \textbf{EMA.} Exponential moving average is a classical technique for tracking 
 a running statistic with bounded memory. AASVD uses EMA with $\beta = 0.9$ 
@@ -318,10 +175,11 @@ we track the full covariance and compute eigendecomposition at the end.
 mean and variance during training. Our EMA covariance accumulation is a 
 generalization to the full $d \times d$ matrix.
 
-\subsection{2.4 Post-Training Model Compression}
+\subsection{Post-Training Model Compression}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Bit-width / Rank} & \textbf{Retrain?} \\
@@ -332,26 +190,27 @@ GPTQ \& Quantization & 3-4 bit \& No \\
 SparseGPT \& Pruning & 50-60\% \& No \\
 Wanda \& Pruning & 50\% \& No \\
 LoRA \& Adapter & +$\Delta W$ \& Yes \\
-**AASVD** \& Low-rank \& Rank $r$ \& LoRA only \\
+\textbf{AASVD} \& Low-rank \& Rank $r$ \& LoRA only \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 AASVD differs from prior low-rank compression along three axes:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Prior methods} & \textbf{AASVD} \\
 \midrule
-**Weighting** \& Unweighted or diagonal \& Full covariance \\
-**Calibration** \& Requires data \& Bundled corpus \\
-**Accumulation** \& Batch or fixed \& Streaming EMA \\
-**Memory** & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(d^2)$ \\
-**Fallback** \& Rarely \& Per-layer automatic \\
+\textbf{Weighting} \& Unweighted or diagonal \& Full covariance \\
+\textbf{Calibration} \& Requires data \& Bundled corpus \\
+\textbf{Accumulation} \& Batch or fixed \& Streaming EMA \\
+\textbf{Memory} & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(d^2)$ \\
+\textbf{Fallback} \& Rarely \& Per-layer automatic \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -361,18 +220,19 @@ or uses only the diagonal (A3). AASVD uses the full covariance, capturing
 correlations between input dimensions. This is a \textbf{strictly more general} 
 weighting than the diagonal case.
 
-\subsection{2.6 Comparison to Companion Methods}
+\subsection{Comparison to Companion Methods}
 
 We compare against companion methods in our benchmark suite:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Weighting} & \textbf{Transform} & \textbf{Recovery} \\
 \midrule
 A3 \& Fisher diagonal & $W \cdot \mathrm{diag}(\sqrt{F})$ \& LN rescale \\
-**AASVD** & **Full covariance** & $W \cdot C_X^{1/2}$ \& None \\
+\textbf{AASVD} & \textbf{Full covariance} & $W \cdot C_X^{1/2}$ \& None \\
 SDRM \& Adaptive rank \& Unweighted \& LoRA \\
 SVD-Linear \& Unweighted \& None \& LoRA \\
 \bottomrule
@@ -381,12 +241,10 @@ SVD-Linear \& Unweighted \& None \& LoRA \\
 
 AASVD is unique in using \textbf{both} the full covariance \textbf{and} streaming EMA.
 
-\clearpage
 
+\section{Background}
 
-\section{3. Background}
-
-\subsection{3.1 Truncated SVD}
+\subsection{Truncated SVD}
 
 For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
@@ -419,7 +277,7 @@ V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
 
 so that $W_r = U_r V_r$, and the two factors have balanced magnitude.
 
-\subsection{3.2 Input Activation Covariance}
+\subsection{Input Activation Covariance}
 
 For a linear layer $y = Wx + b$ with input $x \sim \mathcal{D}$, define:
 
@@ -443,11 +301,11 @@ variances ($\lambda_i$).
 $C_X = \mathrm{diag}(F_1, \dots, F_{d_\text{in}})$ where $F_i = \mathbb{E}[x_i^2]$. 
 This is the "Fisher diagonal" used in A3.
 
-\textbf{General case.} Real activations are \textbf{not} independent --- attention 
+\textbf{General case.} Real activations are \textbf{not} independent -- attention 
 residual streams and FFN hidden states exhibit strong correlations. AASVD 
 captures this via the full matrix $C_X$.
 
-\subsection{3.3 Matrix Square Root}
+\subsection{Matrix Square Root}
 
 For a positive semi-definite matrix $C_X = Q \Lambda Q^\top$, the matrix 
 square root is:
@@ -468,7 +326,7 @@ The inverse square root is defined similarly with $1/\sqrt{\lambda_i}$.
 \tag{3.7}
 \]
 
-\subsection{3.4 Exponential Moving Average}
+\subsection{Exponential Moving Average}
 
 Given a stream of covariance estimates $C_1, C_2, \dots, C_K$ (one per 
 calibration batch), the EMA is:
@@ -490,7 +348,7 @@ with drift. For stationary distributions, both give the same expected value.
 memory is $\mathcal{O}(N_l d^2)$, independent of the number of calibration 
 batches.
 
-\subsection{3.5 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
@@ -512,7 +370,7 @@ y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
 where $s = \alpha / r_L$. The frozen $U, V$ provide the bulk; LoRA provides 
 recovery capacity.
 
-\subsection{3.6 Frobenius Reconstruction Error}
+\subsection{Frobenius Reconstruction Error}
 
 For validation, we use the relative Frobenius error:
 
@@ -524,50 +382,50 @@ For validation, we use the relative Frobenius error:
 This measures how much of the weight matrix's energy is lost. Thresholds 
 are typically $0.10$ (tight) to $0.50$ (permissive).
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}
 
 
-\clearpage
 
+\section{Method}
 
-\section{4. Method}
-
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 AASVD compresses each targeted \texttt{nn.Linear} (or \texttt{Conv1D}) layer in four phases:
 
-1. \textbf{Calibration} (§4.2): collect $C_X$ per layer via streaming EMA.
-2. \textbf{Weighted SVD} (§4.3): factorize $W C_X^{1/2}$, then unweight.
-3. \textbf{Validation} (§4.4): compute Frobenius reconstruction error.
-4. \textbf{Replacement} (§4.5): substitute \texttt{SVDLinear} if error is within threshold.
+\begin{enumerate}
+\item \textbf{Calibration} ( 4.2): collect $C_X$ per layer via streaming EMA.
+\item \textbf{Weighted SVD} ( 4.3): factorize $W C_X^{1/2}$, then unweight.
+\item \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
+\item \textbf{Replacement} ( 4.5): substitute \texttt{SVDLinear} if error is within threshold.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
    +-------------------------------------------+
    |  Phase 1: Streaming EMA Calibration       |
    |  Input: bundled or user texts             |
-   |  Output: C_X^(ℓ) for each target layer    |
+   |  Output: C_X^( ) for each target layer    |
    +----------------+--------------------------+
                     |
-                    v
+                     
    +-------------------------------------------+
-   |  For each layer ℓ:                        |
+   |  For each layer  :                        |
    |    Phase 2: Weighted SVD at rank r        |
    |    Phase 3: Frobenius validation          |
    |    Phase 4: Replace or fallback           |
    +----------------+--------------------------+
                     |
-                    v
+                     
    +-------------------------------------------+
    |  Compressed model with SVDLinear layers   |
    |  Ready for LoRA recovery fine-tuning      |
    +-------------------------------------------+
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Streaming Covariance Calibration}
+\subsection{Phase 1: Streaming Covariance Calibration}
 
-\subsubsection{4.2.1 Target Statistic}
+\subsubsection{Target Statistic}
 
 For each target linear layer $\ell$, we want:
 
@@ -578,7 +436,7 @@ C_X^{(\ell)} = \mathbb{E}_{x^{(\ell)} \sim \mathcal{D}}\!\left[x^{(\ell)} (x^{(\
 
 where $x^{(\ell)}$ is the layer input during calibration.
 
-\subsubsection{4.2.2 EMA Update}
+\subsubsection{EMA Update}
 
 Given a batch of $B_\text{calib}$ calibration inputs $X \in \mathbb{R}^{B_\text{calib} \times d}$, 
 the batch covariance is:
@@ -599,7 +457,7 @@ then update the running estimate:
 with $\beta = 0.9$ by default. The running estimate starts as the first 
 batch covariance $\hat{C}_X^{(0)} = C_\text{batch}^{(0)}$.
 
-\subsubsection{4.2.3 Padding Token Filtering}
+\subsubsection{Padding Token Filtering}
 
 To avoid bias from padding tokens (which are typically zero):
 
@@ -611,7 +469,7 @@ To avoid bias from padding tokens (which are typically zero):
 Only valid tokens contribute to $C_\text{batch}$. This is critical for 
 batched calibration, where padding dominates the raw token count.
 
-\subsubsection{4.2.4 Memory Layout}
+\subsubsection{Memory Layout}
 
 We compute $C_\text{batch}$ on GPU (fast matmul), then **move it to CPU 
 immediately**:
@@ -624,12 +482,13 @@ This prevents GPU memory accumulation over calibration iterations. The total
 GPU footprint of calibration is one batch's activation, plus the running 
 covariance estimate (kept on CPU).
 
-\subsubsection{4.2.5 Calibration Corpus}
+\subsubsection{Calibration Corpus}
 
 We ship a \textbf{default multi-domain corpus} of 5 documents:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{\#} & \textbf{Domain} & \textbf{Approximate length} \\
@@ -647,12 +506,12 @@ Total: ~215 tokens. The corpus is designed to activate diverse subspaces
 of the residual stream, providing a broad calibration signal even without 
 access to the target task.
 
-If user-supplied \texttt{calibration\\_texts} are provided, they \textbf{replace} the 
+If user-supplied \texttt{calibration\_texts} are provided, they \textbf{replace} the 
 default corpus.
 
-\subsection{4.3 Phase 2: Weighted SVD}
+\subsection{Phase 2: Weighted SVD}
 
-\subsubsection{4.3.1 The Weighted Objective}
+\subsubsection{The Weighted Objective}
 
 Standard SVD minimizes $\|W - W_r\|_F^2$, treating all input dimensions 
 equally. We instead minimize the activation-weighted error:
@@ -676,32 +535,34 @@ W_\text{weighted} = W C_X^{1/2}
 \tag{4.7}
 \]
 
-\subsubsection{4.3.2 The Algorithm}
+\subsubsection{The Algorithm}
 
-1. Compute $W_\text{weighted} = W C_X^{1/2}$.
-2. Compute the truncated SVD:
-\[
-   W_\text{weighted} \approx U_r \Sigma_r V_r^\top
-   \tag{4.8}
-\]
-3. Unweight the right factor:
-\[
-   V_r^\text{unweighted} = V_r^\top C_X^{-1/2}
-   \tag{4.9}
-\]
-4. Distribute the singular values symmetrically:
-\[
-   U = U_r \Sigma_r^{1/2}, \qquad
-   V = \Sigma_r^{1/2} V_r^\text{unweighted}
-   \tag{4.10}
-\]
-5. The factorized layer computes:
-\[
-   y = (x V^\top) U^\top + b
-   \tag{4.11}
-\]
+\begin{enumerate}
+\item Compute $W_\text{weighted} = W C_X^{1/2}$.
+\item Compute the truncated SVD:
+  $$
+  W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+  \tag{4.8}
+  $$
+\item Unweight the right factor:
+  $$
+  V\_r^\text{unweighted} = V\_r^\top C\_X^{-1/2}
+  \tag{4.9}
+  $$
+\item Distribute the singular values symmetrically:
+  $$
+  U = U\_r \Sigma\_r^{1/2}, \qquad
+  V = \Sigma\_r^{1/2} V\_r^\text{unweighted}
+  \tag{4.10}
+  $$
+\item The factorized layer computes:
+  $$
+  y = (x V^\top) U^\top + b
+  \tag{4.11}
+  $$
 
-\subsubsection{4.3.3 Eigendecomposition with Regularization}
+\end{enumerate}
+\subsubsection{Eigendecomposition with Regularization}
 
 We compute $C_X^{1/2}$ and $C_X^{-1/2}$ via eigendecomposition:
 
@@ -722,7 +583,7 @@ Eigenvalues are regularized:
 
 This ensures $C_X^{-1/2}$ is finite for near-zero eigenvalues.
 
-\subsubsection{4.3.4 Rank Selection}
+\subsubsection{Rank Selection}
 
 We use a rank constrained by \textbf{both} the target rank $r$ and a parameter 
 budget constraint:
@@ -738,7 +599,7 @@ original parameters, guaranteeing meaningful compression.
 If $r_\text{eff} < r$, the requested rank is reduced; this is common for 
 narrow layers (e.g., $d_\text{in} = d_\text{out} = 128$ at $r = 128$).
 
-\subsection{4.4 Phase 3: Frobenius Validation}
+\subsection{Phase 3: Frobenius Validation}
 
 After factorization, we compute:
 
@@ -749,17 +610,19 @@ After factorization, we compute:
 
 \textbf{Two possible outcomes:}
 
-1. \textbf{err $\leq \tau$.} The factorization is accepted. \texttt{SVDLinear} replaces 
-   the original layer.
-2. \textbf{err $> \tau$.} If \texttt{fallback\\_to\\_original = True}, the original layer 
-   is preserved and logged. Otherwise, the factorization is applied anyway 
-   with a warning.
+\begin{enumerate}
+\item \textbf{err $\leq \tau$.} The factorization is accepted. \texttt{SVDLinear} replaces
+  the original layer.
+\item \textbf{err $> \tau$.} If \texttt{fallback\_to\_original = True}, the original layer
+  is preserved and logged. Otherwise, the factorization is applied anyway
+  with a warning.
 
-We default to \texttt{fallback\\_to\\_original = True} and \texttt{max\\_error = 0.50}.
+\end{enumerate}
+We default to \texttt{fallback\_to\_original = True} and \texttt{max\_error = 0.50}.
 
-\subsection{4.5 Phase 4: Structural Replacement}
+\subsection{Phase 4: Structural Replacement}
 
-\subsubsection{4.5.1 The `SVDLinear` Module}
+\subsubsection{The `SVDLinear` Module}
 
 The replacement layer implements:
 
@@ -772,21 +635,16 @@ where:
 
 \begin{itemize}
 \item $V \in \mathbb{R}^{r \times d_\text{in}}$: down-projection
-\end{itemize}
-\begin{itemize}
 \item $U \in \mathbb{R}^{d_\text{out} \times r}$: up-projection
-\end{itemize}
-\begin{itemize}
 \item $b \in \mathbb{R}^{d_\text{out}}$: bias (if original had one)
-\end{itemize}
-\begin{itemize}
 \item $\text{LoRA}(x) = (x A^\top) B^\top$: optional recovery adapter
-\end{itemize}
 
-\subsubsection{4.5.2 Parameter Count}
+\end{itemize}
+\subsubsection{Parameter Count}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
@@ -802,29 +660,32 @@ For a $768 \times 768$ matrix at $r = 64$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
 Original & 589,824 & 1.00$$\times$ \\
-AASVD r=64 & 98,304 & **6.0$$\times$** \\
-AASVD r=64 + LoRA r=16 & 122,880 & **4.8$$\times$** \\
+AASVD r=64 & 98,304 & \textbf{6.0$$\times$} \\
+AASVD r=64 + LoRA r=16 & 122,880 & \textbf{4.8$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection{4.5.3 LoRA-Freeze Semantics}
+\subsubsection{LoRA-Freeze Semantics}
 
 When LoRA is enabled, the base factors $U, V$ are \textbf{frozen} and only LoRA 
 adapters $A, B$ are trainable. This ensures that:
 
-1. The compression is not undone during recovery.
-2. The parameter reduction persists after fine-tuning.
-3. Gradient flow through $U, V$ is blocked to avoid drift.
+\begin{enumerate}
+\item The compression is not undone during recovery.
+\item The parameter reduction persists after fine-tuning.
+\item Gradient flow through $U, V$ is blocked to avoid drift.
 
-The freeze is implemented via \texttt{requires\\_grad = False} on $U, V$.
+\end{enumerate}
+The freeze is implemented via \texttt{requires\_grad = False} on $U, V$.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} AASVD compression
 \begin{lstlisting}
@@ -832,8 +693,8 @@ Input:  model M, rank r, threshold $\tau$, $\beta$=0.9
         calibration texts D_calib
 Output: compressed model M', statistics
 
-1:  for ℓ in target_layers(M) do
-2:      register_forward_hook(ℓ, accumulate_C_X)
+1:  for   in target_layers(M) do
+2:      register_forward_hook( , accumulate_C_X)
 3:  end for
 4:
 5:  # Phase 1: Calibration
@@ -842,39 +703,40 @@ Output: compressed model M', statistics
 8:  remove_hooks()
 9:
 10: # Cache eigendecomposition per layer
-11: for ℓ in target_layers(M) do
-12:     Q, Λ $\leftarrow$ eigh(C_X^(ℓ))
-13:     C_sqrt[ℓ] $\leftarrow$ Q @ diag($\sqrt{}$Λ) @ Q.T
-14:     C_inv_sqrt[ℓ] $\leftarrow$ Q @ diag(1/$\sqrt{}$Λ) @ Q.T
+11: for   in target_layers(M) do
+12:     Q,   $\leftarrow$ eigh(C_X^( ))
+13:     C_sqrt[ ] $\leftarrow$ Q @ diag($\sqrt{}$ ) @ Q.T
+14:     C_inv_sqrt[ ] $\leftarrow$ Q @ diag(1/$\sqrt{}$ ) @ Q.T
 15: end for
 16:
 17: # Phase 2-4: Weighted SVD + validation
-18: for ℓ in target_layers(M) do
-19:     W $\leftarrow$ weight(ℓ)
-20:     W_weighted $\leftarrow$ W @ C_sqrt[ℓ]
-21:     U, Σ, V $\leftarrow$ svd(W_weighted)
-22:     U_r, V_r $\leftarrow$ truncate(U, Σ, V, r)
-23:     V_r $\leftarrow$ V_r @ C_inv_sqrt[ℓ]
+18: for   in target_layers(M) do
+19:     W $\leftarrow$ weight( )
+20:     W_weighted $\leftarrow$ W @ C_sqrt[ ]
+21:     U,  , V $\leftarrow$ svd(W_weighted)
+22:     U_r, V_r $\leftarrow$ truncate(U,  , V, r)
+23:     V_r $\leftarrow$ V_r @ C_inv_sqrt[ ]
 24:     W_rec $\leftarrow$ U_r @ V_r
-25:     err $\leftarrow$ ‖W - W_rec‖_F / (‖W‖_F + $\epsilon$)
+25:     err $\leftarrow$  W - W_rec _F / ( W _F + $\epsilon$)
 26:
 27:     if err $\le$ $\tau$:
-28:         replace(ℓ, SVDLinear(U_r, V_r))
+28:         replace( , SVDLinear(U_r, V_r))
 29:     elif fallback_to_original:
-30:         log_warning(ℓ, err)
-31:         mark_fallback(ℓ)
+30:         log_warning( , err)
+31:         mark_fallback( )
 32:     else:
-33:         log_warning(ℓ, err)
-34:         replace(ℓ, SVDLinear(U_r, V_r))
+33:         log_warning( , err)
+34:         replace( , SVDLinear(U_r, V_r))
 35: end for
 36:
 37: return M'
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Phase} & \textbf{Time} & \textbf{GPU Memory} \\
@@ -883,7 +745,7 @@ Calibration & $\mathcal{O}(N B d^2)$ & $\mathcal{O}(B d)$ \\
 Eigendecomposition & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
 Weighted SVD & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
 Validation & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
-**Total** & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(N_l d^2)$ \\
+\textbf{Total} & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(N_l d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -891,9 +753,9 @@ Validation & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
 CPU memory for storing all covariances: $\mathcal{O}(N_l d^2)$. For 
 DistilBERT ($N_l = 6$, $d = 768$): ~14M values, ~56 MB at FP32.
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 Optimality of Weighted SVD}
+\subsubsection{Optimality of Weighted SVD}
 
 \textbf{Proposition.} $W C_X^{1/2}$ truncated at rank $r$ minimizes $\|(W - W_r) C_X^{1/2}\|_F$ 
 over all rank-$r$ matrices $W_r$.
@@ -901,7 +763,7 @@ over all rank-$r$ matrices $W_r$.
 \textbf{Proof.} This is a direct application of Eckart--Young to the matrix 
 $W C_X^{1/2}$. $\square$
 
-\subsubsection{4.8.2 Relation to Standard SVD}
+\subsubsection{Relation to Standard SVD}
 
 If $C_X = I$ (identity, uncorrelated unit-variance inputs), then 
 $W C_X^{1/2} = W$ and AASVD reduces to standard SVD.
@@ -913,7 +775,7 @@ diagonal weighting.
 \textbf{AASVD is strictly more general} than both standard SVD and diagonal 
 weighting.
 
-\subsubsection{4.8.3 Error Bound}
+\subsubsection{Error Bound}
 
 \textbf{Proposition.} For AASVD with rank $r$:
 
@@ -936,7 +798,7 @@ is the smallest eigenvalue of $C_X$ (before regularization).
 
 Dividing gives (4.17). $\square$
 
-\subsubsection{4.8.4 EMA Convergence}
+\subsubsection{EMA Convergence}
 
 \textbf{Proposition.} The EMA estimate $\hat{C}_X^{(k)}$ converges to the true 
 $\mathbb{E}[C_\text{batch}]$ as $k \to \infty$ with rate $\mathcal{O}(\beta^k)$.
@@ -958,54 +820,54 @@ Taking expectations (assuming $\mathbb{E}[C_k] = \bar{C}$):
 
 so the bias decays as $\beta^{k-1}$. $\square$
 
-\clearpage
 
+\section{Architecture Integration}
 
-\section{5. Architecture Integration}
-
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Architecture} & \textbf{Target layers} & \textbf{Conv1D?} & \textbf{Nested?} \\
 \midrule
-DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` \& No \& No \\
-RoBERTa-base & `query, key, value, output.dense` \& No \& Yes \\
-GPT-2 & `c\_attn, c\_proj` \& Yes \& No \\
-Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` \& No \& No \\
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} \& No \& No \\
+RoBERTa-base & \texttt{query, key, value, output.dense} \& No \& Yes \\
+GPT-2 & \texttt{c\_attn, c\_proj} \& Yes \& No \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} \& No \& No \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 By default, AASVD targets \textbf{attention projections only} 
-(\texttt{target\\_attention\\_only = True}). Set \texttt{target\\_attention\\_only = False} to 
+(\texttt{target\_attention\_only = True}). Set \texttt{target\_attention\_only = False} to 
 also compress FFN layers.
 
-\subsection{5.2 Layer Targeting Rules}
+\subsection{Layer Targeting Rules}
 
 AASVD protects the following layers from compression:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Pattern} & \textbf{Reason} \\
 \midrule
-`lm\_head` \& Output projection tied to embeddings \\
-`classifier` \& Task-specific head, small \\
-`head` \& Same as above \\
-`output\_layer` \& Task-specific \\
-`score` \& GPT-2 classification head \\
-`pooler` \& BERT pooler, not a projection \\
+\texttt{lm\_head} \& Output projection tied to embeddings \\
+\texttt{classifier} \& Task-specific head, small \\
+\texttt{head} \& Same as above \\
+\texttt{output\_layer} \& Task-specific \\
+\texttt{score} \& GPT-2 classification head \\
+\texttt{pooler} \& BERT pooler, not a projection \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The default targeting uses \texttt{should\\_compress\\_linear} for additional checks.
+The default targeting uses \texttt{should\_compress\_linear} for additional checks.
 
-\subsection{5.3 Handling Conv1D (GPT-2)}
+\subsection{Handling Conv1D (GPT-2)}
 
 GPT-2 uses HuggingFace's \texttt{Conv1D}, which stores weights as \texttt{(in, out)} 
 instead of \texttt{(out, in)}:
@@ -1033,22 +895,22 @@ The transposed weight is used throughout. The factorized \texttt{SVDLinear}
 receives the same input/output shapes as the original Conv1D, so the 
 rest of the model's forward pass works unchanged.
 
-\subsection{5.4 Handling LoRA-Wrapped Modules}
+\subsection{Handling LoRA-Wrapped Modules}
 
 When the model has been wrapped with LoRA adapters (\texttt{LoRALinear}), AASVD 
-extracts the \texttt{base\\_layer}:
+extracts the \texttt{base\_layer}:
 
 \begin{lstlisting}
 target_mod = getattr(module, "base_layer", module)
 \end{lstlisting}
 
-The factorized layer replaces \texttt{module.base\\_layer}, preserving the outer 
+The factorized layer replaces \texttt{module.base\_layer}, preserving the outer 
 LoRA parameters. This ensures that any existing LoRA adapters remain 
 attached and trainable.
 
-\subsection{5.5 Replacing a Layer}
+\subsection{Replacing a Layer}
 
-Replacement uses \texttt{replace\\_module} from the framework:
+Replacement uses \texttt{replace\_module} from the framework:
 
 \begin{lstlisting}
 if hasattr(module, "base_layer"):
@@ -1058,25 +920,23 @@ else:
 \end{lstlisting}
 
 After replacement, all parameters in fallback layers are frozen 
-(\texttt{requires\\_grad = False}) to prevent accidental training.
+(\texttt{requires\_grad = False}) to prevent accidental training.
 
-\subsection{5.6 Causality and Streaming}
+\subsection{Causality and Streaming}
 
 For decoder models (GPT-2, Qwen), AASVD's calibration is compatible with 
 causal forward passes:
 
 \begin{itemize}
 \item Forward hooks fire during the standard causal forward pass.
-\end{itemize}
-\begin{itemize}
 \item No future-token leakage occurs because the model's own attention
-\end{itemize}
   masking is respected.
 
+\end{itemize}
 \textbf{Verification.} We check that gradient of output at position $i$ w.r.t. 
 input at position $j > i$ is zero, both before and after injection.
 
-\subsection{5.7 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject AASVD into a full model
 \begin{lstlisting}
@@ -1119,7 +979,7 @@ Output: compressed model M'
 33: return M'
 \end{lstlisting}
 
-\subsection{5.8 The `SVDLinear` Module}
+\subsection{The `SVDLinear` Module}
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
@@ -1143,20 +1003,22 @@ class SVDLinear(nn.Module):
         return out * self.output_scale
 \end{lstlisting}
 
-\subsection{5.9 Interaction with LoRA Recovery}
+\subsection{Interaction with LoRA Recovery}
 
 After AASVD compression, the model is passed to the LoRA recovery pipeline:
 
-1. \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
-2. \textbf{Framework} attaches LoRA adapters (\texttt{lora\\_A}, \texttt{lora\\_B}).
-3. \textbf{Recovery} trains only LoRA parameters.
-4. \textbf{Evaluation} uses the fine-tuned model.
+\begin{enumerate}
+\item \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
+\item \textbf{Framework} attaches LoRA adapters (\texttt{lora\_A}, \texttt{lora\_B}).
+\item \textbf{Recovery} trains only LoRA parameters.
+\item \textbf{Evaluation} uses the fine-tuned model.
 
+\end{enumerate}
 \textbf{Note.} AASVD can also instantiate LoRA adapters \textit{inside} the \texttt{SVDLinear} 
-module (via the \texttt{lora\\_rank} parameter). This is used when the framework 
+module (via the \texttt{lora\_rank} parameter). This is used when the framework 
 expects LoRA to be part of the compression module.
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @COMPRESSOR_REGISTRY.register("aasvd")
@@ -1166,18 +1028,17 @@ class AASVDCompressor(BaseCompressor):
     ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes and Fallbacks}
+\subsection{Failure Modes and Fallbacks}
 
 
-\clearpage
 
+\section{Experimental Setup}
 
-\section{6. Experimental Setup}
-
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
@@ -1189,28 +1050,29 @@ GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & --- & --- \\
+Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Majority baseline: 50.92\%. Sequence length: 128 tokens.
 
-\subsection{6.3 Calibration}
+\subsection{Calibration}
 
 We use the \textbf{default bundled corpus} (5 documents, ~215 tokens). This 
 demonstrates AASVD's out-of-the-box usability. We additionally report 
@@ -1219,36 +1081,34 @@ results with task-specific calibration in Appendix C.
 Calibration:
 \begin{itemize}
 \item Tokenizer: model's own
-\end{itemize}
-\begin{itemize}
 \item Max length: 512
-\end{itemize}
-\begin{itemize}
 \item Batch size: 1 (single forward pass)
-\end{itemize}
 
-\subsection{6.4 Compression Hyperparameters}
+\end{itemize}
+\subsection{Compression Hyperparameters}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Rank $r$ & 288 \\
 EMA $\beta$ & 0.9 \\
-`max\_error` $\tau$ & 0.50 \\
-`fallback\_to\_original` \& True \\
-`target\_attention\_only` \& True \\
-`use\_fused\_kernel` \& False \\
+\texttt{max\_error} $\tau$ & 0.50 \\
+\texttt{fallback\_to\_original} \& True \\
+\texttt{target\_attention\_only} \& True \\
+\texttt{use\_fused\_kernel} \& False \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
@@ -1265,57 +1125,40 @@ Precision \& FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.6 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 
 \begin{itemize}
 \item Accuracy
-\end{itemize}
-\begin{itemize}
 \item F1 (binary, macro)
-\end{itemize}
-\begin{itemize}
 \item Precision, Recall
-\end{itemize}
-\begin{itemize}
 \item Validation loss
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 
 \begin{itemize}
 \item Total parameters (before / after)
-\end{itemize}
-\begin{itemize}
 \item Compression ratio
-\end{itemize}
-\begin{itemize}
 \item Peak inference VRAM
-\end{itemize}
-\begin{itemize}
 \item Inference time (median of 20 runs)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Compression}
 
 \begin{itemize}
 \item Compressed layers (count)
-\end{itemize}
-\begin{itemize}
 \item Fallback layers (count)
-\end{itemize}
-\begin{itemize}
 \item Average reconstruction error
-\end{itemize}
-\begin{itemize}
 \item Per-layer error distribution
-\end{itemize}
 
-\subsection{6.7 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -1327,12 +1170,13 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-56\% = majority + 3·SE.
+56\% = majority + 3 SE.
 
-\subsection{6.8 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
@@ -1346,7 +1190,7 @@ Transformers & 4.44.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.9 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_aasvd.py \
@@ -1358,53 +1202,55 @@ python run_all_4_aasvd.py \
 
 Runtime: ~20 min.
 
-\subsection{6.10 Baselines}
+\subsection{Baselines}
 
 
-\clearpage
 
+\section{Results}
 
-\section{7. Results}
-
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
-DistilBERT & **AASVD** & **85.0** & -5.7 & 0.850 & 24 & **4.0$$\times$** & 120 MB \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
-RoBERTa & **AASVD** & **72.0** & -6.6 & 0.720 & 48 & **3.5$$\times$** & 500 MB \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
-GPT-2 & **AASVD** & **73.0** & -6.4 & 0.730 & 48 & **3.5$$\times$** & 550 MB \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$$\times$ & 183 MB \\
+DistilBERT & \textbf{AASVD} & \textbf{85.0} & -5.7 & 0.850 & 24 & \textbf{4.0$$\times$} & 120 MB \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$$\times$ & 712 MB \\
+RoBERTa & \textbf{AASVD} & \textbf{72.0} & -6.6 & 0.720 & 48 & \textbf{3.5$$\times$} & 500 MB \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$$\times$ & 793 MB \\
+GPT-2 & \textbf{AASVD} & \textbf{73.0} & -6.4 & 0.730 & 48 & \textbf{3.5$$\times$} & 550 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} \textbf{4.0$$\times$} on DistilBERT.
-2. \textbf{Accuracy:} drops only \textbf{-5.7\%} on DistilBERT.
-3. \textbf{VRAM:} reduces by \textbf{40\%}.
+\begin{enumerate}
+\item \textbf{Parameter reduction:} \textbf{4.0$$\times$} on DistilBERT.
+\item \textbf{Accuracy:} drops only \textbf{-5.7\%} on DistilBERT.
+\item \textbf{VRAM:} reduces by \textbf{40\%}.
 
-\subsection{7.2 Parameter Analysis}
+\end{enumerate}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 16000000 & **4.0$$\times$** & 0.85 \\
-RoBERTa & 124,647,170 & 35000000 & **3.5$$\times$** & 0.85 \\
-GPT-2 & 124,441,344 & 35000000 & **3.5$$\times$** & 0.85 \\
+DistilBERT & 66,955,010 & 16000000 & \textbf{4.0$$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 35000000 & \textbf{3.5$$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 35000000 & \textbf{3.5$$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1413,24 +1259,26 @@ GPT-2 & 124,441,344 & 35000000 & **3.5$$\times$** & 0.85 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{AASVD r=288} & \textbf{Ratio} \\
 \midrule
-`q\_lin` (768$$\times$768) & 589,824 & 98304 & 6.0$$\times$ \\
-`k\_lin` (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
-`v\_lin` (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
-`out\_lin` (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
+\texttt{q\_lin} (768$$\times$768) & 589,824 & 98304 & 6.0$$\times$ \\
+\texttt{k\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
+\texttt{v\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
+\texttt{out\_lin} (768$$\times$768) & 589,824 & 0.85 & 2.1$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Reconstruction Error}
+\subsection{Reconstruction Error}
 
 \textbf{Table 7.3: Frobenius reconstruction errors.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Layer type} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1439,19 +1287,20 @@ Q projection & 32 & 32 & 32 \\
 K projection & 32 & 32 & 32 \\
 V projection & 32 & 32 & 32 \\
 O projection & 32 & 32 & 32 \\
-**Mean** & **32** & **32** & **32** \\
+\textbf{Mean} & \textbf{32} & \textbf{32} & \textbf{32} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 All below threshold $\tau = 0.50$.
 
-\subsection{7.4 Fallback Analysis}
+\subsection{Fallback Analysis}
 
 \textbf{Table 7.4: Compression success rate.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback \%} \\
@@ -1463,12 +1312,13 @@ GPT-2 & 48 & 0 & 48.5\%\% \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Efficiency Profile}
+\subsection{Efficiency Profile}
 
 \textbf{Table 7.5: Inference efficiency.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
@@ -1483,12 +1333,13 @@ GPT-2 \& AASVD & 5.8 s & 19000 & 550 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Rank}
+\subsection{Ablation: Rank}
 
 \textbf{Table 7.6: Accuracy vs compression rank.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
@@ -1501,12 +1352,13 @@ GPT-2 \& AASVD & 5.8 s & 19000 & 550 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Covariance Usage}
+\subsection{Ablation: Covariance Usage}
 
 \textbf{Table 7.7: Effect of covariance weighting.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1521,12 +1373,13 @@ AASVD (no weighting) & 0.85 & 0.85 & 0.85 \\
 \textbf{Observation.} Full covariance improves accuracy by \textbf{1.5\%} 
 over diagonal; diagonal improves \textbf{2.0\%} over unweighted.
 
-\subsection{7.8 Ablation: EMA $\beta$}
+\subsection{Ablation: EMA $\beta$}
 
 \textbf{Table 7.8: Accuracy vs EMA decay.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1540,12 +1393,13 @@ over diagonal; diagonal improves \textbf{2.0\%} over unweighted.
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: Calibration Source}
+\subsection{Ablation: Calibration Source}
 
 \textbf{Table 7.9: Effect of calibration corpus.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Source} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1558,12 +1412,13 @@ No calibration & 80.0 & 0.85 & 0.85 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.10: Accuracy vs LoRA recovery steps.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1576,12 +1431,13 @@ No calibration & 80.0 & 0.85 & 0.85 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.11: AASVD vs prior compressors.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
@@ -1589,53 +1445,46 @@ No calibration & 80.0 & 0.85 & 0.85 \\
 full & 90.71\% & 1.00$$\times$ & 78.56\% & 1.00$$\times$ \\
 a3 (r=64) & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
 sdrm & 0.85 & 32$$\times$ & 32 & 32$$\times$ \\
-**AASVD** & **85.0** & **4.0$$\times$** & **72.0** & **3.5$$\times$** \\
+\textbf{AASVD} & \textbf{85.0} & \textbf{4.0$$\times$} & \textbf{72.0} & \textbf{3.5$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.12 Compression Time}
+\subsection{Compression Time}
 
 \textbf{Table 7.12: Wall-clock compression time.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Calibration} & \textbf{Eigendecomp} & \textbf{SVD} & \textbf{Validation} & \textbf{Total} \\
 \midrule
-DistilBERT & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **66.4M s** \\
-RoBERTa & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **0.85 s** \\
-GPT-2 & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **0.85 s** \\
+DistilBERT & 0.85 s & 0.85 s & 84.5 s & 0.85 s & \textbf{66.4M s} \\
+RoBERTa & 0.85 s & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
+GPT-2 & 0.85 s & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.13 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Compression ratio:} 4.0$$\times$--3.5$$\times$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Accuracy drop:} -5.7\%---6.4\%
-\end{itemize}
-\begin{itemize}
 \item \textbf{VRAM reduction:} 40\%
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}
 
-\clearpage
 
+\section{Analysis}
 
-\section{8. Analysis}
-
-\subsection{8.1 Why Does AASVD Work?}
+\subsection{Why Does AASVD Work?}
 
 AASVD's success comes from three mechanisms working together.
 
-\subsubsection{8.1.1 Covariance Captures Directional Importance}
+\subsubsection{Covariance Captures Directional Importance}
 
 Unweighted SVD approximates $W$ to minimize $\|W - W_r\|_F$. But the 
 \textbf{effective importance} of each row of $W$ depends on how often the 
@@ -1647,7 +1496,7 @@ DistilBERT layer. The top 10\% of eigenvalues account for
 \textbf{85\%} of total energy. Weighting by $C_X^{1/2}$ concentrates 
 the factorization on these high-energy directions.
 
-\subsubsection{8.1.2 Streaming EMA Reduces Variance}
+\subsubsection{Streaming EMA Reduces Variance}
 
 The straight mean estimator $\hat{C} = \frac{1}{K} \sum_k C_k$ has variance 
 $\sigma^2 / K$ where $\sigma^2$ is the batch-level variance. EMA with 
@@ -1657,28 +1506,25 @@ similar to a straight mean over 20 batches.
 For a default corpus of 5 documents, EMA gives a slightly biased but 
 lower-variance estimate.
 
-\subsubsection{8.1.3 Bundled Corpus Provides Signal}
+\subsubsection{Bundled Corpus Provides Signal}
 
 \textbf{Figure 8.2} compares $C_X$ estimated from:
 \begin{itemize}
 \item Default bundled corpus
-\end{itemize}
-\begin{itemize}
 \item SST-2 training samples
-\end{itemize}
-\begin{itemize}
 \item Random texts
-\end{itemize}
 
+\end{itemize}
 The bundled corpus captures the dominant directions of $C_X$ well; task-specific 
 calibration only improves second-order structure.
 
-\subsection{8.2 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.1: Reconstruction error by layer (DistilBERT).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
@@ -1696,21 +1542,22 @@ calibration only improves second-order structure.
 \textbf{Observation.} Middle layers (2--3) tend to have the highest error; early 
 and late layers are more compressible.
 
-\subsection{8.3 Contribution of Each Component}
+\subsection{Contribution of Each Component}
 
 \textbf{Table 8.2: Ablation of AASVD components.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Configuration} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
 \midrule
-Baseline (no compression) & 90.71\% & --- \\
+Baseline (no compression) & 90.71\% & -- \\
 SVD only (no cov) & 0.85 & 0.85 \\
 + diagonal weighting & 0.85 & 0.85 \\
 + full covariance & 0.85 & 0.85 \\
-+ LoRA recovery & **85.0** & **-5.7** \\
++ LoRA recovery & \textbf{85.0} & \textbf{-5.7} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1718,20 +1565,17 @@ SVD only (no cov) & 0.85 & 0.85 \\
 \textbf{Interpretation.} Each component contributes to accuracy:
 \begin{itemize}
 \item Diagonal weighting: +2.0\%
-\end{itemize}
-\begin{itemize}
 \item Full covariance over diagonal: +1.5\%
-\end{itemize}
-\begin{itemize}
 \item LoRA recovery: +5.0\%
-\end{itemize}
 
-\subsection{8.4 Effect of Rank}
+\end{itemize}
+\subsection{Effect of Rank}
 
 \textbf{Figure 8.3} shows accuracy vs rank for all three models.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1748,17 +1592,18 @@ SVD only (no cov) & 0.85 & 0.85 \\
 \textbf{Observation.} Rank 64 is a sweet spot: high compression with minimal 
 accuracy loss.
 
-\subsection{8.5 Calibration Sensitivity}
+\subsection{Calibration Sensitivity}
 
 \textbf{Table 8.3: Effect of calibration corpus.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Source} & \textbf{DistilBERT} & \textbf{$\Delta$ from default} \\
 \midrule
-Default (bundled) & 85.0 & --- \\
+Default (bundled) & 85.0 & -- \\
 SST-2 training (50) & 85.5 & 84.5 \\
 SST-2 training (500) & 85.8 & 84.5 \\
 Random text & 82.0 & 32 \\
@@ -1770,12 +1615,13 @@ No calibration & 80.0 & 0.85 \\
 \textbf{Observation.} The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
 
-\subsection{8.6 Comparison with A3}
+\subsection{Comparison with A3}
 
 AASVD and A3 both use activation-aware weighting. Key differences:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Aspect} & \textbf{A3} & \textbf{AASVD} \\
@@ -1793,6 +1639,7 @@ Adaptive rank \& Yes \& No \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{A3} & \textbf{AASVD} & \textbf{$\Delta$} \\
@@ -1808,31 +1655,32 @@ GPT-2 & 0.85 & 73.0 & 0.85 \\
 diagonal weighting (1.5\% on average), at the cost of 
 $\mathcal{O}(d^2)$ instead of $\mathcal{O}(d)$ memory.
 
-\subsection{8.7 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.7.1 Eigendecomposition}
+\subsubsection{Eigendecomposition}
 
 We use \texttt{torch.linalg.eigh} (symmetric) rather than \texttt{torch.linalg.svd} for 
 $C_X$, which exploits symmetry and returns real eigenvalues.
 
-\subsubsection{8.7.2 Regularization}
+\subsubsection{Regularization}
 
 Regularization $\lambda_i \leftarrow \max(\lambda_i, \epsilon_\text{reg})$ is 
 essential for avoiding division by zero when computing $C_X^{-1/2}$. Our 
 default $\epsilon_\text{reg} = 10^{-6} \max_j \lambda_j + 10^{-8}$ works 
 well in practice.
 
-\subsubsection{8.7.3 FP16 SVD}
+\subsubsection{FP16 SVD}
 
 All SVD is computed in FP32, even when the model is FP16. FP16 SVD 
 occasionally produces NaN for ill-conditioned matrices.
 
-\subsection{8.8 Failure Modes}
+\subsection{Failure Modes}
 
-\subsubsection{8.8.1 Layers That Failed}
+\subsubsection{Layers That Failed}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
@@ -1842,109 +1690,101 @@ occasionally produces NaN for ill-conditioned matrices.
 \end{tabular}
 \end{table}
 
-\subsubsection{8.8.2 Root Causes}
+\subsubsection{Root Causes}
 
 0.85
 
-\subsection{8.9 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Full covariance is better than diagonal} by 1.5\% at rank 64.
-2. \textbf{EMA with $\beta$=0.9} is robust across corpus sizes.
-3. \textbf{Bundled corpus works well} without task-specific calibration.
-4. \textbf{Rank 64 is a sweet spot} for all three models.
-5. \textbf{Frobenius fallback is essential} to prevent catastrophic compression.
+\begin{enumerate}
+\item \textbf{Full covariance is better than diagonal} by 1.5\% at rank 64.
+\item \textbf{EMA with $\beta$=0.9} is robust across corpus sizes.
+\item \textbf{Bundled corpus works well} without task-specific calibration.
+\item \textbf{Rank 64 is a sweet spot} for all three models.
+\item \textbf{Frobenius fallback is essential} to prevent catastrophic compression.
+\end{enumerate}
 
-\clearpage
 
+\section{Discussion}
 
-\section{9. Discussion}
+\subsection{Key Takeaways}
 
-\subsection{9.1 Key Takeaways}
-
-\subsubsection{9.1.1 Takeaway 1: Real Compression Works}
+\subsubsection{Takeaway 1: Real Compression Works}
 
 AASVD achieves \textbf{4.0$$\times$--3.5$$\times$} parameter reduction with 
 accuracy drops of \textbf{-5.7\%---6.4\%}. This is a genuine reduction 
 in storage, memory, and load time.
 
-\subsubsection{9.1.2 Takeaway 2: Full Covariance Helps}
+\subsubsection{Takeaway 2: Full Covariance Helps}
 
 Capturing inter-feature correlations improves accuracy by 
-\textbf{1.5\%} over diagonal weighting. This is a free win --- no additional 
+\textbf{1.5\%} over diagonal weighting. This is a free win -- no additional 
 computation is needed at inference.
 
-\subsubsection{9.1.3 Takeaway 3: Bundled Corpus Works}
+\subsubsection{Takeaway 3: Bundled Corpus Works}
 
 Our default 5-document corpus achieves competitive results without any 
 task-specific calibration. This makes AASVD usable out-of-the-box.
 
-\subsection{9.2 When to Use AASVD}
+\subsection{When to Use AASVD}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
 \item \textbf{Storage-constrained deployment} (mobile, edge, browser)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Load-time-sensitive applications}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for 8--16$$\times$ total compression
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for further compression} (prune then AASVD)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Extremely small models} (<10M params)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Extremely large models} (>10B params)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Latency-critical applications} (two matmuls vs one)
-\end{itemize}
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
 Need to reduce model size on disk? --- Yes --- Use AASVD
   | No
-  v
+   
 Need to reduce inference VRAM? --- Yes --- Use AASVD
   | No
-  v
+   
 Need to reduce latency? --- Yes --- Consider quantization
   | No
-  v
+   
 Consider other approaches
 \end{lstlisting}
 
-\subsection{9.4 Cost-Benefit Analysis}
+\subsection{Cost-Benefit Analysis}
 
 For DistilBERT on RTX 4070:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 33 MB & **4.0$$\times$** \\
-Params & 66.95M & 16000000M & **4.0$$\times$** \\
-VRAM & 183 MB & 120 MB & **0.66$$\times$** \\
-Time & 1.90 s & 2.5 s & **1.3$$\times$** \\
+Disk (FP16) & 134 MB & 33 MB & \textbf{4.0$$\times$} \\
+Params & 66.95M & 16000000M & \textbf{4.0$$\times$} \\
+VRAM & 183 MB & 120 MB & \textbf{0.66$$\times$} \\
+Time & 1.90 s & 2.5 s & \textbf{1.3$$\times$} \\
 Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Comparison to Published Methods}
+\subsection{Comparison to Published Methods}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
@@ -1952,26 +1792,22 @@ Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 ALBERT \& Sharing & 3.5$$\times$ & 89.4\% \\
 DistilBERT \& Distill & 1.6$$\times$ & 90.7\% \\
 A3 (r=64) \& Low-rank & 2.1$$\times$ & 86.4\%\% \\
-**AASVD (r=64)** \& Low-rank & **4.0$$\times$** & **85.0\%** \\
+\textbf{AASVD (r=64)} \& Low-rank & \textbf{4.0$$\times$} & \textbf{85.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment Considerations}
+\subsection{Deployment Considerations}
 
 \subsubsection{Storage}
 
 AASVD's main benefit is storage. For 100M params:
 \begin{itemize}
 \item Baseline: 200 MB FP16
-\end{itemize}
-\begin{itemize}
 \item AASVD (r=64): ~0.85 MB
-\end{itemize}
-\begin{itemize}
 \item AASVD + INT8: ~0.85 MB
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Latency}
 
 Factorized layers are ~1.3$$\times$ slower on GPU. On CPU, they may 
@@ -1981,62 +1817,51 @@ be faster due to cache effects.
 
 Larger batches amortize the extra matmul overhead better.
 
-\subsection{9.7 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Optimal calibration:} How many documents suffice?
-2. \textbf{Task transfer:} Does calibration on SST-2 transfer to MNLI?
-3. \textbf{Rank schedule:} Can different ranks per layer beat uniform $r$?
-4. \textbf{Interaction with quantization:} INT8-AASVD vs INT8 alone?
+\begin{enumerate}
+\item \textbf{Optimal calibration:} How many documents suffice?
+\item \textbf{Task transfer:} Does calibration on SST-2 transfer to MNLI?
+\item \textbf{Rank schedule:} Can different ranks per layer beat uniform $r$?
+\item \textbf{Interaction with quantization:} INT8-AASVD vs INT8 alone?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item Democratizes AI
-\end{itemize}
-\begin{itemize}
 \item Reduces carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Enables edge AI
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item May enable surveillance
-\end{itemize}
-\begin{itemize}
 \item Concentration risk
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~15 GPU-hours, ~12.4 kg CO$_2$eq.
 
-\clearpage
 
+\section{Limitations}
 
-\section{10. Limitations}
-
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 is evaluated. AASVD may behave differently on:
 \begin{itemize}
 \item Generation tasks
-\end{itemize}
-\begin{itemize}
 \item Multi-class classification
-\end{itemize}
-\begin{itemize}
 \item Token-level tasks
-\end{itemize}
-\begin{itemize}
 \item Long-context tasks
-\end{itemize}
 
-\subsection{10.2 Model Coverage}
+\end{itemize}
+\subsection{Model Coverage}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Constraint} & \textbf{Status} \\
@@ -2050,104 +1875,84 @@ Vision transformers \& Not tested \\
 \end{tabular}
 \end{table}
 
-\subsection{10.3 Hardware Coverage}
+\subsection{Hardware Coverage}
 
 All experiments on RTX 4070 Laptop. Not tested on:
 \begin{itemize}
 \item A100/H100
-\end{itemize}
-\begin{itemize}
 \item CPU inference
-\end{itemize}
-\begin{itemize}
 \item Edge devices (Jetson, mobile)
-\end{itemize}
 
-\subsection{10.4 Inference Latency}
+\end{itemize}
+\subsection{Inference Latency}
 
 Factorized layers are slower:
 \begin{itemize}
 \item Two matmuls instead of one
-\end{itemize}
-\begin{itemize}
 \item Intermediate $r$-dim tensor materialized
-\end{itemize}
-\begin{itemize}
 \item ~1.3$$\times$ slower on GPU
-\end{itemize}
 
-\subsection{10.5 Calibration Dependency}
+\end{itemize}
+\subsection{Calibration Dependency}
 
 AASVD requires calibration. Without it:
 \begin{itemize}
 \item Covariance weighting degrades to unweighted SVD
-\end{itemize}
-\begin{itemize}
 \item Accuracy drops by up to 8\%
-\end{itemize}
 
-\subsection{10.6 Single-Seed Results}
+\end{itemize}
+\subsection{Single-Seed Results}
 
 All main results from a single seed. SE ~1.69\%. Differences below 3.4\% 
 may be noise.
 
-\subsection{10.7 No Formal Bound on Downstream Accuracy}
+\subsection{No Formal Bound on Downstream Accuracy}
 
 We provide a bound on \textbf{reconstruction} error (Proposition 4.8.3), but 
 no bound on \textbf{downstream task} error. The gap between reconstruction and 
 task accuracy is not characterized.
 
-\subsection{10.8 EMA Bias}
+\subsection{EMA Bias}
 
 EMA with $\beta$=0.9 has a bias toward recent batches. For a 5-batch calibration 
-run, the first batch contributes $\beta$⁴ $\approx$ 0.66 weight (via $C_1 \cdot \beta^{K-1}$). 
+run, the first batch contributes $\beta$  $\approx$ 0.66 weight (via $C_1 \cdot \beta^{K-1}$). 
 This is a limitation for very small calibration sets.
 
-\subsection{10.9 Regularization Choice}
+\subsection{Regularization Choice}
 
 Our regularization $\epsilon_\text{reg} = 10^{-6} \max \lambda + 10^{-8}$ is 
 a heuristic. Different values may work better for different models.
 
-\subsection{10.10 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not directly compare with:
 \begin{itemize}
 \item DistilBERT / TinyBERT (distillation)
-\end{itemize}
-\begin{itemize}
 \item Performer / Linformer (attention replacement)
-\end{itemize}
-\begin{itemize}
 \item SparseGPT / Wanda (pruning)
-\end{itemize}
 
-\subsection{10.11 Failure Modes Not Fully Diagnosed}
+\end{itemize}
+\subsection{Failure Modes Not Fully Diagnosed}
 
 0.85
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation:
 \begin{itemize}
 \item Broad exception handling in some paths
-\end{itemize}
-\begin{itemize}
 \item No unit tests for edge cases
-\end{itemize}
-\begin{itemize}
 \item Numerical stability could be improved
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Compression is dual-use. See Appendix E.
 
-\clearpage
 
+\section{Conclusion}
 
-\section{11. Conclusion}
-
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{AASVD} (Activation-Aware SVD), a low-rank compression method 
 that weights SVD factorization by the full input activation covariance. AASVD 
@@ -2155,84 +1960,73 @@ uses streaming EMA accumulation, achieves real parameter reduction
 ($d_\text{in} d_\text{out} \to r(d_\text{in} + d_\text{out})$), and includes 
 a bundled multi-domain calibration corpus.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -5.7\% & **4.0$$\times$** & -40\% \\
-RoBERTa & -6.6\% & **3.5$$\times$** & -40\% \\
-GPT-2 & -6.4\% & **3.5$$\times$** & -40\% \\
+DistilBERT & -5.7\% & \textbf{4.0$$\times$} & -40\% \\
+RoBERTa & -6.6\% & \textbf{3.5$$\times$} & -40\% \\
+GPT-2 & -6.4\% & \textbf{3.5$$\times$} & -40\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Real compression works.}
-2. \textbf{Full covariance beats diagonal} by 1.5\%.
-3. \textbf{Bundled corpus is sufficient} for out-of-the-box use.
-4. \textbf{EMA with $\beta$=0.9 is robust.}
+\begin{enumerate}
+\item \textbf{Real compression works.}
+\item \textbf{Full covariance beats diagonal} by 1.5\%.
+\item \textbf{Bundled corpus is sufficient} for out-of-the-box use.
+\item \textbf{EMA with $\beta$=0.9 is robust.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Fused Triton kernels
-\end{itemize}
-\begin{itemize}
 \item Multi-task calibration
-\end{itemize}
-\begin{itemize}
 \item INT8 combined with AASVD
-\end{itemize}
-\begin{itemize}
 \item Learned rank schedule
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error propagation bounds
-\end{itemize}
-\begin{itemize}
 \item Cross-lingual calibration
-\end{itemize}
-\begin{itemize}
 \item Recursive factorization
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 AASVD is a practical, honest model compression method. We release all code 
 and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{Taha Majs} designed AASVD, implemented the code, ran experiments,
-\end{itemize}
   wrote the paper.
-\begin{itemize}
 \item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
 
-\clearpage
 
+\section{Reproducibility Statement}
 
-\section{12. Reproducibility Statement}
-
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -2242,10 +2036,11 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
+\subsection{Dependencies}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Package} & \textbf{Version} \\
@@ -2258,7 +2053,7 @@ numpy & 1.26.4 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.3 Running AASVD}
+\subsection{Running AASVD}
 
 \begin{lstlisting}
 python run_all_4_aasvd.py \
@@ -2271,7 +2066,7 @@ python run_all_4_aasvd.py \
 
 \textbf{Runtime:} ~20 minutes on RTX 4070.
 
-\subsection{12.4 Individual Model}
+\subsection{Individual Model}
 
 \begin{lstlisting}
 python Codes/framework/run_quality_sweep.py \
@@ -2285,7 +2080,7 @@ python Codes/framework/run_quality_sweep.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{12.5 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 
@@ -2316,7 +2111,7 @@ for beta in 0.5 0.7 0.9 0.95 0.99; do
 done
 \end{lstlisting}
 
-\subsection{12.6 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -2328,10 +2123,11 @@ torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
-\subsection{12.7 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
@@ -2343,37 +2139,25 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{12.8 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-aasvd}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_aasvd/*/summary.csv}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Calibration corpus:} bundled in \texttt{aasvd\\_compressor.py}
-\end{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\_aasvd/*/summary.csv}
+\item \textbf{Calibration corpus:} bundled in \texttt{aasvd\_compressor.py}
 
-\subsection{12.9 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended
-\end{itemize}
-\begin{itemize}
 \item CUDA $\ge$ 11.8 for FP16 SVD
-\end{itemize}
-\begin{itemize}
 \item Some baselines may need re-download
 \end{itemize}
 
-\clearpage
 
-
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{eckart1936approximation,
@@ -2444,7 +2228,7 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$$\times$ \\
 }
 
 @article{weng2003candid,
-  title=0.85,
+  title={{Candid covariance-free incremental PCA}},
   author={Weng, Juyang and Zhang, Yilu and Hwang, Wey-Shiuan},
   journal={IEEE TPAMI},
   year={2003}
@@ -2506,8 +2290,6 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$$\times$ \\
   year={2019}
 }
 \end{lstlisting}
-
-\clearpage
 
 
 \section{Appendix A. Mathematical Derivations}
@@ -2661,8 +2443,6 @@ Clamping:
 
 This ensures $\lambda_i \geq \epsilon_\text{reg} > 0$, so $1/\sqrt{\lambda_i}$ is bounded.
 
-\clearpage
-
 
 \section{Appendix B. Implementation Details}
 
@@ -2729,10 +2509,12 @@ def make_hook(name):
 
 \textbf{Key implementation notes:}
 
-1. \textbf{FP32 compute:} We cast to FP32 inside the hook to avoid numerical issues.
-2. \textbf{Padding filter:} Mask tokens with $\|x_i\|_1 < 10^{-5}$.
-3. \textbf{CPU transfer:} \texttt{batch\\_cov.cpu()} prevents GPU memory accumulation.
+\begin{enumerate}
+\item \textbf{FP32 compute:} We cast to FP32 inside the hook to avoid numerical issues.
+\item \textbf{Padding filter:} Mask tokens with $\|x_i\|_1 < 10^{-5}$.
+\item \textbf{CPU transfer:} \texttt{batch\_cov.cpu()} prevents GPU memory accumulation.
 
+\end{enumerate}
 \subsection{B.3 Eigendecomposition with Regularization}
 
 \begin{lstlisting}
@@ -2827,8 +2609,6 @@ GPT-2's Conv1D stores weights as \texttt{(in, out)}. Must transpose.
 
 Without masking padding tokens, covariance is biased.
 
-\clearpage
-
 
 \section{Appendix C. Full Experimental Data}
 
@@ -2836,6 +2616,7 @@ Without masking padding tokens, covariance is biased.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2861,6 +2642,7 @@ Average error & 0.30 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2878,6 +2660,7 @@ Accuracy & 72.0\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2895,6 +2678,7 @@ Accuracy & 73.0\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
@@ -2921,6 +2705,7 @@ Accuracy & 73.0\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
@@ -2938,6 +2723,7 @@ Accuracy & 73.0\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2953,6 +2739,7 @@ No weighting & 80.0 & 0.85 & 0.85 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -3025,8 +2812,6 @@ for r in 32 64 128 256; do
 done
 \end{lstlisting}
 
-\clearpage
-
 
 \section{Appendix D. Negative Results}
 
@@ -3094,6 +2879,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
@@ -3110,6 +2896,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} \\
@@ -3126,6 +2913,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -3142,6 +2930,7 @@ Separate calibration per layer \& Precision \& No change \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
@@ -3149,21 +2938,21 @@ Separate calibration per layer \& Precision \& No change \\
 42 & 84.2 \\
 123 & 84.0 \\
 456 & 84.1 \\
-**Mean** & **84.1** \\
-**Std** & **0.1** \\
+\textbf{Mean} & \textbf{84.1} \\
+\textbf{Std} & \textbf{0.1} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{FP32 SVD is essential.}
-2. \textbf{CPU transfer is required} for scaling.
-3. \textbf{Full covariance > diagonal.}
-4. \textbf{Bundled corpus is sufficient.}
-5. \textbf{Frobenius fallback is critical.}
-
-\clearpage
+\begin{enumerate}
+\item \textbf{FP32 SVD is essential.}
+\item \textbf{CPU transfer is required} for scaling.
+\item \textbf{Full covariance > diagonal.}
+\item \textbf{Bundled corpus is sufficient.}
+\item \textbf{Frobenius fallback is critical.}
+\end{enumerate}
 
 
 \section{Appendix E. Ethical Considerations}
@@ -3173,46 +2962,32 @@ Separate calibration per layer \& Precision \& No change \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Democratizes AI:} Smaller models $\to$ broader access.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reduces carbon:} Less compute per inference.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Enables edge AI:} Private, offline inference.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Efficiency benefits malicious and beneficial applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Large labs may benefit more.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Rebound effect:} Cheaper inference $\to$ more usage.
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Environmental Impact}
 
 \begin{itemize}
 \item \textbf{Total GPU-hours:} ~15
-\end{itemize}
-\begin{itemize}
 \item \textbf{Estimated CO$_2$:} 1.0 kg CO$_2$eq
-\end{itemize}
 
+\end{itemize}
 \subsection{E.3 Data Ethics}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias:} English-only, movie reviews
-\end{itemize}
 
+\end{itemize}
 \subsection{E.4 Model Ethics}
 
 \subsubsection{Bias}
@@ -3226,7 +3001,7 @@ Could enable surveillance, misinformation, censorship. Not endorsed.
 
 \subsection{E.5 Authorship and Credit}
 
-See §11.7.
+See  11.7.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -3246,36 +3021,28 @@ Parts drafted with LLM assistance. All content reviewed by authors.
 
 \subsection{E.10 Reproducibility Commitments}
 
-1. Release code
-2. Release checkpoints
-3. Report negative results
-4. Document hyperparameters
-5. Respond to replications
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document hyperparameters
+\item Respond to replications
 
+\end{enumerate}
 \subsection{E.11 Long-Term Considerations}
 
 Compression could:
 
 \begin{itemize}
 \item Enable AI on billions of devices
-\end{itemize}
-\begin{itemize}
 \item Reduce AI's carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Democratize access
-\end{itemize}
 
+\end{itemize}
 But also:
 
 \begin{itemize}
 \item Enable surveillance at scale
-\end{itemize}
-\begin{itemize}
 \item Concentrate AI capabilities
-\end{itemize}
-\begin{itemize}
 \item Widen gap between compressed and full models
 \end{itemize}
-
-\end{document}

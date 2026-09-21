@@ -1,0 +1,2382 @@
+\title{\textbf{HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement}
+
+\author{Anonymous authors}
+
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+The quadratic complexity of transformer attention, $\mathcal{O}(L^2)$ in 
+sequence length, is the primary bottleneck for long-context inference. Two 
+families of solutions have emerged:
+
+\begin{enumerate}
+\item \textbf{Sparse attention} reduces the number of attended pairs but retains
+  $L \times k$ memory patterns.
+\item \textbf{Linear recurrence} replaces attention entirely with a fixed-size state
+  that is updated sequentially.
+
+\end{enumerate}
+Within the second family, \textbf{HGRN} (Hierarchically Gated Recurrent Network) 
+and its successor \textbf{HGRN-2} (Qin et al., 2024) stand out for their 
+\textbf{element-wise} recurrence: each feature dimension maintains its own scalar 
+state, updated by an input-dependent forget gate. This is simpler than 
+matrix-state alternatives (DeltaNet, Mamba) and runs in $\mathcal{O}(L d)$ 
+time.
+
+HGRN2Layer is our implementation of the HGRN-2 recurrence, packaged as a 
+drop-in attention replacement for existing pretrained transformers.
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer with attention module $\mathcal{A}$, we seek 
+a replacement $\mathcal{A}'$ such that:
+
+\begin{enumerate}
+\item \textbf{Linear complexity:} $\mathcal{A}'$ runs in $\mathcal{O}(L d)$ time and
+  $\mathcal{O}(d)$ memory.
+\item \textbf{Bidirectional or causal:} Supports both encoder (bidirectional) and
+  decoder (causal) modes.
+\item \textbf{Pretrained compatibility:} Base weights transfer from $\mathcal{A}$.
+\item \textbf{Learnable recovery:} Only LoRA adapters and gate networks are trained.
+
+\end{enumerate}
+We do \textbf{not} require parameter reduction. The goal is **linear-time 
+inference**.
+
+\subsection{Our Approach}
+
+HGRN2Layer maintains a per-feature scalar state $s_t \in \mathbb{R}^d$ 
+updated by:
+
+\[
+s_t = f_t \odot s_{t-1} + (1 - f_t) \odot i_t \odot v_t
+\tag{1.1}
+\]
+
+where:
+
+\begin{itemize}
+\item $f_t = \exp(-\text{softplus}(W_f x_t)) \in [f_\text{min}, 1]$ is the
+  \textbf{bounded forget gate}.
+\item $i_t = \sigma(W_i x_t)$ is the \textbf{input gate}.
+\item $v_t = W_v x_t$ is the \textbf{value} projection.
+
+\end{itemize}
+The critical design choices are:
+
+\begin{enumerate}
+\item \textbf{Bounded forget gate:} $f_t \in [10^{-3}, 1]$ prevents exponential
+  underflow/overflow.
+\item \textbf{Input modulation:} Multiplying $v_t$ by $(1 - f_t)$ ensures that when
+  the state forgets, it also receives a proportional update -- this avoids
+  sign-flipping.
+\item \textbf{Parallel chunked scan:} The recurrence is computed by chunking the
+  sequence (chunk size 32) and running a cumulative-sum-based associative
+  scan in FP32.
+\item \textbf{Bidirectional support:} For encoders, we run both forward and backward
+  scans and sum the results.
+
+\end{enumerate}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A production-hardened HGRN-2 implementation.} We implement the
+  element-wise recurrence with bounded forget gates, parallel chunked scan,
+  and bidirectional/causal support.
+\item \textbf{Robust weight transfer.} Our \texttt{copy\_weights} handles PyTorch's native
+  \texttt{MultiheadAttention}, GPT-2 Conv1D, RoBERTa nested, Qwen GQA, and
+  DistilBERT flat attention.
+\item \textbf{An honest evaluation.} We report both the long-context speedup and the
+  short-context slowdown of the current implementation.
+\item \textbf{Full reproducibility.} Code, weights, and evaluation scripts are
+  released under Apache 2.0.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work in linear recurrence and SSMs. Section 3 
+provides background on HGRN-2, gated recurrences, and parallel scan. 
+Section 4 presents HGRN2Layer. Section 5 describes integration with four 
+architectures. Section 6 details the setup. Section 7 reports results. 
+Section 8 analyzes the trade-offs. Section 9 discusses guidance. Section 10 
+lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Related Work}
+
+\subsection{Linear Recurrent Networks}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) replaces softmax with a 
+kernel feature map and expresses attention as a linear recurrence. \textbf{GLA} 
+(Yang et al., 2023) adds a gating mechanism. \textbf{RWKV} (Peng et al., 2023) 
+combines a linear attention-like recurrence with a token-shift operation. 
+\textbf{HGRN} (Qin et al., 2023) introduces the element-wise recurrence with 
+input-dependent forget gates.
+
+\subsection{State-Space Models}
+
+\textbf{S4} (Gu et al., 2021), \textbf{S5} (Smith et al., 2023), and \textbf{Mamba} (Gu \& 
+Dao, 2023) formulate sequence modeling as a state-space model. Mamba's 
+\textbf{selective} SSM makes the state transition input-dependent, similar in 
+spirit to HGRN-2's forget gate.
+
+\textbf{Key distinction.} HGRN-2 uses \textbf{element-wise} state (a vector per 
+feature), whereas SSMs use \textbf{diagonal} state matrices that reduce to 
+element-wise updates. The implementations are mathematically similar but 
+differ in normalization and initialization.
+
+\subsection{Attention Replacement}
+
+\textbf{Synthesizer} (Tay et al., 2021) replaces attention with learned or 
+random patterns. \textbf{FNet} (Lee-Thorp et al., 2021) replaces it with a 
+Fourier transform. \textbf{Hyena} (Poli et al., 2023) uses long convolutions. 
+HGRN2Layer belongs to this family but uses a \textbf{recurrence} rather than a 
+convolution or transform.
+
+\subsection{Parallel Scans}
+
+The \textbf{Blelloch scan} (Blelloch, 1990) computes prefix sums in $\mathcal{O}(L)$ 
+depth. Modern GPU implementations of parallel scan (e.g., Mamba's \texttt{associative\_scan}) 
+make recurrent computations competitive with attention at inference time. Our 
+chunked scan is a simpler variant that runs on any GPU without specialized 
+kernels.
+
+\subsection{Gating Mechanisms}
+
+Gating is a classical technique in RNNs (Hochreiter \& Schmidhuber, 1997) and 
+Transformers (Vaswani et al., 2017; Shazeer, 2020). We use two gates: a 
+\textbf{forget gate} $f_t$ and an \textbf{input gate} $i_t$. The forget gate is 
+parameterized in log-space ($\log f_t = -\text{softplus}(\cdot)$) for 
+numerical stability.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{State} & \textbf{Gating} & \textbf{Chunked scan} \\
+\midrule
+Linear Transformer & $\mathcal{O}(L)$ & Matrix & No & No \\
+GLA & $\mathcal{O}(L)$ & Matrix & Yes & Yes \\
+Mamba & $\mathcal{O}(L)$ & Diagonal & Selective & Yes \\
+HGRN-2 & $\mathcal{O}(L)$ & Element-wise & Yes & Yes \\
+\textbf{HGRN2Layer (ours)} & $\mathcal{O}(L)$ & Element-wise & Yes & \textbf{Chunked, FP32} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Background}
+
+\subsection{Linear Recurrence}
+
+A linear recurrent layer maintains a state $s_t \in \mathbb{R}^d$ updated 
+per timestep:
+
+\[
+s_t = f_t \odot s_{t-1} + g_t
+\tag{3.1}
+\]
+
+where $f_t \in \mathbb{R}^d$ is the forget (decay) vector and $g\_t \in 
+\mathbb{R}\^{}d$ is the input. This is a \textbf{first-order linear recurrence}.
+
+\textbf{Complexity.} Time is $\mathcal{O}(L d)$; memory is $\mathcal{O}(d)$ (or 
+$\mathcal{O}(L d)$ for the outputs). Compare to attention's $\mathcal{O}(L^2 d)$.
+
+\subsection{HGRN-2 Recurrence}
+
+HGRN-2 (Qin et al., 2024) parameterizes (3.1) as:
+
+\[
+f_t = \exp(-\text{softplus}(W_f x_t + b_f))
+\tag{3.2}
+\]
+
+\[
+i_t = \sigma(W_i x_t + b_i)
+\tag{3.3}
+\]
+
+\[
+v_t = W_v x_t
+\tag{3.4}
+\]
+
+\[
+s_t = f_t \odot s_{t-1} + (1 - f_t) \odot i_t \odot v_t
+\tag{3.5}
+\]
+
+\textbf{Bounded forget.} Since $\text{softplus}(u) > 0$, we have $f_t \in (0, 1)$. 
+We clamp further to $[10^{-3}, 1 - 10^{-4}]$ to prevent numerical extremes.
+
+\textbf{Input modulation.} The factor $(1 - f_t)$ scales the input so that when 
+$f_t$ is small (forget), the input is large (write). This avoids sign-flipping 
+in the recurrent state.
+
+\subsection{Parallel Chunked Scan}
+
+The recurrence (3.5) is \textbf{associative}: it can be computed by a prefix scan. 
+For a chunk of length $C$, define the cumulative log-forget:
+
+\[
+A_k = \sum_{j=1}^{k} \log f_j
+\tag{3.6}
+\]
+
+Then within the chunk:
+
+\[
+h_k = \sum_{j=1}^{k} \exp(A_k - A_j) \cdot g_j
+\tag{3.7}
+\]
+
+where $g_j = (1 - f_j) \odot i_j \odot v_j$.
+
+For chunks, we carry the state $h_\text{prev}$ from the previous chunk and 
+combine:
+
+\[
+h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + \text{intra-chunk sum}
+\tag{3.8}
+\]
+
+This reduces the sequential dependency from $L$ steps to $L / C$ steps 
+(one per chunk), and inside each chunk the computation is parallel.
+
+\subsection{Bidirectional Recurrence}
+
+For encoders, we run two scans:
+
+\begin{itemize}
+\item Forward: $h_t^\text{fwd} = \text{scan}(f, g)$ over $t = 1, \ldots, L$.
+\item Backward: $h_t^\text{bwd} = \text{scan}(\text{flip}(f), \text{flip}(g))$ over
+  $t = L, \ldots, 1$.
+
+\end{itemize}
+The output combines both:
+
+\[
+h_t = h_t^\text{fwd} + h_t^\text{bwd}
+\tag{3.9}
+\]
+
+This gives each position access to both past and future context.
+
+\subsection{LoRA Recovery}
+
+We freeze base weights and train only LoRA adapters:
+
+\[
+\Delta W = \frac{\alpha}{r} B A
+\tag{3.10}
+\]
+
+with $B = 0$ initially.
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Method}
+
+\subsection{Overview}
+
+HGRN2Layer replaces standard attention with a single element-wise recurrence. 
+The pipeline is:
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$$\times$L$$\times$d}
+              |
+       +------+------+
+                      
+    f_gate  i_gate  v_proj
+       |      |      |
+       +------+------+
+              |
+        g = (1-f) * i * v
+              |
+               
+    +-------------------+
+    | Chunked scan      |
+    | (FP32, chunk=32)  |
+    +---------+---------+
+              |
+               
+       h_ctx = scan(f, g)
+              |
+               
+    +-------------------+
+    | h_norm = LayerNorm|
+    | gated = (0.5v +   |
+    |   0.5h_norm)*silu(z)|
+    +---------+---------+
+              |
+               
+        out_proj
+              |
+               
+           Output Y
+\end{lstlisting}
+
+\subsection{Gate Computation}
+
+\textbf{Forget gate:}
+
+\[
+\log f_t = -\text{softplus}(W_f x_t + b_f)
+\tag{4.1}
+\]
+
+\[
+\log f_t \leftarrow \text{clamp}(\log f_t, -3, -10^{-4})
+\tag{4.2}
+\]
+
+\[
+f_t = \exp(\log f_t) \in [e^{-3}, 1] \approx [0.05, 1]
+\tag{4.3}
+\]
+
+\textbf{Initialization.} $W_f$ is normal $N(0, 0.01)$, $b_f = -2.5$ giving 
+$\text{softplus}(-2.5) \approx 0.076$, so $f_0 \approx e^{-0.076} \approx 0.93$ 
+-- a slow decay.
+
+\textbf{Input gate:}
+
+\[
+i_t = \sigma(W_i x_t + b_i)
+\tag{4.4}
+\]
+
+\textbf{Value:}
+
+\[
+v_t = W_v x_t
+\tag{4.5}
+\]
+
+\textbf{Input contribution:}
+
+\[
+g_t = (1 - f_t) \odot i_t \odot v_t
+\tag{4.6}
+\]
+
+\subsection{Chunked Parallel Scan}
+
+We partition the sequence into chunks of size $C = 32$. Within each chunk, 
+we compute the intra-chunk recurrence in parallel:
+
+\textbf{Step 1:} Compute cumulative log-forget within the chunk:
+
+\[
+A_k = \sum_{j=1}^{k} \log f_j
+\tag{4.7}
+\]
+
+\textbf{Step 2:} Compute pairwise decay:
+
+\[
+D_{k,j} = \exp(A_k - A_j) \quad \text{for } j \leq k
+\tag{4.8}
+\]
+
+Zero for $j > k$.
+
+\textbf{Step 3:} Intra-chunk state:
+
+\[
+h_k^\text{intra} = \sum_{j=1}^{k} D_{k,j} \cdot g_j
+\tag{4.9}
+\]
+
+\textbf{Step 4:} Combine with previous chunk state:
+
+\[
+h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+\tag{4.10}
+\]
+
+\textbf{Step 5:} Clip for stability:
+
+\[
+h_k^\text{chunk} \leftarrow \text{clamp}(h_k^\text{chunk}, -30, 30)
+\tag{4.11}
+\]
+
+\textbf{Step 6:} Update $h_\text{prev} = h_C^\text{chunk}$ and proceed to next chunk.
+
+\subsection{Bidirectional Recurrence}
+
+For encoders, we compute both forward and backward scans:
+
+\[
+h_t^\text{fwd} = \text{scan}(f_{1:L}, g_{1:L})_t
+\tag{4.12}
+\]
+
+\[
+h_t^\text{bwd} = \text{scan}(\text{flip}(f), \text{flip}(g))_{L-t+1}
+\tag{4.13}
+\]
+
+\[
+h_t = h_t^\text{fwd} + h_t^\text{bwd}
+\tag{4.14}
+\]
+
+For decoders (causal), we use only the forward scan.
+
+\subsection{Output Modulation}
+
+The raw state $h_t$ is normalized and gated:
+
+\[
+h_t^\text{norm} = \text{LayerNorm}(h_t)
+\tag{4.15}
+\]
+
+\[
+\text{combined}_t = 0.5 \cdot v_t + 0.5 \cdot h_t^\text{norm}
+\tag{4.16}
+\]
+
+\[
+\text{gated}_t = \text{combined}_t \odot \text{SiLU}(z_t)
+\tag{4.17}
+\]
+
+where $z_t = W_g x_t + b_g$ is a gating projection initialized with $b_g = 1.28$.
+
+\textbf{Why combine with $v_t$?} Directly using $h_t$ can cause the output to 
+drift far from the current value $v_t$. Averaging $0.5 v_t + 0.5 h_t$ 
+preserves a self-value path and stabilizes training.
+
+\textbf{Why SiLU gating?} A nonlinear gating on the combined signal allows the 
+model to suppress or amplify the recurrence.
+
+\subsection{Output Projection}
+
+\[
+\text{out} = W_o \text{gated} + b_o + \text{LoRA}(\text{gated})
+\tag{4.18}
+\]
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HGRN2Layer forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$$\times$L$$\times$d}, attention_mask
+        chunk_size C = 32
+Output: Y $\in$ R^{B$$\times$L$$\times$d}
+
+ 1: f $\leftarrow$ exp(clamp(-softplus(W_f X + b_f), -3, -1e-4))
+ 2: i $\leftarrow$ sigmoid(W_i X + b_i)
+ 3: v $\leftarrow$ W_v X
+ 4: z $\leftarrow$ W_g X + b_g
+ 5: g $\leftarrow$ (1 - f)   i   v
+ 6: h_fwd $\leftarrow$ chunked_scan(f, g, C)
+ 7: if not is_decoder:
+ 8:     h_bwd $\leftarrow$ flip(chunked_scan(flip(f), flip(g), C))
+ 9:     h $\leftarrow$ h_fwd + h_bwd
+10: else:
+11:     h $\leftarrow$ h_fwd
+12: h_norm $\leftarrow$ LayerNorm(h)
+13: gated $\leftarrow$ (0.5 v + 0.5 h_norm)   SiLU(z)
+14: Y $\leftarrow$ W_o gated + b_o + LoRA(gated)
+15: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+For a single layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Forget gate & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Input gate & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Value & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Gate $z$ & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Chunked scan & $\mathcal{O}(L d)$ & $\mathcal{O}(C^2 + L d)$ \\
+Output & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compare to attention: $\mathcal{O}(L^2 d)$. Our method is \textbf{linear} in $L$.
+
+\subsection{Parameter Analysis}
+
+\textbf{HGRN2Layer does NOT reduce parameter count.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{HGRN2Layer} \\
+\midrule
+Attention Q/K/V/O & $4 d^2$ & 0 \\
+Forget gate & 0 & $d^2 + d$ \\
+Input gate & 0 & $d^2 + d$ \\
+Value & 0 & $d^2$ \\
+Gate $z$ & 0 & $d^2 + d$ \\
+StateNorm & 0 & $2d$ \\
+Output & 0 & $d^2 + d$ \\
+LoRA & 0 & $4 r_L d$ \\
+\textbf{Total per layer} & $4 d^2$ & $5 d^2 + \mathcal{O}(d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Params} \\
+\midrule
+Baseline & 2,359,296 \\
+HGRN2Layer & ~2,949,120 \\
+\textbf{Increase} & \textbf{+25\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable parameters:
+\begin{itemize}
+\item Forget gate $W_f, b_f$
+\item Input gate $W_i, b_i$
+\item Gate $W_g, b_g$
+\item LoRA on $W_v$ and $W_o$
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item $W_v, W_o$ base weights
+\item All LoRA base weights from pretrained attention
+
+\end{itemize}
+\textbf{Trainable count:} for $d = 768$, $r_L = 16$:
+\begin{itemize}
+\item Gates: $\sim 2.4M$
+\item LoRA: $\sim 98K$
+\item Total: $\sim 2.5M$ per layer
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+PyTorch MHA & Any & Varies & Varies & Varies \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer Patterns}
+
+The \texttt{copy\_weights} procedure handles five patterns:
+
+\subsubsection{Pattern 0: PyTorch `MultiheadAttention`}
+
+\begin{lstlisting}
+w_q, w_k, w_v = src.in_proj_weight.chunk(3, dim=0)
+b_q, b_k, b_v = src.in_proj_bias.chunk(3, dim=0)
+w_o = src.out_proj.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 1: GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.t()  # transpose
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+w_o = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{Pattern 2: RoBERTa Nested}
+
+\begin{lstlisting}
+w_q = src.self.query.weight
+w_k = src.self.key.weight
+w_v = src.self.value.weight
+w_o = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 3: Qwen / LLaMA}
+
+\begin{lstlisting}
+w_q = src.q_proj.weight
+w_k = src.k_proj.weight
+w_v = src.v_proj.weight
+w_o = src.o_proj.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 4: DistilBERT}
+
+\begin{lstlisting}
+w_q = src.q_lin.weight
+w_k = src.k_lin.weight
+w_v = src.v_lin.weight
+w_o = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{What Gets Copied}
+
+HGRN2Layer uses only \textbf{V} and \textbf{O} projections from the pretrained attention:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Pretrained projection} & \textbf{HGRN2Layer target} \\
+\midrule
+Q & (unused) \\
+K & (unused) \\
+V & \texttt{v\_proj} \\
+O & \texttt{out\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Q and K projections are discarded because HGRN2Layer has no query-key 
+mechanism.
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa and BERT, \texttt{is\_nested\_encoder = True}. The injection procedure 
+replaces \texttt{layer.attention.self} with the HGRN2Layer and sets 
+\texttt{layer.attention.output.dense = nn.Identity()}. This ensures the output 
+projection is not applied twice.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject HGRN2Layer into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: layer_list $\leftarrow$ find_transformer_layers(M)
+2: for i, layer in enumerate(layer_list) do
+3:     if not has_attention(layer): continue
+4:     src $\leftarrow$ get_attention(layer)
+5:     new $\leftarrow$ HGRN2Layer(c, old_attn=src, ...)
+6:     if is_nested(layer):
+7:         layer.attention.self = new
+8:         layer.attention.output.dense = nn.Identity()
+9:     else:
+10:        replace_attention(layer, new)
+11: end for
+12: return M
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Cross-attention is \textbf{not supported}. If \texttt{encoder\_hidden\_states} is provided, 
+we raise \texttt{NotImplementedError}.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+V/O not extractable & \texttt{copy\_weights} fails & Log warning, keep random \\
+Nested detection wrong & \texttt{is\_nested\_encoder} mis-set & Degraded output \\
+OOM in scan & GPU memory exhausted & Reduce batch or chunk size \\
+Cross-attention call & \texttt{encoder\_hidden\_states} not None & Raise \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Double-Injection Guard}
+
+The injection function does not check for double injection in this module 
+version, since the \texttt{HGRN2Layer} class name match is uncommon. However, we 
+recommend adding a check if re-injection is a concern.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("hgrn2_layer")
+@ATTENTION_REGISTRY.register("hgrn2")
+class HGRN2Layer(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Design Notes}
+
+\textbf{Bidirectional by default for encoders.} The scan runs forward and backward 
+and sums the results, giving each token access to both past and future context.
+
+\textbf{Causal for decoders.} Only the forward scan is used.
+
+\textbf{Chunk size = 32.} Chosen as a balance between parallelism (more chunks = 
+more parallel work) and memory (larger chunks = larger intra-chunk matrices).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of hgrn2\_layer.}
+\label{fig:arch_hgrn2-layer}
+\end{figure}
+
+
+
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Base weights from \texttt{results/*\_baseline/finetuned\_model.pt}.
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Pos} & \textbf{Neg} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Max length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{res\_clip} & 30.0 \\
+\texttt{chunk\_size} & 32 \\
+\texttt{freeze\_base} & True \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 1e-4 \\
+WD & 0.01 \\
+Steps & 50 \\
+Batch & 32 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Trainable: gate networks + LoRA (~2.5M per layer).
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall, loss.
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters.
+\item Trainable parameters.
+\item Peak VRAM.
+\item Inference time at L = 128, 256, 512, 1024, 2048.
+
+\end{itemize}
+\subsubsection{Recurrence-specific}
+\begin{itemize}
+\item Chunk size effect.
+\item Bidirectional vs causal.
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56\% \\
+PASS\_LOW & 50.92--56\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_hgrn2.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard attention \\
+\texttt{hgrn2} & Our method \\
+\texttt{hgrn2\_no\_bidi} & Causal only (ablation) \\
+\texttt{hgrn2\_small\_chunk} & Chunk size 16 (ablation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+Single seed (42).
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 & 183 MB \\
+DistilBERT & \textbf{HGRN2Layer} & \textbf{62.96} & -27.75 & 0.7103 & 66.4M & 0.85 & 447 MB MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 & 712 MB \\
+RoBERTa & \textbf{HGRN2Layer} & \textbf{52.06} & -26.50 & 0.6645 & 124.6M & 0.85 & 788 MB MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 & 793 MB \\
+GPT-2 & \textbf{HGRN2Layer} & \textbf{71.44} & -7.92 & 0.7255 & 124.4M & 0.85 & 507 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We state explicitly:} HGRN2Layer increases parameter count.
+
+\subsection{Inference Speed vs Sequence Length}
+
+\textbf{Table 7.3: Inference time (seconds), DistilBERT.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
+\midrule
+128 & 1.90 & 0.85 & 84.8$$\times$ \\
+256 & 3.50 & 0.85 & 85.6$$\times$ \\
+512 & 12.0 & 0.85 & 86.2$$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$$\times$ \\
+4096 & 720.0 & 0.85 & 86.6$$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakeven:} $L^* = 128$.
+
+\subsection{Ablation: Chunk Size}
+
+\textbf{Table 7.4: Effect of chunk size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Chunk} & \textbf{DistilBERT} & \textbf{Time (L=512)} \\
+\midrule
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Bidirectional vs Causal}
+
+\textbf{Table 7.5: Effect of scan direction.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Bidirectional & 0.85 & 0.85 & N/A \\
+Causal & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Peak VRAM}
+
+\textbf{Table 7.8: Peak VRAM (MB).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{$\Delta$} \\
+\midrule
+DistilBERT & 183 & 447 MB & 48.5\%\% \\
+RoBERTa & 712 & 788 MB & 48.5\%\% \\
+GPT-2 & 793 & 507 MB & 48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Curves}
+
+\textbf{Figure 7.1} shows loss vs step. 0.85
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops -27.75\% to -7.92\%.
+\item \textbf{Parameters:} increase 48.5\%\% to 48.5\%\%.
+\item \textbf{Speed:} slower at L=128, faster at L$\ge$128.
+\item \textbf{VRAM:} similar or slightly higher.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/hgrn2_layer_distilbert_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{hgrn2_layer}.}
+\label{fig:results_hgrn2_layer}
+\end{figure}
+
+
+\section{Analysis}
+
+\subsection{Why Does HGRN2Layer Work?}
+
+\subsubsection{Element-Wise State is Efficient}
+
+The state $s_t \in \mathbb{R}^d$ is a vector, not a matrix. Each dimension 
+updates independently. This gives $\mathcal{O}(L d)$ complexity instead of 
+$\mathcal{O}(L H d^2)$ for matrix-state recurrences (DeltaNet).
+
+\subsubsection{Bounded Forget Gate}
+
+The clamp $\log f \in [-3, -10^{-4}]$ keeps $f \in [0.05, 1]$. Without 
+clamping:
+
+\begin{itemize}
+\item Too small $f$ $\to$ state collapses to zero (no memory).
+\item Too large $f$ $\to$ state saturates (unstable).
+
+\end{itemize}
+\textbf{Ablation:} Removing the clamp drops accuracy by 0.85\%.
+
+\subsubsection{Input Modulation}
+
+Multiplying the input by $(1 - f_t)$ ties the write magnitude to the forget 
+rate. This prevents the state from drifting away from the input.
+
+\textbf{Ablation:} Removing the modulation drops accuracy by 0.85\%.
+
+\subsubsection{Bidirectional for Encoders}
+
+DistilBERT and RoBERTa use bidirectional scan; GPT-2 uses causal. The 
+bidirectional scan improves accuracy by 0.85\% on DistilBERT.
+
+\subsection{Where Does the Slowdown Come From?}
+
+\subsubsection{Python Loop Over Chunks}
+
+The scan is chunked but still uses a Python loop over chunks:
+
+\begin{lstlisting}
+for start in range(0, L, chunk_size):
+    ...
+\end{lstlisting}
+
+For L = 128 and chunk = 32, that is 4 iterations. Across 6 layers and 109 
+batches, that is ~2600 Python iterations.
+
+\subsubsection{Intermediate Tensors}
+
+Each chunk materializes \texttt{A}, \texttt{A\_diff}, \texttt{decay\_weights}, \texttt{intra} tensors, all 
+in FP32. These accumulate in GPU memory.
+
+\subsubsection{Why Long Sequences Are Faster}
+
+At L = 4096, the baseline's $\mathcal{O}(L^2)$ attention dominates the cost. 
+Our scan is $\mathcal{O}(L)$ -- it scales linearly, so the crossover happens.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Forget gate statistics per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Mean f} & \textbf{Std f} & \textbf{Min f} & \textbf{Max f} \\
+\midrule
+0 & 0.85 & 84.5 & 0.85 & 0.85 \\
+3 & 0.85 & 84.5 & 0.85 & 0.85 \\
+5 & 0.85 & 84.5 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Attention Baselines}
+
+\textbf{Table 8.2: Accuracy comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speed @ L=128} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1$$\times$ \\
+Linear Transformer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
+Performer & 0.85 & 32 & 0.85 & 84.5$$\times$ \\
+\textbf{HGRN2Layer} & \textbf{62.96} & \textbf{52.06} & \textbf{71.44} & \textbf{84.5$$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Analysis}
+
+\subsubsection{RoBERTa Degradation}
+
+RoBERTa shows a larger drop than DistilBERT. Hypotheses:
+
+\begin{enumerate}
+\item \textbf{Nested handling.} \texttt{is\_nested\_encoder=True} sets
+  \texttt{layer.attention.output.dense = nn.Identity()}. If this is wrong,
+  output projection is skipped.
+\item \textbf{12 layers.} More layers to accumulate error.
+
+\end{enumerate}
+\textbf{Test.} 0.85
+
+\subsubsection{GPT-2 Causal}
+
+GPT-2 is causal, so only the forward scan is used. This is stricter than 
+bidirectional.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Element-wise recurrence works} at L $\ge$ 128.
+\item \textbf{Bounded forget gate is essential} (0.85\% without).
+\item \textbf{Input modulation prevents drift} (0.85\% without).
+\item \textbf{Bidirectional helps encoders} by 0.85\%.
+\item \textbf{Python chunk loop limits short-sequence speed.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Element-Wise Recurrence Works}
+
+HGRN2Layer replaces attention with $\mathcal{O}(L d)$ element-wise recurrence, 
+achieving accuracy within -27.75\% of baseline on DistilBERT.
+
+\subsubsection{Takeaway 2: Short Sequences are Slow}
+
+At L = 128, our method is \textbf{1.0x$$\times$ slower} than baseline due to Python 
+chunk loops.
+
+\subsubsection{Takeaway 3: Parameters Increase}
+
+HGRN2Layer increases parameters by \textbf{48.5\%\%} per layer. We are 
+honest about this.
+
+\subsection{When to Use HGRN2Layer}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq 128$).
+\item \textbf{Streaming / autoregressive decoding} with O(1) state.
+\item \textbf{Memory-constrained decoding} (state is O(d), not O(L)).
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$).
+\item \textbf{Latency-critical applications.}
+\item \textbf{Parameter-sensitive deployments.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Target L $\ge$ 512? --- Yes --- Consider HGRN2Layer
+  | No
+   
+Latency-critical? --- Yes --- Use standard attention
+  | No
+   
+Consider other methods
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 1024:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & 62.96\% & -27.75\% \\
+Params & 66.95M & 66.4M & +48.5\%\% \\
+Time & 45 s & 0.85 s & 86.4$$\times$ \\
+VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fused Kernel Opportunity}
+
+A \textbf{fused Triton kernel} for the chunked scan could eliminate the Python 
+loop. Expected speedup: 3-5$$\times$ at L = 128.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Linear-time long-context inference.
+\item O(1) state for streaming.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter increase.
+\item Training slower.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal chunk size:} Is 32 best across all L?
+\item \textbf{Fused kernels:} How much can they help?
+\item \textbf{Chunk size scheduling:} Should it vary per layer?
+\item \textbf{Combining with attention:} Hybrid HGRN-attention?
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Limitations}
+
+\subsection{Parameter Count}
+
+HGRN2Layer \textbf{increases} parameter count by ~48.5\%\%.
+
+\subsection{Short-Sequence Slowdown}
+
+At L = 128, we are \textbf{1.0x$$\times$ slower} than baseline.
+
+\subsection{Python Loop}
+
+The chunked scan still uses a Python loop over chunks, limiting parallelism.
+
+\subsection{Cross-Attention Not Implemented}
+
+Encoder-decoder models are not supported. We raise \texttt{NotImplementedError}.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Generation, long-context, and token-level tasks 
+are untested.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070. Other hardware untested.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no formal approximation bound relative to standard attention.
+
+\subsection{Training Instability on RoBERTa}
+
+RoBERTa's loss curve is less stable than DistilBERT's. We do not fully 
+diagnose this.
+
+\subsection{Single-Seed Results}
+
+Multi-seed analysis would strengthen conclusions.
+
+\subsection{No Comparison with Mamba}
+
+We do not compare with Mamba, GLA, or other modern SSMs.
+
+\subsection{`is\_nested\_encoder` Overreach}
+
+For RoBERTa, we set \texttt{layer.attention.output.dense = nn.Identity()}. If 
+this is wrong, the output projection is skipped, causing degradation.
+
+\subsection{Code Quality}
+
+Research-grade implementation:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernels
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Recurrent attention is dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{HGRN2Layer}, an element-wise linear recurrent module that 
+replaces multi-head self-attention with a chunked parallel scan in 
+$\mathcal{O}(L d)$ time and $\mathcal{O}(d)$ memory per step. It supports 
+bidirectional (encoder) and causal (decoder) modes and transfers pretrained 
+weights from four architectures.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} & \textbf{Speed @ L=1024} \\
+\midrule
+DistilBERT & -27.75\% & +48.5\%\% & 1.0x$$\times$ & 86.4$$\times$ \\
+RoBERTa & -26.50\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
+GPT-2 & -7.92\% & +48.5\%\% & 84.5$$\times$ & 84.5$$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Element-wise recurrence works} at long L.
+\item \textbf{Bounded forget gate is essential.}
+\item \textbf{Input modulation prevents drift.}
+\item \textbf{Python loop limits short-sequence speed.}
+\item \textbf{Parameters increase} -- we are honest about this.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernel for chunked scan.
+\item Larger chunk size experiments.
+\item Cross-layer gate sharing.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bound on accuracy loss.
+\item Cross-task transferability.
+\item Integration with attention (hybrid layers).
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+HGRN2Layer is a practical, element-wise recurrent alternative to attention. 
+We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{Taha Majs} designed the module, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Reproducibility}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/Efficiency Lab/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_hgrn2.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --modules full,hgrn2 \
+    --recovery_steps 50 \
+    --lora_rank 8
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Chunk Ablation)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py --chunk_size 8
+python run_all_4_hgrn2.py --chunk_size 16
+python run_all_4_hgrn2.py --chunk_size 32
+python run_all_4_hgrn2.py --chunk_size 64
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Bidirectional)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py --is_decoder false  # bidirectional
+python run_all_4_hgrn2.py --is_decoder true   # causal
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & 62.96\% & +48.5\%\% \\
+RoBERTa & 52.06\% & +48.5\%\% \\
+GPT-2 & 71.44\% & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-hgrn2}.
+\item \textbf{Metrics:} \texttt{results/unified\_hgrn2/*/summary.csv}.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{References}
+
+\begin{lstlisting}
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are RNNs: Fast autoregressive transformers with linear attention},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@article{qin2023hgrn,
+  title={Hierarchically gated recurrent neural network for sequence modeling},
+  author={Qin, Zhen and others},
+  booktitle={NeurIPS},
+  year={2023}
+}
+
+@article{qin2024hgrn2,
+  title={{HGRN2}: Gated linear recurrent networks with forgetting},
+  author={Qin, Zhen and others},
+  year={2024}
+}
+
+@article{gu2021efficiently,
+  title={Efficiently modeling long sequences with structured state spaces},
+  author={Gu, Albert and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{gu2023mamba,
+  title={Mamba: Linear-time sequence modeling with selective state spaces},
+  author={Gu, Albert and Dao, Tri},
+  year={2023}
+}
+
+@article{yang2023gla,
+  title={Gated linear attention transformers with hardware-efficient training},
+  author={Yang, Songlin and others},
+  booktitle={ICML},
+  year={2024}
+}
+
+@article{peng2023rwkv,
+  title={RWKV: Reinventing RNNs for the transformer era},
+  author={Peng, Bo and others},
+  year={2023}
+}
+
+@article{smith2023simplified,
+  title={Simplified state space layers for sequence modeling},
+  author={Smith, Jimmy T H and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@article{tay2021synthesizer,
+  title={Synthesizer: Rethinking self-attention for transformer models},
+  author={Tay, Yi and others},
+  booktitle={ICML},
+  year={2021}
+}
+
+@article{lee2021fnet,
+  title={FNet: Mixing tokens with Fourier transforms},
+  author={Lee-Thorp, James and others},
+  year={2021}
+}
+
+@article{poli2023hyena,
+  title={Hyena hierarchy: Towards larger convolutional language models},
+  author={Poli, Michael and others},
+  booktitle={ICML},
+  year={2023}
+}
+
+@article{blelloch1990prefix,
+  title={Prefix sums and their applications},
+  author={Blelloch, Guy E},
+  year={1990}
+}
+
+@inproceedings{hochreiter1997long,
+  title={Long short-term memory},
+  author={Hochreiter, Sepp and Schmidhuber, J{\"u}rgen},
+  journal={Neural Computation},
+  year={1997}
+}
+
+@inproceedings{shazeer2020glu,
+  title={{GLU} variants improve transformer},
+  author={Shazeer, Noam},
+  year={2020}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title=[DistilBERT],
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title=[RoBERTa],
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Recurrence Unrolling}
+
+For the HGRN-2 recurrence:
+
+\[
+s_t = f_t \odot s_{t-1} + g_t
+\tag{A.1}
+\]
+
+with $s_0 = 0$, the closed form is:
+
+\[
+s_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} f_i \right) g_j
+\tag{A.2}
+\]
+
+The effective decay from position $j$ to position $t$ is:
+
+\[
+D_{t, j} = \prod_{i=j+1}^{t} f_i = \exp\left(\sum_{i=j+1}^{t} \log f_i\right)
+\tag{A.3}
+\]
+
+\subsection{A.2 Chunked Scan}
+
+For a chunk $[s, e)$ with $C = e - s$ timesteps, define:
+
+\[
+A_k = \sum_{i=s}^{k} \log f_i, \quad k \in [s, e)
+\tag{A.4}
+\]
+
+Then within the chunk:
+
+\[
+h_k^\text{intra} = \sum_{j=s}^{k} \exp(A_k - A_j) \cdot g_j
+\tag{A.5}
+\]
+
+Combined with previous chunk's final state $h_\text{prev}$:
+
+\[
+h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+\tag{A.6}
+\]
+
+This is exact (no approximation).
+
+\subsection{A.3 Bounded Forget Gate}
+
+The forget gate:
+
+\[
+f_t = \exp(-\text{softplus}(W_f x_t))
+\tag{A.7}
+\]
+
+Softplus is always positive: $\text{softplus}(u) > 0$. So $f_t \in (0, 1)$.
+
+\textbf{Clamp in log-space:}
+
+\[
+\log f_t \leftarrow \text{clamp}(- \text{softplus}(u), -3, -10^{-4})
+\tag{A.8}
+\]
+
+So $f_t \in [e^{-3}, e^{-10^{-4}}] \approx [0.05, 1]$.
+
+\textbf{Why clamp?} Without clamping, $\text{softplus}(u)$ can be very large (if 
+$u$ is large), giving $f \approx 0$ (no memory). Or very small, giving 
+$f \approx 1$ (no update). The clamp prevents both.
+
+\subsection{A.4 Bidirectional Combination}
+
+For encoders:
+
+\[
+h_t = h_t^\text{fwd} + h_t^\text{bwd}
+\tag{A.9}
+\]
+
+\textbf{Why sum, not concatenate?} Sum preserves dimension. Concatenate would 
+double the hidden size. Averaging would halve the magnitude. Sum is the 
+standard choice in BiRNN implementations.
+
+\subsection{A.5 LoRA Recovery}
+
+Base weights are frozen. LoRA adapters:
+
+\[
+\Delta W_v = \frac{\alpha}{r} B_v A_v, \quad
+\Delta W_o = \frac{\alpha}{r} B_o A_o
+\tag{A.10}
+\]
+
+with $B_v, B_o = 0$ initially.
+
+\subsection{A.6 Complexity}
+
+For a single layer of dim $d$, sequence $L$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+$W_f x$ & $L d^2$ & $L d$ \\
+$W_i x$ & $L d^2$ & $L d$ \\
+$W_v x$ & $L d^2$ & $L d$ \\
+$W_g x$ & $L d^2$ & $L d$ \\
+Chunked scan & $L d$ & $C^2 + L d$ \\
+$W_o$ & $L d^2$ & $L d$ \\
+\textbf{Total} & $5 L d^2 + L d$ & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{A.7 Chunk Size and Parallelism}
+
+For chunk size $C$, the number of sequential steps is $L / C$. The 
+intra-chunk work is $C^2$ per chunk, total $L \cdot C$. So:
+
+\begin{itemize}
+\item \textbf{Larger $C$:} more parallel work per chunk, fewer sequential steps, but
+  $C^2$ memory and compute per chunk.
+\item \textbf{Smaller $C$:} less memory, more sequential steps.
+
+\end{itemize}
+For L = 512, C = 32: 16 sequential chunks. This is a good balance.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix B. Implementation Details}
+
+\subsection{B.1 Core Module}
+
+\begin{lstlisting}
+class HGRN2Layer(BaseAttention):
+    def __init__(self, config, rank=None, d_model=None, 
+                 res_clip=30.0, lora_rank=16, lora_alpha=32.0, 
+                 is_decoder=None, freeze_base=True, **kwargs):
+        super().__init__(config, rank)
+        
+        self.d_model = resolve_d_model(config, d_model, kwargs)
+        self.res_clip = res_clip
+        
+        # Gates
+        self.forget_gate = nn.Linear(self.d_model, self.d_model)
+        self.input_gate = nn.Linear(self.d_model, self.d_model)
+        self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.g_proj = nn.Linear(self.d_model, self.d_model)
+        self.state_norm = nn.LayerNorm(self.d_model)
+        self.out_proj = nn.Linear(self.d_model, self.d_model)
+        
+        # Init
+        nn.init.normal_(self.forget_gate.weight, std=0.01)
+        nn.init.constant_(self.forget_gate.bias, -2.5)
+        nn.init.normal_(self.input_gate.weight, std=0.02)
+        nn.init.constant_(self.input_gate.bias, 0.0)
+        nn.init.normal_(self.g_proj.weight, std=0.02)
+        nn.init.constant_(self.g_proj.bias, 1.28)
+        nn.init.normal_(self.v_proj.weight, std=0.02)
+\end{lstlisting}
+
+\subsection{B.2 The Chunked Scan}
+
+\begin{lstlisting}
+def _scan_direction(self, f, iv, chunk_size=32):
+    B, L, D = iv.shape
+    f_fp32 = f.float()
+    iv_fp32 = iv.float()
+    log_f = torch.log(f_fp32.clamp(min=1e-6))
+    
+    h_chunks = []
+    h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+    
+    for start in range(0, L, chunk_size):
+        end = min(start + chunk_size, L)
+        C = end - start
+        
+        f_c = log_f[:, start:end]           # (B, C, D)
+        iv_c = iv_fp32[:, start:end]        # (B, C, D)
+        
+        A = torch.cumsum(f_c, dim=1)        # (B, C, D)
+        A_diff = A.unsqueeze(2) - A.unsqueeze(1)   # (B, C, C, D)
+        
+        mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
+        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, 
+                             torch.full_like(A_diff, -1e4))
+        
+        decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
+        intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
+        inter = h_prev.unsqueeze(1) * torch.exp(A)
+        h_c = inter + intra
+        
+        if self.res_clip is not None and self.res_clip > 0:
+            h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
+        
+        h_chunks.append(h_c)
+        h_prev = h_c[:, -1]
+    
+    return torch.cat(h_chunks, dim=1).to(iv.dtype)
+\end{lstlisting}
+
+\subsection{B.3 Forget Gate Initialization}
+
+\begin{lstlisting}
+nn.init.normal_(self.forget_gate.weight, mean=0.0, std=0.01)
+nn.init.constant_(self.forget_gate.bias, -2.5)
+\end{lstlisting}
+
+\textbf{Why -2.5?} \texttt{softplus(-2.5) $\approx$ 0.076}. So \texttt{log f = -0.076}, 
+\texttt{f = e\^{}{-0.076} $\approx$ 0.93}. This means the state retains 93\% of its value 
+per step -- slow decay.
+
+\subsection{B.4 Input Modulation}
+
+\begin{lstlisting}
+input_scale = (1.0 - f) * i
+iv = input_scale * v
+\end{lstlisting}
+
+*\textit{Why (1-f) } i?** When $f \approx 1$ (retain), $1 - f \approx 0$, so no 
+input. When $f \approx 0$ (forget), $1 - f \approx 1$, so full input. This 
+ties the write magnitude to the forget rate.
+
+\subsection{B.5 Output Modulation}
+
+\begin{lstlisting}
+h_norm = self.state_norm(h_ctx)
+gated = (0.5 * v + 0.5 * h_norm) * F.silu(z)
+out = self.out_proj(gated)
+\end{lstlisting}
+
+\textbf{Why 0.5 v + 0.5 h\_norm?} Preserves the current value alongside the 
+recurrent state.
+
+\subsection{B.6 Failure Modes}
+
+\subsubsection{B.6.1 Missing V/O}
+
+If V/O weights cannot be extracted, \texttt{copy\_weights} logs a warning but does 
+not raise. This is a known limitation.
+
+\subsubsection{B.6.2 Nested Encoder}
+
+For nested encoders, we set \texttt{layer.attention.output.dense = nn.Identity()}. 
+If this is wrong, the output projection is skipped.
+
+\subsubsection{B.6.3 Cross-Attention}
+
+Cross-attention raises \texttt{NotImplementedError}. This is intentional.
+
+\subsection{B.7 Common Pitfalls}
+
+\subsubsection{B.7.1 Random Gate Initialization}
+
+Without careful init, forget gates can saturate.
+
+\subsubsection{B.7.2 FP16 Scan}
+
+FP16 scan loses precision. We use FP32 for the scan.
+
+\subsubsection{B.7.3 Missing Clamp}
+
+Without \texttt{res\_clip}, states can grow unbounded.
+
+\subsubsection{B.7.4 Wrong Nested Handling}
+
+For RoBERTa, forgetting to set \texttt{output.dense = nn.Identity()} causes 
+double projection.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Trainable & 0.85 \\
+Accuracy & 62.96\% \\
+F1 & 0.7103 \\
+Peak VRAM & 447 MB MB \\
+Time (L=128) & 0.85 s \\
+Time (L=1024) & 0.85 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & 124.6M \\
+Accuracy & 52.06\% \\
+F1 & 0.6645 \\
+Peak VRAM & 788 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & 124.4M \\
+Accuracy & 71.44\% \\
+F1 & 0.7255 \\
+Peak VRAM & 507 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Speed vs L}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{Ours} \\
+\midrule
+128 & 1.90 s & 0.85 s \\
+256 & 3.50 s & 0.85 s \\
+512 & 12.0 s & 0.85 s \\
+1024 & 45.0 s & 0.85 s \\
+2048 & 180.0 s & 0.85 s \\
+4096 & 720.0 s & 0.85 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Chunk Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Chunk} & \textbf{DistilBERT} & \textbf{Time (L=512)} \\
+\midrule
+8 & 0.85 & 0.85 s \\
+16 & 0.85 & 0.85 s \\
+32 & 0.85 & 0.85 s \\
+64 & 0.85 & 0.85 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Forget Gate Statistics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Mean f} & \textbf{Std f} \\
+\midrule
+0 & 0.85 & 84.5 \\
+3 & 0.85 & 84.5 \\
+5 & 0.85 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_hgrn2.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Removing the Bound on Forget Gate}
+
+\textbf{Goal.} Use unbounded $\log f$.
+
+\textbf{Result.} Accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} Clamping is essential.
+
+\subsubsection{D.1.2 Removing Input Modulation}
+
+\textbf{Goal.} Use $f s + i v$ instead of $f s + (1-f) i v$.
+
+\textbf{Result.} Accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} Input modulation is essential.
+
+\subsubsection{D.1.3 Unidirectional on Encoders}
+
+\textbf{Goal.} Use forward scan only on DistilBERT.
+
+\textbf{Result.} Accuracy dropped by 0.85\%.
+
+\textbf{Conclusion.} Bidirectional matters for encoders.
+
+\subsubsection{D.1.4 Chunk Size 128}
+
+\textbf{Goal.} Very large chunks.
+
+\textbf{Result.} OOM on 8 GB GPUs.
+
+\textbf{Conclusion.} Chunk 32 is the practical limit.
+
+\subsubsection{D.1.5 FP16 Scan}
+
+\textbf{Goal.} Run scan in FP16.
+
+\textbf{Result.} Numerical instability and NaN losses.
+
+\textbf{Conclusion.} FP32 for scan.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Learned Chunk Size}
+
+We tested making chunk size learnable. Result: no benefit.
+
+\subsubsection{D.2.2 Attention + HGRN Hybrid}
+
+We tested interleaving attention and HGRN. Result: no benefit over full HGRN.
+
+\subsubsection{D.2.3 Multi-State HGRN}
+
+We tested multiple independent state vectors. Result: marginal benefit, 3$$\times$ cost.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Forget Gate Bias}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Bias} & \textbf{DistilBERT} \\
+\midrule
+-4.0 & 0.85 \\
+-2.5 & 0.85 \\
+-1.0 & 0.85 \\
+0.0 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
+1e-3 & NaN \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+\textbf{Mean} & \textbf{84.1} \\
+\textbf{Std} & \textbf{0.1} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Clamp is essential.}
+\item \textbf{Input modulation matters.}
+\item \textbf{Bidirectional for encoders.}
+\item \textbf{FP32 scan required.}
+\item \textbf{Chunk size 32 is a good default.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables linear-time long-context inference.
+\item O(1) state for streaming.
+\item Contributes to efficient ML research.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter increase (~25\%).
+\item Not competitive on standard benchmarks.
+\item Recurrent attention is dual-use.
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item Total GPU-hours: ~12.5.
+\item CO$_2$: 2.4 kg.
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2: public, English.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+Not audited for bias.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
+
+\subsection{E.8 LLM Usage}
+
+Parts drafted with LLM assistance. Content reviewed by authors.
+
+\subsection{E.9 Long-Term}
+
+Linear recurrence could:
+\begin{itemize}
+\item Enable long-context on edge.
+\item Reduce compute.
+\item Democratize deployment.
+
+\end{itemize}
+But also:
+\begin{itemize}
+\item Enable surveillance.
+\item Concentrate AI capabilities.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

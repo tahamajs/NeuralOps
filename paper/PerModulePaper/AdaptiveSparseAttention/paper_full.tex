@@ -1,155 +1,12 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{Adaptive Sparse Attention: Learned Per-Head Sparsity for Efficient Transformer Inference}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-
-\section{Adaptive Sparse Attention: Learned Per-Head Sparsity for Efficient Transformer Inference}
-
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/adaptive\_sparse\_attention.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Dense softmax attention computes $L^2$ pairwise scores per head, but empirical 
-studies have repeatedly shown that the attention distribution is highly 
-concentrated: only a small fraction of keys receive most of the attention mass. 
-This suggests that most of the $L^2$ scores can be pruned with minimal impact 
-on quality. Static sparsity patterns (fixed windows, fixed strides) fail to 
-capture this variability, and existing dynamic methods either ignore per-head 
-heterogeneity or introduce non-differentiable top-$k$ operations that hinder 
-end-to-end training.
-
-We introduce \textbf{Adaptive Sparse Attention} (ASA), a per-head learnable 
-sparsification mechanism. Each of the $H$ heads maintains a single scalar 
-logit $\ell_h$ controlling its retention budget: $k_h = \lfloor (1 - \sigma(\ell_h)) \cdot L \rfloor$. 
-The top-$k$ selection is made differentiable via a \textbf{soft sigmoid threshold}: 
-after computing the top-$k$-th score $\tau_h$, we apply a soft mask 
-$\sigma((s_i - \tau_h) / T)$ that concentrates mass on the retained entries.
-
-We evaluate ASA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At default 
-sparsity 0.5 on decoders and 0.1 on encoders, ASA 
-achieves \textbf{88.5\%}, \textbf{76.0\%}, and \textbf{76.5\%} accuracy, within 
-\textbf{-2.2\%}, \textbf{-2.6\%}, and \textbf{-2.9\%} of the respective 
-dense baselines. Attention FLOPs are reduced by up to \textbf{2$$\times$}. 
-The learned per-head budgets show systematic structure: some heads converge 
-to near-dense (sparsity $\approx$ 0) and others to near-sparse (sparsity $\approx$ 0.9), 
-demonstrating head heterogeneity.
-
-\textbf{Keywords:} sparse attention, learned sparsity, top-k, differentiable 
-masking, per-head budgets
-
-
-
-\subsection{Lay Summary}
-
-Attention is the core operation in transformers. For a sequence of 1000 
-words, it computes a million pairwise scores --- but in practice, most of these 
-scores are near zero and contribute nothing. Throwing them away saves compute 
-without hurting quality.
-
-The challenge is \textit{which} scores to throw away. A fixed rule (e.g., "keep only 
-nearby tokens") works poorly when important context is distant. Our method 
-lets each attention head \textbf{learn} its own rule. A single trainable number 
-per head controls what fraction of keys that head attends to. The learning 
-is fully differentiable, so it can be trained end-to-end alongside the model.
-
-We test this on three popular language models and find that the learned 
-budgets are highly non-uniform: some heads remain dense, others become almost 
-completely sparse. This shows that not all heads are equally important --- a 
-fact that static sparsity methods ignore.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Standard softmax attention (Vaswani et al., 2017) computes, for each of $H$ 
 heads and each pair of positions $(i, j)$, a score:
@@ -159,7 +16,7 @@ s_{ij}^{(h)} = \frac{(Q^{(h)} x_i)^\top (K^{(h)} x_j)}{\sqrt{d_h}}
 \end{equation}
 
 producing an $L \times L$ score matrix per head. This is $\mathcal{O}(L^2 d_h)$ 
-in time and $\mathcal{O}(L^2)$ in memory --- the dominant cost for long sequences.
+in time and $\mathcal{O}(L^2)$ in memory -- the dominant cost for long sequences.
 
 Yet the attention distribution is \textbf{highly concentrated}. Across numerous 
 studies (Clark et al., 2019; Voita et al., 2019; Michel et al., 2019), the 
@@ -167,29 +24,27 @@ following has been repeatedly observed:
 
 \begin{itemize}
 \item Most attention weight is concentrated on a few keys (attention sinks,
-\end{itemize}
   heavy hitters).
-\begin{itemize}
 \item Many heads are redundant and can be pruned entirely.
-\end{itemize}
-\begin{itemize}
 \item The sparsity pattern varies dramatically across heads.
-\end{itemize}
 
-\textbf{Static sparsity} --- fixed windows (Longformer), fixed strides (BigBird), 
-fixed random patterns --- cannot adapt to this variation. A head that needs 
+\end{itemize}
+\textbf{Static sparsity} -- fixed windows (Longformer), fixed strides (BigBird), 
+fixed random patterns -- cannot adapt to this variation. A head that needs 
 global context is forced into a local window; a head that only needs local 
 context wastes capacity on distant keys.
 
-\textbf{Dynamic sparsity} --- top-$k$ selection per query --- adapts to content, but 
+\textbf{Dynamic sparsity} -- top-$k$ selection per query -- adapts to content, but 
 existing methods suffer from two problems:
 
-1. \textbf{Non-differentiability.} Hard top-$k$ selection has zero gradient 
-   almost everywhere, making it unsuitable for end-to-end training.
-2. \textbf{Uniform budget.} Most methods use the same $k$ for all heads, ignoring 
-   the fact that head importance varies.
+\begin{enumerate}
+\item \textbf{Non-differentiability.} Hard top-$k$ selection has zero gradient
+  almost everywhere, making it unsuitable for end-to-end training.
+\item \textbf{Uniform budget.} Most methods use the same $k$ for all heads, ignoring
+  the fact that head importance varies.
 
-\subsection{1.2 Problem Statement}
+\end{enumerate}
+\subsection{Problem Statement}
 
 Given attention score matrix $S \in \mathbb{R}^{L \times L}$ per head, we 
 seek a sparse approximation $\tilde{S}$ such that:
@@ -201,66 +56,62 @@ seek a sparse approximation $\tilde{S}$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Differentiability:} End-to-end trainable w.r.t. the sparsity budget.
-2. \textbf{Per-head adaptation:} Each head has its own sparsity budget.
-3. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
-4. \textbf{Memory bounded:} Peak VRAM must not exceed baseline.
-5. \textbf{Compatibility:} Works with pretrained weights without retraining.
+\begin{enumerate}
+\item \textbf{Differentiability:} End-to-end trainable w.r.t. the sparsity budget.
+\item \textbf{Per-head adaptation:} Each head has its own sparsity budget.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Memory bounded:} Peak VRAM must not exceed baseline.
+\item \textbf{Compatibility:} Works with pretrained weights without retraining.
 
-\subsection{1.3 Our Approach: Adaptive Sparse Attention}
+\end{enumerate}
+\subsection{Our Approach: Adaptive Sparse Attention}
 
 We propose \textbf{Adaptive Sparse Attention} (ASA), which addresses the two 
 problems above simultaneously:
 
-1. \textbf{Learnable per-head budget.} Each head maintains a scalar logit 
-   $\ell_h \in \mathbb{R}$. Its retention budget is:
-\begin{equation}
-k_h = \lfloor (1 - \sigma(\ell_h)) \cdot L \rfloor
+\begin{enumerate}
+\item \textbf{Learnable per-head budget.} Each head maintains a scalar logit
+  $\ell_h \in \mathbb{R}$. Its retention budget is:
+  \begin{equation}
+k\_h = \lfloor (1 - \sigma(\ell\_h)) \cdot L \rfloor
 \end{equation}
-   where $\sigma$ is the sigmoid. This makes the budget a **continuous, 
-   differentiable** function of a single parameter.
+  where $\sigma$ is the sigmoid. This makes the budget a **continuous,
+  differentiable** function of a single parameter.
 
-2. \textbf{Soft top-$k$ masking.} Hard top-$k$ selection is replaced by a soft 
-   mask:
-\begin{equation}
-\tilde{s}_{ij} = s_{ij} + \log \sigma\!\left(\frac{s_{ij} - \tau_h}{T}\right)
+\item \textbf{Soft top-$k$ masking.} Hard top-$k$ selection is replaced by a soft
+  mask:
+  \begin{equation}
+\tilde{s}\_{ij} = s\_{ij} + \log \sigma\!\left(\frac{s\_{ij} - \tau\_h}{T}\right)
 \end{equation}
-   where $\tau_h$ is the $k_h$-th largest score for head $h$ and $T = 0.1$ 
-   is a temperature. As $T \to 0$, this converges to hard top-$k$; for finite 
-   $T$, it is smooth and differentiable.
+  where $\tau_h$ is the $k_h$-th largest score for head $h$ and $T = 0.1$
+  is a temperature. As $T \to 0$, this converges to hard top-$k$; for finite
+  $T$, it is smooth and differentiable.
 
-3. \textbf{Chunked computation.} To bound memory, the query dimension is 
-   processed in chunks of 64. This keeps peak VRAM at $\mathcal{O}(B H \cdot 
-   \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L^2)$.
+\item \textbf{Chunked computation.} To bound memory, the query dimension is
+  processed in chunks of 64. This keeps peak VRAM at $\mathcal{O}(B H \cdot
+  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L\^{}2)$.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A learnable per-head sparsity mechanism.} ASA's per-head logits are the
-\end{itemize}
-  first differentiable mechanism for learning head-specific sparsity budgets 
+  first differentiable mechanism for learning head-specific sparsity budgets
   without auxiliary losses.
-\begin{itemize}
 \item \textbf{A soft top-$k$ threshold.} We replace hard top-$k$ with a sigmoid-based
-\end{itemize}
-  soft mask that concentrates mass on the retained entries while remaining 
+  soft mask that concentrates mass on the retained entries while remaining
   differentiable.
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} The implementation supports flat,
-\end{itemize}
-  nested, and causal architectures with RoPE, GQA, T5-style relative position 
+  nested, and causal architectures with RoPE, GQA, T5-style relative position
   bias, and safe injection.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
-  on SST-2 with ablations over sparsity ratio, temperature, and head budget 
+  on SST-2 with ablations over sparsity ratio, temperature, and head budget
   distribution.
-\begin{itemize}
 \item \textbf{Head budget analysis.} We show that learned budgets are highly non-uniform,
-\end{itemize}
   with a consistent bimodal distribution across layers.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention and 
 sparsity. Section 4 presents ASA. Section 5 describes integration with three 
@@ -273,118 +124,97 @@ concludes.
 
 \subsection{Notation}
 
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Static Sparse Attention}
+\subsection{Static Sparse Attention}
 
 \textbf{Fixed-pattern sparsity} restricts attention to a predetermined subset of 
 key positions:
 
 \begin{itemize}
 \item \textbf{Longformer} (Beltagy et al., 2020): Sliding window + global tokens.
-\end{itemize}
-\begin{itemize}
 \item \textbf{BigBird} (Zaheer et al., 2020): Sliding window + random + global.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sparse Transformer} (Child et al., 2019): Strided + local patterns.
-\end{itemize}
-\begin{itemize}
 \item \textbf{BlockBERT} (Qiu et al., 2020): Block-sparse pattern.
-\end{itemize}
 
+\end{itemize}
 \textbf{Limitation.} Patterns are fixed before training and cannot adapt to 
 content or head heterogeneity.
 
-\subsection{2.2 Dynamic Sparse Attention}
+\subsection{Dynamic Sparse Attention}
 
 \textbf{Content-dependent sparsity} selects keys based on query-key similarity:
 
 \begin{itemize}
 \item \textbf{Routing Transformer} (Roy et al., 2021): K-means clustering of queries
-\end{itemize}
   and keys.
-\begin{itemize}
 \item \textbf{Reformer} (Kitaev et al., 2020): Locality-sensitive hashing.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sinkhorn Attention} (Tay et al., 2020): Sorted bucket attention.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Top-K Attention} (Gupta et al., 2021): Hard top-$k$ over scores.
-\end{itemize}
 
+\end{itemize}
 \textbf{Limitation.} Most dynamic methods use \textbf{uniform} sparsity across heads, 
 or use hard top-$k$ with zero gradient.
 
-\subsection{2.3 Learned Sparsity}
+\subsection{Learned Sparsity}
 
 \textbf{Learnable patterns} adapt the sparsity structure during training:
 
 \begin{itemize}
 \item \textbf{Learned Sparsity Patterns} (Tay et al., 2021): Differentiable stride and
-\end{itemize}
   dilation.
-\begin{itemize}
 \item \textbf{SangerNet} (Yuan et al., 2021): Learned sparse masks.
-\end{itemize}
-\begin{itemize}
 \item \textbf{SparseBERT} (Xia et al., 2022): Distilled sparse patterns.
-\end{itemize}
 
+\end{itemize}
 \textbf{ASA differs} by learning \textbf{per-head} budgets via a \textbf{scalar} parameter 
 per head, avoiding the complexity of learnable masks.
 
-\subsection{2.4 Differentiable Top-$k$}
+\subsection{Differentiable Top-$k$}
 
 \textbf{Hard top-$k$} has zero gradient. Several relaxations exist:
 
 \begin{itemize}
 \item \textbf{Soft top-$k$} (Augustin et al., 2022): Perturbation-based.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Gumbel top-$k$} (Kool et al., 2019): Stochastic.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sigmoid soft mask} (our approach): Deterministic, based on threshold.
-\end{itemize}
 
+\end{itemize}
 \textbf{ASA uses the sigmoid soft mask}, which is simpler than existing relaxations 
 and works well empirically.
 
-\subsection{2.5 Head Importance and Sparsity}
+\subsection{Head Importance and Sparsity}
 
 \textbf{Head pruning} studies which heads matter:
 
 \begin{itemize}
 \item Voita et al. (2019): Most heads can be pruned with minimal loss.
-\end{itemize}
-\begin{itemize}
 \item Michel et al. (2019): A single head suffices for many tasks.
-\end{itemize}
-\begin{itemize}
 \item Clark et al. (2019): Attention patterns vary significantly across heads.
-\end{itemize}
 
+\end{itemize}
 \textbf{ASA exploits this} by allowing each head to learn its own budget, 
 effectively performing soft head pruning.
 
-\subsection{2.6 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{ASA} \\
 \midrule
-Sparsity pattern \& Fixed or uniform & **Per-head learned** \\
-Top-$k$ selection \& Hard (non-diff) & **Soft (differentiable)** \\
-Head budget \& Uniform & **Heterogeneous** \\
-Training \& From scratch & **Pretrained + LoRA** \\
+Sparsity pattern \& Fixed or uniform & \textbf{Per-head learned} \\
+Top-$k$ selection \& Hard (non-diff) & \textbf{Soft (differentiable)} \\
+Head budget \& Uniform & \textbf{Heterogeneous} \\
+Training \& From scratch & \textbf{Pretrained + LoRA} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -393,15 +223,17 @@ Training \& From scratch & **Pretrained + LoRA** \\
 budgets\textbf{ via a }single scalar per head**, without auxiliary losses or 
 special training procedures.
 
-\subsection{2.7 Comparison Table}
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Background}
 
-
-\section{3. Background}
-
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -421,7 +253,7 @@ O = P V \in \mathbb{R}^{L \times d_h}
 matmuls require $\mathcal{O}(L^2 d_h)$ time. For $L = 1024$, $d_h = 64$, 
 this is $\sim 67$M FLOPs per head per sequence.
 
-\subsection{3.2 Sparsity in Attention}
+\subsection{Sparsity in Attention}
 
 \textbf{Observation.} The softmax distribution $P$ is typically concentrated:
 
@@ -436,7 +268,7 @@ vs ranked keys for a middle GPT-2 layer. Top 10\% of keys capture
 \textbf{Implication.} Pruning to the top $k = (1 - \rho) L$ keys retains most 
 of the output quality, at fraction $1 - \rho$ of the compute.
 
-\subsection{3.3 Top-$k$ Selection}
+\subsection{Top-$k$ Selection}
 
 For a score vector $s \in \mathbb{R}^L$, the top-$k$ selection produces:
 
@@ -449,7 +281,7 @@ where $\tau$ is the $k$-th largest value.
 \textbf{Non-differentiability.} The gradient $\partial \text{top-}k / \partial s$ 
 is zero almost everywhere. This is problematic for end-to-end training.
 
-\subsection{3.4 Soft Top-$k$ Relaxations}
+\subsection{Soft Top-$k$ Relaxations}
 
 \textbf{Sigmoid mask.} Given $\tau$, we can define:
 
@@ -470,7 +302,7 @@ log-mask to the scores:
 This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) = 
 \text{softmax}(s) \cdot m / \sum m$.
 
-\subsection{3.5 Per-Head Sparsity Budgets}
+\subsection{Per-Head Sparsity Budgets}
 
 The retention budget $k_h$ for head $h$ is:
 
@@ -489,7 +321,7 @@ where $\rho_h \in [0, 1]$ is the head-specific sparsity ratio.
 This is differentiable w.r.t. $\ell_h$, allowing gradient-based learning of 
 the sparsity budget.
 
-\subsection{3.6 Chunked Computation}
+\subsection{Chunked Computation}
 
 To bound peak memory, we process the query dimension in chunks of size $C$:
 
@@ -502,7 +334,7 @@ O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right)
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
 instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$$\times$ reduction.}
 
-\subsection{3.7 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
@@ -513,58 +345,62 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity 
 injection.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Method}
 
-
-\section{4. Method}
-
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Adaptive Sparse Attention (ASA) replaces dense softmax attention with a 
 sparse variant that:
 
-1. \textbf{Learns per-head budgets} via a scalar logit $\ell_h$ per head.
-2. \textbf{Softly thresholds} scores via a sigmoid mask.
-3. \textbf{Chunks the query dimension} for memory bounding.
+\begin{enumerate}
+\item \textbf{Learns per-head budgets} via a scalar logit $\ell_h$ per head.
+\item \textbf{Softly thresholds} scores via a sigmoid mask.
+\item \textbf{Chunks the query dimension} for memory bounding.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
    Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
-            │
-            ▼
-   ┌──────────────────────────────┐
-   │  Chunked score computation   │
-   │  S_chunk = Q_chunk K^T / $\sqrt{}$d  │
-   └──────────────┬───────────────┘
-                  │
-                  ▼
-   ┌──────────────────────────────┐
-   │  Per-head threshold $\tau$_h      │
-   │  (k_h-th largest score)      │
-   └──────────────┬───────────────┘
-                  │
-                  ▼
-   ┌──────────────────────────────┐
-   │  Soft mask:                  │
-   │  s̃ = s + log $\sigma$((s - $\tau$_h)/T)  │
-   └──────────────┬───────────────┘
-                  │
-                  ▼
-   ┌──────────────────────────────┐
-   │  Softmax + weighted V        │
-   └──────────────┬───────────────┘
-                  │
-                  ▼
+            |
+             
+   +------------------------------+
+   |  Chunked score computation   |
+   |  S_chunk = Q_chunk K^T / $\sqrt{}$d  |
+   +--------------+---------------+
+                  |
+                   
+   +------------------------------+
+   |  Per-head threshold $\tau$_h      |
+   |  (k_h-th largest score)      |
+   +--------------+---------------+
+                  |
+                   
+   +------------------------------+
+   |  Soft mask:                  |
+   |  s  = s + log $\sigma$((s - $\tau$_h)/T)  |
+   +--------------+---------------+
+                  |
+                   
+   +------------------------------+
+   |  Softmax + weighted V        |
+   +--------------+---------------+
+                  |
+                   
               Context
 \end{lstlisting}
 
-\subsection{4.2 Per-Head Sparsity Budget}
+\subsection{Per-Head Sparsity Budget}
 
-\subsubsection{4.2.1 Parameterization}
+\subsubsection{Parameterization}
 
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The sparsity ratio is:
@@ -579,7 +415,7 @@ The retention budget is:
 k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
 \end{equation}
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
@@ -589,7 +425,7 @@ We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
-\subsubsection{4.2.3 Differentiability}
+\subsubsection{Differentiability}
 
 The gradient of the loss w.r.t. $\ell_h$ is:
 
@@ -600,9 +436,9 @@ The gradient of the loss w.r.t. $\ell_h$ is:
 The floor operation in (4.2) is non-differentiable; in practice we use 
 $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
 
-\subsection{4.3 Soft Top-$k$ Threshold}
+\subsection{Soft Top-$k$ Threshold}
 
-\subsubsection{4.3.1 Computing the Threshold}
+\subsubsection{Computing the Threshold}
 
 For each (batch, head, query) triple, we compute the top-$k_h$ threshold 
 $\tau$ as the $k_h$-th largest score:
@@ -613,7 +449,7 @@ $\tau$ as the $k_h$-th largest score:
 
 This is computed via \texttt{torch.sort} followed by indexing at position $k_h - 1$.
 
-\subsubsection{4.3.2 Soft Mask}
+\subsubsection{Soft Mask}
 
 Given threshold $\tau$, we define the mask:
 
@@ -629,39 +465,35 @@ where $T = 0.1$ is a temperature. The masked score is:
 
 with $\epsilon = 10^{-8}$ for numerical stability.
 
-\subsubsection{4.3.3 Interpretation}
+\subsubsection{Interpretation}
 
 \begin{itemize}
 \item For $s_j \gg \tau$: $m_j \approx 1$, $\log m_j \approx 0$ $\to$ \textbf{no change}.
-\end{itemize}
-\begin{itemize}
 \item For $s_j \ll \tau$: $m_j \approx 0$, $\log m_j \to -\infty$ $\to$ \textbf{suppressed}.
-\end{itemize}
-\begin{itemize}
 \item Near $s_j \approx \tau$: $m_j \approx 0.5$, $\log m_j \approx -0.7$ $\to$ \textbf{partial suppression}.
-\end{itemize}
 
+\end{itemize}
 As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$ and we recover hard top-$k$.
 
-\subsection{4.4 Chunked Forward Pass}
+\subsection{Chunked Forward Pass}
 
-\subsubsection{4.4.1 Motivation}
+\subsubsection{Motivation}
 
 Even with sparsity, computing the full $L \times L$ score matrix requires 
 $\mathcal{O}(L^2)$ memory. Chunking the query dimension bounds peak memory 
 to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
-\subsubsection{4.4.2 Algorithm}
+\subsubsection{Algorithm}
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
 Input:  Q, K, V $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
-        sparsity_logits ℓ $\in$ R^H
+        sparsity_logits   $\in$ R^H
         T (temperature), C (chunk size)
 Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 
-1:  ρ $\leftarrow$ sigmoid(ℓ)                        # (H,)
-2:  k $\leftarrow$ floor((1 - ρ) * L)                # (H,)
+1:    $\leftarrow$ sigmoid( )                        # (H,)
+2:  k $\leftarrow$ floor((1 -  ) * L)                # (H,)
 3:  chunks $\leftarrow$ []
 4:
 5:  for q_start in 0..L step C do
@@ -692,10 +524,11 @@ Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 30: return context
 \end{lstlisting}
 
-\subsection{4.5 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{ASA} \\
@@ -703,8 +536,8 @@ Output: context $\in$ R^{B $$\times$ H $$\times$ L $$\times$ d_h}
 Score matrix & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
 Softmax & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
 Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
-**Total memory** & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
-**Total time** & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
+\textbf{Total memory} & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
+\textbf{Total time} & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -712,12 +545,13 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 For $C = 64$ and $L = 512$, memory is reduced by 
 \textbf{8$$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
-for pruned keys --- this is a possible future extension.
+for pruned keys -- this is a possible future extension.
 
-\subsection{4.6 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA} \\
@@ -726,8 +560,8 @@ $W_Q$ & $d H d_h$ \& Same \\
 $W_K$ & $d H_{kv} d_h$ \& Same \\
 $W_V$ & $d H_{kv} d_h$ \& Same \\
 $W_O$ & $H d_h d$ \& Same \\
-**Sparsity logits** & 0 & **$H$** \\
-**LoRA** & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
+\textbf{Sparsity logits} & 0 & \textbf{$H$} \\
+\textbf{LoRA} & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -735,9 +569,9 @@ $W_O$ & $H d_h d$ \& Same \\
 \textbf{ASA adds $H$ parameters} (one per head) and LoRA adapters. It does \textbf{not} 
 reduce total parameter count.
 
-\subsection{4.7 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.7.1 Approximation Error}
+\subsubsection{Approximation Error}
 
 For a head with sparsity $\rho$, the approximation error is:
 
@@ -747,7 +581,7 @@ For a head with sparsity $\rho$, the approximation error is:
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 
-\subsubsection{4.7.2 Head Heterogeneity}
+\subsubsection{Head Heterogeneity}
 
 Let $\rho_h^{(T)}$ be the learned sparsity for head $h$ after convergence. 
 Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
@@ -758,7 +592,7 @@ Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 
 This matches the head-pruning literature.
 
-\subsubsection{4.7.3 Chunked Memory Bound}
+\subsubsection{Chunked Memory Bound}
 
 With chunk size $C$:
 
@@ -768,36 +602,39 @@ With chunk size $C$:
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT \& Flat \& No \& No \& No & ✅ \\
-RoBERTa \& Nested \& No \& No \& No & ✅ \\
-GPT-2 \& Causal \& No \& No \& No & ✅ \\
+DistilBERT \& Flat \& No \& No \& No &  \\
+RoBERTa \& Nested \& No \& No \& No &  \\
+GPT-2 \& Causal \& No \& No \& No &  \\
 T5 \& Causal + bias \& No \& No \& Yes \& not tested \\
 Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& No \& not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
-Direct copy of \texttt{q\\_lin, k\\_lin, v\\_lin, out\\_lin}. \texttt{is\\_nested\\_encoder = False}.
+Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from inner \texttt{self}. The outer \texttt{attention.output.dense} is wrapped 
 with LoRALinear to allow training:
@@ -811,16 +648,16 @@ if hasattr(target.attention, "output"):
         target.attention.output.dense = wrapped
 \end{lstlisting}
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
-Split fused \texttt{c\\_attn}:
+Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
 w = src.c_attn.weight.t()  # Conv1D $\to$ (out, in)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 T5 (Relative Position Bias)}
+\subsubsection{T5 (Relative Position Bias)}
 
 T5 uses relative position bias embeddings. We preserve them:
 
@@ -832,40 +669,38 @@ if hasattr(src, "relative_attention_bias"):
 
 The bias is added to scores before the top-$k$ threshold.
 
-\subsubsection{5.2.5 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
-Direct copy with \texttt{repeat\\_kv} at runtime. RoPE applied before chunking.
+Direct copy with \texttt{repeat\_kv} at runtime. RoPE applied before chunking.
 
-\subsection{5.3 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject ASA into a full model
 \begin{lstlisting}
 Input:  model M, config c
-        ρ_enc, ρ_dec (default sparsity)
+         _enc,  _dec (default sparsity)
 Output: M with ASA attention
 
-1:  for ℓ in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention(ℓ)
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
 3:      if src is None: continue
-4:      ρ_0 $\leftarrow$ ρ_dec if is_decoder(src) else ρ_enc
-5:      new $\leftarrow$ AdaptiveSparseAttention(config=c, pretrained_attn=src, sparsity_ratio=ρ_0)
-6:      replace_attention(ℓ, new)
+4:       _0 $\leftarrow$  _dec if is_decoder(src) else  _enc
+5:      new $\leftarrow$ AdaptiveSparseAttention(config=c, pretrained_attn=src, sparsity_ratio= _0)
+6:      replace_attention( , new)
 7: end for
 \end{lstlisting}
 
-\subsection{5.4 Handling Nested Encoder}
+\subsection{Handling Nested Encoder}
 
 For RoBERTa/BERT, ASA is injected into \texttt{attention.self}. The outer 
 \texttt{attention.output.dense} is wrapped separately with LoRA:
 
 \begin{itemize}
 \item \textbf{Inner ASA} processes Q, K, V and returns raw context (no out\_proj).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Outer LoRALinear} applies output projection with trainable LoRA.
-\end{itemize}
 
-\subsection{5.5 RoPE Handling}
+\end{itemize}
+\subsection{RoPE Handling}
 
 RoPE is applied to Q, K \textbf{before} chunking. This preserves relative 
 position information in the sparse scores.
@@ -876,7 +711,7 @@ for q_start in range(0, L, C):
     # ... chunk processing
 \end{lstlisting}
 
-\subsection{5.6 Relative Position Bias (T5)}
+\subsection{Relative Position Bias (T5)}
 
 T5 uses a learned bias added to scores:
 
@@ -887,9 +722,9 @@ s_{ij} = \frac{Q_i \cdot K_j}{\sqrt{d_h}} + b_{i-j}
 where $b$ is a learned embedding of bucketed relative positions. ASA preserves 
 this by computing the bias before the top-$k$ threshold.
 
-\subsection{5.7 Safe Injection}
+\subsection{Safe Injection}
 
-\texttt{inject\\_adaptive\\_sparse} returns \texttt{None} on failure:
+\texttt{inject\_adaptive\_sparse} returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -901,15 +736,16 @@ except Exception as e:
 
 The caller can then skip the layer.
 
-\subsection{5.8 Handling Failure Modes}
+\subsection{Handling Failure Modes}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises \& Injection aborts \\
+Missing weights & \texttt{copy\_weights} raises \& Injection aborts \\
 RoPE embedding missing \& Exception \& Fallback to no RoPE \\
 LoRA rank mismatch \& Shape check \& Zero-init LoRA \\
 CUDA OOM in chunk \& RuntimeError \& Reduce chunk size \\
@@ -917,7 +753,7 @@ CUDA OOM in chunk \& RuntimeError \& Reduce chunk size \\
 \end{tabular}
 \end{table}
 
-\subsection{5.9 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("adaptive_sparse")
@@ -925,20 +761,32 @@ CUDA OOM in chunk \& RuntimeError \& Reduce chunk size \\
 class AdaptiveSparseAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.10 LoRA Integration}
+\subsection{LoRA Integration}
 
 LoRA is used for recovery:
 
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of AdaptiveSparseAttention.}
+\label{fig:arch_AdaptiveSparseAttention}
+\end{figure}
 
 
-\section{6. Experimental Setup}
 
-\subsection{6.1 Models}
+
+\section{Experimental Setup}
+
+\subsection{Models}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
@@ -950,14 +798,15 @@ GPT-2 & 12 & 12 & 64 & 124.4M \& Causal \\
 \end{tabular}
 \end{table}
 
-Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Split} & \textbf{Size} \\
@@ -971,10 +820,11 @@ Test & 1,821 \\
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 ASA Configuration}
+\subsection{ASA Configuration}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
@@ -989,10 +839,11 @@ LoRA alpha & 32 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
@@ -1007,39 +858,32 @@ Precision \& FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy, F1, Precision, Recall
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Peak VRAM during forward
-\end{itemize}
-\begin{itemize}
 \item Inference time (median of 20 runs)
-\end{itemize}
-\begin{itemize}
 \item Effective sparsity per head
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Sparsity Analysis}
 \begin{itemize}
 \item Learned $\rho_h$ distribution
-\end{itemize}
-\begin{itemize}
 \item Head budget histogram
-\end{itemize}
-\begin{itemize}
 \item Attention mass retention
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -1051,10 +895,11 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
@@ -1067,7 +912,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_adaptive_sparse.py \
@@ -1077,40 +922,44 @@ python run_all_4_adaptive_sparse.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{6.9 Ablations}
+\subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 
-\clearpage
+\section{Results}
 
-
-\section{7. Results}
-
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with default sparsity.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Sparsity} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & 0\% & 183 MB & 1.9 s \\
-DistilBERT & **ASA** & **88.5** & -2.2 & 0.885 & 0.42 & 120 MB & 2.1 s \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & 0\% & 712 MB & 4.1 s \\
-RoBERTa & **ASA** & **76.0** & -2.6 & 0.760 & 0.45 & 500 MB & 4.5 s \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & 0\% & 793 MB & 4.2 s \\
-GPT-2 & **ASA** & **76.5** & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 0\% & 183 MB & 1.9 s \\
+DistilBERT & \textbf{ASA} & \textbf{88.5} & -2.2 & 0.885 & 0.42 & 120 MB & 2.1 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 0\% & 712 MB & 4.1 s \\
+RoBERTa & \textbf{ASA} & \textbf{76.0} & -2.6 & 0.760 & 0.45 & 500 MB & 4.5 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 0\% & 793 MB & 4.2 s \\
+GPT-2 & \textbf{ASA} & \textbf{76.5} & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Head Budget Analysis}
+\subsection{Head Budget Analysis}
 
 \textbf{Table 7.2: Distribution of learned sparsity ratios.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Min $\rho_h$} & \textbf{Max $\rho_h$} & \textbf{Mean} & \textbf{Std} \\
@@ -1125,12 +974,13 @@ GPT-2 & 0.10 & 0.90 & 0.48 & 0.30 \\
 \textbf{Observation.} Learned budgets are \textbf{bimodal}: some heads converge to 
 near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
-\subsection{7.3 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.3: Memory and time.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
@@ -1143,12 +993,13 @@ GPT-2 \& ASA & 550 MB & 4.6 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Sparsity Ratio}
+\subsection{Ablation: Sparsity Ratio}
 
 \textbf{Table 7.4: Accuracy vs target sparsity.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Eff. sparsity} \\
@@ -1162,12 +1013,13 @@ GPT-2 \& ASA & 550 MB & 4.6 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Temperature}
+\subsection{Ablation: Temperature}
 
 \textbf{Table 7.5: Accuracy vs soft-mask temperature.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1183,12 +1035,13 @@ GPT-2 \& ASA & 550 MB & 4.6 s \\
 \textbf{Observation.} $T = 0.1$ is best; smaller is too aggressive, 
 larger is too soft.
 
-\subsection{7.6 Ablation: Chunk Size}
+\subsection{Ablation: Chunk Size}
 
 \textbf{Table 7.6: Peak VRAM vs chunk size.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$C$} & \textbf{DistilBERT VRAM} & \textbf{Time} & \textbf{RoBERTa VRAM} \\
@@ -1201,12 +1054,13 @@ larger is too soft.
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.7: Accuracy vs LoRA rank.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1219,12 +1073,13 @@ larger is too soft.
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.8: Accuracy vs recovery steps.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1237,30 +1092,32 @@ larger is too soft.
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.9: Comparison with other methods.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% \& Dense & 1.00$$\times$ & 1.00$$\times$ \\
 GQA & 88.5 & 75.5 & 77.0 \& KV reduce & 0.95$$\times$ & 1.00$$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & **2$$\times$** \\
-**ASA** & **88.5** & **76.0** & **76.5** \& Sparse & 1.00$$\times$ & **2$$\times$** \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & \textbf{2$$\times$} \\
+\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \& Sparse & 1.00$$\times$ & \textbf{2$$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Attention Mass Retention}
+\subsection{Attention Mass Retention}
 
 \textbf{Table 7.10: Attention mass retained at various sparsity levels.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Sparsity} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -1272,46 +1129,49 @@ Primal & 86.5 & 74.0 & 75.0 \& Low-rank & 1.00$$\times$ & **2$$\times$** \\
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Training Curves}
+\subsection{Training Curves}
 
 \textbf{Figure 7.1} shows loss curves and sparsity evolution.
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops only -2.2\%---2.9\%.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sparsity:} learned per-head budgets are heterogeneous.
-\end{itemize}
-\begin{itemize}
 \item \textbf{VRAM:} reduced by 8$$\times$ via chunking.
-\end{itemize}
-\begin{itemize}
-\item \textbf{No parameter reduction} --- sparsity is compute-only.
-\end{itemize}
-\begin{itemize}
+\item \textbf{No parameter reduction} -- sparsity is compute-only.
 \item \textbf{All models pass quality gate.}
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/adaptive_sparse_attention_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{AdaptiveSparseAttention}.}
+\label{fig:results_adaptivesparseattention}
+\end{figure}
 
 
-\section{8. Analysis}
 
-\subsection{8.1 Where Does ASA Win?}
+\section{Analysis}
+
+\subsection{Where Does ASA Win?}
 
 ASA provides three benefits:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Benefit} & \textbf{Mechanism} \\
 \midrule
-**Memory reduction** \& Chunked computation \\
-**Per-head adaptation** \& Learned sparsity logits \\
-**Interpretability** \& Head-level sparsity budgets \\
+\textbf{Memory reduction} \& Chunked computation \\
+\textbf{Per-head adaptation} \& Learned sparsity logits \\
+\textbf{Interpretability} \& Head-level sparsity budgets \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1319,25 +1179,23 @@ ASA provides three benefits:
 The memory reduction is \textbf{real at all sequence lengths} because chunking 
 is applied unconditionally.
 
-\subsection{8.2 Head Heterogeneity}
+\subsection{Head Heterogeneity}
 
 \textbf{Figure 8.1} shows the learned $\rho_h$ distribution for all three models. 
 Three patterns emerge:
 
-\subsubsection{8.2.1 Bimodal Distribution}
+\subsubsection{Bimodal Distribution}
 
 Most heads fall into two clusters:
 
 \begin{itemize}
 \item \textbf{Critical heads:} $\rho_h < 0.2$ (near-dense)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Redundant heads:} $\rho_h > 0.7$ (near-sparse)
-\end{itemize}
 
+\end{itemize}
 This confirms prior work on head pruning (Voita et al., 2019).
 
-\subsubsection{8.2.2 Layer-Aware Pattern}
+\subsubsection{Layer-Aware Pattern}
 
 Early layers tend to have \textbf{more dense} heads; late layers have **more 
 sparse** heads.
@@ -1346,6 +1204,7 @@ sparse** heads.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Mean $\rho_h$} \\
@@ -1359,47 +1218,49 @@ sparse** heads.
 \end{tabular}
 \end{table}
 
-\subsubsection{8.2.3 Head-Aware Pattern}
+\subsubsection{Head-Aware Pattern}
 
 Some heads are universally dense across layers (attention sinks); others 
 are consistently sparse.
 
-\subsection{8.3 Effect of Temperature}
+\subsection{Effect of Temperature}
 
 \textbf{Figure 8.2} shows the effective sparsity vs temperature. At $T = 0.01$, 
 the mask is nearly hard; at $T = 1$, the mask is very soft. The optimal 
 $T = 0.1$ balances differentiability and effectiveness.
 
-\subsection{8.4 Attention Mass Retention}
+\subsection{Attention Mass Retention}
 
 \textbf{Figure 8.3} shows the fraction of attention mass retained vs sparsity 
-level. At 50\% sparsity, \textbf{97\%} of mass is retained --- consistent 
+level. At 50\% sparsity, \textbf{97\%} of mass is retained -- consistent 
 with the "top 50\% of keys capture 90\% of mass" observation.
 
-\subsection{8.5 Comparison with Static Sparsity}
+\subsection{Comparison with Static Sparsity}
 
 \textbf{Table 8.2: ASA vs static sparsity (window size 64).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Static window & 82.0 & 70.0 & 71.0 \\
-**ASA** & **88.5** & **76.0** & **76.5** \\
+\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} ASA outperforms static window by 6.5\%.
 
-\subsection{8.6 Interaction with Other Methods}
+\subsection{Interaction with Other Methods}
 
 \textbf{Table 8.3: ASA combined with compression.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} \\
@@ -1407,33 +1268,34 @@ Static window & 82.0 & 70.0 & 71.0 \\
 Baseline & 90.71\% \\
 ASA only & 88.5\% \\
 GQA only & 88.5\% \\
-**ASA + GQA** & **86.0\%** \\
+\textbf{ASA + GQA} & \textbf{86.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Combining ASA with GQA is possible; savings are multiplicative.
 
-\subsection{8.7 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.7.1 Log-Mask Stability}
+\subsubsection{Log-Mask Stability}
 
 The log-mask \texttt{log(m + $\epsilon$)} is stable for $\epsilon = 10^{-8}$.
 
-\subsubsection{8.7.2 Threshold Quantization}
+\subsubsection{Threshold Quantization}
 
 The threshold $\tau$ is discrete (k-th largest). The soft mask smooths this.
 
-\subsubsection{8.7.3 FP16 Considerations}
+\subsubsection{FP16 Considerations}
 
 Scores are cast to FP32 for softmax; the log-mask is FP32.
 
-\subsection{8.8 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.8.1 Layers Where ASA Fails}
+\subsubsection{Layers Where ASA Fails}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
@@ -1444,74 +1306,69 @@ layer.2.attn \& RoBERTa & 2.0 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.8.2 Root Causes}
+\subsubsection{Root Causes}
 
 Head redundancy insufficient
 
-\subsection{8.9 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Per-head budgets are bimodal}: dense vs sparse.
-2. \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
-3. \textbf{$T = 0.1$} is the optimal temperature.
-4. \textbf{Chunking reduces memory} by 8$$\times$.
-5. \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
+\begin{enumerate}
+\item \textbf{Per-head budgets are bimodal}: dense vs sparse.
+\item \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
+\item \textbf{$T = 0.1$} is the optimal temperature.
+\item \textbf{Chunking reduces memory} by 8$$\times$.
+\item \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Per-Head Budgets Matter}
+\subsubsection{Takeaway 1: Per-Head Budgets Matter}
 
 Learned sparsity budgets are \textbf{highly non-uniform}. Using a single global 
 budget (as static sparsity does) leaves capacity on the table for critical 
 heads and wastes compute on redundant heads.
 
-\subsubsection{9.1.2 Takeaway 2: Soft Top-$k$ Works}
+\subsubsection{Takeaway 2: Soft Top-$k$ Works}
 
 The sigmoid-based soft mask is differentiable and effective. It avoids 
 the complexity of perturbation or Gumbel relaxations.
 
-\subsubsection{9.1.3 Takeaway 3: Chunking is Essential}
+\subsubsection{Takeaway 3: Chunking is Essential}
 
 Without chunking, ASA's memory benefit is negligible. Chunking provides 
 $\mathcal{O}(L \cdot C)$ peak memory regardless of query length.
 
-\subsection{9.2 When to Use ASA}
+\subsection{When to Use ASA}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L > 1024$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained hardware}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability studies} (head budget analysis)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with GQA} for multiplicative savings
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{When parameter reduction is the goal} (use A3 or AASVD instead)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Applications requiring strict causality} (chunking complicates this)
-\end{itemize}
 
-\subsection{9.3 Choosing Sparsity}
+\end{itemize}
+\subsection{Choosing Sparsity}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Use case} & \textbf{Recommended $\rho$} \\
@@ -1524,12 +1381,13 @@ Extreme & 0.9 \\
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For GPT-2 at $L = 512$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{VRAM} & \textbf{Inference} & \textbf{Accuracy} \\
@@ -1540,126 +1398,116 @@ ASA ($\rho=0.5$) & 550 MB & 4.6 s & 76.5\% \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Learned chunk size:} Can we learn the optimal chunk size?
-2. \textbf{Cross-layer sparsity:} Should early and late layers have different 
-   defaults?
-3. \textbf{Combining with GQA:} What is the interaction?
-4. \textbf{Theoretical bound:} How tight is our error bound?
+\begin{enumerate}
+\item \textbf{Learned chunk size:} Can we learn the optimal chunk size?
+\item \textbf{Cross-layer sparsity:} Should early and late layers have different
+  defaults?
+\item \textbf{Combining with GQA:} What is the interaction?
+\item \textbf{Theoretical bound:} How tight is our error bound?
 
-\subsection{9.6 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability:} Head budgets reveal structure.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~10 GPU-hours, ~0.8 kg CO$_2$eq.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated ($L = 128$). ASA's sparsity benefit grows with $L$; 
 we do not measure accuracy at $L \ge 512$.
 
-\subsection{10.2 Model Coverage}
+\subsection{Model Coverage}
 
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.3 No Parameter Reduction}
+\end{itemize}
+\subsection{No Parameter Reduction}
 
 ASA \textbf{does not} reduce parameter count. It reduces attention memory and 
 compute. For parameter savings, use A3 or AASVD.
 
-\subsection{10.4 No Time Reduction}
+\subsection{No Time Reduction}
 
-Chunking bounds memory but does not reduce \textbf{time} --- we still compute all 
+Chunking bounds memory but does not reduce \textbf{time} -- we still compute all 
 scores. To reduce time, we would need to skip score computation for pruned 
 keys.
 
-\subsection{10.5 Approximate Causality}
+\subsection{Approximate Causality}
 
 Causal masking is applied to each chunk. The chunk boundary may leak 
 information from prior chunks (in bidirectional settings), but for causal 
 decoders, we verify strict causality.
 
-\subsection{10.6 Sparsity Logit Floor}
+\subsection{Sparsity Logit Floor}
 
 The floor operation in $k_h = \lfloor (1 - \rho_h) L \rfloor$ is not 
 differentiable. We use a straight-through estimator, which works but is 
 not theoretically justified.
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not directly compare with:
 \begin{itemize}
 \item Longformer
-\end{itemize}
-\begin{itemize}
 \item BigBird
-\end{itemize}
-\begin{itemize}
 \item Routing Transformer
-\end{itemize}
-\begin{itemize}
 \item Reformer
-\end{itemize}
 
-\subsection{10.9 Chunk Boundary Effects}
+\end{itemize}
+\subsection{Chunk Boundary Effects}
 
 For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
 
-\subsection{10.10 Failure Modes}
+\subsection{Failure Modes}
 
 Causality, long-context evaluation
 
-\subsection{10.11 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.12 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Adaptive Sparse Attention} (ASA), a per-head learnable 
 sparsification mechanism for transformer attention. Each head maintains a 
@@ -1667,10 +1515,11 @@ scalar logit that controls its retention budget, and top-$k$ selection is
 made differentiable via a sigmoid soft mask. Chunked computation bounds 
 peak memory.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
@@ -1682,69 +1531,61 @@ GPT-2 & -2.9\% & 0.48 & -8$$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Learned per-head budgets are bimodal}: dense vs sparse.
-2. \textbf{Soft top-$k$ is differentiable and effective.}
-3. \textbf{Chunking bounds memory} without hurting quality.
-4. \textbf{No parameter reduction} --- compute-only optimization.
-5. \textbf{Attention is highly concentrated}: top 10\% of keys captures 85\%.
+\begin{enumerate}
+\item \textbf{Learned per-head budgets are bimodal}: dense vs sparse.
+\item \textbf{Soft top-$k$ is differentiable and effective.}
+\item \textbf{Chunking bounds memory} without hurting quality.
+\item \textbf{No parameter reduction} -- compute-only optimization.
+\item \textbf{Attention is highly concentrated}: top 10\% of keys captures 85\%.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Learned chunk size
-\end{itemize}
-\begin{itemize}
 \item Cross-layer sparsity transfer
-\end{itemize}
-\begin{itemize}
 \item Fused kernels for sparse matmul
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with GQA and compression
-\end{itemize}
-\begin{itemize}
 \item Cross-task transfer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 ASA provides a flexible, interpretable sparsity mechanism for transformer 
 attention. We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank The authors thank the high-performance computing facilities and open-source scientific community for compute resources and framework support..
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{Taha Majs} designed ASA, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Collaborative Research Team} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -1754,7 +1595,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running}
+\subsection{Running}
 
 \begin{lstlisting}
 python run_all_4_adaptive_sparse.py \
@@ -1764,7 +1605,7 @@ python run_all_4_adaptive_sparse.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
@@ -1785,7 +1626,7 @@ for T in 0.01 0.1 0.5 1.0; do
 done
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -1796,10 +1637,11 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Sparsity} \\
@@ -1811,34 +1653,28 @@ GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\\_sparse}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_adaptive\\_sparse/*/summary.csv}
-\end{itemize}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_sparse}
+\item \textbf{Metrics:} \texttt{results/unified\_adaptive\_sparse/*/summary.csv}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item FP32 needed for softmax stability
-\end{itemize}
-\begin{itemize}
 \item Chunk boundary effects at small $C$
-\end{itemize}
-\begin{itemize}
 \item RoPE fallback may fail on some models
 \end{itemize}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{vaswani2017attention,
@@ -1976,8 +1812,10 @@ GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
   year={2020}
 }
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix A. Mathematical Derivations}
@@ -2085,8 +1923,10 @@ H(\tilde{p}) \approx H(p) - \sum_j p_j \log m_j
 
 For $m_j \ll 1$, $\log m_j < 0$, so $H(\tilde{p}) < H(p)$. Sparsity reduces 
 entropy.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix B. Implementation Details}
@@ -2176,7 +2016,7 @@ if position_bias is not None:
 
 \subsubsection{B.6.1 Missing FP32 Cast}
 
-\texttt{torch.log(soft\\_mask + 1e-8)} must be FP32 for stability.
+\texttt{torch.log(soft\_mask + 1e-8)} must be FP32 for stability.
 
 \subsubsection{B.6.2 Wrong Causal Masking Position}
 
@@ -2193,8 +2033,10 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 \subsubsection{B.6.5 Numerically Unstable Log}
 
 \texttt{log(sigmoid(x))} is stable; \texttt{log(sigmoid(x) + 1e-8)} adds a small offset.
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix C. Full Experimental Data}
@@ -2203,6 +2045,7 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2223,6 +2066,7 @@ $\rho_\text{std}$ & 0.28 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2240,6 +2084,7 @@ Inference time & 4.5 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -2257,6 +2102,7 @@ Inference time & 4.6 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2274,6 +2120,7 @@ Inference time & 4.6 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2290,6 +2137,7 @@ Inference time & 4.6 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2306,6 +2154,7 @@ Inference time & 4.6 s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -2323,6 +2172,7 @@ Inference time & 4.6 s \\
 \subsubsection{DistilBERT}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Head} & \textbf{Layer 0} & \textbf{Layer 3} & \textbf{Layer 5} \\
@@ -2375,8 +2225,10 @@ for rho in 0.1 0.3 0.5 0.7 0.9; do
     python run_all_4_adaptive_sparse.py --sparsity_ratio $rho
 done
 \end{lstlisting}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix D. Negative Results}
@@ -2442,6 +2294,7 @@ Sparsity at multiple attention layers. Marginal improvement.
 \subsubsection{Temperature Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{Note} \\
@@ -2457,6 +2310,7 @@ Sparsity at multiple attention layers. Marginal improvement.
 \subsubsection{Chunk Size Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$C$} & \textbf{DistilBERT} & \textbf{Time} \\
@@ -2475,6 +2329,7 @@ Very small chunks add overhead.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -2491,6 +2346,7 @@ Multi-chunk gradients \& Quality \& No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
@@ -2498,21 +2354,25 @@ Multi-chunk gradients \& Quality \& No improvement \\
 42 & 88.5 \\
 123 & 88.3 \\
 456 & 88.7 \\
-**Mean** & **88.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{88.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Soft mask is essential} for differentiability.
-2. \textbf{$T = 0.1$} is the optimal temperature.
-3. \textbf{Per-head logits suffice;} per-layer not needed.
-4. \textbf{Chunk size remains a hyperparameter.}
-5. \textbf{Learned budgets are interpretable and bimodal.}
+\begin{enumerate}
+\item \textbf{Soft mask is essential} for differentiability.
+\item \textbf{$T = 0.1$} is the optimal temperature.
+\item \textbf{Per-head logits suffice;} per-layer not needed.
+\item \textbf{Chunk size remains a hyperparameter.}
+\item \textbf{Learned budgets are interpretable and bimodal.}
+\end{enumerate}
+\begin{lstlisting}
 
-\clearpage
+---
+\end{lstlisting}
 
 
 \section{Appendix E. Ethical Considerations}
@@ -2522,49 +2382,35 @@ Multi-chunk gradients \& Quality \& No improvement \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Efficient inference:} Reduces memory and compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Longer context:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability:} Head budgets reveal attention structure.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Efficiency gains benefit both beneficial and harmful
-\end{itemize}
   applications.
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Rebound effect:} Cheaper inference may increase total usage.
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Environmental Impact}
 
 \begin{itemize}
 \item \textbf{Total GPU-hours:} ~10
-\end{itemize}
-\begin{itemize}
 \item \textbf{Estimated CO$_2$:} 0.7 kg CO$_2$eq
-\end{itemize}
 
+\end{itemize}
 Sparse attention reduces compute at inference.
 
 \subsection{E.3 Data Ethics}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English movie reviews)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias:} Western-centric
-\end{itemize}
 
+\end{itemize}
 \subsection{E.4 Model Ethics}
 
 \subsubsection{Bias}
@@ -2578,7 +2424,7 @@ Could enable surveillance at scale. Not endorsed.
 
 \subsection{E.5 Authorship and Credit}
 
-See §11.7.
+See  11.7.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -2598,37 +2444,33 @@ Parts drafted with LLM assistance.
 
 \subsection{E.10 Reproducibility Commitments}
 
-1. Release code
-2. Release checkpoints
-3. Report negative results
-4. Document all hyperparameters
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document all hyperparameters
 
+\end{enumerate}
 \subsection{E.11 Long-Term Considerations}
 
 Sparse attention could:
 
 \begin{itemize}
 \item Enable efficient LLM inference on consumer hardware
-\end{itemize}
-\begin{itemize}
 \item Reduce AI's carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Reveal structural properties of attention
-\end{itemize}
 
+\end{itemize}
 But also:
 
 \begin{itemize}
 \item Enable widespread AI deployment
-\end{itemize}
-\begin{itemize}
 \item Concentrate capabilities
-\end{itemize}
-\begin{itemize}
 \item Widen the digital divide
+
 \end{itemize}
-
 We encourage community discussion.
+\begin{lstlisting}
 
-\end{document}
+---
+\end{lstlisting}

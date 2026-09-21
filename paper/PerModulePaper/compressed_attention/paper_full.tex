@@ -1,3 +1,8 @@
+\title{\textbf{Compressed Attention: Formal Architectural Specification and Empirical Benchmark Evaluation}
+
+\author{Anonymous authors}
+
+
 \section{Introduction}
 
 \subsection{Motivation and Computational Bottlenecks}
@@ -584,6 +589,14 @@ Table~\ref{tab:results_vram_compressedattention} presents memory profiling and e
 \caption{Inference throughput and VRAM footprint for \texttt{compressedattention}.}
 \label{tab:results_vram_compressedattention}
 \end{table*}
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/compressed_attention_roberta_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{compressed_attention}.}
+\label{fig:results_compressed_attention}
+\end{figure}
 
 
 \section{Detailed Analysis}

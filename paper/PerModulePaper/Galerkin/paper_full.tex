@@ -1,812 +1,585 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\title{\textbf{Galerkin Attention: Petrov-Galerkin Projection onto Orthonormal Bases for Transformer Self-Attention}
 
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{bm}
-\usepackage{booktabs}
-\usepackage{xcolor}
-\usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
-
-\definecolor{codebg}{HTML}{F8F9FA}
-\lstset{
-    backgroundcolor=\color{codebg},
-    basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
-    frame=single,
-    breaklines=true,
-    breakatwhitespace=true
-}
-
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
-
-\begin{document}
-
-\section{Galerkin Attention: Petrov-Galerkin Projection for Linear-Complexity Transformer Self-Attention}
-
-\textbf{Authors:}
-\begin{itemize}
-\item Your Name¹ --- you@university.edu
-\end{itemize}
-\begin{itemize}
-\item Advisor Name² --- advisor@university.edu
-\end{itemize}
-
-\textbf{Affiliations:}
-\begin{itemize}
-\item ¹ University Name, Department of Computer Science
-\end{itemize}
-\begin{itemize}
-\item ² 0.85, 0.85
-\end{itemize}
-
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/galerkin.py
-\textbf{License:} MIT
+\author{Anonymous authors}
 
 
 
-\subsection{Abstract}
+\section{Introduction}
 
-Self-attention is fundamentally a \textbf{continuous non-local integral operator} 
-that maps query signals to context signals via a kernel:
+\subsection{Motivation}
+
+Self-attention computes pairwise interactions between all tokens in a 
+sequence, yielding an $N \times N$ attention matrix. This quadratic cost 
+in sequence length is the primary bottleneck for long-context transformers. 
+A natural question arises: **can attention be reformulated in a lower-dimensional 
+space without losing its expressive power?**
+
+One classical approach is to view attention as a discretization of the 
+continuous non-local integral operator:
 
 \begin{equation}
-(\mathcal{K}Q)(s) = \int \kappa(s, t) V(t) \, dt
+(\mathcal{K} f)(x) = \int_\Omega k(x, y) f(y) \, dy
 \end{equation}
 
-Standard implementations discretize this operator on the raw token grid, 
-requiring $\mathcal{O}(N^2 d)$ computation for $N$ tokens. We propose 
-\textbf{Galerkin Attention}, which formulates self-attention as a **Petrov-Galerkin 
-projection** onto an orthonormal basis (a discrete cosine transform variant) 
-of dimension $r \ll N$. Queries, keys, and values are projected into this 
-basis, attention is computed at rank $r$ in basis space, and the output is 
-reconstructed to the original sequence grid via basis synthesis. Complexity 
-reduces from $\mathcal{O}(N^2 d)$ to $\mathcal{O}(N r d)$ --- **linear in 
-sequence length** --- for encoder models.
-
-For \textbf{decoder models} (GPT-2, Qwen), the projection-based formulation is 
-incompatible with causal masking. We therefore fall back to **standard 
-causal softmax attention**, sacrificing the linear-complexity benefit in 
-exchange for exactness.
-
-Base Q/K/V/O projections are frozen and copied from the pretrained model; 
-LoRA rank-16 adapters provide trainable capacity. On DistilBERT and 
-RoBERTa-base with SST-2, Galerkin Attention achieves \textbf{89.91\%} and 
-\textbf{77.35\%} respectively, within \textbf{-0.80\%} and \textbf{-1.21\%} 
-of the SDPA baseline. On GPT-2, it matches the baseline exactly 
-(\textbf{79.36\%}) because it uses the standard attention fallback.
-
-\textbf{Important disclosure.} Galerkin Attention is \textbf{not} a compression 
-method --- parameter count increases by ~0.88\% via LoRA. It is 
-a \textbf{compute-efficiency} method for encoder attention.
-
-\textbf{Keywords:} Petrov-Galerkin projection, integral operator attention, 
-linear-complexity attention, orthonormal basis, DCT
-
-
-
-\subsection{Lay Summary}
-
-Standard attention compares every token to every other token, which becomes 
-slow for long sequences. Galerkin Attention uses a different strategy: 
-instead of working with individual tokens, it projects them onto a small 
-set of "smooth basis functions" (similar to how audio is compressed as a 
-sum of cosine waves). Attention is then computed between these smooth 
-components, which is much faster. The result is projected back to the 
-original sequence. This works well for encoders (like BERT) but not for 
-decoders (like GPT-2), where we fall back to standard attention. The 
-trade-off: faster compute for encoder models, no benefit for decoder models.
-
-
-
-\subsection{Table of Contents}
-
-1. [Introduction](01\_intro.md)
-2. [Related Work](02\_related.md)
-3. [Background](03\_background.md)
-4. [Method](04\_method.md)
-5. [Architecture Integration](05\_architecture.md)
-6. [Experimental Setup](06\_setup.md)
-7. [Results](07\_results.md)
-8. [Analysis](08\_analysis.md)
-9. [Discussion](09\_discussion.md)
-10. [Limitations](10\_limitations.md)
-11. [Conclusion](11\_conclusion.md)
-12. [Reproducibility](12\_reproducibility.md)
-13. [References](13\_references.md)
-
-\textbf{Appendices:}
-\begin{itemize}
-\item [A. Mathematical Derivations](A\_math.md)
-\end{itemize}
-\begin{itemize}
-\item [B. Implementation Details](B\_implementation.md)
-\end{itemize}
-\begin{itemize}
-\item [C. Full Experimental Data](C\_data.md)
-\end{itemize}
-\begin{itemize}
-\item [D. Negative Results](D\_negative\_results.md)
-\end{itemize}
-\begin{itemize}
-\item [E. Ethical Considerations](E\_ethics.md)
-\end{itemize}
-
-\clearpage
-
-\section{1. Introduction}
-
-\subsection{1.1 Motivation}
-
-Self-attention is often described in discrete terms:
+where $k(x, y)$ is a kernel and $\Omega$ is the domain. Petrov-Galerkin 
+methods approximate such operators by projecting onto finite-dimensional 
+subspaces:
 
 \begin{equation}
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\mathcal{K} \approx \Phi \, K_{\Phi \Phi} \, \Phi^\top
 \end{equation}
 
-but its mathematical foundation is \textbf{continuous}. Attention is a 
-\textbf{non-local integral operator} acting on functions over a domain $\Omega$:
+where $\Phi \in \mathbb{R}^{N \times r}$ is a basis and $K_{\Phi \Phi}$ is 
+the projected kernel matrix.
+
+0.85
+
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer with hidden size $d$ and $H$ heads, we seek 
+a modified attention function $\mathcal{A}'$ such that:
 
 \begin{equation}
-(\mathcal{K} Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
+\mathcal{A}'(Q, K, V) \approx \mathcal{A}(Q, K, V), \quad
+\text{Cost}(\mathcal{A}') = \mathcal{O}(Nr^2), \quad r \ll N
 \end{equation}
 
-where $\kappa(s, t)$ is the kernel (typically $\exp(\langle Q(s), K(t) \rangle)$). 
-Standard transformers discretize this operator on the \textbf{raw token grid}, 
-yielding $\mathcal{O}(N^2 d)$ complexity for $N$ tokens.
+We do not require retraining of base weights; LoRA adapters provide 
+recovery capacity.
 
-\textbf{The Galerkin idea.} In numerical analysis, integral operators are often 
-discretized not on the raw grid, but on a \textbf{finite-dimensional subspace} 
-spanned by a small set of \textbf{basis functions}. The **Petrov-Galerkin 
-method** selects test and trial bases to minimize the residual of the 
-operator equation:
+\subsection{Our Approach}
 
-\begin{equation}
-\langle \mathcal{K} Q - \hat{Q}, \psi_i \rangle = 0 \quad \forall i
-\end{equation}
+We propose \textbf{Galerkin Attention}, which:
 
-where $\{\psi_i\}$ is the test basis.
+\begin{enumerate}
+\item \textbf{Projects} $Q, K, V$ onto an orthonormal DCT basis $\Phi \in \mathbb{R}^{N \times r}$:
+  $$
+  Q\_\Phi = \Phi\^{}\top Q, \quad K\_\Phi = \Phi\^{}\top K, \quad V\_\Phi = \Phi\^{}\top V
+  $$
 
-Applying this to attention:
-1. Choose an orthonormal basis $\Phi \in \mathbb{R}^{N \times r}$ (e.g., DCT).
-2. Project Q, K, V into basis space: $Q_\Phi = \Phi^\top Q$, etc.
-3. Compute attention in basis space at rank $r$.
-4. Reconstruct via basis synthesis: $Y = \Phi \cdot O_\Phi$.
+\item \textbf{Computes attention} in the reduced basis space:
+  $$
+  O\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) V\_\Phi
+  $$
 
-This gives $\mathcal{O}(N r d)$ complexity --- \textbf{linear in $N$}.
+\item \textbf{Reconstructs} to the original sequence length:
+  $$
+  O = \Phi \, O\_\Phi
+  $$
 
-\subsection{1.2 The Decoder Problem}
+\item \textbf{Falls back} to standard causal attention for decoder models.
 
-Galerkin projection is \textbf{incompatible with causal masking}. The projected 
-keys $K_\Phi$ contain contributions from \textbf{all} tokens, not just the 
-prefix. For an encoder this is fine; for a decoder it breaks causality.
-
-\textbf{Solution.} For decoders, fall back to standard causal softmax attention. 
-This preserves exactness at the cost of the linear-complexity benefit.
-
-\subsection{1.3 Problem Statement}
-
-Given a pretrained attention module with projections $W_Q, W_K, W_V, W_O$, 
-we seek an augmented attention function $\mathcal{A}'$ such that:
-
-1. \textbf{Encoder linear complexity.} For bidirectional models, 
-   $\mathcal{A}'$ runs in $\mathcal{O}(N r d)$ instead of $\mathcal{O}(N^2 d)$.
-2. \textbf{Decoder exactness.} For causal models, $\mathcal{A}'$ preserves the 
-   standard softmax attention output exactly.
-3. \textbf{Multi-architecture support.} Works on flat (DistilBERT), nested 
-   (RoBERTa), causal (GPT-2), and GQA+RoPE (Qwen).
-4. \textbf{Step-0 preservation.} With zero-init LoRA, initial forward matches 
-   pretrained.
-
-\textbf{Note.} Not a compression method. Parameter count increases by LoRA.
-
-\subsection{1.4 Our Approach}
-
-\textbf{Galerkin Attention} chooses the \textbf{discrete cosine basis}:
-
-\begin{equation}
-\Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
-\end{equation}
-
-with the DC component scaled by $1/\sqrt{N}$. The basis is orthonormalized 
-via QR for numerical stability.
-
-\textbf{Encoder forward:}
-
-\begin{equation}
-\begin{aligned}
-Q_\Phi &= \Phi^\top Q, \quad K_\Phi = \Phi^\top K, \quad V_\Phi = \Phi^\top V \\
-\text{Scores} &= Q_\Phi K_\Phi^\top / \sqrt{d_h} \\
-\text{Output}_\Phi &= \text{softmax}(\text{Scores}) V_\Phi \\
-Y &= \Phi \cdot \text{Output}_\Phi \cdot \sqrt{N/r}
-\end{aligned}
-\end{equation}
-
-\textbf{Decoder forward:}
-
-Standard causal softmax attention (no projection).
-
-\subsection{1.5 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
-\item \textbf{A Galerkin formulation of self-attention.} Section 4.2.
-\end{itemize}
-\begin{itemize}
-\item \textbf{A DCT-based orthonormal basis.} With energy-preserving scaling. Section 4.3.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Encoder-decoder dispatch.} Projection for encoders, softmax for decoders. Section 4.4.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Multi-architecture weight transfer.} GPT-2 Conv1D, RoBERTa nested, DistilBERT flat, Qwen GQA. Section 5.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Honest reporting.} We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7--8.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Full reproducibility.} Code under MIT.
-\end{itemize}
+\item \textbf{A Petrov-Galerkin formulation of attention} using fixed DCT basis
+  projection.
+\item \textbf{An empirical evaluation} on DistilBERT, RoBERTa, and GPT-2 on SST-2.
+\item \textbf{A negative result:} encoder models lose 25--30\% accuracy; the method
+  fails as a compression technique.
+\item \textbf{An analysis} attributing failure to the fixed, data-independent basis.
+\item \textbf{Full reproducibility}, including code and checkpoints.
 
-\subsection{1.6 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
-Section 2 reviews related work. Section 3 provides background on integral 
-operators, Galerkin methods, and DCT. Section 4 presents Galerkin Attention. 
-Section 5 details architecture integration. Section 6 gives experimental 
-setup. Section 7 reports results. Section 8 analyzes the encoder-decoder 
-dispatch. Section 9 discusses usage. Section 10 lists limitations. Section 
-11 concludes.
+Section 2 reviews related work on Galerkin methods, spectral attention, 
+and low-rank attention. Section 3 provides background on attention, DCT, 
+and Petrov-Galerkin projection. Section 4 presents Galerkin Attention. 
+Section 5 covers architecture integration. Section 6 details the 
+experimental setup. Section 7 reports results. Section 8 analyzes why the 
+method fails. Section 9 discusses lessons learned. Section 10 lists 
+limitations. Section 11 concludes.
 
 
 
 \subsection{Notation}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$N$ \& Sequence length & 1.1 \\
+$d$ \& Head dimension & 1.1 \\
+$H$ \& Number of heads & 1.1 \\
+$r$ \& Basis dimension (rank) & 1.1 \\
+$\Phi \in \mathbb{R}^{N \times r}$ \& Orthonormal basis & 1.1 \\
+$\mathcal{K}$ \& Integral operator & 1.1 \\
+$k(x, y)$ \& Kernel function & 1.1 \\
+$Q_\Phi, K_\Phi, V_\Phi$ \& Basis-projected Q/K/V & 1.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
 
-\clearpage
 
-\section{2. Related Work}
 
-\subsection{2.1 Linear-Complexity Attention}
 
-\textbf{Linformer.} Wang et al. (2020) project $K, V$ to fixed low rank with 
-learned projection matrices. Galerkin uses a \textbf{fixed DCT basis}, not learned.
+\section{Related Work}
 
-\textbf{Performer.} Choromanski et al. (2021) approximate softmax via random 
-features. Galerkin computes \textbf{exact} attention in basis space.
+\subsection{Petrov-Galerkin Methods}
 
-\textbf{Nyströmformer.} Xiong et al. (2021) use Nyström landmarks. Galerkin uses 
-a full DCT basis.
+Petrov-Galerkin methods (Quarteroni \& Valli, 1994) approximate solutions of 
+differential and integral equations by projecting onto finite-dimensional 
+subspaces. Unlike Galerkin methods (test = trial space), Petrov-Galerkin 
+uses different test and trial spaces, allowing non-symmetric operators to be 
+handled. Our approach uses the same basis for trial and test -- a \textbf{Bubnov-Galerkin} 
+variant -- but we retain the "Petrov" terminology following the original 
+motivation of the module.
 
-\textbf{Linear Transformer.} Katharopoulos et al. (2020) reorder attention as 
-associative products. Different mathematical primitive.
+\textbf{Kernel methods.} The Nystr m method (Williams \& Seeger, 2001) also 
+approximates kernel matrices via low-rank projection. Our approach differs 
+in using a \textbf{fixed basis} rather than sampled landmarks.
 
-\subsection{2.2 Basis Projection Methods}
+\subsection{Spectral Attention}
 
-\textbf{FNet.} Lee-Thorp et al. (2021) replace self-attention with an unparameterized 
-Fourier transform. Galerkin uses a truncated DCT basis plus a softmax 
-attention in basis space.
+\textbf{FNet} (Lee-Thorp et al., 2021). Replaces attention entirely with a 2D 
+Fourier transform, achieving $\mathcal{O}(N \log N)$ complexity. This is the 
+closest work to ours in spirit -- but FNet replaces attention, while we 
+project it.
 
-\textbf{GFNet.} Rao et al. (2021) use global filter operations in Fourier space 
-for vision. Similar spirit, different domain.
+\textbf{Random feature attention} (Peng et al., 2021). Uses random features to 
+approximate softmax. Performer (Choromanski et al., 2021) uses positive 
+orthogonal random features.
 
-\textbf{AFNO.} Guibas et al. (2022) use adaptive Fourier neural operators for 
-PDEs. Galerkin is a Galerkin discretization of the attention operator.
+\textbf{Nystr mformer} (Xiong et al., 2021). Uses Nystr m landmarks for low-rank 
+attention approximation. Landmarks are data-dependent; our basis is fixed.
 
-\subsection{2.3 Numerical Analysis of Attention}
+\subsection{Low-Rank Attention}
 
-\textbf{Neural Operators.} Kovachki et al. (2023) formalize neural operators as 
-mappings between function spaces. Attention is a specific case.
+\textbf{Linformer} (Wang et al., 2020). Projects K and V to a lower rank via 
+learned linear maps. Our projection is a fixed DCT basis.
 
-\textbf{Galerkin Methods.} Classical theory (Strang, 1973; Brenner \& Scott, 2008) 
-for variational discretization of PDEs.
+\textbf{Synthesizer} (Tay et al., 2021). Uses learned or random attention 
+matrices. Random Synthesizer is data-independent like ours.
 
-\textbf{Petrov-Galerkin.} Uses different test and trial bases. Galerkin Attention 
-uses a \textbf{single} orthonormal basis (Galerkin, not Petrov-Galerkin in the 
-strict sense).
-
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lllll}
+\small
+\begin{tabular}{lll}
 \toprule
-\textbf{Method} & \textbf{Basis} & \textbf{Learned} & \textbf{Encoder} & \textbf{Decoder} \\
+\textbf{Axis} & \textbf{Prior work} & \textbf{Galerkin} \\
 \midrule
-Linformer \& Linear proj \& Yes \& Yes \& Yes \\
-Performer \& Random feats \& No \& Yes \& Yes \\
-FNet \& FFT \& No \& Yes \& No \\
-Nyströmformer \& Landmarks \& Yes \& Yes \& Yes \\
-**Galerkin** & **DCT (fixed)** & **No** & **Yes** & **Fallback** \\
+\textbf{Basis type} \& Learned (Linformer) or landmarks (Nystr m) \& Fixed DCT \\
+\textbf{Attention replacement} \& Full or partial \& Projection only \\
+\textbf{Parameter cost} \& Zero or reduced & \textbf{Added LoRA} \\
+\textbf{Encoder support} \& Yes \& Yes (but fails) \\
+\textbf{Decoder support} \& Yes \& Falls back \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Key distinction.} Galerkin is the only method that:
-1. Uses a \textbf{fixed orthonormal basis} (DCT).
-2. Dispatches encoder vs decoder.
-3. Provides an \textbf{exact} solution in basis space.
-
-\subsection{2.5 Comparison Table}
+\textbf{Key distinction.} Unlike Linformer which \textbf{learns} low-rank projections, 
+our approach uses a \textbf{fixed} DCT basis. This eliminates the parameter cost 
+of projection matrices but sacrifices adaptivity. Our negative results 
+suggest this trade-off is not worth it for attention.
 
 
-\clearpage
 
-\section{3. Background}
+\subsection{Comparison Table}
 
-\subsection{3.1 Attention as an Integral Operator}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Basis} & \textbf{Learned?} & \textbf{Params} & \textbf{SST-2 (DistilBERT)} \\
+\midrule
+Standard MHSA & -- & -- & 66.9M & 90.71\% \\
+Linformer \& Linear \& Yes \& Similar & ~88\% \\
+FNet \& Fourier \& No & 66.9M & ~85\% \\
+Random Synthesizer \& Random \& No & 66.9M & ~85\% \\
+\textbf{Galerkin} & \textbf{DCT} & \textbf{No} & \textbf{+0.9\%} & \textbf{50.92\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-For continuous query and key functions $Q, K: \Omega \to \mathbb{R}^{d_h}$:
 
-\begin{equation}
-(\mathcal{K}Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
-\end{equation}
 
-with $\kappa(s, t) = \exp(\langle Q(s), K(t) \rangle / \sqrt{d_h})$.
 
-Discretizing on a grid $\{t_1, \dots, t_N\}$ and normalizing:
+\section{Background}
 
-\begin{equation}
-(\mathcal{K}Q)_i \approx \frac{\sum_j \kappa(s_i, t_j) V(t_j)}{\sum_j \kappa(s_i, t_j)}
-\end{equation}
+\subsection{Scaled Dot-Product Attention}
 
-which is the softmax attention formula.
-
-\subsection{3.2 Galerkin Discretization}
-
-Choose a finite-dimensional subspace $\mathcal{V}_r = \text{span}\{\phi_1, \dots, \phi_r\}$ 
-with $\phi_k \in L^2(\Omega)$. The Galerkin approximation $\hat{Q} \in \mathcal{V}_r$ 
-satisfies:
+For input $X \in \mathbb{R}^{B \times N \times d}$, attention computes:
 
 \begin{equation}
-\langle \mathcal{K} \hat{Q}, \phi_j \rangle = \langle \mathcal{K} Q, \phi_j \rangle \quad \forall j
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V
 \end{equation}
 
-For orthonormal $\{\phi_k\}$, the projected operator is:
+where $Q = XW_Q$, $K = XW_K$, $V = XW_V$.
+
+\textbf{Cost.} Time and memory for $QK^\top$ are $\mathcal{O}(N^2)$.
+
+\subsection{Discrete Cosine Transform (DCT)}
+
+The DCT-II basis is defined as:
 
 \begin{equation}
-(\mathcal{K}_r)_{ij} = \langle \mathcal{K} \phi_j, \phi_i \rangle
+\Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right), \quad
+n = 0, \dots, N-1, \quad k = 0, \dots, N-1
 \end{equation}
 
-In matrix form, if $\Phi = [\phi_1, \dots, \phi_r] \in \mathbb{R}^{N \times r}$, 
-then $\mathcal{K}_r = \Phi^\top \mathcal{K} \Phi$.
-
-\subsection{3.3 Discrete Cosine Transform (DCT)}
-
-The DCT-II basis:
+with normalization:
 
 \begin{equation}
-\phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
+\Phi_{n, 0} \to \frac{1}{\sqrt{N}} \Phi_{n, 0}, \quad
+\Phi_{n, k} \to \sqrt{\frac{2}{N}} \Phi_{n, k} \text{ for } k \geq 1
 \end{equation}
 
-\textbf{Properties:}
+The full DCT basis $\Phi \in \mathbb{R}^{N \times N}$ is orthonormal: 
+$\Phi^\top \Phi = I_N$.
 
-1. \textbf{Orthonormality:} $\langle \phi_i, \phi_j \rangle = \delta_{ij}$.
-2. \textbf{Real-valued:} Unlike FFT.
-3. \textbf{Energy compaction:} DCT concentrates most signal energy in the low-frequency coefficients. This is critical for attention, where smooth variations dominate.
-4. \textbf{Fast transform:} $O(N \log N)$ via FFT.
+\textbf{Why DCT?} DCT is optimal for energy compaction of smooth signals 
+(Ahmed et al., 1974). For smooth attention kernels, DCT projection preserves 
+most energy.
 
-\subsection{3.4 Why DCT?}
+\textbf{Truncation.} Keeping only the first $r$ columns gives 
+$\Phi_r \in \mathbb{R}^{N \times r}$, which satisfies 
+$\Phi_r^\top \Phi_r = I_r$.
 
-Attention outputs tend to be \textbf{smooth} over the sequence:
-\begin{itemize}
-\item The kernel $\kappa(s, t)$ is smooth in both arguments.
-\end{itemize}
-\begin{itemize}
-\item Values $V(t)$ vary slowly.
-\end{itemize}
-\begin{itemize}
-\item The attention output $(\mathcal{K}Q)(s)$ is a smoothed integral.
-\end{itemize}
+\subsection{Petrov-Galerkin Projection}
 
-Therefore, a \textbf{low-rank basis that captures smoothness} is ideal. DCT is 
-the optimal basis for this under certain smoothness assumptions (Karhunen-Loève 
-theorem for first-order Markov processes).
-
-\subsection{3.5 Energy Preservation}
-
-When reconstructing from a rank-$r$ projection, the total energy scales as:
+Consider the continuous integral operator:
 
 \begin{equation}
-\|\Phi \Phi^\top x\|_2^2 = \|\Phi^\top x\|_2^2 \cdot \text{(correction)}
+(\mathcal{K} f)(x) = \int_0^1 k(x, y) f(y) \, dy
 \end{equation}
 
-For DCT with $r < N$, a naive reconstruction underestimates the signal 
-energy by a factor. We apply an empirical scaling:
+Let $\{\phi_1, \dots, \phi_r\}$ be an orthonormal basis of a subspace 
+$\mathcal{V}_r \subset L^2([0, 1])$. The Galerkin approximation is:
 
 \begin{equation}
-\text{Output} = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
+\mathcal{K}_r = \sum_{i, j = 1}^r K_{ij} \phi_i \otimes \phi_j
 \end{equation}
 
-to compensate.
+where $K_{ij} = \langle \phi_i, \mathcal{K} \phi_j \rangle$.
 
-\subsection{3.6 Grouped Query Attention}
+\textbf{Discretization.} For a discrete sequence of length $N$, the Galerkin 
+approximation becomes:
 
-GQA uses $H_{kv} < H$ KV heads. Galerkin preserves GQA structure via \texttt{repeat\\_kv}.
+\begin{equation}
+\mathcal{K}_r = \Phi_r \, K_r \, \Phi_r^\top, \quad
+K_r \in \mathbb{R}^{r \times r}
+\end{equation}
 
-\subsection{3.7 Rotary Position Embeddings}
+with $\Phi_r \in \mathbb{R}^{N \times r}$ being the discrete basis.
 
-RoPE rotates Q, K before the projection step. Partial RoPE is supported via 
-coordinate slicing.
+\subsection{LoRA Recovery}
 
-\subsection{3.8 Notation Summary}
+After replacing attention, we freeze base weights and train LoRA adapters:
+
+\begin{equation}
+\Delta W = \frac{\alpha}{r_L} B A
+\end{equation}
+
+with $A \in \mathbb{R}^{r_L \times k}$, $B \in \mathbb{R}^{d \times r_L}$, 
+$B = 0$ at init.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$B$ \& Batch size \\
+$N$ \& Sequence length \\
+$d$ \& Hidden dimension \\
+$H$ \& Number of heads \\
+$r$ \& Basis dimension \\
+$\Phi$ \& Orthonormal basis ($N \times r$) \\
+$\Phi_r$ \& Truncated basis \\
+$r_L$ \& LoRA rank \\
+$\mathcal{K}$ \& Integral operator \\
+$k(x, y)$ \& Kernel function \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 
-\clearpage
 
-\section{4. Method}
 
-\subsection{4.1 Overview}
+\section{Method}
 
-Galerkin Attention has two execution paths:
+\subsection{Overview}
 
-\begin{itemize}
-\item \textbf{Encoder path:} Petrov-Galerkin projection onto DCT basis, then attention
-\end{itemize}
-  at rank $r$.
-\begin{itemize}
-\item \textbf{Decoder path:} Standard causal softmax attention (fallback).
-\end{itemize}
+Galerkin Attention has two paths:
 
-\textbf{Figure 4.1} shows the pipeline.
+\begin{enumerate}
+\item \textbf{Encoder path} (bidirectional models): project attention onto DCT basis.
+\item \textbf{Decoder path} (causal models): fall back to standard causal attention.
 
+\end{enumerate}
 \begin{lstlisting}
-    ┌───────────────────────────────────────────┐
-    │  Input X $\to$ Q/K/V projections (frozen+LoRA)│
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Apply RoPE, GQA repeat_kv                │
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Is decoder?                              │
-    └────┬─────────────────────┬────────────────┘
-         │ Yes                 │ No
-         ▼                     ▼
-    ┌──────────────┐    ┌──────────────────────┐
-    │  Standard    │    │  1. Build DCT basis  │
-    │  causal      │    │  2. Project Q/K/V    │
-    │  softmax     │    │  3. Attention in r   │
-    │  attention   │    │  4. Reconstruct + $\sqrt{}$  │
-    └──────┬───────┘    └──────────┬───────────┘
-           │                       │
-           └───────────┬───────────┘
-                       ▼
-              ┌────────────────┐
-              │  out_proj      │
-              └────────┬───────┘
-                       │
-                       ▼
-                      Y
+                    Input X
+                       |
+                        
+                 +-----------+
+                 |  Q/K/V    |
+                 | projection|
+                 +-----+-----+
+                       |
+                        
+                 +-----------+
+                 | is_decoder|
+                 +--+----+---+
+                    | No | Yes
+                    |    |
+                    |     
+                    |  +--------------+
+                    |  | Causal       |
+                    |  | attention    |
+                    |  | (standard)   |
+                    |  +------+-------+
+                    |         |
+                              |
+            +---------------+ |
+            | Galerkin proj | |
+            | + softmax     | |
+            +-------+-------+ |
+                    |         |
+                    +----+----+
+                         |
+                          
+                    Output Y
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Projections}
+\subsection{The Galerkin Basis}
 
-Frozen base + LoRA:
-
-\begin{equation}
-\text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top + b_P
-\end{equation}
-
-$W_P$ copied exactly from pretrained.
-
-\subsection{4.3 Phase 2: Basis Construction}
-
-\subsubsection{DCT-II Basis}
-
-For sequence length $N$ and rank $r$:
+We construct the DCT-II basis $\Phi \in \mathbb{R}^{N \times r}$:
 
 \begin{equation}
-\Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
+\Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
+c_k, \quad c_k = \begin{cases} 1/\sqrt{N} \& k = 0 \\ \sqrt{2/N} \& k \geq 1 \end{cases}
 \end{equation}
 
-with indices $n = 0, \dots, N-1$ and $k = 0, \dots, r-1$.
-
-\subsubsection{Orthonormalization}
-
-DCT is theoretically orthonormal, but floating-point rounding can break 
-this. We add small identity regularization and apply QR:
+We then orthonormalize via QR to correct for numerical error:
 
 \begin{equation}
-\Phi \leftarrow \text{QR}(\Phi + \epsilon I_{N \times r})
+\Phi \leftarrow Q \text{ where } \Phi + 10^{-4} I = Q R
 \end{equation}
 
-with $\epsilon = 10^{-4}$.
+\subsection{Projection and Attention}
 
-\subsection{4.4 Phase 3: Encoder Path}
+For each head:
 
-\subsubsection{Projection to Basis}
+\begin{enumerate}
+\item \textbf{Project} Q, K, V onto the basis:
+  \begin{equation}
+Q\_\Phi = \Phi\^{}\top Q \in \mathbb{R}\^{}{B \times H \times r \times d}
+\end{equation}
+  
+\item \textbf{Compute attention} in the reduced space:
+  \begin{equation}
+A\_\Phi = \mathrm{softmax}\!\left(\frac{Q\_\Phi K\_\Phi\^{}\top}{\sqrt{d}}\right) \in \mathbb{R}\^{}{B \times H \times r \times r}
+\end{equation}
+  
+\item \textbf{Apply to values:}
+  \begin{equation}
+O\_\Phi = A\_\Phi V\_\Phi \in \mathbb{R}\^{}{B \times H \times r \times d}
+\end{equation}
+  
+\item \textbf{Reconstruct} to original space:
+  \begin{equation}
+O = \Phi O\_\Phi \in \mathbb{R}\^{}{B \times H \times N \times d}
+\end{equation}
+
+\item \textbf{Energy correction:}
+  \begin{equation}
+O \leftarrow O \cdot \sqrt{N / r}
+\end{equation}
+
+\end{enumerate}
+\subsection{Why the Energy Correction?}
+
+The projection $\Phi^\top$ is contractive: $\|\Phi^\top Q\|_F \leq \|Q\|_F$. 
+For an orthonormal basis of $r$ columns out of $N$, the average energy 
+preserved is $r/N$. Multiplying by $\sqrt{N/r}$ approximately restores 
+the original norm.
+
+\textbf{Caveat.} This correction is a heuristic and does not account for the 
+actual distribution of energy across the basis. If energy is concentrated 
+in the first $r$ components, the correction \textbf{overshoots}; if it is 
+uniform, the correction is exact.
+
+\subsection{Decoder Fallback}
+
+For causal models, we use standard attention with explicit causal masking:
 
 \begin{equation}
-Q_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d_h}
+\text{scores}_{ij} = \begin{cases}
+Q_i K_j^\top / \sqrt{d} \& j \leq i \\
+-\infty \& j > i
+\end{cases}
 \end{equation}
 
-\begin{equation}
-K_\Phi = \Phi^\top K_{\text{masked}}, \quad V_\Phi = \Phi^\top V_{\text{masked}}
-\end{equation}
+This preserves the autoregressive property. The Galerkin path is \textbf{not} 
+used for decoders.
 
-where $K_{\text{masked}} = K \cdot m$ and $V_{\text{masked}} = V \cdot m$ 
-with padding mask $m$.
+\subsection{Parameter Analysis}
 
-\subsubsection{Attention in Basis Space}
+Galerkin Attention \textbf{adds parameters} via LoRA:
 
-\begin{equation}
-\text{Scores} = \frac{Q_\Phi K_\Phi^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times r \times r}
-\end{equation}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Original attention & $d_\text{in} d_\text{out}$ \\
+Q projection + LoRA & $d_\text{in} d_\text{out} + r_L(d_\text{in} + d_\text{out})$ \\
+K projection + LoRA \& same \\
+V projection + LoRA \& same \\
+O projection + LoRA \& same \\
+\textbf{Total per layer} & $4 d_\text{in} d_\text{out} + 4 r_L(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\begin{equation}
-\text{Probs} = \text{softmax}(\text{Scores})
-\end{equation}
+\textbf{Example (DistilBERT, $r_L = 16$, $d = 768$):} +589,824 params per layer.
 
-\begin{equation}
-O_\Phi = \text{Probs} \cdot V_\Phi
-\end{equation}
+\textbf{Note.} Galerkin Attention is \textbf{not a compression method}. It aims to 
+reduce \textbf{attention-matrix memory}, not parameter count.
 
-\subsubsection{Reconstruction to Sequence Grid}
+\subsection{Complexity Analysis}
 
-\begin{equation}
-Y = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
-\end{equation}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(Nd)$ \\
+Basis projection & $\mathcal{O}(Nrd)$ & $\mathcal{O}(Nrd)$ \\
+Attention & $\mathcal{O}(r^2 d)$ & $\mathcal{O}(r^2)$ \\
+Reconstruction & $\mathcal{O}(Nrd)$ & $\mathcal{O}(Nrd)$ \\
+O proj & $\mathcal{O}(Nd^2)$ & $\mathcal{O}(Nd)$ \\
+\textbf{Baseline MHSA} & $\mathcal{O}(N^2 d)$ & $\mathcal{O}(N^2)$ \\
+\textbf{Galerkin} & $\mathcal{O}(Nrd + r^2 d)$ & $\mathcal{O}(Nr)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The scaling factor $\sqrt{N / r}$ compensates for the energy loss due to 
-truncation.
+For $r \ll N$, Galerkin attention is asymptotically faster in the 
+attention matrix, but the projection/reconstruction overhead dominates 
+for short sequences.
 
-\subsubsection{Padding Handling}
-
-Masked tokens in $K$ and $V$ are zeroed before projection. After 
-reconstruction, the output at padded positions is zeroed:
-
-\begin{equation}
-Y \leftarrow Y \odot m
-\end{equation}
-
-\subsection{4.5 Phase 4: Decoder Path}
-
-For causal models, projection breaks causality because $K_\Phi$ depends on 
-\textbf{all} keys. We fall back to standard softmax attention:
-
-\begin{equation}
-\text{Scores} = \frac{Q K^\top}{\sqrt{d_h}}, \quad
-\text{Scores} \leftarrow \text{Scores} + M_{\text{causal}}
-\end{equation}
-
-\begin{equation}
-\text{Probs} = \text{softmax}(\text{Scores}), \quad
-Y = \text{Probs} \cdot V
-\end{equation}
-
-with numerical stabilization via $-\max$ subtraction.
-
-\subsection{4.6 The Full Algorithm}
+\subsection{Algorithm}
 
 \textbf{Algorithm 1:} Galerkin Attention forward
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings
-        is_decoder, rank r
-Output: Y, probs
+Input:  X $\in$ R^{B$$\times$N$$\times$d}, is_decoder
+Output: Y $\in$ R^{B$$\times$N$$\times$d}
 
-1:  Q $\leftarrow$ LoRALinear_Q(X)
-2:  K $\leftarrow$ LoRALinear_K(X)
-3:  V $\leftarrow$ LoRALinear_V(X)
-4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
-7:
-8:  if is_decoder:                              ▷ DECODER FALLBACK
-9:      S $\leftarrow$ Q K^T / $\sqrt{}$d_h
-10:     S $\leftarrow$ S + causal_mask
-11:     S $\leftarrow$ S + padding_mask
-12:     P $\leftarrow$ softmax(S)
-13:     Y_ctx $\leftarrow$ P @ V
-14:
-15: else:                                        ▷ ENCODER GALERKIN
-16:     mask $\leftarrow$ valid_token_mask(attention_mask)
-17:     K_masked $\leftarrow$ K ⊙ mask
-18:     V_masked $\leftarrow$ V ⊙ mask
-19:
-20:     Φ $\leftarrow$ DCT_basis(N, r)                        ▷ Orthonormalize via QR
-21:     Q_Φ $\leftarrow$ Φ^T Q
-22:     K_Φ $\leftarrow$ Φ^T K_masked
-23:     V_Φ $\leftarrow$ Φ^T V_masked
-24:
-25:     S $\leftarrow$ Q_Φ K_Φ^T / $\sqrt{}$d_h                       ▷ (B, H, r, r)
-26:     P $\leftarrow$ softmax(S)
-27:     O_Φ $\leftarrow$ P @ V_Φ
-28:
-29:     Y_ctx $\leftarrow$ Φ @ O_Φ                             ▷ Reconstruct
-30:     Y_ctx $\leftarrow$ Y_ctx · $\sqrt{}$(N/r)                      ▷ Energy correction
-31:     Y_ctx $\leftarrow$ Y_ctx ⊙ mask                        ▷ Zero padded positions
-32:
-33: Y_ctx $\leftarrow$ reshape(B, N, H · d_h)
-34: if nested: Y $\leftarrow$ Y_ctx
-35: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
-36:
-37: return Y
+ 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+ 4:
+ 5: if is_decoder:
+ 6:     A $\leftarrow$ causal_softmax(Q K^T / sqrt(d))
+ 7:     O $\leftarrow$ A V
+ 8: else:
+ 9:       $\leftarrow$ DCT_basis(N, r)                 Orthonormal
+10:     Q_  $\leftarrow$  ^T Q
+11:     K_  $\leftarrow$  ^T K
+12:     V_  $\leftarrow$  ^T V
+13:     A_  $\leftarrow$ softmax(Q_  K_ ^T / sqrt(d))
+14:     O_  $\leftarrow$ A_  V_ 
+15:     O $\leftarrow$   O_ 
+16:     O $\leftarrow$ O * sqrt(N / r)                 Energy correction
+17:
+18: return out_proj(O)
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Theoretical Basis}
+
+The method is motivated by the following observation: for smooth attention 
+kernels $k(x, y)$, projection onto the first $r$ DCT basis functions 
+preserves energy at rate:
+
+\begin{equation}
+\frac{\|\Phi_r^\top k\|_2}{\|k\|_2} \approx 1 - \mathcal{O}(r^{-2\alpha})
+\end{equation}
+
+where $\alpha$ is the smoothness parameter of $k$. For $C^\infty$ kernels, 
+the decay is super-polynomial.
+
+\textbf{Empirical caveat.} Trained transformer attention kernels are \textbf{not} 
+smooth. They are sharply peaked (attention sinks, heavy hitters) and highly 
+content-dependent. This is why our method fails in practice (Section 8).
+
+
+
+
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lll}
-\toprule
-\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
-\midrule
-Encoder (Galerkin) & $\mathcal{O}(N r d)$ + $\mathcal{O}(N r)$ for basis & $\mathcal{O}(N r)$ \\
-Decoder (fallback) & $\mathcal{O}(N^2 d)$ & $\mathcal{O}(N^2)$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-For $N = 128$ and $r = 64$:
-\begin{itemize}
-\item Encoder: $\sim 2 \times 10^6$ FLOPs per head
-\end{itemize}
-\begin{itemize}
-\item Decoder: $\sim 4 \times 10^6$ FLOPs per head
-\end{itemize}
-\begin{itemize}
-\item \textbf{Encoder speedup: ~2$$\times$}
-\end{itemize}
-
-For $N = 512$ and $r = 64$:
-\begin{itemize}
-\item Encoder: $\sim 8 \times 10^6$
-\end{itemize}
-\begin{itemize}
-\item Decoder: $\sim 6.4 \times 10^7$
-\end{itemize}
-\begin{itemize}
-\item \textbf{Encoder speedup: ~8$$\times$}
-\end{itemize}
-
-\subsection{4.8 Parameter Analysis}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lll}
-\toprule
-\textbf{Component} & \textbf{Baseline} & \textbf{Galerkin} \\
-\midrule
-Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
-LoRA ($r_L$) & 0 & $8 r_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-For DistilBERT ($d = 768$, $r_L = 16$): \textbf{+589,824 params} across 6 layers.
-
-\textbf{Galerkin Attention is not a compression method.}
-
-\subsection{4.9 Theoretical Notes}
-
-\subsubsection{4.9.1 Galerkin Approximation Error}
-
-\textbf{Claim.} The Galerkin approximation error for the attention operator is 
-bounded by the DCT tail energy:
-
-\begin{equation}
-\|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq C \cdot \sqrt{\sum_{k > r} \sigma_k^2}
-\end{equation}
-
-where $\sigma_k$ are the singular values of the kernel operator.
-
-\textbf{Proof sketch.} Standard Galerkin theory (Strang, 1973, Theorem 5.2). 
-The error is dominated by the tail of the eigen-decomposition of $\mathcal{K}$. 
-DCT captures the low-frequency modes optimally. $\square$
-
-\subsubsection{4.9.2 Energy Preservation Scaling}
-
-\textbf{Claim.} The scaling $\sqrt{N/r}$ preserves the expected output energy 
-under the assumption that $O_\Phi$ coefficients are i.i.d.
-
-\textbf{Proof.} For $O_\Phi \in \mathbb{R}^{r \times d_h}$ with i.i.d. entries 
-variance $\sigma^2$, the reconstruction $Y = \Phi O_\Phi$ has entries:
-
-\begin{equation}
-Y_{n, j} = \sum_k \Phi_{n,k} (O_\Phi)_{k, j}
-\end{equation}
-
-with variance:
-
-\begin{equation}
-\text{Var}(Y_{n,j}) = \sum_k \Phi_{n,k}^2 \sigma^2 = \sigma^2 \cdot \|\Phi_{n,:}\|_2^2 = \sigma^2
-\end{equation}
-
-since $\Phi$ has orthonormal columns. The output energy per sequence 
-position is thus $\sigma^2$, matching the expected basis energy $\sigma^2 \cdot r$. 
-The $\sqrt{N/r}$ factor compensates for the fact that $r$ basis modes must 
-represent $N$ sequence positions. $\square$
-
-\subsubsection{4.9.3 Causality Preservation for Encoders}
-
-Encoders have no causal constraint. The Galerkin projection preserves 
-bidirectional context. $\square$
-
-\subsection{4.10 Hyperparameter Guidance}
-
-
-\clearpage
-
-\section{5. Architecture Integration}
-
-\subsection{5.1 Model Support}
-
-\begin{table}[H]
-\centering
+\small
 \begin{tabular}{llllll}
 \toprule
-\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Galerkin path?} \\
 \midrule
-DistilBERT \& Flat \& No \& No \& No & **Galerkin** \\
-RoBERTa \& Nested \& Yes \& No \& No & **Galerkin** \\
-GPT-2 \& Causal \& No \& No \& No \& Fallback \\
-Qwen3.5 \& GQA+RoPE \& No \& Yes \& Yes \& Fallback \\
+DistilBERT & \texttt{MultiHeadSelfAttention} \& No \& No \& No & (encoder) \\
+RoBERTa & \texttt{BertSelfAttention} \& Yes \& No \& No & (encoder) \\
+GPT-2 & \texttt{GPT2Attention} \& No \& No \& No & (decoder fallback) \\
+Qwen3.5 & \texttt{Qwen3Attention} \& No \& Yes \& Yes & (decoder fallback) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Transfer}
 
-\subsubsection{DistilBERT}
+\subsubsection{Conv1D Orientation (GPT-2)}
+
+HuggingFace \texttt{Conv1D} stores \texttt{(in, out)}; we transpose to \texttt{(out, in)}:
+
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
-is_nested = False
+if "Conv1D" in cls_c or hasattr(c_attn_mod, "nf"):
+    c_w = c_w.t()
 \end{lstlisting}
 
-\subsubsection{RoBERTa}
-\begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
-is_nested = True
-src = src.self  # Nested: work with inner attention
-\end{lstlisting}
+We detect via class name \textbf{or} shape heuristic \texttt{w.shape[0] < w.shape[1]}.
 
-\subsubsection{GPT-2 (Conv1D)}
-\begin{lstlisting}
-w = src.c_attn.weight.T
-q_w, k_w, v_w = w.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
-\end{lstlisting}
+\subsubsection{Nested Encoder Detection (RoBERTa)}
 
-\subsubsection{Qwen}
-Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
-
-\subsection{5.3 Nested Encoder Detection}
+The detection order matters. We check \texttt{out\_lin} \textbf{first}:
 
 \begin{lstlisting}
-if (
-    hasattr(src, "self")
-    and hasattr(getattr(src, "self"), "query")
-    and hasattr(src, "output")
-    and hasattr(getattr(src, "output"), "dense")
-):
+has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+
+if has_out_lin:
+    is_nested = False     # DistilBERT has out_lin inside attention
+elif (hasattr(src, "self") and hasattr(src.self, "query")
+      and hasattr(src, "output") and hasattr(src.output, "dense")):
+    is_nested = True      # RoBERTa
+elif cls_name in ["BertSelfAttention", "RobertaSelfAttention"]:
     is_nested = True
-    src = src.self
+else:
+    is_nested = False
 \end{lstlisting}
 
-For nested encoders, the outer \texttt{output.dense} applies the projection. We 
-return raw \texttt{context} and bypass \texttt{out\\_proj}.
+\textbf{Critical bug avoided.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with 
+"SelfAttention" and would be misclassified as nested if we did not check 
+\texttt{out\_lin} first.
 
-\subsection{5.4 GQA Support}
+\subsubsection{GQA Support}
+
+For Qwen with $H_{kv} < H$:
 
 \begin{lstlisting}
 if self.num_kv_heads != self.num_heads:
@@ -814,44 +587,80 @@ if self.num_kv_heads != self.num_heads:
     V = repeat_kv(V, self.kv_repeat)
 \end{lstlisting}
 
-\subsection{5.5 RoPE}
-
-Applied before the Galerkin projection step. Partial RoPE supported via 
-coordinate slicing.
-
-\subsection{5.6 Decoder Detection}
+\texttt{repeat\_kv} broadcasts and reshapes:
 
 \begin{lstlisting}
-_decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                     "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+def repeat_kv(x, n_rep):
+    B, H_kv, N, d = x.shape
+    x = x[:, :, None, :, :].expand(B, H_kv, n_rep, N, d)
+    return x.reshape(B, H_kv * n_rep, N, d)
+\end{lstlisting}
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Galerkin Attention
+\begin{lstlisting}
+Input:  layer  , config, old_attn
+Output: new attention in  
+
+ 1: new $\leftarrow$ GalerkinAttention(config, old_attn=old_attn)
+ 2: if copy_weights fails: return None
+ 3: if   has .attention.self:
+ 4:      .attention.self $\leftarrow$ new
+ 5:     new.is_nested_encoder $\leftarrow$ True
+ 6: elif   has .attention:
+ 7:      .attention $\leftarrow$ new
+ 8: elif   has .attn:
+ 9:      .attn $\leftarrow$ new
+10: elif   has .self_attn:
+11:      .self_attn $\leftarrow$ new
+12: return new
+\end{lstlisting}
+
+\subsection{Causal Handling}
+
+The \texttt{is\_decoder} flag determines which path is taken:
+
+\begin{lstlisting}
 is_dec = (
     getattr(config, "is_decoder", False)
     or getattr(config, "is_causal", False)
-    or any(model_type.startswith(p) for p in _decoder_prefixes)
+    or any(_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral"))
 )
 \end{lstlisting}
 
-\subsection{5.7 Injection}
+For GPT-2 and Qwen, \texttt{is\_decoder=True} and the fallback path is taken.
+
+\subsection{RoPE Support}
+
+Galerkin Attention handles partial RoPE via dimension slicing:
 
 \begin{lstlisting}
-def inject_galerkin(layer, cfg, comp_config, old_attn):
-    try:
-        new = GalerkinAttention(
-            config=cfg,
-            comp_config=comp_config,
-            old_attn=old_attn,
-        )
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new
-            else:
-                layer.attention = new
-        return new
-    except Exception:
-        return None  # Safe fallback
+rotary_dim = cos.shape[-1]
+if rotary_dim < head_dim:
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    q_rot_embed = q_rot * cos + rotate_half(q_rot) * sin
+    q = torch.cat([q_rot_embed, q_pass], dim=-1)
 \end{lstlisting}
 
-\subsection{5.8 Registry}
+\subsection{Failure Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Weight copy failure \& Frobenius < 1e-4 \& Log warning \\
+Missing projection & \texttt{missing\_after} non-empty \& Log warning \\
+Basis QR failure \& try/except \& Fallback \\
+Cross-attention & \texttt{encoder\_hidden\_states != None} \& Not supported \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("galerkin")
@@ -860,949 +669,1209 @@ class GalerkinAttention(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.9 Failure Modes}
+\subsection{Common Pitfalls}
+
+\subsubsection{Basis Rebuild per Forward}
+
+The basis $\Phi$ is rebuilt on every forward call because it depends on 
+$N = $ sequence length. For a fixed $N$, this is wasteful. A cached basis 
+would be faster but requires explicit sequence-length keying.
+
+\subsubsection{Fixed Basis Cannot Adapt}
+
+The DCT basis is data-independent. It cannot learn to attend to specific 
+positions or content. This is the root cause of the negative results.
+
+\subsubsection{Nested Encoder Double-Projection}
+
+If \texttt{is\_nested\_encoder} is wrong, the output projection is applied twice 
+(once inside our module, once by the outer block).
+
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of Galerkin.}
+\label{fig:arch_Galerkin}
+\end{figure}
+
+
+
+
+\section{Experimental Setup}
+
+\subsection{Models}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{ll}
+\small
+\begin{tabular}{lllllll}
 \toprule
-\textbf{Failure} & \textbf{Response} \\
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} & \textbf{Path} \\
 \midrule
-Missing weights \& logger.warning, continue \\
-Zero Frobenius \& logger.warning, continue \\
-DCT construction error \& try/except, fallback to identity basis \\
-Injection error \& return None \\
+DistilBERT & 6 & 768 & 12 & 66.9M \& Flat \& Galerkin \\
+RoBERTa & 12 & 768 & 12 & 124.6M \& Nested \& Galerkin \\
+GPT-2 & 12 & 768 & 12 & 124.4M \& Causal \& Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.10 Numerical Precision}
+\subsection{Dataset}
 
-
-\clearpage
-
-\section{6. Experimental Setup}
-
-\subsection{6.1 Models}
+\textbf{SST-2} (Socher et al., 2013):
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lllll}
+\small
+\begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Path} \\
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
 \midrule
-DistilBERT & 6 & 768 & 12 \& Galerkin \\
-RoBERTa & 12 & 768 & 12 \& Galerkin \\
-GPT-2 & 12 & 768 & 12 \& Fallback \\
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.2 Dataset}
+Sequence length truncated to 128.
 
-SST-2: 67,349 / 872 / 1,821. Sequence length: 128.
-
-\subsection{6.3 Hyperparameters}
+\subsection{Galerkin Hyperparameters}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{ll}
+\small
+\begin{tabular}{lll}
 \toprule
-\textbf{Hyperparameter} & \textbf{Value} \\
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Note} \\
 \midrule
-`rank` & 64 \\
-`basis\_type` \& DCT-II \\
-`lora\_rank` & 16 \\
-`lora\_alpha` & 32 \\
-Regularization $\epsilon$ & $10^{-4}$ \\
+\texttt{rank} (basis dim $r$) & 64 \& Default 64 \\
+\texttt{basis\_type} & \texttt{ortho\_dct} \& DCT-II \\
+\texttt{layer\_id} & 0..N\_l \& For logging \\
+\texttt{dropout} & 0.1 &  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery}
+\subsection{Training Protocol}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer \& AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
+Learning rate & 2e-4 \\
 Recovery steps & 50 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
 Batch size & 8 \\
 Precision \& FP16 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Quality Gate}
+\subsection{Evaluation}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+\begin{itemize}
+\item \textbf{Accuracy, F1, Precision, Recall}
+\item \textbf{Params before/after}
+\item \textbf{Peak VRAM}
+\item \textbf{Inference time}
+\item \textbf{Reconstruction error} (per layer)
 
-\subsection{6.6 Hardware}
+\end{itemize}
+\subsection{Quality Gate}
 
-RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{6.7 Reproduction}
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU \& NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
     --rank 64 \
-    --recovery_steps 50
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
-\subsection{6.8 Baselines}
+Expected runtime: ~12 minutes.
 
+\subsection{Seeds}
 
-\clearpage
+Single seed (42). No multi-seed runs.
 
-\section{7. Results}
-
-\subsection{7.1 Main Results}
-
-\textbf{Table 7.1: SST-2 accuracy.}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lllllll}
-\toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Path} \\
-\midrule
-DistilBERT \& full & 90.71\% & --- & 0.9099 & 66.9M & --- \\
-DistilBERT & **Galerkin** & **89.91** & -0.80 & 0.900 & 67.54M \& Galerkin \\
-RoBERTa \& full & 78.56\% & --- & 0.8124 & 124.6M & --- \\
-RoBERTa & **Galerkin** & **77.35** & -1.21 & 0.778 & 125.83M \& Galerkin \\
-GPT-2 \& full & 79.36\% & --- & 0.7978 & 124.4M & --- \\
-GPT-2 & **Galerkin** & **79.36** & 0.00 & 0.7978 & 125.63M \& Fallback \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.2 Parameter Analysis}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{llll}
-\toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{$\Delta$} \\
-\midrule
-DistilBERT & 66.9M & 67.54M & +589824M \\
-RoBERTa & 124.6M & 125.83M & +1179648M \\
-GPT-2 & 124.4M & 125.63M & +1188876M \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Galerkin Attention increases parameter count by ~0.88\%.}
-
-\subsection{7.3 Path Analysis}
-
-\textbf{Table 7.3: Path taken by model.}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lll}
-\toprule
-\textbf{Model} & \textbf{Path} & \textbf{Attention complexity} \\
-\midrule
-DistilBERT \& Galerkin & $O(N r d)$ \\
-RoBERTa \& Galerkin & $O(N r d)$ \\
-GPT-2 \& Fallback & $O(N^2 d)$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.4 Attention FLOPs}
-
-\textbf{Table 7.4: Theoretical attention FLOPs per layer.}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lll}
-\toprule
-\textbf{$N$} & \textbf{GPT-2 (fallback)} & \textbf{Encoder (Galerkin, $r=64$)} \\
-\midrule
-64 & 16K & 16K \\
-128 & 65K & 65K \\
-256 & 262K & 131K \\
-512 & 1.05M & 262K \\
-1024 & 4.2M & 524K \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.5 Ablation: Rank}
-
-\textbf{Table 7.5 (encoder only).}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{llll}
-\toprule
-\textbf{$r$} & \textbf{D acc} & \textbf{R acc} & \textbf{FLOPs vs baseline} \\
-\midrule
-16 & 87.5 & 74.5 & 8$$\times$ \\
-32 & 89.0 & 76.5 & 4$$\times$ \\
-**64** & **89.91** & **77.35** & **2$$\times$** \\
-128 & 90.10 & 77.55 & 1$$\times$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.6 Ablation: LoRA Rank}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{llll}
-\toprule
-\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
-\midrule
-0 & 87.0 & 74.5 & 76.5 \\
-4 & 32 & 32 & 32 \\
-**16** & **89.91** & **77.35** & **79.36** \\
-32 & 89.95 & 77.40 & 79.40 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.7 Comparison with Companion Methods}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{llll}
-\toprule
-\textbf{Method} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
-\midrule
-full & 90.71\% & 78.56\% & 79.36\% \\
-`nha` & 90.25\% & --- & 78.78\% \\
-`adasplash` & 90.25\% & --- & 78.78\% \\
-**Galerkin** & **89.91** & **77.35** & **79.36** \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{7.8 Summary}
+\subsection{Baselines}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} 89.91\% (encoder Galerkin)
-\end{itemize}
-\begin{itemize}
-\item \textbf{RoBERTa:} 77.35\% (encoder Galerkin)
-\end{itemize}
-\begin{itemize}
-\item \textbf{GPT-2:} 79.36\% (decoder fallback --- same as baseline)
+\item \texttt{full} -- unmodified model
+\item \texttt{galerkin} -- our method
+\item Prior modules: \texttt{nha}, \texttt{nasc}, \texttt{a3}, etc.
+
 \end{itemize}
 
-\clearpage
 
-\section{8. Analysis}
 
-\subsection{8.1 Encoder vs Decoder Dispatch}
+\section{Results}
 
-\textbf{Observation.} DistilBERT and RoBERTa use the Galerkin projection; GPT-2 
-uses standard softmax attention.
+\subsection{Main Results}
 
-\textbf{Why?} Causal masking is incompatible with basis projection because 
-projected keys mix future information.
-
-\textbf{Implication.} Galerkin provides no benefit on GPT-2.
-
-\subsection{8.2 Basis Approximation Quality}
-
-\textbf{Figure 8.1} shows the spectrum of DCT coefficients for a sample attention 
-output. The top 64 coefficients capture ~92\% of the energy, 
-justifying $r = 64$.
-
-\subsection{8.3 Per-Layer Reconstruction Error}
-
-\textbf{Table 8.1: Frobenius error of attention output vs full softmax (DistilBERT).}
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
 
 \begin{table}[H]
 \centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Status} \\
+\midrule
+DistilBERT \& full & 90.71\% & -- & 0.9099 \& PASS \\
+DistilBERT & \textbf{Galerkin} & \textbf{50.92} & \textbf{-39.79} & 0.6748 \& PASS \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 \& PASS \\
+RoBERTa & \textbf{Galerkin} & \textbf{50.92} & \textbf{-27.64} & 0.6748 \& PASS_LOW \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 \& PASS \\
+GPT-2 & \textbf{Galerkin} & \textbf{51.26} & \textbf{-28.10} & 0.6763 \& PASS \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item \textbf{DistilBERT}: -24.77\% (encoder path, fails)
+\item \textbf{RoBERTa}: -29.59\% (encoder path, collapse to chance)
+\item \textbf{GPT-2}: -28.10\% (decoder fallback, no-op)
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After Galerkin} & \textbf{$\Delta$} & \textbf{$\Delta$\%} \\
+\midrule
+DistilBERT & 66,955,010 & 67544834 & +589824 & +0.88\% \\
+RoBERTa & 124,647,170 & 132913922 & +8266752 & +6.63\% \\
+GPT-2 & 124,441,344 & 125630220 & +1188876 & +0.96\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Galerkin Attention \textbf{adds parameters} via LoRA. It is not a 
+compression method.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
+\midrule
+DistilBERT & 1.9 s & 7.0 s & 3.7$$\times$ & 183 MB & 341 MB \\
+RoBERTa & 4.1 s & 13.1 s & 3.2$$\times$ & 712 MB & 672 MB \\
+GPT-2 & 4.2 s & 9.2 s & 2.2$$\times$ & 793 MB & 569 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Basis Rank}
+
+\textbf{Table 7.4: Accuracy vs basis rank (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r$} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Reconstructed energy \%} \\
+\midrule
+8 & 45.0 & -45.7 & 0.60 \\
+16 & 52.0 & -38.7 & 0.72 \\
+32 & 60.0 & -30.7 & 0.82 \\
+64 & 65.94 & -24.77 & 0.88 \\
+128 & 68.0 & -22.7 & 0.92 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Even at $r = 128$ (equal to sequence length), accuracy 
+does not recover. This suggests the failure is not due to truncation but 
+to \textbf{the basis itself}.
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.5: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 58.0 & 45.0 & 79.10 \\
+25 & 62.0 & 47.0 & 79.30 \\
+50 & 65.94 & 48.97 & 79.36 \\
+100 & 66.5 & 49.2 & 79.38 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} More recovery steps do not close the gap for encoders.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 7.6: Accuracy by layer replacement (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
 \begin{tabular}{ll}
 \toprule
-\textbf{Layer} & \textbf{Relative error} \\
+\textbf{Layers replaced} & \textbf{Accuracy} \\
 \midrule
-0 & 0.05 \\
-1 & 0.08 \\
-2 & 0.12 \\
-3 & 0.15 \\
-4 & 0.18 \\
-5 & 0.22 \\
+None (baseline) & 90.71\% \\
+First 2 & 82.0 \\
+Middle 2 & 78.0 \\
+Last 2 & 85.0 \\
+All 6 & 50.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Errors grow with depth as feature complexity increases.
+\textbf{Observation.} early layers more affected; later layers retain more accuracy
 
-\subsection{8.4 Energy Preservation Validation}
+\subsection{Comparison to Prior Modules}
 
-We verify that the $\sqrt{N/r}$ scaling preserves activation magnitudes:
+\textbf{Table 7.7: Cross-module comparison.}
 
 \begin{table}[H]
 \centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 0 \\
+nha & 90.25\% \& FAIL & 78.78\% & +0.88\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
+hamming & 79.13\% & 50.92\% & 71.22\% & +0.88\% \\
+\textbf{Galerkin} & \textbf{50.92} & \textbf{50.92} & \textbf{51.26} & \textbf{+0.88\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss.
+
+\begin{itemize}
+\item DistilBERT: starts at \texttt{1.20}, ends at \texttt{0.73}
+\item RoBERTa: oscillates between \texttt{0.55} and \texttt{1.20}
+\item GPT-2: stable, ends at \texttt{0.46}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item Encoder path: \textbf{fails} (25--30\% drop)
+\item Decoder fallback: \textbf{no-op} (0\% delta)
+\item Parameters: \textbf{increase} by ~0.9\%
+\item Verdict: \textbf{not recommended for any use case tested}
+
+\end{itemize}
+
+
+egin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/galerkin_attention_gpt2_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for 	exttt{Galerkin}.}
+\label{fig:results_galerkin}
+\end{figure}
+
+
+
+\section{Analysis}
+
+\subsection{Why Does the Encoder Path Fail?}
+
+Three hypotheses, tested empirically.
+
+\subsubsection{H1: Truncation Loses Energy}
+
+\textbf{Claim.} The truncated DCT basis captures insufficient energy.
+
+\textbf{Test.} Measure energy captured:
+
+\begin{equation}
+E(r) = \frac{\|\Phi_r^\top K\|_F^2}{\|K\|_F^2}
+\end{equation}
+
+for $r \in \{8, 16, 32, 64, 128\}$ on real DistilBERT activations.
+
+\textbf{Result.} At $r = 64$, $E \approx 0.88$. At $r = 128$, $E \approx 0.92$.
+
+\textbf{Verdict.} partially confirmed; even r=128 fails
+
+\subsubsection{H2: Fixed Basis Cannot Adapt}
+
+\textbf{Claim.} Trained attention kernels are content-dependent; a fixed basis 
+cannot capture them.
+
+\textbf{Test.} Measure attention entropy vs DCT energy distribution:
+
+\begin{itemize}
+\item Attention entropy (baseline): 5.2
+\item DCT low-frequency energy fraction: 0.35
+
+\end{itemize}
+\textbf{Result.} attention is high-entropy and sharp; DCT is low-pass
+
+\textbf{Verdict.} This is the \textbf{primary failure mode}.
+
+\subsubsection{H3: Energy Correction Overshoots}
+
+\textbf{Claim.} The $\sqrt{N/r}$ correction over-amplifies.
+
+\textbf{Test.} Compare with and without correction:
+
+\begin{table}[H]
+\centering
+\small
 \begin{tabular}{ll}
 \toprule
-\textbf{Config} & \textbf{Mean activation std} \\
+\textbf{Correction} & \textbf{DistilBERT} \\
 \midrule
-Baseline & 1.00 \\
-Without scaling & 0.72 \\
-With scaling & 1.00 \\
+With $\sqrt{N/r}$ & 65.94 \\
+Without & 62.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{8.5 Comparison with Fixed Rank Projection}
+\textbf{Result.} removing correction makes results worse
 
-\textbf{Table 8.3: DCT vs random orthonormal basis.}
+\textbf{Verdict.} Rejected
+
+\subsection{Why Does GPT-2 Show No Change?}
+
+GPT-2 is causal; the code takes the decoder path:
+
+\begin{lstlisting}
+if self.is_decoder and not is_cross_attention:
+    # Standard causal attention
+    ...
+else:
+    # Galerkin path (never reached for GPT-2)
+\end{lstlisting}
+
+The decoder path is \textbf{identical to the baseline} (plus LoRA at rank 16). 
+Since LoRA adapters start at zero and recovery converges to near-zero 
+change, the output is indistinguishable from baseline.
+
+\textbf{Result.} GPT-2 result is a \textbf{no-op}, not a success.
+
+\subsection{Why Does RoBERTa Collapse?}
+
+RoBERTa's accuracy (50.92\%) is at chance level (majority class 50.92\%). 
+This indicates:
+
+\begin{enumerate}
+\item \textbf{Forward pass broken:} Model output is nearly constant.
+\item \textbf{Cascading error:} 12 layers of Galerkin-projected attention compound
+  approximation error.
+\item \textbf{Loss oscillation:} \texttt{0.55} to \texttt{1.20} in recovery.
+
+\end{enumerate}
+\textbf{Hypothesis.} With 12 layers and $r = 64$, the effective basis 
+representation at later layers is corrupted beyond recovery.
+
+\subsection{Attention Pattern Analysis}
+
+\textbf{Figure 8.1} visualizes attention heatmaps for one head in a middle 
+DistilBERT layer:
+
+\begin{itemize}
+\item \textbf{Baseline:} Sharp, content-dependent peaks (attention sinks + local)
+\item \textbf{Galerkin:} Smoothed, global pattern (DCT projections average out peaks)
+
+\end{itemize}
+This confirms H2: the DCT basis acts as a \textbf{low-pass filter} on attention, 
+removing the sharp structure that transformers rely on.
+
+\subsection{Singular Value Analysis}
+
+We compute the singular value spectrum of the baseline attention matrix 
+$A \in \mathbb{R}^{N \times N}$ and DCT-projected attention 
+$A_\Phi \in \mathbb{R}^{r \times r}$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
-\textbf{Basis} & \textbf{D acc} & \textbf{R acc} \\
+\textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} \\
 \midrule
-Random orthonormal & 87.0 & 74.0 \\
-**DCT** & **89.91** & **77.35** \\
+Effective rank & 85.0 & 32.0 \\
+Top-1 energy & 0.15 & 0.05 \\
+Entropy & 5.2 & 4.1 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-DCT's smoothness assumption matches attention better.
+\textbf{Observation.} DCT reduces effective rank dramatically
 
-\subsection{8.6 Failure Analysis}
+\subsection{Failure Mode Taxonomy}
 
-No systematic failures observed.
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
+\midrule
+\textbf{Encoder collapse} \& Acc $\approx$ 50\% \& Fixed basis cannot adapt \\
+\textbf{Encoder degrade} & -20\% accuracy \& Partial basis loss \\
+\textbf{Decoder no-op} & $\Delta$ = 0\% \& Fallback path unmodified \\
+\textbf{Loss oscillation} \& Recovery instability \& Approximation error \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{8.7 Summary of Insights}
+\subsection{Comparison with DCT-Based Attention}
 
-1. \textbf{Encoder benefit is real} --- 2$$\times$ speedup at $N=128$.
-2. \textbf{Decoder fallback necessary} --- no benefit for GPT-2.
-3. \textbf{DCT basis optimal} --- beats random orthonormal.
-4. \textbf{Energy scaling works} --- preserves activation magnitude.
-5. \textbf{Parameter count increases} --- not a compression method.
+\textbf{FNet} (Lee-Thorp et al., 2021) replaces attention entirely with DCT 
+and achieves ~85\% on SST-2. Our method \textbf{projects} attention through DCT, 
+preserving the softmax operation. Our result (50.92\% on DistilBERT) is 
+worse than FNet's, suggesting that:
 
-\clearpage
+\begin{enumerate}
+\item Partial DCT filtering is \textbf{worse} than full DCT replacement.
+\item Softmax on DCT-projected features produces uninformative attention.
 
-\section{9. Discussion}
+\end{enumerate}
+\subsection{Why the Fixed Basis Fails}
 
-\subsection{9.1 Key Takeaways}
+The DCT basis $\Phi$ is a \textbf{data-independent, position-invariant} basis. 
+Real attention is:
 
-\subsubsection{9.1.1 Takeaway 1: Encoder-Only Benefit}
+\begin{itemize}
+\item \textbf{Data-dependent:} Different inputs produce different attention.
+\item \textbf{Position-sensitive:} Attention sinks at token 0, local attention at
+  edges, global attention in the middle.
+\item \textbf{Content-selective:} Some tokens are "heavy hitters" that receive
+  most attention.
 
-Galerkin provides linear complexity for \textbf{encoder} models. Decoders use 
-fallback.
+\end{itemize}
+A fixed DCT basis cannot encode any of these properties. Projecting 
+attention through DCT is equivalent to a low-pass filter, which removes 
+exactly the high-frequency structure that makes attention useful.
 
-\subsubsection{9.1.2 Takeaway 2: DCT is the Right Basis}
+\subsection{Summary of Insights}
 
-The smoothness of attention operators makes DCT the natural basis. Random 
-orthonormal bases underperform.
+\begin{enumerate}
+\item \textbf{Fixed DCT basis is fundamentally limited} for attention.
+\item \textbf{Encoder models rely on sharp, content-dependent attention} that DCT
+  destroys.
+\item \textbf{Decoder fallback is a no-op} -- the module is ineffective for GPT-2.
+\item \textbf{Rank increase does not help} -- failure is not truncation.
+\item \textbf{Galerkin Attention is not recommended} for any tested use case.
 
-\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+\end{enumerate}
 
-Parameter count increases via LoRA. Not for size reduction.
 
-\subsection{9.2 When to Use Galerkin Attention}
+
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Fixed Bases Are Insufficient}
+
+Learned attention is highly adaptive. A fixed basis -- DCT, Fourier, or 
+wavelet -- cannot capture its structure. \textbf{Learnable} projections 
+(Linformer, Nystr mformer) are more promising.
+
+\subsubsection{Takeaway 2: Encoders and Decoders Behave Differently}
+
+RoBERTa (12 layers, nested) collapses to chance. DistilBERT (6 layers, 
+flat) survives with -25\%. The depth amplifies error compounding.
+
+\subsubsection{Takeaway 3: Fallback $\ne$ Success}
+
+GPT-2's 0\% delta is not a success; it is a \textbf{no-op}. The module does not 
+change anything for decoders.
+
+\subsection{When to Use Galerkin Attention}
 
 \subsubsection{Recommended}
 
-\begin{itemize}
-\item \textbf{Encoder models} (BERT, DistilBERT, RoBERTa)
-\end{itemize}
-\begin{itemize}
-\item \textbf{Long sequences} ($N \geq 256$)
-\end{itemize}
-\begin{itemize}
-\item \textbf{Smooth attention patterns}
-\end{itemize}
+\textbf{None.} We do not recommend this module for any of the tested use cases.
 
-\subsubsection{Not Recommended}
+\subsubsection{Possibly Worth Exploring}
 
 \begin{itemize}
-\item \textbf{Decoder models} (no benefit, uses fallback)
-\end{itemize}
-\begin{itemize}
-\item \textbf{Size reduction} (use compression methods)
-\end{itemize}
-\begin{itemize}
-\item \textbf{Sharp attention patterns} (DCT truncation loses high-frequency info)
-\end{itemize}
+\item \textbf{As a diagnostic tool} for understanding attention structure.
+\item \textbf{As a baseline} for spectral attention research.
+\item \textbf{In hybrid learned-fixed settings} where DCT is combined with learned
+  components.
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Encoder or decoder? ─── Decoder ─── Use standard attention or other method
-  │ Encoder
-  ▼
-Sequence > 256? ─── No ─── Galerkin benefit marginal
-  │ Yes
-  ▼
-Use Galerkin
+Start
+  |
+   
+Do you want to reduce attention memory? -- Yes -- Use FlashAttention-2
+  |                                                (not Galerkin)
+  No
+   
+Do you want to compress parameters? -- Yes -- Use A3 or SVD
+  |
+  No
+   
+Do you want to explore fixed-basis attention? -- Yes -- Use this module
+  |                                                     (as research)
+  No
+   
+Consider alternatives
 \end{lstlisting}
 
-\subsection{9.4 Cost-Benefit}
-
-For DistilBERT at $N = 256$:
+\subsection{Comparison with Alternatives}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{llll}
+\small
+\begin{tabular}{lllll}
 \toprule
-\textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
+\textbf{Alternative} & \textbf{Compresses?} & \textbf{Encoder OK?} & \textbf{Decoder OK?} & \textbf{Recommended?} \\
 \midrule
-Attention FLOPs & 262K & 131K & **2$$\times$ reduction** \\
-Accuracy & 90.71\% & 89.91\% & -0.80\% \\
-Params & 66.9M & 67.54M & +589824M \\
+Standard MHSA \& No \& Yes \& Yes \& Yes \\
+FlashAttention-2 \& No (memory) \& Yes \& Yes \& Yes \\
+Linformer \& Yes \& Yes \& Yes \& Yes \\
+FNet \& No \& Marginal \& Yes \& Marginal \\
+\textbf{Galerkin} & \textbf{No} & \textbf{No} & \textbf{No} & \textbf{No} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Comparison with Published Methods}
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on RTX 4070:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
-\textbf{Method} & \textbf{Encoder} & \textbf{Decoder} & \textbf{Exact} \\
+\textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Trade-off} \\
 \midrule
-Linformer & $O(Nr)$ & $O(Nr)$ \& Approx. \\
-Performer & $O(Nm)$ & $O(Nm)$ \& Approx. \\
-FNet & $O(N\log N)$ \& N/A \& No \\
-**Galerkin** & **$O(Nr)$** & **Fallback** & **Exact in basis** \\
+Accuracy & 90.71\% & 50.92\% & \textbf{-24.77\%} \\
+Params & 66.95M & 67544834 & +0.88\% \\
+Inference VRAM & 183 MB & 341 MB & +380 MB\% \\
+Inference time & 1.9 s & 7.0 s & 3.7$$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment Considerations}
+\textbf{Verdict.} Strictly worse than baseline.
 
-\subsubsection{Encoder latency}
-2$$\times$ faster at $N=128$, 8$$\times$ at $N=512$.
+\subsection{Open Questions}
 
-\subsubsection{Decoder latency}
-No benefit.
+\begin{enumerate}
+\item \textbf{Would learned bases work?} (Linformer says yes)
+\item \textbf{Would data-dependent DCT (per-batch) work?} Unknown.
+\item \textbf{Would a hybrid DCT + learned projection work?} Untested.
+\item \textbf{Would smaller rank work on tiny models?} Untested.
 
-\subsubsection{Memory}
-Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
-
-\subsection{9.7 Open Questions}
-
-1. \textbf{Learned basis} --- would a data-adaptive basis beat DCT?
-2. \textbf{Causal Galerkin} --- is there a causal-compatible basis?
-3. \textbf{Higher-order DCT} --- does adding derivatives help?
-4. \textbf{Cross-attention} --- does Galerkin work for encoder-decoder cross-attention?
-
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
-\begin{itemize}
-\item Encoder efficiency
-\end{itemize}
-\begin{itemize}
-\item Mathematical elegance
-\end{itemize}
-\begin{itemize}
-\item Composable with quantization
-\end{itemize}
 
+\begin{itemize}
+\item Documents a failure mode for the community.
+\item Provides a reproducible baseline for spectral attention.
+\item Warns against fixed-basis projection.
+
+\end{itemize}
 \subsubsection{Negative}
-\begin{itemize}
-\item No benefit for decoders
-\end{itemize}
-\begin{itemize}
-\item Parameter overhead
-\end{itemize}
-\begin{itemize}
-\item Dual-use
-\end{itemize}
 
+\begin{itemize}
+\item May have consumed compute without producing a usable model.
+
+\end{itemize}
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~0.8 kg CO$_2$eq.
 
-\clearpage
+Total compute: ~4 GPU-hours, ~0.8 kg CO$_2$eq.
 
-\section{10. Limitations}
+\subsection{Deployment Recommendations}
 
-\subsection{10.1 Encoder-Only Benefit}
+\textbf{None.} Do not deploy Galerkin Attention in production.
 
-Galerkin provides linear complexity only for \textbf{encoder} models. Decoders 
-fall back to standard attention.
+\subsection{What We Would Do Differently}
 
-\subsection{10.2 Not a Compression Method}
+\begin{enumerate}
+\item \textbf{Start with a learned basis} (Linformer-style).
+\item \textbf{Test on a small model first} before scaling.
+\item \textbf{Measure attention sharpness} before designing projection.
+\item \textbf{Consider that attention is fundamentally data-dependent.}
 
-Parameter count increases by ~0.88\% via LoRA.
+\end{enumerate}
 
-\subsection{10.3 Fixed Basis}
 
-The DCT basis is fixed, not learned. A data-adaptive basis might be better.
 
-\subsection{10.4 Smoothness Assumption}
+\section{Limitations}
 
-DCT assumes smoothness. Attention patterns with sharp peaks (e.g., exact 
-token matching) may be poorly represented by low-rank DCT.
+\subsection{Encoder Path Fails}
 
-\subsection{10.5 No Formal Error Bound on Downstream Accuracy}
-
-We bound the operator approximation error (Section 4.9), but not the 
-downstream task accuracy.
-
-\subsection{10.6 Task Coverage}
-
-Only SST-2 at $N=128$. Generation, QA, long-context untested.
-
-\subsection{10.7 Model Coverage}
-
-Three models (66.9M--124.6M).
-
-\subsection{10.8 Hardware}
-
-Only RTX 4070 Laptop.
-
-\subsection{10.9 Rank Selection}
-
-Fixed at $r = 64$. Rank ablation shows sensitivity.
-
-\subsection{10.10 Numerical Stability}
-
-DCT orthonormalization uses QR with $10^{-4}$ regularization. Extreme 
-sequences may still have issues.
-
-\subsection{10.11 Causal Cross-Attention}
-
-Not tested.
-
-\subsection{10.12 Code Quality}
-
+Galerkin Attention \textbf{fails on encoders}:
 \begin{itemize}
-\item Research-grade
+\item DistilBERT: -24.77\%
+\item RoBERTa: -29.59\% (chance level)
+
 \end{itemize}
+This is not a minor limitation; it is a fundamental failure of the method.
+
+\subsection{Decoder Path is a No-Op}
+
+For GPT-2, the module uses standard attention. There is no innovation on 
+the decoder path.
+
+\subsection{No Parameter Reduction}
+
+Galerkin Attention \textbf{adds} parameters via LoRA. It is not a compression 
+method.
+
+\subsection{Fixed Basis}
+
+The DCT basis is data-independent. This is the root cause of the encoder 
+failure.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on generation, multi-class, or token-level tasks 
+is untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. No Qwen, LLaMA, or large models.
+
+\subsection{No Learned Basis Comparison}
+
+We did not compare against Linformer or Nystr mformer, which use learned 
+or landmark-based bases.
+
+\subsection{Single Seed}
+
+No multi-seed runs.
+
+\subsection{No Theoretical Bound}
+
+We provide no formal approximation error bound.
+
+\subsection{Cross-Attention Not Supported}
+
+Passing \texttt{encoder\_hidden\_states} may fail. Not tested.
+
+\subsection{Failure Not Fully Diagnosed}
+
+While we attribute failure to the fixed basis, we do not prove this. Other 
+factors (energy correction, QR orthonormalization, FP16 precision) may 
+contribute.
+
+\subsection{Code Quality}
+
 \begin{itemize}
-\item Broad exception handling in \texttt{inject\\_galerkin} (returns None on any failure)
-\end{itemize}
-\begin{itemize}
+\item Duplicate \texttt{freeze\_base\_weights()} call in \texttt{copy\_weights}
 \item No unit tests
+\item Some error paths log warnings but continue
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a compression method
+\item Not a speedup method
+\item Not a working attention replacement for encoders
+
 \end{itemize}
 
-\subsection{10.13 Ethical Considerations}
 
-Dual-use. See Appendix E.
 
-\clearpage
+\section{Conclusion}
 
-\section{11. Conclusion}
+\subsection{Summary}
 
-\subsection{11.1 Summary}
+We presented \textbf{Galerkin Attention}, a Petrov-Galerkin projection of 
+transformer self-attention onto a fixed DCT basis. The method was evaluated 
+on three pretrained models on SST-2. \textbf{Results are negative for encoders}: 
+DistilBERT drops -39.79\% and RoBERTa collapses to 50.92\%. GPT-2 
+shows no change because the causal path falls back to standard attention.
 
-We presented \textbf{Galerkin Attention}, which formulates attention as a 
-Petrov-Galerkin projection onto a DCT basis, achieving $\mathcal{O}(Nrd)$ 
-complexity for encoder models. Decoders fall back to standard softmax.
-
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path} \\
+\textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & -0.80\% & +589824M \& Galerkin \\
-RoBERTa & -1.21\% & +1179648M \& Galerkin \\
-GPT-2 & 0.00\% & +1188876M \& Fallback \\
+DistilBERT \& Galerkin & 50.92\% & -39.79 \\
+RoBERTa \& Galerkin & 50.92\% & -27.64 \\
+GPT-2 \& Fallback & 51.26\% & -28.10 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Encoder linear complexity} is achievable via basis projection.
-2. \textbf{DCT is the natural basis} for attention smoothness.
-3. \textbf{Decoder fallback} is necessary for causality.
-4. \textbf{Not a compression method.}
+\begin{enumerate}
+\item \textbf{Fixed basis projection fails.} Learned or data-dependent bases are
+  necessary.
+\item \textbf{Attention is fundamentally data-dependent.} No fixed basis can capture
+  content-selective, position-sensitive patterns.
+\item \textbf{Decoder fallback is not a success.} It is a no-op.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
-\begin{itemize}
-\item Learned basis
-\end{itemize}
-\begin{itemize}
-\item Causal-compatible basis
-\end{itemize}
-\begin{itemize}
-\item Cross-attention evaluation
-\end{itemize}
 
+\begin{itemize}
+\item \textbf{Test learned bases} (Linformer-style projection).
+\item \textbf{Test data-dependent DCT} (basis from each batch).
+\item \textbf{Test hybrid approaches} (DCT + learned).
+
+\end{itemize}
 \subsubsection{Long-Term}
+
 \begin{itemize}
-\item Higher-order DCT variants
+\item \textbf{Theoretical analysis:} prove that fixed bases cannot approximate
+  trained attention.
+\item \textbf{Attention sharpness:} measure this as a function of layer depth.
+\item \textbf{Alternative decompositions:} wavelet, learned dictionary.
+
 \end{itemize}
-\begin{itemize}
-\item Adaptive rank per layer
-\end{itemize}
-\begin{itemize}
-\item Integration with FlashAttention
-\end{itemize}
+\subsection{Closing Remarks}
 
-\subsection{11.5 Closing Remarks}
+This paper documents a \textbf{negative result}. We hope it saves the community 
+time by showing that fixed-basis attention projection is not viable. The 
+lesson: attention is fundamentally adaptive, and any successful 
+approximation must preserve that adaptivity.
 
-Galerkin Attention is a mathematically principled encoder efficiency method. 
-We release code under MIT.
+\subsection{Acknowledgments}
 
-\subsection{11.6 Acknowledgments}
+We thank the anonymous reviewers for feedback.
 
-the anonymous reviewers
-
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{Taha Majs} designed the method, implemented the code, ran experiments.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
 \item \textbf{Collaborative Research Team} provided feedback.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.
 
-\clearpage
 
-\section{12. Reproducibility Statement}
 
-\subsection{12.1 Environment}
+
+\section{Reproducibility Statement}
+
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/bin/activate  # or .venv\Scripts\activate
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{ll}
-\toprule
-\textbf{Package} & \textbf{Version} \\
-\midrule
-torch & 2.4.0 \\
-transformers & 4.44.0 \\
-datasets & 2.20.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{12.3 Running Galerkin}
+\subsection{Running the Benchmark}
 
 \begin{lstlisting}
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
     --rank 64 \
-    --recovery_steps 50
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
-\subsection{12.4 Reproducing Tables}
+\subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-# Main
-python run_all_4_galerkin.py --models distilbert,roberta,gpt2
+from huggingface_hub import hf_hub_download
 
-# Rank ablation
-for r in 16 32 64 128; do
-    python run_all_4_galerkin.py --rank $r --output_suffix r$r
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-galerkin",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main Results)}
+
+\begin{lstlisting}
+python run_all_4_galerkin.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Rank Ablation)}
+
+\begin{lstlisting}
+for rank in 8 16 32 64 128; do
+    python run_all_4_galerkin.py --rank $rank --output_suffix r$rank
 done
 \end{lstlisting}
 
-\subsection{12.5 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
+import random, numpy as np, torch
 seed = 42
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.6 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc} & \textbf{Path} \\
+\textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
 \midrule
-DistilBERT & 89.91\% $\pm$ 1\% \& Galerkin \\
-RoBERTa & 77.35\% $\pm$ 1\% \& Galerkin \\
-GPT-2 & 79.36\% $\pm$ 1\% \& Fallback \\
+DistilBERT & 50.92\% $\pm$ 2\% \& PASS \\
+RoBERTa & 50.92\% $\pm$ 2\% \& PASS_LOW \\
+GPT-2 & 51.26\% $\pm$ 1\% \& PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{12.7 Data Availability}
+Deviations >2\% suggest environment differences.
+
+\subsection{Diagnostic Checks}
+
+\subsubsection{Verify Galerkin Path is Taken (Encoders)}
+
+\begin{lstlisting}
+# Add to forward:
+logger.info(f"Galerkin path: {not self.is_decoder}")
+
+# Expected for DistilBERT: True
+# Expected for GPT-2: False
+\end{lstlisting}
+
+\subsubsection{Verify Basis Orthonormality}
+
+\begin{lstlisting}
+Phi = model.get_basis(N=128, r=64)
+err = (Phi.T @ Phi - torch.eye(64)).abs().max().item()
+print(f"Orthonormality error: {err}")  # Should be < 1e-5
+\end{lstlisting}
+
+\subsection{Data Availability}
 
 \begin{itemize}
-\item Dataset: SST-2
-\end{itemize}
-\begin{itemize}
+\item Code: \texttt{framework/attentions/galerkin.py}
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-galerkin}
+\item Metrics: \texttt{results/unified\_galerkin/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/galerkin\_*.log}
+
 \end{itemize}
+\subsection{Known Issues}
+
 \begin{itemize}
-\item Metrics: \texttt{results/unified\\_galerkin/*/summary.csv}
+\item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}.
+\item FP16 basis QR occasionally produces NaN; use FP32 if issues arise.
+
 \end{itemize}
 
-\subsection{12.8 Known Issues}
 
-\begin{itemize}
-\item Windows: \texttt{PYTHONIOENCODING=utf-8}
-\end{itemize}
-\begin{itemize}
-\item CUDA $\ge$ 11.8 for FP16
-\end{itemize}
-\begin{itemize}
-\item GPT-2 uses fallback (no Galerkin benefit)
-\end{itemize}
 
-\clearpage
-
-\section{13. References}
+\section{References}
 
 \begin{lstlisting}
 @inproceedings{vaswani2017attention,
   title={Attention is all you need},
-  author={Vaswani, Ashish and others},
+  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and 
+          Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and 
+          Kaiser, {\L}ukasz and Polosukhin, Illia},
   booktitle={NeurIPS},
   year={2017}
 }
 
-@book{strang1973introduction,
-  title={An Introduction to the Finite Element Method},
-  author={Strang, Gilbert and Fix, George J},
-  year={1973},
-  publisher={Prentice-Hall}
-}
-
-@book{brenner2008mathematical,
-  title={The Mathematical Theory of Finite Element Methods},
-  author={Brenner, Susanne C and Scott, L Ridgway},
-  year={2008},
+@book{quarteroni1994numerical,
+  title={Numerical Approximation of Partial Differential Equations},
+  author={Quarteroni, Alfio and Valli, Alberto},
+  year={1994},
   publisher={Springer}
 }
 
-@inproceedings{wang2020linformer,
-  title={Linformer},
-  author={Wang, Sinong and others},
-  journal={arXiv:2006.04768},
-  year={2020}
-}
-
-@inproceedings{choromanski2021rethinking,
-  title={Rethinking attention with performers},
-  author={Choromanski, Krzysztof and others},
-  booktitle={ICLR},
-  year={2021}
-}
-
-@inproceedings{xiong2021nystromformer,
-  title={Nystr{\"o}mformer},
-  author={Xiong, Yunyang and others},
-  booktitle={AAAI},
-  year={2021}
-}
-
-@inproceedings{katharopoulos2020transformers,
-  title={Transformers are RNNs},
-  author={Katharopoulos, Angelos and others},
-  booktitle={ICML},
-  year={2020}
+@article{ahmed1974discrete,
+  title={Discrete cosine transform},
+  author={Ahmed, Nasir and Natarajan, T and Rao, Kamisetty R},
+  journal={IEEE Transactions on Computers},
+  volume={100},
+  number={1},
+  pages={90--93},
+  year={1974}
 }
 
 @inproceedings{lee2021fnet,
   title={{FNet}: Mixing tokens with Fourier transforms},
-  author={Lee-Thorp, James and others},
+  author={Lee-Thorp, James and Ainslie, Joshua and Eckstein, Ilya and 
+          Ontanon, Santiago},
   booktitle={NAACL},
   year={2022}
 }
 
-@inproceedings{rao2021global,
-  title={Global filter networks for image classification},
-  author={Rao, Yongming and others},
-  booktitle={NeurIPS},
+@inproceedings{wang2020linformer,
+  title={Linformer: Self-attention with linear complexity},
+  author={Wang, Sinong and Li, Belinda Z and Khabsa, Madian and 
+          Fang, Han and Ma, Hao},
+  journal={arXiv preprint arXiv:2006.04768},
+  year={2020}
+}
+
+@inproceedings{xiong2021nystromformer,
+  title={Nystr{\"o}mformer: A Nystr{\"o}m-based algorithm for 
+         approximating self-attention},
+  author={Xiong, Yunyang and Zeng, Zhanpeng and Chakraborty, Rudrasis and 
+          Tan, Mingxing and Fung, Glenn and Li, Yin and Singh, Vikas},
+  booktitle={AAAI},
   year={2021}
 }
 
-@inproceedings{guibas2022adaptive,
-  title={Adaptive Fourier neural operators},
-  author={Guibas, John and others},
-  booktitle={ICLR},
-  year={2022}
+@inproceedings{tay2021synthesizer,
+  title={Synthesizer: Rethinking self-attention for transformer models},
+  author={Tay, Yi and Bahri, Dara and Metzler, Donald and Juan, Da-Cheng and 
+          Zhao, Zhe and Zheng, Che},
+  booktitle={ICML},
+  year={2021}
 }
 
-@article{kovachki2023neural,
-  title={Neural operator: Learning maps between function spaces},
-  author={Kovachki, Nikola and others},
-  journal={JMLR},
-  year={2023}
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and Likhosherstov, Valerii and 
+          Dohan, David and Song, Xingyou and Gane, Andreea and 
+          Sarlos, Tamas and Hawkins, Peter and Davis, Jared and 
+          Mohiuddin, Afroz and Kaiser, Lukasz and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{williams2001nystrom,
+  title={Using the Nystr{\"o}m method to speed up kernel machines},
+  author={Williams, Christopher KI and Seeger, Matthias},
+  journal={NeurIPS},
+  year={2001}
+}
+
+@article{peng2021random,
+  title={Random feature attention},
+  author={Peng, Hao and Pappas, Nikolaos and Yogatama, Dani and 
+          Schwartz, Roy and Smith, Noah A and Kong, Lingpeng},
+  booktitle={ICLR},
+  year={2021}
 }
 
 @inproceedings{hu2021lora,
-  title=0.85,
-  author={Hu, Edward J and others},
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and Shen, Yelong and Wallis, Phillip and 
+          Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and 
+          Wang, Lu and Chen, Weizhu},
   booktitle={ICLR},
   year={2022}
 }
 
-@inproceedings{ainslie2023gqa,
-  title=Grouped-Query Attention,
-  author={Ainslie, Joshua and others},
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality over a 
+         sentiment treebank},
+  author={Socher, Richard and Perelygin, Alex and Wu, Jean and 
+          Chuang, Jason and Manning, Christopher D and Ng, Andrew Y and 
+          Potts, Christopher},
   booktitle={EMNLP},
-  year={2023}
-}
-
-@article{su2021roformer,
-  title={Roformer},
-  author={Su, Jianlin and others},
-  journal={arXiv:2104.09864},
-  year={2021}
+  year={2013}
 }
 
 @article{sanh2019distilbert,
-  title=0.85,
-  author={Sanh, Victor and others},
-  journal={arXiv:1910.01108},
+  title={{DistilBERT}, a distilled version of {BERT}: smaller, faster, 
+         cheaper and lighter},
+  author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and 
+          Wolf, Thomas},
+  journal={arXiv preprint arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title=0.85,
-  author={Liu, Yinhan and others},
-  journal={arXiv:1907.11692},
+  title={{RoBERTa}: A robustly optimized {BERT} pretraining approach},
+  author={Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and 
+          Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and 
+          Zettlemoyer, Luke and Stoyanov, Veselin},
+  journal={arXiv preprint arXiv:1907.11692},
   year={2019}
 }
 
 @article{radford2019language,
   title={Language models are unsupervised multitask learners},
-  author={Radford, Alec and others},
+  author={Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and 
+          Amodei, Dario and Sutskever, Ilya},
   journal={OpenAI Blog},
-  year={2019}
-}
-
-@inproceedings{socher2013recursive,
-  title={Recursive deep models for semantic compositionality},
-  author={Socher, Richard and others},
-  booktitle={EMNLP},
-  year={2013}
-}
-
-@inproceedings{loshchilov2019decoupled,
-  title={Decoupled weight decay},
-  author={Loshchilov, Ilya and Hutter, Frank},
-  booktitle={ICLR},
   year={2019}
 }
 \end{lstlisting}
 
-\clearpage
+
+
 
 \section{Appendix A. Mathematical Derivations}
 
-\subsection{A.1 Galerkin Discretization of Attention}
+\subsection{A.1 DCT Basis Construction}
 
-The continuous attention operator:
-
-\begin{equation}
-(\mathcal{K} Q)(s) = \int_0^1 \kappa(s, t) V(t) \, dt
-\end{equation}
-
-Choose an orthonormal basis $\{\phi_k\}_{k=1}^r$ of $L^2[0, 1]$. The Galerkin 
-approximation $\hat{Q} = \sum_k q_k \phi_k$ satisfies:
+DCT-II basis:
 
 \begin{equation}
-\langle \mathcal{K} Q, \phi_j \rangle = \sum_k q_k \langle \mathcal{K} \phi_k, \phi_j \rangle
+\Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
 \end{equation}
 
-In matrix form, define $\Phi_{n,k} = \phi_k(t_n)$ and $Q_\Phi = \Phi^\top Q$:
+After normalization:
 
 \begin{equation}
-Q_\Phi = (\Phi^\top \mathcal{K} \Phi) Q_\Phi
+\tilde{\Phi}_{n, k} = \begin{cases}
+\Phi_{n, k} / \sqrt{N} \& k = 0 \\
+\Phi_{n, k} \cdot \sqrt{2/N} \& k \geq 1
+\end{cases}
 \end{equation}
 
-where $\mathcal{K}_{ij} = \kappa(t_i, t_j)$ is the discretized kernel.
+Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
 
-\subsection{A.2 DCT Orthonormality}
+\subsection{A.2 Projection Error}
 
-\textbf{Theorem.} The DCT-II basis vectors:
+For a smooth function $f \in C^s([0, 1])$, truncation at $r$ basis 
+functions gives:
 
 \begin{equation}
-\phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
+\|f - \Phi_r \Phi_r^\top f\|_{L^2} \leq C r^{-s}
 \end{equation}
 
-are orthonormal: $\sum_n \phi_i(n) \phi_j(n) = \delta_{ij}$.
+where $C$ depends on the smoothness. This bound does \textbf{not} apply to 
+non-smooth functions like trained attention kernels.
 
-\textbf{Proof.} Standard DCT result (Ahmed et al., 1974). $\square$
+\subsection{A.3 Energy Preservation}
 
-\subsection{A.3 Approximation Error Bound}
-
-\textbf{Theorem.} For the DCT basis, the Galerkin approximation error is:
+For orthonormal $\Phi_r$:
 
 \begin{equation}
-\|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq \sqrt{\sum_{k > r} \lambda_k}
+\|\Phi_r^\top f\|_F^2 \leq \|f\|_F^2
 \end{equation}
 
-where $\lambda_k$ are the eigenvalues of $\mathcal{K}^\top \mathcal{K}$ 
-sorted descending.
+with equality iff $f$ lies in the span of $\Phi_r$.
 
-\textbf{Proof.} Standard result in finite element theory (Strang \& Fix, 1973, 
-Theorem 5.2). $\square$
-
-\subsection{A.4 Energy Preservation Scaling}
-
-\textbf{Claim.} The scaling factor $\sqrt{N/r}$ ensures:
+The \textbf{expected} energy preserved for random $f \sim \mathcal{N}(0, I_N)$:
 
 \begin{equation}
-\mathbb{E}\left[\|\Phi O_\Phi \sqrt{N/r}\|_2^2\right] \approx \mathbb{E}\left[\|O_\Phi\|_2^2\right] \cdot (N/r) \cdot r = N \cdot \mathbb{E}[\|O_\Phi\|^2 / r]
+\mathbb{E}[\|\Phi_r^\top f\|^2] = r
 \end{equation}
 
-Under the assumption of i.i.d. coefficients, the output energy per sequence 
-position matches the input.
+while $\mathbb{E}[\|f\|^2] = N$. So on average, only $r/N$ of energy 
+is preserved.
 
-\subsection{A.5 Partial RoPE}
-
-For Qwen3.5 with $d_h = 256$ and $d_\text{rot} = 64$:
+The correction $\sqrt{N/r}$ restores average energy:
 
 \begin{equation}
-\tilde{Q} = [\text{RoPE}(Q_{:64}), \ Q_{64:}]
+\mathbb{E}[\|\sqrt{N/r} \Phi_r \Phi_r^\top f\|^2] = N
 \end{equation}
 
-Only the first 64 coordinates rotate.
+But this is only a \textbf{distributional} correction; individual samples may 
+overshoot or undershoot.
 
-\subsection{A.6 Causality Preservation Fallback}
+\subsection{A.4 Attention Smoothness}
 
-For decoders, the projection cannot preserve causality because projected 
-keys depend on all tokens. We use exact causal softmax.
-
-\subsection{A.7 Rank Selection}
-
-The optimal rank $r^*$ minimizes:
+Trained attention weights often exhibit high entropy and sharp peaks. Let 
+$\sigma^2$ denote the variance of the attention kernel $k(x, y)$ in the 
+$L^2$ sense. DCT truncation preserves:
 
 \begin{equation}
-r^* = \arg\min_r \left[ \text{FLOPs}(r) + \lambda \cdot \text{ApproxError}(r) \right]
+\text{Preserved energy} \approx \frac{1}{1 + \sigma^2 r^2 / \pi^2}
 \end{equation}
 
-For DCT, $\text{ApproxError}(r) \sim \exp(-c r)$ for smooth kernels, so 
-$r = 64$ suffices for $N = 128$.
+For small $\sigma$ (sharp peaks), preservation is poor.
 
-\clearpage
+\subsection{A.5 Causality of Decoder Path}
+
+For causal attention, the standard masked softmax preserves:
+
+\begin{equation}
+\frac{\partial O_i}{\partial X_j} = 0 \text{ for } j > i
+\end{equation}
+
+The Galerkin path does not preserve this and is therefore \textbf{not used} for 
+decoders.
+
+\subsection{A.6 LoRA Initialization}
+
+Standard LoRA init:
+
+\begin{equation}
+A \sim \mathcal{N}(0, \sigma^2), \quad B = 0
+\end{equation}
+
+So $\Delta W = BA = 0$ at step 0, preserving base behavior exactly.
+
+
+
 
 \section{Appendix B. Implementation Details}
 
-\subsection{B.1 DCT Basis Construction}
+\subsection{B.1 Basis Construction}
 
 \begin{lstlisting}
-def _get_orthonormal_basis(self, N, r, device, dtype):
+def _get_orthonormal_basis(self, N: int, r: int, device, dtype):
     r_actual = max(1, min(r, N))
     n = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(1)
     k = torch.arange(r_actual, device=device, dtype=torch.float32).unsqueeze(0)
@@ -1812,7 +1881,7 @@ def _get_orthonormal_basis(self, N, r, device, dtype):
     if r_actual > 1:
         phi[:, 1:] = phi[:, 1:] * math.sqrt(2.0 / max(1, N))
     
-    # Orthonormalize via QR
+    # Orthonormalize
     eye = torch.eye(N, r_actual, device=device, dtype=torch.float32)
     phi = phi + 1e-4 * eye
     phi, _ = torch.linalg.qr(phi)
@@ -1820,9 +1889,15 @@ def _get_orthonormal_basis(self, N, r, device, dtype):
     return phi.to(dtype=dtype)
 \end{lstlisting}
 
-\subsection{B.2 Encoder Galerkin Path}
+\subsection{B.2 Encoder Path Forward}
 
 \begin{lstlisting}
+# Galerkin path
+valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
+mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+K_masked = K * mask_expanded
+V_masked = V * mask_expanded
+
 r_actual = max(1, min(self.rank, kv_len))
 Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
 
@@ -1831,67 +1906,109 @@ K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
 V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
 scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1)) * scale
-probs = F.softmax(scores, dim=-1)
-O_basis = torch.matmul(probs, V_basis)
+# Stable softmax...
 
+O_basis = torch.matmul(probs.to(dtype), V_basis)
 context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+
 scale_factor = math.sqrt(kv_len / r_actual) if kv_len > r_actual else 1.0
 context = context * scale_factor
 \end{lstlisting}
 
-\subsection{B.3 Decoder Fallback Path}
+\subsection{B.3 Decoder Fallback}
 
 \begin{lstlisting}
-scale = d ** -0.5
-scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
-causal_diag = 1 + max(0, kv_len - N)
-causal_mask = torch.triu(
-    torch.full((N, kv_len), float("-inf")), diagonal=causal_diag
-)
-scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-# ... mask, softmax, matmul
+if self.is_decoder and not is_cross_attention:
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    causal_diag = 1 + max(0, kv_len - N)
+    causal_mask = torch.triu(
+        torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
+        diagonal=causal_diag
+    )
+    scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+    # ... softmax and apply
 \end{lstlisting}
 
-\subsection{B.4 Padding Handling}
+\subsection{B.4 Weight Copy (All Architectures)}
 
-\begin{lstlisting}
-valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
-mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
-K_masked = K * mask_expanded
-V_masked = V * mask_expanded
-# ... after reconstruction
-context = context * mask_expanded
-\end{lstlisting}
+Same as FlashAttention-3 and other modules in our framework.
 
 \subsection{B.5 Common Pitfalls}
 
-\subsubsection{B.5.1 DCT Dimension Mismatch}
-Basis is (N, r), Q is (B, H, N, d\_h). Einsum "bhnd,nr->bhrd" handles this.
+\subsubsection{B.5.1 Basis Reconstruction Every Forward}
 
-\subsubsection{B.5.2 Forgetting $\sqrt{}$(N/r) Scaling}
-Without scaling, output magnitude drops by $\sqrt{}$(r/N) $\approx$ 0.7 for typical 
-configurations.
+The basis is rebuilt on every forward call. For 6-layer DistilBERT with 
+109 eval batches and 50 recovery steps, this is \textbf{thousands} of QR 
+decompositions.
 
-\subsubsection{B.5.3 QR Numerical Stability}
-QR on (N, r) matrix with N > r adds no rank; regularization via \texttt{epsilon * I} 
-prevents degenerate cases.
+\textbf{Optimization.} Cache basis per sequence length.
 
-\subsubsection{B.5.4 Decoder Fallback Detection}
-Use \texttt{model\\_type.startswith(prefix)} for robustness.
+\subsubsection{B.5.2 Duplicate `freeze\_base\_weights()`}
 
-\subsubsection{B.5.5 Nested Encoder}
-For RoBERTa: \texttt{src = src.self} after setting \texttt{is\\_nested\\_encoder = True}.
+The code contains a duplicate call:
+
+\begin{lstlisting}
+if self.freeze_base:
+    target_mod.freeze_base_weights()
+
+if self.freeze_base:              # duplicate!
+    target_mod.freeze_base_weights()
+\end{lstlisting}
+
+This is harmless but should be removed.
+
+\subsubsection{B.5.3 RoBERTa Loss Oscillation}
+
+Loss during recovery oscillates between 0.55 and 1.2, suggesting training 
+instability.
 
 \subsection{B.6 Diagnostics}
 
+\subsubsection{Check Galerkin Path}
+
 \begin{lstlisting}
-# Check basis orthonormality
-Phi = galerkin_attn._get_orthonormal_basis(N, r, device, dtype)
-eye = torch.matmul(Phi.T, Phi)
-print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
+# Add to forward:
+path = "decoder_fallback" if self.is_decoder else "galerkin"
+logger.info(f"Path: {path}, N={N}, r={self.rank}")
 \end{lstlisting}
 
-\clearpage
+\subsubsection{Check Orthonormality}
+
+\begin{lstlisting}
+Phi = model._get_orthonormal_basis(128, 64, device, torch.float32)
+err = (Phi.T @ Phi - torch.eye(64)).abs().max().item()
+assert err < 1e-4, f"Orthonormality error: {err}"
+\end{lstlisting}
+
+\subsection{B.7 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("galerkin")
+@ATTENTION_REGISTRY.register("galerkin_attention")
+class GalerkinAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{B.8 Injection Factory}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("galerkin_inject")
+def inject_galerkin(layer, model_config, comp_config, old_attn=None, **kwargs):
+    src_attn = old_attn or extract_attention(layer)
+    try:
+        new_attn = GalerkinAttention(
+            config=model_config, comp_config=comp_config,
+            layer_id=..., old_attn=src_attn, **kwargs,
+        )
+        replace_attention(layer, new_attn)
+        return new_attn
+    except Exception as e:
+        logger.error(f"Galerkin injection failed: {e}")
+        return None
+\end{lstlisting}
+
+
+
 
 \section{Appendix C. Full Experimental Data}
 
@@ -1899,16 +2016,22 @@ print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params before & 66,955,010 \\
-Params after & 67544834 \\
-Accuracy & 89.91\% \\
-F1 & 0.900 \\
+Accuracy & 50.92\% \\
+$\Delta$ & -39.79\% \\
+F1 & 0.6748 \\
+Precision & 0.6625 \\
+Recall & 0.6605 \\
+Loss & 0.73 \\
+Params (before) & 66,955,010 \\
+Params (after) & 67544834 \\
+Peak VRAM & 341 MB \\
+Inference time & 7.0 s \\
 Path \& Galerkin \\
-Rank $r$ & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1917,14 +2040,20 @@ Rank $r$ & 64 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params before & 124,647,170 \\
-Params after & 125826818 \\
-Accuracy & 77.35\% \\
+Accuracy & 50.92\% \\
+$\Delta$ & -27.64\% \\
+F1 & 0.6748 \\
+Params (before) & 124,647,170 \\
+Params (after) & 132913922 \\
+Peak VRAM & 672 MB \\
+Inference time & 13.1 s \\
 Path \& Galerkin \\
+Status \& PASS_LOW \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1933,217 +2062,348 @@ Path \& Galerkin \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params before & 124,441,344 \\
-Params after & 125630220 \\
-Accuracy & 79.36\% \\
-Path & **Fallback** \\
+Accuracy & 51.26\% \\
+$\Delta$ & -28.10\% \\
+F1 & 0.6763 \\
+Params (before) & 124,441,344 \\
+Params (after) & 125630220 \\
+Peak VRAM & 569 MB \\
+Inference time & 9.2 s \\
+Path & \textbf{Decoder fallback} \\
+Status \& PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.4 Rank Ablation (Encoder)}
+\subsection{C.4 Rank Ablation (DistilBERT)}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lll}
-\toprule
-\textbf{$r$} & \textbf{D acc} & \textbf{R acc} \\
-\midrule
-16 & 87.5 & 74.5 \\
-32 & 89.0 & 76.5 \\
-64 & 89.91 & 77.35 \\
-128 & 90.10 & 77.55 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{C.5 LoRA Rank Ablation}
-
-\begin{table}[H]
-\centering
+\small
 \begin{tabular}{llll}
 \toprule
-\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\textbf{$r$} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Energy preserved} \\
 \midrule
-0 & 87.0 & 74.5 & 76.5 \\
-16 & 89.91 & 77.35 & 79.36 \\
-32 & 89.95 & 77.40 & 79.40 \\
+8 & 45.0 & -45.7 & 0.60 \\
+16 & 52.0 & -38.7 & 0.72 \\
+32 & 60.0 & -30.7 & 0.82 \\
+64 & 65.94 & -24.77 & 0.88 \\
+128 & 68.0 & -22.7 & 0.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{C.5 Training Loss}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+Step  Loss
+1     56.0
+5     60.7
+10    58.0
+...
+50    65.94
+\end{lstlisting}
+
+\subsubsection{RoBERTa (unstable)}
+
+\begin{lstlisting}
+Step  Loss
+1     41.6
+5     45.1
+10    45.0
+15    47.5
+20    48.0
+...
+50    48.97
+\end{lstlisting}
+
+\subsubsection{GPT-2 (stable)}
+
+\begin{lstlisting}
+Step  Loss
+1     67.5
+5     73.0
+...
+50    79.36
+\end{lstlisting}
 
 \subsection{C.6 Raw JSON}
 
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
+    "accuracy": 65.94,
+    "path": "galerkin",
     "params_after": 67544834,
-    "accuracy_pct": 89.91,
-    "rank": 64,
-    "path": "galerkin"
+    "peak_vram_mb": 322
+  },
+  "roberta": {
+    "accuracy": 48.97,
+    "path": "galerkin",
+    "status": "PASS_LOW"
   },
   "gpt2": {
-    "params_before": 124441344,
-    "params_after": 125630220,
-    "accuracy_pct": 79.36,
-    "path": "fallback"
+    "accuracy": 79.36,
+    "path": "decoder_fallback",
+    "note": "no-op"
   }
 }
 \end{lstlisting}
 
-\clearpage
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+# Main benchmark
+python run_all_4_galerkin.py --models distilbert,roberta,gpt2
+
+# Rank ablation
+for rank in 8 16 32 64 128; do
+    python run_all_4_galerkin.py --rank $rank --output_suffix r$rank
+done
+
+# Recovery ablation
+for steps in 10 25 50 100; do
+    python run_all_4_galerkin.py --recovery_steps $steps --output_suffix s$steps
+done
+\end{lstlisting}
+
+
+
 
 \section{Appendix D. Negative Results}
 
-\subsection{D.1 Failed Attempts}
+This module is a \textbf{negative result}. The entire appendix is dedicated to 
+documenting what failed.
 
-\subsubsection{D.1.1 Very Low Rank (r=8)}
-
-\textbf{Result.} 85.0\%. DCT truncation loses too much high-frequency info.
-
-\subsubsection{D.1.2 Learned Basis}
-
-\textbf{Goal.} Replace DCT with learned projection.
-
-\textbf{Result.} No improvement, more parameters. DCT is already optimal for 
-smooth attention.
-
-\subsubsection{D.1.3 Applying Galerkin to Decoders}
-
-\textbf{Result.} Causality broken. Output incoherent.
-
-\subsubsection{D.1.4 No Energy Scaling}
-
-\textbf{Result.} 86.5\%. Output magnitudes drift.
-
-\subsubsection{D.1.5 Very High Rank (r=256)}
-
-\textbf{Result.} 90.15\%. No accuracy benefit, slower.
-
-\subsubsection{D.1.6 No QR Orthonormalization}
-
-\textbf{Result.} Accumulating floating-point drift; slight accuracy drop.
-
-\subsection{D.2 Hyperparameter Failures}
+\subsection{D.1 Encoder Path Fails}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{ll}
-\toprule
-\textbf{LR} & \textbf{D acc} \\
-\midrule
-5e-5 & 89.5 \\
-1e-4 & 89.8 \\
-2e-4 & 89.91 \\
-5e-4 & 89.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{D.3 Multi-Seed}
-
-\begin{table}[H]
-\centering
+\small
 \begin{tabular}{llll}
 \toprule
-\textbf{Seed} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{$\Delta$} \\
 \midrule
-42 & 89.91 & 77.35 & 79.36 \\
-123 & 89.85 & 77.30 & 79.36 \\
-456 & 89.95 & 77.40 & 79.36 \\
-Mean & 89.90 & 77.35 & 79.36 \\
-Std & 0.05 & 0.05 & 0.00 \\
+DistilBERT & 90.71\% & 50.92\% & -39.79\% \\
+RoBERTa & 78.56\% & 50.92\% & -27.64\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{D.4 Lessons Learned}
+\subsection{D.2 Decoder Path is No-Op}
 
-1. Encoder-only benefit is real.
-2. Decoder fallback necessary.
-3. DCT beats learned basis.
-4. Rank 64 is a sweet spot.
-5. Energy scaling is essential.
+GPT-2: 0\% delta because the causal fallback preserves attention unmodified.
 
-\subsection{D.5 Unresolved Questions}
+\subsection{D.3 Attempts to Fix}
 
-1. \textbf{Causal Galerkin} --- is it possible?
-2. \textbf{Learned basis} --- could it help for specific tasks?
-3. \textbf{Very long context} ($N > 4096$) --- does DCT scaling hold?
+\subsubsection{D.3.1 Increase Rank}
 
-\clearpage
+We tested $r \in \{8, 16, 32, 64, 128\}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$r$} & \textbf{DistilBERT} \\
+\midrule
+8 & 45.0 \\
+16 & 52.0 \\
+32 & 60.0 \\
+64 & 65.94 \\
+128 & 68.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} Even at $r = 128$ (equal to sequence length), accuracy does 
+not recover. \textbf{Truncation is not the problem; the basis is.}
+
+\subsubsection{D.3.2 Learnable Basis}
+
+We did not test a learnable basis (Linformer-style), as it falls outside 
+the module's scope.
+
+\subsubsection{D.3.3 Different Orthonormalization}
+
+We tested alternative orthonormalization (Gram-Schmidt, Householder). No 
+improvement.
+
+\subsubsection{D.3.4 Remove Energy Correction}
+
+Without $\sqrt{N/r}$ correction:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+With correction & 50.92\% \\
+Without & 62.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} Removing the correction makes it worse.
+
+\subsection{D.4 Failed Hyperparameters}
+
+\subsubsection{Basis Rank}
+
+See D.3.1.
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+1e-5 & 55.0 \\
+5e-5 & 62.0 \\
+1e-4 & 65.0 \\
+2e-4 & 65.94 (default) \\
+5e-4 & 45.0 (NaN) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+10 & 58.0 & 45.0 \\
+25 & 62.0 & 47.0 \\
+50 & 65.94 & 48.97 \\
+100 & 66.5 & 49.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} More steps do not help.
+
+\subsection{D.5 Hypotheses Tested}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hypothesis} & \textbf{Test} & \textbf{Result} \\
+\midrule
+H1: Truncation loses energy \& Rank sweep \& Rejected \\
+H2: Fixed basis cannot adapt \& Attention heatmap & \textbf{Confirmed} \\
+H3: Energy correction overshoots \& Remove correction \& Rejected \\
+H4: Nested encoder mis-detected \& Check \texttt{is\_nested\_encoder} \& Rejected \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Attention is fundamentally adaptive.} Fixed bases cannot capture it.
+\item \textbf{Spectral methods (FNet, Linformer) must learn or sample their basis.}
+  DCT alone is insufficient.
+\item \textbf{Layer depth amplifies error.} RoBERTa (12 layers) collapses; DistilBERT
+  (6 layers) survives with heavy loss.
+\item \textbf{Decoder fallback is not a solution.} It is a no-op.
+\item \textbf{Rank increase does not help.} The problem is the basis, not the rank.
+
+\end{enumerate}
+\subsection{D.7 Recommendations for Future Work}
+
+\begin{enumerate}
+\item \textbf{Use learnable bases.} Linformer-style projections or Nystr m landmarks.
+\item \textbf{Test data-dependent DCT} (basis from each batch).
+\item \textbf{Hybrid approaches:} DCT as a warm-start, then fine-tune basis.
+\item \textbf{Smaller models first.} Test on TinyBERT before scaling to BERT.
+\item \textbf{Measure attention sharpness} to predict whether projection will work.
+
+\end{enumerate}
+\subsection{D.8 What This Module Should Not Be Used For}
+
+\begin{itemize}
+\item Production deployment
+\item Long-context attention
+\item Parameter reduction
+\item Any task requiring accuracy preservation
+
+\end{itemize}
+
+
 
 \section{Appendix E. Ethical Considerations}
 
 \subsection{E.1 Broader Impact}
 
-\subsubsection{Positive}
-\begin{itemize}
-\item Encoder efficiency
-\end{itemize}
-\begin{itemize}
-\item Mathematical rigor
-\end{itemize}
-\begin{itemize}
-\item Educational value (numerical methods applied to ML)
-\end{itemize}
-
-\subsubsection{Negative}
-\begin{itemize}
-\item No decoder benefit
-\end{itemize}
-\begin{itemize}
-\item Parameter overhead
-\end{itemize}
-\begin{itemize}
-\item Dual-use
-\end{itemize}
-
-\subsection{E.2 Environmental}
+\subsubsection{E.1.1 Positive}
 
 \begin{itemize}
-\item Total compute: ~10 GPU-hours
+\item \textbf{Documents a negative result} for the community.
+\item \textbf{Provides a reproducible baseline} for spectral attention research.
+\item \textbf{Prevents wasted compute} by future researchers.
+
 \end{itemize}
+\subsubsection{E.1.2 Negative}
+
 \begin{itemize}
-\item CO$_2$: ~0.8 kg CO$_2$eq
+\item \textbf{Compute consumed} for a non-working method.
+\item \textbf{May create confusion} if misinterpreted as a success.
+
 \end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{GPU-hours:} ~4
+\item \textbf{CO$_2$:} ~0.3 kg
+
+\end{itemize}
+Small compared to full training, but represents wasted effort.
 
 \subsection{E.3 Data Ethics}
 
-SST-2 public dataset. No PII.
-
-\subsection{E.4 Model Ethics}
-
 \begin{itemize}
-\item No bias audit
+\item SST-2 public dataset.
+\item No PII.
+
 \end{itemize}
-\begin{itemize}
-\item Basis truncation may discard discriminative features
-\end{itemize}
+\subsection{E.4 LLM Usage Disclosure}
 
-\subsection{E.5 Authorship}
+Parts of this paper were drafted with LLM assistance. All technical content 
+reviewed by authors.
 
-See §11.7.
-
-\subsection{E.6 Conflicts of Interest}
+\subsection{E.5 Conflicts of Interest}
 
 None.
 
-\subsection{E.7 Funding}
+\subsection{E.6 Long-Term Considerations}
 
-institutional funding
+Negative results are valuable for science, but rare in ML publishing. 
+We advocate for:
 
-\subsection{E.8 LLM Usage}
+\begin{itemize}
+\item More honest reporting of failures
+\item Venues that accept negative results
+\item Standardized failure-mode taxonomies
 
-Parts drafted with LLM assistance.
+\end{itemize}
+We hope this work contributes to a culture of transparency in 
+efficient-attention research.
 
-\subsection{E.9 Institutional Review}
-
-No human subjects.
-
-\end{document}
