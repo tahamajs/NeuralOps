@@ -844,14 +844,15 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                 module_state = {}
                 for mod_name, mod in model.named_modules():
                     is_svd = mod.__class__.__name__ == "SVDLinear" or (hasattr(mod, "U") and hasattr(mod, "V"))
-                    if is_svd or any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
+                    is_custom_attn = getattr(mod, "is_custom_attention", False) or "AdaptiveSpan" in mod.__class__.__name__
+                    if is_svd or is_custom_attn or any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
                         for param_name, param in mod.named_parameters(recurse=False):
                             module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
 
                 lora_state = {
                     k: v.detach().cpu()
                     for k, v in model.state_dict().items()
-                    if "lora_" in k or any(h in k for h in ["classifier.", "score.", "classification_head."])
+                    if "lora_" in k or "span_" in k or any(h in k for h in ["classifier.", "score.", "classification_head."])
                 }
 
                 checkpoint_payload = {
