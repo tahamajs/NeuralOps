@@ -303,7 +303,7 @@ def test_gelu_derivative_squared():
     y = torch.tensor([-5.0])
     result = AdaSVDCompressor._gelu_derivative_squared(y)
     assert result.item() < 0.01, f"GELU'(-5)^2 should be ~0, got {result.item()}"
-    print("✓ test_gelu_derivative_squared passed")
+    print("[PASS] test_gelu_derivative_squared passed")
 
 
 def test_gating_aware_d_for_ffn_lin1():
@@ -325,7 +325,7 @@ def test_gating_aware_d_for_ffn_lin1():
     assert comp._is_followed_by_gelu("intermediate.dense") == True
     assert comp._is_followed_by_gelu("gate_proj") == True
     assert comp._is_followed_by_gelu("down_proj") == False
-    print("✓ test_gating_aware_d_for_ffn_lin1 passed")
+    print("[PASS] test_gating_aware_d_for_ffn_lin1 passed")
 
 
 if __name__ == "__main__":
