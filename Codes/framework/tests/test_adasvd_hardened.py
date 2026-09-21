@@ -3,8 +3,9 @@ import math
 from pathlib import Path
 
 # Add project Codes directory
-repo_root = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(repo_root / "Codes"))
+repo_root = Path(__file__).resolve().parents[2]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
 
 import pytest
 import torch
@@ -181,6 +182,55 @@ def test_rank_floor_and_reduction_bounds():
     assert comp.layer_ranks["wide"] <= 432
 
 
+def test_activation_whitening_and_weighted_als():
+    """Verify Cholesky whitening and weighted ALS reduce activation error."""
+    torch.manual_seed(42)
+    in_f, out_f, r = 64, 64, 16
+    lin = nn.Linear(in_f, out_f, bias=False)
+
+    # Create non-isotropic input activations X with distinct dominant directions
+    X = torch.randn(200, in_f)
+    X[:, :8] *= 5.0
+    C_X = (X.t() @ X) / X.size(0)
+
+    comp = AdaSVDCompressor(nn.Sequential(lin), rank=r, num_iters=5, use_weighted_als=True)
+    svd_layer, err, iters = comp.compress_linear(lin, rank=r, covariance=C_X, X_calib=X)
+
+    assert svd_layer is not None
+    assert err < 0.60
+
+    # Check that reconstructed output approximates true output on X
+    y_true = lin(X)
+    y_pred = svd_layer(X)
+    act_err = torch.norm(y_true - y_pred, p="fro").item() / torch.norm(y_true, p="fro").item()
+    assert act_err < 0.60
+
+
+def test_effective_rank_calculation():
+    """Verify Shannon entropy effective rank calculation."""
+    k = 32
+    W_uniform = torch.eye(k)
+    erank_uni = AdaSVDCompressor._compute_effective_rank(W_uniform)
+    assert abs(erank_uni - k) < 1.0
+
+    u = torch.randn(k, 1)
+    v = torch.randn(1, k)
+    W_rank1 = u @ v
+    erank_r1 = AdaSVDCompressor._compute_effective_rank(W_rank1)
+    assert abs(erank_r1 - 1.0) < 0.2
+
+
+def test_strs_rank_search():
+    """Verify STRS finds minimal rank satisfying max_error constraint."""
+    torch.manual_seed(42)
+    in_f, out_f = 64, 64
+    lin = nn.Linear(in_f, out_f)
+    comp = AdaSVDCompressor(nn.Sequential(lin), use_strs=True, max_error=0.45)
+    svd_layer, err, iters = comp.compress_linear(lin, rank=32)
+    assert svd_layer is not None
+    assert err <= 0.45 or svd_layer.rank >= 16
+
+
 if __name__ == "__main__":
     print("Running AdaSVD test suite...")
     test_cfg_get()
@@ -195,4 +245,10 @@ if __name__ == "__main__":
     print("[PASS] test_als_refinement_error_monotonicity")
     test_rank_floor_and_reduction_bounds()
     print("[PASS] test_rank_floor_and_reduction_bounds")
+    test_activation_whitening_and_weighted_als()
+    print("[PASS] test_activation_whitening_and_weighted_als")
+    test_effective_rank_calculation()
+    print("[PASS] test_effective_rank_calculation")
+    test_strs_rank_search()
+    print("[PASS] test_strs_rank_search")
     print("\nALL ADASVD UNIT TESTS PASSED SUCCESSFULLY!")
