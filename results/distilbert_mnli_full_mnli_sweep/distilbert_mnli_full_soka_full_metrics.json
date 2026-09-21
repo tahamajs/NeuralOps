@@ -1,21 +1,21 @@
 {
     "model": "distilbert_mnli_full_soka",
     "performance": {
-        "accuracy_pct": 81.8,
-        "f1_score": 0.817,
-        "f1_macro": 0.817,
-        "precision": 0.8176,
-        "recall": 0.8169,
-        "val_loss": 0.5317,
+        "accuracy_pct": 81.3,
+        "f1_score": 0.8123,
+        "f1_macro": 0.8123,
+        "precision": 0.8125,
+        "recall": 0.8123,
+        "val_loss": 0.5354,
         "status": "PASS",
-        "elapsed_s": 9.89
+        "elapsed_s": 10.46
     },
     "efficiency": {
         "total_params_before": 66955779,
-        "total_params_after": 66955779,
+        "total_params_after": 65481219,
         "trainable_recovery_params": 592899,
-        "compression_rate": 1.0,
-        "compression_ratio_pct": 0.0,
+        "compression_rate": 1.0225,
+        "compression_ratio_pct": 2.2,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
@@ -24,11 +24,36 @@
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
-        "per_layer_ranks": {}
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention.q_lin": 329,
+            "distilbert.transformer.layer.0.attention.k_lin": 324,
+            "distilbert.transformer.layer.0.attention.v_lin": 346,
+            "distilbert.transformer.layer.0.attention.out_lin": 332,
+            "distilbert.transformer.layer.1.attention.q_lin": 313,
+            "distilbert.transformer.layer.1.attention.k_lin": 293,
+            "distilbert.transformer.layer.1.attention.v_lin": 342,
+            "distilbert.transformer.layer.1.attention.out_lin": 339,
+            "distilbert.transformer.layer.2.attention.q_lin": 340,
+            "distilbert.transformer.layer.2.attention.k_lin": 344,
+            "distilbert.transformer.layer.2.attention.v_lin": 344,
+            "distilbert.transformer.layer.2.attention.out_lin": 352,
+            "distilbert.transformer.layer.3.attention.q_lin": 308,
+            "distilbert.transformer.layer.3.attention.k_lin": 310,
+            "distilbert.transformer.layer.3.attention.v_lin": 374,
+            "distilbert.transformer.layer.3.attention.out_lin": 373,
+            "distilbert.transformer.layer.4.attention.q_lin": 341,
+            "distilbert.transformer.layer.4.attention.k_lin": 340,
+            "distilbert.transformer.layer.4.attention.v_lin": 380,
+            "distilbert.transformer.layer.4.attention.out_lin": 383,
+            "distilbert.transformer.layer.5.attention.q_lin": 347,
+            "distilbert.transformer.layer.5.attention.k_lin": 354,
+            "distilbert.transformer.layer.5.attention.v_lin": 365,
+            "distilbert.transformer.layer.5.attention.out_lin": 383
+        }
     },
     "hardware": {
-        "peak_vram_mb": 457.35,
-        "tokens_per_sec": 89211.31
+        "peak_vram_mb": 519.94,
+        "tokens_per_sec": 123559.39
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 295.92,
-        "L_256_vram_mb": 298.48,
+        "L_128_vram_mb": 352.53,
+        "L_256_vram_mb": 355.09,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T12:36:24.708612"
+    "timestamp": "2026-09-21T18:30:10.683717"
 }
