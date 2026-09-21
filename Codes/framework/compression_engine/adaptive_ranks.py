@@ -46,6 +46,64 @@ def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
     return getattr(cfg, key, default)
 
 
+def _gelu_derivative_sq(y: torch.Tensor) -> torch.Tensor:
+    r"""
+    Compute (GELU'(y))^2 elementwise.
+    GELU(y) = y * \Phi(y)
+    GELU'(y) = \Phi(y) + y * \phi(y)
+    where \Phi is the standard Gaussian CDF and \phi is the standard Gaussian PDF.
+    """
+    phi = 0.5 * (1.0 + torch.erf(y / math.sqrt(2.0)))
+    pdf = torch.exp(-0.5 * (y ** 2)) / math.sqrt(2.0 * math.pi)
+    gelu_prime = phi + y * pdf
+    return gelu_prime ** 2
+
+
+def _silu_derivative_sq(y: torch.Tensor) -> torch.Tensor:
+    r"""
+    Compute (SiLU'(y))^2 elementwise.
+    SiLU(y) = y * \sigma(y)
+    SiLU'(y) = \sigma(y) * (1 + y * (1 - \sigma(y)))
+    """
+    sig = torch.sigmoid(y)
+    silu_prime = sig * (1.0 + y * (1.0 - sig))
+    return silu_prime ** 2
+
+
+def _detect_activation_type(layer_name: str, model: Optional[nn.Module] = None) -> str:
+    """
+    Detect whether layer output is directly followed by GELU, SiLU, or None.
+    - GELU: DistilBERT ('ffn.lin1'), RoBERTa ('intermediate.dense'), BERT ('intermediate.dense', 'ffn.lin1')
+    - SiLU: LLaMA / Qwen ('gate_proj', 'up_proj')
+    - None: other layers (attention out, FFN down_proj/lin2)
+    """
+    nl = layer_name.lower()
+    # Check for GELU patterns
+    if any(k in nl for k in ["ffn.lin1", "intermediate.dense"]) or (nl.endswith(".lin1") and "ffn" in nl):
+        return "gelu"
+    if "lin1" in nl and not any(skip in nl for skip in ["q_lin", "k_lin", "v_lin", "out_lin"]):
+        return "gelu"
+    # Check for SiLU patterns (SwiGLU)
+    if any(k in nl for k in ["gate_proj", "up_proj"]):
+        return "silu"
+    return "none"
+
+
+def _is_attention_qk(layer_name: str) -> bool:
+    """
+    Detect whether layer produces attention Queries or Keys (subject to Softmax Jacobian weighting).
+    """
+    nl = layer_name.lower()
+    qk_patterns = [
+        "q_lin", "k_lin",
+        "q_proj", "k_proj",
+        "query", "key",
+        "c_attn",
+        "in_proj_qkv",
+    ]
+    return any(p in nl for p in qk_patterns) and not any(skip in nl for skip in ["out_lin", "o_proj", "v_proj", "v_lin", "value", "c_proj"])
+
+
 # Backward compatibility alias
 AdaptiveSVDLinear = SVDLinear
 
@@ -88,12 +146,29 @@ class AdaptiveRanksCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        use_jg_svd: bool = False,
+        use_cholesky_jg: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adaptive_ranks", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is None and hasattr(model, "config") and model.config is not None:
             cfg = model.config
+
+        # Check sys.argv for CLI overrides
+        cli_use_jg_svd = None
+        cli_use_cholesky_jg = None
+        import sys
+        for _idx, _arg in enumerate(sys.argv):
+            if _arg in ("--use_jg_svd", "--adaptive_ranks_use_jg_svd") and _idx + 1 < len(sys.argv):
+                cli_use_jg_svd = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--use_jg_svd=") or _arg.startswith("--adaptive_ranks_use_jg_svd="):
+                cli_use_jg_svd = _arg.split("=")[1].lower() in ("true", "1", "yes")
+            elif _arg in ("--use_cholesky_jg", "--adaptive_ranks_use_cholesky_jg") and _idx + 1 < len(sys.argv):
+                cli_use_cholesky_jg = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
+            elif _arg.startswith("--use_cholesky_jg=") or _arg.startswith("--adaptive_ranks_use_cholesky_jg="):
+                cli_use_cholesky_jg = _arg.split("=")[1].lower() in ("true", "1", "yes")
+
         if cfg is not None:
             energy_threshold = _cfg_get(cfg, "energy_threshold", _cfg_get(cfg, "adaptive_ranks_energy_threshold", _cfg_get(cfg, "asvd_energy_threshold", energy_threshold)))
             min_rank = _cfg_get(cfg, "min_rank", _cfg_get(cfg, "rank", min_rank))
@@ -101,6 +176,18 @@ class AdaptiveRanksCompressor(BaseCompressor):
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             protect_critical = _cfg_get(cfg, "protect_critical", protect_critical)
             target_attention_only = _cfg_get(cfg, "target_attention_only", _cfg_get(cfg, "adaptive_ranks_target_attention_only", _cfg_get(cfg, "aasvd_target_attention_only", target_attention_only)))
+            use_jg_svd = _cfg_get(cfg, "use_jg_svd", _cfg_get(cfg, "adaptive_ranks_use_jg_svd", use_jg_svd))
+            use_cholesky_jg = _cfg_get(cfg, "use_cholesky_jg", _cfg_get(cfg, "adaptive_ranks_use_cholesky_jg", use_cholesky_jg))
+
+        if cli_use_jg_svd is not None:
+            use_jg_svd = cli_use_jg_svd
+        if cli_use_cholesky_jg is not None:
+            use_cholesky_jg = cli_use_cholesky_jg
+
+        if "use_jg_svd" in kwargs and kwargs["use_jg_svd"] is not None:
+            use_jg_svd = kwargs["use_jg_svd"]
+        if "use_cholesky_jg" in kwargs and kwargs["use_cholesky_jg"] is not None:
+            use_cholesky_jg = kwargs["use_cholesky_jg"]
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             min_rank = kwargs["rank"]
@@ -113,6 +200,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
         self.fallback_to_original = bool(fallback_to_original)
         self.protect_critical = bool(protect_critical)
         self.target_attention_only = bool(target_attention_only)
+        self.use_jg_svd = bool(use_jg_svd)
+        self.use_cholesky_jg = bool(use_cholesky_jg)
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -123,11 +212,15 @@ class AdaptiveRanksCompressor(BaseCompressor):
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
+        self.layer_D_gating: Dict[str, torch.Tensor] = {}
+        self.attn_jacobian: Dict[str, float] = {}
+
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.layer_ranks: Dict[str, int] = {}
         self.used_covariance: Dict[str, bool] = {}
+        self.used_jg_svd: Dict[str, bool] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear) or (CompressedAttentionLayer is not None and isinstance(module, CompressedAttentionLayer)):
@@ -294,9 +387,257 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
         return covariances
 
+    def _collect_gating_D(self) -> None:
+        r"""
+        Collect output gating importance vectors D for FFN layers and Softmax Jacobian scalars for Attention Q/K.
+        FFN: D_{FFN} = E[(f'(Y))^2] where f is GELU or SiLU.
+        Attention Q/K: D_{Attn} = E[P(1-P)] where P is softmax attention probabilities.
+        """
+        if not (self.tokenizer or self.calibration_loader or self.calibration_texts):
+            logger.info("No calibration data available for JG-SVD gating D collection.")
+            return
+
+        self.model.eval()
+        hooks = []
+        out_acts: Dict[str, List[torch.Tensor]] = {}
+        attn_probs: Dict[str, List[torch.Tensor]] = {}
+
+        def make_out_hook(layer_name: str) -> Any:
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+                if isinstance(outp, torch.Tensor):
+                    y = outp.detach().float()
+                    target_mod = getattr(module, "base_layer", module)
+                    cls_name = module.__class__.__name__.lower()
+                    target_cls = target_mod.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
+                    weight = getattr(target_mod, "weight", getattr(module, "weight", None))
+                    if weight is None:
+                        return
+                    out_f = weight.shape[1] if is_conv1d else weight.shape[0]
+                    y_flat = y.reshape(-1, out_f)
+                    if layer_name not in out_acts:
+                        out_acts[layer_name] = [y_flat[:512].cpu()]
+                    else:
+                        curr_n = sum(t.size(0) for t in out_acts[layer_name])
+                        if curr_n < 1024:
+                            avail = 1024 - curr_n
+                            out_acts[layer_name].append(y_flat[:avail].cpu())
+            return hook
+
+        def make_attn_hook(layer_name: str) -> Any:
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+                p = None
+                if isinstance(outp, (tuple, list)) and len(outp) > 1 and isinstance(outp[1], torch.Tensor):
+                    p = outp[1].detach().float()
+                elif isinstance(outp, torch.Tensor) and outp.ndim >= 3:
+                    # In some modules attention probabilities or softmax is exposed
+                    pass
+                if p is not None:
+                    if layer_name not in attn_probs:
+                        attn_probs[layer_name] = [p[:4].cpu()]
+                    else:
+                        curr_n = sum(t.size(0) for t in attn_probs[layer_name])
+                        if curr_n < 8:
+                            attn_probs[layer_name].append(p[:2].cpu())
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_out_hook(name)))
+            nl = name.lower()
+            if any(k in nl for k in ["attention", "self_attn", "attn"]) and not any(skip in nl for skip in ["q_lin", "k_lin", "v_lin", "out_lin", "dense"]):
+                hooks.append(module.register_forward_hook(make_attn_hook(name)))
+
+        if self.calibration_loader is not None:
+            self.model.eval()
+            with torch.no_grad():
+                for batch in self.calibration_loader:
+                    try:
+                        if isinstance(batch, dict):
+                            self.model(**{k: v.to(self.target_device) if hasattr(v, "to") else v for k, v in batch.items()})
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch.to(self.target_device))
+                        elif isinstance(batch, (list, tuple)):
+                            try:
+                                self.model(*[b.to(self.target_device) if hasattr(b, "to") else b for b in batch])
+                            except Exception:
+                                self.model(batch[0].to(self.target_device))
+                    except Exception as e:
+                        logger.debug("JG-SVD calibration loader forward pass exception: %s", e)
+        else:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=None,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            if calib_inputs is not None and not (isinstance(calib_inputs, (list, tuple, dict)) and len(calib_inputs) == 0):
+                with torch.no_grad():
+                    try:
+                        if isinstance(calib_inputs, dict):
+                            self.model(**calib_inputs)
+                        elif isinstance(calib_inputs, torch.Tensor):
+                            self.model(calib_inputs)
+                        elif isinstance(calib_inputs, (list, tuple)):
+                            self.model(*calib_inputs)
+                    except Exception as e:
+                        logger.debug("JG-SVD gating collection forward pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        # Compute Attention Softmax scalar Jacobian E[P(1-P)]
+        global_attn_scalar = 0.08  # Default baseline for softmax distribution with entropy ~2.5
+        for name, p_list in attn_probs.items():
+            if p_list:
+                cat_p = torch.cat(p_list, dim=0)
+                jac = cat_p * (1.0 - cat_p)
+                m_jac = float(jac.mean().item())
+                if math.isfinite(m_jac) and m_jac > 0.0:
+                    self.attn_jacobian[name] = m_jac
+                    global_attn_scalar = m_jac
+
+        for name, y_list in out_acts.items():
+            if not y_list:
+                continue
+            cat_y = torch.cat(y_list, dim=0)
+            act_type = _detect_activation_type(name, self.model)
+            if act_type == "gelu":
+                d_sq = _gelu_derivative_sq(cat_y)
+                d_vec = d_sq.mean(dim=0).cpu()
+                self.layer_D_gating[name] = torch.clamp(d_vec, min=1e-6)
+                logger.debug("JG-SVD GELU' weighting on %s: mean=%.4f", name, d_vec.mean().item())
+            elif act_type == "silu":
+                d_sq = _silu_derivative_sq(cat_y)
+                d_vec = d_sq.mean(dim=0).cpu()
+                self.layer_D_gating[name] = torch.clamp(d_vec, min=1e-6)
+                logger.debug("JG-SVD SiLU' weighting on %s: mean=%.4f", name, d_vec.mean().item())
+            elif _is_attention_qk(name):
+                # Apply Attention Softmax Jacobian scalar weighting
+                matching_attn = [v for k, v in self.attn_jacobian.items() if k in name or name in k]
+                scalar_val = matching_attn[0] if matching_attn else global_attn_scalar
+                out_dim = cat_y.shape[-1]
+                self.layer_D_gating[name] = torch.full((out_dim,), float(scalar_val), dtype=torch.float32)
+                logger.debug("JG-SVD Attention Softmax Jacobian on %s: scalar=%.4f", name, scalar_val)
+            else:
+                # Other layers: empirical output variance fallback
+                d_var = cat_y.var(dim=0, unbiased=False).cpu()
+                self.layer_D_gating[name] = torch.clamp(d_var, min=1e-6)
+
+    def _factorize_with_JG(
+        self,
+        W: torch.Tensor,
+        cov: Optional[torch.Tensor],
+        D_gating: Optional[torch.Tensor],
+        r: int,
+        num_iters: int = 8,
+    ) -> Tuple[torch.Tensor, torch.Tensor, float]:
+        r"""
+        Two-Sided Weighted ALS factorizing W ~ U_r @ V_r minimizing:
+            || D^{1/2} (W - U V) C_X^{1/2} ||_F^2
+        with input activation covariance C_X and output gating derivative D.
+        """
+        out_f, in_f = W.shape
+        device = W.device
+        dtype = W.dtype
+
+        # 1. Whitened SVD initialization
+        if cov is not None and cov.shape == (in_f, in_f):
+            cov_dev = cov.to(device=device, dtype=torch.float32)
+            diag_mean = torch.diagonal(cov_dev).mean().item()
+            if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                diag_mean = 1.0
+            lambda_reg = max(1e-4 * diag_mean, 1e-6)
+            cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device)
+
+            if self.use_cholesky_jg:
+                try:
+                    S_white = torch.linalg.cholesky(cov_reg)
+                    S_inv = torch.linalg.inv(S_white)
+                    M = torch.matmul(W, S_white)
+                    U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+                    Vt = Vt @ S_inv
+                except Exception:
+                    eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-6)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    M = torch.matmul(W, cov_sqrt)
+                    U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+                    Vt = Vt @ cov_inv_sqrt
+            else:
+                eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                eigvals_clamped = torch.clamp(eigvals, min=1e-6)
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                M = torch.matmul(W, cov_sqrt)
+                U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+                Vt = Vt @ cov_inv_sqrt
+        else:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            cov_reg = torch.eye(in_f, device=device)
+
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        A = U[:, :r] * sqrt_S.unsqueeze(0)
+        B = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+        if D_gating is None or D_gating.shape[0] != out_f:
+            D_vec = torch.ones(out_f, device=device, dtype=torch.float32)
+        else:
+            D_vec = torch.clamp(D_gating.to(device=device, dtype=torch.float32), min=1e-6)
+
+        D_diag = torch.diag(D_vec)
+        E = cov_reg
+        WE = W @ E
+        DW = D_diag @ W
+
+        W_norm = torch.norm(W, p="fro").item()
+        best_A = A.clone()
+        best_B = B.clone()
+        best_recon = A @ B
+        best_err = float(torch.norm(W - best_recon, p="fro").item() / max(W_norm, 1e-12))
+
+        # 2. Alternating Least Squares (ALS) optimization loop
+        for _ in range(num_iters):
+            # Update A: A = (W @ E @ B.T) @ inv(B @ E @ B.T + eps * I)
+            BEBt = B @ E @ B.T
+            eps_B = max(1e-8, float(1e-5 * BEBt.trace().item() / max(1, r)))
+            try:
+                A_new = WE @ B.T @ torch.linalg.inv(
+                    BEBt + eps_B * torch.eye(r, device=device, dtype=BEBt.dtype)
+                )
+            except Exception:
+                break
+
+            # Update B: B = inv(A.T @ D @ A + eps * I) @ (A.T @ D @ W)
+            AtDA = A_new.T @ D_diag @ A_new
+            eps_A = max(1e-8, float(1e-5 * AtDA.trace().item() / max(1, r)))
+            try:
+                B_new = torch.linalg.inv(
+                    AtDA + eps_A * torch.eye(r, device=device, dtype=AtDA.dtype)
+                ) @ A_new.T @ DW
+            except Exception:
+                break
+
+            if torch.isnan(A_new).any() or torch.isnan(B_new).any() or torch.isinf(A_new).any() or torch.isinf(B_new).any():
+                break
+
+            recon = A_new @ B_new
+            err = float(torch.norm(W - recon, p="fro").item() / max(W_norm, 1e-12))
+            if err < best_err:
+                best_A = A_new.clone()
+                best_B = B_new.clone()
+                best_err = err
+            else:
+                break
+            A, B = A_new, B_new
+
+        return best_A.to(dtype=dtype, device=device), best_B.to(dtype=dtype, device=device), best_err
+
     def compress_linear(
-        self, layer: nn.Module, cov: Optional[torch.Tensor] = None
-    ) -> Tuple[Optional[AdaptiveSVDLinear], float, int, bool]:
+        self, layer: nn.Module, cov: Optional[torch.Tensor] = None, layer_name: Optional[str] = None
+    ) -> Tuple[Optional[AdaptiveSVDLinear], float, int, bool, bool]:
         """
         Decompose a single linear, Conv1D, or LoRALinear layer via energy-thresholded SVD
         with covariance whitening, returning (svd_layer, relative_error, rank, used_cov).
@@ -309,7 +650,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         weight = getattr(target_mod, "weight", getattr(layer, "weight", None))
         bias = getattr(target_mod, "bias", getattr(layer, "bias", None))
         if weight is None:
-            return None, float("inf"), self.min_rank, False
+            return None, float("inf"), self.min_rank, False, False
 
         raw_w = weight.data
 
@@ -344,11 +685,54 @@ class AdaptiveRanksCompressor(BaseCompressor):
         lora_a = getattr(layer, "lora_alpha", 1.0)
         has_lora = (hasattr(layer, "lora_A") and hasattr(layer, "lora_B")) or (lora_r > 0)
 
-        # Attempt 1: Covariance whitening SVD
+        # Attempt 0: Jacobian-Gated SVD (JG-SVD) if enabled
         used_cov = False
+        used_jg = False
         svd_layer: Optional[AdaptiveSVDLinear] = None
         best_err = 1.0
         best_rank = r_floor
+
+        if self.use_jg_svd:
+            D_gating = self.layer_D_gating.get(layer_name, None) if layer_name else None
+            try:
+                # Rank selection using singular values
+                if cov is not None and cov.shape == (in_f, in_f):
+                    cov_dev = cov.to(device=device, dtype=torch.float32)
+                    diag_mean = torch.diagonal(cov_dev).mean().item()
+                    lambda_reg = max(1e-4 * (diag_mean if math.isfinite(diag_mean) and diag_mean > 0 else 1.0), 1e-6)
+                    cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device)
+                    eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(torch.clamp(eigvals, min=1e-6))) @ eigvecs.T
+                    M = torch.matmul(W, cov_sqrt)
+                    _, S_jg, _ = torch.linalg.svd(M, full_matrices=False)
+                else:
+                    _, S_jg, _ = torch.linalg.svd(W, full_matrices=False)
+
+                r_jg = self._compute_energy_rank(S_jg, max_allowed_rank, min_rank_floor=r_floor)
+                A_jg, B_jg, err_jg = self._factorize_with_JG(W, cov, D_gating, r_jg)
+
+                if math.isfinite(err_jg) and err_jg <= self.max_error:
+                    svd_layer = AdaptiveSVDLinear(
+                        in_features=in_f,
+                        out_features=out_f,
+                        rank=r_jg,
+                        bias=bias is not None,
+                        dtype=dtype,
+                        device=device,
+                        lora_rank=lora_r if has_lora else 0,
+                        lora_alpha=lora_a,
+                    )
+                    svd_layer.set_low_rank_factors(
+                        A_jg.to(dtype=dtype, device=device),
+                        B_jg.to(dtype=dtype, device=device),
+                    )
+                    if bias is not None and svd_layer.bias is not None:
+                        svd_layer.bias.data.copy_(bias.data)
+                    return svd_layer, err_jg, r_jg, cov is not None, True
+            except Exception as e:
+                logger.debug("JG-SVD factorization exception on %s: %s", layer_name, e)
+
+        # Attempt 1: Covariance whitening SVD
 
         if cov is not None and cov.shape == (in_f, in_f):
             try:
@@ -394,7 +778,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
                         )
                         if bias is not None and svd_layer.bias is not None:
                             svd_layer.bias.data.copy_(bias.data)
-                        return svd_layer, err, r, True
+                        return svd_layer, err, r, True, False
             except Exception as e:
                 logger.debug("Covariance whitening exception on linear layer: %s", e)
 
@@ -430,10 +814,10 @@ class AdaptiveRanksCompressor(BaseCompressor):
             svd_layer.set_low_rank_factors(U_r, V_r)
             if bias is not None and svd_layer.bias is not None:
                 svd_layer.bias.data.copy_(bias.data)
-            return svd_layer, best_err, best_rank, False
+            return svd_layer, best_err, best_rank, False, False
         except Exception as e:
             logger.warning("AdaptiveRanks standard SVD failed: %s", e)
-            return None, 1.0, r_floor, False
+            return None, 1.0, r_floor, False, False
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress target layers with activation covariance whitening and safe validation."""
@@ -454,6 +838,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         covariances = self._collect_activation_covariances()
+        if self.use_jg_svd:
+            self._collect_gating_D()
 
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)
@@ -493,16 +879,18 @@ class AdaptiveRanksCompressor(BaseCompressor):
                     self.layer_ranks[name] = max(r_qkv, r_out)
                     self.layer_errors[name] = 0.05
                     self.used_covariance[name] = False
+                    self.used_jg_svd[name] = False
                 except Exception as e:
                     logger.warning("Failed to compress attention layer %s: %s", name, e)
                     self.fallback_layers.append(name)
                     self.layer_errors[name] = 1.0
             else:
                 cov = covariances.get(name, None)
-                svd_layer, err, r, used_cov = self.compress_linear(module, cov=cov)
+                svd_layer, err, r, used_cov, used_jg = self.compress_linear(module, cov=cov, layer_name=name)
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
                 self.used_covariance[name] = used_cov
+                self.used_jg_svd[name] = used_jg
 
                 if svd_layer is None or err > self.max_error:
                     if self.fallback_to_original:
@@ -581,6 +969,9 @@ class AdaptiveRanksCompressor(BaseCompressor):
             "layer_errors": self.layer_errors,
             "layer_ranks": self.layer_ranks,
             "used_covariance": self.used_covariance,
+            "used_jg_svd": self.used_jg_svd,
+            "use_jg_svd": self.use_jg_svd,
+            "use_cholesky_jg": self.use_cholesky_jg,
             "avg_reconstruction_error": avg_err,
         })
         logger.info(
@@ -613,6 +1004,8 @@ def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
     fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
     target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    use_jg_svd = kwargs.pop("use_jg_svd", _cfg_get(comp_config, "use_jg_svd", False))
+    use_cholesky_jg = kwargs.pop("use_cholesky_jg", _cfg_get(comp_config, "use_cholesky_jg", True))
 
     compressor = AdaptiveRanksCompressor(
         model,
@@ -621,6 +1014,8 @@ def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -
         max_error=max_error,
         fallback_to_original=fallback,
         target_attention_only=target_attention_only,
+        use_jg_svd=use_jg_svd,
+        use_cholesky_jg=use_cholesky_jg,
         comp_config=comp_config,
         **kwargs,
     )
