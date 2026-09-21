@@ -521,7 +521,7 @@ for m in models:
 target_branch = "benchmark-results-aasvd"
 print(f"\nCommitting results and documentation updates to dedicated branch '{target_branch}'...", flush=True)
 commit_msg = f"feat(benchmark): AASVD evaluation ({pass_count}/{len(models)} passed on SST-2)"
-# push_res = commit_and_push_git(commit_msg, branch=target_branch) if commit_and_push_git else None
+push_res = commit_and_push_git(commit_msg, branch=target_branch) if commit_and_push_git else None
 
 if push_res:
     print(f"Git commit and push completed successfully on branch '{target_branch}': {push_res}", flush=True)
