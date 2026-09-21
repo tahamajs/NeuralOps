@@ -2,104 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "cur_moe_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules cur_moe --rank 64 --parallel 1 --batch_size 16 --output_suffix cur_moe_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "res_svd_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules res_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix res_svd_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "salt_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt --rank 64 --parallel 1 --batch_size 16 --output_suffix salt_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "sdrm_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm --rank 64 --parallel 1 --batch_size 16 --output_suffix sdrm_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "spectron_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 16 --output_suffix spectron_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "come_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules come --rank 64 --parallel 1 --batch_size 16 --output_suffix come_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_adaptive_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_adaptive",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_a3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules a3 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_kmeans",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kmeans --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_kronecker",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_swift_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "swift_svd_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd --parallel 1 --batch_size 32 --output_suffix swift_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hybrid_svd_layer_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_compressor_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules adaptive_compressor --parallel 1 --batch_size 32 --output_suffix adaptive_compressor_mnli --fresh",
@@ -7369,6 +7271,38 @@
       "status": "active",
       "retries": 0,
       "launched_at": "2026-09-21 10:43:49"
+    },
+    {
+      "id": "gpt2_eval_adaptive",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:48:08"
+    },
+    {
+      "id": "gpt2_eval_swift_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:51:27"
+    },
+    {
+      "id": "swift_svd_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd --parallel 1 --batch_size 32 --output_suffix swift_svd_mnli --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:53:02"
+    },
+    {
+      "id": "hybrid_svd_layer_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:54:21"
     }
   ],
   "completed": [
@@ -8099,6 +8033,118 @@
       "status": "done",
       "retries": 0,
       "launched_at": "2026-09-21 10:38:57"
+    },
+    {
+      "id": "distilbert_sst2_gqa_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules gqa_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix gqa_attention_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:36:28"
+    },
+    {
+      "id": "distilbert_sst2_grecodec",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules grecodec --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:36:46"
+    },
+    {
+      "id": "distilbert_sst2_grecodec_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules grecodec_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_compressor_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:36:46"
+    },
+    {
+      "id": "cur_moe_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules cur_moe --rank 64 --parallel 1 --batch_size 16 --output_suffix cur_moe_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:40:17"
+    },
+    {
+      "id": "res_svd_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules res_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix res_svd_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:41:57"
+    },
+    {
+      "id": "sdrm_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm --rank 64 --parallel 1 --batch_size 16 --output_suffix sdrm_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:42:27"
+    },
+    {
+      "id": "salt_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt --rank 64 --parallel 1 --batch_size 16 --output_suffix salt_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:41:57"
+    },
+    {
+      "id": "come_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules come --rank 64 --parallel 1 --batch_size 16 --output_suffix come_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:45:55"
+    },
+    {
+      "id": "spectron_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 16 --output_suffix spectron_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:45:55"
+    },
+    {
+      "id": "distilbert_sst2_granite_hybrid",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules granite_hybrid --rank 128 --parallel 1 --batch_size 8 --output_suffix granite_hybrid_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:36:28"
+    },
+    {
+      "id": "gpt2_eval_adaptive_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:47:47"
+    },
+    {
+      "id": "gpt2_eval_kmeans",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kmeans --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:48:31"
+    },
+    {
+      "id": "gpt2_eval_a3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules a3 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:48:08"
+    },
+    {
+      "id": "gpt2_eval_kronecker",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 13:50:27"
     }
   ],
   "failed": []
