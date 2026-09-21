@@ -1,6 +1,154 @@
 {
   "max_parallel": 3,
-  "jobs": [],
+  "jobs": [
+    {
+      "id": "gpt2_eval_aasvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules aasvd --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_fwsvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules fwsvd --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_drone",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules drone --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_svd_compressed",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules svd_compressed --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_vspec",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules vspec --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_aegis_v6",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules aegis_v6 --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_cur_moe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules cur_moe --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_res_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules res_svd --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_salt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules salt --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_sdrm",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules sdrm --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_spectron",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules spectron --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_come",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules come --output_dir results/gpt2_wikitext2_sweep --stride 512",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "svd_compressed_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules svd_compressed --parallel 1 --batch_size 8 --output_suffix svd_compressed_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "vspec_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules vspec --parallel 1 --batch_size 8 --output_suffix vspec_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "aegis_v6_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules aegis_v6 --parallel 1 --batch_size 8 --output_suffix aegis_v6_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "cur_moe_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules cur_moe --parallel 1 --batch_size 8 --output_suffix cur_moe_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "res_svd_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules res_svd --parallel 1 --batch_size 8 --output_suffix res_svd_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "salt_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules salt --parallel 1 --batch_size 8 --output_suffix salt_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "sdrm_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules sdrm --parallel 1 --batch_size 8 --output_suffix sdrm_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "spectron_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules spectron --parallel 1 --batch_size 8 --output_suffix spectron_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "come_mnli_sweep",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules come --parallel 1 --batch_size 8 --output_suffix come_mnli --fresh",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
   "active": [],
   "completed": [
     {
