@@ -77,13 +77,13 @@ def query_gpu_stats() -> Tuple[float, float, float]:
 
 def read_queue() -> Dict[str, Any]:
     if not os.path.exists(QUEUE_PATH):
-        return {"max_parallel": 8, "jobs": [], "active": [], "completed": [], "failed": []}
+        return {"max_parallel": 2, "jobs": [], "active": [], "completed": [], "failed": []}
     try:
         with open(QUEUE_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"Failed reading queue file: {e}")
-        return {"max_parallel": 8, "jobs": [], "active": [], "completed": [], "failed": []}
+        return {"max_parallel": 2, "jobs": [], "active": [], "completed": [], "failed": []}
 
 
 def write_queue(state: Dict[str, Any]) -> None:
@@ -502,7 +502,7 @@ library_name: transformers
 
 
 
-def main_daemon() -> None:
+def main_daemon(max_parallel_override: Optional[int] = None) -> None:
     logger.info("Starting Autonomous Pipeline Daemon (auto_pipeline.py)...")
     start_time = time.time()
     active_processes: Dict[str, Tuple[subprocess.Popen, Dict[str, Any]]] = {}
@@ -515,7 +515,10 @@ def main_daemon() -> None:
             log_event("GPU", "", f"vram={vram_gb:.2f} GB, util={util:.1f}%, temp={temp:.1f} C")
 
             state = read_queue()
-            max_parallel = min(state.get("max_parallel", 6), 6)
+            if max_parallel_override is not None:
+                max_parallel = max_parallel_override
+            else:
+                max_parallel = min(state.get("max_parallel", 2), 2)
             pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
 
             # Auto-refill if queue is low
@@ -628,9 +631,10 @@ def main_daemon() -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--process_papers", nargs=2, type=int, default=None)
+    parser.add_argument("--max_parallel", type=int, default=2, help="Maximum concurrent jobs (default: 2 for GPU safety)")
     args = parser.parse_args()
 
     if args.process_papers is not None:
         process_papers_worker(args.process_papers[0], args.process_papers[1])
     else:
-        main_daemon()
+        main_daemon(max_parallel_override=args.max_parallel)
