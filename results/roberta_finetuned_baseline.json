@@ -1,0 +1,15 @@
+{
+  "model": "roberta-base_finetuned",
+  "dataset": "sst2",
+  "accuracy_pct": 94.27,
+  "f1_score": 0.9432,
+  "precision": 0.9518,
+  "recall": 0.9347,
+  "eval_loss": 0.18112961947917938,
+  "epochs": 3,
+  "lr": 2e-05,
+  "batch_size": 32,
+  "elapsed_s": 1149.05,
+  "status": "FIXED",
+  "timestamp": "2026-09-21T02:59:45"
+}
