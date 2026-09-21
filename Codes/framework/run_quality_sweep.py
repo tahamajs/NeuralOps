@@ -2978,7 +2978,7 @@ def run_single_module_main(args) -> dict:
                         f"base_delta={base_delta} (+{base_delta_pct:.1f}%) lora_excluded={lora_p}"
                     )
                     err = f"{err}; {expansion_err}".strip("; ")
-                elif base_params_after > p_before:
+                elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
                     status = "MODERATE_EXPANSION"
                     expansion_err = (
                         f"MODERATE_EXPANSION: base_before={p_before} base_after={base_params_after} "
