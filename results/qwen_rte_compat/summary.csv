@@ -1,6 +1,0 @@
-run_id,module_name,model_family,dataset,status,accuracy_pct,examples,elapsed_s,peak_vram_mb,error,timestamp
-qwen_rte_zero_shot_20260831_183853,full,QWEN,RTE,PASS,54.51,277,7.47,1255.92,,2026-08-31T18:39:01.038638
-qwen_rte_zero_shot_20260831_183853,a3,QWEN,RTE,FAIL,0.0,277,16.18,0.0,RuntimeError: Could not instantiate compressor a3,2026-08-31T18:39:17.219868
-qwen_rte_zero_shot_20260831_184607,aasvd,QWEN,RTE,PASS,52.71,277,277.53,983.97,,2026-08-31T18:50:45.326821
-qwen_rte_zero_shot_20260831_184607,adaptive_span,QWEN,RTE,PASS,51.62,277,7.84,1317.24,,2026-08-31T18:50:53.165713
-qwen_rte_zero_shot_20260831_184607,adaptive_sparse,QWEN,RTE,PASS,41.88,277,13.22,1317.24,,2026-08-31T18:51:06.390267

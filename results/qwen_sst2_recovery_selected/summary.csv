@@ -1,4 +1,0 @@
-module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
-aasvd,PASS,90.02,147.41,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T20:19:56.418437
-admm,PASS,89.45,144.52,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T20:22:21.817820
-direct_svd,PASS,89.68,143.82,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T20:24:46.130107
