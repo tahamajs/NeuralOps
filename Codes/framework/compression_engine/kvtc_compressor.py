@@ -1,10 +1,22 @@
 """
 KVTC: KV Cache Transform Coding - PCA decorrelation + adaptive quantization
-      + entropy coding for compact KV cache storage.
+      + entropy coding for compact model weight / KV cache storage.
 
 Paper: "KV Cache Transform Coding for Compact Storage in LLM Inference"
        Staniszewski & Lancucki, ICLR 2026.
-Registered as 'kvtc' and 'kvtc_quantizer'.
+
+NOTE ON SCOPE:
+In this codebase, KVTC operates primarily as a static weight-matrix compressor
+(PCA low-rank projection + uniform integer quantization + optional LoRA adaptation)
+applied to linear layers at initialization time, rather than dynamic runtime KV cache
+interception during autoregressive generation. For runtime KV cache transform coding,
+the `KVTCStore` class is provided as a standalone utility.
+
+Registered in COMPRESSOR_REGISTRY as:
+  - 'kvtc' (primary)
+  - 'kvtc_quantizer'
+  - 'pca_quant'
+  - 'pca_quant_compressor'
 """
 
 from __future__ import annotations
@@ -94,7 +106,7 @@ class KVTCStore:
     @torch.no_grad()
     def compress_kv_cache(
         self, k: torch.Tensor, v: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
         """
         Transform and quantize dynamic KV cache tensors.
         Returns reconstructed (k_hat, v_hat) and coding statistics.
@@ -124,50 +136,57 @@ class KVTCStore:
         k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(orig_shape)
         v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(orig_shape)
 
-        stats = {
+        mean_h = (h_k + h_v) / 2.0
+        stats: Dict[str, Any] = {
             "entropy_k_bits": h_k,
             "entropy_v_bits": h_v,
-            "mean_entropy_bits": (h_k + h_v) / 2.0,
-            "theoretical_compression_ratio": 16.0 / max((h_k + h_v) / 2.0, 1e-4),
+            "mean_entropy_bits": mean_h,
+            "entropy_lower_bound_bits": mean_h,
+            "note": "Theoretical lower bound; actual bitstream not implemented.",
+            "theoretical_compression_ratio": 16.0 / max(mean_h, 1e-4),
         }
         return k_hat, v_hat, stats
 
 
 class KVTCQuantizedLoRALinear(nn.Module):
     """
-    Linear layer containing KVTC quantized low-rank base weights (frozen)
-    with optional trainable LoRA adapters (lora_A, lora_B).
+    Linear layer containing true integer quantized base weights (int8/int16 buffer)
+    with scale and zero_point buffers, dequantized on the fly during forward(),
+    plus optional trainable LoRA adapters (lora_A, lora_B).
     """
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        int_weight: torch.Tensor,
+        scale: torch.Tensor,
+        zero_point: torch.Tensor,
         bias: Optional[torch.Tensor] = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        compute_dtype: torch.dtype = torch.float32,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
+        self.compute_dtype = compute_dtype
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
+        target_device = device if device is not None else int_weight.device
 
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
-        )
+        # Store true integer weights as buffer (not float Parameter)
+        self.register_buffer("int_weight", int_weight.to(device=target_device))
+        self.register_buffer("scale", scale.to(device=target_device, dtype=torch.float32))
+        self.register_buffer("zero_point", zero_point.to(device=target_device, dtype=torch.float32))
+
         if bias is not None:
             self.bias = nn.Parameter(
-                bias.to(device=target_device, dtype=target_dtype),
+                bias.to(device=target_device, dtype=compute_dtype),
                 requires_grad=False,
             )
         else:
@@ -175,28 +194,36 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+                torch.empty((self.lora_r, in_features), dtype=compute_dtype, device=target_device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+                torch.zeros((out_features, self.lora_r), dtype=compute_dtype, device=target_device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Backward-compatibility property returning on-the-fly dequantized weight."""
+        return (self.int_weight.to(dtype=self.compute_dtype) * self.scale + self.zero_point)
+
     @classmethod
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        int_weight: torch.Tensor,
+        scale: torch.Tensor,
+        zero_point: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        compute_dtype: Optional[torch.dtype] = None,
     ) -> KVTCQuantizedLoRALinear:
         target_mod = getattr(linear, "base_layer", linear)
         bias = target_mod.bias.detach() if hasattr(target_mod, "bias") and target_mod.bias is not None else None
-        in_features = getattr(target_mod, "in_features", weight.shape[1])
-        out_features = getattr(target_mod, "out_features", weight.shape[0])
+        in_features = getattr(target_mod, "in_features", int_weight.shape[1])
+        out_features = getattr(target_mod, "out_features", int_weight.shape[0])
 
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
@@ -210,44 +237,58 @@ class KVTCQuantizedLoRALinear(nn.Module):
             elif hasattr(linear, "lora_alpha"):
                 effective_lora_alpha = linear.lora_alpha
 
+        if compute_dtype is None:
+            if hasattr(target_mod, "weight") and target_mod.weight is not None:
+                compute_dtype = target_mod.weight.dtype
+            else:
+                compute_dtype = torch.float32
+
         new_layer = cls(
             in_features=in_features,
             out_features=out_features,
-            weight=weight,
+            int_weight=int_weight,
+            scale=scale,
+            zero_point=zero_point,
             bias=bias,
             lora_r=effective_lora_r,
             lora_alpha=effective_lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
+            device=int_weight.device,
+            compute_dtype=compute_dtype,
         )
 
         if existing_lora_A is not None and existing_lora_B is not None:
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
             if hasattr(w_A, "data") and hasattr(w_B, "data") and new_layer.lora_A is not None and new_layer.lora_B is not None:
-                new_layer.lora_A.data.copy_(w_A.data)
-                new_layer.lora_B.data.copy_(w_B.data)
+                new_layer.lora_A.data.copy_(w_A.data.to(dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device))
+                new_layer.lora_B.data.copy_(w_B.data.to(dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device))
                 new_layer.lora_A.requires_grad = True
                 new_layer.lora_B.requires_grad = True
 
         return new_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        w_eff = (self.int_weight.to(dtype=x.dtype) * self.scale.to(dtype=x.dtype) + self.zero_point.to(dtype=x.dtype))
+        bias = self.bias.to(dtype=x.dtype) if self.bias is not None else None
+        out = F.linear(x, w_eff, bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            lora_out = F.linear(
+                F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A),
+                self.lora_B
+            ).to(dtype=out.dtype)
+            out = out + self.scaling * lora_out
         return out
 
 
 @COMPRESSOR_REGISTRY.register("kvtc")
 @COMPRESSOR_REGISTRY.register("kvtc_quantizer")
+@COMPRESSOR_REGISTRY.register("pca_quant")
+@COMPRESSOR_REGISTRY.register("pca_quant_compressor")
 class KVTCCompressor(BaseCompressor):
     """
-    KVTC: KV Cache Transform Coding compressor.
+    KVTC: KV Cache Transform Coding compressor (Static Weight PCA + Quantization).
     Compresses linear projection weights using PCA decorrelation,
-    adaptive quantization, and entropy coding estimation.
+    percentile clipping, uniform integer quantization, and entropy coding estimation.
     """
 
     def __init__(
@@ -260,7 +301,7 @@ class KVTCCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         target_attention_only: bool = False,
-        skip_attention_qkv: bool = False,
+        skip_attention_qkv: bool = True,
         min_rank: int = 4,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
@@ -286,6 +327,74 @@ class KVTCCompressor(BaseCompressor):
         self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
+
+    @staticmethod
+    def _percentile_clip(W: torch.Tensor, low: float = 0.001, high: float = 0.999) -> torch.Tensor:
+        """Clip extreme outliers from weight tensor before computing quantization scale."""
+        if W.numel() == 0:
+            return W
+        q_low = torch.quantile(W.float(), low)
+        q_high = torch.quantile(W.float(), high)
+        return torch.clamp(W, min=q_low, max=q_high)
+
+    def _quantize_to_int(
+        self, W: torch.Tensor, bits: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Quantize continuous tensor to true integer format (torch.int8 or torch.int16).
+        Uses signed symmetric quantization around 0:
+            int_w in [-2^(bits-1), 2^(bits-1) - 1]
+            scale = max(|W|) / (2^(bits-1) - 1)
+            W_dequant ≈ int_w * scale + zero_point (zero_point = 0.0)
+        """
+        qmax = (2 ** (bits - 1)) - 1
+        qmin = -(2 ** (bits - 1))
+
+        max_abs = torch.clamp(W.abs().max(), min=1e-6)
+        scale = (max_abs / float(qmax)).item()
+        zero_point = 0.0
+
+        q_float = torch.round(W / scale)
+        q_clamped = torch.clamp(q_float, qmin, qmax)
+
+        scale_t = torch.tensor(scale, dtype=torch.float32, device=W.device)
+        zp_t = torch.tensor(zero_point, dtype=torch.float32, device=W.device)
+
+        if bits <= 8:
+            int_w = q_clamped.to(torch.int8)
+        else:
+            int_w = q_clamped.to(torch.int16)
+
+        return int_w, scale_t, zp_t
+
+    def _dequantize_from_int(
+        self, int_w: torch.Tensor, scale: torch.Tensor, zero_point: torch.Tensor
+    ) -> torch.Tensor:
+        """Dequantize integer weight back to floating point."""
+        return int_w.to(dtype=scale.dtype) * scale + zero_point
+
+    def _estimate_actual_bytes(self, model: nn.Module) -> int:
+        """
+        Estimate physical memory storage in bytes across all parameters and buffers,
+        taking into account actual tensor element size (int8=1 byte, fp16=2 bytes, fp32=4 bytes).
+        Uses tensor storage data_ptr() to avoid duplicate counting of shared weights.
+        """
+        total_bytes = 0
+        seen_ptrs: Set[int] = set()
+
+        for p in model.parameters():
+            ptr = p.data_ptr()
+            if ptr not in seen_ptrs:
+                seen_ptrs.add(ptr)
+                total_bytes += p.numel() * p.element_size()
+
+        for b in model.buffers():
+            ptr = b.data_ptr()
+            if ptr not in seen_ptrs:
+                seen_ptrs.add(ptr)
+                total_bytes += b.numel() * b.element_size()
+
+        return total_bytes
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -327,7 +436,7 @@ class KVTCCompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress linear layers using PCA decorrelation and adaptive quantization."""
+        """Compress linear layers using PCA decorrelation and true integer quantization."""
         total_entropy = 0.0
         self.compressed_layers = []
         self.fallback_layers = []
@@ -338,6 +447,9 @@ class KVTCCompressor(BaseCompressor):
 
         total_orig_params = 0
         total_comp_params = 0
+
+        # Physical byte tracking before compression
+        initial_actual_bytes = self._estimate_actual_bytes(self.model)
 
         # Freeze non-target linear/conv1d layers when target_attention_only is True
         if self.target_attention_only:
@@ -386,11 +498,13 @@ class KVTCCompressor(BaseCompressor):
                 total_energy = (S ** 2).sum()
                 if total_energy > 0:
                     cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
-                    rank = int((cum_energy < self.pca_energy).sum().item()) + 1
+                    idx = torch.where(cum_energy >= self.pca_energy)[0]
+                    rank = int(idx[0].item()) + 1 if len(idx) > 0 else min_dim
                 else:
                     rank = min_dim
 
-                rank = max(min(self.min_rank, min_dim), min(rank, min_dim))
+                effective_min_rank = min(self.min_rank, min_dim)
+                rank = max(effective_min_rank, min(rank, min_dim))
 
                 # Reconstruct low-rank approximation
                 U_r = U[:, :rank]
@@ -398,16 +512,15 @@ class KVTCCompressor(BaseCompressor):
                 Vt_r = Vt[:rank, :]
                 W_lowrank = (U_r * S_r.unsqueeze(0)) @ Vt_r
 
-                # Step 2: Adaptive quantization
-                min_val, max_val = W_lowrank.min(), W_lowrank.max()
-                if max_val == min_val:
-                    max_val = min_val + 1e-6
-                scale = (max_val - min_val) / float((2 ** self.bits) - 1)
-                q_vals = torch.round((W_lowrank - min_val) / scale)
-                W_quant = q_vals * scale + min_val
+                # Step 2: Percentile outlier clipping before quantization
+                W_clipped = self._percentile_clip(W_lowrank, low=0.001, high=0.999)
+
+                # Step 3: Integer quantization
+                int_w, scale, zp = self._quantize_to_int(W_clipped, bits=self.bits)
+                W_quant = self._dequantize_from_int(int_w, scale, zp)
                 W_quant = torch.nan_to_num(W_quant, nan=0.0)
 
-                # Reconstruction error check
+                # Reconstruction error check against original W
                 norm_orig = torch.norm(W, p="fro").item()
                 rel_err = (torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)).item()
                 self.layer_errors[name] = float(rel_err)
@@ -427,18 +540,21 @@ class KVTCCompressor(BaseCompressor):
                         total_comp_params += orig_params
                         continue
 
-                # Step 3: Empirical entropy calculation
-                entropy = SimpleEntropyCoder.compute_entropy(q_vals)
+                # Step 4: Empirical Shannon entropy calculation on discrete integer symbols
+                entropy = SimpleEntropyCoder.compute_entropy(int_w)
                 total_entropy += entropy
 
                 new_layer = KVTCQuantizedLoRALinear.from_linear(
                     module,
-                    weight=W_quant.to(dtype=dtype, device=device),
+                    int_weight=int_w,
+                    scale=scale,
+                    zero_point=zp,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
+                    compute_dtype=dtype,
                 )
 
-                # Compute effective compressed parameters (quantized weight fraction + LoRA)
+                # Effective compressed parameters count for reporting
                 quant_equiv_params = int(orig_params * (self.bits / 16.0))
                 lora_params = (
                     (new_layer.lora_A.numel() + new_layer.lora_B.numel())
@@ -453,7 +569,7 @@ class KVTCCompressor(BaseCompressor):
                     "rank": rank,
                     "rel_error": rel_err,
                     "entropy": entropy,
-                    "shape": tuple(W_quant.shape),
+                    "shape": tuple(int_w.shape),
                 }
             except Exception as e:
                 logger.warning("KVTC compression exception on %s: %s. Keeping original layer.", name, e)
@@ -463,8 +579,43 @@ class KVTCCompressor(BaseCompressor):
                 total_comp_params += orig_params
                 self.layer_errors[name] = 1.0
 
-        # Post-compression forward sanity check
-        forward_check_success = True
+        # Physical byte tracking after compression
+        final_actual_bytes = self._estimate_actual_bytes(self.model)
+
+        # Real post-compression forward sanity check
+        forward_check_success = False
+        forward_check_error = None
+        try:
+            p0 = next(self.model.parameters(), None)
+            if p0 is None:
+                p0 = next(self.model.buffers(), None)
+            dev = p0.device if p0 is not None else torch.device("cpu")
+            self.model.eval()
+
+            # Try text classification / sequence classification format: input_ids (1, 8)
+            with torch.no_grad():
+                test_passed = False
+                try:
+                    dummy_ids = torch.randint(0, 100, (1, 8), device=dev)
+                    _ = self.model(dummy_ids)
+                    test_passed = True
+                except Exception:
+                    pass
+
+                if not test_passed:
+                    # Try continuous hidden tensor (1, 8, d_model)
+                    dummy_x = torch.randn(1, 8, 64, device=dev)
+                    _ = self.model(dummy_x)
+                    test_passed = True
+
+            forward_check_success = test_passed
+        except Exception as e:
+            forward_check_error = str(e)
+            logger.error("KVTC post-compression forward pass failed: %s", e)
+            if not kwargs.get("ignore_forward_check", False):
+                raise RuntimeError(
+                    f"KVTC produced a model that fails the forward pass sanity check: {e}"
+                ) from e
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -475,6 +626,12 @@ class KVTCCompressor(BaseCompressor):
             else 0.0
         )
         param_ratio = round(total_comp_params / max(total_orig_params, 1), 4) if total_orig_params > 0 else 1.0
+
+        bytes_reduction_pct = (
+            (initial_actual_bytes - final_actual_bytes) / float(initial_actual_bytes) * 100.0
+            if initial_actual_bytes > 0
+            else 0.0
+        )
 
         stats.update({
             "compressed_layers": self.compressed_layers,
@@ -488,9 +645,15 @@ class KVTCCompressor(BaseCompressor):
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
             "target_attention_only": self.target_attention_only,
+            "skip_attention_qkv": self.skip_attention_qkv,
             "avg_entropy_bits": round(avg_entropy, 2),
+            "entropy_lower_bound_bits": round(avg_entropy, 2),
+            "entropy_coding_note": "Theoretical lower bound; actual bitstream not implemented.",
             "avg_reconstruction_error": avg_err,
             "effective_parameter_ratio": param_ratio,
+            "initial_actual_bytes": initial_actual_bytes,
+            "final_actual_bytes": final_actual_bytes,
+            "actual_bytes_reduction_pct": round(bytes_reduction_pct, 2),
             "theoretical_entropy_compression_ratio": round(16.0 / max(avg_entropy, 1e-4), 2),
             "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
             "layer_errors": self.layer_errors,
@@ -498,6 +661,7 @@ class KVTCCompressor(BaseCompressor):
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
             "forward_check_success": forward_check_success,
+            "forward_check_error": forward_check_error,
             "method": "kvtc_pca_quant",
         })
         self.stats = stats
@@ -505,6 +669,7 @@ class KVTCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kvtc_factory")
+@COMPRESSOR_REGISTRY.register("pca_quant_factory")
 def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """KVTC compressor factory function."""
     bits = kwargs.pop("bits", _cfg_get(comp_config, "kvtc_bits", _cfg_get(comp_config, "bits", 4)))
@@ -517,6 +682,10 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
         "target_attention_only",
         _cfg_get(comp_config, "kvtc_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
     )
+    skip_attention_qkv = kwargs.pop(
+        "skip_attention_qkv",
+        _cfg_get(comp_config, "skip_attention_qkv", True),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = KVTCCompressor(
@@ -528,6 +697,7 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
         lora_r=lora_r,
         lora_alpha=lora_alpha,
         target_attention_only=target_attention_only,
+        skip_attention_qkv=skip_attention_qkv,
         comp_config=comp_config,
         **kwargs,
     )
@@ -538,6 +708,7 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
 
 
 kvtc_compressor_factory = kvtc_factory
+pca_quant_factory = kvtc_factory
 
 __all__ = [
     "KVTCQuantizedLoRALinear",
@@ -546,5 +717,5 @@ __all__ = [
     "SimpleEntropyCoder",
     "kvtc_factory",
     "kvtc_compressor_factory",
+    "pca_quant_factory",
 ]
-
