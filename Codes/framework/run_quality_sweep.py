@@ -146,7 +146,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
         rec_steps = 0
         trainable_recovery_params = 0
 
-        if name != "full":
+        if name not in ("full", "dense"):
             if hasattr(model, "config") and model.config is not None:
                 # Automatically propagate all parsed flags matching module name prefix or compressor keywords
                 for attr_name, attr_val in vars(args).items():
@@ -1698,6 +1698,7 @@ def parse_args(argv=None):
                          "loading and tokenization entirely for this run.")
     ap.add_argument("--num_labels", type=int, default=None, help="Number of classification labels (auto-detected if None)")
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
+    ap.add_argument("--output_suffix", type=str, default=None, help="Optional suffix for output summary CSV (e.g. rank32 -> summary_rank32.csv)")
     ap.add_argument("--parallel", type=int, default=None, help="Number of modules to evaluate concurrently across isolated processes")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
@@ -2220,7 +2221,7 @@ def run_single_module_main(args) -> dict:
     import torch
     from framework.core.registry import ATTENTION_REGISTRY
     name = args.modules[0] if isinstance(args.modules, list) else args.modules
-    typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+    typ = "baseline" if name in ("full", "dense") else ("attention" if name in ATTENTION_REGISTRY else "compressor")
 
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
@@ -2726,7 +2727,7 @@ def run_single_module_main(args) -> dict:
         support = module_family_support(name).get(family, "unknown")
         from framework.core.registry import is_module_declared_compatible
         is_compat, reason = is_module_declared_compatible(name, family)
-        if name != "full" and (support == "incompatible" or not is_compat):
+        if name not in ("full", "dense") and (support == "incompatible" or not is_compat):
             LOG.warning("Module %s declared %s / %s, attempting injection with fallback guard...", name, support, reason)
 
         # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
@@ -3384,7 +3385,8 @@ def main():
         args.output_dir = f"results/{safe_model}_{args.dataset}_sweep"
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
-    path = out / "summary.csv"
+    csv_filename = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
+    path = out / csv_filename
     
     summary_dict = {}
     if path.exists() and not args.fresh:
