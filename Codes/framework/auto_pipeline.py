@@ -112,7 +112,7 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
                 new_jobs.append({
                     "id": jid,
                     "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank {r} --parallel 1 --batch_size 8 --output_suffix {mod}{r} --fresh",
+                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank {r} --parallel 1 --batch_size 32 --output_suffix {mod}{r} --fresh",
                     "status": "pending",
                     "retries": 0,
                 })
@@ -126,7 +126,7 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
                 new_jobs.append({
                     "id": jid,
                     "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank 128 --seed {s} --parallel 1 --batch_size 8 --output_suffix {mod}128_seed{s} --fresh",
+                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank 128 --seed {s} --parallel 1 --batch_size 32 --output_suffix {mod}128_seed{s} --fresh",
                     "status": "pending",
                     "retries": 0,
                 })
@@ -139,7 +139,7 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
             new_jobs.append({
                 "id": jid,
                 "type": "gpu",
-                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules {mod} --parallel 1 --batch_size 8 --output_suffix {mod}_mnli --fresh",
+                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_mnli --fresh",
                 "status": "pending",
                 "retries": 0,
             })
@@ -152,22 +152,22 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
             new_jobs.append({
                 "id": jid,
                 "type": "gpu",
-                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --parallel 1 --batch_size 8 --output_suffix {mod}_sst2 --fresh",
+                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_sst2 --fresh",
                 "status": "pending",
                 "retries": 0,
             })
             existing_ids.add(jid)
 
-    # Check for RoBERTa baseline validations
+    # Check for RoBERTa baseline validations for all top compressors
     if os.path.exists(os.path.join(ROOT_DIR, "models", "roberta_sst2")) or os.path.exists(os.path.join(ROOT_DIR, "models", "roberta-base")):
         rob_path = "models/roberta_sst2" if os.path.exists(os.path.join(ROOT_DIR, "models", "roberta_sst2")) else "models/roberta-base"
-        for mod in ["aasvd", "fwsvd", "drone"]:
+        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"]:
             jid = f"{mod}_roberta_sst2"
             if jid not in existing_ids:
                 new_jobs.append({
                     "id": jid,
                     "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {rob_path} --dataset sst2 --modules {mod} --rank 64 --parallel 1 --batch_size 4 --output_suffix {mod}_rob64 --fresh",
+                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {rob_path} --dataset sst2 --modules {mod} --rank 64 --parallel 1 --batch_size 16 --output_suffix {mod}_rob64 --fresh",
                     "status": "pending",
                     "retries": 0,
                 })
@@ -178,10 +178,10 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
     if not os.path.exists(gpt2_model_path):
         gpt2_model_path = os.path.join(ROOT_DIR, "models", "gpt2")
     if os.path.exists(gpt2_model_path):
-        # Key causal decoder candidates
         gpt2_candidates = [
             "aasvd", "fwsvd", "drone", "svd_compressed", "vspec", 
-            "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"
+            "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come",
+            "adaptive_svd", "adaptive", "a3", "kmeans", "kronecker", "swift_svd"
         ]
         for mod in gpt2_candidates:
             jid = f"gpt2_eval_{mod}"
@@ -189,23 +189,27 @@ def auto_refill_queue(state: Dict[str, Any]) -> None:
                 new_jobs.append({
                     "id": jid,
                     "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_gpt2_sweep.py --model_path {gpt2_model_path} --modules {mod} --output_dir results/gpt2_wikitext2_sweep --stride 512",
+                    "cmd": f"python -u Codes/framework/run_gpt2_sweep.py --model_path {gpt2_model_path} --modules {mod} --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
                     "status": "pending",
                     "retries": 0,
                 })
                 existing_ids.add(jid)
 
-    # Check for MNLI sweeps for top compressors
+    # Check for MNLI sweeps across all compressors
     mnli_model_path = os.path.join(ROOT_DIR, "models", "distilbert_mnli_full")
     if os.path.exists(mnli_model_path):
-        top_compressors = ["svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"]
+        top_compressors = [
+            "svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come",
+            "swift_svd", "hybrid_svd_layer", "adaptive_compressor", "adaptive_ranks", "kronecker_compressor",
+            "rpca", "soka", "subspace_projection", "swift_svd_act"
+        ]
         for mod in top_compressors:
             jid = f"{mod}_mnli_sweep"
             if jid not in existing_ids:
                 new_jobs.append({
                     "id": jid,
                     "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {mnli_model_path} --dataset mnli --modules {mod} --parallel 1 --batch_size 8 --output_suffix {mod}_mnli --fresh",
+                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {mnli_model_path} --dataset mnli --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_mnli --fresh",
                     "status": "pending",
                     "retries": 0,
                 })
@@ -511,7 +515,7 @@ def main_daemon() -> None:
             log_event("GPU", "", f"vram={vram_gb:.2f} GB, util={util:.1f}%, temp={temp:.1f} C")
 
             state = read_queue()
-            max_parallel = min(state.get("max_parallel", 3), 3)
+            max_parallel = min(state.get("max_parallel", 6), 6)
             pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
 
             # Auto-refill if queue is low
