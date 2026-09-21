@@ -1,36 +1,27 @@
 """
-AdaSVD: Adaptive SVD with Activation Weighting, Weighted ALS, and STRS Rank Search.
+AdaSVD: Adaptive SVD with Activation Whitening (Cholesky), Effective Rank, and Activation Error.
 Paper Reference: Internal / Custom method.
 Registered as 'adasvd', 'adasvd_compressor', 'adasvd_factory', 'adasvd_compressor_factory'.
 
-Mathematically Rigorous Enhancements:
-1. Activation Weighting (Cholesky Whitening):
-   - Computes activation covariance C_X = (X^T @ X) / N from calibration data.
-   - Computes Cholesky factor S_white = cholesky(C_X + eps * I), eps = 1e-6 * Tr(C_X) / d_in.
+3-Step Architecture:
+1. Cholesky Whitening:
+   - Collects activations X for each target layer using AASVD calibration corpus.
+   - Computes activation covariance C_X = (X.T @ X) / N.
+   - Computes Cholesky factor S_white = cholesky(C_X + eps * I).
    - Whitens weight W_white = W @ S_white.
-   - SVD on whitened matrix U, S, Vt = svd(W_white).
-   - Unwhitens right factor Vt_unw = Vt @ inv(S_white).
-   - Factors: A = U[:, :r] * sqrt(S[:r]), B = sqrt(S[:r]) * Vt_unw[:r, :].
-2. Weighted Alternating Least Squares (ALS):
-   - Incorporates input covariance E = C_X and output variance D = diag(Var(Y)).
-   - A = W @ E @ B.T @ inv(B @ E @ B.T + eps_B * I)
-   - B = inv(A.T @ D @ A + eps_A * I) @ A.T @ D @ W
-   - Adaptive regularization eps_B = 1e-6 * Tr(B E B.T) / r, eps_A = 1e-6 * Tr(A.T D A) / r.
-3. Activation Error for Validation:
-   - Measures actual downstream effect: err = ||WX - ABX||_F / (||WX||_F + 1e-9).
-4. Information-Theoretic Effective Rank:
-   - Shannon entropy effective rank: p_i = sigma_i^2 / sum(sigma_j^2), erank = exp(-sum(p * log(p))).
-   - Replaces crude nuclear norm heuristic with Roy & Vetterli (2007) effective rank.
-5. Relative Convergence Criterion:
-   - Early stopping when |prev_err - err| / (prev_err + 1e-9) < 1e-4.
-6. STRS (Search Truncated Rank Search):
-   - Evaluates candidate rank grid to identify the minimal rank satisfying max_error constraint.
-7. Joint QKV Factorization:
-   - Supports joint whitening across attention projections sharing identical input subspace.
+   - SVD on whitened weight U, S, Vt = svd(W_white).
+   - Unwhitens right factor Vt = Vt @ inv(S_white).
+2. Effective Rank:
+   - Allocates rank proportional to Shannon entropy effective rank:
+     p = s**2 / (s**2).sum(), erank = exp(- (p * log(p)).sum()).
+3. Activation Error Validation:
+   - Measures actual downstream effect:
+     err = ||WX - reconX||_F / (||WX||_F + 1e-9).
 """
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -54,7 +45,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Standard multi-domain calibration corpus (shared with AASVD)
+# Standard multi-domain calibration corpus (identical to AASVD)
 DEFAULT_CALIBRATION_CORPUS: List[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
@@ -102,15 +93,6 @@ class AdaSVDCompressor(BaseCompressor):
     """
     Adaptive SVD Compressor (AdaSVD).
     Paper Reference: Internal / Custom method.
-
-    Features:
-    - Data-driven Cholesky activation whitening (Priority 1)
-    - Weighted ALS with adaptive regularization (Priority 2 & 7)
-    - Downstream activation reconstruction validation (Priority 3)
-    - Shannon entropy effective rank allocation (Priority 4)
-    - Relative convergence monitoring (Priority 5)
-    - STRS rank search (Priority 6)
-    - Joint QKV factorization support (Priority 8)
     """
 
     def __init__(
@@ -118,7 +100,7 @@ class AdaSVDCompressor(BaseCompressor):
         model: nn.Module,
         rank: Optional[int] = None,
         target_param_ratio: float = 0.7,
-        num_iters: int = 5,
+        num_iters: int = 0,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
@@ -126,9 +108,6 @@ class AdaSVDCompressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
-        use_weighted_als: bool = True,
-        use_strs: bool = False,
-        use_joint_qkv: bool = False,
         device: Optional[Union[str, torch.device]] = None,
         comp_config: Any = None,
         **kwargs: Any,
@@ -149,15 +128,22 @@ class AdaSVDCompressor(BaseCompressor):
             _cfg_get(cfg, "adasvd_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
         )
         self.min_rank = int(_cfg_get(cfg, "adasvd_min_rank", _cfg_get(cfg, "min_rank", min_rank)))
-        self.use_weighted_als = bool(
-            _cfg_get(cfg, "adasvd_use_weighted_als", _cfg_get(cfg, "use_weighted_als", use_weighted_als))
-        )
-        self.use_strs = bool(_cfg_get(cfg, "adasvd_use_strs", _cfg_get(cfg, "use_strs", use_strs)))
-        self.use_joint_qkv = bool(
-            _cfg_get(cfg, "adasvd_use_joint_qkv", _cfg_get(cfg, "use_joint_qkv", use_joint_qkv))
-        )
         self.target_modules = target_modules
-        self.tokenizer = tokenizer or _cfg_get(cfg, "tokenizer", None)
+
+        if tokenizer is None:
+            tokenizer = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
+        if tokenizer is None:
+            model_name_or_path = getattr(getattr(model, "config", None), "_name_or_path", None)
+            if model_name_or_path:
+                try:
+                    from transformers import AutoTokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+                    if tokenizer.pad_token is None:
+                        tokenizer.pad_token = tokenizer.eos_token
+                except Exception as e:
+                    logger.debug("Could not auto-load tokenizer from %s: %s", model_name_or_path, e)
+        self.tokenizer = tokenizer
+
         self.calibration_texts = (
             calibration_texts
             or _cfg_get(cfg, "calibration_texts", None)
@@ -170,6 +156,7 @@ class AdaSVDCompressor(BaseCompressor):
         )
         self.comp_config = cfg
 
+        self.calibration_activations: Dict[str, torch.Tensor] = {}
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
@@ -230,70 +217,38 @@ class AdaSVDCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
+    # =========================================================================
+    # STEP 2: Replace Nuclear Norm with Effective Rank
+    # =========================================================================
     @staticmethod
     def _compute_effective_rank(W: torch.Tensor) -> float:
         """
-        Priority 4: Shannon Entropy Effective Rank (Roy & Vetterli, 2007).
-        p_i = sigma_i^2 / sum(sigma_j^2)
-        erank = exp(- sum(p_i * ln(p_i)))
+        Compute Shannon entropy effective rank (Roy & Vetterli, 2007).
+        p = s**2 / (s**2).sum().clamp(min=1e-12)
+        return float(torch.exp(-(p * torch.log(p + 1e-12)).sum()).item())
         """
         with torch.no_grad():
             s = torch.linalg.svdvals(W.float())
             s_sq = s**2
-            s_sq_sum = s_sq.sum()
-            if s_sq_sum <= 1e-12:
-                return 1.0
-            p = s_sq / s_sq_sum
+            denom = s_sq.sum().clamp(min=1e-12)
+            p = s_sq / denom
             p = p[p > 1e-12]
-            entropy = -float((p * torch.log(p)).sum().item())
-            return max(1.0, math.exp(entropy))
+            return float(torch.exp(-(p * torch.log(p + 1e-12)).sum()).item())
 
-    @staticmethod
-    def _robust_cholesky(C: torch.Tensor, n: int) -> torch.Tensor:
-        """
-        Priority 1: Robust Cholesky factorization S = cholesky(C + eps * I).
-        eps = 1e-6 * Tr(C) / n with adaptive regularization on singularity.
-        """
-        diag_c = torch.diag(C)
-        tr = float(torch.sum(diag_c).item()) if diag_c.numel() > 0 else float(n)
-        mean_diag = tr / max(1, n)
-        if mean_diag <= 0 or torch.isnan(C).any():
-            return torch.eye(n, device=C.device, dtype=C.dtype)
+    # Backward compatibility alias
+    _compute_nuclear_norm = _compute_effective_rank
 
-        for exp in [-6, -5, -4, -3, -2, -1, 0]:
-            eps = max(10**exp * mean_diag, 10**exp)
-            try:
-                S = torch.linalg.cholesky(C + eps * torch.eye(n, device=C.device, dtype=C.dtype))
-                if not torch.isnan(S).any() and not torch.isinf(S).any():
-                    return S
-            except Exception:
-                continue
-
-        # Eigen-decomposition fallback for extreme singularity
-        try:
-            eigvals, eigvecs = torch.linalg.eigh(C)
-            eigvals = torch.clamp(eigvals, min=1e-6)
-            return eigvecs @ torch.diag(torch.sqrt(eigvals))
-        except Exception:
-            return torch.eye(n, device=C.device, dtype=C.dtype)
-
-    def collect_covariances(
-        self,
-        calibration_data: Optional[Any] = None,
-    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    def _collect_activations(self, calibration_data: Optional[Any] = None) -> Dict[str, torch.Tensor]:
         """
-        Collect activation covariance C_X = (X^T @ X) / N, output variances D = diag(Var(Y)),
-        and calibration samples X_calib for validation.
+        Step 1 Helper: Register hooks on target layers, run one forward pass on calibration data,
+        and return dict[name] = X tensor.
         """
-        covariances: Dict[str, torch.Tensor] = {}
-        out_variances: Dict[str, torch.Tensor] = {}
-        samples_cache: Dict[str, torch.Tensor] = {}
-        counts: Dict[str, int] = {}
+        activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
-                if not inp or not isinstance(inp[0], torch.Tensor):
+                if not inp or inp[0] is None:
                     return
                 x = inp[0].detach()
                 target_mod = getattr(module, "base_layer", module)
@@ -309,36 +264,20 @@ class AdaSVDCompressor(BaseCompressor):
                     return
 
                 in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
-                x_fp32 = x.float()
-                x_flat = x_fp32.reshape(-1, in_f)
-                mask = x_flat.abs().sum(dim=-1) > 1e-6
-                if mask.sum() == 0:
-                    return
-                x_active = x_flat[mask]
-                batch_cov = torch.matmul(x_active.T, x_active).cpu()
-                n_samples = x_active.size(0)
-
-                # Output variance for weighted ALS
-                if isinstance(outp, torch.Tensor):
-                    y_flat = outp.detach().float().reshape(-1, outp.shape[-1])
-                    var_y = torch.var(y_flat, dim=0, unbiased=False).cpu()
+                x_flat = x.float().reshape(-1, in_f)
+                mask = x_flat.abs().sum(dim=-1) > 1e-5
+                if mask.sum() > 0:
+                    x_active = x_flat[mask]
                 else:
-                    var_y = None
+                    x_active = x_flat
 
-                if layer_name not in covariances:
-                    covariances[layer_name] = batch_cov
-                    counts[layer_name] = n_samples
-                    if var_y is not None:
-                        out_variances[layer_name] = var_y
-                    samples_cache[layer_name] = x_active[:128].cpu()
+                if layer_name not in activations:
+                    activations[layer_name] = [x_active[:512].cpu()]
                 else:
-                    covariances[layer_name] += batch_cov
-                    counts[layer_name] += n_samples
-                    if var_y is not None and layer_name in out_variances:
-                        out_variances[layer_name] += var_y
-                    if samples_cache[layer_name].size(0) < 256:
-                        cat_n = min(256 - samples_cache[layer_name].size(0), x_active.size(0))
-                        samples_cache[layer_name] = torch.cat([samples_cache[layer_name], x_active[:cat_n].cpu()], dim=0)
+                    curr_n = sum(t.size(0) for t in activations[layer_name])
+                    if curr_n < 1024:
+                        avail = 1024 - curr_n
+                        activations[layer_name].append(x_active[:avail].cpu())
 
             return hook
 
@@ -347,7 +286,7 @@ class AdaSVDCompressor(BaseCompressor):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         if not hooks:
-            return {}, {}, {}
+            return {}
 
         self.model.eval()
         dev = next(self.model.parameters()).device
@@ -360,10 +299,7 @@ class AdaSVDCompressor(BaseCompressor):
                         try:
                             self.model(cal_dev)
                         except Exception:
-                            try:
-                                self.model(input_ids=cal_dev)
-                            except Exception as e:
-                                logger.debug("AdaSVD forward pass with tensor calibration failed: %s", e)
+                            self.model(input_ids=cal_dev)
                     elif isinstance(calibration_data, (list, tuple)) and self.tokenizer is not None:
                         inputs = self.tokenizer(
                             list(calibration_data),
@@ -381,8 +317,7 @@ class AdaSVDCompressor(BaseCompressor):
                             elif isinstance(batch, dict):
                                 b_dev = {k: v.to(dev) for k, v in batch.items() if isinstance(v, torch.Tensor)}
                                 self.model(**b_dev)
-                            if len(counts) > 0 and min(counts.values(), default=0) >= 2048:
-                                break
+                            break
                 elif self.tokenizer is not None and self.calibration_texts:
                     inputs = self.tokenizer(
                         self.calibration_texts,
@@ -393,186 +328,49 @@ class AdaSVDCompressor(BaseCompressor):
                     )
                     inputs = {k: v.to(dev) for k, v in inputs.items()}
                     self.model(**inputs)
+                else:
+                    # Synthetic calibration token or float input fallback with sufficient rank
+                    try:
+                        dummy_ids = torch.randint(100, 2000, (8, 64), device=dev)
+                        self.model(input_ids=dummy_ids)
+                    except Exception:
+                        try:
+                            dummy_ids = torch.randint(100, 2000, (8, 64), device=dev)
+                            self.model(dummy_ids)
+                        except Exception:
+                            try:
+                                dummy_x = torch.randn(128, 64, device=dev)
+                                self.model(dummy_x)
+                            except Exception as e:
+                                logger.debug("AdaSVD synthetic calibration fallback failed: %s", e)
         except Exception as e:
             logger.debug("AdaSVD calibration pass exception: %s", e)
         finally:
             for h in hooks:
                 h.remove()
 
-        final_cov: Dict[str, torch.Tensor] = {}
-        for name, cov in covariances.items():
-            n = max(1, counts.get(name, 1))
-            final_cov[name] = cov / float(n)
+        result: Dict[str, torch.Tensor] = {}
+        for name, tensor_list in activations.items():
+            if tensor_list:
+                result[name] = torch.cat(tensor_list, dim=0)
 
-        final_var: Dict[str, torch.Tensor] = {}
-        for name, v in out_variances.items():
-            final_var[name] = v / max(1.0, float(counts.get(name, 1)))
+        return result
 
-        return final_cov, final_var, samples_cache
-
-    @staticmethod
-    def _compute_activation_error(
-        W: torch.Tensor,
-        A: torch.Tensor,
-        B: torch.Tensor,
-        X_calib: Optional[torch.Tensor],
-        C_X: Optional[torch.Tensor],
-    ) -> float:
-        """
-        Priority 3: Activation Error Validation.
-        err = ||WX - ABX||_F / (||WX||_F + 1e-9)
-        """
-        # If explicit calibration samples are cached
-        if X_calib is not None and X_calib.numel() > 0:
-            X_t = X_calib.to(device=W.device, dtype=W.dtype).t()
-            WX = torch.matmul(W, X_t)
-            ABX = torch.matmul(A, torch.matmul(B, X_t))
-            diff_norm = torch.norm(WX - ABX, p="fro").item()
-            wx_norm = torch.norm(WX, p="fro").item()
-            return float(diff_norm / (wx_norm + 1e-9))
-
-        # If covariance C_X is available: Tr((W-AB) C_X (W-AB)^T) / Tr(W C_X W^T)
-        if C_X is not None and C_X.shape == (W.shape[1], W.shape[1]):
-            C_dev = C_X.to(device=W.device, dtype=W.dtype)
-            delta = W - torch.matmul(A, B)
-            diff_energy = torch.trace(torch.matmul(delta, torch.matmul(C_dev, delta.t()))).item()
-            w_energy = torch.trace(torch.matmul(W, torch.matmul(C_dev, W.t()))).item()
-            if w_energy > 1e-12 and diff_energy >= 0:
-                return float(math.sqrt(max(0.0, diff_energy)) / (math.sqrt(w_energy) + 1e-9))
-
-        # Standard Frobenius error fallback
-        W_norm = torch.norm(W, p="fro").item()
-        if W_norm < 1e-12:
-            return 0.0
-        recon = torch.matmul(A, B)
-        return float(torch.norm(W - recon, p="fro").item() / (W_norm + 1e-9))
-
-    def _factorize_single_rank(
-        self,
-        W: torch.Tensor,
-        r: int,
-        covariance: Optional[torch.Tensor] = None,
-        out_variance: Optional[torch.Tensor] = None,
-        X_calib: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, float, int]:
-        """
-        Executes Whitened SVD (Priority 1) + Weighted ALS (Priority 2, 5, 7) + Activation Error (Priority 3).
-        """
-        out_f, in_f = W.shape
-        device = W.device
-        dtype = W.dtype
-
-        # Step 1: Activation Weighting (Cholesky Whitening)
-        has_whitening = covariance is not None and covariance.shape == (in_f, in_f)
-        if has_whitening:
-            C_fp32 = covariance.float().to(device=device)
-            C_sym = 0.5 * (C_fp32 + C_fp32.T)
-            S_white = self._robust_cholesky(C_sym, in_f)
-            try:
-                S_inv = torch.linalg.pinv(S_white)
-            except Exception:
-                S_inv = torch.inverse(S_white + 1e-5 * torch.eye(in_f, device=device, dtype=C_sym.dtype))
-
-            W_white = torch.matmul(W, S_white)
-            try:
-                U, S, Vt = torch.linalg.svd(W_white, full_matrices=False)
-            except Exception:
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                has_whitening = False
-
-            if has_whitening:
-                U_r = U[:, :r]
-                Sigma_r = S[:r]
-                Vt_r = Vt[:r, :]
-                Vt_unw = torch.matmul(Vt_r, S_inv)
-
-                sqrt_S = torch.sqrt(torch.clamp(Sigma_r, min=1e-12))
-                A = U_r * sqrt_S.unsqueeze(0)
-                B = sqrt_S.unsqueeze(1) * Vt_unw
-            else:
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                A = U[:, :r] * sqrt_S.unsqueeze(0)
-                B = sqrt_S.unsqueeze(1) * Vt[:r, :]
-        else:
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            A = U[:, :r] * sqrt_S.unsqueeze(0)
-            B = sqrt_S.unsqueeze(1) * Vt[:r, :]
-
-        # Initial validation error
-        init_err = self._compute_activation_error(W, A, B, X_calib, covariance)
-        best_A = A.clone()
-        best_B = B.clone()
-        best_err = init_err
-        actual_iters = 0
-
-        # Step 2: Weighted ALS (Priority 2, 5, 7)
-        if self.use_weighted_als and self.num_iters > 0:
-            E = covariance.float().to(device=device) if has_whitening else torch.eye(in_f, device=device)
-            if out_variance is not None and out_variance.shape == (out_f,):
-                D = torch.diag(torch.clamp(out_variance.float().to(device=device), min=1e-6))
-            else:
-                D = torch.eye(out_f, device=device)
-
-            prev_err = init_err
-            for it in range(self.num_iters):
-                # Update A: A = W @ E @ B.T @ inv(B @ E @ B.T + eps_B * I)
-                BEBt = torch.matmul(B, torch.matmul(E, B.t()))
-                eps_b = max(1e-9, float(1e-6 * torch.trace(BEBt).item() / max(1, r)))
-                try:
-                    A_next = torch.matmul(
-                        torch.matmul(W, E),
-                        torch.matmul(B.t(), torch.linalg.inv(BEBt + eps_b * torch.eye(r, device=device))),
-                    )
-                except Exception:
-                    break
-
-                # Update B: B = inv(A.T @ D @ A + eps_A * I) @ A.T @ D @ W
-                AtDA = torch.matmul(A_next.t(), torch.matmul(D, A_next))
-                eps_a = max(1e-9, float(1e-6 * torch.trace(AtDA).item() / max(1, r)))
-                try:
-                    B_next = torch.matmul(
-                        torch.matmul(torch.linalg.inv(AtDA + eps_a * torch.eye(r, device=device)), A_next.t()),
-                        torch.matmul(D, W),
-                    )
-                except Exception:
-                    break
-
-                # Check numerical validity
-                if torch.isnan(A_next).any() or torch.isnan(B_next).any() or torch.isinf(A_next).any() or torch.isinf(B_next).any():
-                    break
-
-                err = self._compute_activation_error(W, A_next, B_next, X_calib, covariance)
-                actual_iters += 1
-
-                # Priority 5: Convergence criterion
-                if abs(prev_err - err) / (prev_err + 1e-9) < 1e-4:
-                    if err < best_err:
-                        best_A, best_B, best_err = A_next, B_next, err
-                    break
-
-                if err < best_err:
-                    best_A = A_next
-                    best_B = B_next
-                    best_err = err
-                    prev_err = err
-                else:
-                    # Halt if ALS error begins increasing
-                    break
-
-        return best_A, best_B, best_err, actual_iters
-
+    # =========================================================================
+    # STEP 1: Add Cholesky Whitening & STEP 3: Activation Error
+    # =========================================================================
     def compress_linear(
         self,
         layer: nn.Module,
         rank: int,
         name: str = "",
         covariance: Optional[torch.Tensor] = None,
-        out_variance: Optional[torch.Tensor] = None,
         X_calib: Optional[torch.Tensor] = None,
+        **kwargs: Any,
     ) -> Tuple[Optional[SVDLinear], float, int]:
         """
-        Compress a single layer using Activation-Weighted SVD, Weighted ALS, and optional STRS rank search.
+        Compress a single linear/conv1d layer using Cholesky activation whitening,
+        truncated SVD, and downstream activation reconstruction validation.
         """
         target_mod = getattr(layer, "base_layer", layer)
         cls_name = layer.__class__.__name__.lower()
@@ -602,71 +400,91 @@ class AdaSVDCompressor(BaseCompressor):
             r_floor = max(r_floor, 288)
             max_param_r = min(max_param_r, 432)
 
+        r = max(r_floor, min(rank, max_param_r))
+        if r > max_param_r:
+            r = max_param_r
+
         device = weight_tensor.device
         dtype = weight_tensor.dtype
 
-        # Priority 6: STRS Rank Search
-        if self.use_strs:
-            candidate_ranks = [32, 64, 96, 128, 192, 256]
-            valid_candidates = sorted(list(set(
-                max(r_floor, min(c, max_param_r)) for c in candidate_ranks
-            )))
-            best_A = None
-            best_B = None
-            best_err = float("inf")
-            best_r = valid_candidates[0]
-            total_iters = 0
-
-            for cand_r in valid_candidates:
-                A, B, err, iters = self._factorize_single_rank(
-                    W, cand_r, covariance=covariance, out_variance=out_variance, X_calib=X_calib
-                )
-                total_iters += iters
-                if err < best_err:
-                    best_err = err
-                    best_A = A
-                    best_B = B
-                    best_r = cand_r
-                if err <= self.max_error:
-                    # Found minimal rank meeting error constraint
-                    best_err = err
-                    best_A = A
-                    best_B = B
-                    best_r = cand_r
-                    break
-
-            A_final, B_final, final_err, r_final = best_A, best_B, best_err, best_r
-            actual_iters = total_iters
+        # ---------------------------------------------------------------------
+        # STEP 1: Add Cholesky Whitening
+        # ---------------------------------------------------------------------
+        X = X_calib if X_calib is not None else self.calibration_activations.get(name, None)
+        if X is not None:
+            X = X.to(device=W.device, dtype=W.dtype)
+            C_X = (X.T @ X) / max(1, X.shape[0])
+        elif covariance is not None and covariance.shape == (in_f, in_f):
+            C_X = covariance.to(device=W.device, dtype=W.dtype)
         else:
-            r = max(r_floor, min(rank, max_param_r))
-            if r > max_param_r:
-                r = max_param_r
-            A_final, B_final, final_err, actual_iters = self._factorize_single_rank(
-                W, r, covariance=covariance, out_variance=out_variance, X_calib=X_calib
-            )
-            r_final = r
+            C_X = None
 
-        if A_final is None or B_final is None:
-            return None, 1.0, 0
+        if C_X is not None:
+            eps = 1e-6 * torch.trace(C_X) / max(1, C_X.shape[0])
+            eye = torch.eye(C_X.shape[0], device=C_X.device, dtype=C_X.dtype)
+            try:
+                S_white = torch.linalg.cholesky(C_X + eps * eye)
+            except Exception:
+                for exp in [-5, -4, -3, -2, -1]:
+                    try:
+                        S_white = torch.linalg.cholesky(C_X + (10**exp * (torch.trace(C_X).item() / max(1, C_X.shape[0]))) * eye)
+                        break
+                    except Exception:
+                        continue
+                else:
+                    S_white = None
+
+            if S_white is not None:
+                try:
+                    S_inv = torch.linalg.inv(S_white)
+                    W_white = W @ S_white
+                    U, S, Vt = torch.linalg.svd(W_white, full_matrices=False)
+                    Vt = Vt @ S_inv
+                except Exception as e:
+                    logger.debug("Whitening SVD failed on %s: %s", name, e)
+                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            else:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        else:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        A = U[:, :r] * sqrt_S.unsqueeze(0)       # [out_features, r]
+        B = sqrt_S.unsqueeze(1) * Vt[:r, :]      # [r, in_features]
+        recon = torch.matmul(A, B)
+
+        # ---------------------------------------------------------------------
+        # STEP 3: Use Activation Error
+        # ---------------------------------------------------------------------
+        if X is not None:
+            WX = W @ X.T
+            reconX = recon @ X.T
+            final_err = float(torch.norm(WX - reconX, p="fro").item() / (torch.norm(WX, p="fro").item() + 1e-9))
+        else:
+            W_norm = torch.norm(W, p="fro").item()
+            if W_norm < 1e-12:
+                final_err = 0.0
+            else:
+                final_err = float(torch.norm(W - recon, p="fro").item() / (W_norm + 1e-9))
 
         # Instantiate factorized SVDLinear layer
         bias_tensor = getattr(target_mod, "bias", getattr(layer, "bias", None))
         svd_layer = SVDLinear(
             in_features=in_f,
             out_features=out_f,
-            rank=r_final,
+            rank=r,
             bias=bias_tensor is not None,
             dtype=dtype,
             device=device,
         )
         svd_layer.set_low_rank_factors(
-            U_factor=A_final.to(dtype=dtype, device=device),
-            V_factor=B_final.to(dtype=dtype, device=device),
+            U_factor=A.to(dtype=dtype, device=device),
+            V_factor=B.to(dtype=dtype, device=device),
         )
         if bias_tensor is not None and svd_layer.bias is not None:
             svd_layer.bias.data.copy_(bias_tensor.data)
 
-        return svd_layer, final_err, actual_iters
+        return svd_layer, final_err, 0
 
     def compress(self, calibration_data: Optional[Any] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """
@@ -688,7 +506,7 @@ class AdaSVDCompressor(BaseCompressor):
             logger.warning("AdaSVD: No compressible layers found.")
             return self.model, self.get_compression_stats()
 
-        # Step 1: Compute information-theoretic effective ranks (Priority 4)
+        # Step 2: Compute spectral effective rank in FP32
         layer_importances = {}
         total_importance = 0.0
         for name, module in target_layers:
@@ -707,10 +525,10 @@ class AdaSVDCompressor(BaseCompressor):
             layer_importances[name] = max(imp, 1e-4)
             total_importance += layer_importances[name]
 
-        # Step 2: Collect activation statistics (Priority 1, 2, 3)
-        covariances, out_variances, samples_cache = self.collect_covariances(calibration_data=calibration_data)
+        # Step 1: Collect activation statistics across target layers
+        self.calibration_activations = self._collect_activations(calibration_data=calibration_data)
 
-        # Step 3: Assign ranks and compress layers
+        # Compress target layers
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)
             weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
@@ -744,20 +562,9 @@ class AdaSVDCompressor(BaseCompressor):
             if allocated_rank > max_param_r:
                 allocated_rank = max_param_r
 
-            cov = covariances.get(name, None)
-            out_var = out_variances.get(name, None)
-            x_cal = samples_cache.get(name, None)
-
-            svd_layer, err, iters = self.compress_linear(
-                module,
-                rank=allocated_rank,
-                name=name,
-                covariance=cov,
-                out_variance=out_var,
-                X_calib=x_cal,
-            )
+            svd_layer, err, iters = self.compress_linear(module, rank=allocated_rank, name=name)
             self.layer_errors[name] = err
-            self.layer_ranks[name] = svd_layer.rank if svd_layer is not None else allocated_rank
+            self.layer_ranks[name] = allocated_rank
             self.layer_iters[name] = iters
 
             if svd_layer is None or err > self.max_error:
@@ -784,7 +591,7 @@ class AdaSVDCompressor(BaseCompressor):
                 replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
 
-        # Explicitly freeze fallback layers
+        # Freeze fallback layers
         for name, mod in self.model.named_modules():
             if name in self.fallback_layers:
                 target = getattr(mod, "base_layer", mod)
@@ -827,7 +634,7 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
     target_param_ratio = kwargs.pop(
         "target_param_ratio", _cfg_get(comp_config, "adasvd_target_ratio", _cfg_get(comp_config, "target_param_ratio", 0.7))
     )
-    num_iters = kwargs.pop("num_iters", _cfg_get(comp_config, "adasvd_iters", _cfg_get(comp_config, "num_iters", 5)))
+    num_iters = kwargs.pop("num_iters", _cfg_get(comp_config, "adasvd_iters", _cfg_get(comp_config, "num_iters", 0)))
     max_error = kwargs.pop(
         "max_error", _cfg_get(comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.50))
     )
@@ -838,12 +645,6 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
         "target_attention_only", _cfg_get(comp_config, "adasvd_target_attention_only", _cfg_get(comp_config, "target_attention_only", True))
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "adasvd_min_rank", _cfg_get(comp_config, "min_rank", 16)))
-    use_weighted_als = kwargs.pop(
-        "use_weighted_als", _cfg_get(comp_config, "adasvd_use_weighted_als", _cfg_get(comp_config, "use_weighted_als", True))
-    )
-    use_strs = kwargs.pop(
-        "use_strs", _cfg_get(comp_config, "adasvd_use_strs", _cfg_get(comp_config, "use_strs", False))
-    )
     tokenizer = kwargs.pop("tokenizer", _cfg_get(comp_config, "tokenizer", None))
     calibration_texts = kwargs.pop("calibration_texts", _cfg_get(comp_config, "calibration_texts", None))
     calibration_data = kwargs.pop("calibration_data", None)
@@ -859,8 +660,6 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
         min_rank=min_rank,
         tokenizer=tokenizer,
         calibration_texts=calibration_texts,
-        use_weighted_als=use_weighted_als,
-        use_strs=use_strs,
         comp_config=comp_config,
         **kwargs,
     )
