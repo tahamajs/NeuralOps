@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 QUEUE_PATH = os.path.join(ROOT_DIR, "paper", "_PIPELINE_QUEUE.json")
-LOG_PATH = os.path.join(ROOT_DIR, "logs", "auto_pipeline.log")
+LOG_PATH = os.path.join(ROOT_DIR, "logs", "auto_pipeline_v2.log")
 PAPERS_DIR = os.path.join(ROOT_DIR, "paper", "PerModulePaper")
 RESULTS_DIR = os.path.join(ROOT_DIR, "results")
 
@@ -521,7 +521,7 @@ def main_daemon() -> None:
                 next_job = pending_jobs[0]
 
                 # If next job is GPU, enforce VRAM limit
-                if next_job.get("type") == "gpu" and (vram_gb >= 7.0 or util >= 95.0):
+                if next_job.get("type") == "gpu" and (vram_gb >= 5.5 or util >= 95.0):
                     break
 
                 job_to_launch = pending_jobs.pop(0)
@@ -572,7 +572,7 @@ def main_daemon() -> None:
         except Exception as e:
             logger.error(f"Unhandled exception in daemon loop: {e}", exc_info=True)
 
-        time.sleep(30)
+        time.sleep(5)
 
 
 if __name__ == "__main__":
