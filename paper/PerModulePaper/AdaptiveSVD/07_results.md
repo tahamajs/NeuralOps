@@ -192,3 +192,18 @@ calibration-based methods.
 - **Compression time:** 15–30 s
 - **Per-layer ranks:** 64 to 150
 - **No calibration required**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

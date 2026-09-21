@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_aegis_hybrid/gpt2/summary.csv | gpt2 | aegis_hybrid | 8474.53 tok/s <!-- source: results/unified_aegis_hybrid/gpt2/summary.csv line 3 --> | 476.0 MB <!-- source: results/unified_aegis_hybrid/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_hybrid/gpt2/summary.csv line 3 --> |
 | results/unified_aegis_hybrid/roberta/summary.csv | roberta | full | 23951.82 tok/s <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 2 --> |
 | results/unified_aegis_hybrid/roberta/summary.csv | roberta | aegis_hybrid | 7060.79 tok/s <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 3 --> | 596.29 MB <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_hybrid/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=93.00%, comp=1.050x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.00% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.9269 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.050x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-20T00:29:48.030674 | `results/rank_ablation/ablation_all_rows.csv` |
+

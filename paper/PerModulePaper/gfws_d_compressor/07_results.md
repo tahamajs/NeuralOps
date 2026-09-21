@@ -23,3 +23,12 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
 |---|---|---|---|---|---|
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | gfws_d | Elapsed 0.838s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 55 --> | 129.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 55 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 55 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+

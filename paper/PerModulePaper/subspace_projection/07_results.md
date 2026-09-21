@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_subspace_projection/roberta/summary.csv | roberta | full | 99998.19 tok/s <!-- source: results/unified_subspace_projection/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_subspace_projection/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_subspace_projection/roberta/summary.csv line 2 --> |
 | results/unified_subspace_projection/roberta/summary.csv | roberta | subspace_projection | 83248.79 tok/s <!-- source: results/unified_subspace_projection/roberta/summary.csv line 3 --> | 364.29 MB <!-- source: results/unified_subspace_projection/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_subspace_projection/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | subspace_projection | Elapsed 0.757s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 113 --> | 115.4 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 113 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 113 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=59.52%, comp=1.003x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 59.52% | `results/unified_subspace_projection/gpt2/summary.csv` |
+| F1 Score | 0.6596 | `results/unified_subspace_projection/gpt2/summary.csv` |
+| Compression | 1.003x | `results/unified_subspace_projection/gpt2/summary.csv` |
+| Compressed Layers | 0 | `results/unified_subspace_projection/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/unified_subspace_projection/gpt2/summary.csv` |
+| Timestamp | 2026-09-11T08:48:45.869618 | `results/unified_subspace_projection/gpt2/summary.csv` |
+

@@ -113,3 +113,25 @@
 - **No calibration data required.**
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=76.30%, comp=1.145x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 76.30% | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+| F1 Score | 0.7317 | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+| Compression | 1.145x | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+| Timestamp | 2026-09-18T08:40:05.346564 | `results/agnews_unified_soafusedattention/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

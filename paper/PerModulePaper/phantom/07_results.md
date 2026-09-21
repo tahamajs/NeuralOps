@@ -166,3 +166,24 @@
 - All models pass quality gate
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=72.59%, comp=1.227x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 72.59% | `results/unified_phantom/distilbert/summary.csv` |
+| F1 Score | 0.7668 | `results/unified_phantom/distilbert/summary.csv` |
+| Compression | 1.227x | `results/unified_phantom/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_phantom/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_phantom/distilbert/summary.csv` |
+| Timestamp | 2026-09-11T07:18:34.787140 | `results/unified_phantom/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

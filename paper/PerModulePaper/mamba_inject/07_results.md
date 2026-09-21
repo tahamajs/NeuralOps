@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_mamba_inject/gpt2/summary.csv | gpt2 | mamba_inject | 66502.29 tok/s <!-- source: results/unified_mamba_inject/gpt2/summary.csv line 3 --> | 793.19 MB <!-- source: results/unified_mamba_inject/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_mamba_inject/gpt2/summary.csv line 3 --> |
 | results/unified_mamba_inject/roberta/summary.csv | roberta | full | 75988.96 tok/s <!-- source: results/unified_mamba_inject/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_mamba_inject/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_mamba_inject/roberta/summary.csv line 2 --> |
 | results/unified_mamba_inject/roberta/summary.csv | roberta | mamba_inject | 75988.96 tok/s <!-- source: results/unified_mamba_inject/roberta/summary.csv line 3 --> | 712.34 MB <!-- source: results/unified_mamba_inject/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_mamba_inject/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/master_aggregated_results.csv` |
+| F1 Score | 0.0000 | `results/master_aggregated_results.csv` |
+| Compression | 1.000x | `results/master_aggregated_results.csv` |
+| Compressed Layers | ? | `results/master_aggregated_results.csv` |
+| Fallback Layers | ? | `results/master_aggregated_results.csv` |
+| Timestamp | 2026-09-11T19:37:53.230147 | `results/master_aggregated_results.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 57.91, 75.46]
+> These numbers must NOT be cited in the final paper.
+

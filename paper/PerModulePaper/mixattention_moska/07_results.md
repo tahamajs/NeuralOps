@@ -132,3 +132,24 @@
 - **GPT-2:** 87.27% (Δ = +7.91) — **no-op** (decoder path skips pruning)
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.33% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T07:58:23.585311 | `results/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 78.56, 78.78, 87.27]
+> These numbers must NOT be cited in the final paper.
+

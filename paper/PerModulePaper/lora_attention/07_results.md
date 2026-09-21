@@ -130,3 +130,18 @@
 - Effective recovery mechanism for compression
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/neuralops_mrpc_results.csv` |
+| F1 Score | 0.0000 | `results/neuralops_mrpc_results.csv` |
+| Compression | 1.000x | `results/neuralops_mrpc_results.csv` |
+| Compressed Layers | ? | `results/neuralops_mrpc_results.csv` |
+| Fallback Layers | ? | `results/neuralops_mrpc_results.csv` |
+| Timestamp | unknown | `results/neuralops_mrpc_results.csv` |
+

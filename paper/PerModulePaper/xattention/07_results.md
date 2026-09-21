@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_xattention/gpt2/summary.csv | gpt2 | xattention | 8079.92 tok/s <!-- source: results/unified_xattention/gpt2/summary.csv line 3 --> | 336.93 MB <!-- source: results/unified_xattention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_xattention/gpt2/summary.csv line 3 --> |
 | results/unified_xattention/roberta/summary.csv | roberta | full | 27944.4 tok/s <!-- source: results/unified_xattention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_xattention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_xattention/roberta/summary.csv line 2 --> |
 | results/unified_xattention/roberta/summary.csv | roberta | xattention | 9791.96 tok/s <!-- source: results/unified_xattention/roberta/summary.csv line 3 --> | 656.41 MB <!-- source: results/unified_xattention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_xattention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.998 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 86.24% | `results/unified_xattention/gpt2/summary.csv` |
+| F1 Score | 0.8729 | `results/unified_xattention/gpt2/summary.csv` |
+| Compression | 0.998x | `results/unified_xattention/gpt2/summary.csv` |
+| Compressed Layers | 0 | `results/unified_xattention/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/unified_xattention/gpt2/summary.csv` |
+| Timestamp | 2026-09-14T03:28:55.724316 | `results/unified_xattention/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94]
+> These numbers must NOT be cited in the final paper.
+

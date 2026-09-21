@@ -175,3 +175,24 @@ The differences are in injection safety, not in the core algorithm.
 - **All three models pass quality gate.**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=88.30%, comp=1.152x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 88.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:50:46.818665 | `results/rank_ablation/agnews_rank32/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

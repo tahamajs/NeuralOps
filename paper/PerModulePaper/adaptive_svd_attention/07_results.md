@@ -192,3 +192,25 @@ calibration-based methods.
 - **Compression time:** 15–30 s
 - **Per-layer ranks:** 64 to 150
 - **No calibration required**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=74.60%, comp=1.152x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 74.60% | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+| F1 Score | 0.7178 | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+| Compression | 1.152x | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+| Timestamp | 2026-09-16T08:59:35.736357 | `results/agnews_unified_adaptive_svd_attention/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

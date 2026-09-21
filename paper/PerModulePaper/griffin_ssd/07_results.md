@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_griffin_ssd/gpt2/summary.csv | gpt2 | griffin_ssd | 9384.02 tok/s <!-- source: results/unified_griffin_ssd/gpt2/summary.csv line 3 --> | 597.32 MB <!-- source: results/unified_griffin_ssd/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_griffin_ssd/gpt2/summary.csv line 3 --> |
 | results/unified_griffin_ssd/roberta/summary.csv | roberta | full | 17122.83 tok/s <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 2 --> |
 | results/unified_griffin_ssd/roberta/summary.csv | roberta | griffin_ssd | 8289.91 tok/s <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 3 --> | 700.74 MB <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_griffin_ssd/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.14% | `results/roberta/summary.csv` |
+| F1 Score | 0.0000 | `results/roberta/summary.csv` |
+| Compression | 1.000x | `results/roberta/summary.csv` |
+| Compressed Layers | ? | `results/roberta/summary.csv` |
+| Fallback Layers | ? | `results/roberta/summary.csv` |
+| Timestamp | 2026-09-04T09:19:17.168564 | `results/roberta/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

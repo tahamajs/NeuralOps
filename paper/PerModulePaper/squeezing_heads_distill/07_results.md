@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_squeezing_heads_distill/gpt2/summary.csv | gpt2 | squeezing_heads_distill | 35939.75 tok/s <!-- source: results/unified_squeezing_heads_distill/gpt2/summary.csv line 3 --> | 568.71 MB <!-- source: results/unified_squeezing_heads_distill/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distill/gpt2/summary.csv line 3 --> |
 | results/unified_squeezing_heads_distill/roberta/summary.csv | roberta | full | 91092.48 tok/s <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 2 --> |
 | results/unified_squeezing_heads_distill/roberta/summary.csv | roberta | squeezing_heads_distill | 46530.27 tok/s <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 3 --> | 379.87 MB <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distill/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.991 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.37% | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+| F1 Score | 0.9075 | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+| Compression | 0.991x | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+| Timestamp | 2026-09-11T08:45:26.012457 | `results/unified_squeezing_heads_distill/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [60.78, 75.11]
+> These numbers must NOT be cited in the final paper.
+

@@ -35,3 +35,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_dynamic_entropy/qwen3_5/summary.csv | qwen3_5 | full | 6042.7 tok/s <!-- source: results/unified_dynamic_entropy/qwen3_5/summary.csv line 2 --> | 1796.78 MB <!-- source: results/unified_dynamic_entropy/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_dynamic_entropy/qwen3_5/summary.csv line 2 --> |
 | results/unified_dynamic_entropy/roberta/summary.csv | roberta | full | 27387.12 tok/s <!-- source: results/unified_dynamic_entropy/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_dynamic_entropy/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_dynamic_entropy/roberta/summary.csv line 2 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | dynamic_entropy | Elapsed 1.029s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 37 --> | 104.9 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 37 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 37 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/all_121_compressors_gpu_matrix.csv` |
+| F1 Score | 0.0000 | `results/all_121_compressors_gpu_matrix.csv` |
+| Compression | 1.000x | `results/all_121_compressors_gpu_matrix.csv` |
+| Compressed Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Fallback Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Timestamp | unknown | `results/all_121_compressors_gpu_matrix.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 67.89, 78.56]
+> These numbers must NOT be cited in the final paper.
+

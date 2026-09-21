@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_factorised_matrix_state/gpt2/summary.csv | gpt2 | factorised_matrix_state | 9921.96 tok/s <!-- source: results/unified_factorised_matrix_state/gpt2/summary.csv line 3 --> | 574.03 MB <!-- source: results/unified_factorised_matrix_state/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_factorised_matrix_state/gpt2/summary.csv line 3 --> |
 | results/unified_factorised_matrix_state/roberta/summary.csv | roberta | full | 27504.61 tok/s <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 2 --> |
 | results/unified_factorised_matrix_state/roberta/summary.csv | roberta | factorised_matrix_state | 7844.34 tok/s <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 3 --> | 672.35 MB <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_factorised_matrix_state/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 75.00% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-25 23:52:57 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

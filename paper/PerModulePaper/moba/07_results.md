@@ -112,3 +112,24 @@ roughly constant.
 - Complexity is $\mathcal{O}(L^2 d)$, **not** O(L).
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.71% | `results/unified_sweep/distilbert/summary.csv` |
+| F1 Score | 0.9105 | `results/unified_sweep/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
+| Timestamp | 2026-09-19T01:36:44.009685 | `results/unified_sweep/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36, 78.78, 64.56, 78.44]
+> These numbers must NOT be cited in the final paper.
+

@@ -56,3 +56,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_hla_attention/gpt2/summary.csv | gpt2 | hla_attention | 45287.1 tok/s <!-- source: results/unified_hla_attention/gpt2/summary.csv line 3 --> | 567.58 MB <!-- source: results/unified_hla_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hla_attention/gpt2/summary.csv line 3 --> |
 | results/unified_hla_attention/roberta/summary.csv | roberta | full | 91292.28 tok/s <!-- source: results/unified_hla_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_hla_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_hla_attention/roberta/summary.csv line 2 --> |
 | results/unified_hla_attention/roberta/summary.csv | roberta | hla_attention | 40775.02 tok/s <!-- source: results/unified_hla_attention/roberta/summary.csv line 3 --> | 667.32 MB <!-- source: results/unified_hla_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hla_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Compression | 1.000x | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Compressed Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Fallback Layers | ? | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+| Timestamp | 2026-08-26T17:24:10.582209 | `results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 57.91, 75.46, 90.94, 57.91, 75.46]
+> These numbers must NOT be cited in the final paper.
+

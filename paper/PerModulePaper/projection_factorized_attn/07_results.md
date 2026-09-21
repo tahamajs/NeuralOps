@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_projection_factorized_attn/gpt2/summary.csv | gpt2 | projection_factorized_attn | 10065.69 tok/s <!-- source: results/unified_projection_factorized_attn/gpt2/summary.csv line 3 --> | 468.08 MB <!-- source: results/unified_projection_factorized_attn/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_projection_factorized_attn/gpt2/summary.csv line 3 --> |
 | results/unified_projection_factorized_attn/roberta/summary.csv | roberta | full | 23835.57 tok/s <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 2 --> |
 | results/unified_projection_factorized_attn/roberta/summary.csv | roberta | projection_factorized_attn | 10877.86 tok/s <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 3 --> | 555.07 MB <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_projection_factorized_attn/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=94.50%, comp=1.065x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.50% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.9414 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.065x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 6 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-20T00:37:53.951332 | `results/rank_ablation/ablation_all_rows.csv` |
+

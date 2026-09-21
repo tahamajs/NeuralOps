@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_adaptive_sparse_attention/gpt2/summary.csv | gpt2 | full | 25459.51 tok/s <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 2 --> | 793.99 MB <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 2 --> |
 | results/unified_adaptive_sparse_attention/qwen3_5/summary.csv | qwen3_5 | full | 5803.55 tok/s <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 2 --> | 1796.78 MB <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 2 --> |
 | results/unified_adaptive_sparse_attention/roberta/summary.csv | roberta | full | 28934.64 tok/s <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 2 --> | 713.14 MB <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 2 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 62.50% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:01:44 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [67.55, 78.56, 90.71, 79.36, 67.89, 78.56]
+> These numbers must NOT be cited in the final paper.
+

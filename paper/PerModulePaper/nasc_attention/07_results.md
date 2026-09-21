@@ -141,3 +141,24 @@
 - **GPT-2:** 85.32% (Δ = +5.96) — 0.85
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/run_quality_ep1/summary.csv` |
+| F1 Score | 0.8184 | `results/run_quality_ep1/summary.csv` |
+| Compression | 1.000x | `results/run_quality_ep1/summary.csv` |
+| Compressed Layers | ? | `results/run_quality_ep1/summary.csv` |
+| Fallback Layers | ? | `results/run_quality_ep1/summary.csv` |
+| Timestamp | 2026-08-27T01:58:05.226513 | `results/run_quality_ep1/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36, 85.32]
+> These numbers must NOT be cited in the final paper.
+

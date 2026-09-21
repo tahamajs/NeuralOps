@@ -122,3 +122,24 @@ method is faster.
 - **VRAM:** Similar or slightly higher.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 62.50% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-25 23:56:46 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

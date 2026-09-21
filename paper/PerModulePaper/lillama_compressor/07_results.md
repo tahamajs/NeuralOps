@@ -7,10 +7,10 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
 | results/unified_lillama/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_lillama/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_lillama/distilbert/summary.csv line 2 --> |
-| results/unified_lillama/distilbert/summary.csv | distilbert | lillama | PASS | 87.5% <!-- source: results/unified_lillama/distilbert/summary.csv line 3 --> | 0.8868 <!-- source: results/unified_lillama/distilbert/summary.csv line 3 --> |
+<!-- FABRICATED: | results/unified_lillama/distilbert/summary.csv | distilbert | lillama | PASS | 87.5% <!-- source: results/unified_lillama/distilbert/summary.csv line 3 --> | 0.8868 <!-- source: results/unified_lillama/distilbert/summary.csv line 3 --> | -->
 | results/unified_lillama/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_lillama/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_lillama/gpt2/summary.csv line 2 --> |
 | results/unified_lillama/gpt2/summary.csv | gpt2 | lillama | PASS | 56.88% <!-- source: results/unified_lillama/gpt2/summary.csv line 3 --> | 0.6835 <!-- source: results/unified_lillama/gpt2/summary.csv line 3 --> |
-| results/unified_lillama/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_lillama/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_lillama/roberta/summary.csv line 2 --> |
+<!-- FABRICATED: | results/unified_lillama/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_lillama/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_lillama/roberta/summary.csv line 2 --> | -->
 | results/unified_lillama/roberta/summary.csv | roberta | lillama | PASS | 85.44% <!-- source: results/unified_lillama/roberta/summary.csv line 3 --> | 0.8603 <!-- source: results/unified_lillama/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | lillama | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 71 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 71 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | lillama_compressor | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 72 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 72 --> |
@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_lillama/roberta/summary.csv | roberta | lillama | 100764.43 tok/s <!-- source: results/unified_lillama/roberta/summary.csv line 3 --> | 583.49 MB <!-- source: results/unified_lillama/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lillama/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | lillama | Elapsed 0.406s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 71 --> | 129.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 71 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 71 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | lillama_compressor | Elapsed 0.426s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 72 --> | 129.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 72 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 72 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 62.50% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:01:55 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 87.5, 56.88, 75.0, 85.44]
+> These numbers must NOT be cited in the final paper.
+

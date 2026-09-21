@@ -29,3 +29,18 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | Codes/framework/compression_engine/pruning_utils.py | DistilBERT | saes_svd | 148920.1 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 342.10 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 0.0412 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> |
 | Codes/framework/compression_engine/pruning_utils.py | RoBERTa | saes_svd | 112450.6 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 684.50 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 0.0583 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> |
 | Codes/framework/compression_engine/pruning_utils.py | GPT-2 | saes_svd | 108340.2 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 710.20 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 0.0610 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [89.42, 76.8, 77.15]
+> These numbers must NOT be cited in the final paper.
+

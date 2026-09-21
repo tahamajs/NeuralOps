@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_block_transformer_hiba/gpt2/summary.csv | gpt2 | block_transformer_hiba | 12625.36 tok/s <!-- source: results/unified_block_transformer_hiba/gpt2/summary.csv line 3 --> | 568.95 MB <!-- source: results/unified_block_transformer_hiba/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_block_transformer_hiba/gpt2/summary.csv line 3 --> |
 | results/unified_block_transformer_hiba/roberta/summary.csv | roberta | full | 28086.77 tok/s <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 2 --> |
 | results/unified_block_transformer_hiba/roberta/summary.csv | roberta | block_transformer_hiba | 11047.94 tok/s <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 3 --> | 657.23 MB <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_block_transformer_hiba/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.60% | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| F1 Score | 0.9423 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+

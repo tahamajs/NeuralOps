@@ -66,7 +66,7 @@
 | Module | D acc | Params Δ | Note |
 |---|---|---|---|
 | full | 90.71% | 0 | Baseline |
-| `adaptive_svd` | 88.0% | -60% | Compression |
+<!-- FABRICATED: | `adaptive_svd` | 88.0% | -60% | Compression | -->
 | `nha` | 90.25% | +0.89% | Attention replace |
 | `adasplash` | 90.25% | +0.89% | Sparse |
 | **`flash3`** | **89.91** | **+48.5\%%** | **Hardware-opt** |
@@ -79,3 +79,24 @@
 - **Runtime on H100:** estimated 2-4× faster (not tested).
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.10% | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| F1 Score | 0.9075 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [88.0]
+> These numbers must NOT be cited in the final paper.
+

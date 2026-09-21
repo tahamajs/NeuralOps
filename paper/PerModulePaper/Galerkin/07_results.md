@@ -127,3 +127,25 @@ to **the basis itself**.
 - Verdict: **not recommended for any use case tested**
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 75.57% | `results/summary.csv` |
+| F1 Score | 0.7515 | `results/summary.csv` |
+| Compression | 1.000x | `results/summary.csv` |
+| Compressed Layers | 0 | `results/summary.csv` |
+| Fallback Layers | 0 | `results/summary.csv` |
+| Timestamp | 2026-09-20T01:50:18.958417 | `results/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 90.71, 90.71, 90.25, 90.71, 71.22]
+> These numbers must NOT be cited in the final paper.
+

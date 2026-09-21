@@ -113,3 +113,24 @@ appear similar in accuracy.
 - **No parameter or KV-cache reduction** — compute only.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 81.70% | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| F1 Score | 0.8167 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Compressed Layers | 6 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Fallback Layers | 0 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Timestamp | 2026-09-20T13:18:09.602691 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71]
+> These numbers must NOT be cited in the final paper.
+

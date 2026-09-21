@@ -10,7 +10,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | results/unified_gated_linear_attention/distilbert/summary.csv | distilbert | gated_linear_attention | PASS_LOW | 50.92% <!-- source: results/unified_gated_linear_attention/distilbert/summary.csv line 3 --> | 0.6748 <!-- source: results/unified_gated_linear_attention/distilbert/summary.csv line 3 --> |
 | results/unified_gated_linear_attention/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 2 --> |
 | results/unified_gated_linear_attention/gpt2/summary.csv | gpt2 | gated_linear_attention | PASS_LOW | 50.92% <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 3 --> | 0.6748 <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 3 --> |
-| results/unified_gated_linear_attention/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> |
+<!-- FABRICATED: | results/unified_gated_linear_attention/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> | -->
 | results/unified_gated_linear_attention/roberta/summary.csv | roberta | gated_linear_attention | PASS_LOW | 50.92% <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 3 --> | 0.6748 <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 3 --> |
 
 ## 7.2 Parameter Reduction and Model Efficiency
@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_gated_linear_attention/gpt2/summary.csv | gpt2 | gated_linear_attention | 7082.21 tok/s <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 3 --> | 607.03 MB <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_gated_linear_attention/gpt2/summary.csv line 3 --> |
 | results/unified_gated_linear_attention/roberta/summary.csv | roberta | full | 24605.55 tok/s <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 2 --> |
 | results/unified_gated_linear_attention/roberta/summary.csv | roberta | gated_linear_attention | 7769.12 tok/s <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 3 --> | 714.69 MB <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_gated_linear_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 62.50% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-25 23:55:55 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 75.0]
+> These numbers must NOT be cited in the final paper.
+

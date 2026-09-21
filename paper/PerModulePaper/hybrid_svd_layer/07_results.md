@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_hybrid_svd_layer/qwen3_5/summary.csv | qwen3_5 | hybrid_svd_layer | 1292.52 tok/s <!-- source: results/unified_hybrid_svd_layer/qwen3_5/summary.csv line 3 --> | 1796.78 MB <!-- source: results/unified_hybrid_svd_layer/qwen3_5/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hybrid_svd_layer/qwen3_5/summary.csv line 3 --> |
 | results/unified_hybrid_svd_layer/roberta/summary.csv | roberta | full | 94421.41 tok/s <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 2 --> |
 | results/unified_hybrid_svd_layer/roberta/summary.csv | roberta | hybrid_svd_layer | 81996.21 tok/s <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 3 --> | 630.13 MB <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 3 --> | 0.6672518915600247 <!-- source: results/unified_hybrid_svd_layer/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=77.18%, comp=1.907x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 77.18% | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+| F1 Score | 0.7715 | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+| Compression | 1.907x | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+| Compressed Layers | 36 | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+| Timestamp | 2026-09-11T19:09:00.956833 | `results/unified_hybrid_svd_layer/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 57.91, 67.89]
+> These numbers must NOT be cited in the final paper.
+

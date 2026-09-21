@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_minimal_svd_v2/gpt2/summary.csv | gpt2 | minimal_svd_v2 | 11161.39 tok/s <!-- source: results/unified_minimal_svd_v2/gpt2/summary.csv line 3 --> | 495.67 MB <!-- source: results/unified_minimal_svd_v2/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_minimal_svd_v2/gpt2/summary.csv line 3 --> |
 | results/unified_minimal_svd_v2/roberta/summary.csv | roberta | full | 27376.47 tok/s <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 2 --> |
 | results/unified_minimal_svd_v2/roberta/summary.csv | roberta | minimal_svd_v2 | 13146.62 tok/s <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 3 --> | 579.51 MB <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_minimal_svd_v2/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=88.30%, comp=1.152x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 88.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:51:07.151093 | `results/rank_ablation/agnews_rank32/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

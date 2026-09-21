@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/benchmark_summary_v2.csv | roberta-mrpc | kmeans_quantize | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 539 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 539 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 539 --> |
 | results/benchmark_summary_v2.csv | t5-sst2 | kmeans_quantize | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 540 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 540 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 540 --> |
 | results/benchmark_summary_v2.csv | t5-mrpc | kmeans_quantize | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 541 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 541 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 541 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 50.00% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:01:38 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+

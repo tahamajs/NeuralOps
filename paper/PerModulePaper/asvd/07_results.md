@@ -163,3 +163,18 @@
 | Avg compression time | [COMPRESS_TIME] s |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.964 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 100.00% | `results/long_context/summary.csv` |
+| F1 Score | 0.0000 | `results/long_context/summary.csv` |
+| Compression | 0.964x | `results/long_context/summary.csv` |
+| Compressed Layers | ? | `results/long_context/summary.csv` |
+| Fallback Layers | ? | `results/long_context/summary.csv` |
+| Timestamp | 2026-09-20T06:57:10 | `results/long_context/summary.csv` |
+

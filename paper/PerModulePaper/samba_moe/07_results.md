@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/benchmark_summary_v2.csv | roberta-mrpc | samba_moe | Latency 3144.01ms tok/s <!-- source: results/benchmark_summary_v2.csv line 347 --> | 5094.8 MB <!-- source: results/benchmark_summary_v2.csv line 347 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 347 --> |
 | results/benchmark_summary_v2.csv | t5-sst2 | samba_moe | Latency 3176.26ms tok/s <!-- source: results/benchmark_summary_v2.csv line 348 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 348 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 348 --> |
 | results/benchmark_summary_v2.csv | t5-mrpc | samba_moe | Latency 3170.7ms tok/s <!-- source: results/benchmark_summary_v2.csv line 349 --> | 5101.3 MB <!-- source: results/benchmark_summary_v2.csv line 349 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 349 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 88.30% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T08:14:17.931377 | `results/distilbert/summary.csv` |
+

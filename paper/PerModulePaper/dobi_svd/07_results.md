@@ -149,3 +149,18 @@
 - **All three models pass quality gate.**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.45% | `results/unified_dobi/qwen3_5/summary.csv` |
+| F1 Score | 0.8950 | `results/unified_dobi/qwen3_5/summary.csv` |
+| Compression | 1.000x | `results/unified_dobi/qwen3_5/summary.csv` |
+| Compressed Layers | 0 | `results/unified_dobi/qwen3_5/summary.csv` |
+| Fallback Layers | 48 | `results/unified_dobi/qwen3_5/summary.csv` |
+| Timestamp | 2026-09-08T19:12:01.195530 | `results/unified_dobi/qwen3_5/summary.csv` |
+

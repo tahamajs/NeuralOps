@@ -100,3 +100,24 @@ baseline accuracy at step 0.
 - **Attention is exact.**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 68.38% | `results/adaptive_v3/benchmark_summary.csv` |
+| F1 Score | 0.8122 | `results/adaptive_v3/benchmark_summary.csv` |
+| Compression | 1.000x | `results/adaptive_v3/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 09:40:39 | `results/adaptive_v3/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

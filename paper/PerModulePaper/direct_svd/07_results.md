@@ -41,3 +41,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_direct_svd/roberta/summary.csv | roberta | full | 27189.71 tok/s <!-- source: results/unified_direct_svd/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_direct_svd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_direct_svd/roberta/summary.csv line 2 --> |
 | results/unified_direct_svd/roberta/summary.csv | roberta | direct_svd | 22488.27 tok/s <!-- source: results/unified_direct_svd/roberta/summary.csv line 3 --> | 567.52 MB <!-- source: results/unified_direct_svd/roberta/summary.csv line 3 --> | 0.333649210018602 <!-- source: results/unified_direct_svd/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | direct_svd | Elapsed 0.776s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 32 --> | 106.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 32 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 32 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.40% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9401 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 36 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T16:17:52.454699 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

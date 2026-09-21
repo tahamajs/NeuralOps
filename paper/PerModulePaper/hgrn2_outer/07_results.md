@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_hgrn2_outer/gpt2/summary.csv | gpt2 | hgrn2_outer | 9386.81 tok/s <!-- source: results/unified_hgrn2_outer/gpt2/summary.csv line 3 --> | 569.81 MB <!-- source: results/unified_hgrn2_outer/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hgrn2_outer/gpt2/summary.csv line 3 --> |
 | results/unified_hgrn2_outer/roberta/summary.csv | roberta | full | 92775.9 tok/s <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 2 --> |
 | results/unified_hgrn2_outer/roberta/summary.csv | roberta | hgrn2_outer | 8864.8 tok/s <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 3 --> | 685.64 MB <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hgrn2_outer/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 72.36% | `results/unified_sweep/distilbert/summary.csv` |
+| F1 Score | 0.7372 | `results/unified_sweep/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
+| Timestamp | 2026-09-19T00:28:56.570282 | `results/unified_sweep/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 75.46]
+> These numbers must NOT be cited in the final paper.
+

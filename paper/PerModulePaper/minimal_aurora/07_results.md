@@ -105,10 +105,10 @@
 | Method | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
-| asvd ($r=32$) | 88.5% | 12× | 75.5% | 11× | 76.8% | 11× |
-| aasvd ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
-| a3 ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× |
-| res_svd (16,4) | 88.2% | 5.9× | 74.8% | 5.5× | 75.5% | 5.5× |
+<!-- FABRICATED: | asvd ($r=32$) | 88.5% | 12× | 75.5% | 11× | 76.8% | 11× | -->
+<!-- FABRICATED: | aasvd ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× | -->
+<!-- FABRICATED: | a3 ($r=64$) | 88.5% | 5× | 75.5% | 5× | 76.8% | 5× | -->
+<!-- FABRICATED: | res_svd (16,4) | 88.2% | 5.9× | 74.8% | 5.5× | 75.5% | 5.5× | -->
 | **minimal_aurora** | **85.44** | **50\%×** | **50.92** | **2.1\times×** | **50.92** | **2.1\times×** |
 
 ## 7.10 Failure Cases
@@ -120,3 +120,24 @@
 | GPT-2 | PASS | 50.92 | 32 |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=88.30%, comp=1.152x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 88.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.8826 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:49:58.176355 | `results/rank_ablation/agnews_rank32/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 75.5, 76.8, 75.5, 76.8, 75.5, 76.8, 74.8, 75.5]
+> These numbers must NOT be cited in the final paper.
+

@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_adaptive_compressor/gpt2/summary.csv | gpt2 | adaptive_compressor | 22313.99 tok/s <!-- source: results/unified_adaptive_compressor/gpt2/summary.csv line 3 --> | 638.52 MB <!-- source: results/unified_adaptive_compressor/gpt2/summary.csv line 3 --> | 0.1982078150637553 <!-- source: results/unified_adaptive_compressor/gpt2/summary.csv line 3 --> |
 | results/unified_adaptive_compressor/roberta/summary.csv | roberta | full | 25000.16 tok/s <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 2 --> | 299.92 MB <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 2 --> |
 | results/unified_adaptive_compressor/roberta/summary.csv | roberta | adaptive_compressor | 11130.61 tok/s <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 3 --> | 326.48 MB <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 3 --> | 0.0 <!-- source: results/unified_adaptive_compressor/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=84.50%, comp=1.002x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 84.50% | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+| F1 Score | 0.8376 | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+| Compression | 1.002x | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+| Compressed Layers | 1 | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+| Fallback Layers | 23 | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+| Timestamp | 2026-09-18T08:52:04.621635 | `results/agnews_unified_adaptive_compressor/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [79.36]
+> These numbers must NOT be cited in the final paper.
+

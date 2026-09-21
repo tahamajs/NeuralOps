@@ -35,3 +35,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_adaptive_ranks/qwen3_5/summary.csv | qwen3_5 | adaptive_ranks | 4497.54 tok/s <!-- source: results/unified_adaptive_ranks/qwen3_5/summary.csv line 2 --> | 1877.96 MB <!-- source: results/unified_adaptive_ranks/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_ranks/qwen3_5/summary.csv line 2 --> |
 | results/unified_adaptive_ranks/roberta/summary.csv | roberta | adaptive_ranks | 23773.5 tok/s <!-- source: results/unified_adaptive_ranks/roberta/summary.csv line 2 --> | 520.18 MB <!-- source: results/unified_adaptive_ranks/roberta/summary.csv line 2 --> | 0.0 <!-- source: results/unified_adaptive_ranks/roberta/summary.csv line 2 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | adaptive_ranks | Elapsed 0.932s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 7 --> | 168.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 7 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 7 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=84.50%, comp=1.002x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 84.50% | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+| F1 Score | 0.8376 | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+| Compression | 1.002x | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+| Compressed Layers | 1 | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+| Fallback Layers | 23 | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+| Timestamp | 2026-09-18T08:56:18.085792 | `results/agnews_unified_adaptive_ranks/gpt2/summary.csv` |
+

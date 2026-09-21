@@ -115,3 +115,18 @@ The optimal pruning ratio depends on the task.
 | Pruning speedup (r=0.5) | [PRUNE_SPEEDUP]× |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.10% | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| F1 Score | 0.9075 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+

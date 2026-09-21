@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_adaptive_span/qwen3_5/summary.csv | qwen3_5 | adaptive_span | 586.65 tok/s <!-- source: results/unified_adaptive_span/qwen3_5/summary.csv line 3 --> | 1651.46 MB <!-- source: results/unified_adaptive_span/qwen3_5/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_adaptive_span/qwen3_5/summary.csv line 3 --> |
 | results/unified_adaptive_span/roberta/summary.csv | roberta | full | 27199.86 tok/s <!-- source: results/unified_adaptive_span/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_adaptive_span/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adaptive_span/roberta/summary.csv line 2 --> |
 | results/unified_adaptive_span/roberta/summary.csv | roberta | adaptive_span | 13743.09 tok/s <!-- source: results/unified_adaptive_span/roberta/summary.csv line 3 --> | 624.7 MB <!-- source: results/unified_adaptive_span/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_adaptive_span/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 82.00% | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+| F1 Score | 0.8134 | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+| Compression | 1.000x | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+| Compressed Layers | 12 | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+| Timestamp | 2026-09-18T08:59:00.183083 | `results/agnews_unified_adaptive_span_attention/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 90.48, 77.52, 85.09]
+> These numbers must NOT be cited in the final paper.
+

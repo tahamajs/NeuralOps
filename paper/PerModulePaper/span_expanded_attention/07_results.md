@@ -38,3 +38,18 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_span_expanded/gpt2/summary.csv | gpt2 | span_expanded | 6598.64 tok/s <!-- source: results/unified_span_expanded/gpt2/summary.csv line 3 --> | 568.95 MB <!-- source: results/unified_span_expanded/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_span_expanded/gpt2/summary.csv line 3 --> |
 | results/unified_span_expanded/roberta/summary.csv | roberta | full | 14453.13 tok/s <!-- source: results/unified_span_expanded/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_span_expanded/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_span_expanded/roberta/summary.csv line 2 --> |
 | results/unified_span_expanded/roberta/summary.csv | roberta | span_expanded | 6547.07 tok/s <!-- source: results/unified_span_expanded/roberta/summary.csv line 3 --> | 657.23 MB <!-- source: results/unified_span_expanded/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_span_expanded/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 90.71, 79.36, 79.24, 78.56, 81.65]
+> These numbers must NOT be cited in the final paper.
+

@@ -154,3 +154,24 @@ parameter count.
 - **Reproduction successful:** MLA ports to four non-DeepSeek families.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 34.70% | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| F1 Score | 0.0000 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compressed Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Fallback Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Timestamp | 2026-09-20T14:57:12.882337 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

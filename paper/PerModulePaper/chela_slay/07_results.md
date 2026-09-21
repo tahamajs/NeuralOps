@@ -135,3 +135,18 @@ $L = 128$.
 - **Gate:** learned near-dense (mean 0.92).
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.60% | `results/unified_sweep/distilbert/summary.csv` |
+| F1 Score | 0.9091 | `results/unified_sweep/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
+| Timestamp | 2026-09-18T22:58:14.712540 | `results/unified_sweep/distilbert/summary.csv` |
+

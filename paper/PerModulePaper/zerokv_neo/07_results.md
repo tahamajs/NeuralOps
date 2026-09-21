@@ -41,3 +41,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_zerokv_neo/roberta/summary.csv | roberta | full | 23372.01 tok/s <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 2 --> |
 | results/unified_zerokv_neo/roberta/summary.csv | roberta | zerokv_neo | 23289.24 tok/s <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 3 --> | 531.69 MB <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 3 --> | 0.7596934036492637 <!-- source: results/unified_zerokv_neo/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | zerokv_neo | Elapsed 0.177s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 122 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 122 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 122 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 80.50% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T08:27:22.345684 | `results/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 87.84]
+> These numbers must NOT be cited in the final paper.
+

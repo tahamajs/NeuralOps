@@ -116,3 +116,24 @@
 - **Parameter increase:** 48.5\%%.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 69.13% | `results/t5_cola_parallel/summary.csv` |
+| F1 Score | 0.0000 | `results/t5_cola_parallel/summary.csv` |
+| Compression | 1.000x | `results/t5_cola_parallel/summary.csv` |
+| Compressed Layers | ? | `results/t5_cola_parallel/summary.csv` |
+| Fallback Layers | ? | `results/t5_cola_parallel/summary.csv` |
+| Timestamp | 2026-09-01T02:21:18.180537 | `results/t5_cola_parallel/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

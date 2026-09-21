@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_progressive_token_pruning/gpt2/summary.csv | gpt2 | progressive_token_pruning | 9616.22 tok/s <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 571.22 MB <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/gpt2/summary.csv line 3 --> |
 | results/unified_progressive_token_pruning/roberta/summary.csv | roberta | full | 24405.65 tok/s <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 2 --> |
 | results/unified_progressive_token_pruning/roberta/summary.csv | roberta | progressive_token_pruning | 9969.38 tok/s <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 663.42 MB <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_progressive_token_pruning/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 86.93% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T08:08:02.305773 | `results/distilbert/summary.csv` |
+

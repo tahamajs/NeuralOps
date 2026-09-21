@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_cur_moe/roberta/summary.csv | roberta | full | 26781.23 tok/s <!-- source: results/unified_cur_moe/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_cur_moe/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_cur_moe/roberta/summary.csv line 2 --> |
 | results/unified_cur_moe/roberta/summary.csv | roberta | cur_moe | 20364.41 tok/s <!-- source: results/unified_cur_moe/roberta/summary.csv line 3 --> | 615.57 MB <!-- source: results/unified_cur_moe/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_cur_moe/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | cur_moe | Elapsed 0.166s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 29 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 29 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 29 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=94.30%, comp=1.056x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.30% | `results/pareto_table.csv` |
+| F1 Score | 0.9392 | `results/pareto_table.csv` |
+| Compression | 1.056x | `results/pareto_table.csv` |
+| Compressed Layers | 0 | `results/pareto_table.csv` |
+| Fallback Layers | 0 | `results/pareto_table.csv` |
+| Timestamp | 2026-09-19T16:14:33.169476 | `results/pareto_table.csv` |
+

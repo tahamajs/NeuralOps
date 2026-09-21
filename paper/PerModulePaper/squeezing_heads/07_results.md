@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_squeezing_heads/gpt2/summary.csv | gpt2 | squeezing_heads | 12147.68 tok/s <!-- source: results/unified_squeezing_heads/gpt2/summary.csv line 3 --> | 325.93 MB <!-- source: results/unified_squeezing_heads/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads/gpt2/summary.csv line 3 --> |
 | results/unified_squeezing_heads/roberta/summary.csv | roberta | full | 27118.79 tok/s <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 2 --> |
 | results/unified_squeezing_heads/roberta/summary.csv | roberta | squeezing_heads | 14971.31 tok/s <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 3 --> | 371.96 MB <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.30% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9391 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T18:51:14.038525 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+

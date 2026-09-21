@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_replace/gpt2/summary.csv | gpt2 | replace | 63288.7 tok/s <!-- source: results/unified_replace/gpt2/summary.csv line 3 --> | 793.19 MB <!-- source: results/unified_replace/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_replace/gpt2/summary.csv line 3 --> |
 | results/unified_replace/roberta/summary.csv | roberta | full | 86937.12 tok/s <!-- source: results/unified_replace/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_replace/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_replace/roberta/summary.csv line 2 --> |
 | results/unified_replace/roberta/summary.csv | roberta | replace | 86937.12 tok/s <!-- source: results/unified_replace/roberta/summary.csv line 3 --> | 298.71 MB <!-- source: results/unified_replace/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_replace/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 92.60% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9223 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T18:22:50.707941 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 60.78, 75.11]
+> These numbers must NOT be cited in the final paper.
+

@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_swift_svd/roberta/summary.csv | roberta | full | 87965.94 tok/s <!-- source: results/unified_swift_svd/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_swift_svd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_swift_svd/roberta/summary.csv line 2 --> |
 | results/unified_swift_svd/roberta/summary.csv | roberta | swift_svd | 73089.63 tok/s <!-- source: results/unified_swift_svd/roberta/summary.csv line 3 --> | 629.7 MB <!-- source: results/unified_swift_svd/roberta/summary.csv line 3 --> | 0.1889018558170913 <!-- source: results/unified_swift_svd/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | swift_svd | Elapsed 0.883s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 117 --> | 176.2 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 117 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 117 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=89.30%, comp=1.344x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.30% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.8902 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.344x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:56:37.738418 | `results/rank_ablation/agnews_rank32/summary.csv` |
+

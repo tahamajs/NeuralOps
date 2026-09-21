@@ -44,3 +44,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/benchmark_summary_v2.csv | roberta-mrpc | bonsai_pruner | Latency 27.31ms tok/s <!-- source: results/benchmark_summary_v2.csv line 623 --> | 581.7 MB <!-- source: results/benchmark_summary_v2.csv line 623 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 623 --> |
 | results/benchmark_summary_v2.csv | t5-sst2 | bonsai_pruner | Latency 52.51ms tok/s <!-- source: results/benchmark_summary_v2.csv line 624 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 624 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 624 --> |
 | results/benchmark_summary_v2.csv | t5-mrpc | bonsai_pruner | Latency 52.37ms tok/s <!-- source: results/benchmark_summary_v2.csv line 625 --> | 1107.2 MB <!-- source: results/benchmark_summary_v2.csv line 625 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 625 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 50.00% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:01:53 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+

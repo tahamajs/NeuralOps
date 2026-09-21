@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_soa_attn/gpt2/summary.csv | gpt2 | soa_attn | 12419.29 tok/s <!-- source: results/unified_soa_attn/gpt2/summary.csv line 3 --> | 301.23 MB <!-- source: results/unified_soa_attn/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_attn/gpt2/summary.csv line 3 --> |
 | results/unified_soa_attn/roberta/summary.csv | roberta | full | 26620.13 tok/s <!-- source: results/unified_soa_attn/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_soa_attn/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_soa_attn/roberta/summary.csv line 2 --> |
 | results/unified_soa_attn/roberta/summary.csv | roberta | soa_attn | 26620.13 tok/s <!-- source: results/unified_soa_attn/roberta/summary.csv line 3 --> | 712.34 MB <!-- source: results/unified_soa_attn/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_attn/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=93.90%, comp=1.111x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.90% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9355 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.111x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T18:40:17.965053 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+

@@ -128,3 +128,18 @@ reconstruction at each forward pass.
 - Verdict: **Verified**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=91.40%, comp=1.076x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 91.40% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.9122 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.076x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-20T00:39:08.942713 | `results/rank_ablation/ablation_all_rows.csv` |
+

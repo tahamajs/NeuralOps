@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_mgie_svd/gpt2/summary.csv | gpt2 | mgie_svd | 70762.65 tok/s <!-- source: results/unified_mgie_svd/gpt2/summary.csv line 3 --> | 637.29 MB <!-- source: results/unified_mgie_svd/gpt2/summary.csv line 3 --> | 0.4203306436538696 <!-- source: results/unified_mgie_svd/gpt2/summary.csv line 3 --> |
 | results/unified_mgie_svd/roberta/summary.csv | roberta | full | 104401.95 tok/s <!-- source: results/unified_mgie_svd/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_mgie_svd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_mgie_svd/roberta/summary.csv line 2 --> |
 | results/unified_mgie_svd/roberta/summary.csv | roberta | mgie_svd | 107325.79 tok/s <!-- source: results/unified_mgie_svd/roberta/summary.csv line 3 --> | 301.72 MB <!-- source: results/unified_mgie_svd/roberta/summary.csv line 3 --> | 0.0 <!-- source: results/unified_mgie_svd/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=60.09%, comp=1.003x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 60.09% | `results/unified_mgie_svd/gpt2/summary.csv` |
+| F1 Score | 0.6463 | `results/unified_mgie_svd/gpt2/summary.csv` |
+| Compression | 1.003x | `results/unified_mgie_svd/gpt2/summary.csv` |
+| Compressed Layers | 1 | `results/unified_mgie_svd/gpt2/summary.csv` |
+| Fallback Layers | 47 | `results/unified_mgie_svd/gpt2/summary.csv` |
+| Timestamp | 2026-09-11T02:48:43.064393 | `results/unified_mgie_svd/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [75.11]
+> These numbers must NOT be cited in the final paper.
+

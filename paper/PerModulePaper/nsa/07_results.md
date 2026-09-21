@@ -126,3 +126,24 @@
 - **All models pass quality gate.**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.60% | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| F1 Score | 0.9423 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36]
+> These numbers must NOT be cited in the final paper.
+

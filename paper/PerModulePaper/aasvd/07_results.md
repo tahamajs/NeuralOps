@@ -185,3 +185,19 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 - **Accuracy drop:** -1.26%–+1.37%
 - **VRAM reduction:** 40%
 - **All models pass quality gate.**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=94.50%, comp=1.016x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.50% | `results/rank_ablation/agnews_rank32/summary.csv` |
+| F1 Score | 0.9410 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compression | 1.016x | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Compressed Layers | 2 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Fallback Layers | 22 | `results/rank_ablation/agnews_rank32/summary.csv` |
+| Timestamp | 2026-09-19T23:41:55.180117 | `results/rank_ablation/agnews_rank32/summary.csv` |
+

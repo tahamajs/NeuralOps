@@ -38,3 +38,18 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_qcqa/gpt2/summary.csv | gpt2 | qcqa | 31268.37 tok/s <!-- source: results/unified_qcqa/gpt2/summary.csv line 3 --> | 568.75 MB <!-- source: results/unified_qcqa/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_qcqa/gpt2/summary.csv line 3 --> |
 | results/unified_qcqa/roberta/summary.csv | roberta | full | 96386.47 tok/s <!-- source: results/unified_qcqa/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_qcqa/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_qcqa/roberta/summary.csv line 2 --> |
 | results/unified_qcqa/roberta/summary.csv | roberta | qcqa | 34912.42 tok/s <!-- source: results/unified_qcqa/roberta/summary.csv line 3 --> | 382.56 MB <!-- source: results/unified_qcqa/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_qcqa/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 63.76, 60.78, 50.92, 75.11, 51.03]
+> These numbers must NOT be cited in the final paper.
+

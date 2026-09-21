@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_aegis_v4/gpt2/summary.csv | gpt2 | aegis_v4 | 9810.48 tok/s <!-- source: results/unified_aegis_v4/gpt2/summary.csv line 3 --> | 590.29 MB <!-- source: results/unified_aegis_v4/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_v4/gpt2/summary.csv line 3 --> |
 | results/unified_aegis_v4/roberta/summary.csv | roberta | full | 24513.32 tok/s <!-- source: results/unified_aegis_v4/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_aegis_v4/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_aegis_v4/roberta/summary.csv line 2 --> |
 | results/unified_aegis_v4/roberta/summary.csv | roberta | aegis_v4 | 6149.86 tok/s <!-- source: results/unified_aegis_v4/roberta/summary.csv line 3 --> | 676.53 MB <!-- source: results/unified_aegis_v4/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_v4/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=89.80%, comp=1.197x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.80% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.8954 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.197x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T16:08:14.967776 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56]
+> These numbers must NOT be cited in the final paper.
+

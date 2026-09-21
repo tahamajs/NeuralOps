@@ -114,3 +114,18 @@
 - **Variational sampling helps** by 0.3% over deterministic.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=93.50%, comp=1.036x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.50% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.9304 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.036x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-20T00:42:27.530684 | `results/rank_ablation/ablation_all_rows.csv` |
+

@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_squeezing_heads_distiller/gpt2/summary.csv | gpt2 | squeezing_heads_distiller | 37124.06 tok/s <!-- source: results/unified_squeezing_heads_distiller/gpt2/summary.csv line 3 --> | 568.71 MB <!-- source: results/unified_squeezing_heads_distiller/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distiller/gpt2/summary.csv line 3 --> |
 | results/unified_squeezing_heads_distiller/roberta/summary.csv | roberta | full | 87460.63 tok/s <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 2 --> |
 | results/unified_squeezing_heads_distiller/roberta/summary.csv | roberta | squeezing_heads_distiller | 45143.43 tok/s <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 3 --> | 379.87 MB <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_squeezing_heads_distiller/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.60% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T08:17:38.246771 | `results/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [60.78]
+> These numbers must NOT be cited in the final paper.
+

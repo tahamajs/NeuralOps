@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_aegis_spectron_fp8/gpt2/summary.csv | gpt2 | aegis_spectron_fp8 | 5217.46 tok/s <!-- source: results/unified_aegis_spectron_fp8/gpt2/summary.csv line 3 --> | 643.49 MB <!-- source: results/unified_aegis_spectron_fp8/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_spectron_fp8/gpt2/summary.csv line 3 --> |
 | results/unified_aegis_spectron_fp8/roberta/summary.csv | roberta | full | 23592.51 tok/s <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 2 --> |
 | results/unified_aegis_spectron_fp8/roberta/summary.csv | roberta | aegis_spectron_fp8 | 4840.56 tok/s <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 3 --> | 572.68 MB <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_aegis_spectron_fp8/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=79.59%, comp=1.223x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 79.59% | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+| F1 Score | 0.8118 | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+| Compression | 1.223x | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+| Timestamp | 2026-09-15T10:06:57.863839 | `results/unified_aegis_spectron_fp8/distilbert/summary.csv` |
+

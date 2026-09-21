@@ -1,0 +1,3358 @@
+{
+  "total": 217,
+  "counts": {
+    "NO_DATA": 24,
+    "FALLBACK": 142,
+    "VALID": 46,
+    "COLLAPSED": 0,
+    "BROKEN": 4,
+    "QUESTIONABLE": 1
+  },
+  "fabricated": 152,
+  "results": [
+    {
+      "idx": 1,
+      "name": "AdaptiveSVD",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 2,
+      "name": "AdaptiveSpanAttention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 3,
+      "name": "AdaptiveSparseAttention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 4,
+      "name": "Galerkin",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "75.57%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        90.71,
+        90.25,
+        90.71,
+        71.22
+      ],
+      "csv_rows": 35,
+      "source": "results/summary.csv"
+    },
+    {
+      "idx": 5,
+      "name": "HALO",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        90.25,
+        78.78
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 6,
+      "name": "OH",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        90.25,
+        78.78,
+        89.5,
+        76.5,
+        77.5
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 7,
+      "name": "Primal",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "82.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        78.56,
+        78.78
+      ],
+      "csv_rows": 25,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 8,
+      "name": "SOAFusedAttention",
+      "classification": "VALID",
+      "detail": "acc=76.30%, comp=1.145x",
+      "accuracy": "76.30%",
+      "compression": "1.145x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56
+      ],
+      "csv_rows": 33,
+      "source": "...fusedattention/distilbert/summary.csv"
+    },
+    {
+      "idx": 9,
+      "name": "SqueezingHeadsAttentionDistillationLayer",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 10,
+      "name": "a3",
+      "classification": "VALID",
+      "detail": "acc=100.00%, comp=1.094x",
+      "accuracy": "100.00%",
+      "compression": "1.094x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 95,
+      "source": "results/long_context/summary.csv"
+    },
+    {
+      "idx": 11,
+      "name": "aa_svd_compressor",
+      "classification": "VALID",
+      "detail": "acc=85.80%, comp=1.133x",
+      "accuracy": "85.80%",
+      "compression": "1.133x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 10,
+      "source": "...svd_compressor/distilbert/summary.csv"
+    },
+    {
+      "idx": 12,
+      "name": "aasvd",
+      "classification": "VALID",
+      "detail": "acc=94.50%, comp=1.016x",
+      "accuracy": "94.50%",
+      "compression": "1.016x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 137,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 13,
+      "name": "adaptive_compressor",
+      "classification": "VALID",
+      "detail": "acc=84.50%, comp=1.002x",
+      "accuracy": "84.50%",
+      "compression": "1.002x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36
+      ],
+      "csv_rows": 8,
+      "source": "..._adaptive_compressor/gpt2/summary.csv"
+    },
+    {
+      "idx": 14,
+      "name": "adaptive_ranks",
+      "classification": "VALID",
+      "detail": "acc=84.50%, comp=1.002x",
+      "accuracy": "84.50%",
+      "compression": "1.002x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 45,
+      "source": "...ified_adaptive_ranks/gpt2/summary.csv"
+    },
+    {
+      "idx": 15,
+      "name": "adaptive_span_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "82.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.48,
+        77.52,
+        85.09
+      ],
+      "csv_rows": 15,
+      "source": "...ptive_span_attention/gpt2/summary.csv"
+    },
+    {
+      "idx": 16,
+      "name": "adaptive_sparse_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.55,
+        78.56,
+        90.71,
+        79.36,
+        67.89,
+        78.56
+      ],
+      "csv_rows": 33,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 17,
+      "name": "adaptive_svd_attention",
+      "classification": "VALID",
+      "detail": "acc=74.60%, comp=1.152x",
+      "accuracy": "74.60%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 85,
+      "source": "..._svd_attention/distilbert/summary.csv"
+    },
+    {
+      "idx": 18,
+      "name": "adasplash",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 40,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 19,
+      "name": "adasvd_compressor",
+      "classification": "BROKEN",
+      "detail": "Error: RuntimeError: Compressor 'adasvd_compressor' not found in COMPRESSOR_REGISTRY",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        86.01,
+        79.36,
+        63.76,
+        67.55,
+        78.56,
+        73.39
+      ],
+      "csv_rows": 3,
+      "source": "...svd_compressor/distilbert/summary.csv"
+    },
+    {
+      "idx": 20,
+      "name": "admm_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "81.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.37,
+        67.55,
+        88.42,
+        78.56,
+        62.04
+      ],
+      "csv_rows": 4,
+      "source": "...d_admm_compressor/roberta/summary.csv"
+    },
+    {
+      "idx": 21,
+      "name": "admm_pruner",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 64,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 22,
+      "name": "aegis_hybrid",
+      "classification": "VALID",
+      "detail": "acc=93.00%, comp=1.050x",
+      "accuracy": "93.00%",
+      "compression": "1.050x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 104,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 23,
+      "name": "aegis_spectron_fp8",
+      "classification": "VALID",
+      "detail": "acc=79.59%, comp=1.223x",
+      "accuracy": "79.59%",
+      "compression": "1.223x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 67,
+      "source": "...s_spectron_fp8/distilbert/summary.csv"
+    },
+    {
+      "idx": 24,
+      "name": "aegis_v1",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "87.04%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71
+      ],
+      "csv_rows": 73,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 25,
+      "name": "aegis_v2",
+      "classification": "VALID",
+      "detail": "acc=84.17%, comp=1.181x",
+      "accuracy": "84.17%",
+      "compression": "1.181x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 70,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 26,
+      "name": "aegis_v3",
+      "classification": "VALID",
+      "detail": "acc=90.10%, comp=1.197x",
+      "accuracy": "90.10%",
+      "compression": "1.197x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 100,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 27,
+      "name": "aegis_v4",
+      "classification": "VALID",
+      "detail": "acc=89.80%, comp=1.197x",
+      "accuracy": "89.80%",
+      "compression": "1.197x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56
+      ],
+      "csv_rows": 100,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 28,
+      "name": "aegis_v5",
+      "classification": "VALID",
+      "detail": "acc=89.80%, comp=1.197x",
+      "accuracy": "89.80%",
+      "compression": "1.197x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 101,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 29,
+      "name": "aegis_v6",
+      "classification": "VALID",
+      "detail": "acc=93.30%, comp=1.252x",
+      "accuracy": "93.30%",
+      "compression": "1.252x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 111,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 30,
+      "name": "armor_pruner",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.55
+      ],
+      "csv_rows": 37,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 31,
+      "name": "ast_pruner",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 34,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 32,
+      "name": "astro_quantizer",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "83.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        79.36,
+        77.87,
+        67.55,
+        87.5,
+        78.56,
+        74.77
+      ],
+      "csv_rows": 34,
+      "source": "...d_astro_quantizer/roberta/summary.csv"
+    },
+    {
+      "idx": 33,
+      "name": "asvd",
+      "classification": "FALLBACK",
+      "detail": "comp=0.964 (no compression)",
+      "accuracy": "100.00%",
+      "compression": "0.964x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 41,
+      "source": "results/long_context/summary.csv"
+    },
+    {
+      "idx": 34,
+      "name": "bam_umoe",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 56,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 35,
+      "name": "block_transformer_hiba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 82,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 36,
+      "name": "bonsai_pruner",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "50.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 34,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 37,
+      "name": "cachenotes_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "81.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.6,
+        74.77,
+        67.55,
+        89.22,
+        78.56
+      ],
+      "csv_rows": 34,
+      "source": "...achenotes_compressor/gpt2/summary.csv"
+    },
+    {
+      "idx": 38,
+      "name": "chela_slay",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 50,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 39,
+      "name": "cluster",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 39,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 40,
+      "name": "come",
+      "classification": "VALID",
+      "detail": "acc=91.50%, comp=1.241x",
+      "accuracy": "91.50%",
+      "compression": "1.241x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.89
+      ],
+      "csv_rows": 98,
+      "source": "results/pareto_table.csv"
+    },
+    {
+      "idx": 41,
+      "name": "compot_compressor",
+      "classification": "BROKEN",
+      "detail": "Error: note: zero compressed layers, model grew (LoRA only)",
+      "accuracy": "82.30%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 3,
+      "source": "...compot_compressor/roberta/summary.csv"
+    },
+    {
+      "idx": 42,
+      "name": "compressed_attention",
+      "classification": "VALID",
+      "detail": "acc=78.60%, comp=1.110x",
+      "accuracy": "78.60%",
+      "compression": "1.110x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71
+      ],
+      "csv_rows": 49,
+      "source": "...weep/summary_snapshot_post_group7.csv"
+    },
+    {
+      "idx": 43,
+      "name": "compressed_mha",
+      "classification": "VALID",
+      "detail": "acc=76.60%, comp=1.110x",
+      "accuracy": "76.60%",
+      "compression": "1.110x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 37,
+      "source": "...weep/summary_snapshot_post_group7.csv"
+    },
+    {
+      "idx": 44,
+      "name": "coopq_quantizer",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "50.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 31,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 45,
+      "name": "cosformer",
+      "classification": "FALLBACK",
+      "detail": "comp=0.992 (no compression)",
+      "accuracy": "100.00%",
+      "compression": "0.992x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        90.25,
+        90.71,
+        71.22,
+        58.72
+      ],
+      "csv_rows": 83,
+      "source": "results/long_context/summary.csv"
+    },
+    {
+      "idx": 46,
+      "name": "cr_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 47,
+      "name": "cur_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        79.36,
+        79.36,
+        78.56,
+        78.56
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 48,
+      "name": "cur_linear",
+      "classification": "BROKEN",
+      "detail": "Error: note: zero compressed layers, model grew (LoRA only)",
+      "accuracy": "90.71%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.89
+      ],
+      "csv_rows": 4,
+      "source": "...ied_cur_linear/distilbert/summary.csv"
+    },
+    {
+      "idx": 49,
+      "name": "cur_moe",
+      "classification": "VALID",
+      "detail": "acc=94.30%, comp=1.056x",
+      "accuracy": "94.30%",
+      "compression": "1.056x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 114,
+      "source": "results/pareto_table.csv"
+    },
+    {
+      "idx": 50,
+      "name": "cure",
+      "classification": "BROKEN",
+      "detail": "Error: note: zero compressed layers, model grew (LoRA only)",
+      "accuracy": "90.71%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.89
+      ],
+      "csv_rows": 4,
+      "source": "...s/unified_cure/distilbert/summary.csv"
+    },
+    {
+      "idx": 51,
+      "name": "decay_linear_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 58,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 52,
+      "name": "delta_kv",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "95.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 63,
+      "source": "results/pareto_table.csv"
+    },
+    {
+      "idx": 53,
+      "name": "direct_svd",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.40%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        78.56
+      ],
+      "csv_rows": 63,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 54,
+      "name": "dobi",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        67.89
+      ],
+      "csv_rows": 31,
+      "source": "results/pareto_table.csv"
+    },
+    {
+      "idx": 55,
+      "name": "dobi_svd",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "89.45%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 42,
+      "source": "results/unified_dobi/qwen3_5/summary.csv"
+    },
+    {
+      "idx": 56,
+      "name": "dynamic_entropy",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        67.89,
+        78.56
+      ],
+      "csv_rows": 5,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 57,
+      "name": "dynamic_rank",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.40%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 57,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 58,
+      "name": "eat",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.10%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 49,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 59,
+      "name": "enlighten_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        89.22,
+        79.36,
+        61.12,
+        78.56,
+        51.03
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 60,
+      "name": "entropy_budget_allocation",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 34,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 61,
+      "name": "erc_svd",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 38,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 62,
+      "name": "expert_choice_moe",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 54,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 63,
+      "name": "factorised_matrix_state",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "75.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 75,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 64,
+      "name": "faq_quantizer",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.48,
+        79.36,
+        78.56,
+        78.56,
+        80.05
+      ],
+      "csv_rows": 31,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 65,
+      "name": "flap",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 60,
+      "source": "results/pareto_table.csv"
+    },
+    {
+      "idx": 66,
+      "name": "flash3",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.10%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        88.0
+      ],
+      "csv_rows": 37,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 67,
+      "name": "flash_attention3",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 45,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 68,
+      "name": "flash_attention3_fp8",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        90.25,
+        78.78,
+        90.71,
+        64.56,
+        78.44,
+        79.13,
+        50.92,
+        71.22
+      ],
+      "csv_rows": 15,
+      "source": "...t_2026_08_26/benchmark_summary_v2.csv"
+    },
+    {
+      "idx": 69,
+      "name": "flat_llm",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 59,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 70,
+      "name": "frandi",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.80%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 59,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 71,
+      "name": "full_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "35.20%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 26,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 72,
+      "name": "fused_svd_kernel",
+      "classification": "VALID",
+      "detail": "acc=91.90%, comp=1.076x",
+      "accuracy": "91.90%",
+      "compression": "1.076x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 101,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 73,
+      "name": "fusion",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        90.25,
+        90.25
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 74,
+      "name": "fusion_attn",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.12%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 68,
+      "source": "results/roberta/summary.csv"
+    },
+    {
+      "idx": 75,
+      "name": "galerkin_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.63%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71
+      ],
+      "csv_rows": 59,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 76,
+      "name": "gated_delta_net",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "70.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        90.25
+      ],
+      "csv_rows": 67,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 77,
+      "name": "gated_deltanet_block",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "75.11%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        86.5,
+        90.71,
+        86.5
+      ],
+      "csv_rows": 62,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 78,
+      "name": "gated_linear_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        75.0
+      ],
+      "csv_rows": 56,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 79,
+      "name": "gfws_d_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 80,
+      "name": "goldfinch_ahn",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.17%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 36,
+      "source": "results/roberta/summary.csv"
+    },
+    {
+      "idx": 81,
+      "name": "gqa",
+      "classification": "QUESTIONABLE",
+      "detail": "acc=44.10%, comp=1.078x",
+      "accuracy": "44.10%",
+      "compression": "1.078x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        78.78
+      ],
+      "csv_rows": 61,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 82,
+      "name": "granite_hybrid",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.14%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        57.91,
+        75.0
+      ],
+      "csv_rows": 49,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 83,
+      "name": "grecodec",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.80%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 60,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 84,
+      "name": "griffin_ssd",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.14%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        78.56
+      ],
+      "csv_rows": 68,
+      "source": "results/roberta/summary.csv"
+    },
+    {
+      "idx": 85,
+      "name": "halo_regla",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.94%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 65,
+      "source": "results/roberta/summary.csv"
+    },
+    {
+      "idx": 86,
+      "name": "hamming_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.13,
+        79.36,
+        71.22,
+        78.56
+      ],
+      "csv_rows": 38,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 87,
+      "name": "hashed_linear",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "89.68%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78,
+        67.89,
+        75.11
+      ],
+      "csv_rows": 4,
+      "source": "..._hashed_linear/distilbert/summary.csv"
+    },
+    {
+      "idx": 88,
+      "name": "hashed_net_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 89,
+      "name": "hgrn2_gated_deltanet",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 65,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 90,
+      "name": "hgrn2_layer",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 59,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 91,
+      "name": "hgrn2_outer",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "72.36%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        75.46
+      ],
+      "csv_rows": 67,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 92,
+      "name": "hla_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        75.46,
+        90.94,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 19,
+      "source": "...t_2026_08_26/benchmark_summary_v2.csv"
+    },
+    {
+      "idx": 93,
+      "name": "huffman_coder",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        57.91,
+        67.89,
+        75.46
+      ],
+      "csv_rows": 5,
+      "source": "..._huffman_coder/distilbert/summary.csv"
+    },
+    {
+      "idx": 94,
+      "name": "hybrid_svd_layer",
+      "classification": "VALID",
+      "detail": "acc=77.18%, comp=1.907x",
+      "accuracy": "77.18%",
+      "compression": "1.907x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        67.89
+      ],
+      "csv_rows": 5,
+      "source": "...brid_svd_layer/distilbert/summary.csv"
+    },
+    {
+      "idx": 95,
+      "name": "hybridkv",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.30%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 59,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 96,
+      "name": "hymba_transx",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "88.65%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36
+      ],
+      "csv_rows": 56,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 97,
+      "name": "infini",
+      "classification": "FALLBACK",
+      "detail": "comp=0.983 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "0.983x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        78.78,
+        78.78
+      ],
+      "csv_rows": 28,
+      "source": "...unified_infini/distilbert/summary.csv"
+    },
+    {
+      "idx": 98,
+      "name": "jamba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "88.99%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.46
+      ],
+      "csv_rows": 58,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 99,
+      "name": "jamba_info",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "89.45%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36
+      ],
+      "csv_rows": 52,
+      "source": "results/roberta/summary.csv"
+    },
+    {
+      "idx": 100,
+      "name": "kda_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        76.83,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 39,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 101,
+      "name": "kmeans_quantize",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "50.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 34,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 102,
+      "name": "kronecker_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        90.94,
+        60.78,
+        60.32,
+        75.11,
+        70.07
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 103,
+      "name": "kronecker_linear",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.71%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.89
+      ],
+      "csv_rows": 5,
+      "source": "...onecker_linear/distilbert/summary.csv"
+    },
+    {
+      "idx": 104,
+      "name": "kronecker_tt_lora",
+      "classification": "FALLBACK",
+      "detail": "comp=0.978 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "0.978x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 60,
+      "source": "...necker_tt_lora/distilbert/summary.csv"
+    },
+    {
+      "idx": 105,
+      "name": "kvtc",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.20%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 59,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 106,
+      "name": "leka_v1",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "69.13%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 65,
+      "source": "results/t5_cola_parallel/summary.csv"
+    },
+    {
+      "idx": 107,
+      "name": "leka_v2",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.37%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 64,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 108,
+      "name": "leka_v3",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "80.05%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        90.25,
+        90.71
+      ],
+      "csv_rows": 68,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 109,
+      "name": "liftr",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.90%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.0
+      ],
+      "csv_rows": 59,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 110,
+      "name": "lillama_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        87.5,
+        56.88,
+        75.0,
+        85.44
+      ],
+      "csv_rows": 31,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 111,
+      "name": "linformer_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "77.20%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36
+      ],
+      "csv_rows": 99,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 112,
+      "name": "lola_attention",
+      "classification": "VALID",
+      "detail": "acc=77.98%, comp=1.227x",
+      "accuracy": "77.98%",
+      "compression": "1.227x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71
+      ],
+      "csv_rows": 16,
+      "source": "...lola_attention/distilbert/summary.csv"
+    },
+    {
+      "idx": 113,
+      "name": "lora_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 23,
+      "source": "results/neuralops_mrpc_results.csv"
+    },
+    {
+      "idx": 114,
+      "name": "lsc_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        90.48,
+        60.78,
+        62.04,
+        75.11,
+        72.02
+      ],
+      "csv_rows": 1,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 115,
+      "name": "lsh_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=0.991 (no compression)",
+      "accuracy": "80.62%",
+      "compression": "0.991x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 4,
+      "source": "...nified_lsh_attention/gpt2/summary.csv"
+    },
+    {
+      "idx": 116,
+      "name": "mamba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "34.10%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 45,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 117,
+      "name": "mamba_inject",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 7,
+      "source": "results/master_aggregated_results.csv"
+    },
+    {
+      "idx": 118,
+      "name": "mamba_shedder",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.80%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 76,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 119,
+      "name": "mamba_svd_flash",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 51,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 120,
+      "name": "mgie_svd",
+      "classification": "VALID",
+      "detail": "acc=60.09%, comp=1.003x",
+      "accuracy": "60.09%",
+      "compression": "1.003x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 4,
+      "source": "...lts/unified_mgie_svd/gpt2/summary.csv"
+    },
+    {
+      "idx": 121,
+      "name": "minimal_aurora",
+      "classification": "VALID",
+      "detail": "acc=88.30%, comp=1.152x",
+      "accuracy": "88.30%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        75.5,
+        76.8,
+        75.5,
+        76.8,
+        75.5,
+        76.8,
+        74.8,
+        75.5
+      ],
+      "csv_rows": 57,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 122,
+      "name": "minimal_nova",
+      "classification": "VALID",
+      "detail": "acc=88.30%, comp=1.152x",
+      "accuracy": "88.30%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 58,
+      "source": "...rank_ablation/sst2_rank32/summary.csv"
+    },
+    {
+      "idx": 123,
+      "name": "minimal_prism",
+      "classification": "VALID",
+      "detail": "acc=88.30%, comp=1.152x",
+      "accuracy": "88.30%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 57,
+      "source": "...rank_ablation/sst2_rank32/summary.csv"
+    },
+    {
+      "idx": 124,
+      "name": "minimal_svd",
+      "classification": "VALID",
+      "detail": "acc=88.30%, comp=1.152x",
+      "accuracy": "88.30%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 98,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 125,
+      "name": "minimal_svd_v2",
+      "classification": "VALID",
+      "detail": "acc=88.30%, comp=1.152x",
+      "accuracy": "88.30%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 86,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 126,
+      "name": "mixattention_moska",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "89.33%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        78.56,
+        78.78,
+        87.27
+      ],
+      "csv_rows": 48,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 127,
+      "name": "mla_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "34.70%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 10,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 128,
+      "name": "mlorq_compressor",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        90.48,
+        60.78,
+        62.04,
+        75.11,
+        72.02
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 129,
+      "name": "moba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.71%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        78.78,
+        64.56,
+        78.44
+      ],
+      "csv_rows": 60,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 130,
+      "name": "modegpt",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.06%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 55,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 131,
+      "name": "moe_deltakv_paged",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "72.48%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 61,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 132,
+      "name": "nasc_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        85.32
+      ],
+      "csv_rows": 15,
+      "source": "results/run_quality_ep1/summary.csv"
+    },
+    {
+      "idx": 133,
+      "name": "nexus",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "80.90%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 66,
+      "source": "...t_mnli_full_mnli_sweep/summary_v3.csv"
+    },
+    {
+      "idx": 134,
+      "name": "nha",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 32,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 135,
+      "name": "nli_softmax",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.14%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        78.56
+      ],
+      "csv_rows": 32,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 136,
+      "name": "nmf_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        79.36,
+        79.36,
+        78.56,
+        78.56
+      ],
+      "csv_rows": 1,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 137,
+      "name": "nsa",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 31,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 138,
+      "name": "nystrom_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "81.70%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71
+      ],
+      "csv_rows": 39,
+      "source": "...weep/summary_snapshot_post_group7.csv"
+    },
+    {
+      "idx": 139,
+      "name": "oats",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36
+      ],
+      "csv_rows": 60,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 140,
+      "name": "optimal_subspace_projection",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.48%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 27,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 141,
+      "name": "optimized_hybrid_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        67.89
+      ],
+      "csv_rows": 10,
+      "source": "results/final_paper_run/summary.csv"
+    },
+    {
+      "idx": 142,
+      "name": "orion",
+      "classification": "VALID",
+      "detail": "acc=81.08%, comp=1.060x",
+      "accuracy": "81.08%",
+      "compression": "1.060x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 58,
+      "source": "...lts/unified_orion/qwen3_5/summary.csv"
+    },
+    {
+      "idx": 143,
+      "name": "padre_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 144,
+      "name": "performer_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "62.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        77.5
+      ],
+      "csv_rows": 49,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 145,
+      "name": "phantom",
+      "classification": "VALID",
+      "detail": "acc=72.59%, comp=1.227x",
+      "accuracy": "72.59%",
+      "compression": "1.227x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 90,
+      "source": "...nified_phantom/distilbert/summary.csv"
+    },
+    {
+      "idx": 146,
+      "name": "progressive_token_pruning",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "86.93%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 14,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 147,
+      "name": "projection_factorized_attn",
+      "classification": "VALID",
+      "detail": "acc=94.50%, comp=1.065x",
+      "accuracy": "94.50%",
+      "compression": "1.065x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 58,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 148,
+      "name": "proxsparse",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "78.33%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48
+      ],
+      "csv_rows": 55,
+      "source": "...ied_proxsparse/distilbert/summary.csv"
+    },
+    {
+      "idx": 149,
+      "name": "proxsparse_pruner",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "78.33%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        60.78,
+        75.11,
+        90.48,
+        60.78,
+        75.11
+      ],
+      "csv_rows": 5,
+      "source": "...xsparse_pruner/distilbert/summary.csv"
+    },
+    {
+      "idx": 150,
+      "name": "pruning_utils",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        89.42,
+        76.8,
+        77.15
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 151,
+      "name": "ptp",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.94%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 13,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 152,
+      "name": "qcqa_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        63.76,
+        60.78,
+        50.92,
+        75.11,
+        51.03
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 153,
+      "name": "rala_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        90.25,
+        78.78,
+        90.71,
+        64.56,
+        78.44
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 154,
+      "name": "reap_moe",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.71%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 53,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 155,
+      "name": "regla_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.82,
+        79.36,
+        57.45,
+        78.56,
+        64.79
+      ],
+      "csv_rows": 37,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 156,
+      "name": "replace",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "92.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        60.78,
+        75.11
+      ],
+      "csv_rows": 16,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 157,
+      "name": "replaceme_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        82.0,
+        60.78,
+        56.77,
+        75.11,
+        80.62
+      ],
+      "csv_rows": 1,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 158,
+      "name": "res_svd",
+      "classification": "VALID",
+      "detail": "acc=92.70%, comp=1.036x",
+      "accuracy": "92.70%",
+      "compression": "1.036x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 137,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 159,
+      "name": "roast_hashed_linear",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "91.06%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        57.91,
+        75.46
+      ],
+      "csv_rows": 4,
+      "source": "..._hashed_linear/distilbert/summary.csv"
+    },
+    {
+      "idx": 160,
+      "name": "rotational_slicegpt_int4",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "88.99%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 8,
+      "source": "..._slicegpt_int4/distilbert/summary.csv"
+    },
+    {
+      "idx": 161,
+      "name": "routing_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        90.25,
+        78.78,
+        90.71,
+        64.56,
+        78.44,
+        90.71,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 162,
+      "name": "rpc",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        78.78
+      ],
+      "csv_rows": 33,
+      "source": "...nk_ablation/lora0_ag_news/summary.csv"
+    },
+    {
+      "idx": 163,
+      "name": "rpca",
+      "classification": "VALID",
+      "detail": "acc=60.21%, comp=1.003x",
+      "accuracy": "60.21%",
+      "compression": "1.003x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 56,
+      "source": "results/unified_rpca/gpt2/summary.csv"
+    },
+    {
+      "idx": 164,
+      "name": "saes_svd",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        89.42,
+        76.8,
+        77.15
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 165,
+      "name": "saes_svd_v2",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "87.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        60.78,
+        75.11
+      ],
+      "csv_rows": 42,
+      "source": "...ed_saes_svd_v2/distilbert/summary.csv"
+    },
+    {
+      "idx": 166,
+      "name": "salr",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.90%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 27,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 167,
+      "name": "salt",
+      "classification": "VALID",
+      "detail": "acc=91.40%, comp=1.076x",
+      "accuracy": "91.40%",
+      "compression": "1.076x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 57,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 168,
+      "name": "samba_m3",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "89.91%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 62,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 169,
+      "name": "samba_moe",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "88.30%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 46,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 170,
+      "name": "sdrm",
+      "classification": "VALID",
+      "detail": "acc=91.50%, comp=1.212x",
+      "accuracy": "91.50%",
+      "compression": "1.212x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.46
+      ],
+      "csv_rows": 57,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 171,
+      "name": "simple_ssm",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 63,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 172,
+      "name": "slicegpt",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "86.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        75.11
+      ],
+      "csv_rows": 61,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 173,
+      "name": "slicegpt_pca",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 57,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 174,
+      "name": "slim_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        87.96,
+        60.78,
+        52.41,
+        75.11,
+        50.92
+      ],
+      "csv_rows": 1,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 175,
+      "name": "smart_weighted_ensemble",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.14%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 4,
+      "source": "...ghted_ensemble/distilbert/summary.csv"
+    },
+    {
+      "idx": 176,
+      "name": "soa_attn",
+      "classification": "VALID",
+      "detail": "acc=93.90%, comp=1.111x",
+      "accuracy": "93.90%",
+      "compression": "1.111x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 63,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 177,
+      "name": "soa_fused_module",
+      "classification": "VALID",
+      "detail": "acc=81.77%, comp=1.162x",
+      "accuracy": "81.77%",
+      "compression": "1.162x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        87.84,
+        75.46
+      ],
+      "csv_rows": 4,
+      "source": "...a_fused_module/distilbert/summary.csv"
+    },
+    {
+      "idx": 178,
+      "name": "soa_module",
+      "classification": "VALID",
+      "detail": "acc=89.22%, comp=1.111x",
+      "accuracy": "89.22%",
+      "compression": "1.111x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        78.56
+      ],
+      "csv_rows": 5,
+      "source": "...ied_soa_module/distilbert/summary.csv"
+    },
+    {
+      "idx": 179,
+      "name": "soka",
+      "classification": "VALID",
+      "detail": "acc=60.78%, comp=1.003x",
+      "accuracy": "60.78%",
+      "compression": "1.003x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 61,
+      "source": "results/unified_soka/gpt2/summary.csv"
+    },
+    {
+      "idx": 180,
+      "name": "span_expanded_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        90.71,
+        79.36,
+        79.24,
+        78.56,
+        81.65
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 181,
+      "name": "sparsegpt",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78
+      ],
+      "csv_rows": 60,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 182,
+      "name": "spectra_v2",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.20%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 62,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 183,
+      "name": "spectraformer_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=0.991 (no compression)",
+      "accuracy": "77.64%",
+      "compression": "0.991x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        60.78,
+        75.11,
+        90.48,
+        60.78,
+        75.11
+      ],
+      "csv_rows": 4,
+      "source": "...rmer_attention/distilbert/summary.csv"
+    },
+    {
+      "idx": 184,
+      "name": "spectral_mamba",
+      "classification": "FALLBACK",
+      "detail": "comp=0.856 (no compression)",
+      "accuracy": "90.71%",
+      "compression": "0.856x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.46
+      ],
+      "csv_rows": 55,
+      "source": "...spectral_mamba/distilbert/summary.csv"
+    },
+    {
+      "idx": 185,
+      "name": "spectron",
+      "classification": "VALID",
+      "detail": "acc=91.90%, comp=1.152x",
+      "accuracy": "91.90%",
+      "compression": "1.152x",
+      "fabricated": true,
+      "fabricated_values": [
+        79.36,
+        78.56
+      ],
+      "csv_rows": 100,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 186,
+      "name": "squeezing_heads",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.30%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 32,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 187,
+      "name": "squeezing_heads_distill",
+      "classification": "FALLBACK",
+      "detail": "comp=0.991 (no compression)",
+      "accuracy": "90.37%",
+      "compression": "0.991x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78,
+        75.11
+      ],
+      "csv_rows": 9,
+      "source": "..._heads_distill/distilbert/summary.csv"
+    },
+    {
+      "idx": 188,
+      "name": "squeezing_heads_distiller",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78
+      ],
+      "csv_rows": 14,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 189,
+      "name": "subspace_projection",
+      "classification": "VALID",
+      "detail": "acc=59.52%, comp=1.003x",
+      "accuracy": "59.52%",
+      "compression": "1.003x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 27,
+      "source": "..._subspace_projection/gpt2/summary.csv"
+    },
+    {
+      "idx": 190,
+      "name": "svd_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "75.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        79.36,
+        78.56
+      ],
+      "csv_rows": 66,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 191,
+      "name": "svd_compressed",
+      "classification": "VALID",
+      "detail": "acc=94.80%, comp=1.066x",
+      "accuracy": "94.80%",
+      "compression": "1.066x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 122,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 192,
+      "name": "svd_linear_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "67.19%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56,
+        79.36,
+        88.5,
+        75.5,
+        76.8,
+        89.5,
+        75.5,
+        76.8,
+        85.5,
+        72.5,
+        73.2
+      ],
+      "csv_rows": 93,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 193,
+      "name": "svd_linear_decay",
+      "classification": "VALID",
+      "detail": "acc=94.50%, comp=1.065x",
+      "accuracy": "94.50%",
+      "compression": "1.065x",
+      "fabricated": true,
+      "fabricated_values": [
+        57.91
+      ],
+      "csv_rows": 55,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 194,
+      "name": "svd_llm_v2_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "70.31%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36,
+        90.71,
+        78.56
+      ],
+      "csv_rows": 72,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 195,
+      "name": "svd_mamba",
+      "classification": "FALLBACK",
+      "detail": "comp=0.904 (no compression)",
+      "accuracy": "90.02%",
+      "compression": "0.904x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36,
+        78.56,
+        79.36,
+        75.5,
+        76.8,
+        78.78,
+        76.5,
+        77.8
+      ],
+      "csv_rows": 17,
+      "source": "...fied_svd_mamba/distilbert/summary.csv"
+    },
+    {
+      "idx": 196,
+      "name": "svd_proj_attn",
+      "classification": "VALID",
+      "detail": "acc=76.15%, comp=1.227x",
+      "accuracy": "76.15%",
+      "compression": "1.227x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        60.78
+      ],
+      "csv_rows": 14,
+      "source": "..._svd_proj_attn/distilbert/summary.csv"
+    },
+    {
+      "idx": 197,
+      "name": "svd_projection_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "70.31%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        75.11
+      ],
+      "csv_rows": 66,
+      "source": "...r/abandoned_run/benchmark_summary.csv"
+    },
+    {
+      "idx": 198,
+      "name": "svd_sequence_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        75.46,
+        90.94,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 4,
+      "source": "results/master_aggregated_results.csv"
+    },
+    {
+      "idx": 199,
+      "name": "swift_svd",
+      "classification": "VALID",
+      "detail": "acc=89.30%, comp=1.344x",
+      "accuracy": "89.30%",
+      "compression": "1.344x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 94,
+      "source": "...nk_ablation/agnews_rank32/summary.csv"
+    },
+    {
+      "idx": 200,
+      "name": "swift_svd_act",
+      "classification": "VALID",
+      "detail": "acc=60.09%, comp=1.003x",
+      "accuracy": "60.09%",
+      "compression": "1.003x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 56,
+      "source": "...nified_swift_svd_act/gpt2/summary.csv"
+    },
+    {
+      "idx": 201,
+      "name": "template_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78,
+        75.11
+      ],
+      "csv_rows": 18,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 202,
+      "name": "tlinformer_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=0.988 (no compression)",
+      "accuracy": "90.25%",
+      "compression": "0.988x",
+      "fabricated": true,
+      "fabricated_values": [
+        57.91,
+        75.46,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 4,
+      "source": "...rmer_attention/distilbert/summary.csv"
+    },
+    {
+      "idx": 203,
+      "name": "token_compressed_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        78.56,
+        79.36
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 204,
+      "name": "tomoe",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.40%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        60.78,
+        75.11
+      ],
+      "csv_rows": 18,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 205,
+      "name": "tpa_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.71,
+        75.0,
+        79.36,
+        75.46,
+        59.75
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 206,
+      "name": "tt",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "94.70%",
+      "compression": "1.000x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 26,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 207,
+      "name": "unified_rope",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "93.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        78.56,
+        79.36
+      ],
+      "csv_rows": 31,
+      "source": "...ep/distilbert_agnews_full/summary.csv"
+    },
+    {
+      "idx": 208,
+      "name": "uniql_compressor",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.48,
+        90.14,
+        60.78,
+        60.89,
+        75.11,
+        82.45
+      ],
+      "csv_rows": 1,
+      "source": "...ts/all_121_compressors_gpu_matrix.csv"
+    },
+    {
+      "idx": 209,
+      "name": "upi_mamba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "0.00%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 5,
+      "source": "results/master_aggregated_results.csv"
+    },
+    {
+      "idx": 210,
+      "name": "upi_stuffed_mamba",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "68.38%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        57.91,
+        75.46
+      ],
+      "csv_rows": 43,
+      "source": "...lts/adaptive_v3/benchmark_summary.csv"
+    },
+    {
+      "idx": 211,
+      "name": "vig_attention",
+      "classification": "NO_DATA",
+      "detail": "No CSV rows found",
+      "accuracy": "\u2014",
+      "compression": "\u2014",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        88.3,
+        57.91,
+        61.35,
+        75.46,
+        61.24
+      ],
+      "csv_rows": 0,
+      "source": "\u2014"
+    },
+    {
+      "idx": 212,
+      "name": "vspec",
+      "classification": "VALID",
+      "detail": "acc=93.50%, comp=1.036x",
+      "accuracy": "93.50%",
+      "compression": "1.036x",
+      "fabricated": false,
+      "fabricated_values": [],
+      "csv_rows": 85,
+      "source": "...s/rank_ablation/ablation_all_rows.csv"
+    },
+    {
+      "idx": 213,
+      "name": "weighted_ensemble",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.02%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.11
+      ],
+      "csv_rows": 20,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 214,
+      "name": "wgqa",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "90.60%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        75.46
+      ],
+      "csv_rows": 31,
+      "source": ".../unified_sweep/distilbert/summary.csv"
+    },
+    {
+      "idx": 215,
+      "name": "xattention",
+      "classification": "FALLBACK",
+      "detail": "comp=0.998 (no compression)",
+      "accuracy": "86.24%",
+      "compression": "0.998x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94
+      ],
+      "csv_rows": 29,
+      "source": "...s/unified_xattention/gpt2/summary.csv"
+    },
+    {
+      "idx": 216,
+      "name": "zerokv_neo",
+      "classification": "FALLBACK",
+      "detail": "comp=1.000 (no compression)",
+      "accuracy": "80.50%",
+      "compression": "1.000x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        87.84
+      ],
+      "csv_rows": 46,
+      "source": "results/distilbert/summary.csv"
+    },
+    {
+      "idx": 217,
+      "name": "zeros_attention",
+      "classification": "FALLBACK",
+      "detail": "comp=0.991 (no compression)",
+      "accuracy": "59.75%",
+      "compression": "0.991x",
+      "fabricated": true,
+      "fabricated_values": [
+        90.94,
+        75.46
+      ],
+      "csv_rows": 3,
+      "source": "results/unified_zeros/gpt2/summary.csv"
+    }
+  ]
+}

@@ -41,3 +41,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_soka/roberta/summary.csv | roberta | full | 93934.25 tok/s <!-- source: results/unified_soka/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_soka/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_soka/roberta/summary.csv line 2 --> |
 | results/unified_soka/roberta/summary.csv | roberta | soka | 85290.05 tok/s <!-- source: results/unified_soka/roberta/summary.csv line 3 --> | 359.04 MB <!-- source: results/unified_soka/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soka/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | soka | Elapsed 0.756s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 109 --> | 136.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 109 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 109 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=60.78%, comp=1.003x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 60.78% | `results/unified_soka/gpt2/summary.csv` |
+| F1 Score | 0.6559 | `results/unified_soka/gpt2/summary.csv` |
+| Compression | 1.003x | `results/unified_soka/gpt2/summary.csv` |
+| Compressed Layers | 0 | `results/unified_soka/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/unified_soka/gpt2/summary.csv` |
+| Timestamp | 2026-09-11T08:34:03.874545 | `results/unified_soka/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [75.11]
+> These numbers must NOT be cited in the final paper.
+

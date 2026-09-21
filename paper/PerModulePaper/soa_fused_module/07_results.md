@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_soa_fused_module/gpt2/summary.csv | gpt2 | soa_fused_module | 10748.88 tok/s <!-- source: results/unified_soa_fused_module/gpt2/summary.csv line 3 --> | 296.89 MB <!-- source: results/unified_soa_fused_module/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_fused_module/gpt2/summary.csv line 3 --> |
 | results/unified_soa_fused_module/roberta/summary.csv | roberta | full | 28155.5 tok/s <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 2 --> |
 | results/unified_soa_fused_module/roberta/summary.csv | roberta | soa_fused_module | 11857.43 tok/s <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 3 --> | 573.39 MB <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_fused_module/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=81.77%, comp=1.162x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 81.77% | `results/unified_soa_fused_module/distilbert/summary.csv` |
+| F1 Score | 0.8285 | `results/unified_soa_fused_module/distilbert/summary.csv` |
+| Compression | 1.162x | `results/unified_soa_fused_module/distilbert/summary.csv` |
+| Compressed Layers | 18 | `results/unified_soa_fused_module/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_soa_fused_module/distilbert/summary.csv` |
+| Timestamp | 2026-09-14T07:44:56.812721 | `results/unified_soa_fused_module/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 87.84, 75.46]
+> These numbers must NOT be cited in the final paper.
+

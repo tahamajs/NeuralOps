@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_lola_attention/gpt2/summary.csv | gpt2 | lola_attention | 11377.73 tok/s <!-- source: results/unified_lola_attention/gpt2/summary.csv line 3 --> | 467.79 MB <!-- source: results/unified_lola_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lola_attention/gpt2/summary.csv line 3 --> |
 | results/unified_lola_attention/roberta/summary.csv | roberta | full | 27468.41 tok/s <!-- source: results/unified_lola_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_lola_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lola_attention/roberta/summary.csv line 2 --> |
 | results/unified_lola_attention/roberta/summary.csv | roberta | lola_attention | 8481.68 tok/s <!-- source: results/unified_lola_attention/roberta/summary.csv line 3 --> | 808.59 MB <!-- source: results/unified_lola_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lola_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=77.98%, comp=1.227x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 77.98% | `results/unified_lola_attention/distilbert/summary.csv` |
+| F1 Score | 0.7996 | `results/unified_lola_attention/distilbert/summary.csv` |
+| Compression | 1.227x | `results/unified_lola_attention/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_lola_attention/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_lola_attention/distilbert/summary.csv` |
+| Timestamp | 2026-09-15T04:21:57.496107 | `results/unified_lola_attention/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71]
+> These numbers must NOT be cited in the final paper.
+

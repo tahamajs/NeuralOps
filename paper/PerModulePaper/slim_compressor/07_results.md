@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_slim/roberta/summary.csv | roberta | slim | 82511.43 tok/s <!-- source: results/unified_slim/roberta/summary.csv line 3 --> | 361.54 MB <!-- source: results/unified_slim/roberta/summary.csv line 3 --> | 0.4214 <!-- source: results/unified_slim/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | slim | Elapsed 1.028s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 107 --> | 196.4 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 107 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 107 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | slim_compressor | Elapsed 0.781s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 108 --> | 196.4 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 108 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 108 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/all_121_compressors_gpu_matrix.csv` |
+| F1 Score | 0.0000 | `results/all_121_compressors_gpu_matrix.csv` |
+| Compression | 1.000x | `results/all_121_compressors_gpu_matrix.csv` |
+| Compressed Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Fallback Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Timestamp | unknown | `results/all_121_compressors_gpu_matrix.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 87.96, 60.78, 52.41, 75.11, 50.92]
+> These numbers must NOT be cited in the final paper.
+

@@ -56,3 +56,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_svd_sequence_attention/gpt2/summary.csv | gpt2 | svd_sequence_attention | 35808.87 tok/s <!-- source: results/unified_svd_sequence_attention/gpt2/summary.csv line 3 --> | 569.83 MB <!-- source: results/unified_svd_sequence_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd_sequence_attention/gpt2/summary.csv line 3 --> |
 | results/unified_svd_sequence_attention/roberta/summary.csv | roberta | full | 81675.38 tok/s <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 2 --> |
 | results/unified_svd_sequence_attention/roberta/summary.csv | roberta | svd_sequence_attention | 23073.3 tok/s <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 3 --> | 655.77 MB <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd_sequence_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/master_aggregated_results.csv` |
+| F1 Score | 0.0000 | `results/master_aggregated_results.csv` |
+| Compression | 1.000x | `results/master_aggregated_results.csv` |
+| Compressed Layers | ? | `results/master_aggregated_results.csv` |
+| Fallback Layers | ? | `results/master_aggregated_results.csv` |
+| Timestamp | 2026-09-11T21:51:07.961641 | `results/master_aggregated_results.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.94, 57.91, 75.46, 90.94, 57.91, 75.46]
+> These numbers must NOT be cited in the final paper.
+

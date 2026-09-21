@@ -10,7 +10,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | results/unified_liftr/distilbert/summary.csv | distilbert | liftr | PASS | 90.14% <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> | 0.9029 <!-- source: results/unified_liftr/distilbert/summary.csv line 3 --> |
 | results/unified_liftr/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_liftr/gpt2/summary.csv line 2 --> |
 | results/unified_liftr/gpt2/summary.csv | gpt2 | liftr | PASS | 61.01% <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> | 0.6654 <!-- source: results/unified_liftr/gpt2/summary.csv line 3 --> |
-| results/unified_liftr/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> |
+<!-- FABRICATED: | results/unified_liftr/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | -->
 | results/unified_liftr/roberta/summary.csv | roberta | liftr | PASS | 80.16% <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 0.8309 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | liftr | PASS | Comp 1.0x% <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | Mem -0.0% <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |
 
@@ -41,3 +41,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_liftr/roberta/summary.csv | roberta | full | 83293.19 tok/s <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_liftr/roberta/summary.csv line 2 --> |
 | results/unified_liftr/roberta/summary.csv | roberta | liftr | 92788.29 tok/s <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 585.62 MB <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_liftr/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | liftr | Elapsed 0.169s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 69 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.90% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.9454 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T17:42:19.103736 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [75.0]
+> These numbers must NOT be cited in the final paper.
+

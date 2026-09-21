@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_halo_regla/gpt2/summary.csv | gpt2 | halo_regla | 8164.33 tok/s <!-- source: results/unified_halo_regla/gpt2/summary.csv line 3 --> | 1134.78 MB <!-- source: results/unified_halo_regla/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_halo_regla/gpt2/summary.csv line 3 --> |
 | results/unified_halo_regla/roberta/summary.csv | roberta | full | 26341.29 tok/s <!-- source: results/unified_halo_regla/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_halo_regla/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_halo_regla/roberta/summary.csv line 2 --> |
 | results/unified_halo_regla/roberta/summary.csv | roberta | halo_regla | 6570.81 tok/s <!-- source: results/unified_halo_regla/roberta/summary.csv line 3 --> | 672.44 MB <!-- source: results/unified_halo_regla/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_halo_regla/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.94% | `results/roberta/summary.csv` |
+| F1 Score | 0.0000 | `results/roberta/summary.csv` |
+| Compression | 1.000x | `results/roberta/summary.csv` |
+| Compressed Layers | ? | `results/roberta/summary.csv` |
+| Fallback Layers | ? | `results/roberta/summary.csv` |
+| Timestamp | 2026-09-04T09:19:41.654754 | `results/roberta/summary.csv` |
+

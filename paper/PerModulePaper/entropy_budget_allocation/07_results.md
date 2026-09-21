@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/benchmark_summary_v2.csv | roberta-mrpc | entropy_budget_allocation | Latency 29.92ms tok/s <!-- source: results/benchmark_summary_v2.csv line 101 --> | 727.9 MB <!-- source: results/benchmark_summary_v2.csv line 101 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 101 --> |
 | results/benchmark_summary_v2.csv | t5-sst2 | entropy_budget_allocation | Latency 48.9ms tok/s <!-- source: results/benchmark_summary_v2.csv line 102 --> | 1082.2 MB <!-- source: results/benchmark_summary_v2.csv line 102 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 102 --> |
 | results/benchmark_summary_v2.csv | t5-mrpc | entropy_budget_allocation | Latency 48.89ms tok/s <!-- source: results/benchmark_summary_v2.csv line 103 --> | 1082.2 MB <!-- source: results/benchmark_summary_v2.csv line 103 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 103 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 68.38% | `results/adaptive_v3/benchmark_summary.csv` |
+| F1 Score | 0.8122 | `results/adaptive_v3/benchmark_summary.csv` |
+| Compression | 1.000x | `results/adaptive_v3/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 07:14:11 | `results/adaptive_v3/benchmark_summary.csv` |
+

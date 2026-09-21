@@ -56,3 +56,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_tlinformer_attention/gpt2/summary.csv | gpt2 | tlinformer_attention | 35641.54 tok/s <!-- source: results/unified_tlinformer_attention/gpt2/summary.csv line 3 --> | 571.59 MB <!-- source: results/unified_tlinformer_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_tlinformer_attention/gpt2/summary.csv line 3 --> |
 | results/unified_tlinformer_attention/roberta/summary.csv | roberta | full | 82711.85 tok/s <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 2 --> |
 | results/unified_tlinformer_attention/roberta/summary.csv | roberta | tlinformer_attention | 36981.95 tok/s <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 3 --> | 660.78 MB <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_tlinformer_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.988 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.25% | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+| F1 Score | 0.9063 | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+| Compression | 0.988x | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+| Timestamp | 2026-09-11T21:52:44.485272 | `results/unified_tlinformer_attention/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [57.91, 75.46, 57.91, 75.46]
+> These numbers must NOT be cited in the final paper.
+

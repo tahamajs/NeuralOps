@@ -114,3 +114,18 @@ initialization. Differences arise during training.
 | GPT-2 | PASS | 71.33 | [G_REASON] |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=92.70%, comp=1.036x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 92.70% | `results/rank_ablation/ablation_all_rows.csv` |
+| F1 Score | 0.9239 | `results/rank_ablation/ablation_all_rows.csv` |
+| Compression | 1.036x | `results/rank_ablation/ablation_all_rows.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/ablation_all_rows.csv` |
+| Timestamp | 2026-09-20T00:38:45.640568 | `results/rank_ablation/ablation_all_rows.csv` |
+

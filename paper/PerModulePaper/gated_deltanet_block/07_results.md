@@ -48,7 +48,7 @@ increase comes from the underlying attention.
 | Path | Accuracy | Δ | Per-step time | Peak VRAM |
 |---|---|---|---|---|
 | Baseline | 90.71% | — | 0.4 s | 183 MB |
-| Block (MHA) | 86.5% | 0.85 | 2.3 s s | 620 MB MB |
+<!-- FABRICATED: | Block (MHA) | 86.5% | 0.85 | 2.3 s s | 620 MB MB | -->
 | Block (DeltaNet) | 50.92% | -39.79 | 14.2 ms s | 416 MB MB |
 
 ## 7.4 Weight Transfer Verification
@@ -125,7 +125,7 @@ Step  Loss
 
 ## 7.10 Summary
 
-- Path A (MHA): 86.5% on DistilBERT
+<!-- FABRICATED: - Path A (MHA): 86.5% on DistilBERT -->
 - Path B (DeltaNet): 50.92% on DistilBERT, OOM on larger models
 - LayerNorm adds +66.4M params per block
 - Silent weight transfer failures: 0.85 cases
@@ -133,3 +133,24 @@ Step  Loss
 **Verdict:** Verified
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 75.11% | `results/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/distilbert/summary.csv` |
+| Compression | 1.000x | `results/distilbert/summary.csv` |
+| Compressed Layers | ? | `results/distilbert/summary.csv` |
+| Fallback Layers | ? | `results/distilbert/summary.csv` |
+| Timestamp | 2026-09-04T07:21:42.478993 | `results/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 86.5, 90.71, 86.5]
+> These numbers must NOT be cited in the final paper.
+

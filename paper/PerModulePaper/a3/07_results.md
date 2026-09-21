@@ -171,3 +171,19 @@ All values below threshold $\tau = 0.20$.
 - All three models pass the 56% quality gate.
 - Fisher weighting contributes **35%**.
 - LayerNorm recalibration contributes **25%**.
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=100.00%, comp=1.094x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 100.00% | `results/long_context/summary.csv` |
+| F1 Score | 0.0000 | `results/long_context/summary.csv` |
+| Compression | 1.094x | `results/long_context/summary.csv` |
+| Compressed Layers | ? | `results/long_context/summary.csv` |
+| Fallback Layers | ? | `results/long_context/summary.csv` |
+| Timestamp | 2026-09-20T06:53:07 | `results/long_context/summary.csv` |
+

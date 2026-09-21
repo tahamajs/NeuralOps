@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_soa_module/gpt2/summary.csv | gpt2 | soa_module | 6485.02 tok/s <!-- source: results/unified_soa_module/gpt2/summary.csv line 3 --> | 509.14 MB <!-- source: results/unified_soa_module/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_module/gpt2/summary.csv line 3 --> |
 | results/unified_soa_module/roberta/summary.csv | roberta | full | 13296.55 tok/s <!-- source: results/unified_soa_module/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_soa_module/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_soa_module/roberta/summary.csv line 2 --> |
 | results/unified_soa_module/roberta/summary.csv | roberta | soa_module | 7661.01 tok/s <!-- source: results/unified_soa_module/roberta/summary.csv line 3 --> | 595.15 MB <!-- source: results/unified_soa_module/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_soa_module/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=89.22%, comp=1.111x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.22% | `results/unified_soa_module/distilbert/summary.csv` |
+| F1 Score | 0.8980 | `results/unified_soa_module/distilbert/summary.csv` |
+| Compression | 1.111x | `results/unified_soa_module/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_soa_module/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_soa_module/distilbert/summary.csv` |
+| Timestamp | 2026-09-15T23:43:06.660373 | `results/unified_soa_module/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

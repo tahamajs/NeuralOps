@@ -10,7 +10,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | results/unified_granite_hybrid/distilbert/summary.csv | distilbert | granite_hybrid | PASS | 63.65% <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> | 0.7325 <!-- source: results/unified_granite_hybrid/distilbert/summary.csv line 3 --> |
 | results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | full | PASS | 57.91% <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> | 0.301 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 2 --> |
 | results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | granite_hybrid | PASS_LOW | 51.72% <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 0.6774 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
-| results/unified_granite_hybrid/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> |
+<!-- FABRICATED: | results/unified_granite_hybrid/roberta/summary.csv | roberta | full | PASS | 75.0% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0.7578 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | -->
 | results/unified_granite_hybrid/roberta/summary.csv | roberta | granite_hybrid | PASS_LOW | 53.33% <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 0.6772 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
 
 ## 7.2 Parameter Reduction and Model Efficiency
@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_granite_hybrid/gpt2/summary.csv | gpt2 | granite_hybrid | 4214.39 tok/s <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 2393.89 MB <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_granite_hybrid/gpt2/summary.csv line 3 --> |
 | results/unified_granite_hybrid/roberta/summary.csv | roberta | full | 26766.82 tok/s <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 2 --> |
 | results/unified_granite_hybrid/roberta/summary.csv | roberta | granite_hybrid | 4243.84 tok/s <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 2501.8 MB <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_granite_hybrid/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.14% | `results/unified_sweep/distilbert/summary.csv` |
+| F1 Score | 0.9040 | `results/unified_sweep/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
+| Timestamp | 2026-09-18T23:45:39.547690 | `results/unified_sweep/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [57.91, 75.0]
+> These numbers must NOT be cited in the final paper.
+

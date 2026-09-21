@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_simple_ssm/gpt2/summary.csv | gpt2 | simple_ssm | 9154.04 tok/s <!-- source: results/unified_simple_ssm/gpt2/summary.csv line 3 --> | 578.92 MB <!-- source: results/unified_simple_ssm/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_simple_ssm/gpt2/summary.csv line 3 --> |
 | results/unified_simple_ssm/roberta/summary.csv | roberta | full | 12057.34 tok/s <!-- source: results/unified_simple_ssm/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_simple_ssm/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_simple_ssm/roberta/summary.csv line 2 --> |
 | results/unified_simple_ssm/roberta/summary.csv | roberta | simple_ssm | 3946.63 tok/s <!-- source: results/unified_simple_ssm/roberta/summary.csv line 3 --> | 678.8 MB <!-- source: results/unified_simple_ssm/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_simple_ssm/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 68.38% | `results/adaptive_v3/benchmark_summary.csv` |
+| F1 Score | 0.8122 | `results/adaptive_v3/benchmark_summary.csv` |
+| Compression | 1.000x | `results/adaptive_v3/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/adaptive_v3/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 07:36:25 | `results/adaptive_v3/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

@@ -171,3 +171,24 @@ $\sqrt{1 - 45.2} = 0.03$.
 - **All three models pass quality gate.**
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=88.30%, comp=1.152x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 88.30% | `results/rank_ablation/sst2_rank32/summary.csv` |
+| F1 Score | 0.8825 | `results/rank_ablation/sst2_rank32/summary.csv` |
+| Compression | 1.152x | `results/rank_ablation/sst2_rank32/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/sst2_rank32/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/sst2_rank32/summary.csv` |
+| Timestamp | 2026-09-19T22:18:34.063807 | `results/rank_ablation/sst2_rank32/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

@@ -35,3 +35,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_dobi/qwen3_5/summary.csv | qwen3_5 | full | 5935.34 tok/s <!-- source: results/unified_dobi/qwen3_5/summary.csv line 2 --> | 1796.78 MB <!-- source: results/unified_dobi/qwen3_5/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_dobi/qwen3_5/summary.csv line 2 --> |
 | results/unified_dobi/roberta/summary.csv | roberta | full | 25886.74 tok/s <!-- source: results/unified_dobi/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_dobi/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_dobi/roberta/summary.csv line 2 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | dobi | Elapsed 0.794s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 35 --> | 106.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 35 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 35 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.30% | `results/pareto_table.csv` |
+| F1 Score | 0.9390 | `results/pareto_table.csv` |
+| Compression | 1.000x | `results/pareto_table.csv` |
+| Compressed Layers | 0 | `results/pareto_table.csv` |
+| Fallback Layers | 0 | `results/pareto_table.csv` |
+| Timestamp | 2026-09-19T16:18:20.704814 | `results/pareto_table.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [79.36, 67.89]
+> These numbers must NOT be cited in the final paper.
+

@@ -114,7 +114,7 @@
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
-| infini | 89.5% | 76.5% | 77.5% | 1.02× |
+<!-- FABRICATED: | infini | 89.5% | 76.5% | 77.5% | 1.02× | -->
 | **oha** | **89.2** | **76.5** | **77.8** | **1.01×** |
 
 ## 7.9 Failure Cases
@@ -139,3 +139,18 @@
 | Long-context benefit (L=2048) | 20× |
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 90.25, 78.78, 89.5, 76.5, 77.5]
+> These numbers must NOT be cited in the final paper.
+

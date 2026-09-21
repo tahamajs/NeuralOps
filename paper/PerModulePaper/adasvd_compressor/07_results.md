@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_adasvd/roberta/summary.csv | roberta | full | 24228.27 tok/s <!-- source: results/unified_adasvd/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_adasvd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_adasvd/roberta/summary.csv line 2 --> |
 | results/unified_adasvd/roberta/summary.csv | roberta | adasvd | 17145.01 tok/s <!-- source: results/unified_adasvd/roberta/summary.csv line 3 --> | 610.89 MB <!-- source: results/unified_adasvd/roberta/summary.csv line 3 --> | 0.5913941559039471 <!-- source: results/unified_adasvd/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | adasvd | Elapsed 1.5s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 9 --> | 106.4 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 9 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 9 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `BROKEN`  
+**Detail**: Error: RuntimeError: Compressor 'adasvd_compressor' not found in COMPRESSOR_REGISTRY
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| F1 Score | 0.0000 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| Compression | 1.000x | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+| Timestamp | 2026-09-18T18:50:16.067311 | `results/agnews_unified_adasvd_compressor/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 86.01, 79.36, 63.76, 67.55, 78.56, 73.39]
+> These numbers must NOT be cited in the final paper.
+

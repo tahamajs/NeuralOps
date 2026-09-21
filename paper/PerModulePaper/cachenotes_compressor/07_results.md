@@ -7,7 +7,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
 | results/unified_cachenotes/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_cachenotes/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_cachenotes/distilbert/summary.csv line 2 --> |
-| results/unified_cachenotes/distilbert/summary.csv | distilbert | cachenotes | PASS | 90.6% <!-- source: results/unified_cachenotes/distilbert/summary.csv line 3 --> | 0.9093 <!-- source: results/unified_cachenotes/distilbert/summary.csv line 3 --> |
+<!-- FABRICATED: | results/unified_cachenotes/distilbert/summary.csv | distilbert | cachenotes | PASS | 90.6% <!-- source: results/unified_cachenotes/distilbert/summary.csv line 3 --> | 0.9093 <!-- source: results/unified_cachenotes/distilbert/summary.csv line 3 --> | -->
 | results/unified_cachenotes/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_cachenotes/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_cachenotes/gpt2/summary.csv line 2 --> |
 | results/unified_cachenotes/gpt2/summary.csv | gpt2 | cachenotes | PASS | 74.77% <!-- source: results/unified_cachenotes/gpt2/summary.csv line 3 --> | 0.7751 <!-- source: results/unified_cachenotes/gpt2/summary.csv line 3 --> |
 | results/unified_cachenotes/qwen3_5/summary.csv | qwen3_5 | full | PASS | 67.55% <!-- source: results/unified_cachenotes/qwen3_5/summary.csv line 2 --> | 0.5501 <!-- source: results/unified_cachenotes/qwen3_5/summary.csv line 2 --> |
@@ -50,3 +50,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_cachenotes/roberta/summary.csv | roberta | cachenotes | 23971.27 tok/s <!-- source: results/unified_cachenotes/roberta/summary.csv line 3 --> | 527.8 MB <!-- source: results/unified_cachenotes/roberta/summary.csv line 3 --> | 0.2373566765687054 <!-- source: results/unified_cachenotes/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | cachenotes | Elapsed 0.846s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 21 --> | 143.6 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 21 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 21 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | cachenotes_compressor | Elapsed 0.734s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 22 --> | 143.6 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 22 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 22 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 81.30% | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+| F1 Score | 0.8080 | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+| Compression | 1.000x | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+| Compressed Layers | 14 | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+| Fallback Layers | 34 | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+| Timestamp | 2026-09-18T21:29:35.623759 | `results/agnews_unified_cachenotes_compressor/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 90.6, 74.77, 67.55, 89.22, 78.56]
+> These numbers must NOT be cited in the final paper.
+

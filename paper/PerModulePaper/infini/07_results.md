@@ -131,3 +131,24 @@
 | Inference ratio | [INFERENCE_RATIO]× |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.983 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.60% | `results/unified_infini/distilbert/summary.csv` |
+| F1 Score | 0.9091 | `results/unified_infini/distilbert/summary.csv` |
+| Compression | 0.983x | `results/unified_infini/distilbert/summary.csv` |
+| Compressed Layers | 24 | `results/unified_infini/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_infini/distilbert/summary.csv` |
+| Timestamp | 2026-09-14T19:03:25.630922 | `results/unified_infini/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36, 78.78, 78.78]
+> These numbers must NOT be cited in the final paper.
+

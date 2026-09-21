@@ -176,3 +176,19 @@ architecture (not size).
 - **Parameter count:** increased by ~1-2% due to LoRA.
 - **Attention:** 40% sparse.
 - **Not a compression method.**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 93.00% | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| F1 Score | 0.9254 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compression | 1.000x | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Compressed Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Fallback Layers | 0 | `results/rank_ablation/lora0_ag_news/summary.csv` |
+| Timestamp | unknown | `results/rank_ablation/lora0_ag_news/summary.csv` |
+

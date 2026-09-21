@@ -7,7 +7,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
 | results/unified_tpa/distilbert/summary.csv | distilbert | full | PASS | 90.71% <!-- source: results/unified_tpa/distilbert/summary.csv line 2 --> | 0.9099 <!-- source: results/unified_tpa/distilbert/summary.csv line 2 --> |
-| results/unified_tpa/distilbert/summary.csv | distilbert | tpa | PASS_NO_COMPRESSION | 75.0% <!-- source: results/unified_tpa/distilbert/summary.csv line 3 --> | 0.6997 <!-- source: results/unified_tpa/distilbert/summary.csv line 3 --> |
+<!-- FABRICATED: | results/unified_tpa/distilbert/summary.csv | distilbert | tpa | PASS_NO_COMPRESSION | 75.0% <!-- source: results/unified_tpa/distilbert/summary.csv line 3 --> | 0.6997 <!-- source: results/unified_tpa/distilbert/summary.csv line 3 --> | -->
 | results/unified_tpa/gpt2/summary.csv | gpt2 | full | PASS | 79.36% <!-- source: results/unified_tpa/gpt2/summary.csv line 2 --> | 0.7978 <!-- source: results/unified_tpa/gpt2/summary.csv line 2 --> |
 | results/unified_tpa/gpt2/summary.csv | gpt2 | tpa | PASS_LOW | 49.08% <!-- source: results/unified_tpa/gpt2/summary.csv line 3 --> | 0.0 <!-- source: results/unified_tpa/gpt2/summary.csv line 3 --> |
 | results/unified_tpa/roberta/summary.csv | roberta | full | PASS | 75.46% <!-- source: results/unified_tpa/roberta/summary.csv line 2 --> | 0.7277 <!-- source: results/unified_tpa/roberta/summary.csv line 2 --> |
@@ -38,3 +38,18 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_tpa/gpt2/summary.csv | gpt2 | tpa | 4692.26 tok/s <!-- source: results/unified_tpa/gpt2/summary.csv line 3 --> | 500.77 MB <!-- source: results/unified_tpa/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_tpa/gpt2/summary.csv line 3 --> |
 | results/unified_tpa/roberta/summary.csv | roberta | full | 45523.74 tok/s <!-- source: results/unified_tpa/roberta/summary.csv line 2 --> | 698.89 MB <!-- source: results/unified_tpa/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_tpa/roberta/summary.csv line 2 --> |
 | results/unified_tpa/roberta/summary.csv | roberta | tpa | 2203.51 tok/s <!-- source: results/unified_tpa/roberta/summary.csv line 3 --> | 2738.19 MB <!-- source: results/unified_tpa/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_tpa/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 75.0, 79.36, 75.46, 59.75]
+> These numbers must NOT be cited in the final paper.
+

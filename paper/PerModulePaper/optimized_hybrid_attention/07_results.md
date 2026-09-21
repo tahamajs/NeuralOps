@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_optimized_hybrid_attention/qwen3_5/summary.csv | qwen3_5 | optimized_hybrid_attention | 1275.31 tok/s <!-- source: results/unified_optimized_hybrid_attention/qwen3_5/summary.csv line 3 --> | 1796.78 MB <!-- source: results/unified_optimized_hybrid_attention/qwen3_5/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_optimized_hybrid_attention/qwen3_5/summary.csv line 3 --> |
 | results/unified_optimized_hybrid_attention/roberta/summary.csv | roberta | full | 27321.01 tok/s <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 2 --> |
 | results/unified_optimized_hybrid_attention/roberta/summary.csv | roberta | optimized_hybrid_attention | 8458.7 tok/s <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 3 --> | 669.6 MB <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_optimized_hybrid_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/final_paper_run/summary.csv` |
+| F1 Score | 0.9087 | `results/final_paper_run/summary.csv` |
+| Compression | 1.000x | `results/final_paper_run/summary.csv` |
+| Compressed Layers | ? | `results/final_paper_run/summary.csv` |
+| Fallback Layers | ? | `results/final_paper_run/summary.csv` |
+| Timestamp | 2026-08-29T10:30:46.665834 | `results/final_paper_run/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [67.89]
+> These numbers must NOT be cited in the final paper.
+

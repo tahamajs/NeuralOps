@@ -56,3 +56,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_lsh_attention/gpt2/summary.csv | gpt2 | lsh_attention | 12107.01 tok/s <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 569.05 MB <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh_attention/gpt2/summary.csv line 3 --> |
 | results/unified_lsh_attention/roberta/summary.csv | roberta | full | 27482.84 tok/s <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 2 --> |
 | results/unified_lsh_attention/roberta/summary.csv | roberta | lsh_attention | 5986.65 tok/s <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 666.82 MB <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_lsh_attention/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.991 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 80.62% | `results/unified_lsh_attention/gpt2/summary.csv` |
+| F1 Score | 0.8298 | `results/unified_lsh_attention/gpt2/summary.csv` |
+| Compression | 0.991x | `results/unified_lsh_attention/gpt2/summary.csv` |
+| Compressed Layers | 48 | `results/unified_lsh_attention/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/unified_lsh_attention/gpt2/summary.csv` |
+| Timestamp | 2026-09-15T04:39:44.559260 | `results/unified_lsh_attention/gpt2/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

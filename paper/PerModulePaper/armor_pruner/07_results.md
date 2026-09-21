@@ -47,3 +47,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_armor/roberta/summary.csv | roberta | armor_pruner | 23855.46 tok/s <!-- source: results/unified_armor/roberta/summary.csv line 3 --> | 520.68 MB <!-- source: results/unified_armor/roberta/summary.csv line 3 --> | 0.4025514241721895 <!-- source: results/unified_armor/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | armor | Elapsed 0.835s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 13 --> | 279.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 13 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 13 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | armor_pruner | Elapsed 0.838s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 14 --> | 279.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 14 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 14 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 62.50% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:01:51 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [67.55]
+> These numbers must NOT be cited in the final paper.
+

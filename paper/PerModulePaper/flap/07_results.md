@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_flap/roberta/summary.csv | roberta | full | 26887.25 tok/s <!-- source: results/unified_flap/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_flap/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_flap/roberta/summary.csv line 2 --> |
 | results/unified_flap/roberta/summary.csv | roberta | flap | 27426.09 tok/s <!-- source: results/unified_flap/roberta/summary.csv line 3 --> | 520.18 MB <!-- source: results/unified_flap/roberta/summary.csv line 3 --> | 0.0 <!-- source: results/unified_flap/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | flap | Elapsed 0.187s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 48 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 48 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 48 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 94.70% | `results/pareto_table.csv` |
+| F1 Score | 0.9432 | `results/pareto_table.csv` |
+| Compression | 1.000x | `results/pareto_table.csv` |
+| Compressed Layers | 0 | `results/pareto_table.csv` |
+| Fallback Layers | 36 | `results/pareto_table.csv` |
+| Timestamp | 2026-09-19T16:22:31.507170 | `results/pareto_table.csv` |
+

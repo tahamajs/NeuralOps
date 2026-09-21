@@ -138,3 +138,25 @@
 - **All models pass quality gate.**
 
 ---
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 82.00% | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| F1 Score | 0.0000 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compressed Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Fallback Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Timestamp | 2026-09-20T15:55:28.080936 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 78.56, 78.78]
+> These numbers must NOT be cited in the final paper.
+

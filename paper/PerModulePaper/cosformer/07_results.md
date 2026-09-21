@@ -125,3 +125,24 @@ Cosformer is a **reasonable linear attention baseline** that preserves
 most of the baseline accuracy at modest overhead.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.992 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 100.00% | `results/long_context/summary.csv` |
+| F1 Score | 0.0000 | `results/long_context/summary.csv` |
+| Compression | 0.992x | `results/long_context/summary.csv` |
+| Compressed Layers | ? | `results/long_context/summary.csv` |
+| Fallback Layers | ? | `results/long_context/summary.csv` |
+| Timestamp | 2026-09-20T06:57:19 | `results/long_context/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 90.71, 90.25, 90.71, 71.22, 58.72]
+> These numbers must NOT be cited in the final paper.
+

@@ -41,3 +41,18 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_enlighten/roberta/summary.csv | roberta | full | 27357.52 tok/s <!-- source: results/unified_enlighten/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_enlighten/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_enlighten/roberta/summary.csv line 2 --> |
 | results/unified_enlighten/roberta/summary.csv | roberta | enlighten | 26019.95 tok/s <!-- source: results/unified_enlighten/roberta/summary.csv line 3 --> | 520.68 MB <!-- source: results/unified_enlighten/roberta/summary.csv line 3 --> | 0.2388048979619952 <!-- source: results/unified_enlighten/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | enlighten | Elapsed 2.36s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 40 --> | 152.7 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 40 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 40 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `NO_DATA`  
+**Detail**: No CSV rows found
+
+*No valid CSV data found for this module.*
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 89.22, 79.36, 61.12, 78.56, 51.03]
+> These numbers must NOT be cited in the final paper.
+

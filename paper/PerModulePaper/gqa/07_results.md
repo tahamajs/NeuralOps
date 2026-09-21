@@ -103,3 +103,25 @@
 - **Accuracy:** drops only -0.80%–+2.64%.
 - **Parameter reduction:** modest (1.05×–1.05×).
 - **All models pass quality gate.**
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `QUESTIONABLE`  
+**Detail**: acc=44.10%, comp=1.078x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 44.10% | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| F1 Score | 0.3486 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compression | 1.078x | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Compressed Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+| Timestamp | 2026-09-19T16:27:47.581167 | `results/unified_sweep/distilbert_agnews_full/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36, 78.56, 79.36, 78.78]
+> These numbers must NOT be cited in the final paper.
+

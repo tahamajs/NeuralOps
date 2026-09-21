@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_svd/gpt2/summary.csv | gpt2 | svd | 12404.45 tok/s <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 590.39 MB <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd/gpt2/summary.csv line 3 --> |
 | results/unified_svd/roberta/summary.csv | roberta | full | 28095.04 tok/s <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 711.69 MB <!-- source: results/unified_svd/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_svd/roberta/summary.csv line 2 --> |
 | results/unified_svd/roberta/summary.csv | roberta | svd | 12718.31 tok/s <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 680.69 MB <!-- source: results/unified_svd/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_svd/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 75.00% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-25 23:52:49 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

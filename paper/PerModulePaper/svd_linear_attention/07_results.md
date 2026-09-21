@@ -128,9 +128,9 @@ $\mathcal{O}(N)$.
 | Method | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
-| aasvd | 88.5% | 4.0× | 75.5% | 3.5× | 76.8% | 3.5× |
-| rpc | 89.5% | 1.01× | 75.5% | 1.01× | 76.8% | 1.01× |
-| svd_mamba | 85.5% | 0.90× | 72.5% | 0.90× | 73.2% | 0.90× |
+<!-- FABRICATED: | aasvd | 88.5% | 4.0× | 75.5% | 3.5× | 76.8% | 3.5× | -->
+<!-- FABRICATED: | rpc | 89.5% | 1.01× | 75.5% | 1.01× | 76.8% | 1.01× | -->
+<!-- FABRICATED: | svd_mamba | 85.5% | 0.90× | 72.5% | 0.90× | 73.2% | 0.90× | -->
 | **svd_linear** | **80.73** | **50\%×** | **50.92** | **2.1\times×** | **77.5** | **2.1\times×** |
 
 ## 7.11 Failure Cases
@@ -153,3 +153,24 @@ $\mathcal{O}(N)$.
 | Long-context speedup (N=1024) | 86.4× |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 67.19% | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| F1 Score | 0.0000 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compression | 1.000x | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Compressed Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Fallback Layers | ? | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+| Timestamp | 2026-08-26 00:33:08 | `results/gpu_server/abandoned_run/benchmark_summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 79.36, 90.71, 78.56, 79.36, 88.5, 75.5, 76.8, 89.5, 75.5, 76.8, 85.5, 72.5, 73.2]
+> These numbers must NOT be cited in the final paper.
+

@@ -134,3 +134,24 @@
 - **GPT-2:** 50.92% (Δ = -28.44), **46.0\%×** reduction
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=81.08%, comp=1.060x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 81.08% | `results/unified_orion/qwen3_5/summary.csv` |
+| F1 Score | 0.7854 | `results/unified_orion/qwen3_5/summary.csv` |
+| Compression | 1.060x | `results/unified_orion/qwen3_5/summary.csv` |
+| Compressed Layers | 0 | `results/unified_orion/qwen3_5/summary.csv` |
+| Fallback Layers | 0 | `results/unified_orion/qwen3_5/summary.csv` |
+| Timestamp | 2026-09-09T05:23:24.160104 | `results/unified_orion/qwen3_5/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 78.56, 90.71, 78.56]
+> These numbers must NOT be cited in the final paper.
+

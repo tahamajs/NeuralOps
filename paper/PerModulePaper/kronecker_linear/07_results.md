@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_kronecker_linear/qwen3_5/summary.csv | qwen3_5 | kronecker_linear | 1285.76 tok/s <!-- source: results/unified_kronecker_linear/qwen3_5/summary.csv line 3 --> | 1796.78 MB <!-- source: results/unified_kronecker_linear/qwen3_5/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_kronecker_linear/qwen3_5/summary.csv line 3 --> |
 | results/unified_kronecker_linear/roberta/summary.csv | roberta | full | 27395.46 tok/s <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 2 --> |
 | results/unified_kronecker_linear/roberta/summary.csv | roberta | kronecker_linear | 25928.59 tok/s <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 3 --> | 520.18 MB <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_kronecker_linear/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.71% | `results/unified_kronecker_linear/distilbert/summary.csv` |
+| F1 Score | 0.9099 | `results/unified_kronecker_linear/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_kronecker_linear/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_kronecker_linear/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_kronecker_linear/distilbert/summary.csv` |
+| Timestamp | 2026-09-15T04:06:04.321316 | `results/unified_kronecker_linear/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [67.89]
+> These numbers must NOT be cited in the final paper.
+

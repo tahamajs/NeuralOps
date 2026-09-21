@@ -41,3 +41,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_rpca/roberta/summary.csv | roberta | full | 94654.06 tok/s <!-- source: results/unified_rpca/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_rpca/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_rpca/roberta/summary.csv line 2 --> |
 | results/unified_rpca/roberta/summary.csv | roberta | rpca | 92321.44 tok/s <!-- source: results/unified_rpca/roberta/summary.csv line 3 --> | 301.72 MB <!-- source: results/unified_rpca/roberta/summary.csv line 3 --> | 0.0 <!-- source: results/unified_rpca/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | rpca | Elapsed 3.946s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 99 --> | 155.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 99 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 99 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=60.21%, comp=1.003x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 60.21% | `results/unified_rpca/gpt2/summary.csv` |
+| F1 Score | 0.6825 | `results/unified_rpca/gpt2/summary.csv` |
+| Compression | 1.003x | `results/unified_rpca/gpt2/summary.csv` |
+| Compressed Layers | 1 | `results/unified_rpca/gpt2/summary.csv` |
+| Fallback Layers | 0 | `results/unified_rpca/gpt2/summary.csv` |
+| Timestamp | 2026-09-11T08:05:41.849179 | `results/unified_rpca/gpt2/summary.csv` |
+

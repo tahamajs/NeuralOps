@@ -119,9 +119,9 @@
 | Method | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
-| aasvd (r=64) | 88.5% | 75.5% | 76.8% | 0.20× |
+<!-- FABRICATED: | aasvd (r=64) | 88.5% | 75.5% | 76.8% | 0.20× | -->
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
-| oha | 89.2% | 76.5% | 77.8% | 1.02× |
+<!-- FABRICATED: | oha | 89.2% | 76.5% | 77.8% | 1.02× | -->
 | **svd_mamba** | **50.92** | **50.92** | **50.23** | **2.1\times×** |
 
 ## 7.10 Failure Cases
@@ -144,3 +144,24 @@
 | Gate at end of training | [GATE_FINAL] |
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.904 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.02% | `results/unified_svd_mamba/distilbert/summary.csv` |
+| F1 Score | 0.9034 | `results/unified_svd_mamba/distilbert/summary.csv` |
+| Compression | 0.904x | `results/unified_svd_mamba/distilbert/summary.csv` |
+| Compressed Layers | 54 | `results/unified_svd_mamba/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_svd_mamba/distilbert/summary.csv` |
+| Timestamp | 2026-09-14T03:57:48.503736 | `results/unified_svd_mamba/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [78.56, 79.36, 78.56, 79.36, 75.5, 76.8, 78.78, 76.5, 77.8]
+> These numbers must NOT be cited in the final paper.
+

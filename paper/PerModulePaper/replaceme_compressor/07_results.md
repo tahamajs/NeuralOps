@@ -7,7 +7,7 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
 | results/unified_replaceme/distilbert/summary.csv | distilbert | full | PASS | 90.48% <!-- source: results/unified_replaceme/distilbert/summary.csv line 2 --> | 0.9077 <!-- source: results/unified_replaceme/distilbert/summary.csv line 2 --> |
-| results/unified_replaceme/distilbert/summary.csv | distilbert | replaceme | PASS | 82.0% <!-- source: results/unified_replaceme/distilbert/summary.csv line 3 --> | 0.8363 <!-- source: results/unified_replaceme/distilbert/summary.csv line 3 --> |
+<!-- FABRICATED: | results/unified_replaceme/distilbert/summary.csv | distilbert | replaceme | PASS | 82.0% <!-- source: results/unified_replaceme/distilbert/summary.csv line 3 --> | 0.8363 <!-- source: results/unified_replaceme/distilbert/summary.csv line 3 --> | -->
 | results/unified_replaceme/gpt2/summary.csv | gpt2 | full | PASS | 60.78% <!-- source: results/unified_replaceme/gpt2/summary.csv line 2 --> | 0.6354 <!-- source: results/unified_replaceme/gpt2/summary.csv line 2 --> |
 | results/unified_replaceme/gpt2/summary.csv | gpt2 | replaceme | PASS | 56.77% <!-- source: results/unified_replaceme/gpt2/summary.csv line 3 --> | 0.6808 <!-- source: results/unified_replaceme/gpt2/summary.csv line 3 --> |
 | results/unified_replaceme/roberta/summary.csv | roberta | full | PASS | 75.11% <!-- source: results/unified_replaceme/roberta/summary.csv line 2 --> | 0.7586 <!-- source: results/unified_replaceme/roberta/summary.csv line 2 --> |
@@ -41,3 +41,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_replaceme/roberta/summary.csv | roberta | full | 101984.15 tok/s <!-- source: results/unified_replaceme/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_replaceme/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_replaceme/roberta/summary.csv line 2 --> |
 | results/unified_replaceme/roberta/summary.csv | roberta | replaceme | 100713.97 tok/s <!-- source: results/unified_replaceme/roberta/summary.csv line 3 --> | 325.0 MB <!-- source: results/unified_replaceme/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_replaceme/roberta/summary.csv line 3 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | replaceme_compressor | Elapsed 0.161s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 91 --> | 127.0 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 91 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 91 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 0.00% | `results/all_121_compressors_gpu_matrix.csv` |
+| F1 Score | 0.0000 | `results/all_121_compressors_gpu_matrix.csv` |
+| Compression | 1.000x | `results/all_121_compressors_gpu_matrix.csv` |
+| Compressed Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Fallback Layers | ? | `results/all_121_compressors_gpu_matrix.csv` |
+| Timestamp | unknown | `results/all_121_compressors_gpu_matrix.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.48, 82.0, 60.78, 56.77, 75.11, 80.62]
+> These numbers must NOT be cited in the final paper.
+

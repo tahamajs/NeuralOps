@@ -44,3 +44,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_hashed_linear/qwen3_5/summary.csv | qwen3_5 | hashed_linear | 1303.54 tok/s <!-- source: results/unified_hashed_linear/qwen3_5/summary.csv line 3 --> | 1796.78 MB <!-- source: results/unified_hashed_linear/qwen3_5/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hashed_linear/qwen3_5/summary.csv line 3 --> |
 | results/unified_hashed_linear/roberta/summary.csv | roberta | full | 112717.41 tok/s <!-- source: results/unified_hashed_linear/roberta/summary.csv line 2 --> | 298.71 MB <!-- source: results/unified_hashed_linear/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_hashed_linear/roberta/summary.csv line 2 --> |
 | results/unified_hashed_linear/roberta/summary.csv | roberta | hashed_linear | 104843.18 tok/s <!-- source: results/unified_hashed_linear/roberta/summary.csv line 3 --> | 362.29 MB <!-- source: results/unified_hashed_linear/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_hashed_linear/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.68% | `results/unified_hashed_linear/distilbert/summary.csv` |
+| F1 Score | 0.9009 | `results/unified_hashed_linear/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_hashed_linear/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_hashed_linear/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_hashed_linear/distilbert/summary.csv` |
+| Timestamp | 2026-09-10T21:07:56.031811 | `results/unified_hashed_linear/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [60.78, 67.89, 75.11]
+> These numbers must NOT be cited in the final paper.
+

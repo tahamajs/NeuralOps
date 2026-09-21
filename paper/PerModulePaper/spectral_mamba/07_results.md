@@ -38,3 +38,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_spectral_mamba/gpt2/summary.csv | gpt2 | spectral_mamba | 30894.94 tok/s <!-- source: results/unified_spectral_mamba/gpt2/summary.csv line 3 --> | 650.47 MB <!-- source: results/unified_spectral_mamba/gpt2/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_spectral_mamba/gpt2/summary.csv line 3 --> |
 | results/unified_spectral_mamba/roberta/summary.csv | roberta | full | 81138.79 tok/s <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 2 --> |
 | results/unified_spectral_mamba/roberta/summary.csv | roberta | spectral_mamba | 32098.62 tok/s <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 3 --> | 749.82 MB <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 3 --> | 0.0000 <!-- source: results/unified_spectral_mamba/roberta/summary.csv line 3 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=0.856 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 90.71% | `results/unified_spectral_mamba/distilbert/summary.csv` |
+| F1 Score | 0.9111 | `results/unified_spectral_mamba/distilbert/summary.csv` |
+| Compression | 0.856x | `results/unified_spectral_mamba/distilbert/summary.csv` |
+| Compressed Layers | 0 | `results/unified_spectral_mamba/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_spectral_mamba/distilbert/summary.csv` |
+| Timestamp | 2026-09-11T21:03:01.937278 | `results/unified_spectral_mamba/distilbert/summary.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [75.46]
+> These numbers must NOT be cited in the final paper.
+

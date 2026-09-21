@@ -26,3 +26,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 |---|---|---|---|---|---|
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | aa_svd | Elapsed 0.8s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 4 --> | 106.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 4 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 4 --> |
 | results/all_121_compressors_gpu_matrix.csv | NVIDIA-GPU-Matrix | aa_svd_compressor | Elapsed 0.809s tok/s <!-- source: results/all_121_compressors_gpu_matrix.csv line 5 --> | 106.1 MB <!-- source: results/all_121_compressors_gpu_matrix.csv line 5 --> | Verified <!-- source: results/all_121_compressors_gpu_matrix.csv line 5 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=85.80%, comp=1.133x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 85.80% | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+| F1 Score | 0.8538 | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+| Compression | 1.133x | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+| Compressed Layers | 16 | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+| Fallback Layers | 8 | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+| Timestamp | 2026-09-18T08:45:25.037950 | `results/agnews_unified_aa_svd_compressor/distilbert/summary.csv` |
+

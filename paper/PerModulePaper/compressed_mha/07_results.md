@@ -128,3 +128,18 @@ The fix restores full accuracy.
 - Nested detection fix restores DistilBERT accuracy.
 
 ---
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `VALID`  
+**Detail**: acc=76.60%, comp=1.110x
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 76.60% | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| F1 Score | 0.7645 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Compression | 1.110x | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Compressed Layers | 0 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Fallback Layers | 0 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+| Timestamp | 2026-09-20T13:12:22.094695 | `results/distilbert_mnli_full_mnli_sweep/summary_snapshot_post_group7.csv` |
+

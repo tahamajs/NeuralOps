@@ -29,3 +29,25 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/unified_full/distilbert/summary.csv | distilbert | full | 53818.36 tok/s <!-- source: results/unified_full/distilbert/summary.csv line 2 --> | 388.01 MB <!-- source: results/unified_full/distilbert/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_full/distilbert/summary.csv line 2 --> |
 | results/unified_full/gpt2/summary.csv | gpt2 | full | 26323.5 tok/s <!-- source: results/unified_full/gpt2/summary.csv line 2 --> | 791.56 MB <!-- source: results/unified_full/gpt2/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_full/gpt2/summary.csv line 2 --> |
 | results/unified_full/roberta/summary.csv | roberta | full | 26612.78 tok/s <!-- source: results/unified_full/roberta/summary.csv line 2 --> | 712.34 MB <!-- source: results/unified_full/roberta/summary.csv line 2 --> | 0.0000 <!-- source: results/unified_full/roberta/summary.csv line 2 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 35.20% | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| F1 Score | 0.0000 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compression | 1.000x | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Compressed Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Fallback Layers | ? | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+| Timestamp | 2026-09-20T15:13:23.350042 | `results/distilbert_mnli_full_mnli_sweep/summary_v3.csv` |
+
+
+> [!CAUTION]
+> The following numbers in this paper had NO CSV backing and have been flagged as FABRICATED:
+> [90.71, 79.36, 78.56]
+> These numbers must NOT be cited in the final paper.
+

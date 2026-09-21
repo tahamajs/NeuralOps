@@ -38,3 +38,19 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 | results/benchmark_summary_v2.csv | roberta-mrpc | samba_m3 | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 353 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 353 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 353 --> |
 | results/benchmark_summary_v2.csv | t5-sst2 | samba_m3 | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 354 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 354 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 354 --> |
 | results/benchmark_summary_v2.csv | t5-mrpc | samba_m3 | Latency 0.0ms tok/s <!-- source: results/benchmark_summary_v2.csv line 355 --> | 0.0 MB <!-- source: results/benchmark_summary_v2.csv line 355 --> | Verified <!-- source: results/benchmark_summary_v2.csv line 355 --> |
+
+---
+## ✅ Verified Results (Auto-Updated 2026-09-21)
+
+**Classification**: `FALLBACK`  
+**Detail**: comp=1.000 (no compression)
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Accuracy | 89.91% | `results/unified_sweep/distilbert/summary.csv` |
+| F1 Score | 0.9020 | `results/unified_sweep/distilbert/summary.csv` |
+| Compression | 1.000x | `results/unified_sweep/distilbert/summary.csv` |
+| Compressed Layers | 6 | `results/unified_sweep/distilbert/summary.csv` |
+| Fallback Layers | 0 | `results/unified_sweep/distilbert/summary.csv` |
+| Timestamp | 2026-09-19T01:56:33.266369 | `results/unified_sweep/distilbert/summary.csv` |
+
