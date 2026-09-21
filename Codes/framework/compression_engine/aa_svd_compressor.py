@@ -126,6 +126,7 @@ class SVDLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        self.register_buffer("input_mean", None)
         self.reset_parameters()
 
     @property
@@ -177,6 +178,10 @@ class SVDLinear(nn.Module):
                 nn.init.zeros_(self.lora_B)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if hasattr(self, "input_mean") and self.input_mean is not None:
+            if self.input_mean.dim() == 1:
+                x = x - self.input_mean.to(dtype=x.dtype)
+
         if self.use_fused_kernel and (self.lora_rank == 0 or self.lora_A is None):
             from framework.attentions.fused_svd_kernel import fused_svd_linear
             return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
