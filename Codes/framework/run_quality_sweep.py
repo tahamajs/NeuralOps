@@ -3332,6 +3332,16 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.append("--force_rank")
     if getattr(args, "span_lambda", None) is not None and getattr(args, "span_lambda", 0.0) > 0:
         cmd.extend(["--span_lambda", str(args.span_lambda)])
+    if getattr(args, "kvtc_bits", None) is not None:
+        cmd.extend(["--kvtc_bits", str(args.kvtc_bits)])
+    if getattr(args, "kvtc_max_error", None) is not None:
+        cmd.extend(["--kvtc_max_error", str(args.kvtc_max_error)])
+    if getattr(args, "kvtc_pca_energy", None) is not None:
+        cmd.extend(["--kvtc_pca_energy", str(args.kvtc_pca_energy)])
+    if getattr(args, "kvtc_target_attention_only", None) is not None:
+        cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
+    if getattr(args, "kvtc_fallback_to_original", None) is not None:
+        cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
     if args.dataset_dir is None:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
     if getattr(args, "unknown_args", None):
