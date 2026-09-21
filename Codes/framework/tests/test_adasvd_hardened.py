@@ -284,6 +284,50 @@ def test_two_sided_als_improves_over_svd():
     assert err_als <= err_svd * 1.05, f"ALS made error worse: {err_als} > {err_svd}"
 
 
+def test_gelu_derivative_squared():
+    """Test GELU derivative squared values at known points."""
+    import math
+    from framework.compression_engine.adasvd_compressor import AdaSVDCompressor
+
+    # GELU'(0) = 0.5 + 0 = 0.5, so GELU'(0)^2 = 0.25
+    y = torch.tensor([0.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert abs(result.item() - 0.25) < 1e-5, f"GELU'(0)^2 should be 0.25, got {result.item()}"
+
+    # For large positive y, GELU'(y) ≈ 1, so squared ≈ 1
+    y = torch.tensor([5.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert abs(result.item() - 1.0) < 0.01, f"GELU'(5)^2 should be ~1, got {result.item()}"
+
+    # For large negative y, GELU'(y) ≈ 0, so squared ≈ 0
+    y = torch.tensor([-5.0])
+    result = AdaSVDCompressor._gelu_derivative_squared(y)
+    assert result.item() < 0.01, f"GELU'(-5)^2 should be ~0, got {result.item()}"
+    print("✓ test_gelu_derivative_squared passed")
+
+
+def test_gating_aware_d_for_ffn_lin1():
+    """Test that ffn.lin1 gets gating-aware D, lin2 gets variance."""
+    from framework.compression_engine.adasvd_compressor import AdaSVDCompressor
+
+    # We need a dummy compressor - use a tiny model
+    model = torch.nn.Sequential(
+        torch.nn.Linear(64, 128),   # would be "lin1"
+        torch.nn.GELU(),
+        torch.nn.Linear(128, 64),   # would be "lin2"
+    )
+    # Manually test the detector
+    comp = AdaSVDCompressor.__new__(AdaSVDCompressor)
+
+    assert comp._is_followed_by_gelu("ffn.lin1") == True
+    assert comp._is_followed_by_gelu("ffn.lin2") == False
+    assert comp._is_followed_by_gelu("attention.q_lin") == False
+    assert comp._is_followed_by_gelu("intermediate.dense") == True
+    assert comp._is_followed_by_gelu("gate_proj") == True
+    assert comp._is_followed_by_gelu("down_proj") == False
+    print("✓ test_gating_aware_d_for_ffn_lin1 passed")
+
+
 if __name__ == "__main__":
     print("Running AdaSVD test suite...")
     test_cfg_get()
@@ -308,4 +352,8 @@ if __name__ == "__main__":
     print("[PASS] test_mean_shift_absorption")
     test_two_sided_als_improves_over_svd()
     print("[PASS] test_two_sided_als_improves_over_svd")
-    print("\nALL 11 ADASVD UNIT TESTS PASSED SUCCESSFULLY!")
+    test_gelu_derivative_squared()
+    print("[PASS] test_gelu_derivative_squared")
+    test_gating_aware_d_for_ffn_lin1()
+    print("[PASS] test_gating_aware_d_for_ffn_lin1")
+    print("\nALL 13 ADASVD UNIT TESTS PASSED SUCCESSFULLY!")
