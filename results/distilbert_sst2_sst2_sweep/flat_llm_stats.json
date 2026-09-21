@@ -1,0 +1,8 @@
+{
+  "compressor_name": "flat_llm",
+  "original_parameters": 66955010,
+  "compressed_parameters": 66955010,
+  "saved_parameters": 0,
+  "compression_ratio": 1.0,
+  "reduction_percentage": 0.0
+}
