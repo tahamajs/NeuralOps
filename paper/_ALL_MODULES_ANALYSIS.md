@@ -32,7 +32,7 @@ This document provides the exhaustive audit and empirical validation across all 
 
 ### P0 Action Items (Immediate Fixes)
 
-- `adasvd_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py (Category: BROKEN, Sub: Compression-Failed)
+- `adasvd_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py (Status: PASS, 88.76% acc, 1.161x comp, verified 2026-09-21)
 - `compot_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/compot_compressor.py (Category: BROKEN, Sub: Compression-Failed)
 - `cur_linear`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cur_linear.py (Category: BROKEN, Sub: Compression-Failed)
 - `cure`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cure.py (Category: BROKEN, Sub: Compression-Failed)
@@ -253,7 +253,7 @@ This document provides the exhaustive audit and empirical validation across all 
 | `weighted_ensemble` | Attention Replacement | **FALLBACK** | Unknown | 89.79% | 79.20% | 1.000x | **P2** | `...ts/master_aggregated_results.csv` |
 | `xattention` | Attention Replacement | **FALLBACK** | Unknown | 85.78% | 52.50% | 1.000x | **P2** | `...attention/distilbert/summary.csv` |
 | `zeros_attention` | Attention Replacement | **FALLBACK** | Unknown | 51.26% | 36.30% | 1.000x | **P2** | `...s/unified_zeros/gpt2/summary.csv` |
-| `adasvd_compressor` | Compressor | **BROKEN** | Compression-Failed | 87.04% | 87.40% | 27.220x | **P0** | `...l_121_compressors_gpu_matrix.csv` |
+| `adasvd_compressor` | Compressor | **PASS** | PASS | 88.76% | 88.76% | 1.161x | **DONE** | `...summary_adasvd_fixed.csv` |
 | `compot_compressor` | Compressor | **BROKEN** | Compression-Failed | 55.16% | 94.50% | 30.960x | **P0** | `...l_121_compressors_gpu_matrix.csv` |
 | `cur_linear` | Compressor | **BROKEN** | Compression-Failed | N/A | N/A | 1.000x | **P0** | `...ur_linear/distilbert/summary.csv` |
 | `cure` | Compressor | **BROKEN** | Compression-Failed | N/A | N/A | 1.000x | **P0** | `...fied_cure/distilbert/summary.csv` |
