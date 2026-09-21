@@ -1,8 +1,0 @@
-module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
-a3,PASS,49.54,73.36,,adapted_qwen,2026-08-31T22:07:38.159247
-aasvd,PASS,50.8,86.38,,adapted_qwen,2026-08-31T22:09:04.990594
-adaptive_svd,PASS,50.92,47.6,,adapted_qwen,2026-08-31T22:09:52.983483
-astro,PASS,68.23,7.89,,adapted_qwen,2026-08-31T22:10:01.156240
-admm,PASS,51.61,8.25,,adapted_qwen,2026-08-31T22:10:09.649339
-faq,PASS,75.23,6.48,,adapted_qwen,2026-08-31T22:10:16.516159
-aegis_v1,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-08-31T22:10:16.903968

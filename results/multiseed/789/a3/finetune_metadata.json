@@ -1,0 +1,1 @@
+{"classification_head_trained": true, "finetune_mode": "head", "steps": 200, "dataset": "mnli", "seed": 789}

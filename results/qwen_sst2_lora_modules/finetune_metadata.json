@@ -1,1 +1,0 @@
-{"classification_head_trained": true, "finetune_mode": "lora", "steps": 0, "dataset": "sst2", "seed": 42}
