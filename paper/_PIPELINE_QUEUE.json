@@ -1,0 +1,449 @@
+{
+  "max_parallel": 8,
+  "jobs": [],
+  "active": [
+    {
+      "id": "aasvd_r128_seed789",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed789 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "fwsvd_r128_seed789",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed789 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "drone_r128_seed42",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix drone128_seed42 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "drone_r128_seed123",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix drone128_seed123 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "drone_r128_seed456",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix drone128_seed456 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "drone_r128_seed789",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 789 --parallel 1 --batch_size 8 --output_suffix drone128_seed789 --fresh",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:29:27"
+    },
+    {
+      "id": "process_papers_batch5",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 40 50",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:08"
+    },
+    {
+      "id": "process_papers_batch6",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 50 60",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:08"
+    },
+    {
+      "id": "process_papers_batch7",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 60 70",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch8",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 70 80",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch9",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 80 90",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch10",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 90 100",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch11",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 100 110",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch12",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 110 120",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch13",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 120 130",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    },
+    {
+      "id": "process_papers_batch14",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 130 140",
+      "status": "active",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:31:45"
+    }
+  ],
+  "completed": [
+    {
+      "id": "fwsvd_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 32 --parallel 1 --batch_size 8 --output_suffix fwsvd32 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "fwsvd_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 256 --parallel 1 --batch_size 8 --output_suffix fwsvd256 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "drone_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 32 --parallel 1 --batch_size 8 --output_suffix drone32 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "drone_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 256 --parallel 1 --batch_size 8 --output_suffix drone256 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "aasvd_r128_seed42",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed42 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "aasvd_r128_seed123",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed123 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "aasvd_r128_seed456",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix aasvd128_seed456 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "fwsvd_r128_seed42",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 42 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed42 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:22:23"
+    },
+    {
+      "id": "process_papers_batch1",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 10",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:25:53"
+    },
+    {
+      "id": "process_papers_batch2",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 10 20",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:25:53"
+    },
+    {
+      "id": "fwsvd_r128_seed123",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 123 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed123 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:25:53"
+    },
+    {
+      "id": "fwsvd_r128_seed456",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 456 --parallel 1 --batch_size 8 --output_suffix fwsvd128_seed456 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:25:53"
+    },
+    {
+      "id": "aasvd_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd32 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "aasvd_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "aasvd_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "aasvd_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd256 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "fwsvd_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 8 --output_suffix fwsvd64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "fwsvd_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:26:40"
+    },
+    {
+      "id": "drone_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 8 --output_suffix drone64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:27:32"
+    },
+    {
+      "id": "drone_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --parallel 1 --batch_size 8 --output_suffix drone128 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:27:32"
+    },
+    {
+      "id": "process_papers_batch3",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 20 30",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:30:17"
+    },
+    {
+      "id": "process_papers_batch4",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 30 40",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:30:17"
+    },
+    {
+      "id": "process_papers_batch15",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 140 150",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch16",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 150 160",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch17",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 160 170",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch18",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 170 180",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch19",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 180 190",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch20",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 190 200",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch21",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 200 210",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "process_papers_batch22",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:32:30"
+    },
+    {
+      "id": "fwsvd_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "drone_mnli",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --parallel 1 --batch_size 8 --output_suffix drone_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "a3_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 8 --output_suffix a3_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "kmeans_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 8 --output_suffix kmeans_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "adaptive_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 8 --output_suffix adaptive_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "adaptive_svd_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_sst2 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "aasvd_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 4 --output_suffix aasvd_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "fwsvd_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 4 --output_suffix fwsvd_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:36:08"
+    },
+    {
+      "id": "drone_roberta_sst2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 4 --output_suffix drone_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-21 04:40:03"
+    }
+  ],
+  "failed": []
+}
