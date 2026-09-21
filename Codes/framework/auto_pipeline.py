@@ -400,7 +400,7 @@ def main_daemon(max_parallel_override: Optional[int] = None) -> None:
             if max_parallel_override is not None:
                 max_parallel = max_parallel_override
             else:
-                max_parallel = min(state.get("max_parallel", 2), 2)
+                max_parallel = min(state.get("max_parallel", 1), 1)
             pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
 
             # Auto-refill if queue is low
@@ -450,13 +450,13 @@ def main_daemon(max_parallel_override: Optional[int] = None) -> None:
                 state["active"] = [j for j in state.get("active", []) if j.get("id") != jid]
 
             # Launch pending jobs if capacity allows
-            # VRAM safety rule: VRAM < 7.0 GB and util < 90%
+            # Strict single-job execution on laptop GPU with VRAM cap < 5.5 GB
             while pending_jobs and len(active_processes) < max_parallel:
                 vram_gb, util, temp = query_gpu_stats()
                 next_job = pending_jobs[0]
 
-                # If next job is GPU, enforce VRAM limit
-                if next_job.get("type") == "gpu" and (vram_gb >= 7.0 or util >= 95.0):
+                # If next job is GPU, enforce safe VRAM limit
+                if next_job.get("type") == "gpu" and (vram_gb >= 5.5 or util >= 90.0):
                     break
 
                 job_to_launch = pending_jobs.pop(0)
