@@ -394,7 +394,7 @@ class AegisHybridAttention(BaseAttention):
                 h_dim = kwargs.get("head_dim",
                         getattr(cfg_src, "head_dim",
                         getattr(cfg_src, "d_kv", h_size // max(1, n_heads))))
-                r = rank or kwargs.get("rank", getattr(cfg_src, "rank", min(128, h_size)))
+                r = rank or kwargs.get("rank", getattr(cfg_src, "rank", min(64, h_size)))
                 l_r = lora_rank or kwargs.get("lora_rank", getattr(cfg_src, "lora_rank",
                                      getattr(cfg_src, "lora_r", 32)))
                 l_win = getattr(cfg_src, "local_window", getattr(cfg_src, "block_size", 128))
