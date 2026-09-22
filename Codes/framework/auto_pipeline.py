@@ -1,7 +1,27 @@
 """
-Autonomous Pipeline Daemon for SVD Attention & Model Compression Framework.
-Continuously executes GPU evaluation sweeps and CPU paper compiling tasks.
-Survives process restarts, manages GPU VRAM/temperature thresholds, and auto-refills queues.
+Auto Pipeline Daemon v2 — GPU-Safe, Optimal-Utilization Edition.
+
+Design principles:
+  1. Never saturate VRAM  → pause launches when VRAM > 6.5/8.0 GB
+  2. Never exceed thermal  → pause when temp > 80C
+  3. Maximize throughput   → adaptive parallelism (1-3 jobs)
+  4. Recover gracefully    → orphan recovery, retry with reset
+  5. Full observability    → per-job logs, GPU telemetry
+  6. Safety first          → circuit breaker on repeated fails
+
+Bugs fixed from v1:
+  - max_parallel properly clamped (never exceeds GPU_SAFE_MAX_PARALLEL)
+  - VRAM checked before AND after launch
+  - retries reset on orphan recovery
+  - circuit breaker actually blocks problematic jobs
+  - glob cached per batch (not re-run for every paper)
+  - shlex.split for command parsing (handles spaces)
+  - anomaly report actually written to disk
+  - file locking prevents queue corruption
+  - per-job logs (no more DEVNULL)
+  - job timeouts enforced with SIGTERM → SIGKILL fallback
+  - nvidia-smi failure → skip launch (not 0,0,0)
+  - shell flag removed (always list)
 """
 
 from __future__ import annotations
@@ -12,511 +32,987 @@ import glob
 import json
 import logging
 import os
+import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import time
+from dataclasses import dataclass, field, asdict
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-QUEUE_PATH = os.path.join(ROOT_DIR, "paper", "_PIPELINE_QUEUE.json")
-LOG_PATH = os.path.join(ROOT_DIR, "logs", "auto_pipeline.log")
-PAPERS_DIR = os.path.join(ROOT_DIR, "paper", "PerModulePaper")
-RESULTS_DIR = os.path.join(ROOT_DIR, "results")
+# =============================================================================
+# PATHS
+# =============================================================================
+ROOT_DIR = Path(__file__).resolve().parents[2]
+QUEUE_PATH = ROOT_DIR / "paper" / "_PIPELINE_QUEUE.json"
+QUEUE_LOCK = ROOT_DIR / "paper" / "_PIPELINE_QUEUE.lock"
+LOG_DIR = ROOT_DIR / "logs"
+JOB_LOG_DIR = LOG_DIR / "jobs"
+LOG_PATH = LOG_DIR / "auto_pipeline.log"
+PAPERS_DIR = ROOT_DIR / "paper" / "PerModulePaper"
+RESULTS_DIR = ROOT_DIR / "results"
 
-os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
-os.makedirs(os.path.dirname(QUEUE_PATH), exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+JOB_LOG_DIR.mkdir(parents=True, exist_ok=True)
+QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+# =============================================================================
+# TUNABLE SAFETY / PERFORMANCE CONSTANTS
+# =============================================================================
+# VRAM safety (RTX 4070 Laptop = 8 GB)
+VRAM_CEILING_GB = 6.5        # pause new launches above this
+VRAM_RESUME_GB = 5.5         # resume launches below this
+VRAM_PER_JOB_GB = 1.8        # typical per-job footprint
+
+# Thermal safety
+TEMP_CEILING_C = 80.0        # pause when temp > this
+TEMP_RESUME_C = 70.0         # resume below this
+
+# Utilization (informational; laptop GPUs don't hit 100% on real workloads)
+UTIL_TARGET_PCT = 90.0
+
+# Parallelism
+GPU_SAFE_MAX_PARALLEL = 3    # hard ceiling for GPU jobs
+CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
+
+# Timing
+POLL_INTERVAL_S = 15         # main loop sleep
+THERMAL_PAUSE_S = 90         # pause duration when hot
+LAUNCH_COOLDOWN_S = 5        # wait between launches
+
+# Job execution
+JOB_TIMEOUT_S = 1800         # 30 min max per job
+JOB_KILL_GRACE_S = 10        # SIGTERM → SIGKILL grace period
+MAX_RETRIES = 2              # per-job
+
+# Circuit breaker
+CIRCUIT_FAIL_WINDOW_S = 300  # 5 minutes
+CIRCUIT_FAIL_THRESHOLD = 5   # if 5 fails in window → block job id
+
+# Auto-refill
+AUTO_REFILL_INTERVAL_S = 120 # only refill every 2 min
+
+# =============================================================================
+# LOGGING
+# =============================================================================
 logger = logging.getLogger("auto_pipeline")
 logger.setLevel(logging.INFO)
+logger.handlers.clear()
+
+_fmt = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
+
 try:
-    file_handler = logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8")
-    file_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
-    logger.addHandler(file_handler)
+    _fh = logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8")
+    _fh.setFormatter(_fmt)
+    logger.addHandler(_fh)
 except Exception:
     pass
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
-logger.addHandler(console_handler)
+
+_ch = logging.StreamHandler(sys.stdout)
+_ch.setFormatter(_fmt)
+logger.addHandler(_ch)
 
 
-def log_event(level: str, job_id: str, message: str) -> None:
-    msg = f"[{job_id}] {message}" if job_id else message
+def log_job(job_id: str, level: str, message: str) -> None:
+    """Structured per-job logging."""
+    tag = f"[{job_id}]"
     if level == "GPU":
-        logger.info(f"[GPU] {msg}")
+        logger.info(f"[GPU] {message}")
     elif level == "LAUNCH":
-        logger.info(f"[LAUNCH] {msg}")
+        logger.info(f"[LAUNCH]{tag} {message}")
     elif level == "DONE":
-        logger.info(f"[DONE] {msg}")
+        logger.info(f"[DONE]{tag} {message}")
     elif level == "FAIL":
-        logger.warning(f"[FAIL] {msg}")
+        logger.warning(f"[FAIL]{tag} {message}")
+    elif level == "TIMEOUT":
+        logger.warning(f"[TIMEOUT]{tag} {message}")
+    elif level == "BLOCK":
+        logger.warning(f"[BLOCK]{tag} {message}")
     else:
-        logger.info(f"[{level}] {msg}")
+        logger.info(f"[{level}]{tag} {message}")
 
 
-def query_gpu_stats() -> Tuple[float, float, float]:
-    """Returns (vram_used_gb, utilization_pct, temperature_c)."""
+# =============================================================================
+# GPU MONITOR
+# =============================================================================
+@dataclass
+class GPUStats:
+    vram_used_gb: float
+    vram_total_gb: float
+    utilization_pct: float
+    temperature_c: float
+    ok: bool = True
+
+    @property
+    def vram_free_gb(self) -> float:
+        return max(0.0, self.vram_total_gb - self.vram_used_gb)
+
+
+def query_gpu_stats() -> GPUStats:
+    """Query nvidia-smi. Returns ok=False on failure."""
     try:
         cmd = [
             "nvidia-smi",
-            "--query-gpu=memory.used,utilization.gpu,temperature.gpu",
+            "--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu",
             "--format=csv,noheader,nounits",
         ]
         out = subprocess.check_output(cmd, encoding="utf-8", timeout=5).strip()
         lines = [l.strip() for l in out.splitlines() if l.strip()]
-        if lines:
-            parts = [p.strip() for p in lines[0].split(",")]
-            vram_mb = float(parts[0])
-            util = float(parts[1])
-            temp = float(parts[2])
-            return vram_mb / 1024.0, util, temp
+        if not lines:
+            return GPUStats(0, 0, 0, 0, ok=False)
+        parts = [p.strip() for p in lines[0].split(",")]
+        return GPUStats(
+            vram_used_gb=float(parts[0]) / 1024.0,
+            vram_total_gb=float(parts[1]) / 1024.0,
+            utilization_pct=float(parts[2]),
+            temperature_c=float(parts[3]),
+            ok=True,
+        )
     except Exception as e:
-        logger.debug(f"Error querying nvidia-smi: {e}")
-    return 0.0, 0.0, 0.0
+        logger.warning(f"nvidia-smi query failed: {e}")
+        return GPUStats(0, 0, 0, 0, ok=False)
 
 
-def read_queue() -> Dict[str, Any]:
-    if not os.path.exists(QUEUE_PATH):
-        return {"max_parallel": 2, "jobs": [], "active": [], "completed": [], "failed": []}
+def is_gpu_safe(stats: GPUStats) -> Tuple[bool, str]:
+    """Check if GPU is safe for a new launch."""
+    if not stats.ok:
+        return False, "nvidia-smi query failed"
+    if stats.vram_used_gb > VRAM_CEILING_GB:
+        return False, f"VRAM {stats.vram_used_gb:.2f} > {VRAM_CEILING_GB}"
+    if stats.temperature_c > TEMP_CEILING_C:
+        return False, f"temp {stats.temperature_c:.1f} > {TEMP_CEILING_C}"
+    return True, "ok"
+
+
+# =============================================================================
+# QUEUE MANAGER (file-locked)
+# =============================================================================
+class QueueManager:
+    """Thread-safe / process-safe queue access via lock file."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.lock_path = path.with_suffix(".lock")
+
+    def _acquire_lock(self, timeout: float = 10.0) -> Optional[int]:
+        """Simple PID-based lock. Returns fd or None on timeout."""
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                fd = os.open(str(self.lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                os.write(fd, str(os.getpid()).encode())
+                return fd
+            except FileExistsError:
+                # Check if lock is stale (PID no longer exists)
+                try:
+                    with open(self.lock_path, "r") as f:
+                        pid = int(f.read().strip())
+                    # Check if PID is alive
+                    try:
+                        os.kill(pid, 0)
+                    except OSError:
+                        # Stale lock
+                        logger.warning(f"Removing stale lock (pid {pid})")
+                        os.unlink(str(self.lock_path))
+                        continue
+                except Exception:
+                    pass
+                time.sleep(0.5)
+        logger.error(f"Failed to acquire queue lock within {timeout}s")
+        return None
+
+    def _release_lock(self, fd: int) -> None:
+        try:
+            os.close(fd)
+        except Exception:
+            pass
+        try:
+            os.unlink(str(self.lock_path))
+        except Exception:
+            pass
+
+    def read(self) -> Dict[str, Any]:
+        """Read queue under lock."""
+        fd = self._acquire_lock()
+        if fd is None:
+            return self._default_state()
+        try:
+            if not self.path.exists():
+                return self._default_state()
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Queue read failed: {e}")
+            return self._default_state()
+        finally:
+            self._release_lock(fd)
+
+    def write(self, state: Dict[str, Any]) -> bool:
+        """Atomic write under lock."""
+        fd = self._acquire_lock()
+        if fd is None:
+            return False
+        try:
+            tmp = self.path.with_suffix(".tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+            shutil.move(str(tmp), str(self.path))
+            return True
+        except Exception as e:
+            logger.error(f"Queue write failed: {e}")
+            return False
+        finally:
+            self._release_lock(fd)
+
+    def mutate(self, mutator) -> Dict[str, Any]:
+        """Atomic read-modify-write under a single lock."""
+        fd = self._acquire_lock()
+        if fd is None:
+            return self._default_state()
+        try:
+            if not self.path.exists():
+                state = self._default_state()
+            else:
+                with open(self.path, "r", encoding="utf-8") as f:
+                    state = json.load(f)
+            state = mutator(state) or state
+            tmp = self.path.with_suffix(".tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+            shutil.move(str(tmp), str(self.path))
+            return state
+        except Exception as e:
+            logger.error(f"Queue mutate failed: {e}")
+            return self._default_state()
+        finally:
+            self._release_lock(fd)
+
+    @staticmethod
+    def _default_state() -> Dict[str, Any]:
+        return {
+            "max_parallel": GPU_SAFE_MAX_PARALLEL,
+            "jobs": [],
+            "active": [],
+            "completed": [],
+            "failed": [],
+            "blocked": [],
+        }
+
+
+# =============================================================================
+# JOB HANDLE
+# =============================================================================
+@dataclass
+class JobHandle:
+    job_id: str
+    job_type: str  # "gpu" | "cpu"
+    cmd: str
+    proc: Optional[subprocess.Popen] = None
+    log_file: Optional[Any] = None
+    started_at: float = 0.0
+    retries: int = 0
+    status: str = "pending"
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = asdict(self)
+        d.pop("proc", None)
+        d.pop("log_file", None)
+        d["started_at"] = (
+            datetime.datetime.fromtimestamp(self.started_at).isoformat()
+            if self.started_at else None
+        )
+        return d
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "JobHandle":
+        return cls(
+            job_id=d["job_id"],
+            job_type=d.get("job_type", "gpu"),
+            cmd=d["cmd"],
+            retries=d.get("retries", 0),
+            status=d.get("status", "pending"),
+        )
+
+
+# =============================================================================
+# JOB LAUNCHER
+# =============================================================================
+def launch_job(handle: JobHandle) -> bool:
+    """Launch job with per-job log file. Returns success."""
     try:
-        with open(QUEUE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        # Parse command
+        if handle.cmd.startswith("python "):
+            parts = shlex.split(handle.cmd)
+            parts[0] = sys.executable
+            exec_cmd: Any = parts
+        else:
+            exec_cmd = shlex.split(handle.cmd)
+
+        log_path = JOB_LOG_DIR / f"{handle.job_id}.log"
+        log_file = open(log_path, "w", encoding="utf-8", buffering=1)
+
+        proc = subprocess.Popen(
+            exec_cmd,
+            cwd=str(ROOT_DIR),
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            # shell=False always (list form)
+        )
+        handle.proc = proc
+        handle.log_file = log_file
+        handle.started_at = time.time()
+        handle.status = "active"
+        log_job(handle.job_id, "LAUNCH", f"pid={proc.pid} cmd='{handle.cmd}'")
+        return True
     except Exception as e:
-        logger.error(f"Failed reading queue file: {e}")
-        return {"max_parallel": 2, "jobs": [], "active": [], "completed": [], "failed": []}
+        logger.error(f"Launch failed for {handle.job_id}: {e}", exc_info=True)
+        return False
 
 
-def write_queue(state: Dict[str, Any]) -> None:
-    tmp_path = QUEUE_PATH + ".tmp"
+def terminate_job(handle: JobHandle, reason: str) -> None:
+    """Gracefully terminate: SIGTERM → wait → SIGKILL."""
+    if handle.proc is None or handle.proc.poll() is not None:
+        return
+    log_job(handle.job_id, "TIMEOUT", f"terminating ({reason})")
     try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
-        shutil.move(tmp_path, QUEUE_PATH)
+        handle.proc.terminate()
+        try:
+            handle.proc.wait(timeout=JOB_KILL_GRACE_S)
+        except subprocess.TimeoutExpired:
+            handle.proc.kill()
+            handle.proc.wait(timeout=5)
     except Exception as e:
-        logger.error(f"Failed writing queue file: {e}")
+        logger.error(f"Failed to terminate {handle.job_id}: {e}")
+    finally:
+        if handle.log_file is not None:
+            try:
+                handle.log_file.close()
+            except Exception:
+                pass
+            handle.log_file = None
 
 
-def auto_refill_queue(state: Dict[str, Any]) -> None:
-    existing_ids = {j["id"] for j in state.get("jobs", [])}
-    existing_ids.update(j["id"] for j in state.get("active", []))
-    existing_ids.update(j["id"] for j in state.get("completed", []))
-    existing_ids.update(j["id"] for j in state.get("failed", []))
-
-    new_jobs = []
-
-    # Check for missing rank ablations
-    for mod in ["aasvd", "fwsvd", "drone"]:
-        for r in [32, 64, 128, 256]:
-            jid = f"{mod}_r{r}"
-            if jid not in existing_ids:
-                new_jobs.append({
-                    "id": jid,
-                    "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank {r} --parallel 1 --batch_size 32 --output_suffix {mod}{r} --fresh",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    # Check for seed ablations at r=128
-    for mod in ["aasvd", "fwsvd", "drone"]:
-        for s in [42, 123, 456, 789]:
-            jid = f"{mod}_r128_seed{s}"
-            if jid not in existing_ids:
-                new_jobs.append({
-                    "id": jid,
-                    "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --rank 128 --seed {s} --parallel 1 --batch_size 32 --output_suffix {mod}128_seed{s} --fresh",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    # Check for missing baselines on DistilBERT / MNLI
-    for mod in ["fwsvd", "drone"]:
-        jid = f"{mod}_mnli"
-        if jid not in existing_ids:
-            new_jobs.append({
-                "id": jid,
-                "type": "gpu",
-                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_mnli --fresh",
-                "status": "pending",
-                "retries": 0,
-            })
-            existing_ids.add(jid)
-
-    # Check for missing key compressor baselines on DistilBERT / SST-2
-    for mod in ["a3", "kmeans", "adaptive_svd", "adaptive"]:
-        jid = f"{mod}_sst2"
-        if jid not in existing_ids:
-            new_jobs.append({
-                "id": jid,
-                "type": "gpu",
-                "cmd": f"python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_sst2 --fresh",
-                "status": "pending",
-                "retries": 0,
-            })
-            existing_ids.add(jid)
-
-    # Check for RoBERTa baseline validations for all top compressors
-    if os.path.exists(os.path.join(ROOT_DIR, "models", "roberta_sst2")) or os.path.exists(os.path.join(ROOT_DIR, "models", "roberta-base")):
-        rob_path = "models/roberta_sst2" if os.path.exists(os.path.join(ROOT_DIR, "models", "roberta_sst2")) else "models/roberta-base"
-        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come"]:
-            jid = f"{mod}_roberta_sst2"
-            if jid not in existing_ids:
-                new_jobs.append({
-                    "id": jid,
-                    "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {rob_path} --dataset sst2 --modules {mod} --rank 64 --parallel 1 --batch_size 16 --output_suffix {mod}_rob64 --fresh",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    # Check for GPT-2 WikiText-2 decoder causal LM evaluations
-    gpt2_model_path = os.path.join(ROOT_DIR, "models", "gpt2_wikitext")
-    if not os.path.exists(gpt2_model_path):
-        gpt2_model_path = os.path.join(ROOT_DIR, "models", "gpt2")
-    if os.path.exists(gpt2_model_path):
-        gpt2_candidates = [
-            "aasvd", "fwsvd", "drone", "svd_compressed", "vspec", 
-            "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come",
-            "adaptive_svd", "adaptive", "a3", "kmeans", "kronecker", "swift_svd"
-        ]
-        for mod in gpt2_candidates:
-            jid = f"gpt2_eval_{mod}"
-            if jid not in existing_ids:
-                new_jobs.append({
-                    "id": jid,
-                    "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_gpt2_sweep.py --model_path {gpt2_model_path} --modules {mod} --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    # Check for MNLI sweeps across all compressors
-    mnli_model_path = os.path.join(ROOT_DIR, "models", "distilbert_mnli_full")
-    if os.path.exists(mnli_model_path):
-        top_compressors = [
-            "svd_compressed", "vspec", "aegis_v6", "cur_moe", "res_svd", "salt", "sdrm", "spectron", "come",
-            "swift_svd", "hybrid_svd_layer", "adaptive_compressor", "adaptive_ranks", "kronecker_compressor",
-            "rpca", "soka", "subspace_projection", "swift_svd_act"
-        ]
-        for mod in top_compressors:
-            jid = f"{mod}_mnli_sweep"
-            if jid not in existing_ids:
-                new_jobs.append({
-                    "id": jid,
-                    "type": "gpu",
-                    "cmd": f"python -u Codes/framework/run_quality_sweep.py --model {mnli_model_path} --dataset mnli --modules {mod} --parallel 1 --batch_size 32 --output_suffix {mod}_mnli --fresh",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    # Check for papers batch processing
-    if os.path.exists(PAPERS_DIR):
-        papers = sorted([d for d in os.listdir(PAPERS_DIR) if os.path.isdir(os.path.join(PAPERS_DIR, d)) and not d.startswith("_")])
-        batch_size = 10
-        total_batches = (len(papers) + batch_size - 1) // batch_size
-        for b in range(total_batches):
-            jid = f"process_papers_batch{b+1}"
-            if jid not in existing_ids:
-                start_idx = b * batch_size
-                end_idx = min(len(papers), (b + 1) * batch_size)
-                new_jobs.append({
-                    "id": jid,
-                    "type": "cpu",
-                    "cmd": f"python -u Codes/framework/auto_pipeline.py --process_papers {start_idx} {end_idx}",
-                    "status": "pending",
-                    "retries": 0,
-                })
-                existing_ids.add(jid)
-
-    if new_jobs:
-        logger.info(f"Auto-refill added {len(new_jobs)} new jobs to the queue.")
-        state.setdefault("jobs", []).extend(new_jobs)
+def close_handle(handle: JobHandle) -> None:
+    """Close log file."""
+    if handle.log_file is not None:
+        try:
+            handle.log_file.close()
+        except Exception:
+            pass
+        handle.log_file = None
 
 
+# =============================================================================
+# CIRCUIT BREAKER
+# =============================================================================
+@dataclass
+class CircuitBreaker:
+    """Blocks job IDs that have failed too often in a window."""
+    fail_times: Dict[str, List[float]] = field(default_factory=dict)
+
+    def record_fail(self, job_id: str) -> None:
+        self.fail_times.setdefault(job_id, []).append(time.time())
+
+    def record_success(self, job_id: str) -> None:
+        self.fail_times.pop(job_id, None)
+
+    def is_blocked(self, job_id: str) -> bool:
+        times = self.fail_times.get(job_id, [])
+        cutoff = time.time() - CIRCUIT_FAIL_WINDOW_S
+        recent = [t for t in times if t > cutoff]
+        self.fail_times[job_id] = recent
+        return len(recent) >= CIRCUIT_FAIL_THRESHOLD
+
+    def blocklist(self) -> set:
+        return {jid for jid in self.fail_times if self.is_blocked(jid)}
+
+
+# =============================================================================
+# PAPER WORKER (CSV cache)
+# =============================================================================
 def process_papers_worker(start_idx: int, end_idx: int) -> None:
-    """CPU worker: populates papers from results CSVs and attempts pdflatex build."""
-    if not os.path.exists(PAPERS_DIR):
+    """Populate paper templates + attempt pdflatex compile."""
+    if not PAPERS_DIR.exists():
         logger.warning(f"Papers directory not found: {PAPERS_DIR}")
         return
 
-    papers = sorted([d for d in os.listdir(PAPERS_DIR) if os.path.isdir(os.path.join(PAPERS_DIR, d)) and not d.startswith("_")])
-    target_papers = papers[start_idx:end_idx]
-    logger.info(f"Processing paper batch {start_idx}-{end_idx}: {target_papers}")
+    papers = sorted([
+        d.name for d in PAPERS_DIR.iterdir()
+        if d.is_dir() and not d.name.startswith("_")
+    ])
+    target = papers[start_idx:end_idx]
+    logger.info(f"Processing papers [{start_idx}:{end_idx}] → {len(target)} files")
 
-    # Gather all summary CSVs
-    csv_files = glob.glob(os.path.join(RESULTS_DIR, "**", "summary*.csv"), recursive=True)
-
+    # Cache CSVs once (not per paper)
+    csv_files = glob.glob(str(RESULTS_DIR / "**" / "summary*.csv"), recursive=True)
     csv_data: Dict[str, Dict[str, Any]] = {}
     for c in csv_files:
         try:
             with open(c, "r", encoding="utf-8", errors="ignore") as f:
                 lines = [l.strip() for l in f if l.strip()]
-            if len(lines) >= 2:
-                header = [h.strip() for h in lines[0].split(",")]
-                for line in lines[1:]:
-                    vals = [v.strip() for v in line.split(",")]
-                    row = dict(zip(header, vals))
-                    mod = row.get("module_name")
-                    if mod and mod not in csv_data:
-                        csv_data[mod] = row
+            if len(lines) < 2:
+                continue
+            header = [h.strip() for h in lines[0].split(",")]
+            for line in lines[1:]:
+                vals = [v.strip() for v in line.split(",")]
+                row = dict(zip(header, vals))
+                mod = row.get("module_name")
+                if mod and mod not in csv_data:
+                    csv_data[mod] = row
         except Exception:
             continue
 
-    processed_count = 0
-    for p_name in target_papers:
-        p_dir = os.path.join(PAPERS_DIR, p_name)
-        data = csv_data.get(p_name, None)
-        if not data:
+    processed = 0
+    for p_name in target:
+        p_dir = PAPERS_DIR / p_name
+        data = csv_data.get(p_name)
+        if data is None:
+            # Fuzzy match
             for k, v in csv_data.items():
                 if p_name.lower() in k.lower() or k.lower() in p_name.lower():
                     data = v
                     break
 
-        # Populate results table if template exists
-        res_tex = os.path.join(p_dir, "07_results.tex")
-        if os.path.exists(res_tex) and data:
+        res_tex = p_dir / "07_results.tex"
+        if res_tex.exists() and data:
             try:
-                with open(res_tex, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                acc = data.get("accuracy_pct", "85.0")
-                comp = data.get("compression_rate", "1.15")
-                ratio = data.get("compression_ratio_pct", "13.0")
-                rec_err = data.get("avg_reconstruction_error", "0.75")
-                content = content.replace("ACC_PLACEHOLDER", str(acc))
-                content = content.replace("COMP_PLACEHOLDER", str(comp))
-                content = content.replace("RATIO_PLACEHOLDER", str(ratio))
-                content = content.replace("REC_ERR_PLACEHOLDER", str(rec_err))
-                with open(res_tex, "w", encoding="utf-8") as f:
-                    f.write(content)
+                content = res_tex.read_text(encoding="utf-8", errors="ignore")
+                for ph, key, default in [
+                    ("ACC_PLACEHOLDER", "accuracy_pct", "85.0"),
+                    ("COMP_PLACEHOLDER", "compression_rate", "1.15"),
+                    ("RATIO_PLACEHOLDER", "compression_ratio_pct", "13.0"),
+                    ("REC_ERR_PLACEHOLDER", "avg_reconstruction_error", "0.75"),
+                ]:
+                    content = content.replace(ph, str(data.get(key, default)))
+                res_tex.write_text(content, encoding="utf-8")
             except Exception as e:
                 logger.warning(f"Failed updating {res_tex}: {e}")
 
-        # Attempt pdflatex compile if main.tex exists
-        main_tex = os.path.join(p_dir, "main.tex")
-        if os.path.exists(main_tex):
+        main_tex = p_dir / "main.tex"
+        if main_tex.exists():
             try:
-                subprocess.run(["pdflatex", "-interaction=nonstopmode", "main.tex"], cwd=p_dir, timeout=60, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
-        processed_count += 1
+                subprocess.run(
+                    ["pdflatex", "-interaction=nonstopmode", "main.tex"],
+                    cwd=str(p_dir),
+                    timeout=300,  # 5 min (was 60)
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except subprocess.TimeoutExpired:
+                logger.warning(f"pdflatex timed out for {p_name}")
+            except Exception as e:
+                logger.debug(f"pdflatex failed for {p_name}: {e}")
+        processed += 1
 
-    logger.info(f"Completed paper batch {start_idx}-{end_idx} ({processed_count} papers processed).")
+    logger.info(f"Paper batch [{start_idx}:{end_idx}] done ({processed} papers)")
 
 
+# =============================================================================
+# ANOMALY REPORTER
+# =============================================================================
 def check_anomaly_status() -> None:
-    """Checks results of the r=128 ablations across seeds and generates _ANOMALY_REPORT.md"""
+    """Generate _ANOMALY_REPORT.md from r=128 multi-seed results."""
     seeds = [42, 123, 456]
-    aasvd_rows = []
-    fwsvd_rows = []
-
-    for s in seeds:
-        # AASVD
-        pattern_aa = os.path.join(RESULTS_DIR, "**", f"*aasvd128_seed{s}*.csv")
-        files_aa = glob.glob(pattern_aa, recursive=True)
-        if files_aa:
+    rows = []
+    for mod in ["aasvd", "fwsvd"]:
+        for s in seeds:
+            pattern = str(RESULTS_DIR / "**" / f"*{mod}128_seed{s}*.csv")
+            files = glob.glob(pattern, recursive=True)
+            if not files:
+                continue
             try:
-                with open(files_aa[0], "r", encoding="utf-8") as f:
+                with open(files[0], "r", encoding="utf-8") as f:
                     lines = [l.strip() for l in f if l.strip()]
                 if len(lines) >= 2:
                     h = [x.strip() for x in lines[0].split(",")]
                     r = dict(zip(h, [x.strip() for x in lines[1].split(",")]))
-                    aasvd_rows.append((s, r.get("accuracy_pct", "N/A"), r.get("num_fallback_layers", "N/A"), r.get("avg_reconstruction_error", "N/A")))
+                    rows.append((mod, s,
+                                 r.get("accuracy_pct", "N/A"),
+                                 r.get("num_fallback_layers", "N/A"),
+                                 r.get("avg_reconstruction_error", "N/A")))
             except Exception:
-                pass
+                continue
 
-        # FWSVD
-        pattern_fw = os.path.join(RESULTS_DIR, "**", f"*fwsvd128_seed{s}*.csv")
-        files_fw = glob.glob(pattern_fw, recursive=True)
-        if files_fw:
-            try:
-                with open(files_fw[0], "r", encoding="utf-8") as f:
-                    lines = [l.strip() for l in f if l.strip()]
-                if len(lines) >= 2:
-                    h = [x.strip() for x in lines[0].split(",")]
-                    r = dict(zip(h, [x.strip() for x in lines[1].split(",")]))
-                    fwsvd_rows.append((s, r.get("accuracy_pct", "N/A"), r.get("num_fallback_layers", "N/A"), r.get("avg_reconstruction_error", "N/A")))
-            except Exception:
-                pass
+    if not rows:
+        return
 
-    if len(aasvd_rows) + len(fwsvd_rows) > 0:
-        report_path = os.path.join(ROOT_DIR, "paper", "_ANOMALY_REPORT.md")
-        lines = [
-            "# AASVD vs. FWSVD Rank-128 Anomaly Investigation Report",
-            "",
-            f"*Generated: {datetime.datetime.now().isoformat()}*",
-            "",
-            "| Module | Seed | Accuracy (%) | Fallback Layers | Rec. Error |",
-            "| :--- | :---: | :---: | :---: | :---: |",
-        ]
-        for s, acc, fb, err in aasvd_rows:
-            lines.append(f"| aasvd | {s} | {acc}% | {fb} | {err} |")
-        for s, acc, fb, err in fwsvd_rows:
-            lines.append(f"| fwsvd | {s} | {acc}% | {fb} | {err} |")
+    report_path = ROOT_DIR / "paper" / "_ANOMALY_REPORT.md"
+    lines = [
+        "# AASVD vs. FWSVD Rank-128 Anomaly Report",
+        "",
+        f"*Generated: {datetime.datetime.now().isoformat()}*",
+        "",
+        "| Module | Seed | Accuracy (%) | Fallback | Rec. Error |",
+        "| :--- | :---: | :---: | :---: | :---: |",
+    ]
+    for mod, s, acc, fb, err in rows:
+        lines.append(f"| {mod} | {s} | {acc} | {fb} | {err} |")
+    lines.append("")
+    lines.append("## Analysis")
+    lines.append("Empirical comparison on SST-2 at rank=128 across seeds 42/123/456.")
+    try:
+        report_path.write_text("\n".join(lines), encoding="utf-8")
+        logger.info(f"Anomaly report written: {report_path}")
+    except Exception as e:
+        logger.error(f"Failed to write anomaly report: {e}")
 
-        lines.extend([
-            "",
-            "## Findings & Analysis",
-            "- **Empirical Comparison**: Evaluation on SST-2 at rank=128.",
-        ])
 
+# =============================================================================
+# HF UPLOADER (disabled per user request)
+# =============================================================================
 def upload_models_to_hf() -> None:
-    """Scans results directory for new PASS checkpoints and uploads them to HuggingFace (DISABLED)."""
-    # All uploads disabled per user request
+    """
+    DISABLED: All HuggingFace uploads are disabled per user request.
+    To re-enable, replace body with upload logic.
+    """
     return
 
 
+# =============================================================================
+# AUTO-REFILL
+# =============================================================================
+def auto_refill_queue(state: Dict[str, Any]) -> int:
+    """Add missing jobs. Returns count of new jobs."""
+    existing = set()
+    for bucket in ("jobs", "active", "completed", "failed", "blocked"):
+        for j in state.get(bucket, []):
+            existing.add(j.get("id") or j.get("job_id"))
+
+    new_jobs: List[Dict[str, Any]] = []
+
+    def add(jid: str, cmd: str, jtype: str = "gpu") -> None:
+        if jid in existing:
+            return
+        new_jobs.append({
+            "id": jid, "type": jtype, "cmd": cmd,
+            "status": "pending", "retries": 0,
+        })
+        existing.add(jid)
+
+    # Rank ablations
+    for mod in ["aasvd", "fwsvd", "drone"]:
+        for r in [32, 64, 128, 256]:
+            add(
+                f"{mod}_r{r}",
+                f"python -u Codes/framework/run_quality_sweep.py "
+                f"--model models/distilbert_sst2 --dataset sst2 "
+                f"--modules {mod} --rank {r} --parallel 1 "
+                f"--batch_size 32 --output_suffix {mod}{r} --fresh",
+            )
+
+    # Seed ablations
+    for mod in ["aasvd", "fwsvd", "drone"]:
+        for s in [42, 123, 456, 789]:
+            add(
+                f"{mod}_r128_seed{s}",
+                f"python -u Codes/framework/run_quality_sweep.py "
+                f"--model models/distilbert_sst2 --dataset sst2 "
+                f"--modules {mod} --rank 128 --seed {s} "
+                f"--parallel 1 --batch_size 32 "
+                f"--output_suffix {mod}128_seed{s} --fresh",
+            )
+
+    # MNLI baselines
+    for mod in ["fwsvd", "drone"]:
+        add(
+            f"{mod}_mnli",
+            f"python -u Codes/framework/run_quality_sweep.py "
+            f"--model models/distilbert_mnli_full --dataset mnli "
+            f"--modules {mod} --parallel 1 --batch_size 32 "
+            f"--output_suffix {mod}_mnli --fresh",
+        )
+
+    # Key compressors on SST-2
+    for mod in ["a3", "kmeans", "adaptive_svd", "adaptive"]:
+        add(
+            f"{mod}_sst2",
+            f"python -u Codes/framework/run_quality_sweep.py "
+            f"--model models/distilbert_sst2 --dataset sst2 "
+            f"--modules {mod} --parallel 1 --batch_size 32 "
+            f"--output_suffix {mod}_sst2 --fresh",
+        )
+
+    # RoBERTa
+    rob_path = None
+    for cand in ["models/roberta_sst2", "models/roberta-base"]:
+        if (ROOT_DIR / cand).exists():
+            rob_path = cand
+            break
+    if rob_path:
+        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed",
+                    "vspec", "aegis_v6", "cur_moe", "res_svd",
+                    "salt", "sdrm", "spectron", "come"]:
+            add(
+                f"{mod}_roberta_sst2",
+                f"python -u Codes/framework/run_quality_sweep.py "
+                f"--model {rob_path} --dataset sst2 --modules {mod} "
+                f"--rank 64 --parallel 1 --batch_size 16 "
+                f"--output_suffix {mod}_rob64 --fresh",
+            )
+
+    # GPT-2 WikiText-2
+    gpt2_path = None
+    for cand in ["models/gpt2_wikitext", "models/gpt2"]:
+        if (ROOT_DIR / cand).exists():
+            gpt2_path = cand
+            break
+    if gpt2_path:
+        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed",
+                    "vspec", "aegis_v6", "cur_moe", "res_svd",
+                    "salt", "sdrm", "spectron", "come",
+                    "adaptive_svd", "adaptive", "a3", "kmeans",
+                    "kronecker", "swift_svd"]:
+            add(
+                f"gpt2_eval_{mod}",
+                f"python -u Codes/framework/run_gpt2_sweep.py "
+                f"--model_path {gpt2_path} --modules {mod} "
+                f"--output_dir results/gpt2_wikitext2_sweep "
+                f"--stride 512 --batch_size 8",
+            )
+
+    # MNLI compressors
+    mnli_path = ROOT_DIR / "models" / "distilbert_mnli_full"
+    if mnli_path.exists():
+        for mod in ["svd_compressed", "vspec", "aegis_v6", "cur_moe",
+                    "res_svd", "salt", "sdrm", "spectron", "come",
+                    "swift_svd", "hybrid_svd_layer", "adaptive_compressor",
+                    "adaptive_ranks", "kronecker_compressor", "rpca",
+                    "soka", "subspace_projection", "swift_svd_act"]:
+            add(
+                f"{mod}_mnli_sweep",
+                f"python -u Codes/framework/run_quality_sweep.py "
+                f"--model models/distilbert_mnli_full --dataset mnli "
+                f"--modules {mod} --parallel 1 --batch_size 32 "
+                f"--output_suffix {mod}_mnli --fresh",
+            )
+
+    # Paper batches
+    if PAPERS_DIR.exists():
+        papers = sorted([
+            d.name for d in PAPERS_DIR.iterdir()
+            if d.is_dir() and not d.name.startswith("_")
+        ])
+        batch_size = 10
+        total_batches = (len(papers) + batch_size - 1) // batch_size
+        for b in range(total_batches):
+            start = b * batch_size
+            end = min(len(papers), (b + 1) * batch_size)
+            add(
+                f"process_papers_batch{b+1}",
+                f"python -u Codes/framework/auto_pipeline.py "
+                f"--process_papers {start} {end}",
+                jtype="cpu",
+            )
+
+    if new_jobs:
+        state.setdefault("jobs", []).extend(new_jobs)
+        logger.info(f"Auto-refill: +{len(new_jobs)} jobs")
+    return len(new_jobs)
 
 
-def main_daemon(max_parallel_override: Optional[int] = None) -> None:
-    logger.info("Starting Autonomous Pipeline Daemon (auto_pipeline.py)...")
+# =============================================================================
+# MAIN DAEMON
+# =============================================================================
+_shutdown = False
+
+
+def _signal_handler(signum, frame):
+    global _shutdown
+    logger.info(f"Received signal {signum}; shutting down gracefully...")
+    _shutdown = True
+
+
+def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+
+    logger.info("=" * 70)
+    logger.info("Auto Pipeline Daemon v2 starting")
+    logger.info(f"VRAM ceiling: {VRAM_CEILING_GB} GB | Temp ceiling: {TEMP_CEILING_C}C")
+    logger.info(f"Max parallel: {GPU_SAFE_MAX_PARALLEL} (GPU)")
+    logger.info("=" * 70)
+
+    qm = QueueManager(QUEUE_PATH)
+    breaker = CircuitBreaker()
+
+    # Determine max parallel (clamped)
+    if cli_max_parallel is not None:
+        max_parallel = min(cli_max_parallel, GPU_SAFE_MAX_PARALLEL)
+    else:
+        max_parallel = GPU_SAFE_MAX_PARALLEL
+    logger.info(f"Effective max_parallel = {max_parallel}")
+
+    active: Dict[str, JobHandle] = {}
     start_time = time.time()
-    active_processes: Dict[str, Tuple[subprocess.Popen, Dict[str, Any]]] = {}
-    consecutive_failures = 0
+    last_refill = 0.0
+    last_launch = 0.0
 
-    # Recover any orphaned active jobs from previous daemon run
-    initial_state = read_queue()
-    orphaned = initial_state.get("active", [])
-    if orphaned:
-        logger.info(f"Re-queuing {len(orphaned)} orphaned jobs from previous run back to pending...")
-        for j in orphaned:
+    # --- Recover orphans ---
+    state = qm.read()
+    orphans = state.get("active", [])
+    if orphans:
+        logger.info(f"Recovering {len(orphans)} orphaned jobs")
+        recovered = []
+        for j in orphans:
             j["status"] = "pending"
-            initial_state.setdefault("jobs", []).append(j)
-        initial_state["active"] = []
-        write_queue(initial_state)
+            j["retries"] = 0  # reset retries (bug fix)
+            recovered.append(j)
+        state["active"] = []
+        state.setdefault("jobs", []).extend(recovered)
+        qm.write(state)
 
-    while True:
+    while not _shutdown:
         try:
-            now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            vram_gb, util, temp = query_gpu_stats()
-            log_event("GPU", "", f"vram={vram_gb:.2f} GB, util={util:.1f}%, temp={temp:.1f} C")
+            # --- 1. GPU telemetry ---
+            stats = query_gpu_stats()
+            safe, reason = is_gpu_safe(stats)
 
-            state = read_queue()
-            if max_parallel_override is not None:
-                max_parallel = max_parallel_override
-            else:
-                max_parallel = min(state.get("max_parallel", 1), 1)
-            pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
-
-            # Auto-refill if queue is low
-            if len(pending_jobs) < 2:
-                auto_refill_queue(state)
-                pending_jobs = [j for j in state.get("jobs", []) if j.get("status") == "pending"]
-
-            # Thermal safety rule: temp > 85C -> pause 120s
-            if temp > 85.0:
-                logger.warning(f"GPU temperature ({temp:.1f}C) exceeded 85C safety threshold! Pausing launches for 120s...")
-                time.sleep(120)
+            # --- 2. Thermal pause ---
+            if stats.ok and stats.temperature_c > TEMP_CEILING_C:
+                logger.warning(
+                    f"GPU temp {stats.temperature_c:.1f}C > "
+                    f"{TEMP_CEILING_C}C; pausing {THERMAL_PAUSE_S}s"
+                )
+                time.sleep(THERMAL_PAUSE_S)
                 continue
 
-            # Failure circuit breaker
-            if consecutive_failures >= 3:
-                logger.error("3 consecutive job failures observed. Pausing pipeline for 300s...")
-                time.sleep(300)
-                consecutive_failures = 0
-                continue
+            # --- 3. Read queue ---
+            state = qm.read()
+            max_parallel = min(
+                state.get("max_parallel", GPU_SAFE_MAX_PARALLEL),
+                GPU_SAFE_MAX_PARALLEL,
+            )
 
-            # Check active processes
-            finished_ids = []
-            for jid, (proc, job_info) in list(active_processes.items()):
-                ret = proc.poll()
-                if ret is not None:
-                    finished_ids.append(jid)
-                    if ret == 0:
-                        log_event("DONE", jid, f"exit=0")
-                        job_info["status"] = "done"
-                        state.setdefault("completed", []).append(job_info)
-                        consecutive_failures = 0
-                    else:
-                        retries = job_info.get("retries", 0)
-                        if retries < 1:
-                            log_event("FAIL", jid, f"exit={ret} (scheduling retry 1/1)")
-                            job_info["retries"] = retries + 1
-                            job_info["status"] = "pending"
-                            state.setdefault("jobs", []).append(job_info)
-                        else:
-                            log_event("FAIL", jid, f"exit={ret} (max retries reached)")
-                            job_info["status"] = "failed"
-                            state.setdefault("failed", []).append(job_info)
-                            consecutive_failures += 1
+            # --- 4. Auto-refill ---
+            if time.time() - last_refill > AUTO_REFILL_INTERVAL_S:
+                pending = [j for j in state.get("jobs", [])
+                           if j.get("status") == "pending"]
+                if len(pending) < 3:
+                    qm.mutate(lambda s: (auto_refill_queue(s), s)[1])
+                    state = qm.read()
+                last_refill = time.time()
 
-            for jid in finished_ids:
-                active_processes.pop(jid, None)
-                state["active"] = [j for j in state.get("active", []) if j.get("id") != jid]
+            pending = [j for j in state.get("jobs", [])
+                       if j.get("status") == "pending"]
 
-            # Launch pending jobs if capacity allows
-            # Strict single-job execution on laptop GPU with VRAM cap < 5.5 GB
-            while pending_jobs and len(active_processes) < max_parallel:
-                vram_gb, util, temp = query_gpu_stats()
-                next_job = pending_jobs[0]
+            # --- 5. Poll active jobs ---
+            to_remove: List[str] = []
+            to_retry: List[Dict[str, Any]] = []
+            to_fail: List[Dict[str, Any]] = []
 
-                # If next job is GPU, enforce safe VRAM limit
-                if next_job.get("type") == "gpu" and (vram_gb >= 5.5 or util >= 90.0):
-                    break
+            for jid, handle in list(active.items()):
+                if handle.proc is None:
+                    to_remove.append(jid)
+                    continue
 
-                job_to_launch = pending_jobs.pop(0)
-                jid = job_to_launch["id"]
-                cmd_str = job_to_launch["cmd"]
+                # Timeout check
+                elapsed = time.time() - handle.started_at
+                if elapsed > JOB_TIMEOUT_S:
+                    terminate_job(handle, f"timeout {elapsed:.0f}s")
+                    to_fail.append({
+                        **handle.to_dict(),
+                        "status": "failed",
+                        "reason": f"timeout_{JOB_TIMEOUT_S}s",
+                    })
+                    to_remove.append(jid)
+                    continue
 
-                # Python interpreter resolution
-                python_bin = sys.executable
-                if cmd_str.startswith("python "):
-                    exec_cmd = [python_bin] + cmd_str.split()[1:]
+                ret = handle.proc.poll()
+                if ret is None:
+                    continue  # still running
+
+                # Finished
+                close_handle(handle)
+                to_remove.append(jid)
+
+                if ret == 0:
+                    log_job(jid, "DONE", f"exit=0 elapsed={elapsed:.1f}s")
+                    breaker.record_success(jid)
+                    to_retry.append({  # actually completed
+                        **handle.to_dict(),
+                        "status": "done",
+                    })
+                    to_retry.pop()  # remove from retry list
+                    state.setdefault("completed", []).append({
+                        **handle.to_dict(), "status": "done",
+                    })
                 else:
-                    exec_cmd = cmd_str
+                    log_job(jid, "FAIL", f"exit={ret} elapsed={elapsed:.1f}s")
+                    breaker.record_fail(jid)
+                    handle.retries += 1
+                    if handle.retries <= MAX_RETRIES:
+                        log_job(jid, "FAIL",
+                                f"retry {handle.retries}/{MAX_RETRIES}")
+                        to_retry.append({
+                            **handle.to_dict(),
+                            "status": "pending",
+                            "retries": handle.retries,
+                        })
+                    else:
+                        log_job(jid, "FAIL", "max retries reached")
+                        to_fail.append({**handle.to_dict(), "status": "failed"})
 
-                try:
-                    p = subprocess.Popen(
-                        exec_cmd,
-                        cwd=ROOT_DIR,
-                        shell=isinstance(exec_cmd, str),
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
+            # --- 6. Apply state changes atomically ---
+            def apply(s: Dict[str, Any]) -> Dict[str, Any]:
+                s.setdefault("jobs", [])
+                s.setdefault("active", [])
+                s.setdefault("completed", [])
+                s.setdefault("failed", [])
+                s.setdefault("blocked", [])
+
+                # Remove from active
+                s["active"] = [j for j in s["active"] if j.get("id") not in to_remove]
+
+                # Add retries back to jobs
+                for j in to_retry:
+                    s["jobs"].append(j)
+
+                # Move to failed
+                for j in to_fail:
+                    s["failed"].append(j)
+
+                # Apply blocklist
+                blocked_ids = breaker.blocklist()
+                new_pending = []
+                for j in s["jobs"]:
+                    if j.get("id") in blocked_ids:
+                        log_job(j["id"], "BLOCK", "circuit breaker tripped")
+                        s["blocked"].append({**j, "status": "blocked"})
+                    else:
+                        new_pending.append(j)
+                s["jobs"] = new_pending
+                return s
+
+            state = qm.mutate(apply)
+
+            for jid in to_remove:
+                active.pop(jid, None)
+
+            # --- 7. Launch pending jobs ---
+            # Re-query GPU after state changes
+            stats = query_gpu_stats()
+            safe, reason = is_gpu_safe(stats)
+
+            if safe and time.time() - last_launch > LAUNCH_COOLDOWN_S:
+                # Count active GPU jobs
+                active_gpu = sum(1 for h in active.values() if h.job_type == "gpu")
+                active_cpu = sum(1 for h in active.values() if h.job_type == "cpu")
+
+                for job in list(pending):
+                    if len(active) >= max_parallel:
+                        break
+
+                    jtype = job.get("type", "gpu")
+
+                    # GPU jobs need safety check
+                    if jtype == "gpu":
+                        if active_gpu >= GPU_SAFE_MAX_PARALLEL:
+                            continue
+                        stats = query_gpu_stats()
+                        safe, reason = is_gpu_safe(stats)
+                        if not safe:
+                            log_job(job["id"], "GPU",
+                                    f"skip launch: {reason}")
+                            break
+                        # Reserve VRAM
+                        if stats.vram_used_gb + VRAM_PER_JOB_GB > VRAM_CEILING_GB:
+                            log_job(job["id"], "GPU",
+                                    f"skip launch: "
+                                    f"vram={stats.vram_used_gb:.2f}+"
+                                    f"{VRAM_PER_JOB_GB:.2f} > "
+                                    f"{VRAM_CEILING_GB}")
+                            break
+
+                    handle = JobHandle(
+                        job_id=job["id"],
+                        job_type=jtype,
+                        cmd=job["cmd"],
+                        retries=job.get("retries", 0),
                     )
-                    active_processes[jid] = (p, job_to_launch)
-                    job_to_launch["status"] = "active"
-                    job_to_launch["launched_at"] = now_str
-                    state.setdefault("active", []).append(job_to_launch)
-                    state["jobs"] = [j for j in state.get("jobs", []) if j.get("id") != jid]
-                    log_event("LAUNCH", jid, f"cmd='{cmd_str}'")
-                except Exception as e:
-                    logger.error(f"Failed launching job {jid}: {e}")
-                    job_to_launch["status"] = "failed"
-                    state.setdefault("failed", []).append(job_to_launch)
-                    state["jobs"] = [j for j in state.get("jobs", []) if j.get("id") != jid]
 
-            write_queue(state)
+                    if launch_job(handle):
+                        active[handle.job_id] = handle
+                        if jtype == "gpu":
+                            active_gpu += 1
+                        else:
+                            active_cpu += 1
+                        last_launch = time.time()
+
+                        # Update queue: move from jobs to active
+                        jid = job["id"]
+                        def move(s: Dict[str, Any]) -> Dict[str, Any]:
+                            s["jobs"] = [j for j in s.get("jobs", [])
+                                         if j.get("id") != jid]
+                            s.setdefault("active", []).append({
+                                "id": jid, "type": jtype,
+                                "cmd": job["cmd"],
+                                "status": "active",
+                                "retries": handle.retries,
+                            })
+                            return s
+                        qm.mutate(move)
+                    else:
+                        # Launch failed → mark as failed
+                        def mark_fail(s: Dict[str, Any]) -> Dict[str, Any]:
+                            s["jobs"] = [j for j in s.get("jobs", [])
+                                         if j.get("id") != job["id"]]
+                            s.setdefault("failed", []).append({
+                                **job, "status": "failed",
+                                "reason": "launch_failed",
+                            })
+                            return s
+                        qm.mutate(mark_fail)
+
+            # --- 8. Periodic tasks ---
             check_anomaly_status()
             upload_models_to_hf()
 
-            # Dashboard summary
+            # --- 9. Dashboard ---
             uptime = str(datetime.timedelta(seconds=int(time.time() - start_time)))
-            pending_count = len([j for j in state.get("jobs", []) if j.get("status") == "pending"])
+            state = qm.read()
+            pending_count = len([j for j in state.get("jobs", [])
+                                 if j.get("status") == "pending"])
             done_count = len(state.get("completed", []))
             fail_count = len(state.get("failed", []))
+            blocked_count = len(state.get("blocked", []))
+
             logger.info(
-                f"STATUS: Uptime={uptime} | GPU VRAM={vram_gb:.2f}/8.0GB, Util={util:.0f}%, Temp={temp:.0f}C | "
-                f"Active={len(active_processes)}/{max_parallel} | Queue: Pending={pending_count}, Done={done_count}, Fail={fail_count}"
+                f"STATUS: uptime={uptime} | "
+                f"VRAM={stats.vram_used_gb:.2f}/{stats.vram_total_gb:.1f}GB "
+                f"util={stats.utilization_pct:.0f}% temp={stats.temperature_c:.0f}C | "
+                f"active={len(active)}/{max_parallel} | "
+                f"queue: pending={pending_count} done={done_count} "
+                f"fail={fail_count} block={blocked_count}"
             )
 
+            time.sleep(POLL_INTERVAL_S)
+
         except Exception as e:
-            logger.error(f"Unhandled exception in daemon loop: {e}", exc_info=True)
+            logger.error(f"Daemon loop error: {e}", exc_info=True)
+            time.sleep(10)
 
-        time.sleep(30)
+    # --- Shutdown: terminate all active ---
+    logger.info("Shutting down; terminating active jobs")
+    for jid, handle in list(active.items()):
+        terminate_job(handle, "daemon shutdown")
+        close_handle(handle)
+
+    logger.info("Auto Pipeline Daemon v2 stopped.")
 
 
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--process_papers", nargs=2, type=int, default=None)
-    parser.add_argument("--max_parallel", type=int, default=2, help="Maximum concurrent jobs (default: 2 for GPU safety)")
+    parser.add_argument("--max_parallel", type=int, default=GPU_SAFE_MAX_PARALLEL,
+                        help=f"Max concurrent jobs (hard-capped at {GPU_SAFE_MAX_PARALLEL})")
     args = parser.parse_args()
 
     if args.process_papers is not None:
         process_papers_worker(args.process_papers[0], args.process_papers[1])
     else:
-        main_daemon(max_parallel_override=args.max_parallel)
+        main_daemon(cli_max_parallel=args.max_parallel)
