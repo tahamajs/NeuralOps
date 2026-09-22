@@ -1,15 +1,15 @@
-# AASVD vs. FWSVD Rank-128 Anomaly Investigation Report
+# AASVD vs. FWSVD Rank-128 Anomaly Report
 
-*Generated: 2026-09-21T04:31:28.505159*
+*Generated: 2026-09-22T13:52:53.777171*
 
-| Module | Seed | Accuracy (%) | Fallback Layers | Rec. Error |
+| Module | Seed | Accuracy (%) | Fallback | Rec. Error |
 | :--- | :---: | :---: | :---: | :---: |
-| aasvd | 42 | 87.73% | 0 | 0.7281 |
-| aasvd | 123 | 87.73% | 0 | 0.7281 |
-| aasvd | 456 | 87.73% | 0 | 0.7281 |
-| fwsvd | 42 | 87.96% | 0 | 0.6404 |
-| fwsvd | 123 | 88.76% | 0 | 0.6404 |
-| fwsvd | 456 | 88.76% | 0 | 0.6404 |
+| aasvd | 42 | 87.16 | 0 | 0.8162 |
+| aasvd | 123 | 86.12 | 0 | 0.8162 |
+| aasvd | 456 | 84.98 | 0 | 0.8162 |
+| fwsvd | 42 | 90.71 | 0 |  |
+| fwsvd | 123 | 90.71 | 0 |  |
+| fwsvd | 456 | 90.83 | 0 |  |
 
-## Findings & Analysis
-- **Empirical Comparison**: Evaluation on SST-2 at rank=128.
+## Analysis
+Empirical comparison on SST-2 at rank=128 across seeds 42/123/456.
