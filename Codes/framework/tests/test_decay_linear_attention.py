@@ -4,6 +4,7 @@ import math
 import pytest
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from types import SimpleNamespace
 
 from framework.attentions.decay_linear_attention import (
@@ -62,8 +63,8 @@ def test_chunked_scan_numerical_equivalence():
     layer = DecayLinearAttention(config=cfg, d_model=64, num_heads=4)
     # L = 64 tests chunking with chunk_size=32
     B, H, L, d = 2, 4, 64, 16
-    q = torch.randn(B, H, L, d)
-    k = torch.randn(B, H, L, d)
+    q = F.elu(torch.randn(B, H, L, d)) + 1.0
+    k = F.elu(torch.randn(B, H, L, d)) + 1.0
     v = torch.randn(B, H, L, d)
     lambdas = torch.full((B, H, L), 0.95)
 
