@@ -27,10 +27,15 @@ logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions of the input tensor (odd-dim safe)."""
+    d = x.shape[-1]
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half : 2 * half]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if d % 2 == 1:
+        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -537,7 +542,10 @@ class ASVDAttention(BaseAttention):
         if not self.is_nested_encoder and extracted_weights["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(f"Missing essential pretrained weights for ASVDAttention: {missing}. Proceeding with initialized weights.")
+            raise RuntimeError(
+                f"ASVDAttention.copy_weights: could not extract mandatory projections {missing} "
+                f"from {src.__class__.__name__}. Refusing to install randomly-initialised weights."
+            )
 
         for p in ["q", "k", "v"]:
             w_check = extracted_weights[p][0]
@@ -740,7 +748,7 @@ def inject_asvd(
             res = inject_asvd(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
