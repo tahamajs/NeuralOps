@@ -17,10 +17,11 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 - Safe injection factory returning None on extraction failures
 """
 
-from __future__ import annotations
-
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -50,9 +51,16 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x_rot = x[..., :even_d]
+    half = even_d // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        return torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -255,9 +263,12 @@ class FactorisedMatrixState(BaseAttention):
         self.k_proj = LoRALinear(self.d_model, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.d_model, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Factorized low-rank projection parameters L and R (init with zeros for zero initial perturbation)
-        self.L = nn.Parameter(torch.zeros(self.all_head_size, self.proj_rank))
+        # Factorized low-rank projection parameters L and R
+        # L is initialized with Kaiming uniform and R with zeros so that the initial low-rank perturbation
+        # is exactly zero (W_res alone acts as base projection), but gradients into L are non-zero.
+        self.L = nn.Parameter(torch.empty(self.all_head_size, self.proj_rank))
         self.R = nn.Parameter(torch.zeros(self.d_model, self.proj_rank))
+        nn.init.kaiming_uniform_(self.L, a=math.sqrt(5))
         self.W_res = LoRALinear(self.all_head_size, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
@@ -404,7 +415,10 @@ class FactorisedMatrixState(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning("FactorisedMatrixState copy_weights warning. Proceeding with initialized weights.")
+            raise RuntimeError(
+                f"FactorisedMatrixState copy_weights: missing mandatory projections {missing_after} "
+                f"from module {old_attn.__class__.__name__}."
+            )
 
         target_map = {
             "q": self.q_proj,
@@ -455,10 +469,12 @@ class FactorisedMatrixState(BaseAttention):
         decay: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
+        chunk_size: int = 64,
     ) -> torch.Tensor:
         r"""
-        Vectorized parallel associative matrix scan with non-negative ELU+1 feature maps.
-        Eliminates slow sequential Python loops, prevents negative denominators, and avoids evaluation timeouts.
+        Chunked associative matrix scan with non-negative ELU+1 feature maps.
+        Maintains recurrent key-value matrix state S_t in R^{d x d} across chunks,
+        achieving true linear O(L) time and memory complexity without O(L^2) materialization.
         """
         B, H, L, d = q.shape
 
@@ -480,18 +496,92 @@ class FactorisedMatrixState(BaseAttention):
             k_f = k_f.flip(dims=[2])
             v_f = v_f.flip(dims=[2])
 
-        # Parallel Toeplitz decay matrix: D[b, h, t, s] = exp((t - s) * log(decay)) for s <= t
-        log_decay = torch.log(decay_f)
-        idx = torch.arange(L, device=q.device, dtype=torch.float32)
-        dist = idx.unsqueeze(1) - idx.unsqueeze(0)
-        causal_mask = dist >= 0
-        log_D = dist.unsqueeze(0).unsqueeze(0) * log_decay
-        D = torch.exp(log_D).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+        # Short sequences (L <= chunk_size) execute exact parallel scan efficiently
+        if L <= chunk_size:
+            log_decay = torch.log(decay_f)
+            idx = torch.arange(L, device=q.device, dtype=torch.float32)
+            dist = idx.unsqueeze(1) - idx.unsqueeze(0)
+            causal_mask = dist >= 0
+            log_D = dist.unsqueeze(0).unsqueeze(0) * log_decay
+            D = torch.exp(log_D).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-        scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * D
-        num = torch.matmul(scores, v_f)
-        denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
-        y = num / denom
+            scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * D
+            num = torch.matmul(scores, v_f)
+            denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
+            y = num / denom
+        else:
+            # Chunked linear scan: within each chunk, compute intra-chunk attention;
+            # across chunks, accumulate state S in R^{B x H x d x d} and z in R^{B x H x d}
+            num_chunks = math.ceil(L / chunk_size)
+            y_chunks = []
+            
+            # Recurrent matrix memory state: S is (B, H, d, d), z is (B, H, d, 1)
+            S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+            z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
+
+            log_decay = torch.log(decay_f)
+
+            for i in range(num_chunks):
+                start = i * chunk_size
+                end = min(start + chunk_size, L)
+                curr_c = end - start
+
+                qc = q_f[:, :, start:end, :]  # (B, H, C, d)
+                kc = k_f[:, :, start:end, :]  # (B, H, C, d)
+                vc = v_f[:, :, start:end, :]  # (B, H, C, d)
+
+                # Intra-chunk decay mask
+                idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
+                dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
+                causal_mask_c = dist_c >= 0
+                log_Dc = dist_c.unsqueeze(0).unsqueeze(0) * log_decay
+                Dc = torch.exp(log_Dc).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
+
+                # Intra-chunk numerator and denominator contributions
+                scores_c = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * Dc
+                num_intra = torch.matmul(scores_c, vc)  # (B, H, C, d)
+                denom_intra = scores_c.sum(dim=-1, keepdim=True)  # (B, H, C, 1)
+
+                # Inter-chunk contribution from accumulated state S
+                # decay_f is (1, H, 1, 1). idx_c is (curr_c,) -> (1, 1, curr_c, 1, 1)
+                # decay from previous chunk boundary to step t in current chunk: decay^(t + 1)
+                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1, 1) * log_decay.unsqueeze(-1))  # (1, H, curr_c, 1, 1)
+                
+                # qc is (B, H, curr_c, d) -> (B, H, curr_c, 1, d)
+                # S is (B, H, d, d) -> (B, H, 1, d, d)
+                # qc @ S gives (B, H, curr_c, 1, d)
+                qc_exp = qc.unsqueeze(-2)
+                num_inter = torch.matmul(qc_exp, S.unsqueeze(2))  # (B, H, curr_c, 1, d)
+                num_inter = (num_inter * decay_from_prev).squeeze(-2)  # (B, H, curr_c, d)
+
+                # Denominator inter-chunk: qc @ z gives (B, H, curr_c, 1, 1)
+                denom_inter = torch.matmul(qc_exp, z.unsqueeze(2))  # (B, H, curr_c, 1, 1)
+                denom_inter = (denom_inter * decay_from_prev).squeeze(-2)  # (B, H, curr_c, 1)
+
+                num_c = num_intra + num_inter
+                denom_c = (denom_intra + denom_inter).clamp_min(1e-5)
+                y_chunks.append(num_c / denom_c)
+
+                # Update running state S and z for next chunk
+                # Decay accumulated state across the entire chunk: decay^curr_c
+                decay_chunk = torch.exp(float(curr_c) * log_decay)  # (1, H, 1, 1)
+
+                # Decay factors for each token in chunk to end of chunk: decay^(curr_c - 1 - t)
+                dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1, 1)
+                decay_to_end = torch.exp(dist_to_end * log_decay.unsqueeze(-1))  # (1, H, curr_c, 1, 1)
+
+                # Outer product kv_t: kc is (B, H, curr_c, d, 1), vc is (B, H, curr_c, 1, d)
+                kc_col = kc.unsqueeze(-1)
+                vc_row = vc.unsqueeze(-2)
+                kv_outer = torch.matmul(kc_col, vc_row)  # (B, H, curr_c, d, d)
+                chunk_S = (kv_outer * decay_to_end).sum(dim=2)  # (B, H, d, d)
+                # decay_to_end is (1, H, curr_c, 1, 1), kc_col is (B, H, curr_c, d, 1) -> product is (B, H, curr_c, d, 1)
+                chunk_z = (kc_col * decay_to_end).sum(dim=2)  # (B, H, d, 1)
+
+                S = S * decay_chunk + chunk_S
+                z = z * decay_chunk + chunk_z
+
+            y = torch.cat(y_chunks, dim=2)
 
         if reverse:
             y = y.flip(dims=[2])
