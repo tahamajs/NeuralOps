@@ -241,6 +241,7 @@ TRACK_MODULES: Dict[str, Dict[str, List[str]]] = {
             "modegpt",
             "delta_kv",
             "kvtc",
+            "aatc_xkv",
             "hybridkv",
         ],
     },
