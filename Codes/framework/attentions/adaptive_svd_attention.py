@@ -11,6 +11,7 @@ augmented with trainable low-rank residual adapters:
 $$W \approx U_r V_r + W_{\text{lora\_B}} W_{\text{lora\_A}}$$
 """
 
+import logging
 import math
 from typing import Any, Optional, Tuple, Union
 
@@ -23,6 +24,8 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 from framework.utils.compat import maybe_apply_rotary, repeat_kv
+
+logger = logging.getLogger(__name__)
 
 
 class AdaptiveSVDLinear(nn.Module):
@@ -769,6 +772,14 @@ def inject_adaptive_svd(
             },
         )()
 
+    # Compute hidden_size from model_config (needed as fallback even when model_config is provided)
+    _h_size_fallback = (
+        getattr(model_config, "hidden_size", None)
+        or getattr(model_config, "d_model", None)
+        or getattr(model_config, "n_embd", None)
+        or getattr(model_config, "dim", 768)
+    ) if model_config is not None else 768
+
     try:
         svd_rank = getattr(
             comp_config,
@@ -776,7 +787,7 @@ def inject_adaptive_svd(
             getattr(
                 comp_config,
                 "rank",
-                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", hidden_size))),
+                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", _h_size_fallback))),
             ),
         )
         residual_rank = getattr(comp_config, "residual_rank", getattr(model_config, "residual_rank", kwargs.get("residual_rank", 16)))
@@ -822,7 +833,9 @@ def inject_adaptive_svd(
             test_module.train(target.training)
 
         return test_module
-    except Exception:
+    except Exception as _inject_exc:
+        import traceback as _tb
+        logger.debug("inject_adaptive_svd failed: %s\n%s", _inject_exc, _tb.format_exc())
         return None
 
 
