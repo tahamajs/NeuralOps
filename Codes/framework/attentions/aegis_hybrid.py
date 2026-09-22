@@ -594,10 +594,10 @@ class AegisHybridAttention(BaseAttention):
             missing.append("o")
 
         if missing:
-            logger.warning(
-                f"Could not extract all required weights for AegisHybridAttention from {cls_name}. Missing: {missing}"
+            raise RuntimeError(
+                f"AegisHybridAttention.copy_weights: could not extract mandatory projections {missing} "
+                f"from {cls_name}. Refusing to install randomly-initialised weights."
             )
-            return
 
         # Strict Frobenius norm verification (>= 1e-4)
         for p in ["q", "k", "v"]:
@@ -706,7 +706,12 @@ class AegisHybridAttention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
 
             def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-                return torch.cat((-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]), dim=-1)
+                _d = x.shape[-1]
+                _h = _d // 2
+                _rotated = torch.cat((-x[..., _h : 2 * _h], x[..., :_h]), dim=-1)
+                if _d % 2 == 1:
+                    _rotated = torch.cat([_rotated, x[..., -1:]], dim=-1)
+                return _rotated
 
             if cos.dim() == 3:
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
