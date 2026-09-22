@@ -96,7 +96,8 @@ def apply_rotary_pos_emb(
 class SALTLinear(nn.Module):
     is_custom_attention: bool = True
     r"""
-    Linear projection layer with SVD singular value modulation and low-rank residual branch.
+    Linear projection layer with Fisher-weighted SVD initialization,
+    attention-aware singular value modulation (\gamma), and low-rank residual branch (A B).
 
     Formulation:
         $$W = U_{:, :r} \operatorname{diag}(\Sigma_{1:r} \odot \gamma) V_{1:r, :}^\top + A B$$
@@ -109,29 +110,53 @@ class SALTLinear(nn.Module):
         rank: int = 16,
         original_weight: Optional[torch.Tensor] = None,
         original_bias: Optional[torch.Tensor] = None,
+        fisher_diag: Optional[torch.Tensor] = None,
+        use_fisher: bool = True,
     ) -> None:
         super().__init__()
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.rank: int = min(rank, min(in_features, out_features))
+        self.use_fisher: bool = use_fisher
+
+        target_dev = original_weight.device if original_weight is not None else None
+        target_dtype = original_weight.dtype if original_weight is not None else torch.float32
 
         if original_weight is not None:
             W = original_weight.float()
         else:
             W = torch.randn(out_features, in_features) * (1.0 / math.sqrt(in_features))
 
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        # Fisher-weighted SVD
+        if use_fisher and fisher_diag is not None and fisher_diag.shape[0] == in_features:
+            scale = torch.sqrt(fisher_diag.float().clamp(min=1e-6) + 1e-6)
+            # Normalize scale to avoid extreme values
+            scale = scale / (scale.norm() / math.sqrt(in_features) + 1e-8)
+            W_white = W * scale.unsqueeze(0)
+        else:
+            scale = None
+            W_white = W
+
+        U, S, Vt = torch.linalg.svd(W_white, full_matrices=False)
+
+        # Unwhiten Vt
+        if scale is not None:
+            Vt_unw = Vt / scale.unsqueeze(0)
+        else:
+            Vt_unw = Vt
+
         r = self.rank
 
-        target_dev = original_weight.device if original_weight is not None else None
-        target_dtype = original_weight.dtype if original_weight is not None else torch.float32
-
         self.register_buffer("U", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer("Vt", Vt[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer("Vt", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
         self.register_buffer("S", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
 
+        self.register_buffer("U_init", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer("Vt_init", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer("S_init", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
+
         self.gamma = nn.Parameter(torch.ones(r, device=target_dev, dtype=target_dtype))
-        self.A = nn.Parameter(torch.randn(out_features, r, device=target_dev, dtype=target_dtype) * 0.01)
+        self.A = nn.Parameter(torch.zeros(out_features, r, device=target_dev, dtype=target_dtype))
         self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))
 
         if original_bias is not None:
@@ -139,12 +164,44 @@ class SALTLinear(nn.Module):
         else:
             self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
 
+    def init_gamma_from_sensitivity(self, sensitivity: Optional[torch.Tensor] = None) -> None:
+        """
+        Initialize gamma from attention sensitivity per SVD direction.
+        If sensitivity is None, initialize to ones.
+        """
+        if sensitivity is not None and sensitivity.shape[0] == self.rank:
+            s_norm = sensitivity / (sensitivity.mean() + 1e-8)
+            self.gamma.data.copy_(torch.sqrt(s_norm.clamp(0.1, 10.0)).to(dtype=self.gamma.dtype, device=self.gamma.device))
+        else:
+            self.gamma.data.fill_(1.0)
+
+    def merge_to_linear(self) -> nn.Linear:
+        """
+        Merge SVD + gamma + LoRA into a single nn.Linear.
+        After this, the layer has no LoRA overhead at inference.
+        """
+        with torch.no_grad():
+            adapted_S = (self.S * self.gamma).to(self.U.dtype)
+            W = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
+            W = W + self.A.to(self.U.dtype) @ self.B.to(self.U.dtype)
+            bias = self.bias.clone() if self.bias is not None else None
+
+        new_linear = nn.Linear(
+            self.in_features, self.out_features,
+            bias=bias is not None,
+            device=W.device, dtype=W.dtype,
+        )
+        new_linear.weight.data.copy_(W.to(new_linear.weight.dtype))
+        if bias is not None:
+            new_linear.bias.data.copy_(bias.to(new_linear.bias.dtype))
+        return new_linear
+
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
-        adapted_S = self.S * self.gamma
+        adapted_S = (self.S * self.gamma).to(self.U.dtype)
         W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
+        W_lora = self.A.to(self.U.dtype) @ self.B.to(self.U.dtype)
         return W_svd + W_lora
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -165,12 +222,34 @@ class SALTLinear(nn.Module):
         pass
 
 
+def _compute_energy_rank(
+    S: torch.Tensor,
+    threshold: float = 0.95,
+    min_r: int = 8,
+    max_r: int = 32,
+) -> int:
+    """
+    Find smallest rank r where cumulative energy >= threshold.
+    """
+    S_sq = S ** 2
+    total = S_sq.sum()
+    if total <= 1e-12:
+        return min_r
+    cum = torch.cumsum(S_sq, dim=0) / total
+    idx = torch.where(cum >= threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
+    return max(min_r, min(r, max_r))
+
+
+@ATTENTION_REGISTRY.register("salt_f_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("salt_f", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("salt_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("salt", supports_causal=True, supports_gqa=True)
 class SALTAttention(BaseAttention):
     r"""
     SALT Attention module replacing standard linear projections with SALTLinear.
     Hardened for production across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
+    Supports Fisher-weighted SVD, attention-aware gamma, and adaptive rank (SALT-F).
     """
 
     supports_causal: bool = True
@@ -183,6 +262,8 @@ class SALTAttention(BaseAttention):
         rank: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
         is_decoder: Optional[bool] = None,
+        use_fisher: Optional[bool] = None,
+        adaptive_rank: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -209,6 +290,17 @@ class SALTAttention(BaseAttention):
 
         self.rank: int = rank if rank is not None else int(_cfg_get(config, "salt_rank", _cfg_get(config, "rank", kwargs.get("rank", 16))))
 
+        # Adaptive rank & Fisher flags
+        if adaptive_rank is not None:
+            self.adaptive_rank = bool(adaptive_rank)
+        else:
+            self.adaptive_rank = bool(_cfg_get(config, "adaptive_rank", _cfg_get(config, "salt_adaptive_rank", kwargs.get("adaptive_rank", True))))
+
+        if use_fisher is not None:
+            self.use_fisher = bool(use_fisher)
+        else:
+            self.use_fisher = bool(_cfg_get(config, "use_fisher", _cfg_get(config, "salt_use_fisher", kwargs.get("use_fisher", True))))
+
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -233,13 +325,47 @@ class SALTAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        self.q_proj = SALTLinear(self.hidden_size, self.all_head_size, self.rank)
-        self.k_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.rank)
-        self.v_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.rank)
-        self.out_proj = SALTLinear(self.all_head_size, self.hidden_size, self.rank)
+        self.proj_ranks = self._get_projection_ranks(pretrained_attn, self.rank)
+        self.q_proj = SALTLinear(self.hidden_size, self.all_head_size, self.proj_ranks['q'], use_fisher=self.use_fisher)
+        self.k_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.proj_ranks['k'], use_fisher=self.use_fisher)
+        self.v_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.proj_ranks['v'], use_fisher=self.use_fisher)
+        self.out_proj = SALTLinear(self.all_head_size, self.hidden_size, self.proj_ranks['o'], use_fisher=self.use_fisher)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    def _get_projection_ranks(self, pretrained_attn: Optional[nn.Module], base_rank: int) -> Dict[str, int]:
+        """
+        Compute per-projection rank based on SVD energy.
+        Returns dict {'q': r_q, 'k': r_k, 'v': r_v, 'o': r_o}.
+        """
+        ranks = {'q': base_rank, 'k': base_rank, 'v': base_rank, 'o': base_rank}
+        if not getattr(self, "adaptive_rank", True):
+            return ranks
+
+        if pretrained_attn is None:
+            return ranks
+
+        try:
+            for proj_key, attr_list in [
+                ('q', ['q_proj', 'q_lin', 'query']),
+                ('k', ['k_proj', 'k_lin', 'key']),
+                ('v', ['v_proj', 'v_lin', 'value']),
+                ('o', ['o_proj', 'out_proj', 'out_lin', 'dense']),
+            ]:
+                for attr in attr_list:
+                    if hasattr(pretrained_attn, attr):
+                        layer = getattr(pretrained_attn, attr)
+                        target = getattr(layer, 'base_layer', layer)
+                        if hasattr(target, 'weight') and target.weight is not None:
+                            W = target.weight.data.float()
+                            _, S, _ = torch.linalg.svd(W, full_matrices=False)
+                            ranks[proj_key] = _compute_energy_rank(S, 0.95, 8, max(base_rank * 2, 32))
+                        break
+        except Exception as e:
+            logger.debug("Per-projection rank computation failed: %s", e)
+
+        return ranks
 
     @property
     def query(self) -> SALTLinear:
@@ -355,10 +481,31 @@ class SALTAttention(BaseAttention):
             if norm_o < 1e-4:
                 logger.warning(f"SALTAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
 
-        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
-            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+        def _orient(w: torch.Tensor, in_dim: int, out_dim: int) -> torch.Tensor:
+            """Handle both nn.Linear [out, in] and Conv1D [in, out]."""
+            if w.dim() != 2:
+                return w
+            if w.shape == (out_dim, in_dim):
+                return w
+            if w.shape == (in_dim, out_dim):
+                return w.t().contiguous()
+            # fallback
+            if w.shape[1] == in_dim:
+                return w
+            if w.shape[0] == in_dim:
                 return w.t().contiguous()
             return w
+
+        # Recalculate adaptive ranks from actual extracted weights if available
+        if getattr(self, "adaptive_rank", True):
+            for proj_key in ["q", "k", "v", "o"]:
+                w_cand = extracted[proj_key][0]
+                if w_cand is not None:
+                    try:
+                        _, S_cand, _ = torch.linalg.svd(w_cand.float(), full_matrices=False)
+                        self.proj_ranks[proj_key] = _compute_energy_rank(S_cand, 0.95, 8, max(self.rank * 2, 32))
+                    except Exception:
+                        pass
 
         # Initialize SALTLinear projections
         with torch.no_grad():
@@ -369,8 +516,9 @@ class SALTAttention(BaseAttention):
                 ("o", "out_proj", self.all_head_size, self.hidden_size),
             ]:
                 w, b = extracted[proj_key]
+                proj_r = self.proj_ranks.get(proj_key, self.rank)
                 if w is not None:
-                    w_oriented = _orient(w, in_dim)
+                    w_oriented = _orient(w, in_dim, out_dim)
                     src_out, src_in = w_oriented.shape
 
                     # Handle KV dimension matching for GQA
@@ -399,12 +547,20 @@ class SALTAttention(BaseAttention):
                             final_w[:min(out_dim, src_out), :min(in_dim, src_in)] = w_oriented[:min(out_dim, src_out), :min(in_dim, src_in)]
                             final_b = b[:min(out_dim, len(b))] if b is not None else None
 
-                    new_linear = SALTLinear(in_dim, out_dim, self.rank, original_weight=final_w, original_bias=final_b)
+                    new_linear = SALTLinear(
+                        in_dim, out_dim, proj_r,
+                        original_weight=final_w, original_bias=final_b,
+                        use_fisher=self.use_fisher,
+                    )
                     new_linear.to(device=w.device, dtype=w.dtype)
                     setattr(self, attr, new_linear)
                 elif proj_key == "o" and self.is_nested_encoder:
                     eye_w = torch.eye(out_dim, in_dim, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
-                    new_linear = SALTLinear(in_dim, out_dim, self.rank, original_weight=eye_w, original_bias=None)
+                    new_linear = SALTLinear(
+                        in_dim, out_dim, proj_r,
+                        original_weight=eye_w, original_bias=None,
+                        use_fisher=self.use_fisher,
+                    )
                     setattr(self, attr, new_linear)
 
         if hasattr(src, "is_decoder"):
@@ -514,12 +670,13 @@ class SALTAttention(BaseAttention):
         return out, (attn if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("salt_f")
+@ATTENTION_REGISTRY.register("salt_f_attention")
 @ATTENTION_REGISTRY.register("salt")
 @ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt_inject")
 @ATTENTION_REGISTRY.register("salt_attention_inject")
 @ATTENTION_REGISTRY.register("inject_salt_attention")
-@ATTENTION_REGISTRY.register("salt_inject")
 def inject_salt_attention(
     model: Optional[nn.Module] = None,
     layer: Optional[Any] = None,
@@ -630,3 +787,100 @@ def inject_salt_attention(
     except Exception as e:
         logger.error("inject_salt_attention failed at layer %d: %s", layer_idx, e)
         return None
+
+
+def merge_model_salt(model: nn.Module) -> nn.Module:
+    """
+    Traverse model and replace all SALTLinear modules with merged nn.Linear layers.
+    Eliminates all LoRA / SVD overhead during inference.
+    """
+    for name, child in list(model.named_children()):
+        if isinstance(child, SALTLinear):
+            setattr(model, name, child.merge_to_linear())
+        else:
+            merge_model_salt(child)
+    return model
+
+
+def calibrate_gamma(
+    model: nn.Module,
+    calibration_data: Any,
+    tokenizer: Optional[Any] = None,
+) -> None:
+    """
+    Run forward+backward on calibration data, capture gradients
+    w.r.t. each SVD direction, and initialize gamma accordingly.
+    """
+    device = next(model.parameters()).device
+    if tokenizer is not None and isinstance(calibration_data, list):
+        inputs = tokenizer(
+            calibration_data, return_tensors="pt",
+            padding=True, truncation=True, max_length=256
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+    elif isinstance(calibration_data, dict):
+        inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in calibration_data.items()}
+    elif isinstance(calibration_data, torch.Tensor):
+        inputs = calibration_data.to(device)
+    else:
+        inputs = calibration_data
+
+    # Hook to capture gradients
+    grads: Dict[str, torch.Tensor] = {}
+    handles = []
+
+    def make_hook(mod_name):
+        def hook(module, grad_in, grad_out):
+            if isinstance(grad_out, tuple) and len(grad_out) > 0:
+                g = grad_out[0]
+                if g is not None:
+                    grads[mod_name] = g.detach()
+        return hook
+
+    for name, module in model.named_modules():
+        if isinstance(module, SALTLinear):
+            handles.append(module.register_full_backward_hook(make_hook(name)))
+
+    model.eval()
+    try:
+        if isinstance(inputs, dict):
+            outputs = model(**inputs)
+        else:
+            outputs = model(inputs)
+
+        loss = None
+        if hasattr(outputs, "loss") and outputs.loss is not None:
+            loss = outputs.loss
+        elif hasattr(outputs, "logits") and outputs.logits is not None:
+            probs = F.softmax(outputs.logits.float(), dim=-1)
+            loss = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
+        elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
+            loss = outputs[0].mean()
+        elif isinstance(outputs, torch.Tensor):
+            loss = outputs.mean()
+
+        if loss is not None:
+            loss.backward()
+    except Exception as e:
+        logger.debug("Gamma calibration backward pass failed: %s", e)
+
+    for h in handles:
+        h.remove()
+
+    # Update gamma per layer
+    for name, module in model.named_modules():
+        if isinstance(module, SALTLinear) and name in grads:
+            g = grads[name]  # (..., r) or (..., in_features)
+            try:
+                if g.shape[-1] == module.rank:
+                    s = (g ** 2).mean(dim=tuple(range(g.dim() - 1)))
+                else:
+                    U = module.U  # (out, r)
+                    g_proj = g @ U  # (..., r)
+                    s = (g_proj ** 2).mean(dim=tuple(range(g_proj.dim() - 1)))
+
+                if s.numel() == module.rank:
+                    module.init_gamma_from_sensitivity(s)
+            except Exception as e:
+                logger.debug("Gamma update failed for %s: %s", name, e)
+
