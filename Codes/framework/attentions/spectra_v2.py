@@ -1,23 +1,35 @@
-"""SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention – Production-Hardened.
+"""
+MHA-SDPA: A thin Multi-Head Attention wrapper around PyTorch's 
+scaled_dot_product_attention.
 
-Hybrid sparse-attention architecture unifying intra-block local attention, relative-position-biased
-inter-block top-k routing, per-head adaptive attention spans, and periodic global Random Fourier Feature (RFF) rectification.
+DISCLAIMER:
+    This module was previously named "SPECTRA-v2" and claimed to 
+    implement a sparse per-head efficient context transformer 
+    with intra-block attention, top-k inter-block routing, 
+    adaptive spans, and RFF rectification. NONE of these 
+    features are implemented here. What this module actually 
+    does is:
+    
+      1. Project Q, K, V via LoRALinear (frozen base + adapters).
+      2. Apply RoPE if position_embeddings are provided.
+      3. Repeat KV heads for GQA.
+      4. Call scaled_dot_product_attention.
+      5. Apply head_mask.
+      6. Project the output.
+    
+    This is functionally equivalent to a standard MHA with SDPA.
+    It provides NO sparsity, NO top-k, NO adaptive span, and NO 
+    RFF features.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+If you need the actual SPECTRA architecture, see paper/_SPECTRA_V2_REPORT.md.
+
+Registered as "mha_sdpa" (canonical) and "spectra_v2" (deprecated).
 """
 
 from __future__ import annotations
 
+import logging
 import math
-from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
@@ -29,21 +41,7 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
-
-@dataclass
-class SpectraConfig:
-    hidden_size: int = 768
-    num_attention_heads: int = 12
-    dropout: float = 0.1
-    block_size: int = 64
-    top_k_inter: int = 16
-    use_rel_pos_bias: bool = True
-    rel_pos_max_distance: int = 128
-    adaptive_span: bool = True
-    max_span: float = 512.0
-    rectify_interval: int = 4
-    rff_features: int = 128
-    aks_enabled: bool = True
+logger = logging.getLogger(__name__)
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -97,25 +95,17 @@ def apply_rotary_pos_emb(
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
+    elif cos.dim() == 4:
+        pass
 
-    rotary_dim = cos.shape[-1]
-    rotary_dim = rotary_dim - (rotary_dim % 2)
-
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-    cos = cos[..., :rotary_dim]
-    sin = sin[..., :rotary_dim]
-
-    q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
-
-    return q, k
+    q_rot = (q * cos) + (_rotate_half(q) * sin)
+    k_rot = (k * cos) + (_rotate_half(k) * sin)
+    return q_rot, k_rot
 
 
 class LoRALinear(nn.Module):
+    """Linear layer augmented with Low-Rank Adaptation (LoRA) and base freezing."""
+
     def __init__(
         self,
         in_features: int,
@@ -185,14 +175,20 @@ class LoRALinear(nn.Module):
         return out
 
 
+@ATTENTION_REGISTRY.register("mha_sdpa")
 @ATTENTION_REGISTRY.register("spectra_v2")
 class SpectraV2Attention(BaseAttention):
+    """
+    MHA wrapper around PyTorch's scaled_dot_product_attention.
+    Previously named spectra_v2 (deprecated alias).
+    """
+
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Optional[Any] = None,
         model_config: Optional[Any] = None,
-        spectra_cfg: Optional[SpectraConfig] = None,
         layer_idx: int = 0,
         total_layers: int = 12,
         bert_mode: bool = False,
@@ -231,7 +227,6 @@ class SpectraV2Attention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.cfg: SpectraConfig = spectra_cfg if spectra_cfg is not None else SpectraConfig()
         self.layer_idx = layer_idx
         self.total_layers = total_layers
         self.bert_mode = bert_mode
@@ -248,20 +243,20 @@ class SpectraV2Attention(BaseAttention):
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
-        self.query = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.key = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.query = LoRALinear(
+            self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base
+        )
+        self.key = LoRALinear(
+            self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base
+        )
+        self.value = LoRALinear(
+            self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base
+        )
 
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-        self.q_lin = self.query
-        self.k_lin = self.key
-        self.v_lin = self.value
-        self.out_lin = self.out_proj
-
-        dropout_p = _cfg_get(cfg, "dropout", _cfg_get(cfg, "attention_probs_dropout_prob", self.cfg.dropout))
+        dropout_p = _cfg_get(cfg, "dropout", _cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
@@ -273,7 +268,7 @@ class SpectraV2Attention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_proj = hasattr(src, "out_proj") or hasattr(src, "dense") or hasattr(src, "c_proj") or hasattr(src, "out_lin")
         is_nested = False
         if (
             hasattr(src, "self")
@@ -285,7 +280,7 @@ class SpectraV2Attention(BaseAttention):
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        ) and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -296,7 +291,7 @@ class SpectraV2Attention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. GPT-2 fused
+        # 1. GPT-2 fused c_attn / c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -313,47 +308,39 @@ class SpectraV2Attention(BaseAttention):
                 extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
-                c_proj_mod = src.c_proj
-                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
-                if o_w is not None:
-                    o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
-                        o_w = o_w.t().contiguous()
-                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                extracted["o"] = _unpack_weight_bias(src.c_proj)
 
-        # 2. RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        # 2. DistilBERT style: q_lin, k_lin, v_lin, out_lin
+        if hasattr(src, "q_lin") and src.q_lin is not None:
+            extracted["q"] = _unpack_weight_bias(src.q_lin)
+            extracted["k"] = _unpack_weight_bias(getattr(src, "k_lin", None))
+            extracted["v"] = _unpack_weight_bias(getattr(src, "v_lin", None))
+            extracted["o"] = _unpack_weight_bias(getattr(src, "out_lin", None))
+
+        # 3. BERT / RoBERTa style: query, key, value, dense
+        if hasattr(src, "query") and src.query is not None and extracted["q"][0] is None:
+            extracted["q"] = _unpack_weight_bias(src.query)
+            extracted["k"] = _unpack_weight_bias(getattr(src, "key", None))
+            extracted["v"] = _unpack_weight_bias(getattr(src, "value", None))
+            extracted["o"] = _unpack_weight_bias(getattr(src, "dense", getattr(src, "out_proj", None)))
+
+        # 4. Nested structures (RoBERTa / BERT container objects)
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and extracted["q"][0] is None:
             s = getattr(src, "self")
-            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
-                mod = getattr(s, sub_name, None)
-                w, b = _unpack_weight_bias(mod)
-                if w is not None:
-                    extracted[proj_key] = (w, b)
+            extracted["q"] = _unpack_weight_bias(getattr(s, "query", None))
+            extracted["k"] = _unpack_weight_bias(getattr(s, "key", None))
+            extracted["v"] = _unpack_weight_bias(getattr(s, "value", None))
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
-                out_mod = src.output.dense
-                w, b = _unpack_weight_bias(out_mod)
-                if w is not None:
-                    extracted["o"] = (w, b)
+                extracted["o"] = _unpack_weight_bias(getattr(getattr(src, "output"), "dense", None))
 
-        # 3. Flat modules
-        else:
-            proj_candidates = {
-                "q": ["q_lin", "q_proj", "query"],
-                "k": ["k_lin", "k_proj", "key"],
-                "v": ["v_lin", "v_proj", "value"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
-            }
-            for proj_key, names in proj_candidates.items():
-                for name in names:
-                    if hasattr(src, name):
-                        mod = getattr(src, name)
-                        w, b = _unpack_weight_bias(mod)
-                        if w is not None:
-                            extracted[proj_key] = (w, b)
-                            break
+        # 5. Qwen / LLaMA / HF Attention style: q_proj, k_proj, v_proj, o_proj
+        if hasattr(src, "q_proj") and src.q_proj is not None and extracted["q"][0] is None:
+            extracted["q"] = _unpack_weight_bias(src.q_proj)
+            extracted["k"] = _unpack_weight_bias(getattr(src, "k_proj", None))
+            extracted["v"] = _unpack_weight_bias(getattr(src, "v_proj", None))
+            extracted["o"] = _unpack_weight_bias(getattr(src, "o_proj", getattr(src, "dense", getattr(src, "out_proj", None))))
 
+        # 6. UniversalAdapter fallback for custom names
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
@@ -365,12 +352,6 @@ class SpectraV2Attention(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            raise RuntimeError(
-                f"SpectraV2Attention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
 
         target_map = {
             "q": self.query,
@@ -390,6 +371,9 @@ class SpectraV2Attention(BaseAttention):
                         continue
                     else:
                         logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+                        continue
+
+                src_norm = torch.linalg.norm(w.float()).item()
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -398,6 +382,11 @@ class SpectraV2Attention(BaseAttention):
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
+                elif w.shape[0] > target_mod.weight.shape[0] and w.shape[0] % target_mod.weight.shape[0] == 0:
+                    repeats = w.shape[0] // target_mod.weight.shape[0]
+                    # For GQA: average the query head groups
+                    w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
+                    target_mod.weight.copy_(w_grouped)
                 else:
                     min_0 = min(target_mod.weight.shape[0], w.shape[0])
                     min_1 = min(target_mod.weight.shape[1], w.shape[1])
@@ -410,6 +399,10 @@ class SpectraV2Attention(BaseAttention):
                     elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
+                    elif b.shape[0] > target_mod.bias.shape[0] and b.shape[0] % target_mod.bias.shape[0] == 0:
+                        repeats = b.shape[0] // target_mod.bias.shape[0]
+                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
+                        target_mod.bias.copy_(b_grouped)
                     else:
                         min_b = min(target_mod.bias.shape[0], b.shape[0])
                         target_mod.bias.zero_()
@@ -418,8 +411,12 @@ class SpectraV2Attention(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
-                if fnorm < 1e-4:
-                    logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+                if src_norm > 1e-3 and fnorm < 1e-4:
+                    raise RuntimeError(
+                        f"SpectraV2Attention: copy_weights for {proj_key} produced near-zero norm "
+                        f"({fnorm:.2e}) from a valid source ({src_norm:.2e}). Aborting to prevent silent "
+                        f"model corruption."
+                    )
 
         if self.freeze_base:
             for mod in [self.query, self.key, self.value, self.out_proj]:
@@ -450,9 +447,15 @@ class SpectraV2Attention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, D = hidden_states.shape
 
+        is_cross = encoder_hidden_states is not None
+        kv_states = encoder_hidden_states if is_cross else hidden_states
+        N_k = kv_states.shape[1]
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+
         Q = self.query(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        K = self.key(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        V = self.value(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -468,47 +471,90 @@ class SpectraV2Attention(BaseAttention):
             V = repeat_kv(V, repeats)
 
         scale = self.head_dim ** -0.5
-        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
-        try:
+        # Causal determination
+        _is_causal = (
+            getattr(self, "is_decoder", False)
+            and not is_cross
+            and N > 1
+        )
 
-            _qs = Q.half() if Q.dtype == torch.float32 else Q
+        attn_out = None
+        attn_weights = None
 
-            _ks = K.half() if K.dtype == torch.float32 else K
+        if not output_attentions:
+            try:
+                _qs = Q.half() if Q.dtype == torch.float32 else Q
+                _ks = K.half() if K.dtype == torch.float32 else K
+                _vs = V.half() if V.dtype == torch.float32 else V
 
-            _vs = V.half() if V.dtype == torch.float32 else V
+                attn_mask_for_sdpa = None
+                if eff_mask is not None and not _is_causal:
+                    if eff_mask.dim() == 2:
+                        attn_mask_for_sdpa = eff_mask.bool().view(
+                            eff_mask.shape[0], 1, 1, eff_mask.shape[1]
+                        )
+                    elif eff_mask.dim() == 4:
+                        attn_mask_for_sdpa = eff_mask.bool()
 
-            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                    _qs,
+                    _ks,
+                    _vs,
+                    attn_mask=attn_mask_for_sdpa,
+                    is_causal=_is_causal,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
 
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+                _sdpa_out = _sdpa_out.to(hidden_states.dtype)
 
-            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                # Apply head_mask
+                if head_mask is not None and head_mask.dim() >= 1:
+                    hm = head_mask.view(-1, self.num_heads)
+                    if hm.shape[0] == 1:
+                        hm = hm.expand(_sdpa_out.shape[0], -1)
+                    _sdpa_out = _sdpa_out * hm.view(
+                        _sdpa_out.shape[0], self.num_heads, 1, 1
+                    ).to(_sdpa_out.dtype)
 
-            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+                context = _sdpa_out
+                if self.is_nested_encoder:
+                    if context.shape[-1] != hidden_states.shape[-1]:
+                        raise RuntimeError(
+                            f"SpectraV2Attention: output dimension mismatch. "
+                            f"Got {context.shape[-1]}, expected {hidden_states.shape[-1]}."
+                        )
+                    return context, None
 
-        except Exception:
+                output = self.out_proj(context)
+                if output.shape[-1] != hidden_states.shape[-1]:
+                    raise RuntimeError(
+                        f"SpectraV2Attention: output dimension mismatch. "
+                        f"Got {output.shape[-1]}, expected {hidden_states.shape[-1]}."
+                    )
+                return output, None
 
-            pass
+            except Exception as e:
+                logger.debug("SDPA path failed or fell back: %s", e)
+                pass
 
+        # Fallback path (manual attention)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal masking
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
+        if _is_causal:
+            causal_mask = torch.triu(torch.full((N, N_k), -1e4, device=scores.device), diagonal=1)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # Attention mask
-        if attention_mask is not None:
-            scores = apply_attention_mask(scores, attention_mask)
+        if eff_mask is not None:
+            scores = apply_attention_mask(scores, eff_mask)
 
         attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
         attn_weights = self.dropout(attn_weights)
 
-        # head_mask handling
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
@@ -521,24 +567,22 @@ class SpectraV2Attention(BaseAttention):
 
         if self.is_nested_encoder:
             if context.shape[-1] != hidden_states.shape[-1]:
-                if context.shape[-1] < hidden_states.shape[-1]:
-                    context = F.pad(context, (0, hidden_states.shape[-1] - context.shape[-1]))
-                else:
-                    context = context[..., :hidden_states.shape[-1]]
+                raise RuntimeError(
+                    f"SpectraV2Attention: output dimension mismatch. "
+                    f"Got {context.shape[-1]}, expected {hidden_states.shape[-1]}."
+                )
             return context, (attn_weights if output_attentions else None)
 
         output = self.out_proj(context)
         if output.shape[-1] != hidden_states.shape[-1]:
-            if output.shape[-1] < hidden_states.shape[-1]:
-                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
-            else:
-                output = output[..., :hidden_states.shape[-1]]
+            raise RuntimeError(
+                f"SpectraV2Attention: output dimension mismatch. "
+                f"Got {output.shape[-1]}, expected {hidden_states.shape[-1]}."
+            )
         return output, (attn_weights if output_attentions else None)
 
-    def get_ortho_loss(self) -> torch.Tensor:
-        return torch.tensor(0.0, device=self.out_proj.weight.device)
 
-
+@ATTENTION_REGISTRY.register("mha_sdpa_inject")
 @ATTENTION_REGISTRY.register("spectra_v2_inject")
 @ATTENTION_REGISTRY.register("inject_spectra_v2")
 def inject_spectra_v2(
@@ -552,11 +596,10 @@ def inject_spectra_v2(
     target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ) -> Optional[Any]:
-    """Safely replace attention in model or layer with SpectraV2Attention."""
+    """Safely replace attention in model or layer with SpectraV2Attention (mha_sdpa)."""
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None)
 
-    # 1. Whole model traversal support
     if target is not None and (
         hasattr(target, "transformer")
         or hasattr(target, "distilbert")
@@ -569,19 +612,26 @@ def inject_spectra_v2(
             layer_list = target.distilbert.transformer.layer
         elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
             layer_list = target.roberta.encoder.layer
-        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
-            layer_list = target.bert.encoder.layer
         elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
             layer_list = target.transformer.h
+        elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
+            layer_list = target.h
         elif hasattr(target, "model") and hasattr(target.model, "layers"):
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+            layer_list = target.layers
 
         if layer_list is not None:
+            num_injected = 0
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
-                inject_spectra_v2(
+                if target_layer_idx is not None and idx != target_layer_idx:
+                    continue
+                res = inject_spectra_v2(
                     layer=lyr,
                     model_config=cfg,
                     comp_config=comp_config,
@@ -589,44 +639,10 @@ def inject_spectra_v2(
                     total_layers=tot,
                     **kwargs,
                 )
-            return target
-
-    # 2. Named modules whole-model fallback
-    if (
-        old_attn is None
-        and target is not None
-        and hasattr(target, "named_modules")
-        and not (
-            hasattr(target, "attention")
-            or hasattr(target, "self")
-            or hasattr(target, "attn")
-            or hasattr(target, "q_proj")
-            or hasattr(target, "q_lin")
-            or hasattr(target, "query")
-        )
-    ):
-        try:
-            replaced = 0
-            for name, module in target.named_modules():
-                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                    parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                    child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                    parent = target.get_submodule(parent_name) if parent_name else target
-                    new_attn = inject_spectra_v2(
-                        layer=None,
-                        model_config=cfg,
-                        comp_config=comp_config,
-                        old_attn=module,
-                        **kwargs,
-                    )
-                    if new_attn is not None:
-                        setattr(parent, child_name, new_attn)
-                        replaced += 1
-                        if target_layer_idx is not None and replaced > target_layer_idx:
-                            break
-            if replaced > 0:
-                return target
-        except Exception:
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+        else:
             return None
 
     src_attn = old_attn
@@ -634,23 +650,23 @@ def inject_spectra_v2(
         src_attn = getattr(target, "attention", getattr(target, "self", getattr(target, "attn", None)))
 
     hidden_size = (
-        kwargs.get("hidden_size") or
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (target.in_features if hasattr(target, 'in_features') else None) or
-        _cfg_get(cfg, 'hidden_size', None) or
-        _cfg_get(cfg, 'd_model', 64)
+        kwargs.get("hidden_size")
+        or getattr(src_attn, "hidden_size", None)
+        or getattr(src_attn, "embed_dim", None)
+        or (src_attn.q_proj.in_features if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
+        or (src_attn.query.in_features if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features") else None)
+        or (src_attn.q_lin.in_features if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
+        or (target.in_features if hasattr(target, "in_features") else None)
+        or _cfg_get(cfg, "hidden_size", None)
+        or _cfg_get(cfg, "d_model", 64)
     )
     num_heads = (
-        kwargs.get("num_heads") or
-        kwargs.get("num_attention_heads") or
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        _cfg_get(cfg, 'num_attention_heads', None) or
-        _cfg_get(cfg, 'num_heads', 4)
+        kwargs.get("num_heads")
+        or kwargs.get("num_attention_heads")
+        or getattr(src_attn, "num_heads", None)
+        or getattr(src_attn, "num_attention_heads", None)
+        or _cfg_get(cfg, "num_attention_heads", None)
+        or _cfg_get(cfg, "num_heads", 4)
     )
     try:
         new_attn = SpectraV2Attention(
