@@ -106,11 +106,28 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True)
-@ATTENTION_REGISTRY.register("upi_mamba", supports_causal=True, supports_bidirectional=True)
-class UPIMambaBlock(BaseAttention):
-    r"""Bidirectional / Causal Uncertainty-Penalized Interpolated Selective Mamba Block.
-    Hardened for production use across diverse transformer architectures.
+@ATTENTION_REGISTRY.register("selective_mamba", supports_causal=True, supports_bidirectional=True)
+@ATTENTION_REGISTRY.register("upi_mamba", supports_causal=True, supports_bidirectional=True)  # DEPRECATED alias
+@ATTENTION_REGISTRY.register("upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True)  # DEPRECATED alias
+class SelectiveMamba(BaseAttention):
+    r"""
+    Selective Mamba SSM block.
+
+    Implements a Mamba-style selective state space model with 
+    input-dependent B, C, and dt parameters:
+        h_t = Ā_t · h_{t-1} + B̄_t · x_t
+        y_t = C_t · h_t + D · x_t
+    where Ā_t = exp(dt_t · A).
+
+    The "selectivity" comes from x_proj producing B_t and C_t 
+    from the input.
+
+    NOTE: The previous name "UPI-Stuffed" has been removed 
+    because none of the claimed features (Uncertainty Penalty, 
+    Interpolation, Stuffing) were actually implemented.
+
+    Registered as "upi_mamba" (legacy alias) and 
+    "selective_mamba" (canonical).
     """
 
     supports_causal: bool = True
@@ -174,17 +191,43 @@ class UPIMambaBlock(BaseAttention):
             groups=self.inner_dim,
             padding=d_conv - 1,
         )
-        # S4/Mamba parameterization: A_log over [inner_dim, d_state]
-        self.A_log = nn.Parameter(
-            torch.log(torch.arange(1, d_state + 1, dtype=torch.float32).unsqueeze(0).repeat(self.inner_dim, 1))
-        )
+        # A_log init: log([1, 2, ..., d_state]) repeated.
+        # In our scan, we compute A = +exp(A_log) (positive),
+        # then log_decay = -dt * A (negative), giving decay < 1.
+        # This is mathematically equivalent to Mamba's 
+        # A = -exp(A_log), decay = exp(dt * A).
+        A_init = torch.arange(1, d_state + 1, dtype=torch.float32).repeat(self.inner_dim, 1)
+        self.A_log = nn.Parameter(torch.log(A_init))
+
         # Trainable skip connection D matching inner_dim
         self.D = nn.Parameter(torch.ones(self.inner_dim))
 
-        # Trainable selective projections: produces dt_raw [inner_dim], B_t [d_state], C_t [d_state]
-        self.x_proj = nn.Linear(self.inner_dim, self.inner_dim + 2 * self.d_state, bias=False)
+        # Mamba paper: dt_rank = ceil(d_model / 16), not d_inner
+        self.dt_rank = math.ceil(self.dim / 16)
+
+        # x_proj maps inner_dim → dt_rank + 2*d_state
+        self.x_proj = nn.Linear(
+            self.inner_dim, 
+            self.dt_rank + 2 * self.d_state, 
+            bias=False,
+        )
         self.x_proj.weight.requires_grad = True
-        self.dt_proj = nn.Linear(self.inner_dim, self.inner_dim, bias=True)
+
+        # dt_proj maps dt_rank → inner_dim
+        self.dt_proj = nn.Linear(self.dt_rank, self.inner_dim, bias=True)
+
+        # Initialize dt_proj bias (Mamba paper Eq. 12)
+        dt_min, dt_max = 0.001, 0.1
+        dt_init = torch.exp(
+            torch.rand(self.inner_dim) * (math.log(dt_max) - math.log(dt_min))
+            + math.log(dt_min)
+        )
+        dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
+        with torch.no_grad():
+            self.dt_proj.bias.copy_(dt_init_inv)
+            # Weight init: uniform(-1/sqrt(dt_rank), 1/sqrt(dt_rank))
+            bound = 1.0 / math.sqrt(self.dt_rank)
+            nn.init.uniform_(self.dt_proj.weight, -bound, bound)
         self.dt_proj.weight.requires_grad = True
         self.dt_proj.bias.requires_grad = True
 
@@ -320,33 +363,57 @@ class UPIMambaBlock(BaseAttention):
                         logger.debug("UniversalAdapter extraction for %s failed: %s", proj, e)
 
             missing = []
-            if w_q is None: missing.append("Q projection")
-            if w_v is None: missing.append("V projection")
-            if w_o is None and not self.is_nested_encoder: missing.append("Out projection")
+            if w_q is None: missing.append("Q")
+            if w_v is None: missing.append("V")
+            if w_o is None and not self.is_nested_encoder: missing.append("O")
             if missing:
-                logger.warning("UPIMambaBlock: Missing weights: %s from %s. Proceeding with initialized weights.", ", ".join(missing), type(old_attn))
+                raise RuntimeError(
+                    f"SelectiveMamba: cannot extract {missing} from "
+                    f"{old_attn.__class__.__name__}. Aborting to avoid "
+                    f"silent model corruption."
+                )
 
             def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
                 if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                     return w.t()
                 return w
 
+            def _adapt_to_inner(w: torch.Tensor, name: str) -> torch.Tensor:
+                """
+                Adapt weight from source head count to inner_dim.
+                If source is smaller: tile and truncate.
+                If source is larger: slice to fit.
+                """
+                src_out, src_in = w.shape
+                if src_out == self.inner_dim:
+                    return w
+
+                if src_out > self.inner_dim:
+                    # Source has more heads — take the first inner_dim
+                    logger.debug(
+                        "SelectiveMamba: slicing %s from %d to %d",
+                        name, src_out, self.inner_dim,
+                    )
+                    return w[:self.inner_dim, :].contiguous()
+
+                # Source is smaller — repeat to fill
+                rep = math.ceil(self.inner_dim / src_out)
+                logger.debug(
+                    "SelectiveMamba: repeating %s from %d to %d (rep=%d)",
+                    name, src_out, self.inner_dim, rep,
+                )
+                return w.repeat(rep, 1)[:self.inner_dim, :].contiguous()
+
             w_v_or = _orient(w_v, self.dim)
             w_q_or = _orient(w_q, self.dim)
+            w_v_or = _adapt_to_inner(w_v_or, "W_V")
+            w_q_or = _adapt_to_inner(w_q_or, "W_Q")
 
-            # Support GQA and wider inner_dim: repeat if smaller
-            if w_v_or.shape[0] < self.inner_dim:
-                rep = math.ceil(self.inner_dim / w_v_or.shape[0])
-                w_v_or = w_v_or.repeat(rep, 1)[: self.inner_dim, : self.dim]
-            if w_q_or.shape[0] < self.inner_dim:
-                rep = math.ceil(self.inner_dim / w_q_or.shape[0])
-                w_q_or = w_q_or.repeat(rep, 1)[: self.inner_dim, : self.dim]
+            v_chunk = w_v_or[:, :self.dim]
+            q_chunk = w_q_or[:, :self.dim]
 
-            v_chunk = w_v_or[: self.inner_dim, : self.dim]
-            q_chunk = w_q_or[: self.inner_dim, : self.dim]
-
-            self.in_proj.weight.data[: self.inner_dim, : self.dim].copy_(v_chunk)
-            self.in_proj.weight.data[self.inner_dim : 2 * self.inner_dim, : self.dim].copy_(q_chunk)
+            self.in_proj.weight.data[:self.inner_dim, :self.dim].copy_(v_chunk)
+            self.in_proj.weight.data[self.inner_dim:2*self.inner_dim, :self.dim].copy_(q_chunk)
 
             if w_o is not None:
                 w_o_or = _orient(w_o, self.inner_dim)
@@ -356,15 +423,11 @@ class UPIMambaBlock(BaseAttention):
                 if b_o is not None and self.out_proj.bias is not None:
                     b_val = b_o.data if isinstance(b_o, nn.Parameter) else b_o
                     self.out_proj.bias.data[:min(len(self.out_proj.bias), len(b_val))].copy_(b_val[:min(len(self.out_proj.bias), len(b_val))])
-            elif self.is_nested_encoder:
-                self.out_proj.weight.data.zero_()
-                min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
-                self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
 
             # Frobenius norm checks
             for name, w in [("in_proj", self.in_proj.weight), ("out_proj", self.out_proj.weight)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"UPIMambaBlock: {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"SelectiveMamba: {name} has near-zero Frobenius norm (< 1e-4)")
 
             self.in_proj.freeze_base_weights()
             self.out_proj.freeze_base_weights()
@@ -498,23 +561,42 @@ class UPIMambaBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        # Cross-attention support
         if encoder_hidden_states is not None:
-            hidden_states = encoder_hidden_states
-            if encoder_attention_mask is not None:
-                attention_mask = encoder_attention_mask
+            raise NotImplementedError(
+                "SelectiveMamba does not support cross-attention. "
+                "This module replaces SELF-attention only. "
+                "For cross-attention, use a different module."
+            )
 
         B, L, D = hidden_states.shape
-
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+
+        if head_mask is not None:
+            logger.warning(
+                "SelectiveMamba does not use head_mask (SSM has no heads). "
+                "Ignoring head_mask."
+            )
+
         mask_bool = None
         if mask is not None:
             if mask.dim() == 2:
-                mask_bool = mask.bool().to(hidden_states.device)
+                # Distinguish between int/bool masks and float additive masks
+                if mask.dtype in (torch.bool, torch.int8, torch.int16, 
+                                  torch.int32, torch.int64):
+                    mask_bool = mask.bool().to(hidden_states.device)
+                else:
+                    # Float mask: -inf = invalid, 0 = valid
+                    mask_bool = (mask > -1e4).to(hidden_states.device)
             elif mask.dim() == 4:
-                mask_bool = (mask[:, 0, 0, :] > -10000.0).to(hidden_states.device)
+                mask_bool = (mask[:, 0, 0, :] > -1e4).to(hidden_states.device)
             else:
-                mask_bool = get_token_valid_mask(mask, B, L, hidden_states.device)
+                try:
+                    mask_bool = get_token_valid_mask(
+                        mask, B, L, hidden_states.device,
+                    )
+                except Exception as e:
+                    logger.debug("get_token_valid_mask failed: %s", e)
+                    mask_bool = None
 
         xz = self.in_proj(hidden_states)
         x_in, z = xz.chunk(2, dim=-1)
@@ -522,9 +604,13 @@ class UPIMambaBlock(BaseAttention):
         x_conv = self.conv1d(x_in.transpose(1, 2))[:, :, :L].transpose(1, 2).contiguous()
         x_ssm = F.silu(x_conv)
 
-        # Selective projections: dt_raw [inner_dim], B_t [d_state], C_t [d_state]
+        # Selective projections: dt_raw [dt_rank], B_t [d_state], C_t [d_state]
         x_proj_out = self.x_proj(x_ssm)
-        dt_raw, B_t, C_t = torch.split(x_proj_out, [self.inner_dim, self.d_state, self.d_state], dim=-1)
+        dt_raw, B_t, C_t = torch.split(
+            x_proj_out, 
+            [self.dt_rank, self.d_state, self.d_state], 
+            dim=-1,
+        )
         dt = F.softplus(self.dt_proj(dt_raw))
         dt = torch.clamp(dt, min=1e-3, max=1.0)
 
@@ -546,22 +632,100 @@ class UPIMambaBlock(BaseAttention):
 
         gated = y * F.silu(z)
 
-        if self.is_nested_encoder:
-            out = gated if gated.shape[-1] == self.dim else self.out_proj(gated)
-        else:
-            out = self.out_proj(gated)
+        # Inner SSM output is inner_dim; out_proj brings it back to dim.
+        # Always apply out_proj.
+        out = self.out_proj(gated)
 
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
         return (out, None)
 
+    def step_recurrent(
+        self,
+        x_t: torch.Tensor,
+        state: Optional[Dict[str, torch.Tensor]] = None,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Single-step streaming inference. 
+        
+        x_t: (B, 1, D)
+        state: dict with keys 'h', 'conv_buf' (optional)
+        Returns: (y_t, new_state)
+        """
+        if x_t.dim() == 2:
+            x_t = x_t.unsqueeze(1)
+        B, L, D = x_t.shape
+        assert L == 1, "step_recurrent expects L=1"
+        
+        # Initialize state
+        if state is None:
+            h = torch.zeros(
+                B, self.inner_dim, self.d_state,
+                device=x_t.device, dtype=torch.float32,
+            )
+            conv_buf = torch.zeros(
+                B, self.d_conv - 1, self.inner_dim,
+                device=x_t.device, dtype=x_t.dtype,
+            )
+        else:
+            h = state["h"]
+            conv_buf = state.get("conv_buf")
+        
+        # in_proj
+        xz = self.in_proj(x_t)  # (B, 1, 2*inner_dim)
+        x_in, z = xz.chunk(2, dim=-1)
+        
+        # Conv1d with buffer
+        x_conv_input = torch.cat([conv_buf, x_in], dim=1)  # (B, d_conv, inner_dim)
+        x_conv = F.conv1d(
+            x_conv_input.transpose(1, 2),
+            self.conv1d.weight,
+            self.conv1d.bias,
+            groups=self.inner_dim,
+        ).transpose(1, 2)  # (B, 1, inner_dim)
+        new_conv_buf = x_conv_input[:, -(self.d_conv - 1):]
+        
+        x_ssm = F.silu(x_conv)
+        
+        # Selective params
+        x_proj_out = self.x_proj(x_ssm)
+        dt_raw, B_t, C_t = torch.split(
+            x_proj_out, 
+            [self.dt_rank, self.d_state, self.d_state], 
+            dim=-1,
+        )
+        dt = F.softplus(self.dt_proj(dt_raw)).clamp(1e-3, 1.0)
+        
+        # Single step scan
+        A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))
+        dA = torch.exp(-dt.unsqueeze(-1) * A.view(1, 1, self.inner_dim, self.d_state))
+        dBx = dt.unsqueeze(-1) * B_t.unsqueeze(2) * x_ssm.unsqueeze(-1)
+        
+        h = dA.squeeze(1) * h + dBx.squeeze(1)  # (B, inner_dim, d_state)
+        y = (C_t.squeeze(1).unsqueeze(1) * h).sum(dim=-1)  # (B, inner_dim)
+        y = y + self.D * x_ssm.squeeze(1)
+        
+        # Gating
+        gated = y * F.silu(z.squeeze(1))  # (B, inner_dim)
+        
+        # Output projection
+        out = self.out_proj(gated.unsqueeze(1))  # (B, 1, D)
+        
+        new_state = {"h": h, "conv_buf": new_conv_buf}
+        return out, new_state
 
-@ATTENTION_REGISTRY.register("upi_stuffed_mamba_inject")
-@ATTENTION_REGISTRY.register("inject_upi_mamba")
-@ATTENTION_REGISTRY.register("upi_mamba_inject")
-@ATTENTION_REGISTRY.register("inject_upi_stuffed_mamba")
-def inject_upi_mamba(
+
+UPIMambaBlock = SelectiveMamba  # Backward-compatibility alias
+
+
+@ATTENTION_REGISTRY.register("selective_mamba_inject")
+@ATTENTION_REGISTRY.register("inject_selective_mamba")
+@ATTENTION_REGISTRY.register("upi_mamba_inject")  # DEPRECATED alias
+@ATTENTION_REGISTRY.register("inject_upi_mamba")  # DEPRECATED alias
+@ATTENTION_REGISTRY.register("upi_stuffed_mamba_inject")  # DEPRECATED alias
+@ATTENTION_REGISTRY.register("inject_upi_stuffed_mamba")  # DEPRECATED alias
+def inject_selective_mamba(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
@@ -570,8 +734,8 @@ def inject_upi_mamba(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[UPIMambaBlock]:
-    """Safe injection hook for UPIMambaBlock."""
+) -> Optional[SelectiveMamba]:
+    """Safe injection hook for SelectiveMamba."""
     target = layer if layer is not None else model
     try:
         # Whole-model traversal support
@@ -600,7 +764,7 @@ def inject_upi_mamba(
             if layer_list is not None:
                 tot = len(layer_list)
                 for idx, lyr in enumerate(layer_list):
-                    inject_upi_mamba(
+                    inject_selective_mamba(
                         layer=lyr,
                         model_config=model_config,
                         comp_config=comp_config,
@@ -624,7 +788,7 @@ def inject_upi_mamba(
             elif hasattr(target, "self"):
                 src = target.self
 
-        if src is None or isinstance(src, UPIMambaBlock):
+        if src is None or isinstance(src, SelectiveMamba):
             return None
 
         cfg = model_config or getattr(target, "config", getattr(src, "config", None))
@@ -643,7 +807,7 @@ def inject_upi_mamba(
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
         rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
 
-        new_block = UPIMambaBlock(
+        new_block = SelectiveMamba(
             config=cfg,
             dim=dim,
             rank=rank,
@@ -673,5 +837,9 @@ def inject_upi_mamba(
 
         return new_block
     except Exception as e:
-        logger.error("inject_upi_mamba failed at layer %d: %s", layer_idx, e)
+        logger.error("inject_selective_mamba failed at layer %d: %s", layer_idx, e)
         return None
+
+
+inject_upi_mamba = inject_selective_mamba  # Backward-compatibility alias
+
