@@ -550,28 +550,31 @@ class PerformerAttention(BaseAttention):
 
     # ------------------------------------------------------------
     def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        """FAVOR+ feature map with GLOBAL max for numerical stability.
-        
-        Uses a single global max (scalar) instead of per-token max.
-        This avoids the per-token bias while maintaining FP16 stability.
+        """FAVOR+ feature map.
+
+        FIX 1: removed per-token max_proj subtraction (bias).
+        FIX 6: removed redundant +eps.
+        FIX 11: removed .contiguous() (matmul handles non-contiguous).
+        FIX 12: removed dead clamp(max=10.0).
         """
-        omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()
+        # x: [B, H, N, d]
+        # omega: [M, d]
+        omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()  # [d, M]
         proj = torch.matmul(x, omega_t)  # [B, H, N, M]
 
         if self.kernel_type in ("favor_plus", "exp", "favor"):
+            # FIX 1: no per-token max subtraction
             diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5  # [B,H,N,1]
-            
-            # FIX: Use GLOBAL max (scalar) — cancels in softmax AND stable in FP16
-            max_val = (proj - diag_sq).detach().max()  # scalar
-            
-            diff = torch.clamp(proj - diag_sq - max_val, min=-30.0)
-            phi = torch.exp(diff)
+            # FIX 12: only clamp min
+            diff = torch.clamp(proj - diag_sq, min=-30.0)
+            phi = torch.exp(diff)  # FIX 6: no +eps
             phi = phi / math.sqrt(self.num_features)
         elif self.kernel_type == "elu":
             phi = (F.elu(proj) + 1.0) / math.sqrt(self.num_features)
         else:
             phi = (F.relu(proj) + self.eps) / math.sqrt(self.num_features)
         return phi
+
     # ------------------------------------------------------------
     def copy_weights(self, src: Any) -> bool:
         """Copy weights from source attention module.
