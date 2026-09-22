@@ -491,7 +491,11 @@ class AdaptiveSVDAttention(BaseAttention):
                 extracted_all = True
 
         if not extracted_all:
-            logger.warning(f"Could not extract all required weights for AdaptiveSVDAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}. Proceeding with initialized weights.")
+            raise RuntimeError(
+                f"AdaptiveSVDAttention.copy_weights: could not extract mandatory projections "
+                f"{[p for p, (w, _) in extracted_weights.items() if w is None]} from {cls_name}. "
+                f"Refusing to install randomly-initialised weights."
+            )
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -561,7 +565,12 @@ class AdaptiveSVDAttention(BaseAttention):
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
             def _rotate_half(x):
-                return torch.cat((-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1)
+                _d = x.shape[-1]
+                _h = _d // 2
+                _rot = torch.cat((-x[..., _h : 2 * _h], x[..., :_h]), dim=-1)
+                if _d % 2 == 1:
+                    _rot = torch.cat([_rot, x[..., -1:]], dim=-1)
+                return _rot
             if cos.dim() == 3:
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
             while cos.dim() < Q.dim():
