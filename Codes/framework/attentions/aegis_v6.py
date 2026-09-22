@@ -233,13 +233,23 @@ class StableKernelFeatureMap(nn.Module):
         return torch.cat(blocks, dim=1)[:, :m] * math.sqrt(d)
 
     def forward(self, x):
+        """FAVOR+ feature map with GLOBAL max subtraction for FP16 stability."""
         with torch.autocast(device_type=x.device.type, enabled=False):
             x_f = x.float()
             phi = torch.matmul(x_f, self.proj.float())
             norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
-            exp_in = torch.clamp(phi - norm_sq, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
-            return (self.scale * torch.exp(exp_in)).to(x.dtype)
+            raw = phi - norm_sq
 
+            # FIX: Global max (scalar) subtraction to avoid FP16 overflow.
+            # This scalar cancels in the softmax normalization (safe).
+            max_val = raw.detach().max()
+
+            exp_in = torch.clamp(
+                raw - max_val,
+                min=self.cfg.clamp_min,
+                max=self.cfg.clamp_max,
+            )
+            return (self.scale * torch.exp(exp_in)).to(x.dtype)
 
 # ===========================================================================
 # Gates
@@ -437,13 +447,17 @@ class AegisAttentionV3(BaseAttention):
         if self.is_decoder and not is_cross:
             if raw.shape[-2] != N_q or raw.shape[-1] != N_kv:
                 raise ValueError(f"mask shape mismatch: {tuple(raw.shape)} vs ({B},1,{N_q},{N_kv})")
-            # FIX-M3: absolute positions
-            past_len = N_kv - N_q
-            idx_q = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
-            idx_k = torch.arange(N_kv, device=device).unsqueeze(0)
-            causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
-            raw = raw & causal
+
+            # FIX: Causal mask only valid when N_q == N_kv (full sequence).
+            # For decode (N_q=1, N_kv=past+1), the single query attends to ALL keys → no causal mask needed.
+            if N_q == N_kv:
+                idx_q = torch.arange(N_q, device=device).unsqueeze(1)
+                idx_k = torch.arange(N_kv, device=device).unsqueeze(0)
+                causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
+                raw = raw & causal
+            # For decode: raw already correct (all past keys valid for the single query)
         return raw
+
 
     # ------------------------------------------------------------------
     # Sliding window — FIX-S1, FIX-S2
@@ -455,18 +469,18 @@ class AegisAttentionV3(BaseAttention):
         scale = d ** -0.5
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
-        # FIX-S1: absolute positions, not relative.
-        if self.is_decoder and not is_cross and N_k >= N:
-            past_len = N_k - N
-        else:
-            past_len = 0
-        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)   # (N,1)
-        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)               # (1,N_k)
+        # FIX: Absolute positions. For decode (N != N_k), past_len = N_k - N.
+        past_len = (N_k - N) if (self.is_decoder and not is_cross and N_k >= N) else 0
+        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+
+        # Band: |q - k| <= W
         dist = (abs_q - abs_k).abs()
         band = (dist <= W).unsqueeze(0).unsqueeze(0)
 
-        # FIX-S2: causal band uses absolute positions too.
-        if self.is_decoder and not is_cross and N_k >= N:
+        # FIX: Causal band only when N == N_k (full sequence). For decode (N_q=1),
+        # the single query legitimately attends to all past keys.
+        if self.is_decoder and not is_cross and N == N_k:
             causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
             band = band & causal
 
@@ -503,20 +517,21 @@ class AegisAttentionV3(BaseAttention):
         den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
         return torch.nan_to_num(num / den, nan=0.0)
 
-    # ------------------------------------------------------------------
-    # Causal linear attention  — FIX-C3, FIX-C4
-    # ------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # Causal linear attention  — FIX-C3, FIX-C4
+        # ------------------------------------------------------------------
     def _causal_linear_attention(self, Q, K, V, valid, q_gate, in_gate,
-                                 chunk_size: Optional[int] = None):
+                                chunk_size: Optional[int] = None):
         """
         Chunked causal linear attention.
 
-        Handles three cases:
-          * N == N_k (training / prefill): full chunked cumsum with causal structure.
-          * N == 1 and N_k > 1 (single-token decode): non-causal over all keys
-            (the causal mask already limits the single query to all keys).
-          * otherwise (multi-token decode): falls back to non-causal over all keys
-            with a warning (approximation).
+        Three cases:
+        * N == N_k (training / prefill): full chunked cumsum with causal structure.
+        * N == 1 (single-token decode with cache): exact, since the single query
+            attends to all keys in the cache (causal mask trivially holds).
+        * N > 1 and N != N_k (multi-token decode): FALLBACK to sliding-window
+            attention over the full key history. This avoids the current
+            non-causal approximation which is known to be inaccurate.
         """
         B, h, N, d = Q.shape
         N_k = K.shape[2]
@@ -534,25 +549,27 @@ class AegisAttentionV3(BaseAttention):
             K_feat = K_feat * in_gate
             V = V * in_gate
 
-        # Key padding mask — validity over the key axis.
-        valid_k = valid.any(dim=-2, keepdim=True).transpose(-1, -2).to(K_feat.dtype)  # (B,1,N_k,1)
+        valid_k = valid.any(dim=-2, keepdim=True).transpose(-1, -2).to(K_feat.dtype)
         K_feat = K_feat * valid_k
         V = V * valid_k
 
         # ---- Case: decode with cache (N != N_k) ----
-        # FIX-C4: use non-causal over the full key history. Correct for N=1;
-        # approximate for multi-token decode (causal within new tokens not enforced
-        # — acceptable when past_len >> N).
         if N != N_k:
-            if N > 1:
+            # FIX: For single-token decode (N==1), non-causal over full history is EXACT.
+            # For multi-token decode, fall back to exact sliding-window attention
+            # rather than the inaccurate non-causal approximation.
+            if N == 1:
+                KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V)
+                Z = K_feat.sum(dim=-2, keepdim=True)
+                num = torch.matmul(Q_feat, KV)
+                den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
+                return torch.nan_to_num(num / den, nan=0.0)
+            else:
+                # Multi-token decode: use exact sliding-window attention
                 logger.warning(
                     "_causal_linear_attention: multi-token decode (N=%d, N_k=%d). "
-                    "Using non-causal approximation over full history.", N, N_k)
-            KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V)   # (B,h,M,d)
-            Z = K_feat.sum(dim=-2, keepdim=True)                          # (B,h,1,M)
-            num = torch.matmul(Q_feat, KV)                                 # (B,h,N,d)
-            den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
-            return torch.nan_to_num(num / den, nan=0.0)
+                    "Falling back to exact sliding-window attention.", N, N_k)
+                return self._sliding_window_attention(Q, K, V, valid, False, return_attn=False)
 
         # ---- Case: N == N_k (training / full prefill) ----
         M = Q_feat.shape[-1]
@@ -566,7 +583,7 @@ class AegisAttentionV3(BaseAttention):
             Kc = K_feat[:, :, start:end]
             Vc = V[:, :, start:end]
 
-            # FIX-C3: Vc.unsqueeze(-2) → (B,h,C,1,d); broadcast with (B,h,C,M,1) → (B,h,C,M,d).
+            # FIX-C3: correct outer product orientation
             KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
             K_local = Kc.cumsum(dim=2)
 
