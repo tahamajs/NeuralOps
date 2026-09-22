@@ -26,9 +26,16 @@ logger = logging.getLogger(__name__)
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x_rot = x[..., :even_d]
+    half = even_d // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        return torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -229,7 +236,27 @@ class EATBlock(BaseAttention):
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
-        self.prune_layer: Optional[ProgressiveTokenPruning] = prune_layer
+
+        # Progressive Token Pruning layer instantiation
+        if prune_layer is not None:
+            self.prune_layer: Optional[ProgressiveTokenPruning] = prune_layer
+        else:
+            keep_ratio = getattr(config, "keep_ratio", getattr(comp_config, "keep_ratio", kwargs.get("keep_ratio", None)))
+            enable_pruning = getattr(config, "enable_pruning", getattr(comp_config, "enable_pruning", kwargs.get("enable_pruning", False)))
+            if keep_ratio is not None or enable_pruning:
+                effective_ratio = float(keep_ratio) if keep_ratio is not None else 0.7
+                prune_kwargs = dict(kwargs)
+                prune_kwargs.pop("keep_ratio", None)
+                self.prune_layer = ProgressiveTokenPruning(
+                    config=config,
+                    comp_config=comp_config,
+                    keep_ratio=effective_ratio,
+                    layer_id=self.layer_idx,
+                    layer_idx=self.layer_idx,
+                    **prune_kwargs,
+                )
+            else:
+                self.prune_layer = None
 
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
@@ -372,7 +399,10 @@ class EATBlock(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning(f"EATBlock copy_weights: missing projections {missing_after} from {pretrained_attn.__class__.__name__}; proceeding with random init for those")
+            raise RuntimeError(
+                f"EATBlock copy_weights: missing mandatory projections {missing_after} "
+                f"from {pretrained_attn.__class__.__name__}."
+            )
 
         target_map = {"q": self.q_lin, "k": self.k_lin, "v": self.v_lin, "o": self.out_lin}
         with torch.no_grad():
@@ -464,59 +494,88 @@ class EATBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # 4. Multi-head attention scores in FP32
-        scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs
+        # 4. Multi-head attention scores (SDPA path with fallback to explicit attention)
+        eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
+        attn_out = None
 
         try:
-            _qs = q.half() if q.dtype == torch.float32 else q
-            _ks = k.half() if k.dtype == torch.float32 else k
-            _vs = v.half() if v.dtype == torch.float32 else v
             _is_causal = getattr(self, 'is_decoder', False) and not is_cross_attention and L > 1
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs, _ks, _vs,
-                is_causal=_is_causal,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
-        except Exception:
-            pass
+            attn_mask_sdpa = None
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    min_val = torch.finfo(q.dtype).min if q.dtype.is_floating_point else -1e4
+                    attn_mask_sdpa = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * min_val
+                elif eff_mask.dim() == 3:
+                    attn_mask_sdpa = eff_mask.unsqueeze(1).float()
+                elif eff_mask.dim() == 4:
+                    attn_mask_sdpa = eff_mask.float()
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            if _is_causal and attn_mask_sdpa is None:
+                _sdpa_out = F.scaled_dot_product_attention(
+                    q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p if self.training else 0.0
+                )
+            else:
+                if _is_causal:
+                    causal_m = torch.triu(torch.full((L, kv_len), float("-inf"), device=q.device, dtype=torch.float32), diagonal=1 + (kv_len - L))
+                    attn_mask_sdpa = (attn_mask_sdpa + causal_m.unsqueeze(0).unsqueeze(0)) if attn_mask_sdpa is not None else causal_m.unsqueeze(0).unsqueeze(0)
+                _sdpa_out = F.scaled_dot_product_attention(
+                    q, k, v, attn_mask=attn_mask_sdpa, is_causal=False, dropout_p=self.dropout.p if self.training else 0.0
+                )
 
-        if self.is_decoder and not is_cross_attention:
-            causal_mask = torch.triu(
-                torch.full((L, kv_len), float("-inf"), device=scores.device, dtype=torch.float32),
-                diagonal=1 + (kv_len - L),
-            )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            # Apply head_mask if present
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+                elif head_mask.dim() == 3:
+                    hm = head_mask.unsqueeze(-1)
+                else:
+                    hm = head_mask
+                _sdpa_out = _sdpa_out * hm
 
-        eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
-        if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                pad_mask = (eff_mask == 0).unsqueeze(1).unsqueeze(2)
-                scores = scores.masked_fill(pad_mask, float("-inf"))
-            elif eff_mask.dim() == 3:
-                scores = scores + eff_mask.unsqueeze(1).float()
-            elif eff_mask.dim() == 4:
-                scores = scores + eff_mask.float()
+            attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            attn_out = torch.nan_to_num(attn_out, nan=0.0)
+            probs = None
+        except Exception as e:
+            logger.debug(f"SDPA failed in EATBlock, falling back to explicit attention: {e}")
+            attn_out = None
 
-        probs = F.softmax(scores, dim=-1)
-        probs = torch.nan_to_num(probs, nan=0.0)
-        probs = self.dropout(probs)
+        if attn_out is None:
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        # 5. Head mask handling
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            probs = probs * head_mask
+            if self.is_decoder and not is_cross_attention:
+                causal_mask = torch.triu(
+                    torch.full((L, kv_len), float("-inf"), device=scores.device, dtype=torch.float32),
+                    diagonal=1 + (kv_len - L),
+                )
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        attn_out = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    pad_mask = (eff_mask == 0).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(pad_mask, float("-inf"))
+                elif eff_mask.dim() == 3:
+                    scores = scores + eff_mask.unsqueeze(1).float()
+                elif eff_mask.dim() == 4:
+                    scores = scores + eff_mask.float()
+
+            probs = F.softmax(scores, dim=-1)
+            probs = torch.nan_to_num(probs, nan=0.0)
+            probs = self.dropout(probs)
+
+            # 5. Head mask handling
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                probs = probs * head_mask
+
+            attn_out = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:
@@ -530,6 +589,7 @@ class EATBlock(BaseAttention):
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
+        # 7. Progressive Token Pruning
         if self.prune_layer is not None and not self.training:
             out, _ = self.prune_layer(out)
 
