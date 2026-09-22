@@ -18,6 +18,7 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,8 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -43,8 +46,15 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    d = x.shape[-1]
+    if d % 2 != 0:
+        x_even = x[..., :-1]
+        x1 = x_even[..., : (d - 1) // 2]
+        x2 = x_even[..., (d - 1) // 2 :]
+        rot_even = torch.cat((-x2, x1), dim=-1)
+        return torch.cat((rot_even, x[..., -1:]), dim=-1)
+    x1 = x[..., : d // 2]
+    x2 = x[..., d // 2 :]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -266,14 +276,14 @@ class ChelaSlayAttention(BaseAttention):
         self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Yat-Kernel Random Fourier projection buffer
-        self.register_buffer("random_proj", torch.randn(self.head_dim, self.feature_dim) * 0.02)
+        # Yat-Kernel projection parameter (trainable)
+        self.yat_proj = nn.Parameter(torch.randn(self.head_dim, self.feature_dim) * 0.02)
 
         # Adaptive gating initialized to preserve Step-0 dense representations
-        self.gate = nn.Linear(self.dim, self.num_heads)
-        nn.init.zeros_(self.gate.weight)
+        self.lora_gate = nn.Linear(self.dim, self.num_heads)
+        nn.init.zeros_(self.lora_gate.weight)
         init_bias = kwargs.get("gate_init_bias", gate_init_bias)
-        self.gate.bias.data.fill_(init_bias)
+        self.lora_gate.bias.data.fill_(init_bias)
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -287,6 +297,10 @@ class ChelaSlayAttention(BaseAttention):
     # --------------------------------------------------------------------------
     # Compatibility properties for parameter inspection & framework integration
     # --------------------------------------------------------------------------
+    @property
+    def gate(self) -> nn.Linear: return self.lora_gate
+    @property
+    def random_proj(self) -> torch.Tensor: return self.yat_proj
     @property
     def q_proj(self) -> LoRALinear: return self.W_q
     @property
@@ -435,8 +449,8 @@ class ChelaSlayAttention(BaseAttention):
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning(
-                f"ChelaSlayAttention copy_weights incomplete: missing mandatory projections {missing_after} "
+            raise RuntimeError(
+                f"ChelaSlayAttention copy_weights failed: missing mandatory projections {missing_after} "
                 f"from module {pretrained_attn.__class__.__name__}."
             )
 
@@ -489,15 +503,19 @@ class ChelaSlayAttention(BaseAttention):
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def _spherical_normalize(self, x: torch.Tensor) -> torch.Tensor:
-        """Projects coordinate representations onto the unit hypersphere."""
-        return F.normalize(x, p=2, dim=-1, eps=1e-6)
+        """Magnitude-preserving spherical normalization: x_hat * log(1 + ||x||)."""
+        norm = torch.norm(x, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+        x_hat = x / norm
+        return x_hat * torch.log1p(norm)
 
     def _yat_feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        """Trigonometric random Fourier feature mapping (Yat-Kernel)."""
-        if self.random_proj.shape[0] != x.shape[-1]:
-            # Automatically adjust projection buffer dimensions if head_dim varies
-            self.random_proj = torch.randn(x.shape[-1], self.feature_dim, device=x.device, dtype=x.dtype) * 0.02
-        proj = torch.matmul(x, self.random_proj.to(device=x.device, dtype=x.dtype))
+        """Trigonometric Fourier feature mapping (Yat-Kernel) using trainable projection."""
+        if self.yat_proj.shape[0] != x.shape[-1]:
+            # Automatically adjust projection parameter dimensions if head_dim varies
+            with torch.no_grad():
+                new_p = torch.randn(x.shape[-1], self.feature_dim, device=x.device, dtype=x.dtype) * 0.02
+                self.yat_proj = nn.Parameter(new_p)
+        proj = torch.matmul(x, self.yat_proj.to(device=x.device, dtype=x.dtype))
         return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (
             1.0 / (self.feature_dim**0.25)
         )
@@ -601,15 +619,42 @@ class ChelaSlayAttention(BaseAttention):
             v_masked = v
 
         if self.is_causal and not is_cross_attention and L == kv_len:
-            # Strictly causal linear attention via vectorized cumulative sum
-            # outer product: (B, H, L, 2F, head_dim)
-            outer_prod = k_feat.float().unsqueeze(-1) * v_masked.float().unsqueeze(-2)
-            S = torch.cumsum(outer_prod, dim=2)  # (B, H, L, 2F, head_dim)
-            Z = torch.cumsum(k_feat.float(), dim=2)  # (B, H, L, 2F)
+            # Strictly causal linear attention via chunked cumsum for O(1) sequence-memory footprint
+            chunk_size = 64
+            if L <= chunk_size:
+                outer_prod = k_feat.float().unsqueeze(-1) * v_masked.float().unsqueeze(-2)
+                S = torch.cumsum(outer_prod, dim=2)  # (B, H, L, 2F, head_dim)
+                Z = torch.cumsum(k_feat.float(), dim=2)  # (B, H, L, 2F)
+                num = torch.matmul(q_feat.float().unsqueeze(-2), S).squeeze(-2)  # (B, H, L, head_dim)
+                denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5     # (B, H, L, 1)
+                linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+            else:
+                num_chunks = (L + chunk_size - 1) // chunk_size
+                feat_2f = k_feat.shape[-1]
+                S_running = torch.zeros(B, self.num_heads, feat_2f, self.head_dim, device=x.device, dtype=torch.float32)
+                Z_running = torch.zeros(B, self.num_heads, feat_2f, device=x.device, dtype=torch.float32)
+                out_chunks = []
+                for c in range(num_chunks):
+                    start_c = c * chunk_size
+                    end_c = min(start_c + chunk_size, L)
+                    q_c = q_feat[:, :, start_c:end_c, :]
+                    k_c = k_feat[:, :, start_c:end_c, :]
+                    v_c = v_masked[:, :, start_c:end_c, :]
 
-            num = torch.matmul(q_feat.float().unsqueeze(-2), S).squeeze(-2)  # (B, H, L, head_dim)
-            denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True) + 1e-5     # (B, H, L, 1)
-            linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
+                    outer_c = k_c.float().unsqueeze(-1) * v_c.float().unsqueeze(-2)
+                    S_intra = torch.cumsum(outer_c, dim=2)
+                    Z_intra = torch.cumsum(k_c.float(), dim=2)
+
+                    S_total = S_intra + S_running.unsqueeze(2)
+                    Z_total = Z_intra + Z_running.unsqueeze(2)
+
+                    num_c = torch.matmul(q_c.float().unsqueeze(-2), S_total).squeeze(-2)
+                    denom_c = (q_c.float() * Z_total).sum(dim=-1, keepdim=True) + 1e-5
+                    out_chunks.append((num_c / denom_c.clamp(min=1e-5)).to(x.dtype))
+
+                    S_running = S_running + outer_c.sum(dim=2)
+                    Z_running = Z_running + k_c.float().sum(dim=2)
+                linear_out = torch.cat(out_chunks, dim=2)
         else:
             # Bidirectional linear attention (global summation)
             # KV: (B, H, 2F, head_dim)
@@ -621,8 +666,8 @@ class ChelaSlayAttention(BaseAttention):
             linear_out = (num / denom.clamp(min=1e-5)).to(x.dtype)
 
         # 6. Adaptive gating with step-0 dense representation preservation
-        # gate produces (B, L, H) -> permute to (B, H, L, 1)
-        g = torch.sigmoid(self.gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
+        # lora_gate produces (B, L, H) -> permute to (B, H, L, 1)
+        g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
