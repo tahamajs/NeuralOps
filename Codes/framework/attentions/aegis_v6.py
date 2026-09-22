@@ -440,60 +440,134 @@ class AegisAttentionV3(BaseAttention):
             return v.to(torch.bool)
         raise ValueError(f"Unsupported attention_mask dim: {mask.dim()}")
 
-    def _prepare_valid_mask(self, attention_mask, B, N_q, N_kv, device, is_cross):
-        raw = self._raw_valid(attention_mask, B, N_kv, device)
+    def _prepare_valid_mask(
+        self,
+        attention_mask: Optional[torch.Tensor],
+        B: int,
+        N_q: int,
+        N_kv: int,
+        device: torch.device,
+        is_cross: bool,
+    ) -> torch.Tensor:
+        """
+        Build a boolean validity mask of shape (B, 1, N_q, N_kv).
+        True = key is allowed for the corresponding query.
+
+        Causal masking is applied ONLY when:
+        - the module is a decoder, AND
+        - this is self-attention (not cross-attention).
+
+        Handles three decoding regimes correctly via absolute positions:
+        * prefill:       N_q == N_kv   (full sequence, causal mask diag-aligned)
+        * single decode: N_q == 1      (single query sees all past keys)
+        * multi decode:  N_q > 1, N_q < N_kv (chunked decode with past cache)
+        In all three cases the query at absolute position `past_len + i` can attend
+        to keys at absolute positions `<= past_len + i`.
+        """
+        # 1) Raw validity from padding (before any causal logic)
+        raw = self._raw_valid(attention_mask, B, N_kv, device)  # (B, 1, 1 or N_q, N_kv)
+
+        # 2) Broadcast padding along query dim if needed
         if raw.shape[-2] == 1 and N_q != 1:
             raw = raw.expand(B, 1, N_q, N_kv)
-        if self.is_decoder and not is_cross:
-            if raw.shape[-2] != N_q or raw.shape[-1] != N_kv:
-                raise ValueError(f"mask shape mismatch: {tuple(raw.shape)} vs ({B},1,{N_q},{N_kv})")
 
-            # FIX: Causal mask only valid when N_q == N_kv (full sequence).
-            # For decode (N_q=1, N_kv=past+1), the single query attends to ALL keys → no causal mask needed.
-            if N_q == N_kv:
-                idx_q = torch.arange(N_q, device=device).unsqueeze(1)
-                idx_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
-                raw = raw & causal
-            # For decode: raw already correct (all past keys valid for the single query)
+        # 3) Causal mask (decoder self-attention only)
+        if self.is_decoder and not is_cross:
+            # Sanity check: shapes must line up
+            if raw.shape[-2] != N_q or raw.shape[-1] != N_kv:
+                raise ValueError(
+                    f"_prepare_valid_mask: shape mismatch: raw={tuple(raw.shape)} "
+                    f"expected (B, 1, {N_q}, {N_kv})"
+                )
+
+            # Absolute positions: query i has absolute index (past_len + i).
+            # past_len = N_kv - N_q is exact for both prefill and decode-with-cache.
+            past_len = N_kv - N_q
+            idx_q = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)  # (N_q, 1)
+            idx_k = torch.arange(N_kv, device=device).unsqueeze(0)              # (1, N_kv)
+
+            # Causal: query q can attend to key k iff abs_k <= abs_q
+            causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)                 # (1, 1, N_q, N_kv)
+            raw = raw & causal
+
         return raw
+
 
 
     # ------------------------------------------------------------------
     # Sliding window — FIX-S1, FIX-S2
     # ------------------------------------------------------------------
-    def _sliding_window_attention(self, Q, K, V, valid, is_cross, return_attn=False):
+    def _sliding_window_attention(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        valid: torch.Tensor,
+        is_cross: bool,
+        return_attn: bool = False,
+    ):
+        """
+        Sliding-window + causal attention.
+
+        Args:
+            Q:       (B, h, N, d)
+            K:       (B, h, N_kv, d)
+            V:       (B, h, N_kv, d)
+            valid:   (B, 1, N, N_kv) boolean — padding + causal pre-computed
+                    by `_prepare_valid_mask`. This function additionally restricts
+                    attention to a local band of width `self.window`.
+            is_cross: whether this call is cross-attention (skip causal band).
+            return_attn: if True, also return the attention matrix.
+
+        Returns:
+            (out, attn) if return_attn else (out, None)
+        """
         B, h, N, d = Q.shape
         N_k = K.shape[2]
         W = self.window
         scale = d ** -0.5
+
+        # 1) Raw scores (full N x N_kv matrix; for production replace with a
+        #    FlashAttention / Triton kernel to actually get O(N*W) memory).
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
-        # FIX: Absolute positions. For decode (N != N_k), past_len = N_k - N.
+        # 2) Absolute positions
+        #    past_len is exact for prefill (0), single decode (N_kv-1),
+        #    and multi decode (N_kv-N).
         past_len = (N_k - N) if (self.is_decoder and not is_cross and N_k >= N) else 0
-        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
-        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)   # (N, 1)
+        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)              # (1, N_k)
 
-        # Band: |q - k| <= W
-        dist = (abs_q - abs_k).abs()
-        band = (dist <= W).unsqueeze(0).unsqueeze(0)
+        # 3) Local band: |abs_q - abs_k| <= W
+        dist = (abs_q - abs_k).abs()                                         # (N, N_k)
+        band = (dist <= W).unsqueeze(0).unsqueeze(0)                         # (1, 1, N, N_k)
 
-        # FIX: Causal band only when N == N_k (full sequence). For decode (N_q=1),
-        # the single query legitimately attends to all past keys.
-        if self.is_decoder and not is_cross and N == N_k:
-            causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+        # 4) Causal band: query at abs_q can attend to key at abs_k iff abs_k <= abs_q.
+        #    Applied for ALL decoder self-attention cases (prefill, single decode,
+        #    multi-token decode). It degenerates to "all keys allowed" when N == 1
+        #    because abs_q = N_k-1 >= every abs_k.
+        if self.is_decoder and not is_cross:
+            causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)              # (1, 1, N, N_k)
             band = band & causal
 
+        # 5) Apply band + caller-provided valid mask (padding + causal).
         mask_val = -1e4
         scores = scores.masked_fill(~band, mask_val)
         scores = scores.masked_fill(~valid, mask_val)
         scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
 
-        any_valid = valid.any(dim=-1, keepdim=True).to(scores.dtype)
+        # 6) Safe softmax: rows with no valid key → zero output (not uniform).
+        any_valid = valid.any(dim=-1, keepdim=True).to(scores.dtype)         # (B, 1, N, 1)
         attn = F.softmax(scores.float(), dim=-1).to(Q.dtype) * any_valid
         attn = F.dropout(attn, p=self.cfg.dropout, training=self.training)
+
+        # 7) Weighted sum
         out = torch.matmul(attn, V)
-        return (out, attn) if return_attn else (out, None)
+
+        if return_attn:
+            return out, attn
+        return out, None
+
 
     # ------------------------------------------------------------------
     # Non-causal linear attention (encoder)
