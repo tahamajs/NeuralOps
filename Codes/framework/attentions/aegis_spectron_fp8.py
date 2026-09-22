@@ -639,7 +639,10 @@ class AegisSpectronFP8Attention(BaseAttention):
         if not self.is_nested_encoder and extracted_weights["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(f"AegisSpectronFP8: missing weights for projections {missing}; proceeding with random init for those")
+            raise RuntimeError(
+                f"AegisSpectronFP8Attention.copy_weights: could not extract mandatory projections {missing} "
+                f"from {cls_name}. Refusing to install randomly-initialised weights."
+            )
 
         for p in ["q", "k", "v"]:
             w_chk = extracted_weights[p][0]
@@ -687,6 +690,9 @@ class AegisSpectronFP8Attention(BaseAttention):
             self.is_decoder = bool(old_attn.is_decoder)
         elif hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention", "Qwen2_5_VLAttention", "QwenAttention"):
             self.is_decoder = True
+
+    copy_weights = _copy_pretrained
+
 
     @classmethod
     def from_distilbert_pretrained(
@@ -862,7 +868,12 @@ class AegisSpectronFP8Attention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
 
             def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-                return torch.cat((-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]), dim=-1)
+                _d = x.shape[-1]
+                _h = _d // 2
+                _rotated = torch.cat((-x[..., _h : 2 * _h], x[..., :_h]), dim=-1)
+                if _d % 2 == 1:
+                    _rotated = torch.cat([_rotated, x[..., -1:]], dim=-1)
+                return _rotated
 
             if cos.dim() == 3:
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
@@ -959,7 +970,7 @@ def inject_aegis_spectron_fp8(
             res = inject_aegis_spectron_fp8(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -970,12 +981,19 @@ def inject_aegis_spectron_fp8(
 
     layer = target
 
-    r"""Injects Aegis-Spectron-FP8 attention into a transformer layer with safe pre-testing."""
+    if old_attn is None and layer is not None:
+        for attr in ("attention", "attn", "self_attn", "self"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = getattr(cand, "self", cand)
+                    break
+
     if model_config is None:
         if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
             model_config = layer
-        elif hasattr(layer, "attention"):
-            old_attn = layer.attention
+        elif old_attn is not None:
+            model_config = getattr(old_attn, "config", None)
     h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
     n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
     # Use adapter or config's native head_dim if available (avoids 128 vs 256 bug for Qwen)
