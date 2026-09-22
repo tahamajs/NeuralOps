@@ -49,24 +49,30 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 class CoMeBridge(nn.Module):
     """
-    Learnable linear interpolation adapter bridging the representation gap between non-consecutive layers.
-    Computes: y = x + alpha * (W_bridge @ x - x) with W_bridge initialized to Identity.
+    Learnable low-rank linear interpolation adapter bridging the representation gap between non-consecutive layers.
+    Computes: y = x + alpha * (U(V(x)) - x) where V: hidden -> bridge_rank, U: bridge_rank -> hidden.
+    Initialized such that U is N(0, 0.02^2) and V is 0, yielding identity at initialization.
     Robustly handles Tensor, tuple, list, dict, and BaseModelOutput returns.
     """
 
-    def __init__(self, hidden_size: int, alpha_init: float = 0.1) -> None:
+    def __init__(self, hidden_size: int, bridge_rank: int = 64, alpha_init: float = 0.1) -> None:
         super().__init__()
         self.hidden_size = hidden_size
-        self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.bridge_rank = min(bridge_rank, hidden_size)
+        self.V = nn.Linear(hidden_size, self.bridge_rank, bias=False)
+        self.U = nn.Linear(self.bridge_rank, hidden_size, bias=False)
         with torch.no_grad():
-            nn.init.eye_(self.linear.weight)
+            nn.init.zeros_(self.V.weight)
+            nn.init.normal_(self.U.weight, std=0.02)
         self.alpha = nn.Parameter(torch.tensor(float(alpha_init)))
 
     def _bridge_tensor(self, t: torch.Tensor) -> torch.Tensor:
         if t.ndim >= 2 and t.shape[-1] == self.hidden_size:
-            w = self.linear.weight.to(device=t.device, dtype=t.dtype)
-            lin_out = F.linear(t, w)
-            return t + self.alpha.to(device=t.device, dtype=t.dtype) * (lin_out - t)
+            v_w = self.V.weight.to(device=t.device, dtype=t.dtype)
+            u_w = self.U.weight.to(device=t.device, dtype=t.dtype)
+            bottleneck = F.linear(t, v_w)
+            recon = F.linear(bottleneck, u_w)
+            return t + self.alpha.to(device=t.device, dtype=t.dtype) * (recon - t)
         return t
 
     def forward(self, hidden_states: Any, *args: Any, **kwargs: Any) -> Any:
@@ -267,15 +273,17 @@ class CoMeLoRALinear(nn.Module):
 class CoMeCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
-    CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.
+    CoMe Compressor: Layer shedding with learnable low-rank linear interpolation adapters/bridges.
 
     Config parameters:
         target_layers : int, optional – target number of layers after shedding
         sparsity      : float, default 0.3 – fraction of layers to remove
+        bridge_rank   : int, default 64 – bottleneck rank for inter-layer interpolation bridge (U @ V)
         alpha_init    : float, default 0.1 – initial bridge interpolation weight
-        lora_r        : int, default 0 – rank for optional post-compression LoRA adapters
+        lora_r        : int, default 16 – rank for optional post-compression LoRA adapters
         lora_alpha    : float, default 1.0 – alpha scaling for LoRA adapters
         target_attention_only : bool, default False - only bridge/adapt attention projections
+        allow_forward_failure : bool, default False - whether to suppress forward check failure
     """
 
     def __init__(
@@ -284,13 +292,15 @@ class CoMeCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         target_layers: Optional[int] = None,
         sparsity: float = 0.3,
+        bridge_rank: int = 64,
         alpha_init: float = 0.1,
-        lora_r: int = 0,
+        lora_r: int = 16,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
         protect_critical: bool = True,
         target_attention_only: bool = False,
         recalibrate_ln: bool = True,
+        allow_forward_failure: bool = False,
         device: Optional[Union[str, torch.device]] = None,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
@@ -302,6 +312,7 @@ class CoMeCompressor(BaseCompressor):
         if target_layers is not None:
             target_layers = int(target_layers)
         sparsity = float(_cfg_get(conf, "come_sparsity", _cfg_get(conf, "sparsity", sparsity)))
+        bridge_rank = int(_cfg_get(conf, "come_bridge_rank", _cfg_get(conf, "bridge_rank", bridge_rank)))
         alpha_init = float(_cfg_get(conf, "come_alpha_init", _cfg_get(conf, "alpha_init", alpha_init)))
         lora_r = int(_cfg_get(conf, "come_lora_r", _cfg_get(conf, "lora_r", _cfg_get(conf, "lora_rank", lora_r))))
         lora_alpha = float(_cfg_get(conf, "come_lora_alpha", _cfg_get(conf, "lora_alpha", lora_alpha)))
@@ -311,10 +322,14 @@ class CoMeCompressor(BaseCompressor):
             _cfg_get(conf, "come_target_attention_only", _cfg_get(conf, "target_attention_only", target_attention_only))
         )
         recalibrate_ln = bool(_cfg_get(conf, "come_recalibrate_ln", _cfg_get(conf, "recalibrate_ln", recalibrate_ln)))
+        allow_forward_failure = bool(
+            _cfg_get(conf, "allow_forward_failure", _cfg_get(kwargs, "allow_forward_failure", allow_forward_failure))
+        )
 
         self.tokenizer = tokenizer or kwargs.get("tokenizer", getattr(model, "tokenizer", None))
         self.target_layers = target_layers
         self.sparsity = max(0.0, min(sparsity, 0.95))
+        self.bridge_rank = bridge_rank
         self.alpha_init = alpha_init
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
@@ -322,6 +337,7 @@ class CoMeCompressor(BaseCompressor):
         self.protect_critical = protect_critical
         self.target_attention_only = target_attention_only
         self.recalibrate_ln = recalibrate_ln
+        self.allow_forward_failure = allow_forward_failure
         self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
@@ -350,7 +366,10 @@ class CoMeCompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if isinstance(module, (CoMeLoRALinear, CoMeBridge)):
+        if isinstance(module, (CoMeLoRALinear, CoMeBridge, CoMeBridgedLayer)):
+            return False
+
+        if ".bridge." in name or name.endswith(".bridge"):
             return False
 
         if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
@@ -516,7 +535,11 @@ class CoMeCompressor(BaseCompressor):
                     if is_gap:
                         hidden_size = self._get_hidden_size(layer)
                         p = next(layer.parameters(), None)
-                        bridge = CoMeBridge(hidden_size=hidden_size, alpha_init=self.alpha_init)
+                        bridge = CoMeBridge(
+                            hidden_size=hidden_size,
+                            bridge_rank=self.bridge_rank,
+                            alpha_init=self.alpha_init,
+                        )
                         if p is not None:
                             bridge = bridge.to(device=p.device, dtype=p.dtype)
                         bridged_module_list.append(CoMeBridgedLayer(layer, bridge=bridge))
@@ -546,7 +569,6 @@ class CoMeCompressor(BaseCompressor):
                         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                         r = max(1, int(len(S) * (1.0 - self.sparsity)))
                         from framework.compression_engine.aa_svd_compressor import SVDLinear
-                        from framework.core.registry import replace_module
                         
                         in_features = W.shape[1]
                         out_features = W.shape[0]
@@ -609,7 +631,7 @@ class CoMeCompressor(BaseCompressor):
             except Exception as e:
                 logger.warning("CoMe LayerNorm recalibration skipped: %s", e)
 
-        # Post-compression forward sanity check
+        # Post-compression forward sanity check (fail loud if allow_forward_failure=False)
         forward_check_success = False
         try:
             self.model.eval()
@@ -619,12 +641,21 @@ class CoMeCompressor(BaseCompressor):
                 self.model(dummy)
             forward_check_success = True
         except Exception as e:
-            logger.debug("CoMe post-compression forward sanity check exception: %s", e)
+            logger.error("CoMe post-compression forward sanity check failed: %s", e)
+            if not self.allow_forward_failure:
+                raise RuntimeError(f"CoMe post-compression forward check failed: {e}") from e
 
         self._compressed_params = self._count_params(self.model)
         shed_count = orig_len - keep_len if orig_len > 0 else 0
         reduc_ratio = float(shed_count) / orig_len if orig_len > 0 else self.sparsity
         flops_reduction = f"{reduc_ratio * 100:.1f}%"
+
+        bridge_params_count = sum(
+            p.numel() for m in self.model.modules() if isinstance(m, CoMeBridge) for p in m.parameters()
+        )
+        lora_params_count = sum(
+            p.numel() for m in self.model.modules() if isinstance(m, CoMeLoRALinear) for p in [m.lora_A, m.lora_B] if p is not None
+        )
 
         stats = self.get_compression_stats()
         stats.update({
@@ -634,6 +665,10 @@ class CoMeCompressor(BaseCompressor):
             "layer_reduction_ratio": reduc_ratio,
             "estimated_flops_reduction": flops_reduction,
             "bridges_inserted": bridges_inserted,
+            "bridge_rank": self.bridge_rank,
+            "bridge_parameters": bridge_params_count,
+            "lora_parameters": lora_params_count,
+            "trainable_parameters": sum(p.numel() for p in self.get_trainable_params()),
             "target_layers": self.target_layers,
             "sparsity": self.sparsity,
             "lora_r": self.lora_r,
@@ -653,6 +688,14 @@ class CoMeCompressor(BaseCompressor):
         self.model.compression_stats = stats
         return self.model, stats
 
+    def get_trainable_params(self) -> List[nn.Parameter]:
+        """Returns list of all trainable parameters (bridges + LoRA adapters)."""
+        trainable = []
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                trainable.append(param)
+        return trainable
+
 
 @COMPRESSOR_REGISTRY.register("come_factory")
 @COMPRESSOR_REGISTRY.register("come_compressor_factory")
@@ -671,6 +714,12 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             _cfg_get(comp_config, "come_sparsity", _cfg_get(comp_config, "sparsity", 0.3)),
         )
     )
+    bridge_rank = int(
+        kwargs.pop(
+            "bridge_rank",
+            _cfg_get(comp_config, "come_bridge_rank", _cfg_get(comp_config, "bridge_rank", 64)),
+        )
+    )
     alpha_init = float(
         kwargs.pop(
             "alpha_init",
@@ -680,7 +729,7 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     lora_r = int(
         kwargs.pop(
             "lora_r",
-            _cfg_get(comp_config, "come_lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))),
+            _cfg_get(comp_config, "come_lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 16))),
         )
     )
     lora_alpha = float(
@@ -714,12 +763,19 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             _cfg_get(comp_config, "come_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", True)),
         )
     )
+    allow_forward_failure = bool(
+        kwargs.pop(
+            "allow_forward_failure",
+            _cfg_get(comp_config, "allow_forward_failure", False),
+        )
+    )
 
     compressor = CoMeCompressor(
         model,
         tokenizer=tokenizer,
         target_layers=target_layers,
         sparsity=sparsity,
+        bridge_rank=bridge_rank,
         alpha_init=alpha_init,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
@@ -727,6 +783,7 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         protect_critical=protect_critical,
         target_attention_only=target_attention_only,
         recalibrate_ln=recalibrate_ln,
+        allow_forward_failure=allow_forward_failure,
         comp_config=comp_config,
         **kwargs,
     )
