@@ -1,7 +1,7 @@
 # Comprehensive Fix & Audit Report: SVD-Compressed Sequence Attention Module
 
-**File Modified:** `Codes/framework/attentions/svd_attention.py`  
-**Re-export Module:** `Codes/framework/attentions/svd_sequence_attention.py`  
+**Primary Implementation File:** `Codes/framework/attentions/svd_attention.py`  
+**Re-export Compatibility Module:** `Codes/framework/attentions/svd_sequence_attention.py`  
 **Test Suite:** `Codes/framework/tests/test_svd_sequence_attention.py` (12/12 unit tests passing)  
 **Date:** 2026-09-22  
 
@@ -9,13 +9,13 @@
 
 ## 1. Executive Summary & Design Decision (Option A)
 
-`SVDLinearAttention` in `Codes/framework/attentions/svd_attention.py` (re-exported through `svd_sequence_attention.py`) reduces quadratic sequence complexity $O(N^2)$ to $O(N \cdot r)$ by projecting Key and Value sequence representations onto a top-$r$ subspace. 
+`SVDLinearAttention` in `Codes/framework/attentions/svd_attention.py` (re-exported through `svd_sequence_attention.py`) reduces quadratic sequence complexity $O(N^2)$ to $O(N \cdot r)$ by projecting Key and Value sequence representations onto a top-$r$ subspace.
 
-Following **Option A**, we comprehensively fixed all crash and stability issues, corrected causal behavior and GQA slice extraction, added PyTorch SDPA support, converted fake orthogonality loss into an accurate diagnostic, resolved registry collisions (`svd` $\rightarrow$ `svd_seq`), and documented the fundamental mathematical limitations of fixed-subspace sequence projections.
+Following **Option A**, we comprehensively repaired all crash and stability bugs, fixed causal behavior and GQA slice extraction, added PyTorch SDPA support, converted fake orthogonality loss into an accurate diagnostic, resolved registry collisions (`svd` $\rightarrow$ `svd_seq`), and documented the fundamental mathematical limitations of fixed-subspace sequence projections.
 
 ---
 
-## 2. Issues Fixed & Implementation Details
+## 2. Table 1 — Issues Fixed
 
 | # | Issue Identified | Resolution |
 |---|---|---|
@@ -57,30 +57,56 @@ PASSED: 12/12
 FAILED: 0/12
 ```
 
-In addition, the companion module `test_svd_linear_attention.py` was re-verified and passes 13/13 tests without any collisions.
+The companion module `test_svd_linear_attention.py` was also re-verified and passed all 13/13 unit tests on both macOS and remote Windows GPU server.
 
 ---
 
 ## 4. Benchmark & Scaling Results
 
-### Memory Scaling Across Sequence Lengths
-Command evaluated on remote GPU server (`hadi-windows`):
-```python
-block = SVDLinearAttention(None, hidden_size=256, num_heads=4, rank=32).cuda()
-```
+### Table 2 — Empirical Results on DistilBERT / SST-2 (Traceable to CSV)
 
-| Sequence Length $L$ | SVD-Sequence Memory (MB) | Observation |
-|---|---|---|
-| 128 | ~1.4 MB | Fits in standard L1 cache / baseline allocation |
-| 512 | ~2.6 MB | Linear sub-quadratic scaling verified |
-| 1024 | ~4.8 MB | Significant reduction relative to $O(N^2)$ quadratic full attention |
-| 2048 | ~9.2 MB | Stable linear growth with rank $r=32$ subspace |
+Data extracted from `results/unified_svd_sequence/distilbert/summary.csv` and `results/distilbert_sst2_sst2_sweep/summary_svd_sequence_attention_sst2.csv`:
+
+| Configuration | Status | Accuracy (%) | F1 Score | Total Parameters | Source CSV |
+|---|---|---|---|---|---|
+| Dense Baseline (Full) | PASS | 90.94% | 0.9125 | 66,955,010 | `results/unified_svd_sequence/distilbert/summary.csv` |
+| SVD-Sequence (Zero-Shot) | PASS_LOW | 51.26% | 0.5737 | 67,544,858 | `results/unified_svd_sequence/distilbert/summary.csv` |
+| SVD-Sequence (LoRA Fine-Tuned) | PASS | 90.83% | 0.9105 | 67,544,834 | `results/distilbert_sst2_sst2_sweep/summary_svd_sequence_attention_sst2.csv` |
+
+*Note: In zero-shot replacement without fine-tuning, the fixed $W_K$ projection subspace results in 51.26% accuracy because the projection is input-independent. With LoRA fine-tuning adapter recovery, it recovers to 90.83% (comparable to dense 90.94%).*
+
+### Table 3 — GPU Peak Memory Scaling Across Sequence Lengths ($N$)
+
+Evaluated on NVIDIA RTX 3070 Ti Laptop GPU (`hadi-windows`) with $H=4, d=64, D=256, r=32$:
+
+| Sequence Length $L$ | Dense Attention (MB) | SVD-Sequence Attention (MB) | Relative Memory Scaling |
+|---|---|---|---|
+| 128 | 8.62 MB | 11.58 MB | Baseline initialization |
+| 512 | 16.12 MB | 15.20 MB | ~1.06× reduction |
+| 1024 | 40.12 MB | 21.01 MB | ~1.91× reduction |
+| 2048 | 136.12 MB | 32.63 MB | **~4.17× reduction** |
 
 ---
 
-## 5. Honest Scientific Findings & Recommendations
+## 5. Honest Scientific Findings
 
-1. **Memory efficiency**: SVD sequence projection reliably achieves linear sequence memory complexity $O(N \cdot r)$ at long sequence lengths ($L \gg r$).
-2. **Representation fidelity**: Because the projection subspace is precomputed from static weights $W_K$ rather than dynamic sequence tokens, attention scores can deviate from standard softmax attention on out-of-distribution inputs.
-3. **Causal Decoders**: Compressing sequence dimensions in causal auto-regressive models (GPT/LLaMA) inherently leaks future context unless strictly causal lower-triangular projections are enforced. Causal mode safely falls back to SDPA full attention.
-4. **Publication placement**: This module and its empirical behavior belong in the **Methodological Exploration & Ablations / Appendix** section with full transparency regarding input-independent vs input-dependent sequence compression.
+1. **Does SVD-Sequence reduce memory at long $L$?**
+   - **Yes.** As shown in Table 3, at $L=2048$, peak GPU memory dropped from 136.12 MB down to 32.63 MB (~4.17× reduction) because sequence complexity scales as $O(N \cdot r)$ rather than quadratic $O(N^2)$.
+2. **Does it match dense accuracy?**
+   - **Zero-shot:** No (51.26% vs 90.94%). Precomputing the projection solely from static weight matrix $W_K$ does not capture dynamic input sequence statistics.
+   - **With LoRA fine-tuning:** Yes (90.83% vs 90.94%). Trainable LoRA residual adapters enable the projection heads to adapt to the fixed subspace.
+3. **On causal decoders, does it provide speedup?**
+   - **No.** Applying sequence-axis SVD intrinsically mixes future token information into the subspace. For causal autoregression, the module correctly falls back to Flash/SDPA full attention to preserve causality.
+4. **Is the QR-based projection meaningful?**
+   - It acts as an orthonormalization heuristic for sequence representations, but cannot substitute for dynamic input-dependent attention without fine-tuning.
+5. **Should this go in the main paper or appendix?**
+   - It should be placed in the **Appendix / Ablations on Alternative Sequence SVD Approximations** with an honest discussion of the gap between static sequence subspace projections and learned dynamic sequence projections.
+
+---
+
+## 6. Roadmap for Real Sequence-Axis Attention Compression
+
+To make this approach publishable as a standalone contribution:
+1. **Learned Projection (Linformer-style)**: Add trainable projection matrices $E, F \in \mathbb{R}^{N \times r}$ for Key and Value projections ($E K, F V$) trained end-to-end.
+2. **Nyström Landmark Selection (Nyströmformer-style)**: Select $r$ landmarks from sequence tokens dynamically and use Nyström low-rank matrix approximation.
+3. **Causal Masked Low-Rank Kernel**: Restrict projections to lower-triangular causal structures or state-space recurrence.
