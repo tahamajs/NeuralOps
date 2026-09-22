@@ -23,9 +23,14 @@ logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half : 2 * half]  # safe for odd d: leaves trailing element out
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if d % 2 == 1:
+        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -569,7 +574,10 @@ class AegisAttentionV1(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(f"AegisAttentionV1 missing required weights for projections: {missing}"); return
+            raise RuntimeError(
+                f"AegisAttentionV1.copy_weights: could not extract mandatory projections {missing} "
+                f"from {old_attn.__class__.__name__}. Refusing to install randomly-initialised weights."
+            )
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
@@ -795,7 +803,7 @@ def inject_aegis_v1(
             res = inject_aegis_v1(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
