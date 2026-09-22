@@ -2,1049 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "mnli_adasplash_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adasvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix adasvd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adasvd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasvd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix adasvd_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_admm_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules admm_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix admm_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_admm_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules admm_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix admm_pruner_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_hybrid",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_hybrid --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_hybrid_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_hybrid_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_hybrid_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_hybrid_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_spectron_fp8",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_spectron_fp8 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_spectron_fp8_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v1",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v1 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v1_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v2_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v3 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v3_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v4",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v4 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v4_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v5",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v5 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v5_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aegis_v6",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v6 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v6_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_armor_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules armor_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix armor_pruner_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_ast_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules ast_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix ast_pruner_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_astro_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules astro_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix astro_quantizer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_asvd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules asvd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix asvd_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_bam_umoe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules bam_umoe --rank 128 --parallel 1 --batch_size 8 --output_suffix bam_umoe_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_block_transformer_hiba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules block_transformer_hiba --rank 128 --parallel 1 --batch_size 8 --output_suffix block_transformer_hiba_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_bonsai_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules bonsai_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix bonsai_pruner_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cachenotes_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cachenotes_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cachenotes_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_chela_slay",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules chela_slay --rank 128 --parallel 1 --batch_size 8 --output_suffix chela_slay_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cluster_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cluster_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix cluster_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cluster_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cluster_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix cluster_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_come",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules come --rank 128 --parallel 1 --batch_size 8 --output_suffix come_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_compot_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compot_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix compot_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_compressed_mha",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_mha --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_mha_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_compressed_mha_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_mha_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_mha_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_coopq_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules coopq_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix coopq_quantizer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cosformer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer --rank 128 --parallel 1 --batch_size 8 --output_suffix cosformer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cosformer_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix cosformer_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cr_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cr_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cr_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cur_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cur_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_linear_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cur_moe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_moe --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_moe_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cur_moe_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_moe_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_moe_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_cure",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cure --rank 128 --parallel 1 --batch_size 8 --output_suffix cure_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_decay_linear_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules decay_linear_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix decay_linear_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_delta_kv",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules delta_kv --rank 128 --parallel 1 --batch_size 8 --output_suffix delta_kv_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_direct_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules direct_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix direct_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_dobi",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dobi --rank 128 --parallel 1 --batch_size 8 --output_suffix dobi_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_dobi_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dobi_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix dobi_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_drone_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix drone_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_dynamic_entropy",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dynamic_entropy --rank 128 --parallel 1 --batch_size 8 --output_suffix dynamic_entropy_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_dynamic_rank",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dynamic_rank --rank 128 --parallel 1 --batch_size 8 --output_suffix dynamic_rank_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_eat",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules eat --rank 128 --parallel 1 --batch_size 8 --output_suffix eat_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_enlighten_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules enlighten_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix enlighten_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_entropy_budget_allocation",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules entropy_budget_allocation --rank 128 --parallel 1 --batch_size 8 --output_suffix entropy_budget_allocation_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_erc_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules erc_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix erc_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_expert_choice_moe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules expert_choice_moe --rank 128 --parallel 1 --batch_size 8 --output_suffix expert_choice_moe_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_factorised_matrix_state",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules factorised_matrix_state --rank 128 --parallel 1 --batch_size 8 --output_suffix factorised_matrix_state_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_faq_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules faq_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix faq_quantizer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_flap",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flap --rank 128 --parallel 1 --batch_size 8 --output_suffix flap_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_flash_attention3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flash_attention3 --rank 128 --parallel 1 --batch_size 8 --output_suffix flash_attention3_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_flash_attention3_fp8",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flash_attention3_fp8 --rank 128 --parallel 1 --batch_size 8 --output_suffix flash_attention3_fp8_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_flat_llm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flat_llm --rank 128 --parallel 1 --batch_size 8 --output_suffix flat_llm_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_frandi",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules frandi --rank 128 --parallel 1 --batch_size 8 --output_suffix frandi_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_frandi_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules frandi_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix frandi_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_full_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules full_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix full_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_fused_svd_kernel",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fused_svd_kernel --rank 128 --parallel 1 --batch_size 8 --output_suffix fused_svd_kernel_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_fusion_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fusion_attn --rank 128 --parallel 1 --batch_size 8 --output_suffix fusion_attn_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_fwsvd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_galerkin",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_galerkin_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_galerkin_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gated_delta_net",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_delta_net --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_delta_net_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gated_deltanet_block",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_deltanet_block --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_deltanet_block_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gated_linear_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_linear_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_linear_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gfws_d_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gfws_d_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix gfws_d_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_goldfinch_ahn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules goldfinch_ahn --rank 128 --parallel 1 --batch_size 8 --output_suffix goldfinch_ahn_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gqa",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gqa --rank 128 --parallel 1 --batch_size 8 --output_suffix gqa_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_gqa_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gqa_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix gqa_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_granite_hybrid",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules granite_hybrid --rank 128 --parallel 1 --batch_size 8 --output_suffix granite_hybrid_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_grecodec",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules grecodec --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_grecodec_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules grecodec_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_griffin_ssd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules griffin_ssd --rank 128 --parallel 1 --batch_size 8 --output_suffix griffin_ssd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_halo_regla",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules halo_regla --rank 128 --parallel 1 --batch_size 8 --output_suffix halo_regla_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hamming_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hamming_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix hamming_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hashed_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hashed_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix hashed_linear_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hashed_net_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hashed_net_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix hashed_net_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hgrn2_gated_deltanet",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_gated_deltanet --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_gated_deltanet_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hgrn2_layer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_layer --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_layer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hgrn2_outer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_outer --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_outer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hla_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hla_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix hla_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hla_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hla_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix hla_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_huffman_coder",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules huffman_coder --rank 128 --parallel 1 --batch_size 8 --output_suffix huffman_coder_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hybrid_svd_layer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --rank 128 --parallel 1 --batch_size 8 --output_suffix hybrid_svd_layer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hybridkv",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybridkv --rank 128 --parallel 1 --batch_size 8 --output_suffix hybridkv_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hybridkv_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybridkv_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix hybridkv_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_hymba_transx",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hymba_transx --rank 128 --parallel 1 --batch_size 8 --output_suffix hymba_transx_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_infini_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules infini_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix infini_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_jamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules jamba --rank 128 --parallel 1 --batch_size 8 --output_suffix jamba_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_jamba_info",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules jamba_info --rank 128 --parallel 1 --batch_size 8 --output_suffix jamba_info_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kda_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kda_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix kda_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kda_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kda_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix kda_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kmeans_quantize",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kmeans_quantize --rank 128 --parallel 1 --batch_size 8 --output_suffix kmeans_quantize_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kronecker_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kronecker_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_linear_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kronecker_tt_lora",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_tt_lora --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_tt_lora_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kvtc",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kvtc --rank 128 --parallel 1 --batch_size 8 --output_suffix kvtc_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_kvtc_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kvtc_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix kvtc_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v1",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v1_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v1_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v1_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v2_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v2_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v2_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v2_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v3 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v3_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_leka_v3_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v3_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v3_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_liftr",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules liftr --rank 128 --parallel 1 --batch_size 8 --output_suffix liftr_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_lillama_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lillama_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix lillama_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_linformer_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules linformer_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix linformer_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_lola_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lola_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lola_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_lora_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lora_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lora_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_lsc_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lsc_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix lsc_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_lsh_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lsh_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lsh_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mamba_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mamba_shedder",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_shedder --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_shedder_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mamba_svd_flash",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_svd_flash --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_svd_flash_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mgie_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mgie_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix mgie_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mgie_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mgie_svd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix mgie_svd_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_minimal_aurora",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_aurora --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_aurora_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_minimal_nova",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_nova --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_nova_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_minimal_prism",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_prism --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_prism_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_minimal_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_minimal_svd_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_svd_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_svd_v2_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mixattention_moska",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mixattention_moska --rank 128 --parallel 1 --batch_size 8 --output_suffix mixattention_moska_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mla_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mla_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix mla_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_mlorq_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mlorq_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix mlorq_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_moba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moba --rank 128 --parallel 1 --batch_size 8 --output_suffix moba_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_moba_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moba_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix moba_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_modegpt",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules modegpt --rank 128 --parallel 1 --batch_size 8 --output_suffix modegpt_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_modegpt_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules modegpt_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix modegpt_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_moe_deltakv_paged",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moe_deltakv_paged --rank 128 --parallel 1 --batch_size 8 --output_suffix moe_deltakv_paged_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_naive_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules naive_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix naive_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nasc_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nasc_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nasc_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nexus",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nexus --rank 128 --parallel 1 --batch_size 8 --output_suffix nexus_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nha_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nha_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nha_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nha_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nha_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix nha_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nli_softmax",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nli_softmax --rank 128 --parallel 1 --batch_size 8 --output_suffix nli_softmax_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nmf_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nmf_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix nmf_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nsa_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nsa_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nsa_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_nystrom_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nystrom_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nystrom_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_oats",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules oats --rank 128 --parallel 1 --batch_size 8 --output_suffix oats_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_oats_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules oats_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix oats_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_optimal_subspace_projection",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules optimal_subspace_projection --rank 128 --parallel 1 --batch_size 8 --output_suffix optimal_subspace_projection_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_optimized_hybrid_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules optimized_hybrid_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix optimized_hybrid_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_orion",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules orion --rank 128 --parallel 1 --batch_size 8 --output_suffix orion_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "mnli_padre_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules padre_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix padre_attention_mnli --fresh",
@@ -3574,20 +2531,20 @@
       "launched_at": "2026-09-21 13:54:21"
     },
     {
-      "id": "mnli_adaptive_svd_attention",
+      "id": "mnli_optimized_hybrid_attention",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_svd_attention_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules optimized_hybrid_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix optimized_hybrid_attention_mnli --fresh",
       "status": "active",
       "retries": 0,
-      "launched_at": "2026-09-22 04:19:22"
+      "launched_at": "2026-09-22 08:14:45"
     },
     {
-      "id": "mnli_adasplash_attention",
+      "id": "mnli_orion",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_attention_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules orion --rank 128 --parallel 1 --batch_size 8 --output_suffix orion_mnli --fresh",
       "status": "active",
       "retries": 0,
-      "launched_at": "2026-09-22 04:19:22"
+      "launched_at": "2026-09-22 08:14:45"
     }
   ],
   "completed": [
@@ -8694,6 +7651,1198 @@
       "status": "done",
       "retries": 0,
       "launched_at": "2026-09-22 04:17:05"
+    },
+    {
+      "id": "mnli_adaptive_svd_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_svd_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:19:22"
+    },
+    {
+      "id": "mnli_adasplash_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:19:22"
+    },
+    {
+      "id": "mnli_adasplash_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:21:38"
+    },
+    {
+      "id": "mnli_adasvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix adasvd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:23:15"
+    },
+    {
+      "id": "mnli_adasvd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasvd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix adasvd_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:25:30"
+    },
+    {
+      "id": "mnli_admm_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules admm_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix admm_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:25:30"
+    },
+    {
+      "id": "mnli_admm_pruner",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules admm_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix admm_pruner_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:27:03"
+    },
+    {
+      "id": "mnli_aegis_hybrid",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_hybrid --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_hybrid_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:27:03"
+    },
+    {
+      "id": "mnli_aegis_hybrid_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_hybrid_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_hybrid_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:28:33"
+    },
+    {
+      "id": "mnli_aegis_spectron_fp8",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_spectron_fp8 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_spectron_fp8_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:29:23"
+    },
+    {
+      "id": "mnli_aegis_v1",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v1 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v1_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:30:53"
+    },
+    {
+      "id": "mnli_aegis_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v2_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:32:25"
+    },
+    {
+      "id": "mnli_aegis_v3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v3 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v3_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:33:57"
+    },
+    {
+      "id": "mnli_aegis_v4",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v4 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v4_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:34:42"
+    },
+    {
+      "id": "mnli_aegis_v5",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v5 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v5_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:36:59"
+    },
+    {
+      "id": "mnli_aegis_v6",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v6 --rank 128 --parallel 1 --batch_size 8 --output_suffix aegis_v6_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:37:44"
+    },
+    {
+      "id": "mnli_armor_pruner",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules armor_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix armor_pruner_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:39:16"
+    },
+    {
+      "id": "mnli_ast_pruner",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules ast_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix ast_pruner_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:40:46"
+    },
+    {
+      "id": "mnli_astro_quantizer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules astro_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix astro_quantizer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:41:31"
+    },
+    {
+      "id": "mnli_asvd_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules asvd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix asvd_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:42:16"
+    },
+    {
+      "id": "mnli_bam_umoe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules bam_umoe --rank 128 --parallel 1 --batch_size 8 --output_suffix bam_umoe_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:43:02"
+    },
+    {
+      "id": "mnli_block_transformer_hiba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules block_transformer_hiba --rank 128 --parallel 1 --batch_size 8 --output_suffix block_transformer_hiba_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:44:34"
+    },
+    {
+      "id": "mnli_bonsai_pruner",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules bonsai_pruner --rank 128 --parallel 1 --batch_size 8 --output_suffix bonsai_pruner_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:45:20"
+    },
+    {
+      "id": "mnli_cachenotes_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cachenotes_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cachenotes_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:46:06"
+    },
+    {
+      "id": "mnli_chela_slay",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules chela_slay --rank 128 --parallel 1 --batch_size 8 --output_suffix chela_slay_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:46:51"
+    },
+    {
+      "id": "mnli_cluster_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cluster_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix cluster_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:47:36"
+    },
+    {
+      "id": "mnli_cluster_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cluster_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix cluster_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:49:07"
+    },
+    {
+      "id": "mnli_come",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules come --rank 128 --parallel 1 --batch_size 8 --output_suffix come_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:50:38"
+    },
+    {
+      "id": "mnli_compot_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compot_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix compot_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:52:11"
+    },
+    {
+      "id": "mnli_compressed_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:52:11"
+    },
+    {
+      "id": "mnli_compressed_mha",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_mha --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_mha_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:53:41"
+    },
+    {
+      "id": "mnli_compressed_mha_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules compressed_mha_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix compressed_mha_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:53:41"
+    },
+    {
+      "id": "mnli_coopq_quantizer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules coopq_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix coopq_quantizer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:55:12"
+    },
+    {
+      "id": "mnli_cosformer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer --rank 128 --parallel 1 --batch_size 8 --output_suffix cosformer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:55:12"
+    },
+    {
+      "id": "mnli_cosformer_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cosformer_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix cosformer_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:56:41"
+    },
+    {
+      "id": "mnli_cr_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cr_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cr_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:57:28"
+    },
+    {
+      "id": "mnli_cur_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:58:59"
+    },
+    {
+      "id": "mnli_cur_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_linear_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:58:59"
+    },
+    {
+      "id": "mnli_cur_moe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_moe --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_moe_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:00:29"
+    },
+    {
+      "id": "mnli_cur_moe_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cur_moe_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix cur_moe_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:00:29"
+    },
+    {
+      "id": "mnli_cure",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules cure --rank 128 --parallel 1 --batch_size 8 --output_suffix cure_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:02:00"
+    },
+    {
+      "id": "mnli_delta_kv",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules delta_kv --rank 128 --parallel 1 --batch_size 8 --output_suffix delta_kv_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:03:30"
+    },
+    {
+      "id": "mnli_direct_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules direct_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix direct_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:05:00"
+    },
+    {
+      "id": "mnli_decay_linear_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules decay_linear_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix decay_linear_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:02:00"
+    },
+    {
+      "id": "mnli_dobi",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dobi --rank 128 --parallel 1 --batch_size 8 --output_suffix dobi_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:06:31"
+    },
+    {
+      "id": "mnli_dobi_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dobi_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix dobi_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:07:16"
+    },
+    {
+      "id": "mnli_drone_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix drone_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:08:01"
+    },
+    {
+      "id": "mnli_dynamic_entropy",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dynamic_entropy --rank 128 --parallel 1 --batch_size 8 --output_suffix dynamic_entropy_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:08:01"
+    },
+    {
+      "id": "mnli_dynamic_rank",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules dynamic_rank --rank 128 --parallel 1 --batch_size 8 --output_suffix dynamic_rank_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:09:30"
+    },
+    {
+      "id": "mnli_eat",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules eat --rank 128 --parallel 1 --batch_size 8 --output_suffix eat_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:09:30"
+    },
+    {
+      "id": "mnli_enlighten_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules enlighten_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix enlighten_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:11:00"
+    },
+    {
+      "id": "mnli_entropy_budget_allocation",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules entropy_budget_allocation --rank 128 --parallel 1 --batch_size 8 --output_suffix entropy_budget_allocation_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:11:00"
+    },
+    {
+      "id": "mnli_erc_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules erc_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix erc_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:12:28"
+    },
+    {
+      "id": "mnli_expert_choice_moe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules expert_choice_moe --rank 128 --parallel 1 --batch_size 8 --output_suffix expert_choice_moe_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:12:28"
+    },
+    {
+      "id": "mnli_factorised_matrix_state",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules factorised_matrix_state --rank 128 --parallel 1 --batch_size 8 --output_suffix factorised_matrix_state_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:13:59"
+    },
+    {
+      "id": "mnli_faq_quantizer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules faq_quantizer --rank 128 --parallel 1 --batch_size 8 --output_suffix faq_quantizer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:14:44"
+    },
+    {
+      "id": "mnli_flap",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flap --rank 128 --parallel 1 --batch_size 8 --output_suffix flap_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:16:15"
+    },
+    {
+      "id": "mnli_flash_attention3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flash_attention3 --rank 128 --parallel 1 --batch_size 8 --output_suffix flash_attention3_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:17:00"
+    },
+    {
+      "id": "mnli_flash_attention3_fp8",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flash_attention3_fp8 --rank 128 --parallel 1 --batch_size 8 --output_suffix flash_attention3_fp8_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:17:00"
+    },
+    {
+      "id": "mnli_flat_llm",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules flat_llm --rank 128 --parallel 1 --batch_size 8 --output_suffix flat_llm_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:18:31"
+    },
+    {
+      "id": "mnli_frandi",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules frandi --rank 128 --parallel 1 --batch_size 8 --output_suffix frandi_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:18:31"
+    },
+    {
+      "id": "mnli_frandi_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules frandi_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix frandi_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:20:00"
+    },
+    {
+      "id": "mnli_full_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules full_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix full_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:20:00"
+    },
+    {
+      "id": "mnli_fused_svd_kernel",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fused_svd_kernel --rank 128 --parallel 1 --batch_size 8 --output_suffix fused_svd_kernel_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:21:31"
+    },
+    {
+      "id": "mnli_fusion_attn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fusion_attn --rank 128 --parallel 1 --batch_size 8 --output_suffix fusion_attn_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:21:31"
+    },
+    {
+      "id": "mnli_fwsvd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:23:01"
+    },
+    {
+      "id": "mnli_galerkin",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:23:01"
+    },
+    {
+      "id": "mnli_galerkin_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:24:35"
+    },
+    {
+      "id": "mnli_galerkin_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix galerkin_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:25:20"
+    },
+    {
+      "id": "mnli_gated_delta_net",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_delta_net --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_delta_net_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:26:51"
+    },
+    {
+      "id": "mnli_gated_deltanet_block",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_deltanet_block --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_deltanet_block_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:27:36"
+    },
+    {
+      "id": "mnli_gfws_d_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gfws_d_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix gfws_d_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:28:21"
+    },
+    {
+      "id": "mnli_gated_linear_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gated_linear_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix gated_linear_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:28:21"
+    },
+    {
+      "id": "mnli_goldfinch_ahn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules goldfinch_ahn --rank 128 --parallel 1 --batch_size 8 --output_suffix goldfinch_ahn_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:29:07"
+    },
+    {
+      "id": "mnli_gqa",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gqa --rank 128 --parallel 1 --batch_size 8 --output_suffix gqa_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:31:22"
+    },
+    {
+      "id": "mnli_gqa_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules gqa_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix gqa_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:31:22"
+    },
+    {
+      "id": "mnli_grecodec",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules grecodec --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:32:53"
+    },
+    {
+      "id": "mnli_grecodec_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules grecodec_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix grecodec_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:43:50"
+    },
+    {
+      "id": "mnli_granite_hybrid",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules granite_hybrid --rank 128 --parallel 1 --batch_size 8 --output_suffix granite_hybrid_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:32:53"
+    },
+    {
+      "id": "mnli_griffin_ssd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules griffin_ssd --rank 128 --parallel 1 --batch_size 8 --output_suffix griffin_ssd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:50:25"
+    },
+    {
+      "id": "mnli_halo_regla",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules halo_regla --rank 128 --parallel 1 --batch_size 8 --output_suffix halo_regla_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:50:25"
+    },
+    {
+      "id": "mnli_hamming_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hamming_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix hamming_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:52:40"
+    },
+    {
+      "id": "mnli_hashed_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hashed_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix hashed_linear_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:52:40"
+    },
+    {
+      "id": "mnli_hashed_net_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hashed_net_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix hashed_net_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:54:10"
+    },
+    {
+      "id": "mnli_hgrn2_gated_deltanet",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_gated_deltanet --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_gated_deltanet_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:54:10"
+    },
+    {
+      "id": "mnli_hgrn2_layer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_layer --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_layer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:54:55"
+    },
+    {
+      "id": "mnli_hla_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hla_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix hla_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:58:37"
+    },
+    {
+      "id": "mnli_hla_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hla_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix hla_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:00:52"
+    },
+    {
+      "id": "mnli_huffman_coder",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules huffman_coder --rank 128 --parallel 1 --batch_size 8 --output_suffix huffman_coder_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:03:08"
+    },
+    {
+      "id": "mnli_hybrid_svd_layer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --rank 128 --parallel 1 --batch_size 8 --output_suffix hybrid_svd_layer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:04:38"
+    },
+    {
+      "id": "mnli_hybridkv",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybridkv --rank 128 --parallel 1 --batch_size 8 --output_suffix hybridkv_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:06:08"
+    },
+    {
+      "id": "mnli_hybridkv_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hybridkv_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix hybridkv_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:07:39"
+    },
+    {
+      "id": "mnli_hymba_transx",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hymba_transx --rank 128 --parallel 1 --batch_size 8 --output_suffix hymba_transx_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:09:09"
+    },
+    {
+      "id": "mnli_infini_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules infini_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix infini_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:14:57"
+    },
+    {
+      "id": "mnli_hgrn2_outer",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules hgrn2_outer --rank 128 --parallel 1 --batch_size 8 --output_suffix hgrn2_outer_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 05:54:55"
+    },
+    {
+      "id": "mnli_jamba_info",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules jamba_info --rank 128 --parallel 1 --batch_size 8 --output_suffix jamba_info_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:35:23"
+    },
+    {
+      "id": "mnli_kda_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kda_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix kda_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:41:28"
+    },
+    {
+      "id": "mnli_kda_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kda_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix kda_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:45:15"
+    },
+    {
+      "id": "mnli_kmeans_quantize",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kmeans_quantize --rank 128 --parallel 1 --batch_size 8 --output_suffix kmeans_quantize_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:47:30"
+    },
+    {
+      "id": "mnli_kronecker_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:49:01"
+    },
+    {
+      "id": "mnli_jamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules jamba --rank 128 --parallel 1 --batch_size 8 --output_suffix jamba_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:17:20"
+    },
+    {
+      "id": "mnli_kronecker_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_linear --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_linear_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:52:44"
+    },
+    {
+      "id": "mnli_kvtc",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kvtc --rank 128 --parallel 1 --batch_size 8 --output_suffix kvtc_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:54:58"
+    },
+    {
+      "id": "mnli_kronecker_tt_lora",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kronecker_tt_lora --rank 128 --parallel 1 --batch_size 8 --output_suffix kronecker_tt_lora_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:54:58"
+    },
+    {
+      "id": "mnli_kvtc_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules kvtc_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix kvtc_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:56:28"
+    },
+    {
+      "id": "mnli_leka_v1",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v1_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:57:13"
+    },
+    {
+      "id": "mnli_leka_v1_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v1_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v1_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:57:13"
+    },
+    {
+      "id": "mnli_leka_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v2_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:59:27"
+    },
+    {
+      "id": "mnli_leka_v2_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v2_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v2_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 06:59:27"
+    },
+    {
+      "id": "mnli_leka_v3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v3 --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v3_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:01:43"
+    },
+    {
+      "id": "mnli_leka_v3_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules leka_v3_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix leka_v3_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:01:43"
+    },
+    {
+      "id": "mnli_liftr",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules liftr --rank 128 --parallel 1 --batch_size 8 --output_suffix liftr_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:03:58"
+    },
+    {
+      "id": "mnli_lillama_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lillama_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix lillama_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:03:58"
+    },
+    {
+      "id": "mnli_linformer_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules linformer_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix linformer_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:05:28"
+    },
+    {
+      "id": "mnli_lola_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lola_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lola_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:05:28"
+    },
+    {
+      "id": "mnli_lora_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lora_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lora_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:07:43"
+    },
+    {
+      "id": "mnli_lsc_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lsc_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix lsc_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:07:43"
+    },
+    {
+      "id": "mnli_lsh_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules lsh_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix lsh_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:09:13"
+    },
+    {
+      "id": "mnli_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:09:13"
+    },
+    {
+      "id": "mnli_mamba_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:12:10"
+    },
+    {
+      "id": "mnli_mamba_shedder",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_shedder --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_shedder_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:26:04"
+    },
+    {
+      "id": "mnli_mgie_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mgie_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix mgie_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:27:36"
+    },
+    {
+      "id": "mnli_mgie_svd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mgie_svd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix mgie_svd_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:29:07"
+    },
+    {
+      "id": "mnli_minimal_aurora",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_aurora --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_aurora_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:30:37"
+    },
+    {
+      "id": "mnli_minimal_nova",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_nova --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_nova_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:32:52"
+    },
+    {
+      "id": "mnli_minimal_prism",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_prism --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_prism_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:36:21"
+    },
+    {
+      "id": "mnli_minimal_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:38:39"
+    },
+    {
+      "id": "mnli_minimal_svd_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules minimal_svd_v2 --rank 128 --parallel 1 --batch_size 8 --output_suffix minimal_svd_v2_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:40:57"
+    },
+    {
+      "id": "mnli_mixattention_moska",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mixattention_moska --rank 128 --parallel 1 --batch_size 8 --output_suffix mixattention_moska_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:43:13"
+    },
+    {
+      "id": "mnli_mla_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mla_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix mla_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:45:30"
+    },
+    {
+      "id": "mnli_mlorq_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mlorq_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix mlorq_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:47:01"
+    },
+    {
+      "id": "mnli_moba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moba --rank 128 --parallel 1 --batch_size 8 --output_suffix moba_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:48:42"
+    },
+    {
+      "id": "mnli_moba_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moba_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix moba_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:50:59"
+    },
+    {
+      "id": "mnli_modegpt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules modegpt --rank 128 --parallel 1 --batch_size 8 --output_suffix modegpt_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:53:15"
+    },
+    {
+      "id": "mnli_modegpt_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules modegpt_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix modegpt_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:54:46"
+    },
+    {
+      "id": "mnli_moe_deltakv_paged",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules moe_deltakv_paged --rank 128 --parallel 1 --batch_size 8 --output_suffix moe_deltakv_paged_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:56:21"
+    },
+    {
+      "id": "mnli_naive_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules naive_svd --rank 128 --parallel 1 --batch_size 8 --output_suffix naive_svd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:58:38"
+    },
+    {
+      "id": "mnli_mamba_svd_flash",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba_svd_flash --rank 128 --parallel 1 --batch_size 8 --output_suffix mamba_svd_flash_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 07:26:51"
+    },
+    {
+      "id": "mnli_nasc_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nasc_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nasc_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:00:55"
+    },
+    {
+      "id": "mnli_nha_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nha_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nha_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:04:48"
+    },
+    {
+      "id": "mnli_nexus",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nexus --rank 128 --parallel 1 --batch_size 8 --output_suffix nexus_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:04:02"
+    },
+    {
+      "id": "mnli_nha_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nha_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix nha_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:07:04"
+    },
+    {
+      "id": "mnli_nli_softmax",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nli_softmax --rank 128 --parallel 1 --batch_size 8 --output_suffix nli_softmax_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:07:50"
+    },
+    {
+      "id": "mnli_nmf_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nmf_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix nmf_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:09:22"
+    },
+    {
+      "id": "mnli_nsa_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nsa_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nsa_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:10:08"
+    },
+    {
+      "id": "mnli_nystrom_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules nystrom_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix nystrom_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:10:55"
+    },
+    {
+      "id": "mnli_oats",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules oats --rank 128 --parallel 1 --batch_size 8 --output_suffix oats_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:11:41"
+    },
+    {
+      "id": "mnli_oats_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules oats_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix oats_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:13:13"
+    },
+    {
+      "id": "mnli_optimal_subspace_projection",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules optimal_subspace_projection --rank 128 --parallel 1 --batch_size 8 --output_suffix optimal_subspace_projection_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 08:13:13"
     }
   ],
   "failed": []

@@ -1,14 +1,14 @@
 {
     "model": "distilbert_mnli_full_kronecker_compressor",
     "performance": {
-        "accuracy_pct": 80.3,
-        "f1_score": 0.8022,
-        "f1_macro": 0.8022,
-        "precision": 0.8054,
-        "recall": 0.8022,
-        "val_loss": 0.6046,
+        "accuracy_pct": 80.1,
+        "f1_score": 0.8003,
+        "f1_macro": 0.8003,
+        "precision": 0.8034,
+        "recall": 0.8002,
+        "val_loss": 0.6045,
         "status": "PASS",
-        "elapsed_s": 18.24
+        "elapsed_s": 33.11
     },
     "efficiency": {
         "total_params_before": 66955779,
@@ -43,7 +43,7 @@
     },
     "hardware": {
         "peak_vram_mb": 478.79,
-        "tokens_per_sec": 96103.59
+        "tokens_per_sec": 82971.75
     },
     "architecture": {
         "span_distribution": {},
@@ -56,5 +56,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T18:28:53.594717"
+    "timestamp": "2026-09-22T06:50:32.198005"
 }
