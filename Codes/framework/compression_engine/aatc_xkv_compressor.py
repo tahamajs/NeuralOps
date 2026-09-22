@@ -564,17 +564,31 @@ class AATC_XKVCompressor(BaseCompressor):
             preserve_last_token=self.preserve_last_token,
         )
 
-        # Install forward pre/post hooks on self-attention modules
+        # Install runtime compression hooks directly on k_proj and v_proj projections
         for layer_idx, name, mod in attn_modules:
-            def make_attn_hook(l_idx):
-                def hook_fn(module, args, output):
-                    # Intercept output tuple if it returns (attn_output, attn_weights, past_key_value)
-                    # or apply compression to the layer's internal kv projections
-                    return output
-                return hook_fn
+            k_layer = next((getattr(mod, a) for a in ("k_proj", "k_lin", "key", "W_k", "k") if hasattr(mod, a)), None)
+            v_layer = next((getattr(mod, a) for a in ("v_proj", "v_lin", "value", "W_v", "v") if hasattr(mod, a)), None)
 
-            h = mod.register_forward_hook(make_attn_hook(layer_idx))
-            self.hooks.append(h)
+            if k_layer is not None and v_layer is not None:
+                # Keep reference to original forward
+                def make_kv_hook(l_idx, runtime_c):
+                    # Hook on k_layer to apply compression to K states
+                    def k_hook(module, args, output):
+                        if not runtime_c.enabled:
+                            return output
+                        # output shape can be (B, N, D) or (B, H, N, D)
+                        k_comp, _ = runtime_c.compress_kv_pair(output, output, l_idx)
+                        return k_comp
+                    def v_hook(module, args, output):
+                        if not runtime_c.enabled:
+                            return output
+                        _, v_comp = runtime_c.compress_kv_pair(output, output, l_idx)
+                        return v_comp
+                    return k_hook, v_hook
+
+                kh, vh = make_kv_hook(layer_idx, runtime_compressor)
+                self.hooks.append(k_layer.register_forward_hook(kh))
+                self.hooks.append(v_layer.register_forward_hook(vh))
 
         # Attach runtime compressor directly to model for inference access
         self.model.aatc_xkv_runtime = runtime_compressor
