@@ -2,552 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "roberta_sst2_samba_m3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules samba_m3 --rank 64 --parallel 1 --batch_size 8 --output_suffix samba_m3_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_samba_moe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules samba_moe --rank 64 --parallel 1 --batch_size 8 --output_suffix samba_moe_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_sdrm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm --rank 64 --parallel 1 --batch_size 8 --output_suffix sdrm_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_sdrm_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix sdrm_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_simple_ssm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules simple_ssm --rank 64 --parallel 1 --batch_size 8 --output_suffix simple_ssm_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_slicegpt",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_slicegpt_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_slicegpt_pca",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt_pca --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_pca_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_slim_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slim_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix slim_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_smart_weighted_ensemble",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules smart_weighted_ensemble --rank 64 --parallel 1 --batch_size 8 --output_suffix smart_weighted_ensemble_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_soa_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_attn --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_attn_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_soa_fused_module",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_fused_module --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_fused_module_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_soa_module",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_module --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_module_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_soka",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soka --rank 64 --parallel 1 --batch_size 8 --output_suffix soka_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_soka_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soka_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix soka_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_span_expanded_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules span_expanded_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix span_expanded_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_sparsegpt",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sparsegpt --rank 64 --parallel 1 --batch_size 8 --output_suffix sparsegpt_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectra_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectra_v2 --rank 64 --parallel 1 --batch_size 8 --output_suffix spectra_v2_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectra_v2_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectra_v2_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectra_v2_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectraformer_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectraformer_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectraformer_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectral_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectral_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix spectral_mamba_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectral_mamba_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectral_mamba_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectral_mamba_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectron",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 8 --output_suffix spectron_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_spectron_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectron_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_squeezing_heads",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_squeezing_heads_distill",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads_distill --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_distill_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_squeezing_heads_distiller",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads_distiller --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_distiller_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_subspace_projection",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules subspace_projection --rank 64 --parallel 1 --batch_size 8 --output_suffix subspace_projection_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_compressed",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_compressed_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_compressed_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_linear_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_linear_decay",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear_decay --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_decay_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_llm_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_llm_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_v2 --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_v2_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_llm_v2_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_v2_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_v2_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_mamba_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_proj_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_proj_attn --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_proj_attn_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_projection_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_projection_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_projection_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_svd_sequence_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_sequence_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_sequence_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_swift_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_swift_svd_act",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_act --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_act_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_swift_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_template_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules template_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix template_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tlinformer_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tlinformer_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix tlinformer_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_token_compressed",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules token_compressed --rank 64 --parallel 1 --batch_size 8 --output_suffix token_compressed_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_token_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules token_compressed_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix token_compressed_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tomoe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tomoe --rank 64 --parallel 1 --batch_size 8 --output_suffix tomoe_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tomoe_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tomoe_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix tomoe_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tpa_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tpa_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix tpa_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tt",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tt_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_tt_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_linear --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_linear_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_unified_rope",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules unified_rope --rank 64 --parallel 1 --batch_size 8 --output_suffix unified_rope_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_uniql_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules uniql_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix uniql_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_upi_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules upi_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix upi_mamba_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_upi_stuffed_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules upi_stuffed_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix upi_stuffed_mamba_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_vig_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules vig_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix vig_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_vspec",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules vspec --rank 64 --parallel 1 --batch_size 8 --output_suffix vspec_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_weighted_ensemble",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules weighted_ensemble --rank 64 --parallel 1 --batch_size 8 --output_suffix weighted_ensemble_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_wgqa_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules wgqa_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix wgqa_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_xattention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules xattention --rank 64 --parallel 1 --batch_size 8 --output_suffix xattention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_zerokv_neo",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zerokv_neo --rank 64 --parallel 1 --batch_size 8 --output_suffix zerokv_neo_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_zerokv_neo_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zerokv_neo_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix zerokv_neo_compressor_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "roberta_sst2_zeros_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zeros_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix zeros_attention_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_SOAFusedAttention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules SOAFusedAttention --rank 128 --parallel 1 --batch_size 8 --output_suffix SOAFusedAttention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_a3_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules a3_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix a3_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aa_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aa_svd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix aa_svd_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_aasvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_compressor_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_ranks",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_ranks --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_ranks_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_span_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_span_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_span_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_span_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_sparse_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_sparse_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_sparse_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_sparse_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_sparse_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_sparse_inject_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adaptive_svd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_svd_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "mnli_adasplash_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_attention_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "mnli_adasplash_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_inject_mnli --fresh",
@@ -4120,20 +3574,20 @@
       "launched_at": "2026-09-21 13:54:21"
     },
     {
-      "id": "roberta_sst2_salt",
+      "id": "mnli_adaptive_svd_attention",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt --rank 64 --parallel 1 --batch_size 8 --output_suffix salt_rob64 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_svd_attention_mnli --fresh",
       "status": "active",
       "retries": 0,
-      "launched_at": "2026-09-22 02:57:26"
+      "launched_at": "2026-09-22 04:19:22"
     },
     {
-      "id": "roberta_sst2_salt_attention",
+      "id": "mnli_adasplash_attention",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix salt_attention_rob64 --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adasplash_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adasplash_attention_mnli --fresh",
       "status": "active",
       "retries": 0,
-      "launched_at": "2026-09-22 02:58:11"
+      "launched_at": "2026-09-22 04:19:22"
     }
   ],
   "completed": [
@@ -8616,6 +8070,630 @@
       "status": "done",
       "retries": 0,
       "launched_at": "2026-09-22 02:56:41"
+    },
+    {
+      "id": "roberta_sst2_salt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt --rank 64 --parallel 1 --batch_size 8 --output_suffix salt_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 02:57:26"
+    },
+    {
+      "id": "roberta_sst2_salt_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules salt_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix salt_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 02:58:11"
+    },
+    {
+      "id": "roberta_sst2_samba_m3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules samba_m3 --rank 64 --parallel 1 --batch_size 8 --output_suffix samba_m3_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:00:00"
+    },
+    {
+      "id": "roberta_sst2_sdrm",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm --rank 64 --parallel 1 --batch_size 8 --output_suffix sdrm_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:02:18"
+    },
+    {
+      "id": "roberta_sst2_samba_moe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules samba_moe --rank 64 --parallel 1 --batch_size 8 --output_suffix samba_moe_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:00:47"
+    },
+    {
+      "id": "roberta_sst2_sdrm_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix sdrm_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:03:50"
+    },
+    {
+      "id": "roberta_sst2_simple_ssm",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules simple_ssm --rank 64 --parallel 1 --batch_size 8 --output_suffix simple_ssm_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:04:36"
+    },
+    {
+      "id": "roberta_sst2_slicegpt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:05:21"
+    },
+    {
+      "id": "roberta_sst2_slicegpt_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:06:52"
+    },
+    {
+      "id": "roberta_sst2_slicegpt_pca",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slicegpt_pca --rank 64 --parallel 1 --batch_size 8 --output_suffix slicegpt_pca_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:06:52"
+    },
+    {
+      "id": "roberta_sst2_slim_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules slim_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix slim_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:08:23"
+    },
+    {
+      "id": "roberta_sst2_smart_weighted_ensemble",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules smart_weighted_ensemble --rank 64 --parallel 1 --batch_size 8 --output_suffix smart_weighted_ensemble_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:08:23"
+    },
+    {
+      "id": "roberta_sst2_soa_attn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_attn --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_attn_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:09:53"
+    },
+    {
+      "id": "roberta_sst2_soa_fused_module",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_fused_module --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_fused_module_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:09:53"
+    },
+    {
+      "id": "roberta_sst2_soa_module",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soa_module --rank 64 --parallel 1 --batch_size 8 --output_suffix soa_module_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:11:23"
+    },
+    {
+      "id": "roberta_sst2_soka",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soka --rank 64 --parallel 1 --batch_size 8 --output_suffix soka_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:11:23"
+    },
+    {
+      "id": "roberta_sst2_soka_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules soka_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix soka_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:12:53"
+    },
+    {
+      "id": "roberta_sst2_span_expanded_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules span_expanded_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix span_expanded_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:12:53"
+    },
+    {
+      "id": "roberta_sst2_sparsegpt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sparsegpt --rank 64 --parallel 1 --batch_size 8 --output_suffix sparsegpt_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:14:22"
+    },
+    {
+      "id": "roberta_sst2_spectra_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectra_v2 --rank 64 --parallel 1 --batch_size 8 --output_suffix spectra_v2_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:14:22"
+    },
+    {
+      "id": "roberta_sst2_spectra_v2_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectra_v2_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectra_v2_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:15:52"
+    },
+    {
+      "id": "roberta_sst2_spectraformer_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectraformer_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectraformer_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:15:52"
+    },
+    {
+      "id": "roberta_sst2_spectral_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectral_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix spectral_mamba_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:17:22"
+    },
+    {
+      "id": "roberta_sst2_spectral_mamba_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectral_mamba_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectral_mamba_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:17:22"
+    },
+    {
+      "id": "roberta_sst2_spectron",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 8 --output_suffix spectron_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:18:52"
+    },
+    {
+      "id": "roberta_sst2_spectron_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix spectron_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:18:52"
+    },
+    {
+      "id": "roberta_sst2_squeezing_heads",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:20:22"
+    },
+    {
+      "id": "roberta_sst2_squeezing_heads_distill",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads_distill --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_distill_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:20:22"
+    },
+    {
+      "id": "roberta_sst2_squeezing_heads_distiller",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules squeezing_heads_distiller --rank 64 --parallel 1 --batch_size 8 --output_suffix squeezing_heads_distiller_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:21:52"
+    },
+    {
+      "id": "roberta_sst2_subspace_projection",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules subspace_projection --rank 64 --parallel 1 --batch_size 8 --output_suffix subspace_projection_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:21:52"
+    },
+    {
+      "id": "roberta_sst2_svd_compressed",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_compressed_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:23:25"
+    },
+    {
+      "id": "roberta_sst2_svd_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:23:25"
+    },
+    {
+      "id": "roberta_sst2_svd_compressed_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_compressed_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:24:58"
+    },
+    {
+      "id": "roberta_sst2_svd_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:25:44"
+    },
+    {
+      "id": "roberta_sst2_svd_linear_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:26:30"
+    },
+    {
+      "id": "roberta_sst2_svd_linear_decay",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_linear_decay --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_linear_decay_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:28:01"
+    },
+    {
+      "id": "roberta_sst2_svd_llm_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:28:46"
+    },
+    {
+      "id": "roberta_sst2_svd_llm_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_v2 --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_v2_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:30:20"
+    },
+    {
+      "id": "roberta_sst2_svd_llm_v2_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_llm_v2_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_llm_v2_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:31:55"
+    },
+    {
+      "id": "roberta_sst2_svd_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_mamba_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:32:41"
+    },
+    {
+      "id": "roberta_sst2_svd_proj_attn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_proj_attn --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_proj_attn_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:34:26"
+    },
+    {
+      "id": "roberta_sst2_svd_projection_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_projection_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_projection_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:35:58"
+    },
+    {
+      "id": "roberta_sst2_svd_sequence_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_sequence_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix svd_sequence_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:36:45"
+    },
+    {
+      "id": "roberta_sst2_swift_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:38:18"
+    },
+    {
+      "id": "roberta_sst2_swift_svd_act",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_act --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_act_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:39:03"
+    },
+    {
+      "id": "roberta_sst2_swift_svd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix swift_svd_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:39:49"
+    },
+    {
+      "id": "roberta_sst2_template_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules template_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix template_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:40:35"
+    },
+    {
+      "id": "roberta_sst2_tlinformer_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tlinformer_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix tlinformer_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:41:21"
+    },
+    {
+      "id": "roberta_sst2_token_compressed",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules token_compressed --rank 64 --parallel 1 --batch_size 8 --output_suffix token_compressed_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:42:10"
+    },
+    {
+      "id": "roberta_sst2_token_compressed_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules token_compressed_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix token_compressed_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:43:41"
+    },
+    {
+      "id": "roberta_sst2_tomoe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tomoe --rank 64 --parallel 1 --batch_size 8 --output_suffix tomoe_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:44:27"
+    },
+    {
+      "id": "roberta_sst2_tomoe_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tomoe_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix tomoe_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:45:12"
+    },
+    {
+      "id": "roberta_sst2_tpa_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tpa_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix tpa_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:45:58"
+    },
+    {
+      "id": "roberta_sst2_tt",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:46:44"
+    },
+    {
+      "id": "roberta_sst2_tt_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:48:19"
+    },
+    {
+      "id": "roberta_sst2_tt_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules tt_linear --rank 64 --parallel 1 --batch_size 8 --output_suffix tt_linear_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:49:04"
+    },
+    {
+      "id": "roberta_sst2_unified_rope",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules unified_rope --rank 64 --parallel 1 --batch_size 8 --output_suffix unified_rope_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:49:50"
+    },
+    {
+      "id": "roberta_sst2_uniql_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules uniql_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix uniql_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:50:36"
+    },
+    {
+      "id": "roberta_sst2_upi_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules upi_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix upi_mamba_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:52:06"
+    },
+    {
+      "id": "roberta_sst2_upi_stuffed_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules upi_stuffed_mamba --rank 64 --parallel 1 --batch_size 8 --output_suffix upi_stuffed_mamba_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 03:52:06"
+    },
+    {
+      "id": "roberta_sst2_vig_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules vig_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix vig_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:01:55"
+    },
+    {
+      "id": "roberta_sst2_vspec",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules vspec --rank 64 --parallel 1 --batch_size 8 --output_suffix vspec_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:02:41"
+    },
+    {
+      "id": "roberta_sst2_weighted_ensemble",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules weighted_ensemble --rank 64 --parallel 1 --batch_size 8 --output_suffix weighted_ensemble_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:04:14"
+    },
+    {
+      "id": "roberta_sst2_wgqa_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules wgqa_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix wgqa_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:05:00"
+    },
+    {
+      "id": "roberta_sst2_xattention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules xattention --rank 64 --parallel 1 --batch_size 8 --output_suffix xattention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:05:45"
+    },
+    {
+      "id": "roberta_sst2_zerokv_neo",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zerokv_neo --rank 64 --parallel 1 --batch_size 8 --output_suffix zerokv_neo_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:07:15"
+    },
+    {
+      "id": "roberta_sst2_zerokv_neo_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zerokv_neo_compressor --rank 64 --parallel 1 --batch_size 8 --output_suffix zerokv_neo_compressor_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:08:01"
+    },
+    {
+      "id": "roberta_sst2_zeros_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules zeros_attention --rank 64 --parallel 1 --batch_size 8 --output_suffix zeros_attention_rob64 --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:08:46"
+    },
+    {
+      "id": "mnli_SOAFusedAttention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules SOAFusedAttention --rank 128 --parallel 1 --batch_size 8 --output_suffix SOAFusedAttention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:09:32"
+    },
+    {
+      "id": "mnli_a3_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules a3_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix a3_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:10:17"
+    },
+    {
+      "id": "mnli_aa_svd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aa_svd_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix aa_svd_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:11:48"
+    },
+    {
+      "id": "mnli_aasvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:12:33"
+    },
+    {
+      "id": "mnli_adaptive_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_compressor --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_compressor_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:13:18"
+    },
+    {
+      "id": "mnli_adaptive_ranks",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_ranks --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_ranks_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:14:04"
+    },
+    {
+      "id": "mnli_adaptive_span_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_span_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:14:49"
+    },
+    {
+      "id": "mnli_adaptive_span_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_span_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_span_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:15:35"
+    },
+    {
+      "id": "mnli_adaptive_sparse_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_sparse_attention --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_sparse_attention_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:17:05"
+    },
+    {
+      "id": "mnli_adaptive_sparse_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_sparse_inject --rank 128 --parallel 1 --batch_size 8 --output_suffix adaptive_sparse_inject_mnli --fresh",
+      "status": "done",
+      "retries": 0,
+      "launched_at": "2026-09-22 04:17:05"
     }
   ],
   "failed": []
