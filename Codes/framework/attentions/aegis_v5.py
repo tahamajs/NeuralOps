@@ -23,9 +23,14 @@ logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half : 2 * half]  # safe for odd d: leaves trailing element out
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if d % 2 == 1:
+        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -524,7 +529,10 @@ class AegisAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(f"AegisAttention: missing weights for projections {missing}; proceeding with random init for those")
+            raise RuntimeError(
+                f"AegisAttention.copy_weights: could not extract mandatory projections {missing} "
+                f"from {old_attn.__class__.__name__}. Refusing to install randomly-initialised weights."
+            )
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
@@ -617,6 +625,8 @@ class AegisAttention(BaseAttention):
 
         if N < self.cfg.local_window or self.is_decoder:
             # Memory-efficient attention — avoids OOM from full B×H×N×N matrix on GPT-2/long seqs
+            # SDPA cannot return attention weights, so bypass it when output_attentions=True
+            use_sdpa = not output_attentions
             q_sdp = Q.half() if Q.dtype == torch.float32 else Q
             k_sdp = K.half() if K.dtype == torch.float32 else K
             v_sdp = V.half() if V.dtype == torch.float32 else V
@@ -626,18 +636,28 @@ class AegisAttention(BaseAttention):
                 attn_bias_sdp = eff_mask.to(q_sdp.dtype)
             elif eff_mask is not None and eff_mask.dim() == 2 and not is_causal_sdp:
                 attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdp.dtype)
-            try:
-                out_sdp = torch.nn.functional.scaled_dot_product_attention(
-                    q_sdp, k_sdp, v_sdp,
-                    attn_mask=attn_bias_sdp,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                    is_causal=is_causal_sdp,
-                )
-                out = out_sdp.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
-            except Exception:
+
+            attn_weights_out: Optional[torch.Tensor] = None
+            sdp_success = False
+            if use_sdpa:
+                try:
+                    out_sdp = torch.nn.functional.scaled_dot_product_attention(
+                        q_sdp, k_sdp, v_sdp,
+                        attn_mask=attn_bias_sdp,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                        is_causal=is_causal_sdp,
+                    )
+                    out = out_sdp.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                    out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    sdp_success = True
+                except Exception:
+                    pass  # fall through to chunked path
+
+            if not sdp_success:
+                # Chunked explicit path — also used when output_attentions=True to return weights
                 CHUNK = 64
                 out_chunks = []
+                attn_weight_chunks = []
                 for q_start in range(0, N, CHUNK):
                     q_end = min(q_start + CHUNK, N)
                     q_chunk = Q[:, :, q_start:q_end, :].float()
@@ -650,9 +670,13 @@ class AegisAttention(BaseAttention):
                         scores_chunk = scores_chunk + attn_bias_sdp[:, :, q_start:q_end, :].float()
                     scores_chunk = torch.nan_to_num(scores_chunk, nan=-1e4, posinf=1e4, neginf=-1e4)
                     attn_chunk = torch.softmax(scores_chunk, dim=-1).to(V.dtype)
+                    if output_attentions:
+                        attn_weight_chunks.append(attn_chunk)
                     out_chunks.append(torch.matmul(attn_chunk, V))
                 out = torch.cat(out_chunks, dim=2).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                 out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                if output_attentions and attn_weight_chunks:
+                    attn_weights_out = torch.cat(attn_weight_chunks, dim=2)
 
             if head_mask is not None:
                 if head_mask.dim() == 1:
@@ -665,8 +689,8 @@ class AegisAttention(BaseAttention):
                 out = out.view(B, N, self.all_head_size)
 
             if self.is_nested_encoder:
-                return out, None
-            return self.out_proj(out), None
+                return out, attn_weights_out
+            return self.out_proj(out), attn_weights_out
 
         Hl, Hg = self.num_local_heads, self.num_global_heads
         Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
@@ -757,7 +781,7 @@ def inject_aegis_v5(
             res = inject_aegis_v5(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -812,11 +836,6 @@ def inject_aegis_v5(
     return new_attn
 
 
-AegisAttention = AegisAttention
-
-
-AegisAttention = AegisAttention
-
 def inject_aegis_into_distilbert(
     layer: Any = None,
     model: Any = None,
@@ -827,5 +846,6 @@ def inject_aegis_into_distilbert(
 ):
     target = layer if layer is not None else model
     return inject_aegis_v5(layer=target, model=model, model_config=model_config, comp_config=aegis_cfg, old_attn=old_attn, **kwargs)
+
 
 AegisAttentionV5 = AegisAttention
