@@ -20,6 +20,7 @@ Key architectural features:
 9. Cross-Attention support for encoder-decoder architectures.
 """
 
+import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -31,11 +32,20 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 
+logger = logging.getLogger(__name__)
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input for RoPE."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    d = x.shape[-1]
+    if d % 2 != 0:
+        x_even = x[..., :-1]
+        x1 = x_even[..., : (d - 1) // 2]
+        x2 = x_even[..., (d - 1) // 2 :]
+        rot_even = torch.cat((-x2, x1), dim=-1)
+        return torch.cat((rot_even, x[..., -1:]), dim=-1)
+    x1 = x[..., : d // 2]
+    x2 = x[..., d // 2 :]
     return torch.cat((-x2, x1), dim=-1)
 
 
@@ -213,15 +223,15 @@ class UnifiedMoE(nn.Module):
             for _ in range(self.num_experts)
         ])
 
-        # Step-0 Zero-Initialization: Final expert linear layer initialized to strictly zero
-        # to guarantee zero disturbance to pretrained representations at step 0.
+        # Non-zero initialization for expert final linear layer to avoid zero-gradient trap,
+        # combined with negative gate_bias (-6.0 -> sigmoid(-6.0) ≈ 0.0025) for step-0 preservation
         for exp in self.experts:
-            nn.init.zeros_(exp[2].weight)
+            nn.init.normal_(exp[2].weight, std=0.02)
             if exp[2].bias is not None:
                 nn.init.zeros_(exp[2].bias)
 
-        # Learnable gate with negative bias for gentle ramp-up
-        self.gate_bias = nn.Parameter(torch.tensor([-3.0]))
+        # Learnable gate with negative bias for gentle ramp-up and step-0 preservation
+        self.gate_bias = nn.Parameter(torch.tensor([-6.0]))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Forward execution pass for top-k Unified MoE with load balancing."""
@@ -229,7 +239,7 @@ class UnifiedMoE(nn.Module):
         x_norm = self.router_ln(x)
         logits = self.router(x_norm)  # (B, L, E)
         if self.training:
-            logits += torch.randn_like(logits) * 0.05
+            logits = logits + torch.randn_like(logits) * 0.05
 
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std
@@ -237,13 +247,16 @@ class UnifiedMoE(nn.Module):
         else:
             routing_logits = logits
 
-        topk_vals, topk_idx = torch.topk(routing_logits, self.top_k, dim=-1)  # (B, L, k)
-        scores = F.softmax(topk_vals, dim=-1)  # (B, L, k)
+        # Softmax over ALL experts first, then take top-k and re-normalize
+        all_probs = F.softmax(routing_logits, dim=-1)  # (B, L, E)
+        topk_scores, topk_idx = torch.topk(all_probs, self.top_k, dim=-1)  # (B, L, k)
+        # Re-normalize across selected top-k experts
+        scores = topk_scores / topk_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
         scores = torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
 
         # Auxiliary load balancing loss (Switch Transformer / GShard formulation)
         if self.training and self.num_experts > 1:
-            router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num_experts)  # (B*L, E)
+            router_probs = all_probs.view(-1, self.num_experts)  # (B*L, E)
             expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()  # (B, L, k, E)
             density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)  # (E,)
             prob_mean = router_probs.mean(dim=0)  # (E,)
@@ -429,8 +442,7 @@ class BAMUMoEBlock(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    logger.warning(f"copy_weights failed: {e}")
+                    logger.warning("c_attn merge failed: %s", e)
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -451,8 +463,7 @@ class BAMUMoEBlock(BaseAttention):
                     try:
                         c_proj_mod.merge()
                     except Exception as e:
-                        print(f'copy_weights failed: {e}')
-                        logger.warning(f"copy_weights failed: {e}")
+                        logger.warning("c_proj merge failed: %s", e)
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -507,10 +518,9 @@ class BAMUMoEBlock(BaseAttention):
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning(
+            raise RuntimeError(
                 f"BAMUMoEBlock copy_weights failed: missing mandatory projections {missing_after} "
-                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn}). "
-                f"Proceeding with partially initialized projections."
+                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn})."
             )
 
         # 6. Copy weights into target LoRALinear layers with strict dimension safety
@@ -614,25 +624,25 @@ class BAMUMoEBlock(BaseAttention):
 
         # 5. Attention scores computation in FP32 for numerical stability
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs
-
-        try:
-            _qs = q.half() if q.dtype == torch.float32 else q
-            _ks = k.half() if k.dtype == torch.float32 else k
-            _vs = v.half() if v.dtype == torch.float32 else v
-            _is_causal = getattr(self, 'is_decoder', False) and not is_cross_attention and L > 1
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs, _ks, _vs,
-                is_causal=_is_causal,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
-            final_out = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-            self.aux_loss = self.qkv_moe.aux_loss
-            return final_out, None
-        except Exception:
-            pass
+        # Memory-efficient: use SDPA when attention weights are not requested and no complex masks
+        if not output_attentions and attention_mask is None and encoder_attention_mask is None and head_mask is None:
+            try:
+                _qs = q.half() if q.dtype == torch.float32 else q
+                _ks = k.half() if k.dtype == torch.float32 else k
+                _vs = v.half() if v.dtype == torch.float32 else v
+                _is_causal = getattr(self, 'is_decoder', False) and not is_cross_attention and L > 1
+                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                    _qs, _ks, _vs,
+                    is_causal=_is_causal,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                final_out = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
+                self.aux_loss = self.qkv_moe.aux_loss
+                return final_out, None
+            except Exception:
+                pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
