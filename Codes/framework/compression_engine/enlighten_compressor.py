@@ -1,6 +1,6 @@
 """
 ENLighten: Low-Rank SVD + 2:4 Structured Sparsity (Photonic-Aligned).
-Registered as 'enlighten'. Production hardened for multi-architecture compatibility
+Registered as 'enlighten' and 'enlighten_compressor'. Production hardened for multi-architecture compatibility
 (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with vectorization, error validation, and safe fallback.
 """
 
@@ -75,6 +75,7 @@ def unstructured_prune(residual: torch.Tensor, sparsity: float) -> torch.Tensor:
 
 
 @COMPRESSOR_REGISTRY.register("enlighten")
+@COMPRESSOR_REGISTRY.register("enlighten_compressor")
 class ENLightenCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
@@ -181,16 +182,13 @@ class ENLightenCompressor(BaseCompressor):
             residual_sp = unstructured_prune(residual, self.sparsity)
 
         W_recon = L + residual_sp
-        recon_norm = torch.linalg.norm(W_recon, ord="fro").item()
-        scale = norm_w / (recon_norm + 1e-12) if recon_norm > 1e-12 else 1.0
-        W_new = W_recon * scale
 
         err = (
-            float(torch.linalg.norm(W - W_new, ord="fro").item() / max(norm_w, 1e-12))
+            float(torch.linalg.norm(W - W_recon, ord="fro").item() / max(norm_w, 1e-12))
             if norm_w > 1e-12
             else 0.0
         )
-        return W_new, err
+        return W_recon, err
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear and Conv1D layers using low-rank SVD + 2:4 structured sparse residuals."""
@@ -352,6 +350,7 @@ class ENLightenCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("enlighten")
+@COMPRESSOR_REGISTRY.register("enlighten_compressor")
 def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Enlighten compressor factory function."""
     rank = kwargs.pop("rank", _cfg_get(comp_config, "enlighten_rank", _cfg_get(comp_config, "rank", 64)))
