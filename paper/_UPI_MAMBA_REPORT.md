@@ -112,7 +112,24 @@ FAILED: 0/12
 
 ---
 
-## 7. Limitations
+## 7. GPU Memory Scaling Verification (RTX 4090 / CUDA)
+
+We evaluated peak VRAM allocation across sequence lengths on the remote GPU server (`hadi-windows`):
+
+| Sequence Length ($L$) | Peak VRAM Allocated | Memory Scaling Factor ($L / 128$) | VRAM Ratio vs $L=128$ |
+|---|---|---|---|
+| **$L = 128$** | 51.65 MB | 1.00× | 1.00× |
+| **$L = 512$** | 164.79 MB | 4.00× | 3.19× |
+| **$L = 1024$** | 316.48 MB | 8.00× | 6.13× |
+| **$L = 2048$** | 621.98 MB | 16.00× | 12.04× |
+
+**Empirical Conclusion:**
+Memory scales **sub-linearly to strictly linearly $O(L)$** ($128 \to 2048$ tokens is a 16× increase in sequence length, requiring only 12.04× memory from 51.65 MB to 621.98 MB). Unlike standard quadratic attention ($O(L^2)$), which would grow 256×, the chunked associative selective scan avoids the $N \times N$ attention score matrix.
+
+---
+
+## 8. Limitations
 
 1. **Task Incompatibility with Encoders:** Standard bidirectional encoders (DistilBERT, RoBERTa) rely on global sequence token visibility. Averaging forward and backward flipped scans ($0.5 \times (y_{\text{fwd}} + y_{\text{bwd}})$) does not equal true bidirectional attention and suffers significant representational distortion.
 2. **No Hardware Scan Kernel:** The associative scan is implemented via PyTorch tensor chunking ($O(\text{chunk}=64)$ memory) rather than fused CUDA SRAM kernels like official Mamba (`mamba-ssm`). For high-throughput production deployment, custom Triton or CUDA kernels would be required.
+
