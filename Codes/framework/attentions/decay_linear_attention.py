@@ -45,9 +45,16 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x_rot = x[..., :even_d]
+    half = even_d // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        return torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -419,7 +426,10 @@ class DecayLinearAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning("DecayLinearAttention copy_weights warning. Proceeding with initialized weights.")
+            raise RuntimeError(
+                f"DecayLinearAttention copy_weights: missing mandatory projections {missing_after} "
+                f"from {old_attn.__class__.__name__}."
+            )
 
         target_map = {
             "q": self.q_proj,
