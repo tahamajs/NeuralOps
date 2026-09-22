@@ -990,7 +990,7 @@ def inject_aegis_v2(
             num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
             local_window=getattr(comp_config, "block_size", 64),
-            rank=getattr(comp_config, "rank", getattr(comp_config, "lora_r", 64)),
+            rank=getattr(comp_config, "rank", getattr(comp_config, "lora_r", 192)),
             kernel_feature_dim=getattr(comp_config, "rff_features", 128),
             dropout=getattr(comp_config, "dropout", 0.1),
             use_adaptive_pruning=getattr(comp_config, "use_gate", True),
