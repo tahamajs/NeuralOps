@@ -1,14 +1,36 @@
 """
-Low-Rank SVD-Compressed Sequence Attention Mechanism.
-Reduces quadratic sequence complexity O(N^2) to linear in sequence length O(N * r)
-by projecting Key and Value sequence dimensions into the top-r left-singular subspace
-of the sequence representation.
+SVD-Compressed Sequence Attention.
 
-Hardened for production use across diverse transformer architectures:
-- DistilBERT (Flat MHA)
-- RoBERTa / BERT (Nested Encoder Self-Attention)
-- GPT-2 (Causal Decoder with Conv1D)
-- Qwen / LLaMA (GQA with Rotary Position Embeddings)
+This module reduces attention complexity from O(N²) to O(N·r) 
+by projecting K and V onto a rank-r subspace along the 
+sequence dimension.
+
+CRITICAL LIMITATION — Read This:
+
+    The projection basis is precomputed ONCE from the SVD of 
+    the key weight matrix W_K in copy_weights(). This means 
+    the projection does NOT depend on the input sequence — 
+    it is fixed at initialization time.
+
+    A more principled approach would compute a per-input 
+    projection (e.g., via Linformer-style learned projections 
+    or Nyström landmark selection). The current implementation 
+    is a HEURISTIC and may not preserve attention semantics 
+    for all inputs.
+
+    For CAUSAL decoders (GPT-2, Qwen, LLaMA), applying a 
+    sequence-axis SVD breaks causality because the projection 
+    combines future tokens into the subspace. The current 
+    implementation DISABLES SVD compression for causal mode 
+    and falls back to full attention. This means decoders 
+    get no speedup from this module.
+
+Future Work:
+    - Learnable input-dependent projection (Linformer-style)
+    - Nyström landmark selection
+    - Causal-aware projection with causal masking
+
+Registered as: "svd_seq", "svd_sequence", "svd_sequence_attention".
 """
 
 import logging
@@ -145,7 +167,7 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("svd", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_sequence", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_sequence_attention", supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
@@ -202,8 +224,16 @@ class SVDLinearAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        default_r = int(_cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
-        self.rank: Optional[int] = rank if rank is not None else default_r
+        # Explicitly allow None to disable SVD compression
+        if rank is None:
+            svd_disabled = _cfg_get(config, "svd_disabled", False)
+            if svd_disabled or ("rank" in kwargs and kwargs["rank"] is None):
+                self.rank: Optional[int] = None
+            else:
+                cfg_r = _cfg_get(config, "svd_rank", _cfg_get(config, "rank", None))
+                self.rank = int(cfg_r) if cfg_r is not None else None
+        else:
+            self.rank = int(rank)
         self.lora_rank: int = int(lora_rank if lora_rank is not None else 16)
         self.lora_alpha: float = lora_alpha
 
@@ -413,12 +443,21 @@ class SVDLinearAttention(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                logger.warning(f"Failed to extract required projections: {missing}. Proceeding with initialized projections.")
+                raise RuntimeError(
+                    f"SVD-Compressed Sequence Attention: cannot extract "
+                    f"{missing} from {old_attn.__class__.__name__}. "
+                    f"Aborting to avoid silent corruption."
+                )
 
-            # Frobenius norm checks
+            # Frobenius norm checks with None guard
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
+                if w is None:
+                    continue
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    raise RuntimeError(
+                        f"SVD-Sequence: {name} weight has near-zero "
+                        f"Frobenius norm. This will destroy the model."
+                    )
 
             # Copy Q
             if w_q.shape == self.query.weight.shape:
@@ -437,16 +476,19 @@ class SVDLinearAttention(BaseAttention):
                     if b is not None and target_proj.bias is not None:
                         target_proj.bias.copy_(b)
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                    # GQA: take the first group from each cluster (deterministic)
                     rep = w.shape[0] // self.kv_head_size
-                    w_pooled = (
-                        w.view(self.num_kv_heads, rep, self.head_dim, -1)
-                        .mean(dim=1)
-                        .view(self.kv_head_size, -1)
+                    w_grouped = (
+                        w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0]
+                        .reshape(self.kv_head_size, -1)
                     )
-                    target_proj.weight.copy_(w_pooled)
+                    target_proj.weight.copy_(w_grouped)
                     if b is not None and target_proj.bias is not None:
-                        b_pooled = b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                        target_proj.bias.copy_(b_pooled)
+                        b_grouped = (
+                            b.view(self.num_kv_heads, rep, self.head_dim)[:, 0]
+                            .reshape(-1)
+                        )
+                        target_proj.bias.copy_(b_grouped)
                 elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
                     target_proj.weight.copy_(w.repeat(rep, 1))
@@ -540,45 +582,84 @@ class SVDLinearAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        effective_rank = min(self.rank, kv_len) if self.rank is not None else kv_len
         is_causal = self.is_decoder and not is_cross
 
-        # Full attention if rank is disabled, sequence length <= rank, or causal decoder mode
-        # (SVD sequence projection collapses temporal causality in decoders)
-        if self.rank is None or kv_len <= self.rank or is_causal:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
+        # Full attention if sequence is too short for SVD compression
+        # (SVD with r >= N is meaningless — the projection is identity)
+        use_full_attention = (
+            self.rank is None 
+            or kv_len <= (self.rank or 0) + 8  # small buffer
+        )
 
-            if is_causal and seq_len > 1:
-                causal_mask = torch.triu(
-                    torch.full((seq_len, kv_len), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=1,
-                ).unsqueeze(0).unsqueeze(0)
-                scores = scores + causal_mask
+        if use_full_attention:
+            # Use SDPA when possible (no explicit head_mask/output_attentions)
+            _use_sdpa = (
+                head_mask is None
+                and output_attentions is False
+            )
 
-            if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                elif eff_mask.dim() == 3:
-                    scores = scores + eff_mask.unsqueeze(1).float()
-                elif eff_mask.dim() == 4:
-                    scores = scores + eff_mask.float()
+            if _use_sdpa:
+                try:
+                    _q = Q if Q.dtype in (torch.float16, torch.bfloat16) else Q.half()
+                    _k = K if K.dtype in (torch.float16, torch.bfloat16) else K.half()
+                    _v = V if V.dtype in (torch.float16, torch.bfloat16) else V.half()
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            probs = F.softmax(scores, dim=-1).to(dtype)
-            probs = self.dropout(probs)
+                    # Prepare attn_mask for SDPA if eff_mask is provided
+                    _attn_mask = None
+                    if eff_mask is not None and eff_mask.dim() == 2:
+                        _attn_mask = eff_mask.bool().view(
+                            eff_mask.shape[0], 1, 1, eff_mask.shape[1]
+                        )
+                    elif eff_mask is not None and eff_mask.dim() == 4:
+                        _attn_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                probs = probs * head_mask
+                    context = torch.nn.functional.scaled_dot_product_attention(
+                        _q, _k, _v,
+                        attn_mask=_attn_mask,
+                        is_causal=is_causal if _attn_mask is None else False,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    ).to(dtype)
+                    probs = None  # not available in SDPA
+                except Exception as e:
+                    logger.debug("SDPA failed: %s, falling back", e)
+                    _use_sdpa = False
 
-            context = torch.matmul(probs, V)
-            q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
-            context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+            if not _use_sdpa:
+                # Manual softmax path
+                scores = torch.matmul(
+                    Q.float(), K.float().transpose(-2, -1).contiguous()
+                ) / math.sqrt(self.head_dim)
+                if is_causal and seq_len > 1:
+                    causal_mask = torch.triu(
+                        torch.full(
+                            (seq_len, kv_len), 
+                            float("-inf"), 
+                            device=device, dtype=torch.float32,
+                        ),
+                        diagonal=1,
+                    ).unsqueeze(0).unsqueeze(0)
+                    scores = scores + causal_mask
+                if eff_mask is not None:
+                    scores = apply_attention_mask(scores, eff_mask)
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                probs = F.softmax(scores, dim=-1).to(dtype)
+                probs = self.dropout(probs)
+                if head_mask is not None:
+                    if head_mask.dim() == 1:
+                        head_mask = head_mask.view(1, -1, 1, 1)
+                    elif head_mask.dim() == 2:
+                        head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                    elif head_mask.dim() == 3:
+                        head_mask = head_mask.unsqueeze(-1)
+                    probs = probs * head_mask
+                context = torch.matmul(probs, V)
+
+            if attention_mask is not None:
+                q_valid_mask = get_token_valid_mask(
+                    attention_mask, batch_size, seq_len, device,
+                )
+                if q_valid_mask is not None:
+                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
             # Use the fixed SVD subspace precomputed from W_K in copy_weights.
@@ -598,7 +679,8 @@ class SVDLinearAttention(BaseAttention):
                     U_r = U_r.to(device=device)
                 U_r = U_r.to(dtype)  # [B, kv_len, actual_r]
 
-            self._last_u_r = U_r
+            # Store detached — the ortho loss is a metric, not a gradient source
+            self._last_u_r = U_r.detach()
 
             # Project K and V through the stable subspace
             U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
@@ -606,6 +688,25 @@ class SVDLinearAttention(BaseAttention):
             V_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), V)  # [B, H, actual_r, head_dim]
 
             scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
+
+            if is_causal and seq_len > 1 and actual_r == kv_len:
+                # Only apply causal mask if we kept the full sequence
+                causal_mask = torch.triu(
+                    torch.full(
+                        (seq_len, actual_r), 
+                        float("-inf"), 
+                        device=device, dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                ).unsqueeze(0).unsqueeze(0)
+                scores = scores + causal_mask
+            elif is_causal:
+                logger.debug(
+                    "SVD-Sequence: causal mode with r=%d < kv_len=%d. "
+                    "Causal masking not strictly enforced because SVD "
+                    "compression combines multiple tokens.",
+                    actual_r, kv_len,
+                )
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -621,8 +722,12 @@ class SVDLinearAttention(BaseAttention):
                 probs = probs * head_mask
 
             context = torch.matmul(probs, V_proj)  # [B, H, seq_len, head_dim]
-            q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
-            context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+            if attention_mask is not None:
+                q_valid_mask = get_token_valid_mask(
+                    attention_mask, batch_size, seq_len, device,
+                )
+                if q_valid_mask is not None:
+                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
 
         # 4. Context merge & Output projection
@@ -641,16 +746,21 @@ class SVDLinearAttention(BaseAttention):
         return (out, attn_ret)
 
     def get_ortho_loss(self) -> torch.Tensor:
-        """Compute orthogonality regularization loss for left-singular vectors."""
+        """
+        Orthogonality diagnostic for the QR basis.
+        Returns a scalar (no gradient). Use only for logging.
+        """
         device = self.query.weight.device
         if self._last_u_r is None:
-            return torch.tensor(0.0, device=device, requires_grad=True)
+            return torch.tensor(0.0, device=device)
         U = self._last_u_r
         r = U.size(-1)
-        I = torch.eye(r, device=U.device, dtype=torch.float32).unsqueeze(0)
-        gram = torch.matmul(U.transpose(-2, -1).contiguous().float(), U.float())
-        loss = F.mse_loss(gram, I.expand_as(gram))
-        return loss.requires_grad_(True)
+        # Mean per-batch orthogonality error
+        gram = torch.matmul(U.transpose(-2, -1).float(), U.float())
+        I = torch.eye(r, device=U.device, dtype=torch.float32)
+        # Average over batch
+        loss = (gram - I.unsqueeze(0)).abs().mean()
+        return loss.detach()
 
 
 LowRankSVDSequenceAttention = SVDLinearAttention
@@ -659,7 +769,6 @@ LowRankSVDSequenceAttention = SVDLinearAttention
 @ATTENTION_REGISTRY.register("svd_sequence_inject")
 @ATTENTION_REGISTRY.register("svd_sequence_attention_inject")
 @ATTENTION_REGISTRY.register("inject_svd_sequence_attention")
-@ATTENTION_REGISTRY.register("inject_svd_linear_attention")
 def inject_svd_linear_attention(
     layer: Any = None,
     model: Any = None,
