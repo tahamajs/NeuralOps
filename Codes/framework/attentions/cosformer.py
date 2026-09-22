@@ -45,9 +45,16 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x_rot = x[..., :even_d]
+    half = even_d // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        return torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -412,7 +419,10 @@ class CosformerAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning("Cosformer copy_weights warning. Proceeding with initialized weights.")
+            raise RuntimeError(
+                f"CosformerAttention copy_weights: missing mandatory projections {missing_after} "
+                f"from {src.__class__.__name__}."
+            )
 
         target_map = {
             "q": self.q_proj,
@@ -637,7 +647,7 @@ class CosformerAttention(BaseAttention):
 
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
             denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
-            denom = denom.abs().clamp(min=self.eps)
+            denom = denom.clamp(min=self.eps)
 
             context = (num / denom).to(dtype)
             context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
