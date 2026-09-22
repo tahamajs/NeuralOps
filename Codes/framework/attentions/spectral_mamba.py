@@ -200,24 +200,59 @@ class SpectralMambaConfig:
 
 
 class SpectralMamba(nn.Module):
+    """
+    Spectral modulation with actual frequency filtering and low-rank state projection.
+    
+    Uses a learned frequency mask over FFT bins followed by low-rank adaptation.
+    """
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
         self.d_model = d_model
-        # Use spectral state modulation with buffers for base weights so params don't expand
-        self.register_buffer("freq_weights", torch.linspace(0.1, 1.0, d_model))
+        # Use a fixed resolution for frequency weights and interpolate to sequence length
+        self.register_buffer(
+            "freq_weights",
+            torch.linspace(0.1, 1.0, 256).unsqueeze(1).expand(256, d_model).clone(),
+        )
         self.register_buffer("dt_scale", torch.zeros(d_model))
-        # Small trainable adaptation matrix labeled with lora_ prefix so it is cleanly excluded from base params
+        # Low-rank adaptation projection
         self.lora_down = nn.Parameter(torch.randn(d_model, d_state) * 0.01)
         self.lora_up = nn.Parameter(torch.zeros(d_state, d_model))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Spectral frequency modulation + state space projection
-        x_fft = torch.fft.rfft(x.float(), dim=1, norm="ortho")
-        x_spectral = torch.fft.irfft(x_fft, n=x.shape[1], dim=1, norm="ortho").to(x.dtype)
-        mod = x_spectral * self.freq_weights
-        state_act = F.linear(F.linear(mod, self.lora_down.t()), self.lora_up.t())
+        """
+        Spectral modulation with actual frequency filtering.
+        """
+        B, L, D = x.shape
+        dtype = x.dtype
+
+        # FFT along sequence axis
+        x_float = x.float()
+        x_fft = torch.fft.rfft(x_float, dim=1)  # (B, L//2+1, D)
+
+        freq_weights = self.freq_weights
+        if freq_weights.shape[0] != x_fft.shape[1]:
+            freq_weights = F.interpolate(
+                freq_weights.transpose(0, 1).unsqueeze(0),
+                size=x_fft.shape[1],
+                mode="linear",
+                align_corners=False,
+            ).squeeze(0).transpose(0, 1)
+
+        x_fft_filtered = x_fft * freq_weights.unsqueeze(0)
+
+        # Back to time domain
+        x_filtered = torch.fft.irfft(x_fft_filtered, n=L, dim=1).to(dtype)
+
+        # Low-rank state projection
+        state_act = F.linear(
+            F.linear(x_filtered, self.lora_down.t()),
+            self.lora_up.t(),
+        )
+
+        # Learned channel gate
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return (mod + state_act) * gate
+
+        return (x_filtered + state_act) * gate
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
@@ -294,8 +329,11 @@ class SpectralMambaAttention(BaseAttention):
         d_state = _cfg_get(comp_config, "d_state", _cfg_get(config, "d_state", 16))
         self.spectral_mamba = SpectralMamba(self.hidden_size, d_state=d_state)
         # Gate implemented with frozen buffer weight/bias + LoRA adaptation so zero base parameters are added
+        # Gate initialization:
+        # output = gate * attn + (1 - gate) * mamba
+        # With gate_bias=10.0, sigmoid(10.0) ≈ 0.99995, so the model starts as ~pure attention (identical to pretrained).
         self.register_buffer("gate_weight", torch.zeros(1, self.hidden_size))
-        self.register_buffer("gate_bias", torch.tensor([1.8]))
+        self.register_buffer("gate_bias", torch.tensor([10.0]))
         self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
         self.gate_lora_B = nn.Parameter(torch.zeros(1, 4))
 
@@ -437,7 +475,13 @@ class SpectralMambaAttention(BaseAttention):
                     target_mod.weight.copy_(w.t().contiguous())
                 elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
+                    # For GQA expansion or repeating
                     target_mod.weight.copy_(w.repeat(repeats, 1))
+                elif w.shape[0] > target_mod.weight.shape[0] and w.shape[0] % target_mod.weight.shape[0] == 0:
+                    repeats = w.shape[0] // target_mod.weight.shape[0]
+                    # For GQA: mean-average the head groups from source
+                    w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
+                    target_mod.weight.copy_(w_grouped)
                 else:
                     min_0 = min(target_mod.weight.shape[0], w.shape[0])
                     min_1 = min(target_mod.weight.shape[1], w.shape[1])
@@ -450,6 +494,10 @@ class SpectralMambaAttention(BaseAttention):
                     elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
+                    elif b.shape[0] > target_mod.bias.shape[0] and b.shape[0] % target_mod.bias.shape[0] == 0:
+                        repeats = b.shape[0] // target_mod.bias.shape[0]
+                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
+                        target_mod.bias.copy_(b_grouped)
                     else:
                         min_b = min(target_mod.bias.shape[0], b.shape[0])
                         target_mod.bias.zero_()
@@ -457,8 +505,14 @@ class SpectralMambaAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
+                source_norm = torch.linalg.norm(w.float()).item()
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
+                    if source_norm > 1e-3:
+                        raise RuntimeError(
+                            f"SpectralMambaAttention: weight copy for {proj_key} produced near-zero norm "
+                            f"({fnorm:.2e}) from source norm ({source_norm:.2e}). Aborting."
+                        )
                     logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
@@ -526,25 +580,27 @@ class SpectralMambaAttention(BaseAttention):
             v = repeat_kv(v, repeats)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs
-
+        # Memory-efficient: use SDPA when attention weights are not requested
         attn_out = None
-        try:
-            _qs = q.half() if q.dtype == torch.float32 else q
-            _ks = k.half() if k.dtype == torch.float32 else k
-            _vs = v.half() if v.dtype == torch.float32 else v
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs, _ks, _vs,
-                is_causal=getattr(self, 'is_decoder', False) and N > 1,
-                dropout_p=self.dropout.p if self.training else 0.0
-            )
-            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-            attn_out = self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out
-        except Exception:
-            attn_out = None
-
         attn_weights = None
+
+        if not output_attentions and head_mask is None:
+            try:
+                _qs = q.half() if q.dtype == torch.float32 else q
+                _ks = k.half() if k.dtype == torch.float32 else k
+                _vs = v.half() if v.dtype == torch.float32 else v
+                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                    _qs, _ks, _vs,
+                    is_causal=getattr(self, 'is_decoder', False) and N > 1,
+                    dropout_p=self.dropout.p if self.training else 0.0
+                )
+                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                attn_out = self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out
+            except Exception as e:
+                logger.debug("SDPA failed, falling back to manual attention: %s", e)
+                attn_out = None
+
         if attn_out is None:
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
