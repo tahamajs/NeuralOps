@@ -106,36 +106,89 @@ class AegisConfigV3:
 # Factorised projection
 # ===========================================================================
 
-class FactorisedLowRankProjection(nn.Module):
+class FactorisedLinear(nn.Module):
+    """
+    SVD-factorized linear layer with trainable LoRA adapters.
+
+    Naming convention matches PEFT and framework detection:
+      * lora_A: (lora_rank, in_features)   -- down projection, trainable
+      * lora_B: (out_features, lora_rank)  -- up projection, trainable
+
+    Base SVD tensors (U, S, V, bias) are stored as frozen Parameters so that
+    they appear in `model.parameters()` and are counted by the framework's
+    parameter counter (which uses `model.parameters()`, not buffers).
+
+    Forward: y = (x @ V @ diag(S) @ U^T) + (x @ lora_A^T @ lora_B^T) + bias
+    """
+
     is_custom_attention: bool = True
 
-    def __init__(self, in_features, out_features, svd_rank, lora_rank,
-                 pretrained_weight=None, pretrained_bias=None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        svd_rank: int,
+        lora_rank: int,
+        pretrained_weight: Optional[torch.Tensor] = None,
+        pretrained_bias: Optional[torch.Tensor] = None,
+    ):
         super().__init__()
+
         self.in_features = in_features
         self.out_features = out_features
         self.svd_rank = min(svd_rank, in_features, out_features)
         self.lora_rank = lora_rank
+
         device = pretrained_weight.device if pretrained_weight is not None else torch.device("cpu")
         dtype = pretrained_weight.dtype if pretrained_weight is not None else torch.float32
-        self.register_buffer("U", torch.zeros(out_features, self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("S", torch.ones(self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("V", torch.zeros(in_features, self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("bias", torch.zeros(out_features, device=device, dtype=dtype))
+
+        # FIX 3: store SVD tensors as frozen Parameters so they are counted
+        # by model.parameters() (framework uses .parameters(), not buffers).
+        self.U = nn.Parameter(
+            torch.zeros(out_features, self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.S = nn.Parameter(
+            torch.ones(self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.V = nn.Parameter(
+            torch.zeros(in_features, self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.bias = nn.Parameter(
+            torch.zeros(out_features, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+
+        # FIX 2: rename A -> lora_B, B -> lora_A with PEFT shapes.
+        # Old: A (out, r), B (r, in).  New: lora_A (r, in), lora_B (out, r).
         if lora_rank > 0:
-            self.A = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
-            self.B = nn.Parameter(torch.zeros(lora_rank, in_features, device=device, dtype=dtype))
-            nn.init.kaiming_uniform_(self.B, a=math.sqrt(5))
-            nn.init.zeros_(self.A)
+            self.lora_A = nn.Parameter(
+                torch.zeros(lora_rank, in_features, device=device, dtype=dtype)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros(out_features, lora_rank, device=device, dtype=dtype)
+            )
+            # Same init as before: kaiming on the (r, in) tensor, zeros on (out, r).
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
         else:
-            self.register_parameter("A", None)
-            self.register_parameter("B", None)
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
         if pretrained_weight is not None:
             self.decompose_from_weight(pretrained_weight, pretrained_bias)
 
-    def decompose_from_weight(self, weight, bias=None):
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+    ) -> None:
         with torch.no_grad():
             W = weight.float()
+
+            # Shape alignment (unchanged from original)
             if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
                 rep = self.out_features // W.shape[0]
                 W = W.repeat(rep, 1)
@@ -147,49 +200,81 @@ class FactorisedLowRankProjection(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
-                r = min(self.out_features, W.shape[0]); c = min(self.in_features, W.shape[1])
+                padded = torch.zeros(
+                    self.out_features, self.in_features,
+                    device=W.device, dtype=W.dtype,
+                )
+                r = min(self.out_features, W.shape[0])
+                c = min(self.in_features, W.shape[1])
                 padded[:r, :c] = W[:r, :c]
                 W = padded
+
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.svd_rank, U.size(1), Vt.size(0))
-            self.U.zero_(); self.V.zero_(); self.S.zero_()
-            self.U[:, :r].copy_(U[:, :r].to(self.U.dtype))
-            self.S[:r].copy_(S[:r].to(self.S.dtype))
-            self.V[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype))
+
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.S.data.zero_()
+            self.U.data[:, :r].copy_(U[:, :r].to(self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(self.S.dtype))
+            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype))
+
             if bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias[:n].copy_(bias[:n].to(self.bias.dtype))
+                self.bias.data[:n].copy_(bias[:n].to(self.bias.dtype))
+
+    def freeze_base_weights(self) -> None:
+        # Base SVD weights are already frozen via requires_grad=False on construction.
+        # LoRA tensors are trainable by default.
+        self.U.requires_grad = False
+        self.S.requires_grad = False
+        self.V.requires_grad = False
+        self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
 
     @property
-    def lora_A(self): return self.A
-    @property
-    def lora_B(self): return self.B
+    def base_weight(self) -> torch.Tensor:
+        return (
+            (self.U.float() * self.S.float().unsqueeze(0))
+            @ self.V.float().t().contiguous()
+        ).to(self.U.dtype)
 
     @property
-    def base_weight(self):
-        return ((self.U.float() * self.S.float().unsqueeze(0))
-                @ self.V.float().t().contiguous()).to(self.U.dtype)
-
-    @property
-    def weight(self):
+    def weight(self) -> torch.Tensor:
         svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
-        if self.lora_rank > 0 and self.A is not None and self.B is not None:
-            return (svd_w + self.A.float() @ self.B.float()).to(self.A.dtype)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_w = self.lora_B.float() @ self.lora_A.float()  # (out,r) @ (r,in) = (out,in)
+            return (svd_w + lora_w).to(self.lora_B.dtype)
         return svd_w.to(self.U.dtype)
 
-    def forward(self, x):
+    # Backward-compat aliases for code that still refers to A / B.
+    @property
+    def A(self) -> Optional[nn.Parameter]:
+        return self.lora_B
+
+    @property
+    def B(self) -> Optional[nn.Parameter]:
+        return self.lora_A
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
         x_f = x.float()
+
+        # SVD branch: x @ V @ diag(S) @ U^T + bias
         xV = torch.matmul(x_f, self.V.float())
         xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
         out = torch.matmul(xV_S, self.U.float().t().contiguous()) + self.bias.float()
-        if self.lora_rank > 0 and self.A is not None and self.B is not None:
-            xB = torch.matmul(x_f, self.B.float().t().contiguous())
-            out = out + torch.matmul(xB, self.A.float().t().contiguous())
+
+        # LoRA branch: x @ lora_A^T @ lora_B^T
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())   # (B, N, r)
+            out = out + torch.matmul(xa, self.lora_B.float().t().contiguous())
+
         return out.to(orig_dtype)
 
-
+    
 # ===========================================================================
 # Kernel feature map
 # ===========================================================================
@@ -351,10 +436,10 @@ class AegisAttentionV3(BaseAttention):
         self.is_nested_encoder = False
         self.chunk_size = config.chunk_size
 
-        self.q_proj = FactorisedLowRankProjection(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update)
-        self.k_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
-        self.v_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
-        self.out_proj = FactorisedLowRankProjection(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update)
+        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update)
+        self.k_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.v_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update)
 
         self.pre_norm = config.use_pre_norm
         if self.pre_norm:
@@ -997,7 +1082,7 @@ def inject_aegis_v6(layer=None, model=None, model_config=None, comp_config=None,
             hidden_size=h_size, num_heads=n_heads, num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
             window_size=getattr(comp_config, "window_size", 64),
-            svd_rank=getattr(comp_config, "svd_rank", 384),
+            svd_rank=getattr(comp_config, "svd_rank", 64),
             low_rank_update=getattr(comp_config, "low_rank_update", 16),
             kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
             dropout=getattr(comp_config, "dropout", 0.1),
