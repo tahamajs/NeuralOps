@@ -345,36 +345,31 @@ class AATC_XKVCompressor(BaseCompressor):
         gk_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
         gv_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
 
-        # Hooks to intercept K and V activations and retain their gradients
+        # Register hooks directly on k_proj and v_proj (or equivalents)
+        # Because in Qwen/Llama, self_attn is called with kwargs (hidden_states=...),
+        # whereas k_proj and v_proj are nn.Linear called positionally: k_proj(hidden_states)
         temp_hooks = []
         captured_kv: Dict[int, Dict[str, torch.Tensor]] = {}
 
-        def make_hook(layer_idx):
-            def forward_hook(m, inp, outp):
-                k_val, v_val = None, None
-                for k_attr in ("k_proj", "k_lin", "key", "W_k", "k"):
-                    if hasattr(m, k_attr):
-                        k_layer = getattr(m, k_attr)
-                        break
-                for v_attr in ("v_proj", "v_lin", "value", "W_v", "v"):
-                    if hasattr(m, v_attr):
-                        v_layer = getattr(m, v_attr)
-                        break
-
-                # Extract projected activations directly from input
-                hidden = inp[0]
-                if isinstance(hidden, torch.Tensor):
-                    k_t = k_layer(hidden)
-                    v_t = v_layer(hidden)
-                    if k_t.requires_grad:
-                        k_t.retain_grad()
-                    if v_t.requires_grad:
-                        v_t.retain_grad()
-                    captured_kv[layer_idx] = {"k": k_t, "v": v_t}
-            return forward_hook
+        def make_proj_hook(layer_idx, proj_type):
+            def proj_forward_hook(m, inp, outp):
+                if layer_idx not in captured_kv:
+                    captured_kv[layer_idx] = {}
+                # outp is the projected tensor (K or V)
+                if isinstance(outp, torch.Tensor):
+                    t = outp
+                    if t.requires_grad:
+                        t.retain_grad()
+                    captured_kv[layer_idx][proj_type] = t
+            return proj_forward_hook
 
         for idx, name, mod in attn_modules:
-            temp_hooks.append(mod.register_forward_hook(make_hook(idx)))
+            k_layer = next((getattr(mod, a) for a in ("k_proj", "k_lin", "key", "W_k", "k") if hasattr(mod, a)), None)
+            v_layer = next((getattr(mod, a) for a in ("v_proj", "v_lin", "value", "W_v", "v") if hasattr(mod, a)), None)
+            if k_layer is not None:
+                temp_hooks.append(k_layer.register_forward_hook(make_proj_hook(idx, "k")))
+            if v_layer is not None:
+                temp_hooks.append(v_layer.register_forward_hook(make_proj_hook(idx, "v")))
 
         was_training = self.model.training
         self.model.eval()
