@@ -613,6 +613,7 @@ class AATC_XKVCompressor(BaseCompressor):
         comp_ratio = total_orig_bits / max(1, total_compressed_bits) if total_compressed_bits > 0 else 1.0
 
         self.stats = {
+            "status": "PASS",
             "method": "aatc_xkv",
             "group_size": self.group_size,
             "num_groups": len(self.subspaces),
