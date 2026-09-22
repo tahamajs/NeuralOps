@@ -558,7 +558,7 @@ class AegisAttention(BaseAttention):
                 f"num_kv_heads ({self.num_kv_heads})."
             )
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.rank: int = int(kwargs.get("rank", 64))
+        self.rank: int = int(kwargs.get("rank", 192))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.cfg: AegisConfigV5 = aegis_cfg if aegis_cfg is not None else AegisConfigV5()
