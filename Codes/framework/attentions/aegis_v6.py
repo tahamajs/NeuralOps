@@ -493,7 +493,7 @@ class AegisAttentionV3(BaseAttention):
         attn = F.softmax(scores.float(), dim=-1).to(Q.dtype) * any_valid
         attn = F.dropout(attn, p=self.cfg.dropout, training=self.training)
         out = torch.matmul(attn, V)
-        return (out, attn) if return_attn else out
+        return (out, attn) if return_attn else (out, None)
 
     # ------------------------------------------------------------------
     # Non-causal linear attention (encoder)
@@ -569,7 +569,8 @@ class AegisAttentionV3(BaseAttention):
                 logger.warning(
                     "_causal_linear_attention: multi-token decode (N=%d, N_k=%d). "
                     "Falling back to exact sliding-window attention.", N, N_k)
-                return self._sliding_window_attention(Q, K, V, valid, False, return_attn=False)
+                _fallback_out, _ = self._sliding_window_attention(Q, K, V, valid, False, return_attn=False)
+                return _fallback_out
 
         # ---- Case: N == N_k (training / full prefill) ----
         M = Q_feat.shape[-1]
@@ -700,13 +701,9 @@ class AegisAttentionV3(BaseAttention):
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_ret = local_attn if output_attentions else None
-
-        if return_dict:
-            return SimpleNamespace(last_hidden_state=out, attentions=attn_ret,
-                                   past_key_value=cache_to_return)
-        if output_attentions:
-            return out, attn_ret
-        return out, None
+        # Always return a plain 2-tuple so `out, weights = attn(...)` unpacking works
+        # for both encoder (legacy_bert) and decoder paths.
+        return out, attn_ret
 
     def _reshape(self, x, num_heads):
         B, N, _ = x.shape
@@ -812,7 +809,11 @@ class AegisAttentionV3(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"copy_weights: missing {missing} from {old_attn.__class__.__name__}")
+            raise RuntimeError(
+                f"AegisAttentionV3.copy_weights: could not extract mandatory projections "
+                f"{missing} from {old_attn.__class__.__name__}. "
+                f"Refusing to install randomly-initialised weights."
+            )
 
         def _orient(w, in_dim):
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -826,6 +827,14 @@ class AegisAttentionV3(BaseAttention):
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
                     target.decompose_from_weight(_orient(w, in_dim), b)
+                    # Warn if weight norm is suspiciously near-zero
+                    norm = float(torch.linalg.norm(w.float()).item())
+                    if norm < 1e-4:
+                        logger.warning(
+                            "AegisAttentionV3.copy_weights: extracted weight for '%s' has "
+                            "near-zero Frobenius norm (%.2e) — weights may be uninitialised.",
+                            proj_key, norm
+                        )
                 elif proj_key == "o" and self.is_nested_encoder:
                     eye_w = torch.eye(self.all_head_size, device=self.out_proj.U.device,
                                       dtype=self.out_proj.U.dtype)
