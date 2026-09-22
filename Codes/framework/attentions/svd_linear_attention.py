@@ -117,7 +117,6 @@ def compute_exponential_decay(
 
 
 class SVDLinear(nn.Module):
-    is_custom_attention: bool = True
     r"""Low-Rank Factorized Linear Layer with SVD bases and trainable LoRA adapters:
     $$y = (x V^\top) U^\top + b + \frac{\alpha}{r_{\text{lora}}} (x A^\top) B^\top$$
     """
@@ -180,9 +179,8 @@ class SVDLinear(nn.Module):
 
         self.reset_parameters()
 
-    @property
-    def weight(self) -> torch.Tensor:
-        """Reconstructed effective dense weight matrix."""
+    def get_weight(self) -> torch.Tensor:
+        """Reconstructed effective dense weight matrix without caching or materializing on property access."""
         W = torch.matmul(self.U, self.V)
         if self.lora_A is not None and self.lora_B is not None:
             W = W + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
@@ -232,10 +230,16 @@ class SVDLinear(nn.Module):
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
             r = min(self.rank, U_factor.size(1), V_factor.size(0))
-            self.U.data.zero_()
-            self.V.data.zero_()
+            if r < self.rank:
+                logger.debug(
+                    "SVDLinear: factor rank %d is less than allocated rank %d. Zeroing remaining components.",
+                    r,
+                    self.rank,
+                )
             out_d = min(self.out_features, U_factor.size(0))
             in_d = min(self.in_features, V_factor.size(1))
+            self.U.data[:out_d, :].zero_()
+            self.V.data[:, :in_d].zero_()
             self.U.data[:out_d, :r].copy_(U_factor[:out_d, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.V.data[:r, :in_d].copy_(V_factor[:r, :in_d].to(device=self.V.device, dtype=self.V.dtype))
 
@@ -546,24 +550,21 @@ class SVDLinearAttention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.out_lin)
 
             # Fallback: UniversalAdapter
-            if w_q is None or w_k is None or w_v is None:
+            if w_q is None or w_k is None or w_v is None or (w_o is None and not self.is_nested_encoder):
                 try:
-                    adapter = UniversalAdapter(old_attn)
-                    extracted = adapter.extract_qkv_out()
-                    if extracted:
-                        w_q = extracted.get("q_weight")
-                        b_q = extracted.get("q_bias")
-                        w_k = extracted.get("k_weight")
-                        b_k = extracted.get("k_bias")
-                        w_v = extracted.get("v_weight")
-                        b_v = extracted.get("v_bias")
-                        if w_o is None:
-                            w_o = extracted.get("out_weight")
-                            b_o = extracted.get("out_bias")
+                    adapter = UniversalAdapter()
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(old_attn, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(old_attn, "v")
+                    if w_o is None and not self.is_nested_encoder:
+                        w_o, b_o = adapter.get_weight_bias(old_attn, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
-            # Verification of essential projections
+            # Verification of essential projections - raise RuntimeError on missing projections
             missing = []
             if w_q is None:
                 missing.append("query/q_proj")
@@ -572,27 +573,48 @@ class SVDLinearAttention(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                logger.warning(f"Failed to extract required projections: {missing}. Proceeding with initialized projections.")
+                raise RuntimeError(
+                    f"SVDLinearAttention: failed to extract required projections: {missing} from {type(old_attn).__name__}."
+                )
 
-            # Frobenius norm checks
+            # Frobenius norm checks with None guard and raise on near-zero norm
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
-                if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                if w is None:
+                    continue
+                norm_val = torch.norm(w.float(), p="fro").item()
+                if norm_val < 1e-4:
+                    raise RuntimeError(
+                        f"SVDLinearAttention: copied weight {name} has near-zero Frobenius norm ({norm_val:.6e} < 1e-4)."
+                    )
 
             # Set Q
             self._factorize_and_set(self.q_proj, w_q, b_q)
 
             # Set K & V with GQA pooling or expansion if needed
-            def _adapt_to_kv_size(weight: torch.Tensor, bias: Optional[torch.Tensor]) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+            def _adapt_to_kv_size(
+                weight: torch.Tensor,
+                bias: Optional[torch.Tensor],
+                mode: str = "slice",
+            ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
                 w = weight
                 b = bias
                 if w.shape[0] == self.kv_head_size:
                     return w, b
                 if w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     rep = w.shape[0] // self.kv_head_size
-                    w = w.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1)
-                    if b is not None:
-                        b = b.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
+                    if mode == "slice":
+                        # Group by num_kv_heads and slice the first head per group
+                        w = w.contiguous().reshape(self.num_kv_heads, rep, -1)[:, 0, :].contiguous()
+                        if b is not None:
+                            b = b.contiguous().reshape(self.num_kv_heads, rep, -1)[:, 0, :].contiguous().reshape(-1)
+                    elif mode == "first":
+                        w = w[:self.kv_head_size, :].contiguous()
+                        if b is not None:
+                            b = b[:self.kv_head_size].contiguous()
+                    else:  # "mean"
+                        w = w.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1)
+                        if b is not None:
+                            b = b.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
                 elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
                     w = w.repeat(rep, 1)
@@ -609,16 +631,19 @@ class SVDLinearAttention(BaseAttention):
                         b = padded_b
                 return w, b
 
-            w_k_adapt, b_k_adapt = _adapt_to_kv_size(w_k, b_k)
+            w_k_adapt, b_k_adapt = _adapt_to_kv_size(w_k, b_k, mode="slice")
             self._factorize_and_set(self.k_proj, w_k_adapt, b_k_adapt)
 
-            w_v_adapt, b_v_adapt = _adapt_to_kv_size(w_v, b_v)
+            w_v_adapt, b_v_adapt = _adapt_to_kv_size(w_v, b_v, mode="slice")
             self._factorize_and_set(self.v_proj, w_v_adapt, b_v_adapt)
 
             # Set out_proj if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
-                if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
+                norm_o = torch.norm(w_o.float(), p="fro").item()
+                if norm_o < 1e-4:
+                    raise RuntimeError(
+                        f"SVDLinearAttention: copied out_proj weight has near-zero Frobenius norm ({norm_o:.6e} < 1e-4)."
+                    )
                 self._factorize_and_set(self.out_proj, w_o, b_o)
 
     def _forward_decay_gated_linear_kernel(
@@ -633,15 +658,18 @@ class SVDLinearAttention(BaseAttention):
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 
-        phi_q = F.elu(q.float()) + 1.0  # [B, H, N, D_k]
-        phi_k = F.elu(k.float()) + 1.0  # [B, H, N, D_k]
-        v_f = v.float()
+        # Dynamic compute dtype: BF16 if q is BF16, else FP32
+        compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
+
+        phi_q = (F.elu(q.to(compute_dtype)) + 1.0)  # [B, H, N, D_k]
+        phi_k = (F.elu(k.to(compute_dtype)) + 1.0)  # [B, H, N, D_k]
+        v_f = v.to(compute_dtype)
 
         if mask is not None:
             if mask.dtype in (torch.float16, torch.float32, torch.float64, torch.bfloat16):
-                mask_binary = (mask > -10000.0).to(torch.float32) if (mask < 0).any() else mask.to(torch.float32)
+                mask_binary = (mask > -10000.0).to(compute_dtype) if (mask < 0).any() else mask.to(compute_dtype)
             else:
-                mask_binary = mask.to(torch.float32)
+                mask_binary = mask.to(compute_dtype)
 
             if mask_binary.dim() == 2:
                 mask_expanded = mask_binary.view(B, 1, N, 1)
@@ -668,10 +696,10 @@ class SVDLinearAttention(BaseAttention):
         decay_logits = self.decay_gate(hidden_states)
         if self.decay_channel_wise:
             decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
-            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).unsqueeze(-1)
+            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).unsqueeze(-1).to(compute_dtype)
         else:
             decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
-            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation)
+            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).to(compute_dtype)
 
         # Ensure unobserved padding tokens do not decay memory state (lambda = 1.0)
         if mask is not None:
@@ -684,8 +712,8 @@ class SVDLinearAttention(BaseAttention):
         if past_state is None and not self.decay_channel_wise:
             chunk_size = 64
             num_chunks = (N + chunk_size - 1) // chunk_size
-            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
-            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
+            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
             outputs = []
 
             for c in range(num_chunks):
@@ -733,11 +761,11 @@ class SVDLinearAttention(BaseAttention):
         # Sequential associative memory recurrence loop
         if past_state is not None:
             S, Z = past_state
-            S = S.to(device=q.device, dtype=torch.float32)
-            Z = Z.to(device=q.device, dtype=torch.float32)
+            S = S.to(device=q.device, dtype=compute_dtype)
+            Z = Z.to(device=q.device, dtype=compute_dtype)
         else:
-            S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
-            Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
+            Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
 
         outputs = []
         for t in range(N):
@@ -842,11 +870,42 @@ class SVDLinearAttention(BaseAttention):
         v: torch.Tensor,
         mask: Optional[torch.Tensor],
         is_cross: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        output_attentions: bool = False,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        is_causal_attn = self.is_decoder and not is_cross and q.shape[-2] > 1
+
+        # Use PyTorch SDPA when output_attentions is False and mask format is directly compatible
+        if not output_attentions:
+            try:
+                sdpa_mask = None
+                can_use_sdpa = False
+                if mask is None:
+                    can_use_sdpa = True
+                elif mask.dim() == 2 and not is_causal_attn:
+                    sdpa_mask = mask.bool().view(mask.shape[0], 1, 1, mask.shape[1])
+                    can_use_sdpa = True
+                elif mask.dim() == 4 and not is_causal_attn:
+                    sdpa_mask = mask.bool() if mask.dtype == torch.bool else mask
+                    can_use_sdpa = True
+
+                if can_use_sdpa:
+                    drop_p = self.dropout.p if self.training else 0.0
+                    context = F.scaled_dot_product_attention(
+                        q,
+                        k,
+                        v,
+                        attn_mask=sdpa_mask,
+                        dropout_p=drop_p,
+                        is_causal=is_causal_attn if sdpa_mask is None else False,
+                    )
+                    return context, None
+            except Exception:
+                pass  # Fall back to explicit softmax
+
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
 
-        if self.is_decoder and not is_cross and q.shape[-2] > 1:
+        if is_causal_attn:
             causal_mask = torch.triu(
                 torch.full((q.shape[-2], k.shape[-2]), float("-inf"), device=scores.device, dtype=torch.float32),
                 diagonal=1,
@@ -920,7 +979,9 @@ class SVDLinearAttention(BaseAttention):
 
         # 4. Mode dispatch
         if self.mode == "exact":
-            context, attn_probs = self._forward_exact_softmax(q, k, v, eff_mask, is_cross=is_cross)
+            context, attn_probs = self._forward_exact_softmax(
+                q, k, v, eff_mask, is_cross=is_cross, output_attentions=bool(output_attentions)
+            )
         elif self.use_decay_gating or self.mode in ["decay_linear", "linear_decay", "decay", "gated_linear"]:
             context, updated_state = self._forward_decay_gated_linear_kernel(
                 q=q,
