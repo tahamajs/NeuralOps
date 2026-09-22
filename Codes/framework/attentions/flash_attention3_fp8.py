@@ -1,18 +1,27 @@
 r"""FlashAttention-3 FP8: Low-Precision 8-bit Float Transformer Attention.
 
-Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for Hopper Tensor Cores,
-with automatic fallback to hardware-accelerated SDPA.
+Implements FlashAttention-3 utilizing FP8 (e4m3fn) precision format for NVIDIA Hopper (SM 9.0+)
+Tensor Cores with per-tensor dynamic scaling and de-scaling, with automatic fallback to
+hardware-accelerated SDPA on pre-Hopper architectures (such as Ada Lovelace SM 8.9 or Ampere SM 8.0)
+and CPU.
+
+NOTE ON METHODOLOGY:
+FlashAttention-3 FP8 is a hardware execution acceleration technique, NOT a model compression technique.
+It does not reduce parameter count or weight storage (unless LoRA adapters are configured). Base model
+weights are maintained in native precision and activation tensors are dynamically scaled and cast to FP8
+during Hopper GPU attention computation.
 
 Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
 - Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT)
 - Strict Frobenius norm verification (>= 1e-4) for all projections
+- Strict validation requiring all mandatory Q/K/V projections (raises RuntimeError if missing)
 - Grouped Query Attention (GQA) with kv_head_size projections and repeat_kv
 - Rotary Position Embedding (RoPE) support with partial-coordinate slicing
 - Strict causal masking for decoder models across FlashAttention and SDPA paths
 - Nested encoder detection to bypass out_proj in inner self-attention
 - Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
-- Safe FP8 casting with fallback to FP16/BF16/FP32
-- Safe injection factory returning None on extraction failures
+- Safe FP8 casting with per-tensor dynamic scaling (max absolute value / 448.0) and de-scaling
+- Hardware capability gating (Hopper compute capability >= 9.0 check)
 - Full cross-attention support
 """
 
@@ -182,7 +191,12 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("flash3_fp8", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("flash_attention3_fp8", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class FlashAttention3FP8(BaseAttention):
-    r"""FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention."""
+    r"""FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.
+    
+    Accelerates attention using FP8 (e4m3fn) precision with FlashAttention-3 kernels on
+    Hopper (SM 9.0+) GPUs. Automatically falls back to native PyTorch SDPA on pre-Hopper
+    hardware or CPU.
+    """
 
     is_custom_attention: bool = True
     def __init__(
@@ -191,7 +205,7 @@ class FlashAttention3FP8(BaseAttention):
         rank: Optional[int] = None,
         d_model: Union[int, Any] = 768,
         n_heads: int = 12,
-        use_fp8: bool = True,
+        use_fp8: bool = False,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,
         comp_config: Optional[Any] = None,
@@ -235,7 +249,23 @@ class FlashAttention3FP8(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        # Check hardware capability for FP8 (requires Hopper SM 9.0+)
         self.use_fp8: bool = bool(use_fp8)
+        if self.use_fp8:
+            hopper_capable = False
+            if torch.cuda.is_available() and hasattr(torch.cuda, "get_device_capability"):
+                try:
+                    cc = torch.cuda.get_device_capability()
+                    hopper_capable = (cc[0] >= 9)
+                except Exception:
+                    hopper_capable = False
+            if not hopper_capable or not FLASH_ATTN_AVAILABLE or not hasattr(torch, "float8_e4m3fn"):
+                logger.info(
+                    "FlashAttention3FP8: Hopper architecture (SM 9.0+), FlashAttention, or torch.float8_e4m3fn "
+                    "not available; disabling FP8 and falling back to native SDPA."
+                )
+                self.use_fp8 = False
 
         # Static layer index
         resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
@@ -347,7 +377,7 @@ class FlashAttention3FP8(BaseAttention):
             is_nested = False
         self.is_nested_encoder = bool(is_nested)
 
-        if hasattr(src, "rotary_emb"):
+        if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
             self.rotary_emb = src.rotary_emb
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
@@ -435,9 +465,9 @@ class FlashAttention3FP8(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.debug(
+            raise RuntimeError(
                 f"FlashAttention3FP8 copy_weights: missing mandatory projections {missing_after} "
-                f"from module {src.__class__.__name__}."
+                f"from source module {src.__class__.__name__}."
             )
 
         target_map = {
@@ -532,19 +562,60 @@ class FlashAttention3FP8(BaseAttention):
         causal_flag = bool(self.is_decoder and not is_cross_attention and L == kv_len)
 
         # 4. FlashAttention-3 FP8 hardware acceleration path
+        # Requires Hopper architecture (SM 9.0+), flash_attn, and CUDA tensor
+        out = None
         if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn"):
-            try:
-                # FlashAttention expects (B, L, H, Dh)
-                q_fa = q.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-                k_fa = k.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-                v_fa = v.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-                out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
-                out = out.contiguous().view(B, L, self.all_head_size)
-            except Exception:
-                # Fallback to SDPA if FP8 kernel fails
-                out = None
-        else:
-            out = None
+            # Check Hopper compute capability
+            is_hopper = False
+            if hasattr(torch.cuda, "get_device_capability"):
+                try:
+                    is_hopper = (torch.cuda.get_device_capability(device)[0] >= 9)
+                except Exception:
+                    is_hopper = False
+
+            if is_hopper:
+                try:
+                    # FlashAttention expects shape (B, L, H, Dh)
+                    q_perm = q.transpose(1, 2).contiguous()
+                    k_perm = k.transpose(1, 2).contiguous()
+                    v_perm = v.transpose(1, 2).contiguous()
+
+                    # Dynamic per-tensor scaling to FP8 max representable magnitude (448.0 for float8_e4m3fn)
+                    fp8_max = 448.0
+                    q_scale = (q_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+                    k_scale = (k_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+                    v_scale = (v_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+
+                    # Scale and cast to FP8
+                    q_fa = (q_perm / q_scale).to(torch.float8_e4m3fn)
+                    k_fa = (k_perm / k_scale).to(torch.float8_e4m3fn)
+                    v_fa = (v_perm / v_scale).to(torch.float8_e4m3fn)
+
+                    # Execute FlashAttention kernel
+                    out_fp8 = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag)
+
+                    # De-scale back: output is mathematically scaled by v_scale
+                    out_tensor = (out_fp8.float() * v_scale).to(dtype)
+
+                    # Apply head_mask if provided
+                    if head_mask is not None:
+                        # out_tensor is (B, L, H, Dh) -> transpose to (B, H, L, Dh) for head masking
+                        out_tensor_h = out_tensor.transpose(1, 2)
+                        if head_mask.dim() == 1:
+                            hm = head_mask.view(1, -1, 1, 1)
+                        elif head_mask.dim() == 2:
+                            hm = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+                        elif head_mask.dim() == 3:
+                            hm = head_mask.unsqueeze(-1)
+                        else:
+                            hm = head_mask
+                        out_tensor_h = out_tensor_h * hm
+                        out = out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                    else:
+                        out = out_tensor.contiguous().view(B, L, self.all_head_size)
+                except Exception as e:
+                    logger.warning(f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA.")
+                    out = None
 
         # 5. SDPA / PyTorch native fallback path
         if out is None:
@@ -552,7 +623,8 @@ class FlashAttention3FP8(BaseAttention):
             attn_mask = None
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+                    min_val = torch.finfo(q.dtype).min if q.dtype.is_floating_point else -1e4
+                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * min_val
                 elif eff_mask.dim() == 3:
                     attn_mask = eff_mask.unsqueeze(1).float()
                 elif eff_mask.dim() == 4:
