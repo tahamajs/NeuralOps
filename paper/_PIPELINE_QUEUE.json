@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hybridkv_class_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 32 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hybridkv_class_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 64 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "hybridkv_class_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 128 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r128",
@@ -64069,9 +64055,16 @@
       "retries": 0
     },
     {
-      "id": "hybridkv_bert_sst2_r256",
+      "id": "hybridkv_class_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv --rank 256 --parallel 1 --batch_size 16 --output_suffix hybridkv_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 32 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "hybridkv_class_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 64 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70608,6 +70601,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv --rank 128 --parallel 1 --batch_size 16 --output_suffix hybridkv_bert_sst2_r128",
       "started_at": "2026-09-23T20:41:03.263707",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hybridkv_bert_sst2_r256",
+      "id": "hybridkv_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv --rank 256 --parallel 1 --batch_size 16 --output_suffix hybridkv_bert_sst2_r256",
+      "started_at": "2026-09-23T20:41:22.072205",
       "retries": 0,
       "status": "done"
     }
