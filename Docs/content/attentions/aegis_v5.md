@@ -583,6 +583,6 @@ The `AegisAttention` architecture incorporates telemetry hooks for tracking sing
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **80.96%** | -10.10% | 0.8184 | 1.20x | 6 | [svd-linear-attention-distilbert-sst2-aegis-v5](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v5) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **85.67%** | -4.93% | 0.8616 | 1.11x | 0 | [svd-linear-attention-distilbert-sst2-aegis-v5](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v5) | 2026-09-23 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **42.50%** | -39.30% | 0.4032 | 1.20x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-v5](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-v5) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.80%** | -4.50% | 0.8954 | 1.20x | 0 | N/A | 2026-09-19 |
