@@ -68574,22 +68574,7 @@
       "retries": 0
     }
   ],
-  "active": [
-    {
-      "id": "cur_moe_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules cur_moe --rank 64 --parallel 1 --batch_size 16 --output_suffix cur_moe_rob64 --fresh",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "res_svd_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules res_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix res_svd_rob64 --fresh",
-      "status": "active",
-      "retries": 0
-    }
-  ],
+  "active": [],
   "completed": [
     {
       "job_id": "aasvd_r128_seed456",
@@ -68786,6 +68771,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aegis_v6 --rank 64 --parallel 1 --batch_size 16 --output_suffix aegis_v6_rob64 --fresh",
       "started_at": "2026-09-23T08:54:19.863988",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cur_moe_roberta_sst2",
+      "id": "cur_moe_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules cur_moe --rank 64 --parallel 1 --batch_size 16 --output_suffix cur_moe_rob64 --fresh",
+      "started_at": "2026-09-23T08:55:15.591542",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "res_svd_roberta_sst2",
+      "id": "res_svd_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules res_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix res_svd_rob64 --fresh",
+      "started_at": "2026-09-23T08:55:15.734035",
       "retries": 0,
       "status": "done"
     }
