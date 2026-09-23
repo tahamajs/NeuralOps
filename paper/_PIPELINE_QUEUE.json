@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "spectron_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 16 --output_suffix spectron_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "come_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules come --rank 64 --parallel 1 --batch_size 16 --output_suffix come_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "gpt2_eval_aasvd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules aasvd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
@@ -68793,6 +68779,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules sdrm --rank 64 --parallel 1 --batch_size 16 --output_suffix sdrm_rob64 --fresh",
       "started_at": "2026-09-23T08:56:11.388160",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "spectron_roberta_sst2",
+      "id": "spectron_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules spectron --rank 64 --parallel 1 --batch_size 16 --output_suffix spectron_rob64 --fresh",
+      "started_at": "2026-09-23T08:57:06.874565",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "come_roberta_sst2",
+      "id": "come_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules come --rank 64 --parallel 1 --batch_size 16 --output_suffix come_rob64 --fresh",
+      "started_at": "2026-09-23T08:57:07.019386",
       "retries": 0,
       "status": "done"
     }
