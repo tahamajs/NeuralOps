@@ -2,76 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hgrn2_layer_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 128 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hgrn2_layer_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hgrn2_outer_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 32 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hgrn2_outer_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 64 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hgrn2_outer_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 128 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hgrn2_outer_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hla_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 32 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hla_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 64 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hla_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 128 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hla_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 256 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "hla_attention_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r32",
@@ -64283,6 +64213,33 @@
       "started_at": "2026-09-23T17:40:09.340738",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "hgrn2_outer_bert_sst2_r64",
+      "id": "hgrn2_outer_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 64 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r64",
+      "started_at": "2026-09-23T20:19:01.966896",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "hgrn2_outer_bert_sst2_r128",
+      "id": "hgrn2_outer_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 128 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r128",
+      "started_at": "2026-09-23T20:19:02.396760",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "hgrn2_outer_bert_sst2_r256",
+      "id": "hgrn2_outer_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r256",
+      "started_at": "2026-09-23T20:19:02.695328",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
@@ -64308,9 +64265,9 @@
       "retries": 0
     },
     {
-      "id": "hgrn2_layer_bert_sst2_r32",
+      "id": "hla_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 256 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70561,6 +70518,42 @@
       "started_at": "2026-09-23T17:40:46.355369",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "hgrn2_layer_bert_sst2_r32",
+      "id": "hgrn2_layer_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r32",
+      "started_at": "2026-09-23T17:40:46.214782",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_bert_sst2_r128",
+      "id": "hla_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 128 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r128",
+      "started_at": "2026-09-23T20:33:18.823051",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_bert_sst2_r32",
+      "id": "hla_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 32 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r32",
+      "started_at": "2026-09-23T20:33:18.479031",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_bert_sst2_r64",
+      "id": "hla_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 64 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r64",
+      "started_at": "2026-09-23T20:33:18.676436",
+      "retries": 0,
+      "status": "done"
     }
   ],
   "failed": [
@@ -70710,6 +70703,36 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2 --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_bert_sst2_r256",
       "started_at": "2026-09-23T17:09:54.153035",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "hgrn2_layer_bert_sst2_r128",
+      "id": "hgrn2_layer_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 128 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r128",
+      "started_at": "2026-09-23T18:01:29.387038",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "hgrn2_layer_bert_sst2_r256",
+      "id": "hgrn2_layer_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r256",
+      "started_at": "2026-09-23T18:01:29.592126",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "hgrn2_outer_bert_sst2_r32",
+      "id": "hgrn2_outer_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_outer --rank 32 --parallel 1 --batch_size 16 --output_suffix hgrn2_outer_bert_sst2_r32",
+      "started_at": "2026-09-23T18:01:29.751796",
       "retries": 0,
       "status": "failed",
       "reason": "timeout_1800s"
