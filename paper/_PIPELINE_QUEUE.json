@@ -65389,20 +65389,6 @@
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
       "status": "active",
       "retries": 0
-    },
-    {
-      "id": "flat_llm_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flat_llm --rank 32 --parallel 1 --batch_size 16 --output_suffix flat_llm_bert_sst2_r32",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "flat_llm_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flat_llm --rank 64 --parallel 1 --batch_size 16 --output_suffix flat_llm_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
     }
   ],
   "completed": [
@@ -70326,6 +70312,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 256 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r256",
       "started_at": "2026-09-23T13:36:35.583899",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flat_llm_bert_sst2_r32",
+      "id": "flat_llm_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flat_llm --rank 32 --parallel 1 --batch_size 16 --output_suffix flat_llm_bert_sst2_r32",
+      "started_at": "2026-09-23T13:36:54.467561",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flat_llm_bert_sst2_r64",
+      "id": "flat_llm_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flat_llm --rank 64 --parallel 1 --batch_size 16 --output_suffix flat_llm_bert_sst2_r64",
+      "started_at": "2026-09-23T13:36:54.606518",
       "retries": 0,
       "status": "done"
     }
