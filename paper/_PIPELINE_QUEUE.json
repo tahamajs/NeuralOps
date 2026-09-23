@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "full_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full --rank 256 --parallel 1 --batch_size 16 --output_suffix full_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "full_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix full_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "full_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix full_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "full_attention_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix full_attention_bert_sst2_r128",
@@ -70356,6 +70335,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full --rank 128 --parallel 1 --batch_size 16 --output_suffix full_bert_sst2_r128",
       "started_at": "2026-09-23T13:52:52.277322",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "full_bert_sst2_r256",
+      "id": "full_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full --rank 256 --parallel 1 --batch_size 16 --output_suffix full_bert_sst2_r256",
+      "started_at": "2026-09-23T13:53:30.146530",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "full_attention_bert_sst2_r32",
+      "id": "full_attention_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix full_attention_bert_sst2_r32",
+      "started_at": "2026-09-23T13:53:30.299401",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "full_attention_bert_sst2_r64",
+      "id": "full_attention_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules full_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix full_attention_bert_sst2_r64",
+      "started_at": "2026-09-23T13:53:30.456016",
       "retries": 0,
       "status": "done"
     }
