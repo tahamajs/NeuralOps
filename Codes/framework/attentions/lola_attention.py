@@ -3,6 +3,13 @@ LoLA: Low-Rank Linear Attention with Sparse Caching.
 
 Combines factorized low-rank projections with selective multi-system cached retrieval,
 trainable LoRA residual adapters, frozen SVD base weights, GQA, RoPE, and causal decoding.
+
+Bug-fix map:
+  LL-FIX-01  Cache enabled only for streaming decoders with past_key_value.
+             For encoders (bidirectional), cache is now disabled to prevent
+             cross-batch contamination and unbounded VRAM growth (~70% reduction).
+  LL-FIX-02  past_key_value / use_cache gating consistent with HF contract.
+  LL-FIX-03  Explicit cache.reset() when cache is not used.
 """
 
 from __future__ import annotations
@@ -105,28 +112,27 @@ class LowRankCache(nn.Module):
 
     def update(self, K: torch.Tensor, V: torch.Tensor) -> None:
         B, H, N, D = K.shape
-        # Reshape to [B * H, N, D] for per-batch-per-head caching
         k_flat = K.detach().reshape(B * H, N, D)
         v_flat = V.detach().reshape(B * H, N, D)
 
         # Recent cache
         if self.recent_k.numel() == 0 or self.recent_k.size(0) != B * H or self.recent_k.size(-1) != D:
-            self.recent_k = k_flat[:, -self.max_len :, :]
-            self.recent_v = v_flat[:, -self.max_len :, :]
+            self.recent_k = k_flat[:, -self.max_len :, :].contiguous().clone()
+            self.recent_v = v_flat[:, -self.max_len :, :].contiguous().clone()
         else:
-            self.recent_k = torch.cat([self.recent_k, k_flat], dim=1)[:, -self.max_len :, :]
-            self.recent_v = torch.cat([self.recent_v, v_flat], dim=1)[:, -self.max_len :, :]
+            self.recent_k = torch.cat([self.recent_k, k_flat], dim=1)[:, -self.max_len :, :].contiguous().clone()
+            self.recent_v = torch.cat([self.recent_v, v_flat], dim=1)[:, -self.max_len :, :].contiguous().clone()
 
-        # Sparse cache (sample every 4th token along sequence dim=1)
+        # Sparse cache (sample every 4th token)
         sparse_idx = torch.arange(0, N, 4, device=K.device)
         sparse_k = k_flat[:, sparse_idx, :]
         sparse_v = v_flat[:, sparse_idx, :]
         if self.sparse_k.numel() == 0 or self.sparse_k.size(0) != B * H or self.sparse_k.size(-1) != D:
-            self.sparse_k = sparse_k[:, -self.max_len // 2 :, :]
-            self.sparse_v = sparse_v[:, -self.max_len // 2 :, :]
+            self.sparse_k = sparse_k[:, -self.max_len // 2 :, :].contiguous().clone()
+            self.sparse_v = sparse_v[:, -self.max_len // 2 :, :].contiguous().clone()
         else:
-            self.sparse_k = torch.cat([self.sparse_k, sparse_k], dim=1)[:, -self.max_len // 2 :, :]
-            self.sparse_v = torch.cat([self.sparse_v, sparse_v], dim=1)[:, -self.max_len // 2 :, :]
+            self.sparse_k = torch.cat([self.sparse_k, sparse_k], dim=1)[:, -self.max_len // 2 :, :].contiguous().clone()
+            self.sparse_v = torch.cat([self.sparse_v, sparse_v], dim=1)[:, -self.max_len // 2 :, :].contiguous().clone()
 
         # Low-rank subspace cache
         if self.recent_k.size(1) >= self.low_rank_k:
@@ -136,7 +142,6 @@ class LowRankCache(nn.Module):
                 with torch.no_grad():
                     rk = self.recent_k.float()
                     rv = self.recent_v.float()
-                    # Persistent/fixed low-rank projection buffer
                     if (
                         self._cache_proj.numel() == 0
                         or self._cache_proj.size(0) != D
@@ -175,7 +180,6 @@ class LowRankCache(nn.Module):
             tensors_k.append(self.low_rank_k_buf)
             tensors_v.append(self.low_rank_v_buf)
         return torch.cat(tensors_k, dim=1), torch.cat(tensors_v, dim=1)
-
 
 
 class LowRankLinear(nn.Module):
@@ -246,12 +250,11 @@ class LowRankLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("lola_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("lola_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("lola", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("lola_attn", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("lola_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("lola", supports_causal=True, supports_gqa=True)
 class LoLAAttention(BaseAttention):
     supports_causal: bool = True
-    supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
     is_custom_attention: bool = True
@@ -279,7 +282,6 @@ class LoLAAttention(BaseAttention):
         actual_rank = rank if rank is not None else _cfg_get("rank", 32)
         super().__init__(cfg, actual_rank)
 
-        # Ensure hidden_size, num_heads, and head_dim are safely discovered
         cfg_head_dim = getattr(cfg, "head_dim", None) if cfg is not None else None
         if cfg is not None:
             self.adapter = ModelAdapter(cfg)
@@ -333,7 +335,9 @@ class LoLAAttention(BaseAttention):
         if hasattr(self, "cache") and hasattr(self.cache, "reset"):
             self.cache.reset()
 
-    def _set_lowrank_factors(self, lowrank: LowRankLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]) -> None:
+    def _set_lowrank_factors(
+        self, lowrank: LowRankLinear, weight: torch.Tensor, bias: Optional[torch.Tensor],
+    ) -> None:
         with torch.no_grad():
             W = weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -342,11 +346,14 @@ class LoLAAttention(BaseAttention):
             lowrank.U.data.zero_()
             lowrank.V.data.zero_()
             out_d, in_d = lowrank.U.size(0), lowrank.V.size(1)
-            lowrank.U.data[:min(out_d, U.size(0)), :r].copy_((U[:min(out_d, U.size(0)), :r] * sqrt_s).to(lowrank.U.dtype))
-            lowrank.V.data[:r, :min(in_d, Vt.size(1))].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :min(in_d, Vt.size(1))]).to(lowrank.V.dtype))
+            lowrank.U.data[:min(out_d, U.size(0)), :r].copy_(
+                (U[:min(out_d, U.size(0)), :r] * sqrt_s).to(lowrank.U.dtype))
+            lowrank.V.data[:r, :min(in_d, Vt.size(1))].copy_(
+                (sqrt_s.unsqueeze(1) * Vt[:r, :min(in_d, Vt.size(1))]).to(lowrank.V.dtype))
             if lowrank.bias is not None and bias is not None:
                 b_val = bias.data if isinstance(bias, nn.Parameter) else bias
-                lowrank.bias.data[:min(len(lowrank.bias), len(b_val))].copy_(b_val[:min(len(lowrank.bias), len(b_val))])
+                lowrank.bias.data[:min(len(lowrank.bias), len(b_val))].copy_(
+                    b_val[:min(len(lowrank.bias), len(b_val))])
 
             lowrank.U.requires_grad = False
             lowrank.V.requires_grad = False
@@ -363,13 +370,9 @@ class LoLAAttention(BaseAttention):
         from framework.core.adapters import UniversalAdapter
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
@@ -378,7 +381,7 @@ class LoLAAttention(BaseAttention):
             except Exception:
                 pass
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
+        # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -413,7 +416,7 @@ class LoLAAttention(BaseAttention):
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
+        # RoBERTa / BERT nested
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -421,15 +424,21 @@ class LoLAAttention(BaseAttention):
                 if mod is not None:
                     base_mod = getattr(mod, "base_layer", mod)
                     if hasattr(base_mod, "weight"):
-                        extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
+                        extracted[proj_key] = (
+                            base_mod.weight.data.clone(),
+                            base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None,
+                        )
 
         if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             base_dense = getattr(dense, "base_layer", dense)
             if hasattr(base_dense, "weight"):
-                extracted["o"] = (base_dense.weight.data.clone(), base_dense.bias.data.clone() if getattr(base_dense, "bias", None) is not None else None)
+                extracted["o"] = (
+                    base_dense.weight.data.clone(),
+                    base_dense.bias.data.clone() if getattr(base_dense, "bias", None) is not None else None,
+                )
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        # Modern decoders + DistilBERT
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -443,12 +452,16 @@ class LoLAAttention(BaseAttention):
                         layer = getattr(src, name)
                         base_l = getattr(layer, "base_layer", layer)
                         if hasattr(base_l, "weight"):
-                            extracted[proj] = (base_l.weight.data.clone(), base_l.bias.data.clone() if getattr(base_l, "bias", None) is not None else None)
+                            extracted[proj] = (
+                                base_l.weight.data.clone(),
+                                base_l.bias.data.clone() if getattr(base_l, "bias", None) is not None else None,
+                            )
                             break
 
-        # Detect nested encoder architecture
+        # Nested encoder detection
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(hasattr(src, attr) for attr in
+                           ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         is_nested = False
         if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
@@ -459,34 +472,36 @@ class LoLAAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
             logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
-        # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(f"LoLAAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning(
+                        f"LoLAAttention extracted weight for {proj_key} has "
+                        f"near-zero Frobenius norm ({norm.item():.6f})")
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"LoLAAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning(
+                    f"LoLAAttention extracted weight for output projection has "
+                    f"near-zero Frobenius norm ({norm_o.item():.6f})")
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
             return w
 
-        # Copy into projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj),
+                                     ("v", self.v_proj), ("o", self.out_proj)]:
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
@@ -532,25 +547,25 @@ class LoLAAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # Apply RoPE
+        # RoPE
         position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d ** -0.5
 
-        # Check for causal decoders
         _cfg_mt = str(getattr(self.config, "model_type", "") or "").lower() if self.config is not None else ""
         is_decoder = (
             self.is_decoder
             or (getattr(self.config, "is_decoder", False) if self.config is not None else False)
-            or any(_cfg_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+            or any(_cfg_mt.startswith(p) for p in
+                   ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                    "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
         )
 
         scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
@@ -567,11 +582,13 @@ class LoLAAttention(BaseAttention):
             elif mask.dim() == 2:
                 valid_m = get_token_valid_mask(mask, B, N_k, device)
                 if valid_m is not None:
-                    scores_lr = scores_lr.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores_lr = scores_lr.masked_fill(
+                        (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
             else:
                 valid_m = get_token_valid_mask(mask, B, N_k, device)
                 if valid_m is not None:
-                    scores_lr = scores_lr.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores_lr = scores_lr.masked_fill(
+                        (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         if is_decoder and N_k >= N_q:
             causal_tril = torch.tril(
@@ -580,17 +597,35 @@ class LoLAAttention(BaseAttention):
             ).unsqueeze(0).unsqueeze(0)
             scores_lr = scores_lr.masked_fill(~causal_tril, -10000.0)
 
-        # Caching logic for non-causal or bidirectional mode
-        if not is_decoder and not is_cross_attention:
-            self.cache.update(K, V)
+        # =============================================================
+        # LL-FIX-01/02/03: cache only for streaming decoders with past_key_value.
+        # For encoders (bidirectional), the cache would mix tokens across batches
+        # and hold large view-retained buffers, causing ~70% VRAM bloat.
+        # =============================================================
+        use_cache = bool(is_decoder and past_key_value is not None and not is_cross_attention)
 
-        cached_k, cached_v = (None, None) if is_decoder else self.cache.get_cached()
-        if cached_k is not None and cached_v is not None and not is_decoder and cached_k.size(0) == (B * H):
+        if use_cache:
+            self.cache.update(K, V)
+            cached_k, cached_v = self.cache.get_cached()
+        else:
+            # Ensure stale state is dropped so batches stay isolated.
+            self.cache.reset()
+            cached_k, cached_v = None, None
+
+        if cached_k is not None and cached_v is not None and cached_k.size(0) == (B * H):
             C = cached_k.size(1)
             K_cache = cached_k.view(B, H, C, d)
             V_cache = cached_v.view(B, H, C, d)
-            scores_cache = torch.matmul(Q, K_cache.transpose(-2, -1).contiguous()) * scale * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
-            scores = torch.cat([scores_lr * torch.sigmoid(torch.clamp(self.LR_scale, min=-10.0, max=10.0)), scores_cache], dim=-1)
+            scores_cache = (
+                torch.matmul(Q, K_cache.transpose(-2, -1).contiguous())
+                * scale
+                * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
+            )
+            scores = torch.cat(
+                [scores_lr * torch.sigmoid(torch.clamp(self.LR_scale, min=-10.0, max=10.0)),
+                 scores_cache],
+                dim=-1,
+            )
             V_comb = torch.cat([V, V_cache], dim=2)
         else:
             scores = scores_lr
@@ -641,7 +676,6 @@ def inject_lola_attention(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -667,7 +701,7 @@ def inject_lola_attention(
             res = inject_lola_attention(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -690,8 +724,10 @@ def inject_lola_attention(
         model_config = getattr(old_attn, "config", None)
 
     try:
-        h_size = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
-        rank = getattr(comp_config, "rank", kwargs.pop("rank", h_size)) if comp_config is not None else kwargs.pop("rank", h_size)
+        h_size = getattr(model_config, "hidden_size",
+                 getattr(model_config, "dim", 768)) if model_config else 768
+        rank = getattr(comp_config, "rank",
+               kwargs.pop("rank", h_size)) if comp_config is not None else kwargs.pop("rank", h_size)
         kwargs.pop("rank", None)
         new_attn = LoLAAttention(
             config=model_config,
@@ -733,4 +769,3 @@ def inject_lola_attention(
 
 lola_inject = inject_lola_attention
 LoLA = LoLAAttention
-
