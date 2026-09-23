@@ -1,14 +1,14 @@
 {
     "model": "distilbert_sst2_galerkin",
     "performance": {
-        "accuracy_pct": 78.9,
-        "f1_score": 0.7951,
-        "f1_macro": 0.7888,
-        "precision": 0.7891,
-        "recall": 0.7887,
-        "val_loss": 0.5248,
+        "accuracy_pct": 76.83,
+        "f1_score": 0.774,
+        "f1_macro": 0.7682,
+        "precision": 0.7683,
+        "recall": 0.7681,
+        "val_loss": 0.5489,
         "status": "PASS",
-        "elapsed_s": 35.82
+        "elapsed_s": 4.53
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -25,17 +25,17 @@
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
         "per_layer_ranks": {
-            "distilbert.transformer.layer.0.attention": 128,
-            "distilbert.transformer.layer.1.attention": 128,
-            "distilbert.transformer.layer.2.attention": 128,
-            "distilbert.transformer.layer.3.attention": 128,
-            "distilbert.transformer.layer.4.attention": 128,
-            "distilbert.transformer.layer.5.attention": 128
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
         }
     },
     "hardware": {
-        "peak_vram_mb": 467.39,
-        "tokens_per_sec": 53683.06
+        "peak_vram_mb": 450.91,
+        "tokens_per_sec": 178003.4
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 294.62,
-        "L_256_vram_mb": 297.12,
+        "L_128_vram_mb": 349.14,
+        "L_256_vram_mb": 351.89,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T19:34:32.309262"
+    "timestamp": "2026-09-23T10:34:00.759830+00:00"
 }

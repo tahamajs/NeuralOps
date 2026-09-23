@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "fwsvd_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 128 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "fwsvd_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 256 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "galerkin_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "galerkin_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 64 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r64",
@@ -65137,6 +65116,20 @@
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "fwsvd_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 256 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r256",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "galerkin_bert_sst2_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -70402,6 +70395,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r64",
       "started_at": "2026-09-23T14:03:04.527469",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fwsvd_bert_sst2_r128",
+      "id": "fwsvd_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 128 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r128",
+      "started_at": "2026-09-23T14:03:41.613261",
       "retries": 0,
       "status": "done"
     }
