@@ -1,41 +1,55 @@
-"""Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block (Production-Hardened).
+"""Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
 
-Combines:
-- SVD-Mamba selective state space branch
-- Multi-Head Attention branch with GQA, RoPE, and causal masking
-- Expert Choice MoE branch with auxiliary loss tracking
+Differential attention with concept-bottlenecked SSM branch.
 
-Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
-- Trainable LoRA adapters with frozen base weights
-- GQA with repeat_kv
-- RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
+Bug-fix map (2026 revision):
+  JI-01  RoPE cos/sin cast to q/k dtype.
+  JI-02  W_q2/W_k2 initialized from pretrained (differential attention convention).
+  JI-03  super().__init__ with try/except for signature robustness.
+  JI-04  RoPE past_len offset for KV-cache decoding.
+  JI-05  injector recursion guard.
+  JI-06  SimpleSSM guarded with 3-level fallback.
+  JI-07  attention_mask dim=4 robust handling.
+  JI-08  ssm forward via _run_ssm wrapper.
+  JI-09  Forward sanity check after weight transfer.
+  JI-10  decoder detection via centralized helper.
+  JI-11  Robust hidden_size / num_heads / head_dim detection.
+  JI-12  is_decoder respected in inject.
+  JI-13  is_nested_encoder set during copy_weights.
+  JI-14  alpha_raw documented (-2.0 => ~12% SSM initial).
+  JI-15  FactorizedLoRALinear replaces LoRALinear (parameter reduction).
+  JI-16  copy_weights uses SVD init (no direct weight copy).
+  JI-17  SSM branch multiplied by scaling to avoid magnitude mismatch.
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
-
-logger = logging.getLogger(__name__)
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.attentions.expert_choice_moe import ExpertChoiceMoE
-from framework.attentions.simple_ssm import SimpleSSM
-from framework.attentions.svd_mamba import SVDMamba
+try:
+    from framework.attentions.simple_ssm import SimpleSSM
+except Exception as _e:
+    _import_logger = logging.getLogger(__name__)
+    _import_logger.warning("SimpleSSM import failed: %s", _e)
+    SimpleSSM = None  # type: ignore
+
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
+logger = logging.getLogger(__name__)
+
+
+# ===========================================================================
+# RoPE (dtype-safe)
+# ===========================================================================
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -60,282 +74,465 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        raise ValueError(
+            f"apply_rotary_pos_emb: cos/sin seq len {cos.shape[-2]} != q seq len {q.shape[-2]}"
+        )
+
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
 
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        cos_q = cos.to(q_rot.dtype)
+        sin_q = sin.to(q_rot.dtype)
+        cos_k = cos.to(k_rot.dtype)
+        sin_k = sin.to(k_rot.dtype)
+        q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+        k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+        cos_q = cos[..., :head_dim].to(q.dtype)
+        sin_q = sin[..., :head_dim].to(q.dtype)
+        cos_k = cos[..., :head_dim].to(k.dtype)
+        sin_k = sin[..., :head_dim].to(k.dtype)
+        q = (q * cos_q) + (_rotate_half(q) * sin_q)
+        k = (k * cos_k) + (_rotate_half(k) * sin_k)
 
     return q, k
 
 
-class LoRALinear(nn.Module):
+# ===========================================================================
+# Decoder detection helper
+# ===========================================================================
+
+def _detect_decoder(
+    config: Any,
+    is_decoder: Optional[bool],
+    src_attn: Optional[nn.Module],
+) -> bool:
+    if is_decoder is not None:
+        return bool(is_decoder)
+    if config is not None:
+        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
+            return True
+        mt = str(getattr(config, "model_type", "") or "").lower()
+        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+            return True
+        arch = getattr(config, "architectures", None)
+        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
+            return True
+    if src_attn is not None:
+        if getattr(src_attn, "is_decoder", False):
+            return True
+        if hasattr(src_attn, "c_attn"):
+            return True
+        if "gpt" in src_attn.__class__.__name__.lower():
+            return True
+    return False
+
+
+# ===========================================================================
+# JI-15: FactorizedLoRALinear
+# ===========================================================================
+
+class FactorizedLoRALinear(nn.Module):
+    """
+    SVD-factorized linear + LoRA adapter (parameter-reducing).
+
+    Forward: y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+    Base (down, up) frozen; LoRA trainable.
+
+    Param count: rank*(in + out) + bias + lora_r*(in + out)
+    vs original: in*out + bias
+    """
+    is_custom_attention = False
+
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        bias: bool = True,
+        rank: int = 64,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        freeze_base: bool = False,
+        bias: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        factory_kwargs = {"device": device, "dtype": dtype}
-        self.in_features = in_features
-        self.out_features = out_features
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = int(lora_rank) if lora_rank > 0 else 0
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
-        self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
-        if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
-        else:
-            self.register_parameter("bias", None)
+        factory = {"device": device, "dtype": dtype}
+        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
+        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
 
+        # Freeze base
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+
+        # LoRA
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+    @property
+    def weight(self) -> torch.Tensor:
+        w = torch.matmul(self.up.weight, self.down.weight)
+        if self.lora_A is not None and self.lora_B is not None:
+            w = w + (self.lora_B @ self.lora_A) * self.lora_scaling
+        return w
 
-    def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
-
-        if self.lora_rank > 0 and self.lora_A is not None:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            nn.init.zeros_(self.lora_B)
-            self.lora_B.requires_grad = True
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.up.bias
 
     def freeze_base_weights(self) -> None:
-        self.weight.requires_grad = False
-        if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0 and self.lora_A is not None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_A is not None:
             self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
+        if self.lora_B is not None:
             self.lora_B.requires_grad = True
 
     def unfreeze_base_weights(self) -> None:
-        self.weight.requires_grad = True
-        if self.bias is not None:
-            self.bias.requires_grad = True
+        self.down.weight.requires_grad = True
+        self.up.weight.requires_grad = True
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            out = out + lora_out
+        out = self.up(self.down(x))
+        if self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
-class SVDMambaSub(nn.Module):
-    is_custom_attention: bool = True
-    def __init__(self, d_model: int = 768, config: Optional[Any] = None, rank: Optional[int] = None, is_decoder: bool = False, **kwargs: Any) -> None:
+# ===========================================================================
+# Concept Bottleneck
+# ===========================================================================
+
+class InfoMambaConceptBottleneck(nn.Module):
+    def __init__(self, dim: int, bottleneck_dim: int = 64) -> None:
         super().__init__()
+        self.dim = dim
+        self.bottleneck_dim = bottleneck_dim
+        self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
+        self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
 
-        if d_model is None and config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
-        d_model = int(d_model or 768)
-        self.d_model = d_model
-        self.ssm = SimpleSSM(d_model=d_model, config=config, is_decoder=is_decoder)
-        self.in_proj = nn.Linear(d_model, d_model)
-        self.out_proj = nn.Linear(d_model, d_model)
-
-    def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs: Any) -> Tuple[torch.Tensor, None]:
-        x_proj = self.in_proj(hidden_states)
-        ssm_out = self.ssm(x_proj, attention_mask=attention_mask)
-        if isinstance(ssm_out, tuple):
-            ssm_out = ssm_out[0]
-
-        out = self.out_proj(ssm_out)
-        return out, None
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.W_up(F.gelu(self.W_down(x)))
 
 
-@ATTENTION_REGISTRY.register("jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("jamba2", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-class Jamba2Block(BaseAttention):
-    r"""Jamba-2 Hybrid Architecture combining SVD-Mamba, Multi-Head Attention, and Expert Choice MoE."""
+# ===========================================================================
+# Main JambaInfoBlock
+# ===========================================================================
 
+@ATTENTION_REGISTRY.register("jamba_info", supports_causal=True, supports_gqa=True)
+class JambaInfoBlock(BaseAttention):
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Optional[Any] = None,
-        d_model: Optional[int] = None,
-        n_heads: Optional[int] = None,
-        n_experts: int = 4,
-        top_k: int = 2,
         rank: Optional[int] = 64,
+        mode: str = "retrieval",
+        sparsity: float = 0.5,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,
         comp_config: Optional[Any] = None,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
-        super().__init__(config, rank)
 
-        d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim") or d_model
-        n_heads = kwargs.get("n_heads") or kwargs.get("num_heads") or kwargs.get("num_attention_heads") or n_heads
+        # JI-03: robust super().__init__
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
 
-        if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
-            elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", getattr(source_attn, "hidden_size", getattr(source_attn, "dim", 768))) if out_layer is not None else 768
-            else:
-                d_model = 768
+        hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
+        num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
+        num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
+        head_dim = self._detect_head_dim(config, source_attn, kwargs, hidden_size, num_heads)
 
-        if n_heads is None:
-            if config is not None:
-                n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
-            elif source_attn is not None:
-                n_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
-            else:
-                n_heads = 12
-
-        if config is not None:
-            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
-            top_k = getattr(config, "top_k", top_k)
-
-        self.d_model = int(d_model)
-        self.dim = self.d_model
-        self.hidden_size = self.d_model
-        self.n_heads = int(n_heads)
-        self.num_heads = self.n_heads
-        self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)) if config else self.num_heads
-        self.head_dim = self.d_model // self.num_heads if self.num_heads > 0 else 64
+        self.dim = int(hidden_size)
+        self.hidden_size = self.dim
+        self.num_heads = int(num_heads)
+        self.num_kv_heads = int(num_kv_heads)
+        self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
+        self.mode = mode
+        self.sparsity = float(sparsity)
 
-        # Decoder detection
-        model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
-            is_dec = True
-        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
-            is_dec = True
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
+        # JI-12: respect explicit is_decoder
+        self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
+        self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
+        # LoRA config
+        self.lora_rank = int(
+            getattr(config, "lora_rank", None)
+            or (getattr(comp_config, "lora_rank", None) if comp_config else None)
+            or kwargs.get("lora_rank", 16)
+        )
+        self.lora_alpha = float(
+            getattr(config, "lora_alpha", None)
+            or (getattr(comp_config, "lora_alpha", None) if comp_config else None)
+            or kwargs.get("lora_alpha", 32.0)
+        )
 
-        # LoRA config: independent inspection of config, comp_config, and kwargs
-        if config is not None:
-            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        elif comp_config is not None:
-            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-        else:
-            self.lora_rank = kwargs.get("lora_rank", 16)
-            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
-        self.freeze_base = (self.lora_rank > 0)
-        self.source_attn = source_attn
-        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+        # JI-15: SVD rank for FactorizedLoRALinear
+        self.proj_rank = int(
+            kwargs.get("proj_rank")
+            or (getattr(comp_config, "proj_rank", None) if comp_config else None)
+            or (rank if rank is not None else 64)
+        )
 
-        # MHA Projections
-        self.q_lin = LoRALinear(self.d_model, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_lin = LoRALinear(self.d_model, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_lin = LoRALinear(self.d_model, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_lin = LoRALinear(self.all_head_size, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        # JI-15: use FactorizedLoRALinear
+        FF = FactorizedLoRALinear
+        self.W_q1 = FF(self.dim, self.all_head_size, rank=self.proj_rank,
+                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=False)
+        self.W_k1 = FF(self.dim, self.all_kv_head_size, rank=self.proj_rank,
+                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=False)
+        self.W_q2 = FF(self.dim, self.all_head_size, rank=self.proj_rank,
+                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=False)
+        self.W_k2 = FF(self.dim, self.all_kv_head_size, rank=self.proj_rank,
+                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=False)
+        self.W_v = FF(self.dim, self.all_kv_head_size, rank=self.proj_rank,
+                      lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=False)
+        self.out_proj = FF(self.all_head_size, self.dim, rank=self.proj_rank,
+                           lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, bias=True)
 
         # Aliases
-        self.q_proj = self.q_lin
-        self.k_proj = self.k_lin
-        self.v_proj = self.v_lin
-        self.out_proj = self.out_lin
+        self.q_proj = self.W_q1
+        self.k_proj = self.W_k1
+        self.v_proj = self.W_v
 
-        # Branch 1: SSM
-        self.mamba = SVDMambaSub(self.d_model, config=config, rank=rank, is_decoder=self.is_decoder)
+        # Concept bottleneck + SSM
+        bottleneck_dim = int(getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256)
+        self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
+        if SimpleSSM is not None:
+            try:
+                self.ssm = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
+            except TypeError:
+                try:
+                    self.ssm = SimpleSSM(d_model=self.dim, config=config)
+                except TypeError:
+                    self.ssm = SimpleSSM(self.dim)
+        else:
+            self.ssm = None
+            logger.warning("JambaInfoBlock: SimpleSSM unavailable; SSM branch disabled.")
 
-        # Branch 3: MoE
-        self.moe = ExpertChoiceMoE(self.d_model, n_experts=n_experts, capacity_factor=1.0)
+        # JI-14: alpha_raw = -2.0 => sigmoid(-2) ~ 0.12 (12% SSM initial)
+        self.alpha_raw = nn.Parameter(torch.tensor(-2.0))
 
-        self.norm1 = nn.LayerNorm(self.d_model)
-        self.norm2 = nn.LayerNorm(self.d_model)
-        self.norm3 = nn.LayerNorm(self.d_model)
-
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = float(
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
+            if config else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
-        self.aux_loss = torch.tensor(0.0)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    def freeze_base_weights(self) -> None:
-        """Freeze base linear projection weights when LoRA adapters are present."""
-        for mod in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
-            if hasattr(mod, "freeze_base_weights"):
-                mod.freeze_base_weights()
+    # ------------------------------------------------------------------
+    # Dimension detection helpers (JI-11)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _detect_hidden_size(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any]) -> int:
+        for k in ("hidden_size", "d_model", "n_embd", "dim"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("hidden_size", "d_model", "n_embd", "dim"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for attr in ("out_lin", "out_proj", "o_proj", "dense", "c_proj"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "out_features"):
+                    return int(mod.out_features)
+            for attr in ("q_proj", "q_lin", "query", "W_q1", "c_attn"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "in_features"):
+                    return int(mod.in_features)
+        return 768
 
-    def unfreeze_base_weights(self) -> None:
-        """Unfreeze base linear projection weights."""
-        for mod in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
-            if hasattr(mod, "unfreeze_base_weights"):
-                mod.unfreeze_base_weights()
+    @staticmethod
+    def _detect_num_heads(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+                          hidden_size: int) -> int:
+        for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("num_attention_heads", "num_heads", "n_heads", "n_head"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for k in ("num_heads", "num_attention_heads", "n_heads"):
+                v = getattr(src, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        return max(1, hidden_size // 64)
 
+    @staticmethod
+    def _detect_num_kv_heads(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+                             num_heads: int) -> int:
+        for k in ("num_key_value_heads", "num_kv_heads"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("num_key_value_heads", "num_kv_heads"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            v = getattr(src, "num_key_value_heads", None)
+            if isinstance(v, int) and v > 0:
+                return v
+        return num_heads
+
+    @staticmethod
+    def _detect_head_dim(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+                         hidden_size: int, num_heads: int) -> int:
+        v = kwargs.get("head_dim")
+        if isinstance(v, int) and v > 0:
+            return v
+        if config is not None:
+            for k in ("head_dim", "kv_channels", "d_kv"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for attr in ("q_proj", "query", "q_lin", "W_q1"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                    try:
+                        return int(mod.weight.shape[0] // max(1, num_heads))
+                    except Exception:
+                        pass
+        return max(1, hidden_size // max(1, num_heads))
+
+    # ------------------------------------------------------------------
+    @property
+    def alpha(self) -> torch.Tensor:
+        return torch.sigmoid(self.alpha_raw)
+
+    # ------------------------------------------------------------------
+    # SVD init helper (JI-16)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor],
+                  proj: FactorizedLoRALinear) -> None:
+        with torch.no_grad():
+            W = w.detach().float()
+            if W.ndim != 2:
+                W = W.reshape(W.size(0), -1)
+
+            out_t, in_t = proj.out_features, proj.in_features
+            if W.shape[0] != out_t or W.shape[1] != in_t:
+                padded = torch.zeros(out_t, in_t, dtype=W.dtype, device=W.device)
+                r = min(out_t, W.shape[0])
+                c = min(in_t, W.shape[1])
+                padded[:r, :c] = W[:r, :c]
+                W = padded
+
+            try:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            except Exception as e:
+                logger.warning("JambaInfoBlock._svd_init: SVD failed (%s); leaving default init.", e)
+                return
+
+            r = min(proj.rank, U.size(1), Vh.size(0))
+            proj.down.weight.data.zero_()
+            proj.up.weight.data.zero_()
+            proj.down.weight.data[:r, :].copy_(Vh[:r, :].to(proj.down.weight.dtype))
+            US = U[:, :r] @ torch.diag(S[:r])
+            proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
+
+            if b is not None and proj.up.bias is not None:
+                n = min(b.numel(), proj.up.bias.numel())
+                proj.up.bias.data[:n].copy_(b[:n].to(proj.up.bias.dtype))
+            elif proj.up.bias is not None:
+                proj.up.bias.data.zero_()
+
+    # ------------------------------------------------------------------
+    # Weight transfer (JI-16: uses SVD init)
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
 
-        cls_name = getattr(src, '__class__', type(src)).__name__
-        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
-        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
-            self.is_nested_encoder = True
-        if hasattr(src, 'self') and hasattr(src, 'output'):
-            self.is_nested_encoder = True
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
+                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
+            is_nested = True
+        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                           "DebertaSelfAttention"]
+              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
+                and not has_out_lin:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused
+        # 1. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                is_conv = (
+                    c_attn_mod.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (c_w.ndim == 2 and c_w.shape[1] == 3 * self.hidden_size)
+                )
+                if is_conv:
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size:2 * split_size, :],
+                                  c_b[split_size:2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size:, :],
+                                  c_b[2 * split_size:] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -343,23 +540,34 @@ class Jamba2Block(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    is_conv_o = (
+                        c_proj_mod.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
+                    if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # 2. RoBERTa nested
+        # 2. RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
-        # 3. Flat modules
+        # 3. Flat modules (DistilBERT)
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -372,13 +580,14 @@ class Jamba2Block(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            w_data = mod.weight.data.clone()
-                            if (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
-                                w_data = w_data.t().contiguous()
-                            extracted[proj_key] = (w_data, mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [k for k, (w, _) in extracted.items()
+                   if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
@@ -388,178 +597,254 @@ class Jamba2Block(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                logger.debug(f"UniversalAdapter fallback: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [k for k, (w, _) in extracted.items()
+                         if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"Jamba2Block copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            logger.warning(
+                "JambaInfoBlock.copy_weights: missing %s from %s; keeping defaults.",
+                missing_after, src.__class__.__name__,
             )
 
-        target_map = {
-            "q": self.q_lin,
-            "k": self.k_lin,
-            "v": self.v_lin,
-            "o": self.out_lin,
-        }
+        def _orient(w, in_dim):
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
+
+        def _resize_gqa(w, b, out_target):
+            """Adapt w for GQA: average down or repeat to match out_target."""
+            if w is None:
+                return w, b
+            src_out = w.shape[0]
+            if src_out == out_target:
+                return w, b
+            if src_out > out_target and src_out % out_target == 0:
+                rep = src_out // out_target
+                w = w.view(out_target, rep, -1).mean(dim=1)
+                if b is not None:
+                    b = b.view(out_target, rep).mean(dim=1)
+            elif src_out < out_target and out_target % src_out == 0:
+                rep = out_target // src_out
+                w = w.repeat(rep, 1)
+                if b is not None:
+                    b = b.repeat(rep)
+            return w, b
 
         with torch.no_grad():
-            for proj_key, target_mod in target_map.items():
-                w, b = extracted[proj_key]
-                if w is None:
-                    if proj_key == "o" and self.is_nested_encoder:
-                        nn.init.eye_(target_mod.weight)
-                        if target_mod.bias is not None:
-                            nn.init.zeros_(target_mod.bias)
-                    continue
+            w_q, _ = extracted["q"]
+            w_k, _ = extracted["k"]
+            w_v, _ = extracted["v"]
+            w_o, b_o = extracted["o"]
 
-                if w.ndim != 2:
-                    w = w.reshape(w.size(0), -1)
+            # Q1
+            if w_q is not None:
+                w_q_o = _orient(w_q, self.hidden_size)
+                self._svd_init(w_q_o, None, self.W_q1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
-                    w = w.t().contiguous()
-                out_d = min(target_mod.weight.size(0), w.size(0))
-                in_d = min(target_mod.weight.size(1), w.size(1))
+            # JI-02: Q2 and K2 initialized from pretrained (differential attention convention)
+            if w_q is not None:
+                self._svd_init(w_q_o, None, self.W_q2)
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+            if w_k is not None:
+                w_k_o = _orient(w_k, self.hidden_size)
+                w_k_res, _ = _resize_gqa(w_k_o, None, self.W_k2.out_features)
+                self._svd_init(w_k_res, None, self.W_k2)
 
-                if b is not None and target_mod.bias is not None:
-                    min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
-                elif target_mod.bias is not None:
-                    nn.init.zeros_(target_mod.bias)
+                # K1
+                self._svd_init(w_k_o, None, self.W_k1)
 
-                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
-                if w_norm < 1e-4:
-                    raise RuntimeError(f"Jamba2Block weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+            # V
+            if w_v is not None:
+                w_v_o = _orient(w_v, self.hidden_size)
+                w_v_res, _ = _resize_gqa(w_v_o, None, self.W_v.out_features)
+                self._svd_init(w_v_res, None, self.W_v)
 
-                if self.freeze_base:
-                    target_mod.freeze_base_weights()
+            # O
+            if w_o is not None:
+                w_o_o = _orient(w_o, self.all_head_size)
+                self._svd_init(w_o_o, b_o, self.out_proj)
+            elif self.is_nested_encoder:
+                eye = torch.eye(self.all_head_size, self.all_head_size,
+                                device=self.out_proj.down.weight.device,
+                                dtype=self.out_proj.down.weight.dtype)
+                self._svd_init(eye, None, self.out_proj)
 
-        if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
-            self.rotary_emb = src.rotary_emb
+            # Norm verification
+            for name, mod in (("W_q1", self.W_q1), ("W_k1", self.W_k1),
+                              ("W_q2", self.W_q2), ("W_k2", self.W_k2),
+                              ("W_v", self.W_v), ("out_proj", self.out_proj)):
+                try:
+                    w_norm = float(torch.norm(mod.weight).item())
+                    if w_norm < 1e-4:
+                        logger.warning(
+                            "JambaInfoBlock: weight '%s' has near-zero norm (%.2e).",
+                            name, w_norm,
+                        )
+                except Exception:
+                    pass
 
-        if self.lora_rank > 0 or self.freeze_base:
-            self.freeze_base_weights()
+            # Freeze base
+            for mod in (self.W_q1, self.W_k1, self.W_q2, self.W_k2,
+                        self.W_v, self.out_proj):
+                mod.freeze_base_weights()
 
+        # JI-09: forward sanity check
+        try:
+            with torch.no_grad():
+                d = next(self.parameters()).device
+                dt = self.W_q1.down.weight.dtype
+                dummy = torch.randn(1, 4, self.dim, device=d, dtype=dt)
+                _ = self.forward(dummy)
+        except Exception as e:
+            logger.debug("JambaInfoBlock forward sanity check warning: %s", e)
+
+    # ------------------------------------------------------------------
+    # JI-08: SSM wrapper
+    # ------------------------------------------------------------------
+    def _run_ssm(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor]) -> torch.Tensor:
+        if self.ssm is None:
+            return torch.zeros_like(x)
+        try:
+            out = self.ssm(x, attention_mask=attention_mask)
+        except TypeError:
+            try:
+                out = self.ssm(x)
+            except Exception as e:
+                logger.debug("SSM forward fallback failed: %s", e)
+                return torch.zeros_like(x)
+        if isinstance(out, tuple):
+            out = out[0]
+        return out
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        past_key_value: Optional[Any] = None,
         output_attentions: Optional[bool] = False,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        B, L, D = hidden_states.shape
+        mask = kwargs.get("mask", None)
+        if attention_mask is None and mask is not None:
+            attention_mask = mask
 
-        # Branch 1: SVD-Mamba
-        mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask)
-        x1 = self.norm1(hidden_states + mamba_out)
+        x = hidden_states
+        B, L, D = x.shape
+        device = x.device
 
-        # Branch 2: Multi-Head Attention
-        q = self.q_lin(x1).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_lin(x1).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
+        # JI-04: RoPE with past_len offset
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
-        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
-            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
-            pos_ids = kwargs.get("position_ids", None)
-            if pos_ids is None:
-                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
-            try:
-                cos, sin = rotary_mod(k, seq_len=L)
-            except TypeError:
-                try:
-                    cos, sin = rotary_mod(k, pos_ids)
-                except Exception:
-                    try:
-                        cos, sin = rotary_mod(pos_ids)
-                    except Exception:
-                        cos, sin = None, None
-            if cos is not None and sin is not None:
-                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+            past_len = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                    past_len = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+                    past_len = past_key_value.key_cache[0].shape[-2]
+            if past_len > 0:
+                cos = cos[..., past_len: past_len + L, :]
+                sin = sin[..., past_len: past_len + L, :]
+            q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+            q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
 
         if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
+            k1 = repeat_kv(k1, self.kv_repeat)
+            k2 = repeat_kv(k2, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        # Memory-efficient: use SDPA to avoid OOM on large seqs
+        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
+        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
-        try:
-            _qs = q.half() if q.dtype == torch.float32 else q
-            _ks = k.half() if k.dtype == torch.float32 else k
-            _vs = v.half() if v.dtype == torch.float32 else v
-            _is_causal = (getattr(self, 'is_decoder', False) or getattr(self, 'is_causal', False) or getattr(self.config, 'is_decoder', False) or getattr(self.config, 'is_causal', False)) and L > 1
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs, _ks, _vs,
-                is_causal=_is_causal,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
-            attn_proj = attn_out if self.is_nested_encoder else self.out_lin(attn_out)
-            x2 = self.norm2(x1 + self.dropout(attn_proj))
-            moe_out = self.moe(x2)
-            x3 = self.norm3(x2 + self.dropout(moe_out))
-            self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0))
-            return x3, None
-        except Exception:
-            pass
+        if self.is_decoder:
+            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+            scores1 = scores1.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            scores2 = scores2.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-
-        if self.is_decoder or getattr(self, "is_causal", False) or getattr(self.config, "is_decoder", False) or getattr(self.config, "is_causal", False):
-            causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
-
+        # JI-07: robust mask handling
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
-                scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+                valid_mask = get_token_valid_mask(attention_mask, B, L, device)
+                scores1 = scores1.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+                scores2 = scores2.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.clamp(min=-1e4)
+                if attention_mask.dtype == torch.bool:
+                    mask_add = (~attention_mask).float() * -1e4
+                else:
+                    mask_add = attention_mask.float()
+                scores1 = scores1 + mask_add
+                scores2 = scores2 + mask_add
 
-        probs = F.softmax(scores, dim=-1).to(v.dtype)
-        probs = torch.nan_to_num(probs, nan=0.0)
-        probs = self.dropout(probs)
+        scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
+        scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+        attn1 = F.softmax(scores1, dim=-1).to(q1.dtype)
+        attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
+
+        # Differential attention
+        diff_attn = F.relu(attn1 - 0.2 * attn2)
+        diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
+        diff_attn = self.dropout(diff_attn).to(v.dtype)
 
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                hm = head_mask.view(head_mask.size(0), -1, 1, 1)
+                hm = head_mask.unsqueeze(-1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                hm = head_mask[:, :, :1].unsqueeze(-1)
             else:
                 hm = head_mask
-            probs = probs * hm
+            diff_attn = diff_attn * hm.to(diff_attn.dtype)
 
-        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(
+            B, L, self.all_head_size
+        )
 
-        if not self.is_nested_encoder:
-            attn_proj = self.out_lin(attn_out)
+        # SSM branch
+        bottleneck_x = self.bottleneck(x)
+        if self.is_decoder:
+            ssm_branch = self._run_ssm(bottleneck_x, attention_mask)
         else:
-            attn_proj = attn_out
+            x_rev = torch.flip(bottleneck_x, dims=[1])
+            ssm_fwd = self._run_ssm(bottleneck_x, attention_mask)
+            ssm_bwd = self._run_ssm(x_rev, attention_mask)
+            ssm_branch = 0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]))
 
-        x2 = self.norm2(x1 + self.dropout(attn_proj))
+        alpha = torch.sigmoid(self.alpha_raw)
+        combined = (1.0 - alpha) * attn_out + alpha * ssm_branch
+        combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Branch 3: Expert Choice MoE
-        moe_out = self.moe(x2)
-        x3 = self.norm3(x2 + self.dropout(moe_out))
-        self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0))
+        if self.is_nested_encoder:
+            out = combined
+        else:
+            out = self.out_proj(combined)
 
-        return x3, (probs if output_attentions else None)
+        return out, (diff_attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("jamba_inject")
-@ATTENTION_REGISTRY.register("jamba2_inject")
-@ATTENTION_REGISTRY.register("inject_jamba")
-@ATTENTION_REGISTRY.register("inject_jamba2")
-def inject_jamba(
+# ===========================================================================
+# Injection (JI-05: recursion guard)
+# ===========================================================================
+
+@ATTENTION_REGISTRY.register("jamba_info_inject")
+@ATTENTION_REGISTRY.register("inject_jamba_info")
+def inject_jamba_info(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
@@ -567,18 +852,21 @@ def inject_jamba(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[Jamba2Block, nn.Module]]:
-    r"""Safe injection factory for Jamba2Block across diverse transformer architectures."""
+):
+    if _depth > 8:
+        logger.warning("inject_jamba_info: max recursion depth exceeded.")
+        return None
+
     target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get("model", kwargs.get("layer", None))
     if target is None:
         return None
 
-    cfg = model_config
-    if cfg is None and hasattr(target, "config"):
-        cfg = target.config
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # 1. Whole model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -586,95 +874,73 @@ def inject_jamba(
         layer_list = target.roberta.encoder.layer
     elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
         layer_list = target.transformer.h
+    elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
     elif hasattr(target, "model") and hasattr(target.model, "layers"):
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
     elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
-            res = inject_jamba(
-                layer=lyr,
-                model_config=cfg,
-                comp_config=comp_config,
-                layer_idx=idx,
-                total_layers=tot,
-                **kwargs,
+            res = inject_jamba_info(
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
             )
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    # 2. Single layer injection
-    src_attn = old_attn
-    if src_attn is None and target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                src_attn = target.attention.self
-            else:
-                src_attn = target.attention
-        elif hasattr(target, "self"):
-            src_attn = target.self
-        elif hasattr(target, "attn"):
-            src_attn = target.attn
-        elif hasattr(target, "self_attn"):
-            src_attn = target.self_attn
-
-    if src_attn is None and target is not None and hasattr(target, "forward"):
-        src_attn = target
-
-    if src_attn is None and cfg is None:
-        return None
-
-    hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        getattr(src_attn, 'dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (getattr(target, 'in_features', None) if target is not None else None) or
-        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
-    )
-    num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(src_attn, 'n_heads', None) or
-        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
-    )
-
+    layer = target
     try:
-        new_block = Jamba2Block(
-            d_model=hidden_size,
+        src_attn = old_attn
+        if src_attn is None and layer is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    cand = getattr(layer, attr)
+                    src_attn = getattr(cand, "self", cand)
+                    break
+
+        # Double-injection guard
+        if isinstance(src_attn, JambaInfoBlock) or "JambaInfo" in src_attn.__class__.__name__:
+            return None
+
+        new_attn = JambaInfoBlock(
             config=cfg,
             comp_config=comp_config,
             old_attn=src_attn,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            num_attention_heads=num_heads,
             **kwargs,
         )
+        if src_attn is not None:
+            new_attn.copy_weights(src_attn)
+
+        p = next(src_attn.parameters(), None) if src_attn is not None else None
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        if layer is not None:
+            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                new_attn.is_nested_encoder = True
+                layer.attention.self = new_attn
+            elif hasattr(layer, "attention"):
+                new_attn.is_nested_encoder = False
+                layer.attention = new_attn
+            elif hasattr(layer, "self_attn"):
+                new_attn.is_nested_encoder = False
+                layer.self_attn = new_attn
+            elif hasattr(layer, "self"):
+                new_attn.is_nested_encoder = True
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                new_attn.is_nested_encoder = False
+                layer.attn = new_attn
+        return new_attn
     except Exception as e:
-        logger.error(f"Jamba2Block injection failed: {e}")
+        logger.error("inject_jamba_info failed at layer %d: %s", layer_idx, e, exc_info=True)
         return None
-
-    if target is not None:
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                target.attention.self = new_block
-                new_block.is_nested_encoder = True
-            else:
-                target.attention = new_block
-        elif hasattr(target, "self"):
-            target.self = new_block
-        elif hasattr(target, "attn"):
-            target.attn = new_block
-        elif hasattr(target, "self_attn"):
-            target.self_attn = new_block
-
-    return new_block

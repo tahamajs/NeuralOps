@@ -1,32 +1,37 @@
 """
-Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compression Engine.
-Registered in COMPRESSOR_REGISTRY as 'mamba_shedder' and 'mamba_shedder_compressor'.
+Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compressor.
+
+Registered as 'mamba_shedder' and 'mamba_shedder_compressor'.
 
 Mathematical Formulation:
-1. Empirical Fisher Information / Sensitivity Metric:
-   $$\\mathcal{I}(X_j) = \\sqrt{\\frac{1}{N} \\sum_{n=1}^N X_{n, j}^2}$$
-2. Layer Residual Sensitivity:
-   $$\\Delta_l = \\frac{\\|X_{l+1} - X_l\\|_F}{\\|X_l\\|_F + \\epsilon}$$
-3. Channel & Layer Masking:
-   $$W_{pruned} = W \\odot \\mathcal{M}_{channel}^\\top$$
+  1. Empirical Fisher Information: I(X_j) = sqrt(mean_n X_{n,j}^2)
+  2. Layer Residual Sensitivity: Δ_l = ||X_{l+1} - X_l||_F / (||X_l||_F + ε)
+  3. Channel Masking: W_pruned = W ⊙ M_channel^T
 
-Production Hardening:
-- Fix 1: Reconstruction error validation with configurable max_error (default 0.20) and safe fallback.
-- Fix 2: Support for Conv1D (GPT-2) with transposition and fused QKV projections (Qwen/LLaMA).
-- Fix 3: Saliency decisions in FP32 with magnitude-based fallback if calibration fails; rejects degenerate masks.
-- Fix 4: Comprehensive per-layer statistics (pruned layers, errors, sparsity patterns, activation sensitivity flags).
-- Fix 5: Dimensional verification before weight assignment; dummy forward validation after layer shedding.
-- Fix 6: Unified critical-layer protection via should_compress_linear; hooks skipped for protected layers.
-- Fix 7: Generic ModuleList detection for layer shedding with evenly spaced deduplicated indices.
-         Exact 2:4 structured sparsity validation along feature columns; biases preserved in full precision.
-- Fix 8: FP32 Fisher variance clamping to prevent division by zero or NaN sensitivities.
+Bug-fix map:
+  MS-FIX-01  is_custom_attention = False.
+  MS-FIX-02  Removed misleading kwargs.pop() calls at start.
+  MS-FIX-03  Shape mismatch -> warning + skip (no assert).
+  MS-FIX-04  Multiple calibration batches supported.
+  MS-FIX-05  Skip LoRA / SVDLinear / already-pruned.
+  MS-FIX-06  Safe parameter-based device resolution.
+  MS-FIX-07  random module import at top, seeded locally.
+  MS-FIX-08  Debug logging for no-target.
+  MS-FIX-09  tokenizer falls back to model.config.tokenizer.
+  MS-FIX-10  Fast mean via sum/len.
+  MS-FIX-11  skip_should_compress_filter.
+  MS-FIX-12  Explicit note in stats (rewrite-only compressor).
+  MS-FIX-13  Idempotence flag on model.
+  MS-FIX-14  Bidirectional prompt: no cross-attn.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 import copy
 import logging
+import random
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -51,16 +56,20 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 _ATTN_NAMES = {
     "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+    "c_attn", "c_proj", "query", "key", "value",
+    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
 }
 
 
-@COMPRESSOR_REGISTRY.register("mamba_shedder")
-@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
+# ===========================================================================
+# Compressor
+# ===========================================================================
+
+@COMPRESSOR_REGISTRY.register("mamba_shedder_class")
+@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor_class")
 class MambaShedderCompressor(BaseCompressor):
-    """
-    Mamba-Shedder Compressor: Sensitivity-based channel pruning and layer shedding.
-    """
+    # MS-FIX-01: this is a compressor, not an attention layer.
+    is_custom_attention: bool = False
 
     def __init__(
         self,
@@ -77,27 +86,38 @@ class MambaShedderCompressor(BaseCompressor):
         structured_24: bool = False,
         target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
+        max_calibration_batches: int = 8,
+        min_layer_dim: int = 8,
+        skip_should_compress_filter: bool = False,
         **kwargs: Any,
     ) -> None:
-        kwargs.pop("max_error", None)
-        kwargs.pop("fallback_to_original", None)
-        kwargs.pop("sparsity", None)
-        kwargs.pop("shed_layers", None)
-        kwargs.pop("structured_24", None)
+        # MS-FIX-02: no misleading kwargs.pop() calls. Config-driven overrides
+        # are read from `comp_config` below.
         super().__init__(model, name="mamba_shedder", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            sparsity = _cfg_get(cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-            shed_layers = _cfg_get(cfg, "mamba_shedder_shed_layers", _cfg_get(cfg, "shed_layers", shed_layers))
-            structured_24 = _cfg_get(cfg, "mamba_shedder_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            sparsity = _cfg_get(cfg, "mamba_shedder_sparsity",
+                                _cfg_get(cfg, "sparsity", sparsity))
+            shed_layers = _cfg_get(cfg, "mamba_shedder_shed_layers",
+                                   _cfg_get(cfg, "shed_layers", shed_layers))
+            structured_24 = _cfg_get(cfg, "mamba_shedder_structured_24",
+                                     _cfg_get(cfg, "structured_24", structured_24))
             max_error = _cfg_get(cfg, "max_error", max_error)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            max_calibration_batches = _cfg_get(cfg, "max_calibration_batches", max_calibration_batches)
+            min_layer_dim = _cfg_get(cfg, "min_layer_dim", min_layer_dim)
+            skip_should_compress_filter = _cfg_get(
+                cfg, "skip_should_compress_filter", skip_should_compress_filter,
+            )
 
-        if "fallback_to_original" in kwargs:
-            fallback_to_original = bool(kwargs["fallback_to_original"])
+        # Tokenizer resolution (MS-FIX-09)
+        self.tokenizer = (
+            tokenizer
+            or getattr(model, "tokenizer", None)
+            or getattr(getattr(model, "config", None), "tokenizer", None)
+        )
 
-        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.shed_layers = max(0, int(shed_layers))
         self.max_error = float(max_error)
@@ -108,94 +128,192 @@ class MambaShedderCompressor(BaseCompressor):
         self.structured_24 = bool(structured_24)
         self.target_attention_only = bool(target_attention_only)
         self.target_modules = target_modules
-        self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
-        )
+        self.max_calibration_batches = max(1, int(max_calibration_batches))
+        self.min_layer_dim = max(1, int(min_layer_dim))
+        self.skip_should_compress_filter = bool(skip_should_compress_filter)
+
+        # MS-FIX-06: safe device resolution.
+        if device is not None:
+            self.target_device = torch.device(device)
+        else:
+            first_param = next(iter(model.parameters()), None)
+            self.target_device = (
+                first_param.device if first_param is not None
+                else torch.device("cpu")
+            )
+
         self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
+        self._compressed_params: int = 0
 
-    def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        """Fix 6: Unified critical-layer protection delegated to should_compress_linear."""
-        cls_name = module.__class__.__name__.lower()
-        # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
+    # ------------------------------------------------------------------
+    # Target check
+    # ------------------------------------------------------------------
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
+        name_lower = name.lower()
+        # MS-FIX-05: skip LoRA / already-compressed submodules.
+        if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
+            if _debug:
+                logger.info(f"  [skip] {name}: lora/base_layer part")
+            return False
+
+        # Already-pruned modules.
+        cls_name = module.__class__.__name__
+        if cls_name in ("DynamicSVDLinear", "SVDLinear", "SVDLinearLayer",
+                        "FactorisedLinear", "FactorizedLinear", "LowRankPlusSparseLinear"):
+            if _debug:
+                logger.info(f"  [skip] {name}: already compressed ({cls_name})")
+            return False
+
+        # Critical layers.
+        if not self.skip_should_compress_filter:
+            try:
+                if not should_compress_linear(self.model, name):
+                    if _debug:
+                        logger.info(f"  [skip] {name}: should_compress_linear=False")
+                    return False
+            except Exception as e:
+                if _debug:
+                    logger.info(f"  [skip] {name}: should_compress_linear raised {e}")
+                return False
+
+        # Linear-like detection.
+        base_mod = getattr(module, "base_layer", module)
+        cls_lower = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(module, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(module, "nf")
-            or hasattr(module, "base_layer")
+            isinstance(base_mod, nn.Linear)
+            or "conv1d" in cls_lower
+            or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
+            if _debug:
+                logger.info(f"  [skip] {name}: not linear-like")
             return False
-        if not should_compress_linear(self.model, name):
-            return False
-        if self.target_attention_only:
-            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
-            if not is_attn:
-                return False
-        if self.target_modules is None:
-            return True
-        return any(t in name for t in self.target_modules)
 
+        w = getattr(base_mod, "weight", None)
+        if w is None:
+            if _debug:
+                logger.info(f"  [skip] {name}: weight None")
+            return False
+        if min(w.shape[0], w.shape[1]) < self.min_layer_dim:
+            if _debug:
+                logger.info(f"  [skip] {name}: dim too small {tuple(w.shape)}")
+            return False
+
+        # Attention-only filter.
+        if self.target_attention_only:
+            if not any(k in name_lower for k in _ATTN_NAMES):
+                if _debug:
+                    logger.info(f"  [skip] {name}: not attention")
+                return False
+
+        # Explicit target modules.
+        if self.target_modules is not None:
+            ok = any(t in name for t in self.target_modules)
+            if not ok and _debug:
+                logger.info(f"  [skip] {name}: not in target_modules")
+            return ok
+
+        if _debug:
+            logger.info(f"  [TARGET] {name}: shape={tuple(w.shape)}")
+        return True
+
+    # ------------------------------------------------------------------
+    # Activation collection (MS-FIX-04)
+    # ------------------------------------------------------------------
     def _collect_activations(self) -> Dict[str, torch.Tensor]:
-        """Collect input activations across all compressible modules, skipping protected layers."""
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        accum: Dict[str, List[torch.Tensor]] = {}
         hooks = []
 
-        def make_hook(name: str):
-            def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
+        def make_hook(layer_name: str):
+            def hook(module, inputs, output):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
-                    if name not in activations:
-                        activations[name] = []
-                    activations[name].append(inp.cpu())
+                    # Cap per-batch tokens.
+                    if inp.dim() >= 2 and inp.shape[0] * inp.shape[1] > 32768:
+                        inp = inp.reshape(-1, inp.shape[-1])[:32768].unsqueeze(0)
+                    accum.setdefault(layer_name, []).append(inp.cpu())
             return hook
 
-        for name, module in self.model.named_modules():
-            # Fix 6: Skip hooks for protected layers
-            if self._is_target_module(name, module):
-                hooks.append(module.register_forward_hook(make_hook(name)))
+        target_modules = [
+            (name, module)
+            for name, module in self.model.named_modules()
+            if self._is_target_module(name, module)
+        ]
 
-        calib_inputs = get_calibration_tensors(
-            self.model,
-            tokenizer=self.tokenizer,
-            calibration_loader=self.calibration_loader,
-            calibration_texts=self.calibration_texts,
-            device=self.target_device,
-        )
+        if not target_modules:
+            return {}
 
-        with torch.no_grad():
-            try:
-                if isinstance(calib_inputs, dict):
-                    self.model(**calib_inputs)
-                elif isinstance(calib_inputs, torch.Tensor):
-                    self.model(calib_inputs)
-                elif isinstance(calib_inputs, (list, tuple)):
-                    self.model(*calib_inputs)
-            except Exception as e:
-                logger.debug("MambaShedder activation collection forward pass exception: %s", e)
+        for name, module in target_modules:
+            hooks.append(module.register_forward_hook(make_hook(name)))
 
-        for h in hooks:
-            h.remove()
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            batches = self._normalize_calibration_batches(calib_inputs)
+            n_batches = min(len(batches), self.max_calibration_batches)
+
+            with torch.no_grad():
+                for i in range(n_batches):
+                    batch = batches[i]
+                    try:
+                        if isinstance(batch, dict):
+                            self.model(**batch)
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch)
+                        elif isinstance(batch, (list, tuple)):
+                            self.model(*batch)
+                    except Exception as e:
+                        logger.debug("Calibration batch %d failed: %s", i, e)
+        finally:
+            for h in hooks:
+                h.remove()
 
         aggregated: Dict[str, torch.Tensor] = {}
-        for name, act_list in activations.items():
+        for name, act_list in accum.items():
             if act_list:
-                aggregated[name] = torch.cat(act_list, dim=0)
-
+                try:
+                    aggregated[name] = torch.cat(act_list, dim=0)
+                except Exception as e:
+                    logger.debug("Activation concat failed for %s: %s", name, e)
         return aggregated
 
+    @staticmethod
+    def _normalize_calibration_batches(calib_inputs: Any) -> List[Any]:
+        if calib_inputs is None:
+            return []
+        if isinstance(calib_inputs, (list, tuple)):
+            if len(calib_inputs) == 0:
+                return []
+            first = calib_inputs[0]
+            if isinstance(first, (dict, torch.Tensor)):
+                return list(calib_inputs)
+            if isinstance(first, (list, tuple)):
+                return [calib_inputs]  # single tuple batch
+            return [calib_inputs]
+        if isinstance(calib_inputs, dict):
+            return [calib_inputs]
+        if isinstance(calib_inputs, torch.Tensor):
+            return [calib_inputs]
+        return [calib_inputs]
+
+    # ------------------------------------------------------------------
+    # Layer shedding (MS-FIX-07)
+    # ------------------------------------------------------------------
     def _apply_layer_shedding(self) -> int:
-        """
-        Fix 7: Generic ModuleList detection for repeated transformer/mamba blocks
-        with evenly spaced, deduplicated index selection and optional forward validation.
-        """
         if self.shed_layers <= 0:
             return 0
 
-        # Search for repeating layer block ModuleList
+        # Already shed?
+        if getattr(self.model, "_mamba_shed_done", False):
+            return 0
+
         target_container = None
         container_parent = None
         container_attr = None
@@ -210,36 +328,50 @@ class MambaShedderCompressor(BaseCompressor):
             ("h", lambda m: getattr(m, "h", None)),
         ]
 
-        for name, getter in candidates:
-            res = getter(self.model)
+        for dotted_name, getter in candidates:
+            try:
+                res = getter(self.model)
+            except Exception:
+                res = None
             if isinstance(res, (nn.ModuleList, list)) and len(res) > self.shed_layers:
-                parts = name.split(".")
+                parts = dotted_name.split(".")
                 parent = self.model
+                valid = True
                 for p in parts[:-1]:
-                    parent = getattr(parent, p)
-                target_container = res
-                container_parent = parent
-                container_attr = parts[-1]
-                break
+                    parent = getattr(parent, p, None)
+                    if parent is None:
+                        valid = False
+                        break
+                if valid:
+                    target_container = res
+                    container_parent = parent
+                    container_attr = parts[-1]
+                    break
 
+        # Generic search
         if target_container is None:
-            # Generic search over named modules for largest ModuleList of blocks
             max_len = 0
             for name, mod in self.model.named_modules():
-                if isinstance(mod, nn.ModuleList) and len(mod) > self.shed_layers and len(mod) > max_len:
-                    # Verify children look like layer blocks
-                    if len(mod) >= 2:
-                        parts = name.split(".")
-                        parent = self.model
-                        for p in parts[:-1]:
-                            parent = getattr(parent, p)
-                        target_container = mod
-                        container_parent = parent
-                        container_attr = parts[-1]
-                        max_len = len(mod)
+                if not isinstance(mod, nn.ModuleList):
+                    continue
+                if len(mod) <= self.shed_layers or len(mod) <= max_len:
+                    continue
+                parts = name.split(".")
+                parent = self.model
+                valid = True
+                for p in parts[:-1]:
+                    parent = getattr(parent, p, None)
+                    if parent is None:
+                        valid = False
+                        break
+                if valid:
+                    target_container = mod
+                    container_parent = parent
+                    container_attr = parts[-1]
+                    max_len = len(mod)
 
         if target_container is None or len(target_container) <= self.shed_layers:
-            logger.warning("MambaShedder: No suitable ModuleList found for layer shedding.")
+            logger.warning("MambaShedder: no suitable ModuleList found for layer shedding.")
             return 0
 
         orig_len = len(target_container)
@@ -247,96 +379,112 @@ class MambaShedderCompressor(BaseCompressor):
         if keep_len <= 1 or orig_len <= 2:
             kept_indices = list(range(keep_len))
         else:
-            # Remove layers from the middle, keep first and last
-            all_indices = list(range(orig_len))
-            # Always keep layer 0 and last layer
             keep_set = {0, orig_len - 1}
-            # Sample remaining from middle candidates
-            middle_candidates = [i for i in range(1, orig_len - 1)]
             n_middle_to_keep = keep_len - len(keep_set)
-            import random
+            middle_candidates = [i for i in range(1, orig_len - 1)]
             rng = random.Random(42)
-            middle_kept = sorted(rng.sample(middle_candidates, min(n_middle_to_keep, len(middle_candidates))))
+            middle_kept = sorted(
+                rng.sample(middle_candidates, min(n_middle_to_keep, len(middle_candidates)))
+            )
             keep_set.update(middle_kept)
             kept_indices = sorted(keep_set)[:keep_len]
 
-        # Save original ModuleList in case validation fails
         old_container = getattr(container_parent, container_attr)
         new_layers = nn.ModuleList([target_container[i] for i in kept_indices])
         setattr(container_parent, container_attr, new_layers)
 
-        # Fix 5: Validate model still produces output on small dummy input
+        # MS-FIX-13: validation with revert.
         if self.validate_after_shed:
             try:
                 self.model.eval()
                 dummy_in = torch.randint(0, 100, (1, 8), device=self.target_device)
                 with torch.no_grad():
-                    _ = self.model(dummy_in)
+                    try:
+                        self.model(dummy_in)
+                    except Exception:
+                        self.model(input_ids=dummy_in,
+                                   attention_mask=torch.ones_like(dummy_in))
             except Exception as e:
                 logger.warning(
-                    "MambaShedder: Layer shedding validation failed (%s). Reverting to original %d layers.",
-                    e,
-                    orig_len,
+                    "MambaShedder: layer shedding validation failed (%s). "
+                    "Reverting to original %d layers.",
+                    e, orig_len,
                 )
                 setattr(container_parent, container_attr, old_container)
                 return 0
 
         shed_done = orig_len - len(new_layers)
-        logger.info("MambaShedder: Successfully shed %d layers (%d -> %d).", shed_done, orig_len, len(new_layers))
+        logger.info(
+            "MambaShedder: shed %d layers (%d -> %d).",
+            shed_done, orig_len, len(new_layers),
+        )
+        self.model._mamba_shed_done = True
         return shed_done
 
+    # ------------------------------------------------------------------
+    # Main compress
+    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes Mamba-Shedder sensitivity pruning and optional layer shedding."""
         shed_done = self._apply_layer_shedding()
         activations_map = self._collect_activations()
         pruned_layers_count = 0
         self.layer_errors = {}
-        layer_details = {}
+        layer_details: Dict[str, Any] = {}
 
         total_orig_params = sum(p.numel() for p in self.model.parameters())
         total_comp_params = 0
 
-        for name, module in self.model.named_modules():
-            if not self._is_target_module(name, module):
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
-                continue
+        # MS-FIX-08: diagnostic if no targets
+        target_list = [
+            (name, module)
+            for name, module in self.model.named_modules()
+            if self._is_target_module(name, module)
+        ]
+        if not target_list:
+            logger.warning("MambaShedder: no target layers found. Running diagnostic...")
+            n_scanned = 0
+            for name, module in self.model.named_modules():
+                n_scanned += 1
+                self._is_target_module(name, module, _debug=True)
+            logger.warning("MambaShedder diagnostic: %d modules scanned, 0 targets.", n_scanned)
 
+        for name, module in target_list:
             target_layer = getattr(module, "base_layer", module)
             raw_w = target_layer.weight.data
             cls_name = target_layer.__class__.__name__.lower()
-            # Fix 2: Conv1D detection by class name and nf attribute
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
             device = raw_w.device
             dtype = raw_w.dtype
 
-            # Fix 3: Perform pruning decisions in FP32
-            if is_conv1d:
-                W = raw_w.t().clone().float()
-            else:
-                W = raw_w.clone().float()
-
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             used_act_sensitivity = False
 
-            # Fix 8: FP32 Fisher Information computation clamped to avoid zero variance
+            # Fisher-based sensitivity with magnitude fallback.
             act = activations_map.get(name, None)
             if act is not None and act.numel() > 0:
-                act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
-                if act_flat.shape[-1] == d_in:
-                    fisher = (act_flat ** 2).mean(dim=0).clamp(min=1e-8)
-                    sens = fisher.sqrt()
-                    used_act_sensitivity = True
-                else:
+                try:
+                    act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
+                    if act_flat.shape[-1] == d_in:
+                        fisher = (act_flat ** 2).mean(dim=0).clamp(min=1e-8)
+                        sens = fisher.sqrt()
+                        used_act_sensitivity = True
+                    else:
+                        sens = torch.norm(W, dim=0)
+                except Exception as e:
+                    logger.debug("Fisher computation failed for %s: %s", name, e)
                     sens = torch.norm(W, dim=0)
             else:
-                # Fix 3: Fallback to magnitude-based sensitivity on weights
                 sens = torch.norm(W, dim=0)
 
-            # Fix 7: Structured 2:4 pruning along input features (dim=1)
+            # Structured 2:4 or unstructured pruning.
             if self.structured_24:
-                saliency_matrix = sens.unsqueeze(0).expand_as(W)
-                W_pruned, _ = apply_24_structured_mask(W, saliency=saliency_matrix, dim=1)
+                saliency = sens.unsqueeze(0).expand_as(W)
+                try:
+                    W_pruned, _ = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                except Exception as e:
+                    logger.warning("Structured 2:4 pruning failed for %s: %s", name, e)
+                    W_pruned = W
             else:
                 n_keep = max(1, int(d_in * (1.0 - self.sparsity)))
                 _, keep_idx = torch.topk(sens, k=n_keep, largest=True)
@@ -344,47 +492,52 @@ class MambaShedderCompressor(BaseCompressor):
                 mask[keep_idx] = 1.0
                 W_pruned = W * mask.unsqueeze(0)
 
-            # Fix 3: Never replace with all-zero mask
             if (W_pruned == 0).all():
-                logger.warning("MambaShedder: Degenerate all-zero mask for %s. Keeping original layer.", name)
+                logger.warning(
+                    "MambaShedder: degenerate all-zero mask for %s; keeping original.",
+                    name,
+                )
                 for p in module.parameters(recurse=False):
-                    p.requires_grad = False
                     total_comp_params += p.numel()
                 continue
 
-            # Fix 1: Reconstruction error validation
             norm_orig = torch.norm(W, p="fro")
             rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
             self.layer_errors[name] = rel_err
 
             if rel_err > self.max_error:
                 logger.warning(
-                    "MambaShedder reconstruction error %.4f on %s exceeded max_error %.4f%s",
-                    rel_err,
-                    name,
-                    self.max_error,
-                    ". Keeping original layer." if self.fallback_to_original else ". Proceeding with pruned weight.",
+                    "MambaShedder: err %.4f on %s > %.4f. %s",
+                    rel_err, name, self.max_error,
+                    "Keeping original." if self.fallback_to_original else "Proceeding.",
                 )
                 if self.fallback_to_original:
                     for p in module.parameters(recurse=False):
-                        p.requires_grad = False
                         total_comp_params += p.numel()
                     continue
 
-            # Fix 5: Verify weight shape integrity before replacement
-            final_w = W_pruned.t() if is_conv1d else W_pruned
-            assert final_w.shape == target_layer.weight.shape, (
-                f"MambaShedder shape mismatch for {name}: expected {target_layer.weight.shape}, got {final_w.shape}"
-            )
+            # MS-FIX-03: no assert; use graceful skip on shape mismatch.
+            final_w = W_pruned.t().contiguous() if is_conv1d else W_pruned
+            expected_shape = target_layer.weight.shape
+            if final_w.shape != expected_shape:
+                logger.warning(
+                    "MambaShedder: shape mismatch for %s: expected %s, got %s; skipping.",
+                    name, tuple(expected_shape), tuple(final_w.shape),
+                )
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
+                continue
 
-            # Assign back in original dtype
             target_layer.weight.data = final_w.to(dtype=dtype, device=device)
             target_layer.weight.requires_grad = False
-            if hasattr(target_layer, "bias") and target_layer.bias is not None:
+            if getattr(target_layer, "bias", None) is not None:
                 target_layer.bias.requires_grad = False
 
+            # Preserve LoRA trainability.
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
-                for p in [module.lora_A, module.lora_B]:
+                for p in (module.lora_A, module.lora_B):
+                    if p is None:
+                        continue
                     if hasattr(p, "weight"):
                         p.weight.requires_grad = True
                     elif isinstance(p, nn.Parameter):
@@ -398,14 +551,29 @@ class MambaShedderCompressor(BaseCompressor):
                 "rel_error": rel_err,
                 "used_act_sensitivity": used_act_sensitivity,
                 "shape": tuple(final_w.shape),
-                "sparsity": self.sparsity if not self.structured_24 else 0.5,
+                "sparsity": 0.5 if self.structured_24 else self.sparsity,
             }
 
-        self._compressed_params = self._count_params(self.model)
-        stats = self.get_compression_stats()
-        avg_err = float(torch.tensor(list(self.layer_errors.values())).mean().item()) if self.layer_errors else 0.0
+        # MS-FIX-10: fast mean without torch.tensor(list(...))
+        if self.layer_errors:
+            avg_err = sum(self.layer_errors.values()) / len(self.layer_errors)
+        else:
+            avg_err = 0.0
+
+        # MS-FIX-12: honest stats. We rewrite weights, not replace modules,
+        # so framework-level compression_rate will read 1.0.
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
         eff_ratio = total_comp_params / max(1, total_orig_params)
-        # Fix 4: Comprehensive per-layer stats
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
         stats.update({
             "pruned_layers": pruned_layers_count,
             "sparsity_target": self.sparsity,
@@ -417,29 +585,54 @@ class MambaShedderCompressor(BaseCompressor):
             "layer_errors": self.layer_errors,
             "layer_details": layer_details,
             "effective_parameter_ratio": eff_ratio,
-            "bias_handling": "Biases preserved in full precision unpruned",  # Fix 7
+            "bias_handling": "biases preserved in full precision (unpruned)",
             "method": "mamba_shedder_sensitivity",
+            "note": (
+                "This compressor rewrites weights in-place; "
+                "framework-level compression_rate may read 1.0. "
+                "Use effective_parameter_ratio as the true density metric."
+            ),
         })
         self.stats = stats
+
         logger.info(
-            "MambaShedder compression complete: %d layers pruned, %d layers shed, avg error: %.4f",
-            pruned_layers_count,
-            shed_done,
-            avg_err,
+            "MambaShedder: %d layers pruned, %d layers shed, avg err %.4f, "
+            "effective_param_ratio %.2fx.",
+            pruned_layers_count, shed_done, avg_err, eff_ratio,
         )
         return self.model, stats
 
 
+# ===========================================================================
+# Factory
+# ===========================================================================
+
+@COMPRESSOR_REGISTRY.register("mamba_shedder")
+@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
 @COMPRESSOR_REGISTRY.register("mamba_shedder_factory")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
-    """Factory function for Mamba-Shedder compressor."""
-    sparsity = _cfg_get(comp_config, "mamba_shedder_sparsity", _cfg_get(comp_config, "sparsity", kwargs.pop("sparsity", 0.2)))
-    shed_layers = _cfg_get(comp_config, "mamba_shedder_shed_layers", _cfg_get(comp_config, "shed_layers", kwargs.pop("shed_layers", 0)))
-    structured_24 = _cfg_get(comp_config, "mamba_shedder_structured_24", _cfg_get(comp_config, "structured_24", kwargs.pop("structured_24", False)))
-    max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 0.20))
-    fallback = _cfg_get(comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True))
-    target_attention_only = _cfg_get(comp_config, "target_attention_only", kwargs.pop("target_attention_only", False))
-    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
+    sparsity = kwargs.pop("sparsity",
+                          _cfg_get(comp_config, "mamba_shedder_sparsity",
+                                   _cfg_get(comp_config, "sparsity", 0.2)))
+    shed_layers = kwargs.pop("shed_layers",
+                             _cfg_get(comp_config, "mamba_shedder_shed_layers",
+                                      _cfg_get(comp_config, "shed_layers", 0)))
+    structured_24 = kwargs.pop("structured_24",
+                               _cfg_get(comp_config, "mamba_shedder_structured_24",
+                                        _cfg_get(comp_config, "structured_24", False)))
+    max_error = kwargs.pop("max_error",
+                           _cfg_get(comp_config, "max_error", 0.20))
+    fallback = kwargs.pop("fallback_to_original",
+                          _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only",
+                                        _cfg_get(comp_config, "target_attention_only", False))
+    skip_filter = kwargs.pop("skip_should_compress_filter",
+                             _cfg_get(comp_config, "skip_should_compress_filter", False))
+    tokenizer = kwargs.pop(
+        "tokenizer",
+        getattr(model, "tokenizer", None)
+        or _cfg_get(comp_config, "tokenizer", None),
+    )
 
     compressor = MambaShedderCompressor(
         model,
@@ -450,6 +643,7 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
         max_error=max_error,
         fallback_to_original=fallback,
         target_attention_only=target_attention_only,
+        skip_should_compress_filter=skip_filter,
         comp_config=comp_config,
         **kwargs,
     )

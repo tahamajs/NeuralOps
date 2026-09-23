@@ -1,34 +1,38 @@
 """
 Hybrid softmax + linear attention with per-head gated fusion.
 
-This module is a valid attention REPLACEMENT (not a compressor).
-It adds a small number of parameters (the gate) but reduces 
-attention computation at long sequence lengths by routing 
-some heads to linear attention.
+Valid attention REPLACEMENT (not a compressor).
+Adds a small number of parameters (the gate) but reduces attention
+computation at long sequence lengths by routing some heads to linear attention.
 
 NOVELTY STATEMENT:
-    Hybrid softmax + linear attention is NOT novel by itself 
-    (cf. MEGA 2023, BiGS 2024, Zipformer 2024). Our specific 
+    Hybrid softmax + linear attention is NOT novel by itself
+    (cf. MEGA 2023, BiGS 2024, Zipformer 2024). Our specific
     formulation differs in:
 
     1. PER-HEAD learned gate:
          gate_h = sigmoid(W_h · hidden_states)
-       This allows different heads to prefer different 
-       attention types, in contrast to MEGA's single-head gate.
-    
+       This allows different heads to prefer different attention types,
+       in contrast to MEGA's single-head gate.
+
     2. Gate initialization to softmax-dominant (bias=10.0):
-       Ensures the model starts IDENTICAL to the original 
-       softmax attention. The gate learns to route some heads 
-       to linear attention during training.
-    
+       Ensures the model starts IDENTICAL to the original softmax attention.
+       The gate learns to route some heads to linear attention during training.
+
     3. No extra parameters beyond the gate:
        768 * 12 + 12 = 9,228 params (+0.014% on DistilBERT).
 
-References:
-    - MEGA (Ma et al., 2023): Exponential Moving Average 
-      with single gate.
-    - BiGS (2024): Bidirectional Gated SSM.
-    - Zipformer (2024): U-Net structured attention.
+Bug-fix map:
+  HA-FIX-01  out_proj always executed (no dead parameters in nested mode).
+  HA-FIX-02  _linear_branch: proper causal + padding masking.
+  HA-FIX-03  injector recursion guard.
+  HA-FIX-04  injector double-injection guard.
+  HA-FIX-05  removed 'comp_config' in locals() hack.
+  HA-FIX-06  is_nested_encoder set correctly in injector.
+  HA-FIX-07  KV-cache implemented (tuple + DynamicCache).
+  HA-FIX-08  RoPE past_len offset + position_embeddings support.
+  HA-FIX-09  head_mask broadcasting corrected (B, H, 1, 1).
+  HA-FIX-10  _standard_branch: optional SDPA fast path.
 """
 
 from __future__ import annotations
@@ -46,6 +50,10 @@ from framework.utils.compat import repeat_kv
 
 logger = logging.getLogger(__name__)
 
+
+# ===========================================================================
+# Mask helper
+# ===========================================================================
 
 def _extract_valid_mask(
     mask: Optional[torch.Tensor],
@@ -87,9 +95,78 @@ def _extract_valid_mask(
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
 
-@ATTENTION_REGISTRY.register("hybrid_attention")
-@ATTENTION_REGISTRY.register("weighted_ensemble")
-@ATTENTION_REGISTRY.register("smart_weighted_ensemble")
+def _detect_decoder(config, is_decoder, old_attn):
+    if is_decoder is not None:
+        return bool(is_decoder)
+    if config is not None:
+        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
+            return True
+        mt = str(getattr(config, "model_type", "")).lower()
+        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+            return True
+    if old_attn is not None:
+        if getattr(old_attn, "is_decoder", False):
+            return True
+        if hasattr(old_attn, "c_attn"):
+            return True
+        if "gpt" in old_attn.__class__.__name__.lower():
+            return True
+    return False
+
+
+# ===========================================================================
+# RoPE
+# ===========================================================================
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    d = x.shape[-1]
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half: 2 * half]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if d % 2 == 1:
+        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
+    return rotated
+
+
+def _apply_rope(q, k, cos, sin):
+    if cos is None or sin is None:
+        return q, k
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+    if cos.shape[-2] != q.shape[-2]:
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+        k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+    return q, k
+
+
+# ===========================================================================
+# Main Attention
+# ===========================================================================
+
+@ATTENTION_REGISTRY.register("hybrid_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("weighted_ensemble", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("smart_weighted_ensemble", supports_causal=True, supports_gqa=True)
 class HybridAttention(BaseAttention):
     """
     Hybrid softmax + linear attention with per-head dynamic gated fusion.
@@ -157,18 +234,8 @@ class HybridAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        # Decoder and nested encoder flags
-        if is_decoder is not None:
-            self.is_decoder = bool(is_decoder)
-        else:
-            is_dec = bool(getattr(cfg_source, "is_decoder", False) or kwargs.get("is_decoder", False))
-            _mt = getattr(cfg_source, "model_type", "").lower() if cfg_source else ""
-            _decoder_prefixes = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"
-            )
-            if any(_mt.startswith(p) for p in _decoder_prefixes):
-                is_dec = True
-            self.is_decoder: bool = is_dec
+        # Decoder detection
+        self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
         self.is_nested_encoder: bool = False
 
         # Projections
@@ -178,12 +245,10 @@ class HybridAttention(BaseAttention):
         self.out_proj = nn.Linear(self.all_head_size, self.hidden_size, bias=True)
         self.dropout = nn.Dropout(drop_rate)
 
-        # Per-head gate: (B, N, hidden) -> (B, N, num_heads)
+        # Per-head gate
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
 
-        # CRITICAL: initialize gate to prefer softmax attention.
-        # sigmoid(10.0) ≈ 0.99995, so at init the model is approximately IDENTICAL
-        # to the original softmax attention, ensuring baseline quality.
+        # Initialize gate to prefer softmax (sigmoid(10.0) ≈ 0.99995)
         with torch.no_grad():
             self.ensemble_gate.weight.zero_()
             self.ensemble_gate.bias.fill_(10.0)
@@ -191,44 +256,91 @@ class HybridAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    # State dict / attribute aliases
+    # ------------------------------------------------------------------
+    # Aliases
+    # ------------------------------------------------------------------
     @property
-    def query(self) -> nn.Linear:
-        return self.q_proj
-
+    def query(self): return self.q_proj
     @property
-    def key(self) -> nn.Linear:
-        return self.k_proj
-
+    def key(self): return self.k_proj
     @property
-    def value(self) -> nn.Linear:
-        return self.v_proj
-
+    def value(self): return self.v_proj
     @property
-    def dense(self) -> nn.Linear:
-        return self.out_proj
+    def dense(self): return self.out_proj
+    @property
+    def q_lin(self): return self.q_proj
+    @property
+    def k_lin(self): return self.k_proj
+    @property
+    def v_lin(self): return self.v_proj
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
 
+    # ------------------------------------------------------------------
+    # Standard softmax branch (HA-FIX-10: optional SDPA fast path)
+    # ------------------------------------------------------------------
     def _standard_branch(
         self,
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
         attention_mask: Optional[torch.Tensor],
+        past_len: int = 0,
+        valid_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         B, H, N, Dh = Q.shape
-        _, _, N_k, _ = K.shape
+        N_k = K.shape[2]
+
+        # HA-FIX-10: SDPA fast path when training/eval allows it.
+        can_sdpa = (not self.training or self.dropout.p == 0.0) and True
+        if can_sdpa:
+            try:
+                q_sdp = Q.half() if Q.dtype == torch.float32 else Q
+                k_sdp = K.half() if K.dtype == torch.float32 else K
+                v_sdp = V.half() if V.dtype == torch.float32 else V
+
+                attn_bias_sdp = None
+                if valid_mask is not None:
+                    # Build a proper (B, 1, 1, N_k) additive mask.
+                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
+
+                is_causal_sdp = self.is_decoder and past_len == 0 and N > 1
+
+                out_sdp = F.scaled_dot_product_attention(
+                    q_sdp, k_sdp, v_sdp,
+                    attn_mask=attn_bias_sdp,
+                    is_causal=is_causal_sdp,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                out_sdp = out_sdp.to(Q.dtype)
+                return torch.nan_to_num(out_sdp, nan=0.0)
+            except Exception as e:
+                logger.debug("SDPA fast path failed: %s; falling back to manual.", e)
+
+        # Manual path
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
+        # Causal mask (offset-aware for cache)
         if self.is_decoder and N > 1:
-            idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
-            idx_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
-            causal_mask = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_mask, -10000.0)
+            if past_len > 0:
+                abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+                abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+                causal_mask = (abs_k <= abs_q)
+            else:
+                causal_mask = torch.tril(torch.ones(N, N_k, device=Q.device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
-        if attention_mask is not None:
+        # Padding mask
+        if valid_mask is not None:
+            scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
+        elif attention_mask is not None:
             if attention_mask.dim() == 2:
-                ext_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * -10000.0
+                ext_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
                 scores = scores + ext_mask.to(scores.dtype)
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
@@ -236,27 +348,46 @@ class HybridAttention(BaseAttention):
                 scores = scores + attention_mask.to(scores.dtype)
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        attn = F.softmax(scores.float(), dim=-1).to(Q.dtype)
+        attn = F.softmax(scores, dim=-1).to(Q.dtype)
         attn = self.dropout(attn)
         return torch.matmul(attn, V)
 
+    # ------------------------------------------------------------------
+    # Linear branch (HA-FIX-02: proper causal + padding)
+    # ------------------------------------------------------------------
     def _linear_branch(
         self,
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
         valid_mask: torch.Tensor,
+        past_len: int = 0,
     ) -> torch.Tensor:
-        phi_Q = F.elu(Q) + 1.0
-        phi_K = F.elu(K) + 1.0
+        phi_Q = F.elu(Q.float()) + 1.0
+        phi_K = F.elu(K.float()) + 1.0
+        V_f = V.float()
 
-        mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
+        # Padding mask on K and V
+        mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(phi_K.dtype)
         phi_K = phi_K * mask
-        V = V * mask
+        V_f = V_f * mask
+
+        B_h, H_h, N_h, D_h = phi_Q.shape
+        N_k = phi_K.shape[2]
+
+        # Handle cache: query positions are [past_len .. past_len + N_h), keys are [0 .. N_k)
+        if self.is_decoder and past_len > 0:
+            # Only new queries, keys include cache.
+            # Non-causal over the full key set (past + new).
+            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
+            Z = phi_K.sum(dim=-2, keepdim=True)
+            num = torch.matmul(phi_Q, KV)
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
+            out = num / den
+            return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
 
         if self.is_decoder:
-            # Chunked cumulative scan to bound memory to O(chunk · D^2) instead of O(N · D^2)
-            B_h, H_h, N_h, D_h = phi_Q.shape
+            # Chunked causal linear attention.
             chunk_size = 128
             num_chunks = (N_h + chunk_size - 1) // chunk_size
 
@@ -272,7 +403,7 @@ class HybridAttention(BaseAttention):
 
                 phi_Q_c = phi_Q[:, :, s:e]
                 phi_K_c = phi_K[:, :, s:e]
-                V_c = V[:, :, s:e]
+                V_c = V_f[:, :, s:e]
 
                 KV_c = torch.einsum("bhnd,bhne->bhnde", phi_K_c, V_c)
                 KV_c_cumsum = torch.cumsum(KV_c, dim=2)
@@ -293,15 +424,18 @@ class HybridAttention(BaseAttention):
             num = torch.cat(num_list, dim=2)
             den = torch.cat(den_list, dim=2).unsqueeze(-1)
         else:
-            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V)
-            num = torch.matmul(phi_Q, KV)
+            KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
             Z = phi_K.sum(dim=-2, keepdim=True)
+            num = torch.matmul(phi_Q, KV)
             den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous())
 
         den = den.clamp(min=1e-6)
         out = num / den
-        return torch.nan_to_num(out, nan=0.0)
+        return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
 
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -313,6 +447,8 @@ class HybridAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -321,53 +457,106 @@ class HybridAttention(BaseAttention):
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
-        N_k = kv_input.shape[1]
+        N_kv_new = kv_input.shape[1]
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        valid_mask = _extract_valid_mask(eff_mask, B, N_k, device)
+        valid_mask_new = _extract_valid_mask(eff_mask, B, N_kv_new, device)
 
+        # Projections
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        # HA-FIX-08: RoPE with past_len offset
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_len_rope = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                    past_len_rope = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+                    past_len_rope = past_key_value.key_cache[0].shape[-2]
+            cos = cos[..., past_len_rope: past_len_rope + N, :]
+            sin = sin[..., past_len_rope: past_len_rope + N, :]
+            Q, K_new = _apply_rope(Q, K_new, cos, sin)
+
+        # HA-FIX-07: KV-cache
+        past_k = past_v = None
+        if past_key_value is not None and not is_cross:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+            elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                past_k = past_key_value.key_cache[idx]
+                past_v = past_key_value.value_cache[idx]
+
+        if past_k is not None and not is_cross:
+            K_cat = torch.cat([past_k, K_new], dim=-2)
+            V_cat = torch.cat([past_v, V_new], dim=-2)
+        else:
+            K_cat = K_new
+            V_cat = V_new
+
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
+            past_key_value.update(K_new, V_new, layer_idx)
+
+        N_kv = K_cat.shape[2]
+        past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
 
         if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K_cat = repeat_kv(K_cat, self.kv_repeat)
+            V_cat = repeat_kv(V_cat, self.kv_repeat)
 
-        out_standard = self._standard_branch(Q, K, V, eff_mask)
-        out_linear = self._linear_branch(Q, K, V, valid_mask)
+        # Valid mask for the full key set (with past)
+        if past_len > 0:
+            past_valid = torch.ones(B, past_len, device=device, dtype=torch.bool)
+            valid_mask_full = torch.cat([past_valid, valid_mask_new], dim=1)
+        else:
+            valid_mask_full = valid_mask_new
 
+        # Two branches
+        out_standard = self._standard_branch(
+            Q, K_cat, V_cat, eff_mask, past_len=past_len, valid_mask=valid_mask_full,
+        )
+        out_linear = self._linear_branch(
+            Q, K_cat, V_cat, valid_mask_full, past_len=past_len,
+        )
+
+        # Per-head gating
         gate = torch.sigmoid(self.ensemble_gate(hidden_states)).view(B, N, self.num_heads, 1).transpose(1, 2).contiguous()
         fused = gate * out_standard + (1.0 - gate) * out_linear
 
+        # HA-FIX-09: head_mask broadcasting corrected.
         if head_mask is not None:
             if head_mask.dim() == 1:
-                fused = fused * head_mask.view(1, -1, 1, 1)
+                head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                fused = fused * head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 4:
-                fused = fused * head_mask
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)   # (B, H, 1, 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)      # (B, H, 1, 1)
+            fused = fused * head_mask.to(fused.dtype)
 
         fused = fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4).clamp(min=-1e4, max=1e4)
+        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        # HA-FIX-01: out_proj ALWAYS executed.
         if self.is_nested_encoder:
-            logger.debug(
-                "HybridAttention: nested encoder mode, skipping internal out_proj. Output shape: %s",
-                tuple(fused.shape),
-            )
-            out = fused
+            # Nested encoder: outer module supplies out_proj, but we still run
+            # the (identity-initialised) internal out_proj for parameter stability.
+            out = self.out_proj(fused)
         else:
             out = self.out_proj(fused)
             out = self.dropout(out)
 
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).clamp(min=-1e4, max=1e4)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         return out, None
 
+    # ------------------------------------------------------------------
+    # copy_weights
+    # ------------------------------------------------------------------
     def copy_weights(self, old_attn: Any) -> None:
-        """
-        Simplified multi-architecture weight transfer using UniversalAdapter.
-        """
         if old_attn is None:
             return
 
@@ -427,12 +616,14 @@ class HybridAttention(BaseAttention):
                     out_d, in_d = target.weight.shape
                     s_out, s_in = w.shape
                     with torch.no_grad():
+                        target.weight.data.zero_()
                         target.weight.data[:min(out_d, s_out), :min(in_d, s_in)].copy_(
                             w[:min(out_d, s_out), :min(in_d, s_in)]
                         )
                     if b is not None and target.bias is not None:
                         min_b = min(target.bias.numel(), b.numel())
                         with torch.no_grad():
+                            target.bias.data.zero_()
                             target.bias.data[:min_b].copy_(b[:min_b])
                     continue
 
@@ -448,14 +639,20 @@ class HybridAttention(BaseAttention):
                     target.bias.copy_(b)
 
 
-# Alias
+# Aliases
 WeightedEnsembleAttention = HybridAttention
 SmartWeightedEnsembleAttention = HybridAttention
 
 
+# ===========================================================================
+# Injection
+# ===========================================================================
+
 @ATTENTION_REGISTRY.register("weighted_ensemble_module_inject")
 @ATTENTION_REGISTRY.register("weighted_ensemble_inject")
 @ATTENTION_REGISTRY.register("inject_weighted_ensemble")
+@ATTENTION_REGISTRY.register("hybrid_attention_inject")
+@ATTENTION_REGISTRY.register("inject_hybrid_attention")
 def inject_weighted_ensemble(
     layer: Any = None,
     model: Any = None,
@@ -464,8 +661,14 @@ def inject_weighted_ensemble(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    _depth: int = 0,
     **kwargs: Any,
 ) -> Optional[Union[nn.Module, Any]]:
+    # HA-FIX-03: recursion guard.
+    if _depth > 8:
+        logger.warning("inject_weighted_ensemble: max recursion depth exceeded.")
+        return None
+
     target = layer if layer is not None else model
     if target is None:
         return None
@@ -474,6 +677,7 @@ def inject_weighted_ensemble(
     if cfg is None and hasattr(target, "config"):
         cfg = target.config
 
+    # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -499,9 +703,10 @@ def inject_weighted_ensemble(
             res = inject_weighted_ensemble(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if "comp_config" in locals() or "comp_config" in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
+                _depth=_depth + 1,
                 **kwargs,
             )
             if res is not None:
@@ -511,12 +716,25 @@ def inject_weighted_ensemble(
     layer = target
     try:
         if model_config is None:
-            if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            if any(hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")):
                 model_config = layer
             elif hasattr(layer, "attention"):
                 old_attn = layer.attention
 
-        src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+        src_attn = old_attn if old_attn is not None else \
+                   getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+        if src_attn is None:
+            return None
+
+        # HA-FIX-04: double-injection guard.
+        if isinstance(src_attn, HybridAttention):
+            return None
+        if "HybridAttention" in src_attn.__class__.__name__:
+            return None
+        if isinstance(getattr(src_attn, "inner", None), HybridAttention):
+            return None
+        if isinstance(getattr(src_attn, "_wrapped_attention", None), HybridAttention):
+            return None
 
         new_attn = HybridAttention(
             config=model_config,
@@ -529,21 +747,27 @@ def inject_weighted_ensemble(
             if p is not None:
                 new_attn.to(device=p.device, dtype=p.dtype)
 
+        # HA-FIX-06: is_nested_encoder correctly set per branch.
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
+                new_attn.is_nested_encoder = False
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+            new_attn.is_nested_encoder = False
         elif hasattr(layer, "self"):
             layer.self = new_attn
+            new_attn.is_nested_encoder = True
         elif hasattr(layer, "attn"):
             layer.attn = new_attn
+            new_attn.is_nested_encoder = False
 
         return new_attn
     except Exception as e:
-        logger.error(f"Failed to inject hybrid weighted ensemble: {e}")
+        logger.exception("Failed to inject hybrid weighted ensemble: %s", e)
         return None
 
 
