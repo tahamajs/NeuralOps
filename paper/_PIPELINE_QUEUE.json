@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_lola_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola_attn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_kda",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_kda --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_kda",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_aegis_v2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_aegis_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_aegis_v2",
@@ -12289,23 +12275,23 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_vspec_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_vspec_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_vspec_attn",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_moba_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moba_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moba_attention",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_minimal_nova",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_nova --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_nova",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_lola_attn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola_attn",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_inject_kda",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_kda --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_kda",
       "status": "active",
       "retries": 0
     }
@@ -12515,6 +12501,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse",
       "started_at": "2026-09-23T22:56:53.968865",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_inject_vspec_attn",
+      "id": "p3_gpt2_inject_vspec_attn",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_vspec_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_vspec_attn",
+      "started_at": "2026-09-23T22:47:44.044506",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_moba_attention",
+      "id": "p3_gpt2_moba_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moba_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moba_attention",
+      "started_at": "2026-09-23T22:49:19.678425",
       "retries": 0,
       "status": "done"
     }
