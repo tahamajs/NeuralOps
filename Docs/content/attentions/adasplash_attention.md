@@ -857,6 +857,7 @@ def inject_adasplash(
 | **roberta-base** | sst2 | `PASS` | 50.92% | **59.98%** | +9.06% | 0.7160 | 1.00x | 12 | [svd-linear-attention-roberta-base-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-adasplash) | 2026-09-19 |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.45%** | -1.15% | 0.8973 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-adasplash-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-adasplash-attention) | 2026-09-23 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **79.20%** | -2.60% | 0.7913 | 1.00x | 0 | [svd-linear-attention-distilbert-mnli-full-adasplash](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-adasplash) | 2026-09-19 |
+| **gpt2** | wikitext2 | `PASS` | 99.72% | **100.00%** | +0.28% | 0.0000 | 1.00x | 0 | [svd-linear-attention-gpt2-adasplash-attention](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adasplash-attention) | 2026-09-24 |
 
 
 The unified benchmark was conducted on the remote GPU server (`NVIDIA GeForce RTX 4070 Laptop GPU`, 8GB VRAM, driver 566.07, CUDA 12.7) under strict standardized evaluation criteria:
