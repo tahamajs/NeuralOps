@@ -3133,12 +3133,17 @@ def run_single_module_main(args) -> dict:
     # Any module with accuracy <= pass_threshold is statistically indistinguishable from
     # random chance or majority-class guess, and is classified as SKIP_<FAMILY>_INCOMPATIBLE_ACCURACY_PLATEAU.
     # -------------------------------------------------------------------------
-    val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
-    from collections import Counter
-    label_counts = Counter(val_labels)
-    total_val_samples = len(val_labels)
-    majority_count = max(label_counts.values()) if label_counts else 0
-    majority_baseline_ratio = majority_count / total_val_samples if total_val_samples > 0 else 0.5
+    if "wikitext" in args.dataset.lower():
+        total_val_samples = 1000
+        majority_baseline_ratio = 0.5
+    else:
+        val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
+        from collections import Counter
+        label_counts = Counter(val_labels)
+        total_val_samples = len(val_labels)
+        majority_count = max(label_counts.values()) if label_counts else 0
+        majority_baseline_ratio = majority_count / total_val_samples if total_val_samples > 0 else 0.5
+        
     majority_baseline_pct = round(majority_baseline_ratio * 100.0, 2)
 
     p0 = majority_baseline_ratio
