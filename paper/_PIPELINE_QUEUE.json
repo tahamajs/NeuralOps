@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "fwsvd_mnli",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --parallel 1 --batch_size 32 --output_suffix fwsvd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "drone_mnli",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --parallel 1 --batch_size 32 --output_suffix drone_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "a3_sst2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 32 --output_suffix a3_sst2 --fresh",
@@ -68761,6 +68747,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 789 --parallel 1 --batch_size 32 --output_suffix drone128_seed789 --fresh",
       "started_at": "2026-09-23T08:49:05.117182",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fwsvd_mnli",
+      "id": "fwsvd_mnli",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --parallel 1 --batch_size 32 --output_suffix fwsvd_mnli --fresh",
+      "started_at": "2026-09-23T08:49:42.105842",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "drone_mnli",
+      "id": "drone_mnli",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --parallel 1 --batch_size 32 --output_suffix drone_mnli --fresh",
+      "started_at": "2026-09-23T08:49:42.265174",
       "retries": 0,
       "status": "done"
     }
