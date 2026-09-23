@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "dynamic_entropy_svd_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "dynamic_entropy_svd_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "dynamic_entropy_svd_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "dynamic_entropy_svd_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r256",
@@ -66077,23 +66056,23 @@
       "retries": 0
     },
     {
-      "id": "dynamic_entropy_class_bert_sst2_r64",
+      "id": "dynamic_entropy_svd_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r32",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "dynamic_entropy_class_bert_sst2_r128",
+      "id": "dynamic_entropy_svd_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r64",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "dynamic_entropy_class_bert_sst2_r256",
+      "id": "dynamic_entropy_svd_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_svd --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_svd_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -70155,6 +70134,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r32",
       "started_at": "2026-09-23T12:37:47.628378",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_entropy_class_bert_sst2_r64",
+      "id": "dynamic_entropy_class_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r64",
+      "started_at": "2026-09-23T12:38:43.827988",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_entropy_class_bert_sst2_r128",
+      "id": "dynamic_entropy_class_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r128",
+      "started_at": "2026-09-23T12:38:43.973388",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_entropy_class_bert_sst2_r256",
+      "id": "dynamic_entropy_class_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_entropy_class --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_entropy_class_bert_sst2_r256",
+      "started_at": "2026-09-23T12:38:44.113400",
       "retries": 0,
       "status": "done"
     }
