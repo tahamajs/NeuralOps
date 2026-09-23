@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "compressed_mha_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 256 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "compressed_mha_attention_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix compressed_mha_attention_bert_sst2_r32",
@@ -66812,16 +66805,16 @@
       "retries": 0
     },
     {
-      "id": "compressed_mha_bert_sst2_r64",
+      "id": "compressed_mha_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 64 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r128",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "compressed_mha_bert_sst2_r128",
+      "id": "compressed_mha_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 256 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -69938,6 +69931,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer_energy --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_energy_bert_sst2_r128",
       "started_at": "2026-09-23T12:05:12.594922",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "compressed_mha_bert_sst2_r64",
+      "id": "compressed_mha_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_mha --rank 64 --parallel 1 --batch_size 16 --output_suffix compressed_mha_bert_sst2_r64",
+      "started_at": "2026-09-23T12:06:27.541737",
       "retries": 0,
       "status": "done"
     }
