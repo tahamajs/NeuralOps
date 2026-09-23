@@ -2,62 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hymba_transx_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 64 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 128 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 256 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_attn_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 32 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_attn_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 64 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_attn_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 128 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hymba_transx_attn_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "infini_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules infini --rank 32 --parallel 1 --batch_size 16 --output_suffix infini_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "infini_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules infini --rank 64 --parallel 1 --batch_size 16 --output_suffix infini_bert_sst2_r64",
@@ -64009,34 +63953,83 @@
       "started_at": "2026-09-23T20:19:02.695328",
       "retries": 1,
       "status": "pending"
-    }
-  ],
-  "active": [
+    },
     {
       "id": "process_papers_batch20",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 190 200",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "process_papers_batch21",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 200 210",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "process_papers_batch22",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "hymba_transx_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 32 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r32",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 64 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r64",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 128 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r128",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx --rank 256 --parallel 1 --batch_size 16 --output_suffix hymba_transx_bert_sst2_r256",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_attn_bert_sst2_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 32 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r32",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [
+    {
+      "id": "hymba_transx_attn_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 64 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r64",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_attn_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 128 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r128",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "hymba_transx_attn_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hymba_transx_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix hymba_transx_attn_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70618,6 +70611,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybridkv_class --rank 256 --parallel 1 --batch_size 16 --output_suffix hybridkv_class_bert_sst2_r256",
       "started_at": "2026-09-23T20:42:18.804451",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "infini_bert_sst2_r32",
+      "id": "infini_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules infini --rank 32 --parallel 1 --batch_size 16 --output_suffix infini_bert_sst2_r32",
+      "started_at": "2026-09-23T21:39:44.874656",
       "retries": 0,
       "status": "done"
     }
