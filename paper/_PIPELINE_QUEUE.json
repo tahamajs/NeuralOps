@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "process_papers_batch4",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 30 40",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "process_papers_batch5",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 40 50",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "process_papers_batch6",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 50 60",
@@ -68287,15 +68273,7 @@
       "retries": 0
     }
   ],
-  "active": [
-    {
-      "id": "swift_svd_act_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd_act --parallel 1 --batch_size 32 --output_suffix swift_svd_act_mnli --fresh",
-      "status": "active",
-      "retries": 0
-    }
-  ],
+  "active": [],
   "completed": [
     {
       "job_id": "aasvd_r128_seed456",
@@ -68870,6 +68848,33 @@
       "job_type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 20 30",
       "started_at": "2026-09-23T09:08:05.675710",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "swift_svd_act_mnli_sweep",
+      "id": "swift_svd_act_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd_act --parallel 1 --batch_size 32 --output_suffix swift_svd_act_mnli --fresh",
+      "started_at": "2026-09-23T09:08:05.392629",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch4",
+      "id": "process_papers_batch4",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 30 40",
+      "started_at": "2026-09-23T09:08:24.582895",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch5",
+      "id": "process_papers_batch5",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 40 50",
+      "started_at": "2026-09-23T09:08:24.680996",
       "retries": 0,
       "status": "done"
     }
