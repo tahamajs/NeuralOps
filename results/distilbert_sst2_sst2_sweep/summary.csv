@@ -3,4 +3,4 @@ full,FAIL,0.0,0.0,0.0,0.0,0.0,0.0,0.48,0.0,0.0,66955010,66955010,0,1.0,,,0.0,0.0
 aasvd,PASS,88.07,0.8857,0.8805,0.8819,0.8802,0.3196,10.96,413.8,105561.98,66955010,57517826,5329154,1.1641,,,14.09,66.67,24,0,0.7281,0.7281,24,0,1.21,105561.98,,,,legacy_bert,2026-09-20T23:55:48.909206
 gated_delta_net,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,DEPRECATED: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM,deprecated,2026-09-23T14:12:12.538504
 gated_deltanet_block,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,DEPRECATED: same as gated_delta_net,deprecated,2026-09-23T14:12:52.876255
-hgrn2_gated_deltanet,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,DEPRECATED: same as gated_delta_net,deprecated,2026-09-23T17:40:29.229524
+hgrn2_gated_deltanet,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,DEPRECATED: same as gated_delta_net,deprecated,2026-09-23T17:41:06.149934
