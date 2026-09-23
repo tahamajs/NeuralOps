@@ -327,17 +327,12 @@ def modules() -> List[str]:
 def fields(name: str) -> Tuple[str, Optional[str]]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
-    if name in {"ag_news", "imdb"}:
+    if name in {"ag_news", "imdb"} or "wikitext" in name.lower():
         return ("text", None)
     if name == "mrpc":
         return ("sentence1", "sentence2")
     if name == "mnli":
         return ("premise", "hypothesis")
-    if "wikitext" in name.lower():
-        raise ValueError(
-            f"Dataset '{name}' is not a classification dataset. "
-            f"Use perplexity evaluation instead."
-        )
     return ("sentence1", "sentence2")
 
 
@@ -352,12 +347,20 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
         return_tensors="pt",
     )
     is_cuda = device.type == "cuda"
-    if is_cuda:
-        x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
-        y = torch.tensor(batch["label"]).pin_memory().to(device, non_blocking=True)
+    
+    if "wikitext" in dataset_name.lower():
+        if is_cuda:
+            x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
+        else:
+            x = {k: v.to(device) for k, v in x.items()}
+        y = x["input_ids"].clone()
     else:
-        x = {k: v.to(device) for k, v in x.items()}
-        y = torch.tensor(batch["label"], device=device)
+        if is_cuda:
+            x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
+            y = torch.tensor(batch["label"]).pin_memory().to(device, non_blocking=True)
+        else:
+            x = {k: v.to(device) for k, v in x.items()}
+            y = torch.tensor(batch["label"], device=device)
     return x, y
 
 
