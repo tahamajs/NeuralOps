@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "fwsvd_r128_seed42",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 42 --parallel 1 --batch_size 32 --output_suffix fwsvd128_seed42 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "fwsvd_r128_seed123",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 123 --parallel 1 --batch_size 32 --output_suffix fwsvd128_seed123 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "fwsvd_r128_seed456",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 456 --parallel 1 --batch_size 32 --output_suffix fwsvd128_seed456 --fresh",
@@ -68745,6 +68731,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules aasvd --rank 128 --seed 789 --parallel 1 --batch_size 32 --output_suffix aasvd128_seed789 --fresh",
       "started_at": "2026-09-23T08:46:18.774703",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fwsvd_r128_seed42",
+      "id": "fwsvd_r128_seed42",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 42 --parallel 1 --batch_size 32 --output_suffix fwsvd128_seed42 --fresh",
+      "started_at": "2026-09-23T08:47:13.401846",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fwsvd_r128_seed123",
+      "id": "fwsvd_r128_seed123",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules fwsvd --rank 128 --seed 123 --parallel 1 --batch_size 32 --output_suffix fwsvd128_seed123 --fresh",
+      "started_at": "2026-09-23T08:47:13.545527",
       "retries": 0,
       "status": "done"
     }
