@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hla_attention_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "hla_attention_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r256",
@@ -64249,20 +64242,6 @@
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
       "status": "active",
       "retries": 0
-    },
-    {
-      "id": "hla_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r32",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "hla_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
     }
   ],
   "completed": [
@@ -70554,6 +70533,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla --rank 256 --parallel 1 --batch_size 16 --output_suffix hla_bert_sst2_r256",
       "started_at": "2026-09-23T20:34:50.120721",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_attention_bert_sst2_r32",
+      "id": "hla_attention_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r32",
+      "started_at": "2026-09-23T20:35:09.332489",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_attention_bert_sst2_r64",
+      "id": "hla_attention_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r64",
+      "started_at": "2026-09-23T20:35:09.514928",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hla_attention_bert_sst2_r128",
+      "id": "hla_attention_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hla_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix hla_attention_bert_sst2_r128",
+      "started_at": "2026-09-23T20:35:28.246448",
       "retries": 0,
       "status": "done"
     }
