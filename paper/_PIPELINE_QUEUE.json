@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "gpt2_eval_drone",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules drone --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_svd_compressed",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules svd_compressed --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "gpt2_eval_vspec",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules vspec --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
@@ -68801,6 +68787,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules fwsvd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
       "started_at": "2026-09-23T08:58:02.587142",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_drone",
+      "id": "gpt2_eval_drone",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules drone --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T08:58:58.335748",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_svd_compressed",
+      "id": "gpt2_eval_svd_compressed",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules svd_compressed --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T08:58:58.478611",
       "retries": 0,
       "status": "done"
     }
