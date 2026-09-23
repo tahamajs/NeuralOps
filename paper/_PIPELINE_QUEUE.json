@@ -2,41 +2,6 @@
   "max_parallel": 5,
   "jobs": [
     {
-      "id": "p3_gpt2_tlinformer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tlinformer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tlinformer",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_svd_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_compressed_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_slicegpt_pca",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_pca --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_pca",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_replaceme_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replaceme_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replaceme_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_galerkin_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_galerkin_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_galerkin_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_tomoe",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_tomoe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_tomoe",
@@ -12468,6 +12433,33 @@
       "started_at": "2026-09-24T02:32:21.468737",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_tlinformer",
+      "id": "p3_gpt2_tlinformer",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tlinformer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tlinformer",
+      "started_at": "2026-09-24T02:33:14.642890",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_inject_svd_compressed_attention",
+      "id": "p3_gpt2_inject_svd_compressed_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_compressed_attention",
+      "started_at": "2026-09-24T02:33:35.298244",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_inject_galerkin_attention",
+      "id": "p3_gpt2_inject_galerkin_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_galerkin_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_galerkin_attention",
+      "started_at": "2026-09-24T02:34:30.976150",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [],
@@ -12901,6 +12893,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashednets_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashednets_class",
       "started_at": "2026-09-24T02:31:46.470183",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_slicegpt_pca",
+      "id": "p3_gpt2_slicegpt_pca",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_pca --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_pca",
+      "started_at": "2026-09-24T02:33:55.891952",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_replaceme_factory",
+      "id": "p3_gpt2_replaceme_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replaceme_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replaceme_factory",
+      "started_at": "2026-09-24T02:34:26.693324",
       "retries": 0,
       "status": "done"
     }
