@@ -1,0 +1,52 @@
+{
+    "model": "distilbert_sst2_cosformer_attention",
+    "performance": {
+        "accuracy_pct": 78.33,
+        "f1_score": 0.7864,
+        "f1_macro": 0.7832,
+        "precision": 0.7832,
+        "recall": 0.7832,
+        "val_loss": 0.5264,
+        "status": "PASS",
+        "elapsed_s": 18.4
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 67544834,
+        "trainable_recovery_params": 589824,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 6,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 589824,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 485.36,
+        "tokens_per_sec": 30399.98
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 348.17,
+        "L_256_vram_mb": 351.81,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "timestamp": "2026-09-23T08:41:53.602624+00:00"
+}
