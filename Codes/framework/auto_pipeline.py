@@ -38,9 +38,31 @@ import signal
 import subprocess
 import sys
 import time
+import threading
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+spawn_lock = threading.Lock()
+
+def wait_for_vram(max_used_gb: float, timeout_s: int = 120) -> bool:
+    """Poll VRAM until usage drops below max_used_gb, or timeout."""
+    start = time.monotonic()
+    while time.monotonic() - start < timeout_s:
+        stats = query_gpu_stats()
+        if stats.vram_used_gb <= max_used_gb:
+            return True
+        time.sleep(2)
+    return False
+
+def wait_for_vram_jump(start_used_gb: float, timeout_s: int = 30) -> None:
+    """Poll VRAM after spawning to wait for it to register the new allocation."""
+    start = time.monotonic()
+    while time.monotonic() - start < timeout_s:
+        stats = query_gpu_stats()
+        if stats.vram_used_gb >= start_used_gb + 0.5:
+            break
+        time.sleep(2)
 
 # =============================================================================
 # PATHS
@@ -62,9 +84,9 @@ QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 # TUNABLE SAFETY / PERFORMANCE CONSTANTS
 # =============================================================================
 # VRAM safety (RTX 4070 Laptop = 8 GB)
-VRAM_CEILING_GB = 6.2        # pause new launches above this (safe max utilization)
+VRAM_CEILING_GB = 7.4        # pause new launches above this (safe max utilization)
 VRAM_RESUME_GB = 6.0         # resume launches below this
-VRAM_PER_JOB_GB = 2.0        # typical per-job footprint for batch_size=16/8
+VRAM_PER_JOB_GB = 0.7        # typical per-job footprint for batch_size=16/8
 
 # Thermal safety
 TEMP_CEILING_C = 82.0        # pause when temp > this
@@ -74,7 +96,7 @@ TEMP_RESUME_C = 72.0         # resume below this
 UTIL_TARGET_PCT = 90.0
 
 # Parallelism
-GPU_SAFE_MAX_PARALLEL = 2    # safe ceiling for GPU jobs to maximize utilization
+GPU_SAFE_MAX_PARALLEL = 8    # safe ceiling for GPU jobs to maximize utilization
 CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
 
 # Timing
@@ -716,6 +738,8 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
     start_time = time.time()
     last_refill = 0.0
     last_launch = 0.0
+    
+    util_below_60_start = None
 
     # --- Recover orphans ---
     state = qm.read()
@@ -752,6 +776,29 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                 state.get("max_parallel", GPU_SAFE_MAX_PARALLEL),
                 GPU_SAFE_MAX_PARALLEL,
             )
+            
+            # --- Dynamic Scaling ---
+            if stats.ok:
+                if stats.utilization_pct < 60:
+                    if util_below_60_start is None:
+                        util_below_60_start = time.time()
+                    elif time.time() - util_below_60_start > 60 and max_parallel < 8:
+                        max_parallel += 1
+                        state["max_parallel"] = max_parallel
+                        qm.write(state)
+                        util_below_60_start = None
+                else:
+                    util_below_60_start = None
+                
+                if stats.vram_used_gb > 7.5:
+                    max_parallel = max(1, max_parallel - 1)
+                    state["max_parallel"] = max_parallel
+                    qm.write(state)
+                
+                if stats.temperature_c > 82.0:
+                    max_parallel = max(1, max_parallel - 1)
+                    state["max_parallel"] = max_parallel
+                    qm.write(state)
 
             # --- 4. Auto-refill ---
             if time.time() - last_refill > AUTO_REFILL_INTERVAL_S:
@@ -877,65 +924,86 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
 
                     jtype = job.get("type", "gpu")
 
-                    # GPU jobs need safety check
                     if jtype == "gpu":
                         if active_gpu >= GPU_SAFE_MAX_PARALLEL:
                             continue
-                        stats = query_gpu_stats()
-                        safe, reason = is_gpu_safe(stats)
-                        if not safe:
-                            log_job(job["id"], "GPU",
-                                    f"skip launch: {reason}")
-                            break
-                        # Reserve VRAM
-                        if stats.vram_used_gb + VRAM_PER_JOB_GB > VRAM_CEILING_GB:
-                            log_job(job["id"], "GPU",
-                                    f"skip launch: "
-                                    f"vram={stats.vram_used_gb:.2f}+"
-                                    f"{VRAM_PER_JOB_GB:.2f} > "
-                                    f"{VRAM_CEILING_GB}")
-                            break
 
-                    handle = JobHandle(
-                        job_id=job["id"],
-                        job_type=jtype,
-                        cmd=job["cmd"],
-                        retries=job.get("retries", 0),
-                    )
+                        spawn_lock.acquire()
+                        try:
+                            target_vram = VRAM_CEILING_GB - VRAM_PER_JOB_GB
+                            if not wait_for_vram(max_used_gb=target_vram, timeout_s=120):
+                                log_job(job["id"], "GPU", "VRAM wait timed out, skipping job")
+                                break
 
-                    if launch_job(handle):
-                        active[handle.job_id] = handle
-                        if jtype == "gpu":
-                            active_gpu += 1
-                            time.sleep(25)  # Wait for VRAM allocation to register to prevent race conditions
-                        else:
-                            active_cpu += 1
-                        last_launch = time.time()
+                            stats_before = query_gpu_stats()
+                            safe, reason = is_gpu_safe(stats_before)
+                            if not safe:
+                                log_job(job["id"], "GPU", f"skip launch: {reason}")
+                                break
 
-                        # Update queue: move from jobs to active
-                        jid = job["id"]
-                        def move(s: Dict[str, Any]) -> Dict[str, Any]:
-                            s["jobs"] = [j for j in s.get("jobs", [])
-                                         if j.get("id") != jid]
-                            s.setdefault("active", []).append({
-                                "id": jid, "type": jtype,
-                                "cmd": job["cmd"],
-                                "status": "active",
-                                "retries": handle.retries,
-                            })
-                            return s
-                        qm.mutate(move)
+                            handle = JobHandle(
+                                job_id=job["id"],
+                                job_type=jtype,
+                                cmd=job["cmd"],
+                                retries=job.get("retries", 0),
+                            )
+
+                            if launch_job(handle):
+                                active[handle.job_id] = handle
+                                active_gpu += 1
+                                wait_for_vram_jump(stats_before.vram_used_gb, timeout_s=30)
+                                last_launch = time.time()
+
+                                jid = job["id"]
+                                def move(s: Dict[str, Any]) -> Dict[str, Any]:
+                                    s["jobs"] = [j for j in s.get("jobs", []) if j.get("id") != jid]
+                                    s.setdefault("active", []).append({
+                                        "id": jid, "type": jtype,
+                                        "cmd": job["cmd"],
+                                        "status": "active",
+                                        "retries": handle.retries,
+                                    })
+                                    return s
+                                qm.mutate(move)
+                            else:
+                                handle.status = "failed"
+                                handle.retries += 1
+                                log_job(job["id"], "ERROR", "Failed to launch process.")
+                        finally:
+                            spawn_lock.release()
                     else:
-                        # Launch failed → mark as failed
-                        def mark_fail(s: Dict[str, Any]) -> Dict[str, Any]:
-                            s["jobs"] = [j for j in s.get("jobs", [])
-                                         if j.get("id") != job["id"]]
-                            s.setdefault("failed", []).append({
-                                **job, "status": "failed",
-                                "reason": "launch_failed",
-                            })
-                            return s
-                        qm.mutate(mark_fail)
+                        handle = JobHandle(
+                            job_id=job["id"],
+                            job_type=jtype,
+                            cmd=job["cmd"],
+                            retries=job.get("retries", 0),
+                        )
+                        if launch_job(handle):
+                            active[handle.job_id] = handle
+                            active_cpu += 1
+                            last_launch = time.time()
+                            jid = job["id"]
+                            def move(s: Dict[str, Any]) -> Dict[str, Any]:
+                                s["jobs"] = [j for j in s.get("jobs", []) if j.get("id") != jid]
+                                s.setdefault("active", []).append({
+                                    "id": jid, "type": jtype,
+                                    "cmd": job["cmd"],
+                                    "status": "active",
+                                    "retries": handle.retries,
+                                })
+                                return s
+                            qm.mutate(move)
+                        else:
+                            # Launch failed → mark as failed
+                            def mark_fail(s: Dict[str, Any]) -> Dict[str, Any]:
+                                s["jobs"] = [j for j in s.get("jobs", [])
+                                             if j.get("id") != job["id"]]
+                                s.setdefault("failed", []).append({
+                                    **job, "status": "failed",
+                                    "reason": "launch_failed",
+                                })
+                                return s
+                            qm.mutate(mark_fail)
 
             # --- 8. Periodic tasks ---
             check_anomaly_status()
