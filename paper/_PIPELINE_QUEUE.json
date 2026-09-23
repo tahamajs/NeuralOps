@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_oha",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oha",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_expert_choice_moe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules expert_choice_moe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_expert_choice_moe",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_replace_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replace_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replace_attention_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_vspec_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_vspec_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_vspec_attn",
@@ -12338,23 +12317,23 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_minimal_svd_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_flat_llm_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_mamba_module_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_module_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_module_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_expert_choice_moe",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules expert_choice_moe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_expert_choice_moe",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_replace_attention_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replace_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replace_attention_inject",
       "status": "active",
       "retries": 0
     }
@@ -12501,6 +12480,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --parallel 1 --batch_size 8 --output_suffix mamba_mnli_p1 --recovery_steps 100",
       "started_at": "2026-09-23T22:28:42.356695",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_flat_llm_factory",
+      "id": "p3_gpt2_flat_llm_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_factory",
+      "started_at": "2026-09-23T22:40:43.717642",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_oha",
+      "id": "p3_gpt2_oha",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oha",
+      "started_at": "2026-09-23T22:42:41.201119",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_minimal_svd_v2",
+      "id": "p3_gpt2_minimal_svd_v2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2",
+      "started_at": "2026-09-23T22:37:59.087710",
       "retries": 0,
       "status": "done"
     }
