@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_slicegpt_pca_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_pca_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_pca_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_flash3_fp8",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flash3_fp8 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flash3_fp8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_spectron_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules spectron_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_spectron_inject",
@@ -12473,6 +12459,15 @@
       "started_at": "2026-09-24T02:24:18.390501",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_flash3_fp8",
+      "id": "p3_gpt2_flash3_fp8",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flash3_fp8 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flash3_fp8",
+      "started_at": "2026-09-24T02:25:30.774392",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [],
@@ -12879,6 +12874,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules entropy_rank_allocator_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_entropy_rank_allocator_class",
       "started_at": "2026-09-24T02:23:53.258474",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_slicegpt_pca_factory",
+      "id": "p3_gpt2_slicegpt_pca_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_pca_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_pca_factory",
+      "started_at": "2026-09-24T02:25:05.666250",
       "retries": 0,
       "status": "done"
     }
