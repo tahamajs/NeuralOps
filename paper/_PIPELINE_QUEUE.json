@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_proxsparse",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_minimal_nova",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_nova --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_nova",
@@ -12303,13 +12296,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_mamba_module_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_module_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_module_inject",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_vspec_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_vspec_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_vspec_attn",
@@ -12320,6 +12306,13 @@
       "id": "p3_gpt2_moba_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moba_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moba_attention",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_proxsparse",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse",
       "status": "active",
       "retries": 0
     }
@@ -12511,6 +12504,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replace_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replace_attention_inject",
       "started_at": "2026-09-23T22:46:54.561205",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_mamba_module_inject",
+      "id": "p3_gpt2_mamba_module_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_module_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_module_inject",
+      "started_at": "2026-09-23T22:42:16.585819",
       "retries": 0,
       "status": "done"
     }
