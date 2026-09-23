@@ -2,34 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_orion_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules orion_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_orion_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dynamic_rank_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_regla_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules regla_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_regla_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_adasplash_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasplash_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasplash_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_phantom",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules phantom --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_phantom",
@@ -12226,16 +12198,23 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_mamba_block",
+      "id": "p3_gpt2_orion_inject",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_block --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_block",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules orion_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_orion_inject",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_leka_v1",
+      "id": "p3_gpt2_regla_attention",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_leka_v1 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_leka_v1",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules regla_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_regla_attention",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_adasplash_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasplash_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasplash_attention",
       "status": "active",
       "retries": 0
     }
@@ -12528,6 +12507,15 @@
       "started_at": "2026-09-23T23:29:18.692717",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dynamic_rank_compressor",
+      "id": "p3_gpt2_dynamic_rank_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_compressor",
+      "started_at": "2026-09-24T00:02:11.961268",
+      "retries": 0,
+      "status": "done"
     }
   ],
   "failed": [
@@ -12537,6 +12525,26 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_nova --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_nova",
       "started_at": "2026-09-23T22:58:48.837097",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "p3_gpt2_mamba_block",
+      "id": "p3_gpt2_mamba_block",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_block --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_block",
+      "started_at": "2026-09-23T23:32:02.572865",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "p3_gpt2_inject_leka_v1",
+      "id": "p3_gpt2_inject_leka_v1",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_leka_v1 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_leka_v1",
+      "started_at": "2026-09-23T23:32:02.689559",
       "retries": 0,
       "status": "failed",
       "reason": "timeout_1800s"
