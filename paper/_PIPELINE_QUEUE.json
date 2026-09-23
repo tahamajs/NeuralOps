@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "drone_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 16 --output_suffix drone_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "svd_compressed_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed --rank 64 --parallel 1 --batch_size 16 --output_suffix svd_compressed_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "vspec_roberta_sst2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules vspec --rank 64 --parallel 1 --batch_size 16 --output_suffix vspec_rob64 --fresh",
@@ -68777,6 +68763,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 16 --output_suffix fwsvd_rob64 --fresh",
       "started_at": "2026-09-23T08:52:28.057159",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "drone_roberta_sst2",
+      "id": "drone_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 16 --output_suffix drone_rob64 --fresh",
+      "started_at": "2026-09-23T08:53:23.635581",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "svd_compressed_roberta_sst2",
+      "id": "svd_compressed_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules svd_compressed --rank 64 --parallel 1 --batch_size 16 --output_suffix svd_compressed_rob64 --fresh",
+      "started_at": "2026-09-23T08:53:23.851426",
       "retries": 0,
       "status": "done"
     }
