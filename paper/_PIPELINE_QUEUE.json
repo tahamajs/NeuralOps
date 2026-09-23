@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "cosformer_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 128 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "cosformer_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 256 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "cosformer_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix cosformer_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "cosformer_attention_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix cosformer_attention_bert_sst2_r64",
@@ -66707,16 +66686,16 @@
       "retries": 0
     },
     {
-      "id": "cosformer_bert_sst2_r32",
+      "id": "cosformer_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 32 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 256 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r256",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "cosformer_bert_sst2_r64",
+      "id": "cosformer_attention_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 64 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix cosformer_attention_bert_sst2_r32",
       "status": "active",
       "retries": 0
     }
@@ -69968,6 +69947,42 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules coopq --rank 256 --parallel 1 --batch_size 16 --output_suffix coopq_bert_sst2_r256",
       "started_at": "2026-09-23T12:09:58.888589",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cosformer_bert_sst2_r32",
+      "id": "cosformer_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 32 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r32",
+      "started_at": "2026-09-23T12:10:17.796321",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cosformer_bert_sst2_r64",
+      "id": "cosformer_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 64 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r64",
+      "started_at": "2026-09-23T12:10:17.937865",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cosformer_bert_sst2_r128",
+      "id": "cosformer_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 128 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r128",
+      "started_at": "2026-09-23T12:10:37.082102",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cosformer_bert_sst2_r128",
+      "id": "cosformer_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 128 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r128",
+      "started_at": "2026-09-23T12:11:14.944382",
       "retries": 0,
       "status": "done"
     }
