@@ -1,17 +1,17 @@
 {
   "module_name": "kmeans",
   "status": "PASS",
-  "perplexity": 22.6,
-  "baseline_ppl": 21.71,
-  "delta_ppl": 0.89,
+  "perplexity": 27.56,
+  "baseline_ppl": 25.88,
+  "delta_ppl": 1.68,
   "compression_rate": 3.149,
   "compression_ratio_pct": 68.24,
-  "peak_vram_mb": 1414.32,
-  "latency_ms_per_token": 0.191,
-  "throughput_tok_per_sec": 5242.4,
-  "elapsed_s": 19.08,
+  "peak_vram_mb": 1417.85,
+  "latency_ms_per_token": 0.035,
+  "throughput_tok_per_sec": 28847.6,
+  "elapsed_s": 3.47,
   "total_params_before": 124439808,
   "total_params_after": 39517440,
   "error": "",
-  "timestamp": "2026-09-21T13:50:32"
+  "timestamp": "2026-09-23T09:03:55"
 }
