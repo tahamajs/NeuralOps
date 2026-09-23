@@ -2757,7 +2757,7 @@ def run_single_module_main(args) -> dict:
                 break
     try:
         if "wikitext" in args.dataset.lower():
-            ds = load_dataset("wikitext", "wikitext-2-raw-v1")
+            ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
         elif args.dataset_dir and Path(args.dataset_dir).exists():
             ds = load_from_disk(args.dataset_dir)
         else:
@@ -3059,30 +3059,36 @@ def run_single_module_main(args) -> dict:
     _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
     _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
     eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
-    if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
-        LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
-        eval_batches = [(d, t.to(device)) for d, t in [
-            ({k: v.to(device) for k, v in x.items()}, y) for x, y in torch.load(str(_eval_cache), map_location="cpu", weights_only=False)
-        ]]
-        _max_train = max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10))
-        all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
-        train_batches = [({k: v.to(device) for k, v in x.items()}, y.to(device)) for x, y in all_train[:_max_train]]
-    else:
-        eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)
-        train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
-        # Auto-save to cache dir if one was specified but files didn't exist yet
-        if _cached_dir:
-            try:
-                _cached_dir.mkdir(parents=True, exist_ok=True)
-                torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches], str(_eval_cache))
-                torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches], str(_train_cache))
-                meta_content = {
-                    "dataset": args.dataset,
-                    "max_length": eval_seq_len,
-                    "num_eval_batches": len(eval_batches),
-                    "num_train_batches": len(train_batches),
-                }
-                cache_meta.write_text(json.dumps(meta_content, indent=2), encoding="utf-8")
+    eval_batches = []
+    train_batches = []
+    
+    if "wikitext" not in args.dataset.lower():
+        if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
+            LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
+            eval_batches = [(d, t.to(device)) for d, t in [
+                ({k: v.to(device) for k, v in x.items()}, y) for x, y in torch.load(str(_eval_cache), map_location="cpu", weights_only=False)
+            ]]
+            _max_train = max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10))
+            all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
+            train_batches = [({k: v.to(device) for k, v in x.items()}, y.to(device)) for x, y in all_train[:_max_train]]
+        else:
+            eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)
+            train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
+            # Auto-save to cache dir if one was specified but files didn't exist yet
+            if _cached_dir:
+                try:
+                    _cached_dir.mkdir(parents=True, exist_ok=True)
+                    torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches], str(_eval_cache))
+                    torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches], str(_train_cache))
+                    meta_content = {
+                        "dataset": args.dataset,
+                        "max_length": eval_seq_len,
+                        "num_eval_batches": len(eval_batches),
+                        "num_train_batches": len(train_batches),
+                    }
+                    cache_meta.write_text(json.dumps(meta_content, indent=2), encoding="utf-8")
+                except Exception as e:
+                    LOG.warning("Failed to save caches to %s: %s", _cached_dir, e)
                 LOG.info("Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)", _cached_dir)
             except Exception as _cache_err:
                 LOG.warning("Could not save batch cache: %s", _cache_err)
