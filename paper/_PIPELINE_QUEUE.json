@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_squeezing_heads_distiller",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distiller --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distiller",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_gqa",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules gqa --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_gqa",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_halo_regla_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules halo_regla_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_halo_regla_attention",
@@ -12422,23 +12408,18 @@
       "started_at": "2026-09-24T02:41:12.476597",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_wgqa_inject",
+      "id": "p3_gpt2_wgqa_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules wgqa_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_wgqa_inject",
+      "started_at": "2026-09-24T02:43:36.099867",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
-    {
-      "id": "p3_gpt2_kvtc",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kvtc --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kvtc",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_wgqa_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules wgqa_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_wgqa_inject",
-      "status": "active",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_performer_inject",
       "type": "gpu",
@@ -12450,6 +12431,20 @@
       "id": "p3_gpt2_lola",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_squeezing_heads_distiller",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distiller --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distiller",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_gqa",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules gqa --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_gqa",
       "status": "active",
       "retries": 0
     }
@@ -12938,6 +12933,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_factory",
       "started_at": "2026-09-24T02:41:22.942944",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_kvtc",
+      "id": "p3_gpt2_kvtc",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kvtc --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kvtc",
+      "started_at": "2026-09-24T02:42:28.882588",
       "retries": 0,
       "status": "done"
     }
