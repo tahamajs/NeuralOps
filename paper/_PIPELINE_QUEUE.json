@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_minimal_nova_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_nova_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_nova_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_sdrm_compressor_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules sdrm_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_sdrm_compressor_class",
@@ -12386,20 +12379,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_faq_quantizer_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_astro_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_tt_linear",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear",
@@ -12417,6 +12396,13 @@
       "id": "p3_gpt2_mixattention_moska_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mixattention_moska_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mixattention_moska_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_minimal_nova_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_nova_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_nova_inject",
       "status": "active",
       "retries": 0
     }
@@ -13004,6 +12990,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq",
       "started_at": "2026-09-24T03:06:51.545863",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_faq_quantizer_factory",
+      "id": "p3_gpt2_faq_quantizer_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
+      "started_at": "2026-09-24T03:07:55.908810",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_astro_factory",
+      "id": "p3_gpt2_astro_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_factory",
+      "started_at": "2026-09-24T03:08:50.340877",
       "retries": 0,
       "status": "done"
     }
