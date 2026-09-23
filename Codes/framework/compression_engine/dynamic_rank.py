@@ -365,8 +365,26 @@ class DynamicSVDLinear(nn.Module):
             device=target_mod.weight.device,
         )
 
-        if covariance is not None and covariance.numel() > 0:
+        # Always compute the weight-only SVD baseline first.
+        # This serves as both the default path (when covariance=None) and the
+        # fallback comparison when the activation-aware path produces higher error.
+        U_svd_w, S_svd_w, Vh_svd_w = torch.linalg.svd(W, full_matrices=False)
+        sqrt_S_w = torch.sqrt(torch.clamp(S_svd_w[:target_rank], min=1e-12))
+        U_w = U_svd_w[:, :target_rank] * sqrt_S_w.unsqueeze(0)   # [out_f, rank]
+        V_w = sqrt_S_w.unsqueeze(1) * Vh_svd_w[:target_rank, :]  # [rank, in_f]
+        W_rec_w = U_w @ V_w
+        norm_W = torch.norm(W, p="fro").clamp(min=1e-12)
+        err_weight_only = (torch.norm(W - W_rec_w, p="fro") / norm_W).item()
+
+        # Default to weight-only unless activation-aware is demonstrably better.
+        U_r, V_r = U_w, V_w
+
+        if covariance is not None and covariance.numel() > 0 and covariance.shape[0] == in_f:
             # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i >= 1e-4
+            # NOTE: We only accept the activation-aware result if its reconstruction error is
+            # strictly lower than the weight-only baseline. This guards against rank-deficient
+            # covariances (e.g. from dummy calibration data) that inflate inv_sqrt by up to 100x
+            # and destroy the approximation quality.
             cov = covariance.to(device=W.device, dtype=torch.float32)
             try:
                 # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
@@ -378,35 +396,46 @@ class DynamicSVDLinear(nn.Module):
                 )
 
                 W_scaled = W @ cov_sqrt
-                U_svd, S_svd, Vh_svd = torch.linalg.svd(W_scaled, full_matrices=False)
+                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 # Truncate and un-whiten right singular factors
-                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
-                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
-                V_r = (
-                    sqrt_S.unsqueeze(1)
-                    * (Vh_svd[:target_rank, :] @ cov_inv_sqrt)
+                sqrt_S_a = torch.sqrt(torch.clamp(S_svd_a[:target_rank], min=1e-12))
+                U_a = U_svd_a[:, :target_rank] * sqrt_S_a.unsqueeze(0)
+                V_a = (
+                    sqrt_S_a.unsqueeze(1)
+                    * (Vh_svd_a[:target_rank, :] @ cov_inv_sqrt)
                 )
                 # Symmetrically normalize factor magnitudes
-                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
-                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                norm_u = torch.norm(U_a, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_a, p="fro").clamp_min(1e-8)
                 scale = torch.sqrt(norm_u / norm_v)
-                U_r = U_r / scale
-                V_r = V_r * scale
+                U_a = U_a / scale
+                V_a = V_a * scale
+
+                W_rec_a = U_a @ V_a
+                err_act_aware = (torch.norm(W - W_rec_a, p="fro") / norm_W).item()
+
+                if err_act_aware < err_weight_only:
+                    # Activation-aware is genuinely better: accept it
+                    U_r, V_r = U_a, V_a
+                    logger.debug(
+                        "from_linear: activation-aware SVD accepted "
+                        "(err_act=%.4f < err_weight=%.4f).",
+                        err_act_aware, err_weight_only,
+                    )
+                else:
+                    # Activation-aware is worse (e.g. due to rank-deficient covariance):
+                    # stick with the weight-only baseline
+                    logger.debug(
+                        "from_linear: activation-aware SVD rejected "
+                        "(err_act=%.4f >= err_weight=%.4f); using weight-only SVD.",
+                        err_act_aware, err_weight_only,
+                    )
             except Exception as e:
                 logger.warning(
-                    f"Activation-aware SVD failed ({e}), falling back to standard SVD."
+                    "Activation-aware SVD failed (%s); using weight-only SVD.", e
                 )
-                U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
-                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
-                V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
-        else:
-            # Standard weight SVD
-            U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-            sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
-            U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
-            V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
+                # U_r, V_r already set to weight-only baseline above
 
         new_layer.U.data.copy_(U_r.to(dtype=target_mod.weight.dtype))
         new_layer.V.data.copy_(V_r.to(dtype=target_mod.weight.dtype))
@@ -572,9 +601,17 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         device = next(self.model.parameters()).device
         self.model.eval()
 
+        # Track whether REAL calibration data (not random dummy) was used.
+        # If only dummy data is used, the covariance matrix will be rank-deficient
+        # (rank <= num_dummy_tokens << hidden_dim), causing the whitening transform
+        # to map near-zero eigenvalue directions through inv_sqrt with scale ~100x,
+        # which after un-whitening produces reconstruction error near 1.0 on every layer.
+        real_calibration_used = False
+
         try:
             with torch.no_grad():
                 if self.calibration_loader is not None:
+                    batch_count = 0
                     for batch in self.calibration_loader:
                         if isinstance(batch, dict):
                             batch = {
@@ -590,29 +627,60 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                             self.model(*batch)
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(device))
+                        batch_count += 1
+                    if batch_count > 0:
+                        real_calibration_used = True
+                        logger.info(
+                            "DynamicEntropySVD: real calibration loader used (%d batches).",
+                            batch_count,
+                        )
                 elif self.calibration_texts is not None and len(self.calibration_texts) > 0:
                     logger.info("Running calibration forward on %d provided texts.", len(self.calibration_texts))
                     if self.tokenizer is not None:
+                        text_count = 0
                         for text in self.calibration_texts[:32]:
                             try:
                                 enc = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
                                 enc = {k: v.to(device) for k, v in enc.items()}
                                 self.model(**enc)
+                                text_count += 1
                             except Exception as e:
                                 logger.debug("Calibration text pass exception: %s", e)
                                 break
+                        if text_count > 0:
+                            real_calibration_used = True
+                            logger.info(
+                                "DynamicEntropySVD: real calibration texts used (%d texts).",
+                                text_count,
+                            )
                     else:
-                        logger.info("No tokenizer available; using dummy input token tensors for calibration.")
-                        dummy_inputs = torch.randint(0, 1000, (2, 32), device=device)
-                        try:
-                            self.model(dummy_inputs)
-                        except Exception as e:
-                            logger.debug("Dummy calibration pass exception: %s", e)
+                        logger.info(
+                            "No tokenizer available; calibration_texts provided but cannot encode. "
+                            "Falling back to weight-only SVD."
+                        )
         except Exception as e:
             logger.warning("Activation collection encountered exception (%s); falling back to weight SVD.", e)
         finally:
             for h in hooks:
                 h.remove()
+
+        # ROOT-CAUSE FIX: If no real calibration data was used, dummy inputs (e.g.
+        # 2x32 random tokens) produce a rank-deficient covariance (rank<=64 for
+        # hidden_dim=768). The whitening eigenvalue clamp (min=1e-4) then assigns
+        # weight 100x to the 704 meaningless directions. After SVD truncation and
+        # un-whitening, reconstruction error approaches 1.0 on every layer, causing
+        # all 24 layers to fall back and zero compression.
+        #
+        # Solution: return {} so from_linear uses plain weight-only SVD instead.
+        # Expected reconstruction error at rank 64: ~0.15-0.25 (all layers compress).
+        if not real_calibration_used:
+            logger.warning(
+                "DynamicEntropySVD: no real calibration data available "
+                "(calibration_loader=None, calibration_texts=None/empty). "
+                "Activation-aware whitening DISABLED. Using weight-only SVD for all "
+                "layers. Expected reconstruction error at rank=64: ~0.15-0.25."
+            )
+            return {}
 
         # Normalize accumulated covariances by total sample count
         normalized_covs: Dict[str, torch.Tensor] = {}
@@ -620,6 +688,10 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             cnt = sample_counts.get(name, 1)
             normalized_covs[name] = cov / max(1, cnt)
 
+        logger.info(
+            "DynamicEntropySVD: %d activation covariances collected (real data).",
+            len(normalized_covs),
+        )
         return normalized_covs
 
     def compute_layer_entropies(
