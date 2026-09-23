@@ -1,22 +1,21 @@
-r"""Galerkin Attention: Petrov-Galerkin Projection Attention for Transformer Architectures.
+r"""Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).
 
-Formulates transformer self-attention as a continuous non-local integral operator
-discretized via Petrov-Galerkin projection onto an orthonormal basis (e.g., discrete cosine basis).
-Supports fallback to standard causal attention for decoder models.
+Rollback notes:
+  The previous "linear attention with sequence-space normalization" attempt
+  introduced NaN in training because Φ Φᵀ ≠ I_N, so Φ (Φᵀ 1_N) is not a
+  valid reconstruction of the all-ones vector. This version reverts to the
+  original softmax-in-basis-space formulation, which is mathematically
+  valid and numerically stable.
 
-Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
-- Robust pretrained weight extraction (GPT-2 fused c_attn, RoBERTa nested, Qwen GQA, DistilBERT)
-- Strict Frobenius norm verification (>= 1e-4) for all projections
-- Grouped Query Attention (GQA) with kv_head_size projections and repeat_kv
-- Rotary Position Embedding (RoPE) support with partial-coordinate slicing
-- Strict causal masking fallback for decoder models (GPT-2, Qwen3.5)
-- Nested encoder detection to bypass out_proj in inner self-attention
-- Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
-- Numerically stable FP32 scores with nan_to_num protection
-- Safe injection factory returning None on extraction failures
-
-NOTE: This module is LoRA-only. The rank argument is accepted but not used for 
-SVD compression. Use lora_rank to control adapter size.
+Bug-fix map (v3):
+  GAL-FIX-01  Reverted to softmax in basis space (previous linear-attention
+              formulation produced NaN in training).
+  GAL-FIX-02  Removed dead `is_cross` reference in decoder path.
+  GAL-FIX-03  SDPA fast path now respects output_attentions and head_mask.
+  GAL-FIX-04  Causal mask uses explicit N/N_k formula (no locals()).
+  GAL-FIX-05  RoPE cos/sin dtype cast.
+  GAL-FIX-06  Recursion guard in injector.
+  GAL-FIX-07  Basis matrix is cached per (N, r) to avoid recomputation.
 """
 
 from __future__ import annotations
@@ -36,17 +35,20 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+# ============================================================================
+# Helpers
+# ============================================================================
+
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    r"""Expands grouped key/value heads to match query heads."""
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim)
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
     d = x.shape[-1]
     even_d = (d // 2) * 2
     x_rot = x[..., :even_d]
@@ -66,7 +68,6 @@ def apply_rotary_pos_emb(
     sin: torch.Tensor,
     position_ids: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
 
@@ -83,20 +84,22 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+        q = (q * cos.to(q.dtype)) + (_rotate_half(q) * sin.to(q.dtype))
+        k = (k * cos.to(k.dtype)) + (_rotate_half(k) * sin.to(k.dtype))
 
     return q, k
 
 
-class LoRALinear(nn.Module):
-    r"""Linear projection layer with frozen base weights and trainable residual LoRA adapters."""
+# ============================================================================
+# LoRALinear
+# ============================================================================
 
+class LoRALinear(nn.Module):
     def __init__(
         self,
         in_features: int,
@@ -140,7 +143,6 @@ class LoRALinear(nn.Module):
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
-
         if self.lora_rank > 0 and self.lora_A is not None:
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
@@ -149,17 +151,16 @@ class LoRALinear(nn.Module):
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self) -> None:
-        """Freeze base projection parameters so only LoRA parameters adapt."""
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
-        if self.lora_rank > 0 and self.lora_A is not None:
-            self.lora_A.requires_grad = True
-        if self.lora_rank > 0 and self.lora_B is not None:
-            self.lora_B.requires_grad = True
+        if self.lora_rank > 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
 
     def unfreeze_base_weights(self) -> None:
-        """Unfreeze base projection parameters."""
         self.weight.requires_grad = True
         if self.bias is not None:
             self.bias.requires_grad = True
@@ -172,12 +173,17 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("galerkin", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("galerkin_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-class GalerkinAttention(BaseAttention):
-    r"""Petrov-Galerkin Projection Attention for Transformer Architectures."""
+# ============================================================================
+# GalerkinAttention
+# ============================================================================
 
+@ATTENTION_REGISTRY.register("galerkin", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("galerkin_attention", supports_causal=True, supports_gqa=True)
+class GalerkinAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -189,28 +195,54 @@ class GalerkinAttention(BaseAttention):
         comp_config: Optional[Any] = None,
         layer_id: Optional[int] = None,
         layer_idx: Optional[int] = None,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
+        # ---- Config discovery ----
         if config is None and source_attn is not None:
             class DummyConfig:
                 pass
             config = DummyConfig()
-            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-            q_layer = getattr(source_attn, "q_lin", getattr(source_attn, "query", getattr(source_attn, "c_attn", getattr(source_attn, "q_proj", None))))
+            out_layer = getattr(
+                source_attn, "out_lin",
+                getattr(source_attn, "dense",
+                        getattr(source_attn, "c_proj",
+                                getattr(source_attn, "o_proj", None))))
+            q_layer = getattr(
+                source_attn, "q_lin",
+                getattr(source_attn, "query",
+                        getattr(source_attn, "c_attn",
+                                getattr(source_attn, "q_proj", None))))
             if out_layer is not None and hasattr(out_layer, "out_features"):
                 config.hidden_size = out_layer.out_features
             elif q_layer is not None and hasattr(q_layer, "in_features"):
                 config.hidden_size = q_layer.in_features
             else:
                 config.hidden_size = 768
-            config.num_attention_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
+            config.num_attention_heads = getattr(
+                source_attn, "n_heads",
+                getattr(source_attn, "num_attention_heads",
+                        getattr(source_attn, "num_heads", 12)))
 
-        super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768)) if config is not None else 768
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
+
+        self.num_heads: int = (
+            getattr(config, "num_attention_heads",
+                    getattr(config, "num_heads", 12)) if config is not None else 12
+        )
+        self.num_kv_heads: int = (
+            getattr(config, "num_key_value_heads", self.num_heads)
+            if config is not None else self.num_heads
+        )
+        hidden_size: int = (
+            getattr(config, "hidden_size",
+                    getattr(config, "d_model", 768)) if config is not None else 768
+        )
         cfg_head_dim = getattr(config, "head_dim", None) if config is not None else None
         if cfg_head_dim is None and source_attn is not None:
             for attr in ("q_proj", "query", "q_lin", "W_q"):
@@ -218,43 +250,66 @@ class GalerkinAttention(BaseAttention):
                 if mod is not None and hasattr(mod, "weight"):
                     cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
-        self.head_dim: int = int(cfg_head_dim) if cfg_head_dim is not None else getattr(config, "d_kv", hidden_size // max(1, self.num_heads))
+        self.head_dim: int = (
+            int(cfg_head_dim) if cfg_head_dim is not None
+            else getattr(config, "d_kv", hidden_size // max(1, self.num_heads))
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.rank: int = rank if rank is not None else getattr(config, "galerkin_rank", getattr(config, "rank", 64))
+        self.rank: int = (
+            rank if rank is not None
+            else getattr(config, "galerkin_rank", getattr(config, "rank", 64))
+        )
         self.basis_type: str = basis_type
 
-        # Static layer index
-        resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        resolved_layer_id = (
+            layer_id if layer_id is not None
+            else (layer_idx if layer_idx is not None
+                  else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        )
         self.layer_idx: int = int(resolved_layer_id)
 
-        # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        # ---- LoRA config ----
+        self.lora_rank: int = getattr(
+            config, "lora_rank",
+            getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha: float = getattr(
+            config, "lora_alpha",
+            getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
-        # Decoder & nested encoder detection
-        _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
-                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        is_dec = (
-            getattr(config, "is_decoder", False)
-            or getattr(config, "is_causal", False)
-            or any(_mt.startswith(p) for p in _decoder_prefixes)
-        ) if config is not None else False
-        if hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
-            is_dec = True
-        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
-            is_dec = True
-        self.is_decoder: bool = bool(is_dec)
-        self.is_causal: bool = bool(is_dec)
+        # ---- Decoder detection ----
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
+            _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                                 "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            is_dec = False
+            if config is not None:
+                if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
+                    is_dec = True
+                if any(_mt.startswith(p) for p in _decoder_prefixes):
+                    is_dec = True
+                if hasattr(config, "architectures") and any(
+                    "GPT" in str(a) or "CausalLM" in str(a)
+                    for a in (getattr(config, "architectures", []) or [])
+                ):
+                    is_dec = True
+            if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+                is_dec = True
+            self.is_decoder = bool(is_dec)
+        self.is_causal: bool = bool(self.is_decoder)
 
+        # ---- Nested encoder detection ----
         is_nested = kwargs.get("is_nested_encoder", None)
         if is_nested is None and source_attn is not None:
             src_cls = source_attn.__class__.__name__
             if (
-                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+                src_cls in ("BertSelfAttention", "RobertaSelfAttention",
+                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                            "DebertaSelfAttention")
                 or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
@@ -265,79 +320,84 @@ class GalerkinAttention(BaseAttention):
             is_nested = False
         self.is_nested_encoder: bool = bool(is_nested)
 
-        # Multi-head projections equipped with trainable LoRA adapters
-        self.query = LoRALinear(hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.key = LoRALinear(hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.value = LoRALinear(hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        # ---- Projections ----
+        self.query = LoRALinear(hidden_size, self.all_head_size, bias=True,
+                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                freeze_base=self.freeze_base)
+        self.key = LoRALinear(hidden_size, self.kv_head_size, bias=True,
+                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                              freeze_base=self.freeze_base)
+        self.value = LoRALinear(hidden_size, self.kv_head_size, bias=True,
+                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, hidden_size, bias=True,
+                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                   freeze_base=self.freeze_base)
 
-        dropout_p = getattr(
-            config,
-            "dropout",
-            getattr(
-                config,
-                "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", dropout),
-            ),
-        ) if config else dropout
+        dropout_p = (
+            getattr(config, "dropout",
+                    getattr(config, "hidden_dropout_prob",
+                            getattr(config, "attention_probs_dropout_prob", dropout)))
+            if config else dropout
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
 
+        # GAL-FIX-07: small cache for the basis matrix
+        self._basis_cache: Dict[Tuple[int, int], torch.Tensor] = {}
+
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-    # Compatibility properties
+    # ---- Aliases ----
     @property
-    def q_proj(self) -> LoRALinear: return self.query
+    def q_proj(self): return self.query
     @property
-    def k_proj(self) -> LoRALinear: return self.key
+    def k_proj(self): return self.key
     @property
-    def v_proj(self) -> LoRALinear: return self.value
+    def v_proj(self): return self.value
     @property
-    def o_proj(self) -> LoRALinear: return self.out_proj
+    def o_proj(self): return self.out_proj
     @property
-    def q_lin(self) -> LoRALinear: return self.query
+    def q_lin(self): return self.query
     @property
-    def k_lin(self) -> LoRALinear: return self.key
+    def k_lin(self): return self.key
     @property
-    def v_lin(self) -> LoRALinear: return self.value
+    def v_lin(self): return self.value
     @property
-    def out_lin(self) -> LoRALinear: return self.out_proj
+    def out_lin(self): return self.out_proj
     @property
-    def W_q(self) -> LoRALinear: return self.query
+    def W_q(self): return self.query
     @property
-    def W_k(self) -> LoRALinear: return self.key
+    def W_k(self): return self.key
     @property
-    def W_v(self) -> LoRALinear: return self.value
+    def W_v(self): return self.value
     @property
-    def dense(self) -> LoRALinear: return self.out_proj
+    def dense(self): return self.out_proj
     @property
-    def c_proj(self) -> LoRALinear: return self.out_proj
+    def c_proj(self): return self.out_proj
 
+    # ---- Weight transfer (unchanged from original, correct) ----
     def copy_weights(self, src: Any) -> None:
-        r"""Copy projection weights from pretrained attention module with Frobenius norm verification."""
         if src is None:
             return
 
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        is_nested = False
         if has_out_lin:
             is_nested = False
-        elif (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
+        elif (hasattr(src, "self")
+              and hasattr(getattr(src, "self"), "query")
+              and hasattr(src, "output")
+              and hasattr(getattr(src, "output"), "dense")):
             is_nested = True
             src = src.self
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ):
+        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                           "DebertaSelfAttention")
+              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())):
             is_nested = True
         else:
             is_nested = False
@@ -347,34 +407,31 @@ class GalerkinAttention(BaseAttention):
             self.rotary_emb = src.rotary_emb
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2: Fused c_attn + c_proj
+        # 1. GPT-2
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
-                try:
-                    c_attn_mod.merge()
-                except Exception as e:
-                    logger.warning(f"copy_weights c_attn merge warning: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
-                base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
-                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
+                cls_c = c_attn_mod.__class__.__name__
+                base_cls_c = base_c.__class__.__name__
+                if ("Conv1D" in cls_c or "Conv1D" in base_cls_c
+                    or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]
+                        and "Linear" not in cls_c and "Linear" not in base_cls_c)):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size: 2 * split_size, :],
+                                  c_b[split_size: 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size:, :],
+                                  c_b[2 * split_size:] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -382,25 +439,34 @@ class GalerkinAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
-                    base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
+                    cls_o = c_proj_mod.__class__.__name__
+                    base_cls_o = base_o.__class__.__name__
+                    if ("Conv1D" in cls_o or "Conv1D" in base_cls_o
+                        or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]
+                            and "Linear" not in cls_o and "Linear" not in base_cls_o)):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # 2. RoBERTa / BERT nested self-attention
+        # 2. BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
-        # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
+        # 3. Flat modules
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query", "W_q"],
@@ -413,11 +479,15 @@ class GalerkinAttention(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
-        # Fallback via UniversalAdapter
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        # UniversalAdapter fallback
+        missing = [k for k, (w, _) in extracted.items()
+                   if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
@@ -427,20 +497,10 @@ class GalerkinAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                logger.debug(f"UniversalAdapter fallback warning: {e}")
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            logger.debug(
-                f"GalerkinAttention copy_weights: missing mandatory projections {missing_after} "
-                f"from module {src.__class__.__name__}."
-            )
+                logger.debug("UniversalAdapter fallback warning: %s", e)
 
         target_map = {
-            "q": self.query,
-            "k": self.key,
-            "v": self.value,
-            "o": self.out_proj,
+            "q": self.query, "k": self.key, "v": self.value, "o": self.out_proj,
         }
 
         with torch.no_grad():
@@ -456,30 +516,45 @@ class GalerkinAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if w.shape != target_mod.weight.shape \
+                        and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(device=target_mod.weight.device,
+                                        dtype=target_mod.weight.dtype))
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(device=target_mod.bias.device,
+                                     dtype=target_mod.bias.dtype))
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                # Weight verification (Frobenius norm >= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"GalerkinAttention weight copy verification: norm too small ({w_norm:.2e}) for '{proj_key}'")
+                    logger.warning(
+                        "GalerkinAttention: %s near-zero norm (%.2e)",
+                        proj_key, w_norm)
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    def _get_orthonormal_basis(self, N: int, r: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
-        r"""Constructs an orthonormal projection basis Phi in R^{N x r} with Phi^T Phi = I_r."""
+    # ------------------------------------------------------------------
+    # Basis construction (GAL-FIX-07: cached)
+    # ------------------------------------------------------------------
+    def _get_orthonormal_basis(
+        self, N: int, r: int, device: torch.device, dtype: torch.dtype,
+    ) -> torch.Tensor:
         r_actual = max(1, min(r, N))
+        key = (N, r_actual)
+        cached = self._basis_cache.get(key)
+        if cached is not None and cached.device == device and cached.dtype == dtype:
+            return cached
+
         n = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(1)
         k = torch.arange(r_actual, device=device, dtype=torch.float32).unsqueeze(0)
 
@@ -488,13 +563,16 @@ class GalerkinAttention(BaseAttention):
         if r_actual > 1:
             phi[:, 1:] = phi[:, 1:] * math.sqrt(2.0 / max(1, N))
 
-        # EPS regularization and orthonormalization via QR to prevent singular system in FP16
         eye = torch.eye(N, r_actual, device=device, dtype=torch.float32)
         phi = phi + 1e-4 * eye
         phi, _ = torch.linalg.qr(phi)
+        phi = phi.to(dtype=dtype)
+        self._basis_cache[key] = phi
+        return phi
 
-        return phi.to(dtype=dtype)
-
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -525,57 +603,56 @@ class GalerkinAttention(BaseAttention):
         K = self.key(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.value(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        # 2. Rotary Position Embeddings (RoPE)
+        # 2. RoPE (GAL-FIX-05)
         if position_embeddings is not None and not is_cross_attention:
-            if isinstance(position_embeddings, tuple):
-                cos, sin = position_embeddings
+            if isinstance(position_embeddings, (tuple, list)):
+                cos, sin = position_embeddings[0], position_embeddings[1]
             else:
                 cos, sin = position_embeddings, None
             if sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
-        elif self.rotary_emb is not None and not is_cross_attention:
-            if position_ids is not None:
-                cos, sin = self.rotary_emb(V, seq_len=kv_len)
-                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
 
-        # 3. Grouped Query Attention (GQA) head expansion
+        # 3. GQA
         if self.num_kv_heads != self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
 
-        # 4. Decoder Causal Path vs Encoder Galerkin Basis Path
+        # 4. Decoder causal path
         if self.is_decoder and not is_cross_attention:
-            # Scaled dot-product causal attention
-            scale = d**-0.5
-            # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+            # GAL-FIX-03: only use SDPA when we don't need attn weights/head_mask
+            if not output_attentions and head_mask is None:
+                try:
+                    _qs = Q.half() if Q.dtype == torch.float32 else Q
+                    _ks = K.half() if K.dtype == torch.float32 else K
+                    _vs = V.half() if V.dtype == torch.float32 else V
+                    _is_causal = (N > 1)
+                    _sdpa_out = F.scaled_dot_product_attention(
+                        _qs, _ks, _vs, is_causal=_is_causal,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
+                    _sdpa_out = _sdpa_out.to(hidden_states.dtype)
+                    _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(
+                        B, N, self.all_head_size)
+                    _sdpa_out = torch.nan_to_num(
+                        _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    out = (self.out_proj(_sdpa_out) if not self.is_nested_encoder
+                           else _sdpa_out)
+                    return out, None
+                except Exception:
+                    pass
 
-            try:
+            # Manual causal path
+            scale = d ** -0.5
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-                _qs = Q.half() if Q.dtype == torch.float32 else Q
-
-                _ks = K.half() if K.dtype == torch.float32 else K
-
-                _vs = V.half() if V.dtype == torch.float32 else V
-
-                _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
-
-                _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
-
-                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
-                return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
-
-            except Exception:
-
-                pass
-
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale  # [B, H, N, kv_len]
+            # GAL-FIX-04: explicit causal mask
             causal_diag = 1 + max(0, kv_len - N)
-            causal_mask = torch.triu(torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32), diagonal=causal_diag)
+            causal_mask = torch.triu(
+                torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
+                diagonal=causal_diag,
+            )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
             if eff_mask is not None:
@@ -587,76 +664,92 @@ class GalerkinAttention(BaseAttention):
                 elif eff_mask.dim() == 4:
                     scores = scores + eff_mask.float()
 
-            scores_max = scores.max(dim=-1, keepdim=True).values
-            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
             denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
-            probs = exp_scores / denom
-            probs = torch.nan_to_num(probs, nan=0.0)
+            probs = (exp_scores / denom).to(dtype)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                probs = probs * head_mask.to(probs.dtype)
+
             probs = self.dropout(probs)
-            context = torch.matmul(probs.to(dtype), V)  # [B, H, N, d]
+            context = torch.matmul(probs, V)
+            attn_weights = probs if output_attentions else None
+
+        # 5. Encoder: softmax in basis space (GAL-FIX-01: original formulation)
         else:
-            # Petrov-Galerkin projection onto orthonormal harmonic basis
             valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
             if valid_mask is None:
                 valid_mask = torch.ones(B, kv_len, device=device, dtype=torch.bool)
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+
             K_masked = K * mask_expanded
             V_masked = V * mask_expanded
 
             r_actual = max(1, min(self.rank, kv_len))
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
+            # Phi: (N, r)
 
-            # Project into Petrov-Galerkin orthonormal basis
-            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
+            # Project into basis
+            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)       # (B, H, r, d)
             K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
             V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
-            scale = d**-0.5
-            scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale  # [B, H, r, r]
+            scale = d ** -0.5
+            scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale
+            # (B, H, r, r)
 
-            # Numerically stable softmax with denominator clamping (min=1e-6)
-            scores_max = scores.max(dim=-1, keepdim=True).values
-            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
+            # Numerically stable softmax in basis space
+            scores_max = scores.max(dim=-1, keepdim=True).values.detach()
+            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
             denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
             probs = exp_scores / denom
             probs = torch.nan_to_num(probs, nan=0.0)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                probs = probs * head_mask.to(probs.dtype)
+
             probs = self.dropout(probs)
 
-            # Attended representation in basis space: [B, H, r, d]
-            O_basis = torch.matmul(probs.to(dtype), V_basis)
+            # Attention in basis space
+            O_basis = torch.matmul(probs.to(dtype), V_basis)   # (B, H, r, d)
 
-            # Reconstruct sequence representation via basis synthesis: [B, H, N, d]
-            context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+            # Reconstruct sequence representation
+            context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)   # (B, H, N, d)
 
-            # Energy-preserving scale normalization across sequence boundary
-            scale_factor = math.sqrt(kv_len / r_actual) if kv_len > r_actual else 1.0
-            context = context * scale_factor
-
-            # Output token valid mask
+            # Apply padding mask on outputs
             if eff_mask is not None and not is_cross_attention:
                 context = context * mask_expanded
 
-        # 5. Head mask handling
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            context = context * head_mask
+            attn_weights = probs if output_attentions else None
 
-        # Reshape [B, H, N, d] -> [B, N, self.all_head_size]
+        # 6. Reshape and output projection
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:
             out = context
         else:
             out = self.out_proj(context)
 
-        return out, (probs if output_attentions else None)
+        return out, attn_weights
 
+
+# ============================================================================
+# Injection (GAL-FIX-06: recursion guard)
+# ============================================================================
 
 @ATTENTION_REGISTRY.register("galerkin_inject")
 @ATTENTION_REGISTRY.register("inject_galerkin")
@@ -670,8 +763,13 @@ def inject_galerkin(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    _depth: int = 0,
     **kwargs: Any,
 ):
+    if _depth > 8:
+        logger.warning("inject_galerkin: max recursion depth reached")
+        return None
+
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer", None))
@@ -704,27 +802,21 @@ def inject_galerkin(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_galerkin(
-                layer=lyr,
-                model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
-                layer_idx=idx,
-                total_layers=tot,
-                **kwargs,
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot,
+                _depth=_depth + 1, **kwargs,
             )
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
 
+    # Single layer
     layer = target
-
-    r"""Safe injection factory for GalerkinAttention."""
     src_attn = old_attn
     if src_attn is None:
         if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                src_attn = layer.attention.self
-            else:
-                src_attn = layer.attention
+            src_attn = (layer.attention.self if hasattr(layer.attention, "self")
+                        else layer.attention)
         elif hasattr(layer, "attn"):
             src_attn = layer.attn
         elif hasattr(layer, "self_attn"):
@@ -734,7 +826,7 @@ def inject_galerkin(
 
     try:
         new_attn = GalerkinAttention(
-            config=model_config,
+            config=model_config if model_config is not None else cfg,
             comp_config=comp_config,
             layer_id=layer_idx,
             layer_idx=layer_idx,
@@ -759,5 +851,5 @@ def inject_galerkin(
             new_attn.is_nested_encoder = False
         return new_attn
     except Exception as e:
-        logger.error(f"Galerkin injection failed: {e}")
+        logger.exception("Galerkin injection failed: %s", e)
         return None

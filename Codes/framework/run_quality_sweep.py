@@ -1817,8 +1817,16 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
             if hasattr(model, "config") and model.config is not None:
                 # Automatically propagate all parsed flags matching module name prefix or compressor keywords
                 for attr_name, attr_val in vars(args).items():
-                    if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "force_rank", "lora_rank", "lora_alpha", "sparsity", "use_fisher", "recalibrate_ln", "n_calib"):
+                    if attr_name.startswith(name + "_") or attr_name in (
+                        "max_error", "target_attention_only", "rank", "force_rank",
+                        "lora_rank", "lora_alpha", "sparsity", "use_fisher",
+                        "recalibrate_ln", "n_calib",
+                        # TPA-specific
+                        "tpa_rank",
+                    ):
                         setattr(model.config, attr_name, attr_val)
+
+
                         # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
                         if attr_name.startswith(name + "_"):
                             stripped = attr_name[len(name) + 1:]
@@ -2383,6 +2391,12 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
                     setattr(model.config, "a3_attention_only", a3_attn)
                     setattr(model.config, "target_attention_only", a3_attn)
+
+                    LOG.info(
+                        "Calling apply_module_to_model with rank=%d for module=%s (lora_rank=%s)",
+                        module_rank, name, getattr(args, "lora_rank", None),
+                    )
+
             model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
             model = model.to(device)
             injected = True
@@ -3030,6 +3044,32 @@ def run_single_module_main(args) -> dict:
         if r.get("status") == "PASS" and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
     }
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
+
+
+    # ============================================================
+    # FIX: Force rank = sqrt(head_dim) for TPA to preserve tensor product.
+    # TPA computes Q = (W_q1 x) ⊗ (W_q2 x), whose per-head dim is rank*rank.
+    # This must equal head_dim for correctness; otherwise the identity-select
+    # qk_proj discards most of (r*r) and causes EXTREME_EXPANSION.
+    # ============================================================
+    if name in ("tpa", "tpa_attention", "tp_attention", "inject_tpa"):
+        # Determine head_dim from the model
+        _hd = None
+        _nh = getattr(base.config, "num_attention_heads", None) or getattr(base.config, "n_heads", 12)
+        _hs = getattr(base.config, "hidden_size", None) or getattr(base.config, "d_model", 768)
+        _hd = getattr(base.config, "head_dim", None) or (_hs // max(1, _nh))
+        _optimal = max(1, int(round(_hd ** 0.5)))
+        if module_rank != _optimal:
+            LOG.warning(
+                "TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).",
+                module_rank, _optimal, _hd,
+            )
+            module_rank = _optimal
+            # Also force the config
+            if hasattr(model, "config") and model.config is not None:
+                setattr(model.config, "rank", _optimal)
+                setattr(model.config, "tpa_rank", _optimal)
+
 
     for n, name in enumerate(names, 1):
         if name in DEPRECATED_MODULES:
