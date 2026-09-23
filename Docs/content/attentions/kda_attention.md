@@ -279,6 +279,7 @@ def inject_kda(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 90.60% | **77.18%** | -13.42% | 0.7588 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-kda](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-kda) | 2026-09-18 |
+| **distilbert-base-uncased** | sst2 | `PASS` | 54.59% | **100.00%** | +45.41% | 1.0000 | 0.99x | 0 | [svd-linear-attention-distilbert-base-uncased-kda](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-kda) | 2026-09-23 |
 
 
 > [!NOTE]
