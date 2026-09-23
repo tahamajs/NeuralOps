@@ -1,1 +1,7 @@
-{}
+{
+  "num_compressed": 2,
+  "num_fallback": 22,
+  "compression_method": "delta_kv",
+  "effective_parameter_ratio": 0.9477776421440972,
+  "avg_reconstruction_error": 0.39455895452165746
+}
