@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "process_papers_batch9",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 80 90",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "process_papers_batch14",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 130 140",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "process_papers_batch15",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 140 150",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "process_papers_batch16",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 150 160",
@@ -68907,6 +68886,33 @@
       "job_type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 120 130",
       "started_at": "2026-09-23T09:09:21.297291",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch9",
+      "id": "process_papers_batch9",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 80 90",
+      "started_at": "2026-09-23T09:09:39.957975",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch14",
+      "id": "process_papers_batch14",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 130 140",
+      "started_at": "2026-09-23T09:09:40.063771",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch15",
+      "id": "process_papers_batch15",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 140 150",
+      "started_at": "2026-09-23T09:09:40.199464",
       "retries": 0,
       "status": "done"
     }
