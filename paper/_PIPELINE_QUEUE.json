@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "entropy_budget_allocation_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 64 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "entropy_budget_allocation_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "entropy_budget_allocation_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "entropy_rank_allocator_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator --rank 32 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_bert_sst2_r32",
@@ -65846,23 +65825,23 @@
       "retries": 0
     },
     {
-      "id": "entropy_budget_bert_sst2_r128",
+      "id": "entropy_budget_allocation_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_budget_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 64 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r64",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "entropy_budget_bert_sst2_r256",
+      "id": "entropy_budget_allocation_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_budget_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r128",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "entropy_budget_allocation_bert_sst2_r32",
+      "id": "entropy_budget_allocation_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 32 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70221,6 +70200,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget --rank 64 --parallel 1 --batch_size 16 --output_suffix entropy_budget_bert_sst2_r64",
       "started_at": "2026-09-23T12:47:34.300585",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "entropy_budget_bert_sst2_r128",
+      "id": "entropy_budget_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_budget_bert_sst2_r128",
+      "started_at": "2026-09-23T12:48:31.196240",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "entropy_budget_bert_sst2_r256",
+      "id": "entropy_budget_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_budget_bert_sst2_r256",
+      "started_at": "2026-09-23T12:48:31.338983",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "entropy_budget_allocation_bert_sst2_r32",
+      "id": "entropy_budget_allocation_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_budget_allocation --rank 32 --parallel 1 --batch_size 16 --output_suffix entropy_budget_allocation_bert_sst2_r32",
+      "started_at": "2026-09-23T12:48:31.481058",
       "retries": 0,
       "status": "done"
     }
