@@ -345,7 +345,9 @@ def commit_and_push_git(
         curr_branch = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd, capture_output=True, text=True
         ).stdout.strip()
-        target_branch = branch or os.environ.get("BENCHMARK_GIT_BRANCH", curr_branch or "main")
+        if curr_branch == "HEAD" or not curr_branch:
+            curr_branch = "main"
+        target_branch = branch or os.environ.get("BENCHMARK_GIT_BRANCH", "main")
 
         switched = False
         if target_branch != curr_branch:
