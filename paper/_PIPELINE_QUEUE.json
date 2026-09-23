@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "gated_delta_net_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gated_delta_net --rank 128 --parallel 1 --batch_size 16 --output_suffix gated_delta_net_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "gated_delta_net_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gated_delta_net --rank 256 --parallel 1 --batch_size 16 --output_suffix gated_delta_net_bert_sst2_r256",
@@ -70422,6 +70415,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gated_delta_net --rank 64 --parallel 1 --batch_size 16 --output_suffix gated_delta_net_bert_sst2_r64",
       "started_at": "2026-09-23T14:11:21.970793",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gated_delta_net_bert_sst2_r128",
+      "id": "gated_delta_net_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gated_delta_net --rank 128 --parallel 1 --batch_size 16 --output_suffix gated_delta_net_bert_sst2_r128",
+      "started_at": "2026-09-23T14:11:40.694116",
       "retries": 0,
       "status": "done"
     }
