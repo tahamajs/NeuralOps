@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "adaptive_svd_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive_svd --parallel 1 --batch_size 32 --output_suffix adaptive_svd_sst2 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 32 --output_suffix adaptive_sst2 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "aasvd_roberta_sst2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 16 --output_suffix aasvd_rob64 --fresh",
@@ -68769,6 +68755,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 32 --output_suffix kmeans_sst2 --fresh",
       "started_at": "2026-09-23T08:50:37.462398",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_svd_sst2",
+      "id": "adaptive_svd_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive_svd --parallel 1 --batch_size 32 --output_suffix adaptive_svd_sst2 --fresh",
+      "started_at": "2026-09-23T08:51:32.498849",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_sst2",
+      "id": "adaptive_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 32 --output_suffix adaptive_sst2 --fresh",
+      "started_at": "2026-09-23T08:51:32.644927",
       "retries": 0,
       "status": "done"
     }
