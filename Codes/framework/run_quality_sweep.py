@@ -3090,8 +3090,6 @@ def run_single_module_main(args) -> dict:
                 except Exception as e:
                     LOG.warning("Failed to save caches to %s: %s", _cached_dir, e)
                 LOG.info("Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)", _cached_dir)
-            except Exception as _cache_err:
-                LOG.warning("Could not save batch cache: %s", _cache_err)
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
     # Pre-evaluate base model to get baseline benchmark accuracy for reference
     # Merge LoRA adapters into base weights BEFORE measuring baseline
