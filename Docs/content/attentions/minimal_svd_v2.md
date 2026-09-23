@@ -220,6 +220,7 @@ A Triton kernel fuses low-rank projections ($B, A$) and token mask validation di
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **86.35%** | -4.71% | 0.8722 | 1.15x | 6 | [svd-linear-attention-distilbert-sst2-minimal-svd-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-minimal-svd-v2) | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **55.10%** | -26.70% | 0.5441 | 1.15x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **91.80%** | -2.50% | 0.9152 | 1.15x | 0 | [svd-linear-attention-distilbert-agnews-full-minimal-svd-v2](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-agnews-full-minimal-svd-v2) | 2026-09-19 |
+| **gpt2** | wikitext2 | `PASS` | 99.72% | **99.72%** | +0.00% | 0.0000 | 1.00x | 0 | [svd-linear-attention-gpt2-minimal-svd-v2](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-minimal-svd-v2) | 2026-09-23 |
 
 
 The empirical evaluation of `minimal_svd_v2` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
