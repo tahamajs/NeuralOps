@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "factorised_matrix_state_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 256 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "faq_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules faq --rank 32 --parallel 1 --batch_size 16 --output_suffix faq_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "faq_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules faq --rank 64 --parallel 1 --batch_size 16 --output_suffix faq_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "faq_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules faq --rank 128 --parallel 1 --batch_size 16 --output_suffix faq_bert_sst2_r128",
@@ -65636,23 +65615,16 @@
       "retries": 0
     },
     {
-      "id": "factorised_matrix_state_bert_sst2_r32",
+      "id": "factorised_matrix_state_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 32 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 256 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r256",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "factorised_matrix_state_bert_sst2_r64",
+      "id": "faq_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 64 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "factorised_matrix_state_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 128 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules faq --rank 64 --parallel 1 --batch_size 16 --output_suffix faq_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70283,8 +70255,48 @@
       "started_at": "2026-09-23T12:56:26.152028",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "faq_bert_sst2_r32",
+      "id": "faq_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules faq --rank 32 --parallel 1 --batch_size 16 --output_suffix faq_bert_sst2_r32",
+      "started_at": "2026-09-23T13:27:25.159178",
+      "retries": 0,
+      "status": "done"
     }
   ],
-  "failed": [],
+  "failed": [
+    {
+      "job_id": "factorised_matrix_state_bert_sst2_r32",
+      "id": "factorised_matrix_state_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 32 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r32",
+      "started_at": "2026-09-23T12:57:04.088347",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "factorised_matrix_state_bert_sst2_r64",
+      "id": "factorised_matrix_state_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 64 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r64",
+      "started_at": "2026-09-23T12:57:04.236865",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "factorised_matrix_state_bert_sst2_r128",
+      "id": "factorised_matrix_state_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 128 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r128",
+      "started_at": "2026-09-23T12:57:04.433540",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    }
+  ],
   "blocked": []
 }
