@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "rpca_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules rpca --parallel 1 --batch_size 32 --output_suffix rpca_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "soka_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules soka --parallel 1 --batch_size 32 --output_suffix soka_mnli --fresh",
@@ -68345,9 +68338,9 @@
   ],
   "active": [
     {
-      "id": "hybrid_svd_layer_mnli_sweep",
+      "id": "rpca_mnli_sweep",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules rpca --parallel 1 --batch_size 32 --output_suffix rpca_mnli --fresh",
       "status": "active",
       "retries": 0
     }
@@ -68854,6 +68847,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd --parallel 1 --batch_size 32 --output_suffix swift_svd_mnli --fresh",
       "started_at": "2026-09-23T09:06:11.898192",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hybrid_svd_layer_mnli_sweep",
+      "id": "hybrid_svd_layer_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
+      "started_at": "2026-09-23T09:06:30.708506",
       "retries": 0,
       "status": "done"
     }
