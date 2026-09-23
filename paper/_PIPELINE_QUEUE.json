@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_dobi_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dynamic_entropy_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_mgie_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_factory",
@@ -12343,23 +12329,18 @@
       "started_at": "2026-09-24T03:14:22.684593",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_hamming_inject",
+      "id": "p3_gpt2_hamming_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hamming_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hamming_inject",
+      "started_at": "2026-09-24T03:17:43.169474",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
-    {
-      "id": "p3_gpt2_hamming_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hamming_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hamming_inject",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_proxsparse_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse_pruner",
-      "status": "active",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_drone",
       "type": "gpu",
@@ -12371,6 +12352,20 @@
       "id": "p3_gpt2_delta_kv_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_dobi_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_dynamic_entropy_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd",
       "status": "active",
       "retries": 0
     }
@@ -13030,6 +13025,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_class",
       "started_at": "2026-09-24T03:16:42.586607",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_proxsparse_pruner",
+      "id": "p3_gpt2_proxsparse_pruner",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse_pruner",
+      "started_at": "2026-09-24T03:17:55.671265",
       "retries": 0,
       "status": "done"
     }
