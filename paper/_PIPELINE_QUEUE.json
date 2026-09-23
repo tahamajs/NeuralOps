@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p2_aasvd_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p2_aasvd_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128",
@@ -12436,13 +12429,6 @@
   ],
   "active": [
     {
-      "id": "p1_aegis_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v2 --parallel 1 --batch_size 8 --output_suffix aegis_v2_mnli_p1 --recovery_steps 100",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p1_mamba",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --parallel 1 --batch_size 8 --output_suffix mamba_mnli_p1 --recovery_steps 100",
@@ -12455,6 +12441,13 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r32",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "p2_aasvd_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -12464,6 +12457,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules galerkin_attention --parallel 1 --batch_size 8 --output_suffix galerkin_attention_mnli_p1",
       "started_at": "2026-09-23T22:28:42.419285",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p1_aegis_v2",
+      "id": "p1_aegis_v2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v2 --parallel 1 --batch_size 8 --output_suffix aegis_v2_mnli_p1 --recovery_steps 100",
+      "started_at": "2026-09-23T22:28:42.279919",
       "retries": 0,
       "status": "done"
     }
