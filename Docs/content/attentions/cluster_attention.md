@@ -917,7 +917,7 @@ print('Output logits shape:', outputs.logits.shape)
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **79.20%** | +4.70% | 0.7732 | 1.00x | 0 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.00%** | +2.30% | 0.8134 | 1.00x | 0 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.48%** | -0.58% | 0.9087 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cluster) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.14%** | -0.46% | 0.9057 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-cluster](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cluster) | 2026-09-23 |
 
 
 Evaluations across sequence lengths and model scales:
