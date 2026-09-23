@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "adaptive_sparse_attn_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_sparse_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_sparse_attn_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_svd_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_svd_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_svd_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r128",
@@ -67825,33 +67804,6 @@
       "retries": 0
     },
     {
-      "job_id": "adaptive_sparse_attn_bert_sst2_r256",
-      "id": "adaptive_sparse_attn_bert_sst2_r256",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_sparse_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_sparse_attn_bert_sst2_r256",
-      "started_at": "2026-09-23T09:29:18.807600",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "adaptive_svd_bert_sst2_r32",
-      "id": "adaptive_svd_bert_sst2_r32",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r32",
-      "started_at": "2026-09-23T09:29:18.941610",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "adaptive_svd_bert_sst2_r64",
-      "id": "adaptive_svd_bert_sst2_r64",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r64",
-      "started_at": "2026-09-23T09:29:19.082145",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "adaptive_svd_bert_sst2_r128",
       "id": "adaptive_svd_bert_sst2_r128",
       "job_type": "gpu",
@@ -68735,6 +68687,20 @@
       "id": "process_papers_batch22",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "adaptive_svd_bert_sst2_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "adaptive_svd_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_svd_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70510,6 +70476,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_sparse_attn --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_sparse_attn_bert_sst2_r128",
       "started_at": "2026-09-23T11:16:46.807476",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_sparse_attn_bert_sst2_r256",
+      "id": "adaptive_sparse_attn_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_sparse_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_sparse_attn_bert_sst2_r256",
+      "started_at": "2026-09-23T11:17:29.483069",
       "retries": 0,
       "status": "done"
     }
