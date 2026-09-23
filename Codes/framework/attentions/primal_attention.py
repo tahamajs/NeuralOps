@@ -181,7 +181,7 @@ class PrimalAttention(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: int = 64,
-        pinv_iters: int = 6,
+        pinv_iters: int = 0,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
