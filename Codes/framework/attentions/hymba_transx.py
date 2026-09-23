@@ -532,23 +532,23 @@ class HymbaTransXBlock(BaseAttention):
             # W_q1
             wq = _adapt(w_q, self.W_q1.weight.shape)
             if wq is not None:
-                self.W_q1.weight.data.copy_(wq.to(self.W_q1.weight.dtype, self.W_q1.weight.device))
+                self.W_q1.weight.data.copy_(wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
 
             # W_k1
             wk = _adapt(w_k, self.W_k1.weight.shape)
             if wk is not None:
-                self.W_k1.weight.data.copy_(wk.to(self.W_k1.weight.dtype, self.W_k1.weight.device))
+                self.W_k1.weight.data.copy_(wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
 
             # W_v
             wv = _adapt(w_v, self.W_v.weight.shape)
             if wv is not None:
-                self.W_v.weight.data.copy_(wv.to(self.W_v.weight.dtype, self.W_v.weight.device))
+                self.W_v.weight.data.copy_(wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
 
             # W_o
             if w_o is not None:
                 wo = _adapt(w_o, self.out_proj.weight.shape)
                 if wo is not None:
-                    self.out_proj.weight.data.copy_(wo.to(self.out_proj.weight.dtype, self.out_proj.weight.device))
+                    self.out_proj.weight.data.copy_(wo.to(device=self.out_proj.weight.device, dtype=self.out_proj.weight.dtype))
                 if b_o is not None and self.out_proj.bias is not None:
                     m = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
