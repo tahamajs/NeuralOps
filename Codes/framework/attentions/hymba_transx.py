@@ -722,16 +722,29 @@ class HymbaTransXBlock(BaseAttention):
 
         # SSM branch
         if self.mamba is not None:
-            if self.is_decoder:
-                mamba_res = self.mamba(x, attention_mask=attention_mask)
-                M_out = mamba_res[0] if isinstance(mamba_res, tuple) else mamba_res
+            if x.requires_grad:
+                from torch.utils.checkpoint import checkpoint
+                def _run_mamba(h, m):
+                    return self.mamba(h, attention_mask=m)[0]
+
+                if self.is_decoder:
+                    M_out = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
+                else:
+                    x_rev = torch.flip(x, dims=[1])
+                    mf = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
+                    mb = checkpoint(_run_mamba, x_rev, attention_mask, use_reentrant=False)
+                    M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
             else:
-                x_rev = torch.flip(x, dims=[1])
-                mamba_fwd = self.mamba(x, attention_mask=attention_mask)
-                mamba_bwd = self.mamba(x_rev, attention_mask=attention_mask)
-                mf = mamba_fwd[0] if isinstance(mamba_fwd, tuple) else mamba_fwd
-                mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
-                M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
+                if self.is_decoder:
+                    mamba_res = self.mamba(x, attention_mask=attention_mask)
+                    M_out = mamba_res[0] if isinstance(mamba_res, tuple) else mamba_res
+                else:
+                    x_rev = torch.flip(x, dims=[1])
+                    mamba_fwd = self.mamba(x, attention_mask=attention_mask)
+                    mamba_bwd = self.mamba(x_rev, attention_mask=attention_mask)
+                    mf = mamba_fwd[0] if isinstance(mamba_fwd, tuple) else mamba_fwd
+                    mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
+                    M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
         else:
             M_out = A_out
 

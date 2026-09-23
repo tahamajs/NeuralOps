@@ -25,7 +25,7 @@ def selective_scan_chunked(
     z: Optional[torch.Tensor] = None,
     delta_bias: Optional[torch.Tensor] = None,
     delta_softplus: bool = False,
-    chunk_size: int = 32,
+    chunk_size: int = 16,
 ) -> torch.Tensor:
     """
     Selective scan implementation with chunked recurrence for linear-time complexity and numerical stability.
@@ -96,7 +96,7 @@ def selective_scan(
     z: Optional[torch.Tensor] = None,
     delta_bias: Optional[torch.Tensor] = None,
     delta_softplus: bool = False,
-    chunk_size: int = 32,
+    chunk_size: int = 16,
 ) -> torch.Tensor:
     """
     Main entry point for selective scan with automatic dispatch to CUDA kernel if available.
