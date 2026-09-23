@@ -62,25 +62,25 @@ QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 # TUNABLE SAFETY / PERFORMANCE CONSTANTS
 # =============================================================================
 # VRAM safety (RTX 4070 Laptop = 8 GB)
-VRAM_CEILING_GB = 6.5        # pause new launches above this
-VRAM_RESUME_GB = 5.5         # resume launches below this
-VRAM_PER_JOB_GB = 1.8        # typical per-job footprint
+VRAM_CEILING_GB = 7.0        # pause new launches above this (safe max utilization)
+VRAM_RESUME_GB = 6.0         # resume launches below this
+VRAM_PER_JOB_GB = 1.4        # typical per-job footprint for batch_size=16/8
 
 # Thermal safety
-TEMP_CEILING_C = 80.0        # pause when temp > this
-TEMP_RESUME_C = 70.0         # resume below this
+TEMP_CEILING_C = 82.0        # pause when temp > this
+TEMP_RESUME_C = 72.0         # resume below this
 
 # Utilization (informational; laptop GPUs don't hit 100% on real workloads)
-UTIL_TARGET_PCT = 90.0
+UTIL_TARGET_PCT = 95.0
 
 # Parallelism
-GPU_SAFE_MAX_PARALLEL = 3    # hard ceiling for GPU jobs
+GPU_SAFE_MAX_PARALLEL = 4    # safe ceiling for GPU jobs to maximize utilization
 CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
 
 # Timing
-POLL_INTERVAL_S = 15         # main loop sleep
-THERMAL_PAUSE_S = 90         # pause duration when hot
-LAUNCH_COOLDOWN_S = 5        # wait between launches
+POLL_INTERVAL_S = 8          # main loop sleep (faster polling)
+THERMAL_PAUSE_S = 60         # pause duration when hot
+LAUNCH_COOLDOWN_S = 2        # wait between launches (faster ramp-up)
 
 # Job execution
 JOB_TIMEOUT_S = 1800         # 30 min max per job
@@ -621,8 +621,11 @@ def auto_refill_queue(state: Dict[str, Any]) -> int:
     # 1. DistilBERT across SST-2, MNLI, and AG News across ranks [32, 64, 128, 256]
     # 2. RoBERTa across SST-2, MNLI, and AG News across ranks [32, 64, 128, 256]
     # -------------------------------------------------------------------------
-    from framework.core.registry import get_evaluatable_modules
-    eval_modules = get_evaluatable_modules(include_compressors=True)
+    # Prioritize attention modules first for highest throughput and time efficiency, then compressors
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
+    attn_modules = sorted([k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)])
+    comp_modules = sorted([k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k) and k not in ATTENTION_REGISTRY])
+    eval_modules = attn_modules + comp_modules
 
     # Models & Datasets in strict sequence: DistilBERT first, then RoBERTa
     eval_matrix = [
