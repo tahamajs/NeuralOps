@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "armor_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 64 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "armor_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 128 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r128",
@@ -67307,15 +67300,6 @@
       "retries": 0
     },
     {
-      "job_id": "armor_bert_sst2_r64",
-      "id": "armor_bert_sst2_r64",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 64 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r64",
-      "started_at": "2026-09-23T09:36:43.652973",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "armor_bert_sst2_r128",
       "id": "armor_bert_sst2_r128",
       "job_type": "gpu",
@@ -67555,16 +67539,9 @@
       "retries": 0
     },
     {
-      "id": "aegisattention_bert_sst2_r128",
+      "id": "armor_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegisattention --rank 128 --parallel 1 --batch_size 16 --output_suffix aegisattention_bert_sst2_r128",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "armor_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 32 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 64 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -69997,6 +69974,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegisattention --rank 256 --parallel 1 --batch_size 16 --output_suffix aegisattention_bert_sst2_r256",
       "started_at": "2026-09-23T11:44:10.647324",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegisattention_bert_sst2_r128",
+      "id": "aegisattention_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegisattention --rank 128 --parallel 1 --batch_size 16 --output_suffix aegisattention_bert_sst2_r128",
+      "started_at": "2026-09-23T11:44:30.008812",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "armor_bert_sst2_r32",
+      "id": "armor_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules armor --rank 32 --parallel 1 --batch_size 16 --output_suffix armor_bert_sst2_r32",
+      "started_at": "2026-09-23T11:44:50.109511",
       "retries": 0,
       "status": "done"
     }
