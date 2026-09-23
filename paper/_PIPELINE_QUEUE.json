@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "gpt2_eval_kronecker",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_swift_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "svd_compressed_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules svd_compressed --parallel 1 --batch_size 32 --output_suffix svd_compressed_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "vspec_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules vspec --parallel 1 --batch_size 32 --output_suffix vspec_mnli --fresh",
@@ -68434,7 +68413,22 @@
       "retries": 0
     }
   ],
-  "active": [],
+  "active": [
+    {
+      "id": "gpt2_eval_kronecker",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_swift_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "active",
+      "retries": 0
+    }
+  ],
   "completed": [
     {
       "job_id": "aasvd_r128_seed456",
@@ -68829,6 +68823,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kmeans --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
       "started_at": "2026-09-23T09:03:21.625105",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "svd_compressed_mnli_sweep",
+      "id": "svd_compressed_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules svd_compressed --parallel 1 --batch_size 32 --output_suffix svd_compressed_mnli --fresh",
+      "started_at": "2026-09-23T09:03:59.579448",
       "retries": 0,
       "status": "done"
     }

@@ -1,3 +1,3 @@
 module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,25.88,25.88,0.0,1.0,0.0,916.17,0.068,14808.4,6.75,124439808,124439808,,2026-09-23T09:03:48
-kmeans,PASS,27.56,25.88,1.68,3.149,68.24,1417.85,0.035,28847.6,3.47,124439808,39517440,,2026-09-23T09:03:55
+full,PASS,25.88,25.88,0.0,1.0,0.0,916.17,0.079,12632.2,7.92,124439808,124439808,,2026-09-23T09:04:28
+kronecker,PASS,25.88,25.88,0.0,1.0,0.0,917.55,0.057,17673.6,5.66,124439808,124439808,,2026-09-23T09:04:36
