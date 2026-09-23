@@ -62,19 +62,19 @@ QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 # TUNABLE SAFETY / PERFORMANCE CONSTANTS
 # =============================================================================
 # VRAM safety (RTX 4070 Laptop = 8 GB)
-VRAM_CEILING_GB = 7.0        # pause new launches above this (safe max utilization)
+VRAM_CEILING_GB = 6.8        # pause new launches above this (safe max utilization)
 VRAM_RESUME_GB = 6.0         # resume launches below this
-VRAM_PER_JOB_GB = 1.4        # typical per-job footprint for batch_size=16/8
+VRAM_PER_JOB_GB = 2.0        # typical per-job footprint for batch_size=16/8
 
 # Thermal safety
 TEMP_CEILING_C = 82.0        # pause when temp > this
 TEMP_RESUME_C = 72.0         # resume below this
 
 # Utilization (informational; laptop GPUs don't hit 100% on real workloads)
-UTIL_TARGET_PCT = 95.0
+UTIL_TARGET_PCT = 90.0
 
 # Parallelism
-GPU_SAFE_MAX_PARALLEL = 4    # safe ceiling for GPU jobs to maximize utilization
+GPU_SAFE_MAX_PARALLEL = 3    # safe ceiling for GPU jobs to maximize utilization
 CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
 
 # Timing
