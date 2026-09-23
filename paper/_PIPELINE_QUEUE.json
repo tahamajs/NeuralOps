@@ -2,48 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "come_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules come --rank 128 --parallel 1 --batch_size 16 --output_suffix come_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "come_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules come --rank 256 --parallel 1 --batch_size 16 --output_suffix come_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compot_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 32 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compot_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 64 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compot_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 128 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compot_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 256 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "compressed_attention_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix compressed_attention_bert_sst2_r32",
@@ -66957,6 +66915,27 @@
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "compot_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 64 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r64",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "compot_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 128 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r128",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "compot_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 256 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r256",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -69891,6 +69870,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules come --rank 64 --parallel 1 --batch_size 16 --output_suffix come_bert_sst2_r64",
       "started_at": "2026-09-23T11:59:11.938526",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "come_bert_sst2_r128",
+      "id": "come_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules come --rank 128 --parallel 1 --batch_size 16 --output_suffix come_bert_sst2_r128",
+      "started_at": "2026-09-23T11:59:50.214622",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "come_bert_sst2_r256",
+      "id": "come_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules come --rank 256 --parallel 1 --batch_size 16 --output_suffix come_bert_sst2_r256",
+      "started_at": "2026-09-23T11:59:50.356431",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "compot_bert_sst2_r32",
+      "id": "compot_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compot --rank 32 --parallel 1 --batch_size 16 --output_suffix compot_bert_sst2_r32",
+      "started_at": "2026-09-23T11:59:50.546748",
       "retries": 0,
       "status": "done"
     }
