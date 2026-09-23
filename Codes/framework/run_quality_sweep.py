@@ -53,6 +53,7 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
+from framework.core.snapshot_restore import ModelStateSnapshot
 from framework.core.registry import (
     ATTENTION_REGISTRY,
     COMPRESSOR_REGISTRY,
@@ -2651,6 +2652,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
 def run_single_module_main(args) -> dict:
     import os
     import torch
+    from framework.core.snapshot_restore import ModelStateSnapshot
     from framework.core.registry import ATTENTION_REGISTRY
     name = args.modules[0] if isinstance(args.modules, list) else args.modules
     typ = "baseline" if name in ("full", "dense") else ("attention" if name in ATTENTION_REGISTRY else "compressor")
@@ -2671,7 +2673,8 @@ def run_single_module_main(args) -> dict:
             LOG.debug("Could not query GPU memory info or set fraction: %s", mem_err)
     if args.output_dir is None:
         safe_model = Path(args.model).name.replace("-", "_").lower()
-        args.output_dir = f"D:/SVD_Project/results/{safe_model}_{args.dataset}_sweep"
+        # Cleanly organized hierarchical structure for saving folders
+        args.output_dir = str(Path(__file__).resolve().parents[2] / "results" / args.dataset / safe_model)
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
     if args.dataset_dir is None:
@@ -3103,34 +3106,22 @@ def run_single_module_main(args) -> dict:
         if r.get("status") == "PASS" and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
     }
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
-
-
-    # ============================================================
-    # FIX: Force rank = sqrt(head_dim) for TPA to preserve tensor product.
-    # TPA computes Q = (W_q1 x) ⊗ (W_q2 x), whose per-head dim is rank*rank.
-    # This must equal head_dim for correctness; otherwise the identity-select
-    # qk_proj discards most of (r*r) and causes EXTREME_EXPANSION.
-    # ============================================================
-    if name in ("tpa", "tpa_attention", "tp_attention", "inject_tpa"):
-        # Determine head_dim from the model
-        _hd = None
-        _nh = getattr(base.config, "num_attention_heads", None) or getattr(base.config, "n_heads", 12)
-        _hs = getattr(base.config, "hidden_size", None) or getattr(base.config, "d_model", 768)
-        _hd = getattr(base.config, "head_dim", None) or (_hs // max(1, _nh))
-        _optimal = max(1, int(round(_hd ** 0.5)))
-        if module_rank != _optimal:
-            LOG.warning(
-                "TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).",
-                module_rank, _optimal, _hd,
-            )
-            module_rank = _optimal
-            # Also force the config
-            if hasattr(model, "config") and model.config is not None:
-                setattr(model.config, "rank", _optimal)
-                setattr(model.config, "tpa_rank", _optimal)
-
+    LOG.info("Initializing ModelStateSnapshot for in-memory module swapping...")
+    base_snapshot = ModelStateSnapshot(base)
 
     for n, name in enumerate(names, 1):
+        # Force rank = sqrt(head_dim) for TPA to preserve tensor product.
+        if name in ("tpa", "tpa_attention", "tp_attention", "inject_tpa"):
+            _nh = getattr(base.config, "num_attention_heads", None) or getattr(base.config, "n_heads", 12)
+            _hs = getattr(base.config, "hidden_size", None) or getattr(base.config, "d_model", 768)
+            _hd = getattr(base.config, "head_dim", None) or (_hs // max(1, _nh))
+            _optimal = max(1, int(round(_hd ** 0.5)))
+            if module_rank != _optimal:
+                LOG.warning("TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).", module_rank, _optimal, _hd)
+                module_rank = _optimal
+                if hasattr(base, "config") and base.config is not None:
+                    setattr(base.config, "rank", _optimal)
+                    setattr(base.config, "tpa_rank", _optimal)
         if name in DEPRECATED_MODULES:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
@@ -3199,24 +3190,9 @@ def run_single_module_main(args) -> dict:
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
-        try:
-            model = copy.deepcopy(base)
-        except torch.cuda.OutOfMemoryError:
-            gc.collect()
-            torch.cuda.empty_cache()
-            time.sleep(2)
-            try:
-                model = copy.deepcopy(base)
-            except torch.cuda.OutOfMemoryError as oom_err:
-                status = "PASS_FALLBACK"
-                err = f"note: CUDA OOM on base model cloning ({oom_err}), fallback to baseline"
-                acc = base_benchmark_acc
-                row = {"module_name": name, "status": status, "accuracy_pct": acc,
-                       "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
-                       "path": path_name, "timestamp": datetime.now().isoformat()}
-                summary_dict[name] = row
-                LOG.info("[%d/%d] %s -> %s (%.2f%%)", n, len(names), name, status, acc)
-                continue
+        model = base
+        # Timing start
+        t_load = time.monotonic()
         # Side effect is projection alias installation; the model itself
         # is not replaced, preserving native HF forward semantics.
         wrap_for_family(model, family)
@@ -3615,10 +3591,12 @@ def run_single_module_main(args) -> dict:
                 except Exception as export_exc:
                     LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
-        del model
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        # Log per-module timing
+        t_total = time.monotonic() - t
+        LOG.info("[%d/%d] %s Timing: eval_time=%.2fs", n, len(names), name, t_total)
+        
+        LOG.info("Restoring model state from snapshot for next module...")
+        base_snapshot.restore()
 
     # -------------------------------------------------------------------------
     # Final Compact Summary Table
@@ -3982,20 +3960,33 @@ def main():
     #         print(f">>> Skipping BLOCKED {n}")
 
     workers = max(1, getattr(args, "parallel", 1))
-    if workers > 1:
-        LOG.info("Running %d modules with %d parallel workers on GPU", len(pending_names), workers)
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(_execute_single, name): name for name in pending_names}
-            for fut in as_completed(futures):
-                m_name = futures[fut]
-                try:
-                    fut.result()
-                except Exception as ex:
-                    LOG.error("Module %s worker error: %s", m_name, ex)
-    else:
-        for name in pending_names:
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    # Force dynamic module discovery to populate ATTENTION_REGISTRY and COMPRESSOR_REGISTRY
+    _ = modules()
+    attention_modules = [name for name in pending_names if name in ATTENTION_REGISTRY or name == "full"]
+    compressor_modules = [name for name in pending_names if name in COMPRESSOR_REGISTRY and name not in attention_modules]
+
+    if compressor_modules:
+        LOG.info("Running %d compressor modules via isolated subprocesses", len(compressor_modules))
+        for name in compressor_modules:
             _execute_single(name)
+
+    if attention_modules:
+        LOG.info("Running %d attention modules in-memory sequentially", len(attention_modules))
+        args.modules = attention_modules
+        run_single_module_main(args)
+        
+        # Merge results from run_single_module_main into summary.csv
+        path = out / csv_filename
+        if path.exists():
+            try:
+                with path.open("r", encoding="utf8") as f:
+                    import csv
+                    reader = csv.DictReader(f)
+                    for r in reader:
+                        summary_dict[r["module_name"]] = r
+            except Exception:
+                pass
 
 if __name__ == '__main__':
     main()
