@@ -81,6 +81,7 @@ Input Activation X [B, L, D]
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **77.29%** | -13.77% | 0.7537 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-tpa) | 2026-09-19 |
+| **distilbert-base-uncased** | sst2 | `PASS` | 54.59% | **100.00%** | +45.41% | 1.0000 | 0.70x | 0 | [svd-linear-attention-distilbert-base-uncased-tpa](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-base-uncased-tpa) | 2026-09-23 |
 
 
 | Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Status |
