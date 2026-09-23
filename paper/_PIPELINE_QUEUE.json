@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_phantom",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules phantom --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_phantom",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_weighted_ensemble",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_weighted_ensemble --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_weighted_ensemble",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_gated_delta_net",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_gated_delta_net --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_gated_delta_net",
@@ -12205,16 +12191,16 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_regla_attention",
+      "id": "p3_gpt2_adasplash_attention",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules regla_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_regla_attention",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasplash_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasplash_attention",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_adasplash_attention",
+      "id": "p3_gpt2_inject_weighted_ensemble",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasplash_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasplash_attention",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_weighted_ensemble --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_weighted_ensemble",
       "status": "active",
       "retries": 0
     }
@@ -12514,6 +12500,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_compressor",
       "started_at": "2026-09-24T00:02:11.961268",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_regla_attention",
+      "id": "p3_gpt2_regla_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules regla_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_regla_attention",
+      "started_at": "2026-09-24T00:02:12.070039",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_phantom",
+      "id": "p3_gpt2_phantom",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules phantom --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_phantom",
+      "started_at": "2026-09-24T00:05:46.791492",
       "retries": 0,
       "status": "done"
     }
