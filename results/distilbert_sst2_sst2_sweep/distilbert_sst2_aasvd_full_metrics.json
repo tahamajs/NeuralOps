@@ -1,14 +1,14 @@
 {
     "model": "distilbert_sst2_aasvd",
     "performance": {
-        "accuracy_pct": 87.16,
-        "f1_score": 0.8764,
-        "f1_macro": 0.8714,
-        "precision": 0.8723,
-        "recall": 0.8711,
-        "val_loss": 0.3915,
+        "accuracy_pct": 87.39,
+        "f1_score": 0.877,
+        "f1_macro": 0.8738,
+        "precision": 0.8739,
+        "recall": 0.8737,
+        "val_loss": 0.3721,
         "status": "PASS",
-        "elapsed_s": 21.78
+        "elapsed_s": 10.59
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -77,8 +77,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 396.27,
-        "tokens_per_sec": 105872.88
+        "peak_vram_mb": 395.52,
+        "tokens_per_sec": 106586.68
     },
     "architecture": {
         "span_distribution": {},
@@ -86,10 +86,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 318.34,
-        "L_256_vram_mb": 320.91,
+        "L_128_vram_mb": 317.59,
+        "L_256_vram_mb": 320.16,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T18:34:49.849268"
+    "timestamp": "2026-09-23T05:16:53.655890+00:00"
 }
