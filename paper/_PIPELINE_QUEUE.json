@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "goldfinch_ahn_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 32 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "goldfinch_ahn_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 64 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "goldfinch_ahn_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 128 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "goldfinch_ahn_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 256 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r256",
@@ -70496,6 +70475,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 32 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r32",
       "started_at": "2026-09-23T14:18:35.418898",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "goldfinch_ahn_bert_sst2_r32",
+      "id": "goldfinch_ahn_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 32 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r32",
+      "started_at": "2026-09-23T14:18:54.788633",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "goldfinch_ahn_bert_sst2_r64",
+      "id": "goldfinch_ahn_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 64 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r64",
+      "started_at": "2026-09-23T14:18:54.945417",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "goldfinch_ahn_bert_sst2_r128",
+      "id": "goldfinch_ahn_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch_ahn --rank 128 --parallel 1 --batch_size 16 --output_suffix goldfinch_ahn_bert_sst2_r128",
+      "started_at": "2026-09-23T14:18:55.134844",
       "retries": 0,
       "status": "done"
     }
