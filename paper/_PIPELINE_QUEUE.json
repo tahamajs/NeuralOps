@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_x_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules x_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_x_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_performer_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_attention",
@@ -12328,13 +12321,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_delta_kv_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
@@ -12359,6 +12345,13 @@
       "id": "p3_gpt2_rpca",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rpca --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rpca",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_x_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules x_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_x_inject",
       "status": "active",
       "retries": 0
     }
@@ -13036,6 +13029,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone",
       "started_at": "2026-09-24T03:19:04.451382",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_delta_kv_compressor",
+      "id": "p3_gpt2_delta_kv_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
+      "started_at": "2026-09-24T03:20:10.874266",
       "retries": 0,
       "status": "done"
     }
