@@ -907,6 +907,7 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                         active[handle.job_id] = handle
                         if jtype == "gpu":
                             active_gpu += 1
+                            time.sleep(25)  # Wait for VRAM allocation to register to prevent race conditions
                         else:
                             active_cpu += 1
                         last_launch = time.time()
