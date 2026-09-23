@@ -1,3 +1,3 @@
 module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.145,6884.1,14.53,124439808,124439808,,2026-09-21T13:53:23
-kronecker,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,18.46,124439808,124439808,"expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",2026-09-21T13:53:42
+full,PASS,25.88,25.88,0.0,1.0,0.0,916.17,0.081,12398.5,8.07,124439808,124439808,,2026-09-23T08:58:31
+aasvd,PASS_DEGRADED,729.44,25.88,703.56,1.0661,6.2,902.95,0.036,28166.0,3.55,124439808,116722944,,2026-09-23T08:58:42
