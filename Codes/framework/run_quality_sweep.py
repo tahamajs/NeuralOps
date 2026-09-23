@@ -704,8 +704,8 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         target_chunk = input_chunk.clone()
         target_chunk[:, :-trg_len] = -100  # ignore overlap
         
-        # Force fp32 for stability in perplexity
-        with torch.autocast(device_type=device_type, dtype=torch.float32):
+        # Force fp32 for stability in perplexity by disabling autocast
+        with torch.autocast(device_type=device_type, enabled=False):
             outputs = model(input_chunk, labels=target_chunk)
             loss = outputs.loss
             
@@ -2789,8 +2789,17 @@ def run_single_module_main(args) -> dict:
             num_classes = 2
     LOG.info("Configured dataset '%s' with num_labels=%d", args.dataset, num_classes)
     try:
-        from transformers import AutoModelForCausalLM
+        from transformers import AutoModelForCausalLM, AutoConfig
+        
+        cfg = AutoConfig.from_pretrained(args.model)
         if "wikitext" in args.dataset.lower():
+            if cfg.model_type in ("distilbert", "bert", "roberta", "albert", "deberta", "deberta-v2", "electra"):
+                LOG.warning("Skipping model %s on wikitext because it lacks an LM head.", args.model)
+                out = Path(args.output_dir)
+                with open(out / f"summary_{args.output_suffix}.csv", "w", newline="") as f:
+                    f.write("module_name,status,accuracy_pct\n")
+                sys.exit(0)
+                
             try:
                 base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device)
             except TypeError:
