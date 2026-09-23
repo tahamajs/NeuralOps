@@ -128,6 +128,7 @@ python Codes/framework/launch_gpu_server.py \
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.30%** | +25.30% | 0.7317 | 1.14x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **49.40%** | -25.10% | 0.4264 | 1.09x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **72.60%** | -7.10% | 0.7215 | 1.16x | 12 | N/A | 2026-09-18 |
+| **gpt2** | wikitext2 | `PASS` | 99.72% | **99.96%** | +0.24% | 0.0000 | 1.16x | 12 | [svd-linear-attention-gpt2-soa-fused-module](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-soa-fused-module) | 2026-09-24 |
 
 
 Evaluated across standard GLUE benchmark suites on NVIDIA GPUs:
