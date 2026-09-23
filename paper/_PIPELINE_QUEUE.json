@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_gated_delta_net",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules gated_delta_net --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_gated_delta_net",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_oha_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oha_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oha_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_unified_rope_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules unified_rope_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_unified_rope_inject",
@@ -12156,9 +12142,16 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_granite_hybrid",
+      "id": "p3_gpt2_gated_delta_net",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules granite_hybrid --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_granite_hybrid",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules gated_delta_net --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_gated_delta_net",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_oha_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oha_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oha_inject",
       "status": "active",
       "retries": 0
     }
@@ -12512,6 +12505,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cure_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cure_factory",
       "started_at": "2026-09-24T01:29:57.982906",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_granite_hybrid",
+      "id": "p3_gpt2_granite_hybrid",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules granite_hybrid --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_granite_hybrid",
+      "started_at": "2026-09-24T01:29:57.919455",
       "retries": 0,
       "status": "done"
     }
