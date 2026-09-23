@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "decay_gated_linear_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "decay_gated_linear_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "decay_gated_linear_attention_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "decay_gated_linear_attention_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r256",
@@ -70049,6 +70028,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules custom_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix custom_attn_bert_sst2_r256",
       "started_at": "2026-09-23T12:21:04.066261",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "decay_gated_linear_attention_bert_sst2_r32",
+      "id": "decay_gated_linear_attention_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r32",
+      "started_at": "2026-09-23T12:21:23.408430",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "decay_gated_linear_attention_bert_sst2_r64",
+      "id": "decay_gated_linear_attention_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r64",
+      "started_at": "2026-09-23T12:21:23.563294",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "decay_gated_linear_attention_bert_sst2_r128",
+      "id": "decay_gated_linear_attention_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules decay_gated_linear_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix decay_gated_linear_attention_bert_sst2_r128",
+      "started_at": "2026-09-23T12:21:23.786225",
       "retries": 0,
       "status": "done"
     }
