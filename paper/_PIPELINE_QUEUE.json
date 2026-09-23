@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_moe_deltakv_paged_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moe_deltakv_paged_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moe_deltakv_paged_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mixattention_moska_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mixattention_moska_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mixattention_moska_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_minimal_nova_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_nova_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_nova_inject",
@@ -12400,13 +12386,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_mlorq",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_faq_quantizer_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
@@ -12424,6 +12403,20 @@
       "id": "p3_gpt2_tt_linear",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_moe_deltakv_paged_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moe_deltakv_paged_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moe_deltakv_paged_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_mixattention_moska_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mixattention_moska_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mixattention_moska_inject",
       "status": "active",
       "retries": 0
     }
@@ -13002,6 +12995,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_compressor",
       "started_at": "2026-09-24T03:06:20.654202",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_mlorq",
+      "id": "p3_gpt2_mlorq",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq",
+      "started_at": "2026-09-24T03:06:51.545863",
       "retries": 0,
       "status": "done"
     }
