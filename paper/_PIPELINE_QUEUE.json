@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hybrid_svd_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd --rank 128 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hybrid_svd_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd --rank 256 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hybrid_svd_layer_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_layer_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "hybrid_svd_layer_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd_layer --rank 64 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_layer_bert_sst2_r64",
@@ -70590,6 +70569,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd --rank 64 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_bert_sst2_r64",
       "started_at": "2026-09-23T20:38:35.371485",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hybrid_svd_bert_sst2_r128",
+      "id": "hybrid_svd_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd --rank 128 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_bert_sst2_r128",
+      "started_at": "2026-09-23T20:39:12.127350",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hybrid_svd_bert_sst2_r256",
+      "id": "hybrid_svd_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd --rank 256 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_bert_sst2_r256",
+      "started_at": "2026-09-23T20:39:12.314574",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hybrid_svd_layer_bert_sst2_r32",
+      "id": "hybrid_svd_layer_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hybrid_svd_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix hybrid_svd_layer_bert_sst2_r32",
+      "started_at": "2026-09-23T20:39:12.476008",
       "retries": 0,
       "status": "done"
     }
