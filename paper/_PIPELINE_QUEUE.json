@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "bam_umoe_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bam_umoe --rank 256 --parallel 1 --batch_size 16 --output_suffix bam_umoe_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "block_transformer_hiba_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 32 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "block_transformer_hiba_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 64 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "block_transformer_hiba_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 128 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r128",
@@ -67151,33 +67130,6 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta-base --model_family roberta --dataset ag_news --modules tomoe_compressor_class --rank 256 --parallel 1 --batch_size 8 --output_suffix tomoe_compressor_class_roberta_ag_news_r256",
       "status": "pending",
       "retries": 0
-    },
-    {
-      "job_id": "bam_umoe_bert_sst2_r256",
-      "id": "bam_umoe_bert_sst2_r256",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bam_umoe --rank 256 --parallel 1 --batch_size 16 --output_suffix bam_umoe_bert_sst2_r256",
-      "started_at": "2026-09-23T09:39:11.489353",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "block_transformer_hiba_bert_sst2_r32",
-      "id": "block_transformer_hiba_bert_sst2_r32",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 32 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r32",
-      "started_at": "2026-09-23T09:39:11.648519",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "block_transformer_hiba_bert_sst2_r64",
-      "id": "block_transformer_hiba_bert_sst2_r64",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 64 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r64",
-      "started_at": "2026-09-23T09:39:11.791608",
-      "retries": 1,
-      "status": "pending"
     }
   ],
   "active": [
@@ -67199,6 +67151,20 @@
       "id": "process_papers_batch22",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "block_transformer_hiba_bert_sst2_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 32 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "block_transformer_hiba_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules block_transformer_hiba --rank 64 --parallel 1 --batch_size 16 --output_suffix block_transformer_hiba_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -69847,6 +69813,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bam_umoe --rank 128 --parallel 1 --batch_size 16 --output_suffix bam_umoe_bert_sst2_r128",
       "started_at": "2026-09-23T11:51:32.098844",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "bam_umoe_bert_sst2_r256",
+      "id": "bam_umoe_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bam_umoe --rank 256 --parallel 1 --batch_size 16 --output_suffix bam_umoe_bert_sst2_r256",
+      "started_at": "2026-09-23T11:51:51.205719",
       "retries": 0,
       "status": "done"
     }
