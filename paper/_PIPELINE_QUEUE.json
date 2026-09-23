@@ -1,69 +1,6 @@
 {
-  "max_parallel": 4,
+  "max_parallel": 5,
   "jobs": [
-    {
-      "id": "p3_gpt2_adaptive_svd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_tpa_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tpa_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tpa_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_aatc_xkv",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aatc_xkv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aatc_xkv",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_tomoe_compressor_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_hashed_linear_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashed_linear_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashed_linear_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_samba_m3_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules samba_m3_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_samba_m3_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_hashednets_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashednets_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashednets_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_asvd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_hgrn2_outer_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hgrn2_outer_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hgrn2_outer_inject",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_tlinformer",
       "type": "gpu",
@@ -12465,6 +12402,72 @@
       "started_at": "2026-09-24T02:27:32.243126",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_adaptive_svd_attention",
+      "id": "p3_gpt2_adaptive_svd_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_attention",
+      "started_at": "2026-09-24T02:28:19.437888",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_tpa_attention",
+      "id": "p3_gpt2_tpa_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tpa_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tpa_attention",
+      "started_at": "2026-09-24T02:28:44.571470",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "id": "p3_gpt2_aatc_xkv",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aatc_xkv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aatc_xkv",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_tomoe_compressor_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_class",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_hashed_linear_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashed_linear_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashed_linear_factory",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "job_id": "p3_gpt2_samba_m3_inject",
+      "id": "p3_gpt2_samba_m3_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules samba_m3_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_samba_m3_inject",
+      "started_at": "2026-09-24T02:31:27.895045",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_asvd_inject",
+      "id": "p3_gpt2_asvd_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_inject",
+      "started_at": "2026-09-24T02:32:17.183422",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_hgrn2_outer_inject",
+      "id": "p3_gpt2_hgrn2_outer_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hgrn2_outer_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hgrn2_outer_inject",
+      "started_at": "2026-09-24T02:32:21.468737",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [],
@@ -12889,6 +12892,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq",
       "started_at": "2026-09-24T02:26:43.533686",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_hashednets_class",
+      "id": "p3_gpt2_hashednets_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashednets_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashednets_class",
+      "started_at": "2026-09-24T02:31:46.470183",
       "retries": 0,
       "status": "done"
     }
