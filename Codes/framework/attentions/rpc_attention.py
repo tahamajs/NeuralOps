@@ -770,3 +770,4 @@ def inject_rpc(
 # Aliases
 inject_rpc_attention = inject_rpc
 inject_rpc_into_distilbert = inject_rpc
+LoRALinear = FactorizedLoRALinear
