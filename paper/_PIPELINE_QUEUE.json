@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_performer_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_reap_moe_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules reap_moe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_reap_moe_inject",
@@ -12321,20 +12314,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_dobi_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dynamic_entropy_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_mgie_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_factory",
@@ -12352,6 +12331,13 @@
       "id": "p3_gpt2_x_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules x_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_x_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_performer_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_attention",
       "status": "active",
       "retries": 0
     }
@@ -13038,6 +13024,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
       "started_at": "2026-09-24T03:20:10.874266",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dobi_inject",
+      "id": "p3_gpt2_dobi_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
+      "started_at": "2026-09-24T03:21:14.795272",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dynamic_entropy_svd",
+      "id": "p3_gpt2_dynamic_entropy_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd",
+      "started_at": "2026-09-24T03:21:45.635459",
       "retries": 0,
       "status": "done"
     }
