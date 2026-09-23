@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "erc_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 64 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "erc_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 128 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "erc_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 256 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "erc_svd_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc_svd --rank 32 --parallel 1 --batch_size 16 --output_suffix erc_svd_bert_sst2_r32",
@@ -65762,23 +65741,23 @@
       "retries": 0
     },
     {
-      "id": "entropy_rank_allocator_class_bert_sst2_r128",
+      "id": "erc_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator_class --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_class_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 64 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r64",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "entropy_rank_allocator_class_bert_sst2_r256",
+      "id": "erc_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator_class --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_class_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 128 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r128",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "erc_bert_sst2_r32",
+      "id": "erc_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 32 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 256 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70245,6 +70224,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator_class --rank 64 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_class_bert_sst2_r64",
       "started_at": "2026-09-23T12:51:21.339425",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "entropy_rank_allocator_class_bert_sst2_r128",
+      "id": "entropy_rank_allocator_class_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator_class --rank 128 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_class_bert_sst2_r128",
+      "started_at": "2026-09-23T12:52:17.440812",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "entropy_rank_allocator_class_bert_sst2_r256",
+      "id": "entropy_rank_allocator_class_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules entropy_rank_allocator_class --rank 256 --parallel 1 --batch_size 16 --output_suffix entropy_rank_allocator_class_bert_sst2_r256",
+      "started_at": "2026-09-23T12:52:17.599833",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "erc_bert_sst2_r32",
+      "id": "erc_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules erc --rank 32 --parallel 1 --batch_size 16 --output_suffix erc_bert_sst2_r32",
+      "started_at": "2026-09-23T12:52:17.742541",
       "retries": 0,
       "status": "done"
     }
