@@ -1,10 +1,10 @@
 {
   "compressor_name": "aasvd",
   "original_parameters": 66955010,
-  "compressed_parameters": 55600898,
-  "saved_parameters": 11354112,
-  "compression_ratio": 0.8304217712759657,
-  "reduction_percentage": 16.957822872403426,
+  "compressed_parameters": 55502594,
+  "saved_parameters": 11452416,
+  "compression_ratio": 0.8289535615034633,
+  "reduction_percentage": 17.10464384965367,
   "compressed_layers": [
     "distilbert.transformer.layer.0.attention.q_lin",
     "distilbert.transformer.layer.0.attention.k_lin",
@@ -39,8 +39,8 @@
     "distilbert.transformer.layer.0.attention.k_lin": 0.7907625974503485,
     "distilbert.transformer.layer.0.attention.v_lin": 0.8405132495443384,
     "distilbert.transformer.layer.0.attention.out_lin": 0.8345536289838829,
-    "distilbert.transformer.layer.1.attention.q_lin": 0.7292604034962344,
-    "distilbert.transformer.layer.1.attention.k_lin": 0.7256524040311154,
+    "distilbert.transformer.layer.1.attention.q_lin": 0.7857070419438184,
+    "distilbert.transformer.layer.1.attention.k_lin": 0.7850723068949584,
     "distilbert.transformer.layer.1.attention.v_lin": 0.8350488048067836,
     "distilbert.transformer.layer.1.attention.out_lin": 0.7927510573671875,
     "distilbert.transformer.layer.2.attention.q_lin": 0.8327861223748632,
@@ -65,8 +65,8 @@
     "distilbert.transformer.layer.0.attention.k_lin": 64,
     "distilbert.transformer.layer.0.attention.v_lin": 64,
     "distilbert.transformer.layer.0.attention.out_lin": 64,
-    "distilbert.transformer.layer.1.attention.q_lin": 64,
-    "distilbert.transformer.layer.1.attention.k_lin": 64,
+    "distilbert.transformer.layer.1.attention.q_lin": 32,
+    "distilbert.transformer.layer.1.attention.k_lin": 32,
     "distilbert.transformer.layer.1.attention.v_lin": 64,
     "distilbert.transformer.layer.1.attention.out_lin": 96,
     "distilbert.transformer.layer.2.attention.q_lin": 64,
@@ -88,5 +88,5 @@
   },
   "max_error": 0.85,
   "fallback_to_original": true,
-  "avg_reconstruction_error": 0.8162440545281774
+  "avg_reconstruction_error": 0.8210718270828202
 }
