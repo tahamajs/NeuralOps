@@ -12268,13 +12268,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_lola_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola_attn",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_svd_llm",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
@@ -12523,6 +12516,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_aegis_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_aegis_v2",
       "started_at": "2026-09-23T23:15:14.866734",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_lola_attn",
+      "id": "p3_gpt2_lola_attn",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola_attn",
+      "started_at": "2026-09-23T23:03:18.790366",
       "retries": 0,
       "status": "done"
     }
