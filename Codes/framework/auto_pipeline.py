@@ -343,12 +343,10 @@ def launch_job(handle: JobHandle) -> bool:
     """Launch job with per-job log file. Returns success."""
     try:
         # Parse command
-        if handle.cmd.startswith("python "):
-            parts = shlex.split(handle.cmd)
+        parts = shlex.split(handle.cmd)
+        if parts and parts[0] == "python":
             parts[0] = sys.executable
-            exec_cmd: Any = parts
-        else:
-            exec_cmd = shlex.split(handle.cmd)
+        exec_cmd: Any = parts
 
         log_path = JOB_LOG_DIR / f"{handle.job_id}.log"
         log_file = open(log_path, "w", encoding="utf-8", buffering=1)
