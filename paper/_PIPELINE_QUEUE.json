@@ -64313,13 +64313,6 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r32",
       "status": "active",
       "retries": 0
-    },
-    {
-      "id": "hgrn2_layer_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 64 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
     }
   ],
   "completed": [
@@ -70557,6 +70550,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_gated_deltanet --rank 256 --parallel 1 --batch_size 16 --output_suffix hgrn2_gated_deltanet_bert_sst2_r256",
       "started_at": "2026-09-23T17:40:46.072824",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hgrn2_layer_bert_sst2_r64",
+      "id": "hgrn2_layer_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hgrn2_layer --rank 64 --parallel 1 --batch_size 16 --output_suffix hgrn2_layer_bert_sst2_r64",
+      "started_at": "2026-09-23T17:40:46.355369",
       "retries": 0,
       "status": "done"
     }
