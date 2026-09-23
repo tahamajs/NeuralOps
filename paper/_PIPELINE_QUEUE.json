@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "halo_regla_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla --rank 64 --parallel 1 --batch_size 16 --output_suffix halo_regla_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "halo_regla_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix halo_regla_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "halo_regla_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix halo_regla_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "halo_regla_attention_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix halo_regla_attention_bert_sst2_r128",
@@ -70511,6 +70490,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla --rank 256 --parallel 1 --batch_size 16 --output_suffix halo_regla_bert_sst2_r256",
       "started_at": "2026-09-23T16:30:24.540377",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "halo_regla_bert_sst2_r64",
+      "id": "halo_regla_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla --rank 64 --parallel 1 --batch_size 16 --output_suffix halo_regla_bert_sst2_r64",
+      "started_at": "2026-09-23T16:31:01.679235",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "halo_regla_attention_bert_sst2_r32",
+      "id": "halo_regla_attention_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix halo_regla_attention_bert_sst2_r32",
+      "started_at": "2026-09-23T16:31:01.872548",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "halo_regla_attention_bert_sst2_r64",
+      "id": "halo_regla_attention_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules halo_regla_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix halo_regla_attention_bert_sst2_r64",
+      "started_at": "2026-09-23T16:31:02.016755",
       "retries": 0,
       "status": "done"
     }
