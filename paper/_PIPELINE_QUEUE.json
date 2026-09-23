@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "flash_attention3_fp8_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 256 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "flat_llm_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flat_llm --rank 32 --parallel 1 --batch_size 16 --output_suffix flat_llm_bert_sst2_r32",
@@ -65412,16 +65405,9 @@
       "retries": 0
     },
     {
-      "id": "flash_attention3_fp8_bert_sst2_r64",
+      "id": "flash_attention3_fp8_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 64 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "flash_attention3_fp8_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 128 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 256 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70320,6 +70306,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 32 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r32",
       "started_at": "2026-09-23T13:35:57.792687",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flash_attention3_fp8_bert_sst2_r64",
+      "id": "flash_attention3_fp8_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 64 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r64",
+      "started_at": "2026-09-23T13:35:57.941440",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flash_attention3_fp8_bert_sst2_r128",
+      "id": "flash_attention3_fp8_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash_attention3_fp8 --rank 128 --parallel 1 --batch_size 16 --output_suffix flash_attention3_fp8_bert_sst2_r128",
+      "started_at": "2026-09-23T13:36:16.591393",
       "retries": 0,
       "status": "done"
     }
