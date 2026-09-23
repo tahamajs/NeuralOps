@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "vspec_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules vspec --parallel 1 --batch_size 32 --output_suffix vspec_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "aegis_v6_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules aegis_v6 --parallel 1 --batch_size 32 --output_suffix aegis_v6_mnli --fresh",
@@ -68415,16 +68408,9 @@
   ],
   "active": [
     {
-      "id": "gpt2_eval_kronecker",
+      "id": "vspec_mnli_sweep",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_swift_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules vspec --parallel 1 --batch_size 32 --output_suffix vspec_mnli --fresh",
       "status": "active",
       "retries": 0
     }
@@ -68832,6 +68818,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules svd_compressed --parallel 1 --batch_size 32 --output_suffix svd_compressed_mnli --fresh",
       "started_at": "2026-09-23T09:03:59.579448",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_kronecker",
+      "id": "gpt2_eval_kronecker",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kronecker --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T09:03:59.275953",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_swift_svd",
+      "id": "gpt2_eval_swift_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules swift_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T09:03:59.439512",
       "retries": 0,
       "status": "done"
     }
