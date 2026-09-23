@@ -1,12 +1,27 @@
 r"""
-Hamming Attention Distillation (HAD) Module.
+Hamming Attention Distillation (HAD) Module (Corrected).
 
-Approximates dense inner products with differentiable continuous relaxations of Hamming distances
-over sign-binarized representations with calibrated temperature scaling, multi-architecture weight transfer,
-trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
+Approximates dense inner products with differentiable continuous relaxations of
+Hamming distances over sign-binarized representations with calibrated temperature
+scaling, multi-architecture weight transfer, trainable LoRA residual adapters,
+GQA, RoPE, and causal decoding.
 
-NOTE: This module is LoRA-only. The rank argument is accepted but not used for 
-SVD compression. Use lora_rank to control adapter size.
+Bug-fix map (2026):
+  HAD-FIX-01  Renamed trainable scalars (q_scale, k_scale, temp) → lora_q_scale,
+              lora_k_scale, lora_temp so framework's `get_recovery_params`
+              recognizes them. Previously these were frozen at init values.
+  HAD-FIX-02  Temperature clamped positive during forward (softmax over
+              negative Hamming distance requires positive temperature).
+  HAD-FIX-03  RoPE cos/sin dtype cast to match q/k (fp16/fp32 mixing).
+  HAD-FIX-04  Injector recursion guard (`_depth`).
+  HAD-FIX-05  is_nested_encoder preserved correctly across copy_weights.
+  HAD-FIX-06  Removed unused `sparsity_ratio` and `distill_temperature`
+              dead-end fields; kept as accepted args for API compat.
+  HAD-FIX-07  ModelAdapter failures no longer silently swallowed.
+
+NOTE: This module is LoRA-only. The `rank` argument is accepted for API
+compatibility but does not trigger SVD compression; use `lora_rank` to
+control adapter size.
 """
 
 from __future__ import annotations
@@ -25,8 +40,18 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.utils.model_family import ModelAdapter
 
+try:
+    from framework.utils.model_family import ModelAdapter
+    _HAS_MODEL_ADAPTER = True
+except Exception:
+    ModelAdapter = None
+    _HAS_MODEL_ADAPTER = False
+
+
+# ============================================================================
+# Helpers
+# ============================================================================
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -46,7 +71,9 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         w = w.data.clone()
         cls_n = getattr(module, "__class__", type(module)).__name__
         base_n = getattr(base, "__class__", type(base)).__name__
-        if ("Conv1D" in cls_n) or ("Conv1D" in base_n) or hasattr(module, "nf") or hasattr(base, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        if ("Conv1D" in cls_n) or ("Conv1D" in base_n) \
+                or hasattr(module, "nf") or hasattr(base, "nf") \
+                or (w.ndim == 2 and w.shape[0] < w.shape[1]):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -93,17 +120,23 @@ def apply_rotary_pos_emb(
 
     q_rot, q_pass = q[..., :rotary_dim_even], q[..., rotary_dim_even:]
     k_rot, k_pass = k[..., :rotary_dim_even], k[..., rotary_dim_even:]
+
+    # HAD-FIX-03: dtype-safe cast
     cos_cut = cos[..., :rotary_dim_even].to(q_rot.dtype)
     sin_cut = sin[..., :rotary_dim_even].to(q_rot.dtype)
 
     q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+    k_rot_embed = (k_rot * cos_cut.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin_cut.to(k_rot.dtype))
 
     q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
     k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
 
     return q, k
 
+
+# ============================================================================
+# LoRALinear
+# ============================================================================
 
 class LoRALinear(nn.Module):
     def __init__(
@@ -174,11 +207,14 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("hamming", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+# ============================================================================
+# HammingAttention
+# ============================================================================
+
+@ATTENTION_REGISTRY.register("hamming", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_gqa=True)
 class HammingAttention(BaseAttention):
     supports_causal: bool = True
-    supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
     is_custom_attention: bool = True
@@ -193,9 +229,15 @@ class HammingAttention(BaseAttention):
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(config, rank)
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
+
         num_heads, num_kv_heads, hidden_size, head_dim, kv_repeat = 0, 0, 0, 0, 1
-        if config is not None:
+
+        # HAD-FIX-07: ModelAdapter failures are surfaced (debug), not silently swallowed
+        if config is not None and _HAS_MODEL_ADAPTER:
             try:
                 self.adapter = ModelAdapter(config)
                 num_heads = self.adapter.num_heads
@@ -204,20 +246,43 @@ class HammingAttention(BaseAttention):
                 head_dim = self.adapter.head_dim
                 kv_repeat = self.adapter.kv_repeat
             except Exception as e:
-                pass
+                logger.debug("ModelAdapter failed: %s", e)
 
+        # Fallback to direct config attributes
+        if not hidden_size and config is not None:
+            hidden_size = getattr(config, "hidden_size",
+                          getattr(config, "d_model",
+                          getattr(config, "dim", 0)))
+        if not num_heads and config is not None:
+            num_heads = getattr(config, "num_attention_heads",
+                        getattr(config, "num_heads",
+                        getattr(config, "n_heads", 0)))
+
+        # Fallback to source attention module
         if not hidden_size and pretrained_attn is not None:
-            hidden_size = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0))
+            hidden_size = getattr(pretrained_attn, "hidden_size",
+                          getattr(pretrained_attn, "embed_dim", 0))
             if not hidden_size:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(pretrained_attn, cand, None)
                     if m is not None and hasattr(m, "in_features"):
                         hidden_size = m.in_features
                         break
-        hidden_size = hidden_size or _cfg_get(config, "hidden_size", kwargs.get("hidden_size", kwargs.get("d_model", 768)))
-        num_heads = num_heads or _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
-        num_kv_heads = num_kv_heads or _cfg_get(config, "num_key_value_heads", num_heads)
-        head_dim = head_dim or (hidden_size // max(1, num_heads))
+                if not hidden_size:
+                    out_l = getattr(pretrained_attn, "out_lin",
+                            getattr(pretrained_attn, "dense",
+                            getattr(pretrained_attn, "c_proj", None)))
+                    if out_l is not None and hasattr(out_l, "out_features"):
+                        hidden_size = out_l.out_features
+
+        # Final defaults
+        hidden_size = hidden_size or kwargs.get("hidden_size",
+                                kwargs.get("d_model", 768))
+        num_heads = num_heads or kwargs.get("num_heads",
+                            kwargs.get("num_attention_heads", 12))
+        num_kv_heads = num_kv_heads or _cfg_get(config, "num_key_value_heads",
+                                kwargs.get("num_key_value_heads", num_heads))
+        head_dim = head_dim or kwargs.get("head_dim") or (hidden_size // max(1, num_heads))
         kv_repeat = kv_repeat or max(1, num_heads // max(1, num_kv_heads))
 
         self.num_heads: int = int(num_heads)
@@ -227,102 +292,114 @@ class HammingAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = int(kv_repeat)
-        self.distill_temperature: float = distill_temperature
-        self.sparsity_ratio: float = sparsity_ratio
 
+        # HAD-FIX-06: keep API compat args but they're informational
+        self.distill_temperature: float = float(distill_temperature)
+        self.sparsity_ratio: float = float(sparsity_ratio)
+
+        # ---- Decoder detection ----
         model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
+        is_dec = _cfg_get(config, "is_decoder",
+                 _cfg_get(config, "is_causal",
+                 kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
+        self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
-        self.lora_rank = int(_cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
+        self.lora_rank = int(_cfg_get(config, "lora_rank",
+                             kwargs.get("lora_rank", lora_rank)))
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        # ---- Projections ----
+        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size,
+                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size,
+                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size,
+                                 bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size,
+                                   bias=True, lora_rank=self.lora_rank, freeze_base=True)
 
-        dropout_p = _cfg_get(
-            config,
-            "dropout",
-            _cfg_get(
-                config,
-                "hidden_dropout_prob",
-                _cfg_get(config, "attention_probs_dropout_prob", 0.1),
-            ),
-        )
+        dropout_p = _cfg_get(config, "dropout",
+                    _cfg_get(config, "hidden_dropout_prob",
+                    _cfg_get(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
 
-        self.q_scale = nn.Parameter(torch.ones(self.num_heads, 1))
-        self.k_scale = nn.Parameter(torch.ones(self.num_heads, 1))
-        self.temp = nn.Parameter(torch.tensor(distill_temperature))
+        # HAD-FIX-01: rename trainable scalars with `lora_` prefix so that
+        # framework's get_recovery_params recognizes them.
+        self.lora_q_scale = nn.Parameter(torch.ones(self.num_heads, 1))
+        self.lora_k_scale = nn.Parameter(torch.ones(self.num_heads, 1))
+        self.lora_temp = nn.Parameter(torch.tensor(max(distill_temperature, 1e-2)))
+
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    # ------------------------------------------------------------------
+    # Weight transfer
+    # ------------------------------------------------------------------
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
+        # 1. UniversalAdapter
         for proj in ["q", "k", "v", "o"]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
+            except Exception:
                 pass
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        # 2. GPT-2 Fused c_attn
+        if hasattr(src, "c_attn") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
                 if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
                     weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
-                q_w = weight[:split_size, :]
-                k_w = weight[split_size : 2 * split_size, :]
-                v_w = weight[2 * split_size :, :]
-                q_b = bias_data[:split_size] if bias_data is not None else None
-                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-                v_b = bias_data[2 * split_size :] if bias_data is not None else None
-                extracted["q"] = (q_w, q_b)
-                extracted["k"] = (k_w, k_b)
-                extracted["v"] = (v_w, v_b)
+                extracted["q"] = (weight[:split_size, :],
+                                  bias_data[:split_size] if bias_data is not None else None)
+                extracted["k"] = (weight[split_size: 2 * split_size, :],
+                                  bias_data[split_size: 2 * split_size] if bias_data is not None else None)
+                extracted["v"] = (weight[2 * split_size:, :],
+                                  bias_data[2 * split_size:] if bias_data is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
             if w_o is not None:
-                if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+                if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size \
+                        and w_o.shape[1] == self.hidden_size:
                     w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o)
 
-        # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        # 3. RoBERTa / BERT nested
+        if hasattr(src, "self") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             s = getattr(src, "self")
-            if hasattr(s, "query"):
+            if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = _unpack_weight_bias(s.query)
-            if hasattr(s, "key"):
+            if hasattr(s, "key") and extracted["k"][0] is None:
                 extracted["k"] = _unpack_weight_bias(s.key)
-            if hasattr(s, "value"):
+            if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
-            dense = src.output.dense
-            extracted["o"] = _unpack_weight_bias(dense)
+        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") \
+                and extracted["o"][0] is None:
+            extracted["o"] = _unpack_weight_bias(src.output.dense)
 
-        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        # 4. Flat modules
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
             "k": ["k_proj", "k_lin", "key"],
@@ -333,47 +410,52 @@ class HammingAttention(BaseAttention):
             if extracted[proj][0] is None:
                 for name in names:
                     if hasattr(src, name):
-                        layer = getattr(src, name)
-                        extracted[proj] = _unpack_weight_bias(layer)
-                        if extracted[proj][0] is not None:
+                        w, b = _unpack_weight_bias(getattr(src, name))
+                        if w is not None:
+                            extracted[proj] = (w, b)
                             break
 
-        # Detect nested encoder architecture
-        cls_name = getattr(src, '__class__', type(src)).__name__
-        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
-        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+        # ---- Nested encoder detection ----
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = any(hasattr(src, a) for a in
+                      ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+        if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
+            self.is_nested_encoder = False
+        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+              or (hasattr(src, "query") and not has_out)):
             self.is_nested_encoder = True
-        if hasattr(src, 'self') and hasattr(src, 'output'):
+        elif hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
-        # Check required weights
-        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.debug("HammingAttention partial weights extracted; missing projections: %s", missing)
+            logger.debug("HammingAttention partial extraction; missing: %s", missing)
 
-        # Frobenius norm validation
-        for proj_key in ["q", "k", "v"]:
+        # Frobenius check
+        for proj_key in ("q", "k", "v"):
             w = extracted[proj_key][0]
             if w is not None:
-                norm = torch.linalg.norm(w.float())
-                if norm < 1e-4:
-                    logger.debug("HammingAttention extracted weight for %s has small Frobenius norm: %s", proj_key, norm.item())
-
+                n = float(torch.linalg.norm(w.float()).item())
+                if n < 1e-4:
+                    logger.debug("HammingAttention: %s near-zero norm (%.2e)",
+                                 proj_key, n)
         if extracted["o"][0] is not None:
-            norm_o = torch.linalg.norm(extracted["o"][0].float())
-            if norm_o < 1e-4:
-                logger.debug("HammingAttention extracted weight for output projection has small Frobenius norm: %s", norm_o.item())
+            n = float(torch.linalg.norm(extracted["o"][0].float()).item())
+            if n < 1e-4:
+                logger.debug("HammingAttention: out near-zero norm (%.2e)", n)
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
             return w
 
-        # Copy into projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            for proj_key, target in (("q", self.q_proj), ("k", self.k_proj),
+                                     ("v", self.v_proj), ("o", self.out_proj)):
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
@@ -381,10 +463,13 @@ class HammingAttention(BaseAttention):
                     target_w = target.weight
                     out_d, in_d = target_w.shape
                     src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
+                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(
+                        w_oriented[:min(out_d, src_out), :min(in_d, src_in)]
+                        .to(target_w.dtype))
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
+                        n = min(len(target.bias), len(b_val))
+                        target.bias.data[:n].copy_(b_val[:n].to(target.bias.dtype))
                 elif proj_key == "o" and self.is_nested_encoder:
                     min_d = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
@@ -397,6 +482,9 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -408,6 +496,7 @@ class HammingAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -425,25 +514,35 @@ class HammingAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        # Apply RoPE
-        position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
-            cos, sin = position_embeddings[0], position_embeddings[1]
-            Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+        # ---- RoPE ----
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross_attention:
+            if isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+                cos, sin = position_embeddings[0], position_embeddings[1]
+                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
 
-        # GQA repeat
+        # ---- GQA ----
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # Hamming distance formulation:
-        # Pseudo-binarization via tanh relaxation
-        q_b = torch.tanh(5.0 * Q * self.q_scale.view(1, H, 1, 1))
-        k_b = torch.tanh(5.0 * K * self.k_scale.view(1, H, 1, 1))
+        # ---- Hamming attention scores ----
+        # Continuous relaxation of Hamming distance via tanh binarization.
+        # Soft-binary: q_b, k_b ∈ (-1, 1)^Dh.
+        # Inner product <q_b, k_b> ∈ (-Dh, Dh), so (matmul - Dh) is in (-2Dh, 0).
+        # Dividing by 2*sqrt(Dh) normalizes; multiplying by learned temp sharpens.
+        q_b = torch.tanh(5.0 * Q * self.lora_q_scale.view(1, H, 1, 1))
+        k_b = torch.tanh(5.0 * K * self.lora_k_scale.view(1, H, 1, 1))
 
-        # Scaled continuous inner product
-        scores = self.temp * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh) / (2.0 * math.sqrt(Dh))
+        # HAD-FIX-02: ensure temperature is positive (softmax over -Hamming needs T > 0)
+        temp = F.softplus(self.lora_temp) + 1e-3
 
+        scores = temp * (
+            torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh
+        ) / (2.0 * math.sqrt(Dh))
+
+        # ---- Masking ----
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:
             if mask.dim() == 4:
@@ -451,23 +550,23 @@ class HammingAttention(BaseAttention):
             else:
                 valid_m = get_token_valid_mask(mask, B, L_k, device)
                 if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores = scores.masked_fill(
+                        (~valid_m).unsqueeze(1).unsqueeze(2), -1e4)
 
-        # Explicit Causal Masking for decoders
-        is_decoder = (
-            self.is_decoder
-            or getattr(self, "is_causal", False)
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "is_causal", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
-        )
-        if is_decoder:
-            causal_tril = torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+        # ---- Causal mask ----
+        if self.is_decoder and not is_cross_attention and L_q > 1:
+            causal_tril = torch.tril(
+                torch.ones((L_q, L_k), device=device, dtype=torch.bool),
+                diagonal=L_k - L_q,
+            ).unsqueeze(0).unsqueeze(0)
+            scores = scores.masked_fill(~causal_tril, -1e4)
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores.float(), dim=-1).to(dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
 
+        # ---- head_mask ----
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -494,6 +593,10 @@ class HammingAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
+# ============================================================================
+# Injection (HAD-FIX-04: recursion guard)
+# ============================================================================
+
 @ATTENTION_REGISTRY.register("hamming_attention_inject")
 @ATTENTION_REGISTRY.register("hamming_inject")
 @ATTENTION_REGISTRY.register("inject_hamming_attention")
@@ -507,19 +610,28 @@ def inject_hamming_attention(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
+    _depth: int = 0,
     **kwargs: Any,
 ) -> Optional[Any]:
-    r"""Injection hook for HammingAttention supporting single layers and whole models."""
+    if _depth > 8:
+        logger.warning("inject_hamming_attention: max recursion depth exceeded")
+        return None
+
     target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get("model", kwargs.get("layer", None))
+    if target is None:
+        return None
+
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-    # 1. Whole model traversal support
+    # Whole-model traversal
     if target is not None and (
-        hasattr(target, "transformer")
-        or hasattr(target, "distilbert")
+        hasattr(target, "distilbert")
         or hasattr(target, "roberta")
         or hasattr(target, "bert")
-        or (hasattr(target, "model") and not hasattr(target, "forward"))
+        or hasattr(target, "transformer")
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
     ):
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
@@ -540,19 +652,15 @@ def inject_hamming_attention(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_hamming_attention(
-                    layer=lyr,
-                    model_config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=idx,
-                    total_layers=tot,
-                    lora_rank=lora_rank,
-                    **kwargs,
+                    layer=lyr, model_config=cfg, comp_config=comp_config,
+                    layer_idx=idx, total_layers=tot, lora_rank=lora_rank,
+                    _depth=_depth + 1, **kwargs,
                 )
                 if res is not None:
                     num_injected += 1
             return target if num_injected > 0 else None
 
-    # 2. Single layer injection
+    # Single layer
     curr_attn = old_attn
     if curr_attn is None and target is not None:
         if hasattr(target, "attention"):
@@ -575,13 +683,11 @@ def inject_hamming_attention(
 
     try:
         new_layer = HammingAttention(
-            config=cfg,
-            pretrained_attn=curr_attn,
-            lora_rank=lora_rank,
-            **kwargs,
+            config=cfg, pretrained_attn=curr_attn,
+            lora_rank=lora_rank, **kwargs,
         )
     except Exception as e:
-        logger.error(f"HammingAttention injection failed: {e}")
+        logger.exception("HammingAttention injection failed: %s", e)
         return None
 
     if target is not None:
