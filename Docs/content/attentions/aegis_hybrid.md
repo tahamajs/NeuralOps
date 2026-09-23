@@ -295,7 +295,7 @@ Given: Batch Size B=8, Sequence Length L=128, Hidden Dim D=768, Heads H=12, Head
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **61.60%** | +10.60% | 0.5225 | 1.18x | 0 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **32.40%** | -42.10% | 0.2392 | 1.12x | 0 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **60.70%** | -19.00% | 0.5713 | 1.20x | 0 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **82.57%** | -8.49% | 0.8362 | 1.18x | 6 | [svd-linear-attention-distilbert-sst2-aegis-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-hybrid) | 2026-09-19 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **85.67%** | -4.93% | 0.8594 | 1.17x | 0 | [svd-linear-attention-distilbert-sst2-aegis-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-hybrid) | 2026-09-23 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **48.60%** | -33.20% | 0.4589 | 1.18x | 6 | [svd-linear-attention-distilbert-mnli-full-aegis-hybrid](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mnli-full-aegis-hybrid) | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **89.50%** | -4.80% | 0.8909 | 1.18x | 0 | N/A | 2026-09-19 |
 
