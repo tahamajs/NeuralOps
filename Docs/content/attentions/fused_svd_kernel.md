@@ -609,6 +609,6 @@ The `FusedSVDLinear` architecture incorporates telemetry hooks for tracking sing
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | sst2 | `PASS` | 79.36% | **60.32%** | -19.04% | 0.6608 | 1.23x | 0 | [svd-linear-attention-gpt2-fused-svd-kernel](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-fused-svd-kernel) | 2026-09-15 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **89.91%** | -0.69% | 0.9043 | 1.08x | 6 | [svd-linear-attention-distilbert-sst2-fused-svd-kernel-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-fused-svd-kernel-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **86.24%** | -4.36% | 0.8707 | 1.16x | 6 | [svd-linear-attention-distilbert-sst2-fused-svd-kernel-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-fused-svd-kernel-attention) | 2026-09-23 |
 | **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **50.50%** | -31.30% | 0.4219 | 1.21x | 6 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **90.30%** | -4.00% | 0.8990 | 1.21x | 0 | N/A | 2026-09-19 |
