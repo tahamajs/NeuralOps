@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "drone_r128_seed456",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 456 --parallel 1 --batch_size 32 --output_suffix drone128_seed456 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "drone_r128_seed789",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 789 --parallel 1 --batch_size 32 --output_suffix drone128_seed789 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "fwsvd_mnli",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --parallel 1 --batch_size 32 --output_suffix fwsvd_mnli --fresh",
@@ -68757,6 +68743,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 123 --parallel 1 --batch_size 32 --output_suffix drone128_seed123 --fresh",
       "started_at": "2026-09-23T08:48:27.935908",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "drone_r128_seed456",
+      "id": "drone_r128_seed456",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 456 --parallel 1 --batch_size 32 --output_suffix drone128_seed456 --fresh",
+      "started_at": "2026-09-23T08:49:04.929784",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "drone_r128_seed789",
+      "id": "drone_r128_seed789",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules drone --rank 128 --seed 789 --parallel 1 --batch_size 32 --output_suffix drone128_seed789 --fresh",
+      "started_at": "2026-09-23T08:49:05.117182",
       "retries": 0,
       "status": "done"
     }
