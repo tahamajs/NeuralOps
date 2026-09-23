@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "gpt2_eval_adaptive",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_a3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules a3 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "gpt2_eval_kmeans",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules kmeans --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
@@ -68457,9 +68443,16 @@
   ],
   "active": [
     {
-      "id": "gpt2_eval_adaptive_svd",
+      "id": "gpt2_eval_adaptive",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "gpt2_eval_a3",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules a3 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
       "status": "active",
       "retries": 0
     }
@@ -68822,6 +68815,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules come --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
       "started_at": "2026-09-23T09:02:23.452560",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_adaptive_svd",
+      "id": "gpt2_eval_adaptive_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules adaptive_svd --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T09:02:43.056572",
       "retries": 0,
       "status": "done"
     }
