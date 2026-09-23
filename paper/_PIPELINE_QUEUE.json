@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_spectron_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules spectron_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_spectron_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_faq",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_xattention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules xattention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_xattention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_adaptive_svd_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_attention",
@@ -12468,6 +12447,24 @@
       "started_at": "2026-09-24T02:25:30.774392",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_spectron_inject",
+      "id": "p3_gpt2_spectron_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules spectron_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_spectron_inject",
+      "started_at": "2026-09-24T02:26:18.404896",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_xattention",
+      "id": "p3_gpt2_xattention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules xattention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_xattention",
+      "started_at": "2026-09-24T02:27:32.243126",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [],
@@ -12883,6 +12880,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_pca_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_pca_factory",
       "started_at": "2026-09-24T02:25:05.666250",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_faq",
+      "id": "p3_gpt2_faq",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq",
+      "started_at": "2026-09-24T02:26:43.533686",
       "retries": 0,
       "status": "done"
     }
