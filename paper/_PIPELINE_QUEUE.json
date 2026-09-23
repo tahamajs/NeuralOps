@@ -1,41 +1,6 @@
 {
-  "max_parallel": 5,
+  "max_parallel": 6,
   "jobs": [
-    {
-      "id": "p3_gpt2_inject_tomoe",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_tomoe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_tomoe",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mla",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mla --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mla",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_performer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_replace_attention_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replace_attention_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replace_attention_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_progressive_token_pruning",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules progressive_token_pruning --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_progressive_token_pruning",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_griffin_ssd_block",
       "type": "gpu",
@@ -12460,6 +12425,42 @@
       "started_at": "2026-09-24T02:34:30.976150",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_mla",
+      "id": "p3_gpt2_mla",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mla --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mla",
+      "started_at": "2026-09-24T02:35:56.097112",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_performer",
+      "id": "p3_gpt2_performer",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer",
+      "started_at": "2026-09-24T02:36:06.520927",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_replace_attention_class",
+      "id": "p3_gpt2_replace_attention_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replace_attention_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replace_attention_class",
+      "started_at": "2026-09-24T02:36:37.296372",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_progressive_token_pruning",
+      "id": "p3_gpt2_progressive_token_pruning",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules progressive_token_pruning --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_progressive_token_pruning",
+      "started_at": "2026-09-24T02:36:57.858304",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [],
@@ -12911,6 +12912,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replaceme_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replaceme_factory",
       "started_at": "2026-09-24T02:34:26.693324",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_inject_tomoe",
+      "id": "p3_gpt2_inject_tomoe",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_tomoe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_tomoe",
+      "started_at": "2026-09-24T02:35:25.336754",
       "retries": 0,
       "status": "done"
     }
