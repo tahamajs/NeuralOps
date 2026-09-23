@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_performer_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lola",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_squeezing_heads_distiller",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distiller --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distiller",
@@ -12427,23 +12413,18 @@
       "started_at": "2026-09-24T02:39:15.916654",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_compressed_attention_fn",
+      "id": "p3_gpt2_compressed_attention_fn",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_fn",
+      "started_at": "2026-09-24T02:41:12.476597",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
-    {
-      "id": "p3_gpt2_compressed_attention_fn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_fn",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dobi_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_factory",
-      "status": "active",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_kvtc",
       "type": "gpu",
@@ -12455,6 +12436,20 @@
       "id": "p3_gpt2_wgqa_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules wgqa_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_wgqa_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_performer_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_lola",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lola --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lola",
       "status": "active",
       "retries": 0
     }
@@ -12934,6 +12929,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_factory",
       "started_at": "2026-09-24T02:40:15.456680",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dobi_factory",
+      "id": "p3_gpt2_dobi_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_factory",
+      "started_at": "2026-09-24T02:41:22.942944",
       "retries": 0,
       "status": "done"
     }
