@@ -2,41 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_adaptive_svd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dobi_svd_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_astro_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_quantizer",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_cur_moe_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_tomoe_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hamming_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hamming_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hamming_inject",
@@ -12379,27 +12344,61 @@
       "started_at": "2026-09-24T03:10:40.462227",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_minimal_nova_inject",
+      "id": "p3_gpt2_minimal_nova_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_nova_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_nova_inject",
+      "started_at": "2026-09-24T03:11:47.864501",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_inject_hymba_transx",
+      "id": "p3_gpt2_inject_hymba_transx",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_hymba_transx --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_hymba_transx",
+      "started_at": "2026-09-24T03:13:25.180993",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_adaptive_svd_inject",
+      "id": "p3_gpt2_adaptive_svd_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_inject",
+      "started_at": "2026-09-24T03:14:22.684593",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
     {
-      "id": "p3_gpt2_minimal_nova_inject",
+      "id": "p3_gpt2_dobi_svd_class",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_nova_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_nova_inject",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_class",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_sdrm_compressor_class",
+      "id": "p3_gpt2_astro_quantizer",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules sdrm_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_sdrm_compressor_class",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_quantizer",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_hymba_transx",
+      "id": "p3_gpt2_cur_moe_compressor",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_hymba_transx --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_hymba_transx",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_tomoe_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_class",
       "status": "active",
       "retries": 0
     }
@@ -13014,6 +13013,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear",
       "started_at": "2026-09-24T03:09:21.186285",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_sdrm_compressor_class",
+      "id": "p3_gpt2_sdrm_compressor_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules sdrm_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_sdrm_compressor_class",
+      "started_at": "2026-09-24T03:12:54.301739",
       "retries": 0,
       "status": "done"
     }
