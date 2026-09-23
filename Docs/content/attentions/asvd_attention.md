@@ -146,7 +146,7 @@ For input sequence batch with $B=8, N=128, D=768, H=12, d=64$, and ASVD rank $r=
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **74.50%** | +23.50% | 0.7399 | 1.00x | 6 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **82.80%** | +3.10% | 0.8216 | 1.00x | 12 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9099 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-asvd-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-asvd-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.71%** | +0.11% | 0.9101 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-asvd) | 2026-09-23 |
 | **roberta-base** | sst2 | `PASS` | 50.92% | **81.31%** | +30.39% | 0.8397 | 1.00x | 12 | [svd-linear-attention-roberta-base-asvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-asvd) | 2026-09-19 |
 
 
