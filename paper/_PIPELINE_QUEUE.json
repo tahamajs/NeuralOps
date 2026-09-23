@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_reap_moe_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules reap_moe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_reap_moe_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_aegis_spectron_fp8",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aegis_spectron_fp8 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aegis_spectron_fp8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_nexus_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nexus_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nexus_inject",
@@ -12314,20 +12300,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_mgie_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_rpca",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rpca --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rpca",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_x_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules x_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_x_inject",
@@ -12338,6 +12310,20 @@
       "id": "p3_gpt2_performer_attention",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules performer_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_performer_attention",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_reap_moe_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules reap_moe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_reap_moe_inject",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_aegis_spectron_fp8",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aegis_spectron_fp8 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aegis_spectron_fp8",
       "status": "active",
       "retries": 0
     }
@@ -13042,6 +13028,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd",
       "started_at": "2026-09-24T03:21:45.635459",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_mgie_factory",
+      "id": "p3_gpt2_mgie_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_factory",
+      "started_at": "2026-09-24T03:22:46.338797",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_rpca",
+      "id": "p3_gpt2_rpca",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rpca --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rpca",
+      "started_at": "2026-09-24T03:22:56.855069",
       "retries": 0,
       "status": "done"
     }
