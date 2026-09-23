@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "adaptive_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_bert_sst2_r128",
@@ -68044,9 +68037,9 @@
       "retries": 0
     },
     {
-      "id": "adaptive_bert_sst2_r32",
+      "id": "adaptive_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -68967,6 +68960,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aatc_xkv --rank 64 --parallel 1 --batch_size 16 --output_suffix aatc_xkv_bert_sst2_r64",
       "started_at": "2026-09-23T09:14:38.658186",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_bert_sst2_r32",
+      "id": "adaptive_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_bert_sst2_r32",
+      "started_at": "2026-09-23T09:19:01.123488",
       "retries": 0,
       "status": "done"
     }
