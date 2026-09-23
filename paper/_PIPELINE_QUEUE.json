@@ -2,20 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_astro_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_tt_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_moe_deltakv_paged_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moe_deltakv_paged_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moe_deltakv_paged_inject",
@@ -12414,20 +12400,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_oats_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oats_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oats_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_linear_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_mlorq",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq",
@@ -12438,6 +12410,20 @@
       "id": "p3_gpt2_faq_quantizer_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_astro_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_tt_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear",
       "status": "active",
       "retries": 0
     }
@@ -12998,6 +12984,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_compressor",
       "started_at": "2026-09-24T03:03:42.579241",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_oats_compressor",
+      "id": "p3_gpt2_oats_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oats_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oats_compressor",
+      "started_at": "2026-09-24T03:04:50.783942",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_svd_linear_compressor",
+      "id": "p3_gpt2_svd_linear_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_compressor",
+      "started_at": "2026-09-24T03:06:20.654202",
       "retries": 0,
       "status": "done"
     }
