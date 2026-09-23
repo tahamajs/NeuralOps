@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "dynamic_rank_class_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "dynamic_rank_class_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "dynamic_rank_class_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "dynamic_rank_class_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r256",
@@ -65993,23 +65972,23 @@
       "retries": 0
     },
     {
-      "id": "dynamic_rank_bert_sst2_r64",
+      "id": "dynamic_rank_class_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r32",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "dynamic_rank_bert_sst2_r128",
+      "id": "dynamic_rank_class_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r64",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "dynamic_rank_bert_sst2_r256",
+      "id": "dynamic_rank_class_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -70179,6 +70158,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 32 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r32",
       "started_at": "2026-09-23T12:41:34.278988",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_rank_bert_sst2_r64",
+      "id": "dynamic_rank_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 64 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r64",
+      "started_at": "2026-09-23T12:42:49.489855",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_rank_bert_sst2_r128",
+      "id": "dynamic_rank_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r128",
+      "started_at": "2026-09-23T12:42:49.630041",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "dynamic_rank_bert_sst2_r256",
+      "id": "dynamic_rank_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_bert_sst2_r256",
+      "started_at": "2026-09-23T12:42:49.774868",
       "retries": 0,
       "status": "done"
     }
