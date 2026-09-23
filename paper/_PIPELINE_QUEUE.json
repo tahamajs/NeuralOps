@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_delta_kv_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_inject",
@@ -12354,20 +12347,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_cur_moe_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_tomoe_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_class",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hamming_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hamming_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hamming_inject",
@@ -12385,6 +12364,13 @@
       "id": "p3_gpt2_drone",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_delta_kv_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
       "status": "active",
       "retries": 0
     }
@@ -13026,6 +13012,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_quantizer",
       "started_at": "2026-09-24T03:15:24.477377",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_cur_moe_compressor",
+      "id": "p3_gpt2_cur_moe_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor",
+      "started_at": "2026-09-24T03:16:30.075443",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_tomoe_class",
+      "id": "p3_gpt2_tomoe_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_class",
+      "started_at": "2026-09-24T03:16:42.586607",
       "retries": 0,
       "status": "done"
     }
