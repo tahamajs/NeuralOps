@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_inject_aegis_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_aegis_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_aegis_v2",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_a3",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
@@ -12289,9 +12275,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_kda",
+      "id": "p3_gpt2_svd_llm",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_kda --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_kda",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
       "status": "active",
       "retries": 0
     }
@@ -12519,6 +12505,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules moba_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_moba_attention",
       "started_at": "2026-09-23T22:49:19.678425",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_inject_kda",
+      "id": "p3_gpt2_inject_kda",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_kda --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_kda",
+      "started_at": "2026-09-23T23:08:11.162858",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_inject_aegis_v2",
+      "id": "p3_gpt2_inject_aegis_v2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_aegis_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_aegis_v2",
+      "started_at": "2026-09-23T23:15:14.866734",
       "retries": 0,
       "status": "done"
     }
