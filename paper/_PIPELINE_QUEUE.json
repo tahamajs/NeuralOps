@@ -2,104 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p2_aasvd_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_aasvd_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_fwsvd_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 32 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_fwsvd_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 64 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_fwsvd_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_fwsvd_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 256 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_drone_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 32 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_drone_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 64 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_drone_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 128 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p2_drone_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 256 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_minimal_svd_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_kvtc_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kvtc_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kvtc_quantizer",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_flat_llm_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mamba_module_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_module_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_module_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_oha",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oha",
@@ -12429,13 +12331,6 @@
   ],
   "active": [
     {
-      "id": "p1_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --parallel 1 --batch_size 8 --output_suffix mamba_mnli_p1 --recovery_steps 100",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p2_aasvd_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 32 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r32",
@@ -12443,9 +12338,23 @@
       "retries": 0
     },
     {
-      "id": "p2_aasvd_r64",
+      "id": "p3_gpt2_minimal_svd_v2",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_flat_llm_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_mamba_module_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_module_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_module_inject",
       "status": "active",
       "retries": 0
     }
@@ -12466,6 +12375,132 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aegis_v2 --parallel 1 --batch_size 8 --output_suffix aegis_v2_mnli_p1 --recovery_steps 100",
       "started_at": "2026-09-23T22:28:42.279919",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_fwsvd_r64",
+      "id": "p2_fwsvd_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 64 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r64",
+      "started_at": "2026-09-23T22:33:13.662140",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_aasvd_r64",
+      "id": "p2_aasvd_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 64 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r64",
+      "started_at": "2026-09-23T22:33:37.378872",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_aasvd_r128",
+      "id": "p2_aasvd_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 128 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r128",
+      "started_at": "2026-09-23T22:34:01.149688",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_aasvd_r256",
+      "id": "p2_aasvd_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules aasvd --rank 256 --parallel 1 --batch_size 8 --output_suffix aasvd_mnli_r256",
+      "started_at": "2026-09-23T22:34:24.936221",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_fwsvd_r32",
+      "id": "p2_fwsvd_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 32 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r32",
+      "started_at": "2026-09-23T22:34:48.736863",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_fwsvd_r64",
+      "id": "p2_fwsvd_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 64 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r64",
+      "started_at": "2026-09-23T22:35:12.530944",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_fwsvd_r128",
+      "id": "p2_fwsvd_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 128 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r128",
+      "started_at": "2026-09-23T22:35:36.237398",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_fwsvd_r256",
+      "id": "p2_fwsvd_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules fwsvd --rank 256 --parallel 1 --batch_size 8 --output_suffix fwsvd_mnli_r256",
+      "started_at": "2026-09-23T22:35:59.965492",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_drone_r32",
+      "id": "p2_drone_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 32 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r32",
+      "started_at": "2026-09-23T22:36:23.747527",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_drone_r64",
+      "id": "p2_drone_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 64 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r64",
+      "started_at": "2026-09-23T22:36:47.561822",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_drone_r128",
+      "id": "p2_drone_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 128 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r128",
+      "started_at": "2026-09-23T22:37:11.265991",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p2_drone_r256",
+      "id": "p2_drone_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --rank 256 --parallel 1 --batch_size 8 --output_suffix drone_mnli_r256",
+      "started_at": "2026-09-23T22:37:35.096229",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_kvtc_quantizer",
+      "id": "p3_gpt2_kvtc_quantizer",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kvtc_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kvtc_quantizer",
+      "started_at": "2026-09-23T22:38:23.092352",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p1_mamba",
+      "id": "p1_mamba",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules mamba --parallel 1 --batch_size 8 --output_suffix mamba_mnli_p1 --recovery_steps 100",
+      "started_at": "2026-09-23T22:28:42.356695",
       "retries": 0,
       "status": "done"
     }
