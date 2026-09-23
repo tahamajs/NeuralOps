@@ -66707,13 +66707,6 @@
       "retries": 0
     },
     {
-      "id": "coopq_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules coopq --rank 256 --parallel 1 --batch_size 16 --output_suffix coopq_bert_sst2_r256",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "cosformer_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cosformer --rank 32 --parallel 1 --batch_size 16 --output_suffix cosformer_bert_sst2_r32",
@@ -69966,6 +69959,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules coopq --rank 128 --parallel 1 --batch_size 16 --output_suffix coopq_bert_sst2_r128",
       "started_at": "2026-09-23T12:09:40.026561",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "coopq_bert_sst2_r256",
+      "id": "coopq_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules coopq --rank 256 --parallel 1 --batch_size 16 --output_suffix coopq_bert_sst2_r256",
+      "started_at": "2026-09-23T12:09:58.888589",
       "retries": 0,
       "status": "done"
     }
