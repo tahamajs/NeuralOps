@@ -570,6 +570,23 @@ def upload_models_to_hf() -> None:
     return
 
 
+def trigger_git_sync(job_id: str) -> None:
+    """Commit new benchmark results to git and push in background process."""
+    try:
+        commit_msg = f"chore(benchmark): record results for {job_id} on GPU"
+        cmd = f"git add results/ paper/ && git commit -m \"{commit_msg}\" && git push origin main"
+        subprocess.Popen(
+            cmd,
+            shell=True,
+            cwd=str(ROOT_DIR),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        logger.info(f"Triggered background git commit & push for {job_id}")
+    except Exception as e:
+        logger.debug(f"Could not trigger background git sync: {e}")
+
+
 # =============================================================================
 # AUTO-REFILL
 # =============================================================================
@@ -591,102 +608,42 @@ def auto_refill_queue(state: Dict[str, Any]) -> int:
         })
         existing.add(jid)
 
-    # Rank ablations
-    for mod in ["aasvd", "fwsvd", "drone"]:
-        for r in [32, 64, 128, 256]:
-            add(
-                f"{mod}_r{r}",
-                f"python -u Codes/framework/run_quality_sweep.py "
-                f"--model models/distilbert_sst2 --dataset sst2 "
-                f"--modules {mod} --rank {r} --parallel 1 "
-                f"--batch_size 32 --output_suffix {mod}{r} --fresh",
-            )
+    # -------------------------------------------------------------------------
+    # Comprehensive Systematic Evaluation Queue:
+    # 1. DistilBERT across SST-2, MNLI, and AG News across ranks [32, 64, 128, 256]
+    # 2. RoBERTa across SST-2, MNLI, and AG News across ranks [32, 64, 128, 256]
+    # -------------------------------------------------------------------------
+    from framework.core.registry import get_evaluatable_modules
+    eval_modules = get_evaluatable_modules(include_compressors=True)
 
-    # Seed ablations
-    for mod in ["aasvd", "fwsvd", "drone"]:
-        for s in [42, 123, 456, 789]:
-            add(
-                f"{mod}_r128_seed{s}",
-                f"python -u Codes/framework/run_quality_sweep.py "
-                f"--model models/distilbert_sst2 --dataset sst2 "
-                f"--modules {mod} --rank 128 --seed {s} "
-                f"--parallel 1 --batch_size 32 "
-                f"--output_suffix {mod}128_seed{s} --fresh",
-            )
+    # Models & Datasets in strict sequence: DistilBERT first, then RoBERTa
+    eval_matrix = [
+        # (model_path, model_family, dataset, batch_size)
+        ("models/distilbert_sst2", "bert", "sst2", 16),
+        ("models/distilbert_mnli_full", "bert", "mnli", 16),
+        ("models/distilbert_agnews_full", "bert", "ag_news", 16),
+        ("models/roberta_sst2", "roberta", "sst2", 8),
+        ("models/roberta-base", "roberta", "mnli", 8),
+        ("models/roberta-base", "roberta", "ag_news", 8),
+    ]
 
-    # MNLI baselines
-    for mod in ["fwsvd", "drone"]:
-        add(
-            f"{mod}_mnli",
-            f"python -u Codes/framework/run_quality_sweep.py "
-            f"--model models/distilbert_mnli_full --dataset mnli "
-            f"--modules {mod} --parallel 1 --batch_size 32 "
-            f"--output_suffix {mod}_mnli --fresh",
-        )
+    ranks = [32, 64, 128, 256]
 
-    # Key compressors on SST-2
-    for mod in ["a3", "kmeans", "adaptive_svd", "adaptive"]:
-        add(
-            f"{mod}_sst2",
-            f"python -u Codes/framework/run_quality_sweep.py "
-            f"--model models/distilbert_sst2 --dataset sst2 "
-            f"--modules {mod} --parallel 1 --batch_size 32 "
-            f"--output_suffix {mod}_sst2 --fresh",
-        )
-
-    # RoBERTa
-    rob_path = None
-    for cand in ["models/roberta_sst2", "models/roberta-base"]:
-        if (ROOT_DIR / cand).exists():
-            rob_path = cand
-            break
-    if rob_path:
-        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed",
-                    "vspec", "aegis_v6", "cur_moe", "res_svd",
-                    "salt", "sdrm", "spectron", "come"]:
-            add(
-                f"{mod}_roberta_sst2",
-                f"python -u Codes/framework/run_quality_sweep.py "
-                f"--model {rob_path} --dataset sst2 --modules {mod} "
-                f"--rank 64 --parallel 1 --batch_size 16 "
-                f"--output_suffix {mod}_rob64 --fresh",
-            )
-
-    # GPT-2 WikiText-2
-    gpt2_path = None
-    for cand in ["models/gpt2_wikitext", "models/gpt2"]:
-        if (ROOT_DIR / cand).exists():
-            gpt2_path = cand
-            break
-    if gpt2_path:
-        for mod in ["aasvd", "fwsvd", "drone", "svd_compressed",
-                    "vspec", "aegis_v6", "cur_moe", "res_svd",
-                    "salt", "sdrm", "spectron", "come",
-                    "adaptive_svd", "adaptive", "a3", "kmeans",
-                    "kronecker", "swift_svd"]:
-            add(
-                f"gpt2_eval_{mod}",
-                f"python -u Codes/framework/run_gpt2_sweep.py "
-                f"--model_path {gpt2_path} --modules {mod} "
-                f"--output_dir results/gpt2_wikitext2_sweep "
-                f"--stride 512 --batch_size 8",
-            )
-
-    # MNLI compressors
-    mnli_path = ROOT_DIR / "models" / "distilbert_mnli_full"
-    if mnli_path.exists():
-        for mod in ["svd_compressed", "vspec", "aegis_v6", "cur_moe",
-                    "res_svd", "salt", "sdrm", "spectron", "come",
-                    "swift_svd", "hybrid_svd_layer", "adaptive_compressor",
-                    "adaptive_ranks", "kronecker_compressor", "rpca",
-                    "soka", "subspace_projection", "swift_svd_act"]:
-            add(
-                f"{mod}_mnli_sweep",
-                f"python -u Codes/framework/run_quality_sweep.py "
-                f"--model models/distilbert_mnli_full --dataset mnli "
-                f"--modules {mod} --parallel 1 --batch_size 32 "
-                f"--output_suffix {mod}_mnli --fresh",
-            )
+    for model_path, family, dataset, bsz in eval_matrix:
+        full_m_path = ROOT_DIR / model_path
+        if not full_m_path.exists():
+            continue
+        for mod in eval_modules:
+            for r in ranks:
+                jid = f"{mod}_{family}_{dataset}_r{r}"
+                out_suffix = f"{mod}_{family}_{dataset}_r{r}"
+                cmd = (
+                    f"python -u Codes/framework/run_quality_sweep.py "
+                    f"--model {model_path} --model_family {family} --dataset {dataset} "
+                    f"--modules {mod} --rank {r} --parallel 1 "
+                    f"--batch_size {bsz} --output_suffix {out_suffix}"
+                )
+                add(jid, cmd, jtype="gpu")
 
     # Paper batches
     if PAPERS_DIR.exists():
@@ -838,6 +795,7 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                     state.setdefault("completed", []).append({
                         **handle.to_dict(), "status": "done",
                     })
+                    trigger_git_sync(jid)
                 else:
                     log_job(jid, "FAIL", f"exit={ret} elapsed={elapsed:.1f}s")
                     breaker.record_fail(jid)
