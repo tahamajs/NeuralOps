@@ -351,11 +351,17 @@ def launch_job(handle: JobHandle) -> bool:
         log_path = JOB_LOG_DIR / f"{handle.job_id}.log"
         log_file = open(log_path, "w", encoding="utf-8", buffering=1)
 
+        extra_kwargs: Dict[str, Any] = {}
+        if os.name == "nt":
+            # 0x08000000 = CREATE_NO_WINDOW: runs totally silent in background without GUI window popping up
+            extra_kwargs["creationflags"] = 0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP
+
         proc = subprocess.Popen(
             exec_cmd,
             cwd=str(ROOT_DIR),
             stdout=log_file,
             stderr=subprocess.STDOUT,
+            **extra_kwargs,
             # shell=False always (list form)
         )
         handle.proc = proc
@@ -757,6 +763,8 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
             to_retry: List[Dict[str, Any]] = []
             to_fail: List[Dict[str, Any]] = []
 
+            to_complete: List[Dict[str, Any]] = []
+
             for jid, handle in list(active.items()):
                 if handle.proc is None:
                     to_remove.append(jid)
@@ -785,13 +793,9 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                 if ret == 0:
                     log_job(jid, "DONE", f"exit=0 elapsed={elapsed:.1f}s")
                     breaker.record_success(jid)
-                    to_retry.append({  # actually completed
+                    to_complete.append({
                         **handle.to_dict(),
                         "status": "done",
-                    })
-                    to_retry.pop()  # remove from retry list
-                    state.setdefault("completed", []).append({
-                        **handle.to_dict(), "status": "done",
                     })
                     trigger_git_sync(jid)
                 else:
@@ -820,6 +824,10 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
 
                 # Remove from active
                 s["active"] = [j for j in s["active"] if j.get("id") not in to_remove]
+
+                # Add completed
+                for j in to_complete:
+                    s["completed"].append(j)
 
                 # Add retries back to jobs
                 for j in to_retry:
