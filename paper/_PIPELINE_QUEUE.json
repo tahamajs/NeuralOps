@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "aegis_spectron_fp8_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 128 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "aegis_spectron_fp8_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 256 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r256",
@@ -67524,15 +67517,6 @@
       "retries": 0
     },
     {
-      "job_id": "aegis_spectron_fp8_bert_sst2_r128",
-      "id": "aegis_spectron_fp8_bert_sst2_r128",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 128 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r128",
-      "started_at": "2026-09-23T09:33:38.394002",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "aegis_spectron_fp8_bert_sst2_r256",
       "id": "aegis_spectron_fp8_bert_sst2_r256",
       "job_type": "gpu",
@@ -68051,16 +68035,9 @@
       "retries": 0
     },
     {
-      "id": "aegis_spectron_fp8_bert_sst2_r32",
+      "id": "aegis_spectron_fp8_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 32 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r32",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "aegis_spectron_fp8_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 64 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 128 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -70205,6 +70182,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_hybrid_attn --rank 256 --parallel 1 --batch_size 16 --output_suffix aegis_hybrid_attn_bert_sst2_r256",
       "started_at": "2026-09-23T11:31:30.721837",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegis_spectron_fp8_bert_sst2_r32",
+      "id": "aegis_spectron_fp8_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 32 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r32",
+      "started_at": "2026-09-23T11:31:49.894865",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegis_spectron_fp8_bert_sst2_r64",
+      "id": "aegis_spectron_fp8_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_spectron_fp8 --rank 64 --parallel 1 --batch_size 16 --output_suffix aegis_spectron_fp8_bert_sst2_r64",
+      "started_at": "2026-09-23T11:31:50.057747",
       "retries": 0,
       "status": "done"
     }
