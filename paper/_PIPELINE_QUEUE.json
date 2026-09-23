@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "gpt2_eval_vspec",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules vspec --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gpt2_eval_aegis_v6",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules aegis_v6 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "gpt2_eval_cur_moe",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules cur_moe --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
@@ -68805,6 +68791,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules svd_compressed --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
       "started_at": "2026-09-23T08:58:58.478611",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_vspec",
+      "id": "gpt2_eval_vspec",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules vspec --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T08:59:53.907214",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gpt2_eval_aegis_v6",
+      "id": "gpt2_eval_aegis_v6",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_gpt2_sweep.py --model_path D:\\SVD_Project\\models\\gpt2_wikitext --modules aegis_v6 --output_dir results/gpt2_wikitext2_sweep --stride 512 --batch_size 8",
+      "started_at": "2026-09-23T08:59:54.048728",
       "retries": 0,
       "status": "done"
     }
