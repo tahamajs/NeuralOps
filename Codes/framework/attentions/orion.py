@@ -626,9 +626,9 @@ class ORIONAttention(BaseAttention):
                         proj_key, norm,
                     )
 
-    # ------------------------------------------------------------------
-    # OR-FIX-03: _kernel_linear_attention with token_valid
-    # ------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        # OR-FIX-03: _kernel_linear_attention with token_valid
+        # ------------------------------------------------------------------
     def _kernel_linear_attention(
         self,
         Q: torch.Tensor,
@@ -636,6 +636,15 @@ class ORIONAttention(BaseAttention):
         V: torch.Tensor,
         token_valid: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        """
+        FAVOR+ random feature linear attention.
+
+        Implements the unbiased feature map from Choromanski et al. (2020):
+            φ(x) = exp(ω·x - ||x||²/2) / sqrt(m),   ω ~ N(0, I_d)
+
+        The `-||x||²/2` term is essential for an unbiased estimate of exp(q·k).
+        The scaling 1/sqrt(d) is applied to x once (not to ω, not twice).
+        """
         B, Hk, N, D = Q.shape
         if Hk == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
@@ -643,17 +652,32 @@ class ORIONAttention(BaseAttention):
         F_dim = self.cfg.rff_features
         orig_dtype = Q.dtype
         Q, K, V = Q.float(), K.float(), V.float()
-        proj = self.rff_proj[:Hk].to(Q.device).float()
+        proj = self.rff_proj[:Hk].to(Q.device).float()   # (Hk, D, m); ω ~ N(0, I_d)
 
+        # Scale x ONCE by 1/sqrt(d). This is the "x" entering the FAVOR+ formula.
         scale = 1.0 / math.sqrt(self.head_dim)
-        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q * scale, proj)
-        K_proj = torch.einsum("bhnd,hdf->bhnf", K * scale, proj)
-        Q_feat = torch.cat([torch.cos(Q_proj), torch.sin(Q_proj)], dim=-1) / math.sqrt(2 * F_dim)
-        K_feat = torch.cat([torch.cos(K_proj), torch.sin(K_proj)], dim=-1) / math.sqrt(2 * F_dim)
+        Q_scaled = Q * scale
+        K_scaled = K * scale
 
-        # OR-FIX-03: mask K and V by token_valid
+        # Project onto random features:  (B, Hk, N, m)
+        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_scaled, proj)
+        K_proj = torch.einsum("bhnd,hdf->bhnf", K_scaled, proj)
+
+        # Subtract ||x||²/2 (per query/key) → unbiased FAVOR+ feature map
+        Q_norm_sq = (Q_scaled ** 2).sum(dim=-1, keepdim=True) / 2.0   # (B, Hk, N, 1)
+        K_norm_sq = (K_scaled ** 2).sum(dim=-1, keepdim=True) / 2.0   # (B, Hk, N, 1)
+
+        # Numerical safety: subtract global max before exp (log-sum-exp style)
+        # Mathematically cancels out in num/denom, so accuracy is unchanged.
+        max_val = max(float(Q_proj.detach().amax().item()), float(K_proj.detach().amax().item()))
+        max_val = max(max_val, 0.0)  # only subtract if positive
+
+        Q_feat = torch.exp(Q_proj - Q_norm_sq - max_val) / math.sqrt(F_dim)
+        K_feat = torch.exp(K_proj - K_norm_sq - max_val) / math.sqrt(F_dim)
+
+        # Padding mask on K and V
         if token_valid is not None:
-            mask_kv = token_valid.unsqueeze(1).unsqueeze(-1).to(K_feat.dtype)  # (B,1,N,1)
+            mask_kv = token_valid.unsqueeze(1).unsqueeze(-1).to(K_feat.dtype)
             K_feat = K_feat * mask_kv
             V = V * mask_kv
 
@@ -674,9 +698,7 @@ class ORIONAttention(BaseAttention):
                 k_c = K_feat[:, :, start:end]
                 v_c = V[:, :, start:end]
 
-                causal_mask = torch.tril(
-                    torch.ones(L, L, device=Q.device, dtype=torch.float32)
-                )
+                causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
                 intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * causal_mask
                 intra_out = torch.matmul(intra_attn, v_c)
                 inter_out = torch.matmul(q_c, S)
@@ -697,6 +719,7 @@ class ORIONAttention(BaseAttention):
             denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-4)
             ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
         return ctx.to(orig_dtype)
+
 
     # ------------------------------------------------------------------
     # OR-FIX-02: _full_softpick_attention rewritten
