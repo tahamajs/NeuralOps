@@ -404,4 +404,4 @@ TODO: Identify specific limitations and edge cases for this module.
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **75.11%** | -15.49% | 0.7554 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-18 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **78.90%** | -11.70% | 0.7951 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-23 |
