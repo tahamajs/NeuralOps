@@ -1,14 +1,14 @@
 {
     "model": "distilbert_sst2_frandi",
     "performance": {
-        "accuracy_pct": 90.6,
-        "f1_score": 0.9077,
-        "f1_macro": 0.9059,
-        "precision": 0.9059,
-        "recall": 0.9059,
-        "val_loss": 0.3051,
+        "accuracy_pct": 90.94,
+        "f1_score": 0.9119,
+        "f1_macro": 0.9093,
+        "precision": 0.9097,
+        "recall": 0.9092,
+        "val_loss": 0.2913,
         "status": "PASS",
-        "elapsed_s": 9.95
+        "elapsed_s": 27.41
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -28,7 +28,7 @@
     },
     "hardware": {
         "peak_vram_mb": 368.29,
-        "tokens_per_sec": 202740.64
+        "tokens_per_sec": 174564.64
     },
     "architecture": {
         "span_distribution": {},
@@ -41,5 +41,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T19:29:43.128795"
+    "timestamp": "2026-09-23T10:12:21.523487+00:00"
 }

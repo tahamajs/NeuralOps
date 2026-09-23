@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "fms_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 128 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "fms_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 256 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "frandi_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules frandi --rank 32 --parallel 1 --batch_size 16 --output_suffix frandi_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "frandi_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules frandi --rank 64 --parallel 1 --batch_size 16 --output_suffix frandi_bert_sst2_r64",
@@ -65363,9 +65342,16 @@
       "retries": 0
     },
     {
-      "id": "fms_bert_sst2_r32",
+      "id": "fms_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 32 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 128 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r128",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "fms_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 256 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -70336,6 +70322,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 64 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r64",
       "started_at": "2026-09-23T13:37:51.399109",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fms_bert_sst2_r32",
+      "id": "fms_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fms --rank 32 --parallel 1 --batch_size 16 --output_suffix fms_bert_sst2_r32",
+      "started_at": "2026-09-23T13:37:51.226227",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "frandi_bert_sst2_r32",
+      "id": "frandi_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules frandi --rank 32 --parallel 1 --batch_size 16 --output_suffix frandi_bert_sst2_r32",
+      "started_at": "2026-09-23T13:41:01.852592",
       "retries": 0,
       "status": "done"
     }
