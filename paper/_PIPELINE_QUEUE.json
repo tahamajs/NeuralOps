@@ -65956,20 +65956,6 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 256 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r256",
       "status": "active",
       "retries": 0
-    },
-    {
-      "id": "eat_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules eat --rank 32 --parallel 1 --batch_size 16 --output_suffix eat_bert_sst2_r32",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "eat_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules eat --rank 64 --parallel 1 --batch_size 16 --output_suffix eat_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
     }
   ],
   "completed": [
@@ -70191,6 +70177,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules dynamic_rank_class --rank 128 --parallel 1 --batch_size 16 --output_suffix dynamic_rank_class_bert_sst2_r128",
       "started_at": "2026-09-23T12:43:46.881955",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "eat_bert_sst2_r32",
+      "id": "eat_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules eat --rank 32 --parallel 1 --batch_size 16 --output_suffix eat_bert_sst2_r32",
+      "started_at": "2026-09-23T12:44:43.281717",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "eat_bert_sst2_r64",
+      "id": "eat_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules eat --rank 64 --parallel 1 --batch_size 16 --output_suffix eat_bert_sst2_r64",
+      "started_at": "2026-09-23T12:44:43.425922",
       "retries": 0,
       "status": "done"
     }
