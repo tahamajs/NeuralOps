@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "fasa_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix fasa_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "fasa_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix fasa_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "fasa_attention_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix fasa_attention_bert_sst2_r128",
@@ -65573,9 +65559,16 @@
       "retries": 0
     },
     {
-      "id": "fasa_bert_sst2_r256",
+      "id": "fasa_attention_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa --rank 256 --parallel 1 --batch_size 16 --output_suffix fasa_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix fasa_attention_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "fasa_attention_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix fasa_attention_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70276,6 +70269,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa --rank 128 --parallel 1 --batch_size 16 --output_suffix fasa_bert_sst2_r128",
       "started_at": "2026-09-23T13:29:59.751113",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fasa_bert_sst2_r256",
+      "id": "fasa_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fasa --rank 256 --parallel 1 --batch_size 16 --output_suffix fasa_bert_sst2_r256",
+      "started_at": "2026-09-23T13:30:18.379245",
       "retries": 0,
       "status": "done"
     }
