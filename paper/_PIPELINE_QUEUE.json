@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "galerkin_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix galerkin_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "galerkin_attention_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix galerkin_attention_bert_sst2_r128",
@@ -65090,16 +65083,16 @@
       "retries": 0
     },
     {
-      "id": "galerkin_bert_sst2_r32",
+      "id": "galerkin_attention_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_attention_bert_sst2_r32",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "galerkin_attention_bert_sst2_r32",
+      "id": "galerkin_attention_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_attention_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix galerkin_attention_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70412,6 +70405,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 256 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r256",
       "started_at": "2026-09-23T14:06:45.638976",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "galerkin_bert_sst2_r32",
+      "id": "galerkin_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 32 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r32",
+      "started_at": "2026-09-23T14:03:41.962368",
       "retries": 0,
       "status": "done"
     }
