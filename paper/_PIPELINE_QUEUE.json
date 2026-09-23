@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_faq_quantizer_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_astro_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_factory",
@@ -12408,27 +12401,22 @@
       "started_at": "2026-09-24T03:02:30.967656",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_padre_attention",
+      "id": "p3_gpt2_padre_attention",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules padre_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_padre_attention",
+      "started_at": "2026-09-24T03:05:15.594991",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
     {
-      "id": "p3_gpt2_dobi_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_oats_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oats_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oats_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_padre_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules padre_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_padre_attention",
       "status": "active",
       "retries": 0
     },
@@ -12443,6 +12431,13 @@
       "id": "p3_gpt2_mlorq",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_faq_quantizer_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules faq_quantizer_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_faq_quantizer_factory",
       "status": "active",
       "retries": 0
     }
@@ -12994,6 +12989,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cr_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cr_compressor_factory",
       "started_at": "2026-09-24T03:02:33.233222",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dobi_compressor",
+      "id": "p3_gpt2_dobi_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_compressor",
+      "started_at": "2026-09-24T03:03:42.579241",
       "retries": 0,
       "status": "done"
     }
