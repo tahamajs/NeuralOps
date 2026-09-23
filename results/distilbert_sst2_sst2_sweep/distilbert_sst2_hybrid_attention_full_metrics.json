@@ -8,7 +8,7 @@
         "recall": 0.8993,
         "val_loss": 0.3681,
         "status": "MODERATE_EXPANSION",
-        "elapsed_s": 16.56
+        "elapsed_s": 4.33
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -25,17 +25,17 @@
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
         "per_layer_ranks": {
-            "distilbert.transformer.layer.0.attention": 64,
-            "distilbert.transformer.layer.1.attention": 64,
-            "distilbert.transformer.layer.2.attention": 64,
-            "distilbert.transformer.layer.3.attention": 64,
-            "distilbert.transformer.layer.4.attention": 64,
-            "distilbert.transformer.layer.5.attention": 64
+            "distilbert.transformer.layer.0.attention": 256,
+            "distilbert.transformer.layer.1.attention": 256,
+            "distilbert.transformer.layer.2.attention": 256,
+            "distilbert.transformer.layer.3.attention": 256,
+            "distilbert.transformer.layer.4.attention": 256,
+            "distilbert.transformer.layer.5.attention": 256
         }
     },
     "hardware": {
         "peak_vram_mb": 479.67,
-        "tokens_per_sec": 41598.12
+        "tokens_per_sec": 180850.6
     },
     "architecture": {
         "span_distribution": {},
@@ -48,5 +48,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-23T17:08:29.009327+00:00"
+    "timestamp": "2026-09-23T17:08:53.497197+00:00"
 }
