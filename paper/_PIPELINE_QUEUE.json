@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "galerkin_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 128 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "galerkin_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 256 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r256",
@@ -65118,9 +65111,9 @@
       "retries": 0
     },
     {
-      "id": "galerkin_bert_sst2_r64",
+      "id": "galerkin_bert_sst2_r128",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 64 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 128 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -70406,6 +70399,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules fwsvd --rank 256 --parallel 1 --batch_size 16 --output_suffix fwsvd_bert_sst2_r256",
       "started_at": "2026-09-23T14:03:41.809780",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "galerkin_bert_sst2_r64",
+      "id": "galerkin_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules galerkin --rank 64 --parallel 1 --batch_size 16 --output_suffix galerkin_bert_sst2_r64",
+      "started_at": "2026-09-23T14:04:19.445011",
       "retries": 0,
       "status": "done"
     }
