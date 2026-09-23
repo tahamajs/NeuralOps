@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "aasvd_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 16 --output_suffix aasvd_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "fwsvd_roberta_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 16 --output_suffix fwsvd_rob64 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "drone_roberta_sst2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules drone --rank 64 --parallel 1 --batch_size 16 --output_suffix drone_rob64 --fresh",
@@ -68773,6 +68759,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive --parallel 1 --batch_size 32 --output_suffix adaptive_sst2 --fresh",
       "started_at": "2026-09-23T08:51:32.644927",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aasvd_roberta_sst2",
+      "id": "aasvd_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules aasvd --rank 64 --parallel 1 --batch_size 16 --output_suffix aasvd_rob64 --fresh",
+      "started_at": "2026-09-23T08:52:27.912765",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "fwsvd_roberta_sst2",
+      "id": "fwsvd_roberta_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules fwsvd --rank 64 --parallel 1 --batch_size 16 --output_suffix fwsvd_rob64 --fresh",
+      "started_at": "2026-09-23T08:52:28.057159",
       "retries": 0,
       "status": "done"
     }
