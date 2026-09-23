@@ -3801,11 +3801,12 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     t0 = time.monotonic()
 
     base_dir = Path("D:/svd_project") if Path("D:/svd_project").exists() else HERE.parent.parent
+    extra_flags = (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
 
     with open(log_path, "w", encoding="utf-8") as log_file:
         proc = subprocess.Popen(
             cmd, stdout=log_file, stderr=subprocess.STDOUT, cwd=str(base_dir),
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+            creationflags=extra_flags,
         )
 
         try:
