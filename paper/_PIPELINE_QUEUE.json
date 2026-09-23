@@ -2,34 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "cachenotes_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 256 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "chela_slay_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 32 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "chela_slay_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 64 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "chela_slay_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 128 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "chela_slay_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 256 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r256",
@@ -67987,22 +67959,7 @@
       "status": "pending"
     }
   ],
-  "active": [
-    {
-      "id": "cachenotes_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 64 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "cachenotes_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 128 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r128",
-      "status": "active",
-      "retries": 0
-    }
-  ],
+  "active": [],
   "completed": [
     {
       "job_id": "aasvd_r128_seed456",
@@ -69243,6 +69200,60 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 32 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r32",
       "started_at": "2026-09-23T09:41:22.792015",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cachenotes_bert_sst2_r64",
+      "id": "cachenotes_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 64 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r64",
+      "started_at": "2026-09-23T09:41:41.532394",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cachenotes_bert_sst2_r128",
+      "id": "cachenotes_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 128 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r128",
+      "started_at": "2026-09-23T09:41:41.664412",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cachenotes_bert_sst2_r256",
+      "id": "cachenotes_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 256 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r256",
+      "started_at": "2026-09-23T09:42:00.800313",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "chela_slay_bert_sst2_r32",
+      "id": "chela_slay_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 32 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r32",
+      "started_at": "2026-09-23T09:42:38.161928",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "chela_slay_bert_sst2_r64",
+      "id": "chela_slay_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 64 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r64",
+      "started_at": "2026-09-23T09:42:38.282000",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "chela_slay_bert_sst2_r128",
+      "id": "chela_slay_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules chela_slay --rank 128 --parallel 1 --batch_size 16 --output_suffix chela_slay_bert_sst2_r128",
+      "started_at": "2026-09-23T09:42:38.418062",
       "retries": 0,
       "status": "done"
     }

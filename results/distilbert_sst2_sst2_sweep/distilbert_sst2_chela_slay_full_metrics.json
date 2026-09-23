@@ -6,13 +6,13 @@
         "f1_macro": 0.9059,
         "precision": 0.9065,
         "recall": 0.9056,
-        "val_loss": 0.2823,
+        "val_loss": 0.2813,
         "status": "MODERATE_EXPANSION",
-        "elapsed_s": 37.19
+        "elapsed_s": 35.11
     },
     "efficiency": {
         "total_params_before": 66955010,
-        "total_params_after": 67600202,
+        "total_params_after": 67649354,
         "trainable_recovery_params": 645192,
         "compression_rate": 1.0,
         "compression_ratio_pct": 0.0,
@@ -20,22 +20,22 @@
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 6,
-        "lora_params": 589824,
+        "lora_params": 645192,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
         "per_layer_ranks": {
-            "distilbert.transformer.layer.0.attention": 128,
-            "distilbert.transformer.layer.1.attention": 128,
-            "distilbert.transformer.layer.2.attention": 128,
-            "distilbert.transformer.layer.3.attention": 128,
-            "distilbert.transformer.layer.4.attention": 128,
-            "distilbert.transformer.layer.5.attention": 128
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
         }
     },
     "hardware": {
-        "peak_vram_mb": 576.08,
-        "tokens_per_sec": 47383.86
+        "peak_vram_mb": 630.15,
+        "tokens_per_sec": 16076.55
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 297.17,
-        "L_256_vram_mb": 307.49,
+        "L_128_vram_mb": 351.24,
+        "L_256_vram_mb": 362.4,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-21T19:02:48.515950"
+    "timestamp": "2026-09-23T06:13:29.099891+00:00"
 }
