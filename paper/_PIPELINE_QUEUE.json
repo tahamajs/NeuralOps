@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "aegis_v6_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v6 --rank 32 --parallel 1 --batch_size 16 --output_suffix aegis_v6_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "aegis_v6_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v6 --rank 64 --parallel 1 --batch_size 16 --output_suffix aegis_v6_bert_sst2_r64",
@@ -67398,15 +67391,6 @@
       "retries": 0
     },
     {
-      "job_id": "aegis_v6_bert_sst2_r32",
-      "id": "aegis_v6_bert_sst2_r32",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v6 --rank 32 --parallel 1 --batch_size 16 --output_suffix aegis_v6_bert_sst2_r32",
-      "started_at": "2026-09-23T09:35:29.510328",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "aegis_v6_bert_sst2_r64",
       "id": "aegis_v6_bert_sst2_r64",
       "job_type": "gpu",
@@ -67763,16 +67747,9 @@
       "retries": 0
     },
     {
-      "id": "aegis_v5_module_bert_sst2_r128",
+      "id": "aegis_v6_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v5_module --rank 128 --parallel 1 --batch_size 16 --output_suffix aegis_v5_module_bert_sst2_r128",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "aegis_v5_module_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v5_module --rank 256 --parallel 1 --batch_size 16 --output_suffix aegis_v5_module_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v6 --rank 32 --parallel 1 --batch_size 16 --output_suffix aegis_v6_bert_sst2_r32",
       "status": "active",
       "retries": 0
     }
@@ -70088,6 +70065,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v5_module --rank 64 --parallel 1 --batch_size 16 --output_suffix aegis_v5_module_bert_sst2_r64",
       "started_at": "2026-09-23T11:39:39.171310",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegis_v5_module_bert_sst2_r128",
+      "id": "aegis_v5_module_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v5_module --rank 128 --parallel 1 --batch_size 16 --output_suffix aegis_v5_module_bert_sst2_r128",
+      "started_at": "2026-09-23T11:39:58.872669",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegis_v5_module_bert_sst2_r256",
+      "id": "aegis_v5_module_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules aegis_v5_module --rank 256 --parallel 1 --batch_size 16 --output_suffix aegis_v5_module_bert_sst2_r256",
+      "started_at": "2026-09-23T11:40:18.390785",
       "retries": 0,
       "status": "done"
     }
