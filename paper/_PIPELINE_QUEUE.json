@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_dobi_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_oats_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oats_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oats_compressor",
@@ -12416,23 +12409,18 @@
       "started_at": "2026-09-24T02:58:09.173534",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_naive_svd_inject",
+      "id": "p3_gpt2_naive_svd_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules naive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_naive_svd_inject",
+      "started_at": "2026-09-24T03:00:56.951052",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
-    {
-      "id": "p3_gpt2_swift_svd_act_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_naive_svd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules naive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_naive_svd_inject",
-      "status": "active",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_nha_compressor",
       "type": "gpu",
@@ -12451,6 +12439,13 @@
       "id": "p3_gpt2_cr_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cr_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cr_compressor_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_dobi_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_compressor",
       "status": "active",
       "retries": 0
     }
@@ -12984,6 +12979,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker",
       "started_at": "2026-09-24T02:59:18.104341",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_swift_svd_act_factory",
+      "id": "p3_gpt2_swift_svd_act_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act_factory",
+      "started_at": "2026-09-24T03:00:30.118968",
       "retries": 0,
       "status": "done"
     }
