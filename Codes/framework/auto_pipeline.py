@@ -316,14 +316,18 @@ class JobHandle:
     status: str = "pending"
 
     def to_dict(self) -> Dict[str, Any]:
-        d = asdict(self)
-        d.pop("proc", None)
-        d.pop("log_file", None)
-        d["started_at"] = (
-            datetime.datetime.fromtimestamp(self.started_at).isoformat()
-            if self.started_at else None
-        )
-        return d
+        return {
+            "job_id": self.job_id,
+            "id": self.job_id,
+            "job_type": self.job_type,
+            "cmd": self.cmd,
+            "started_at": (
+                datetime.datetime.fromtimestamp(self.started_at).isoformat()
+                if self.started_at else None
+            ),
+            "retries": self.retries,
+            "status": self.status,
+        }
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "JobHandle":
