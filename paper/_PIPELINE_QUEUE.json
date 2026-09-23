@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hamming_attention_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hashed_linear_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hashed_linear --rank 32 --parallel 1 --batch_size 16 --output_suffix hashed_linear_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "hashed_linear_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hashed_linear --rank 64 --parallel 1 --batch_size 16 --output_suffix hashed_linear_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "hashed_linear_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hashed_linear --rank 128 --parallel 1 --batch_size 16 --output_suffix hashed_linear_bert_sst2_r128",
@@ -64516,16 +64495,16 @@
       "retries": 0
     },
     {
-      "id": "hamming_attention_bert_sst2_r64",
+      "id": "hashed_linear_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r64",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hashed_linear --rank 32 --parallel 1 --batch_size 16 --output_suffix hashed_linear_bert_sst2_r32",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "hamming_attention_bert_sst2_r128",
+      "id": "hashed_linear_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hashed_linear --rank 64 --parallel 1 --batch_size 16 --output_suffix hashed_linear_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70531,6 +70510,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r32",
       "started_at": "2026-09-23T16:34:42.794034",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hamming_attention_bert_sst2_r64",
+      "id": "hamming_attention_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r64",
+      "started_at": "2026-09-23T16:35:01.562458",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hamming_attention_bert_sst2_r128",
+      "id": "hamming_attention_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r128",
+      "started_at": "2026-09-23T16:35:01.702109",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "hamming_attention_bert_sst2_r256",
+      "id": "hamming_attention_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules hamming_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix hamming_attention_bert_sst2_r256",
+      "started_at": "2026-09-23T16:35:20.508626",
       "retries": 0,
       "status": "done"
     }
