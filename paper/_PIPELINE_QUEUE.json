@@ -2,41 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "gfws_d_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 64 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gfws_d_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 128 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "gfws_d_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 256 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "goldfinch_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch --rank 32 --parallel 1 --batch_size 16 --output_suffix goldfinch_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "goldfinch_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch --rank 64 --parallel 1 --batch_size 16 --output_suffix goldfinch_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "goldfinch_bert_sst2_r128",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch --rank 128 --parallel 1 --batch_size 16 --output_suffix goldfinch_bert_sst2_r128",
@@ -64922,9 +64887,23 @@
       "retries": 0
     },
     {
-      "id": "gfws_d_bert_sst2_r32",
+      "id": "gfws_d_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 32 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 256 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r256",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "goldfinch_bert_sst2_r32",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch --rank 32 --parallel 1 --batch_size 16 --output_suffix goldfinch_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "goldfinch_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules goldfinch --rank 64 --parallel 1 --batch_size 16 --output_suffix goldfinch_bert_sst2_r64",
       "status": "active",
       "retries": 0
     }
@@ -70471,6 +70450,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws --rank 256 --parallel 1 --batch_size 16 --output_suffix gfws_bert_sst2_r256",
       "started_at": "2026-09-23T14:15:46.592720",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gfws_d_bert_sst2_r32",
+      "id": "gfws_d_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 32 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r32",
+      "started_at": "2026-09-23T14:16:42.442119",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gfws_d_bert_sst2_r64",
+      "id": "gfws_d_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 64 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r64",
+      "started_at": "2026-09-23T14:16:42.584429",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "gfws_d_bert_sst2_r128",
+      "id": "gfws_d_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules gfws_d --rank 128 --parallel 1 --batch_size 16 --output_suffix gfws_d_bert_sst2_r128",
+      "started_at": "2026-09-23T14:16:42.738696",
       "retries": 0,
       "status": "done"
     }
