@@ -2,20 +2,6 @@
   "max_parallel": 2,
   "jobs": [
     {
-      "id": "a3_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 32 --output_suffix a3_sst2 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "kmeans_sst2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 32 --output_suffix kmeans_sst2 --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_svd_sst2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules adaptive_svd --parallel 1 --batch_size 32 --output_suffix adaptive_svd_sst2 --fresh",
@@ -68765,6 +68751,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules drone --parallel 1 --batch_size 32 --output_suffix drone_mnli --fresh",
       "started_at": "2026-09-23T08:49:42.265174",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "a3_sst2",
+      "id": "a3_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules a3 --parallel 1 --batch_size 32 --output_suffix a3_sst2 --fresh",
+      "started_at": "2026-09-23T08:50:37.321324",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "kmeans_sst2",
+      "id": "kmeans_sst2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --dataset sst2 --modules kmeans --parallel 1 --batch_size 32 --output_suffix kmeans_sst2 --fresh",
+      "started_at": "2026-09-23T08:50:37.462398",
       "retries": 0,
       "status": "done"
     }
