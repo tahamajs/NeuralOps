@@ -182,7 +182,7 @@ Input Activation X [B, N, D]
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.94% | **58.14%** | -32.80% | 0.7045 | 1.22x | 0 | [svd-linear-attention-distilbert-sst2-aegis-spectron-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-spectron-fp8) | 2026-09-14 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **87.96%** | -2.64% | 0.8847 | 1.12x | 0 | [svd-linear-attention-distilbert-sst2-aegis-spectron-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-spectron-fp8) | 2026-09-23 |
 
 
 ### 4.1 Unified 4-Model SST-2 Evaluation Benchmark (200 Recovery Steps)
