@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_a3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_aegis_v5_fn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aegis_v5_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aegis_v5_fn",
@@ -12261,16 +12254,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_minimal_nova",
+      "id": "p3_gpt2_a3",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_nova --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_nova",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
       "status": "active",
       "retries": 0
     }
@@ -12527,8 +12513,28 @@
       "started_at": "2026-09-23T23:03:18.790366",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_svd_llm",
+      "id": "p3_gpt2_svd_llm",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
+      "started_at": "2026-09-23T23:24:03.535282",
+      "retries": 0,
+      "status": "done"
     }
   ],
-  "failed": [],
+  "failed": [
+    {
+      "job_id": "p3_gpt2_inject_minimal_nova",
+      "id": "p3_gpt2_inject_minimal_nova",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_nova --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_nova",
+      "started_at": "2026-09-23T22:58:48.837097",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    }
+  ],
   "blocked": []
 }
