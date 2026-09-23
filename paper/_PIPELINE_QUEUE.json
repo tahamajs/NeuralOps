@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "compressed_attention_layer_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compressed_attention_layer_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 64 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "compressed_attention_layer_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "compressed_attention_layer_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 256 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r256",
@@ -66889,9 +66868,23 @@
       "retries": 0
     },
     {
-      "id": "compressed_attention_bert_sst2_r256",
+      "id": "compressed_attention_layer_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix compressed_attention_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 32 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r32",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "compressed_attention_layer_bert_sst2_r64",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 64 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r64",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "compressed_attention_layer_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention_layer --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_attention_layer_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -69909,6 +69902,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix compressed_attention_bert_sst2_r128",
       "started_at": "2026-09-23T12:01:42.818821",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "compressed_attention_bert_sst2_r256",
+      "id": "compressed_attention_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules compressed_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix compressed_attention_bert_sst2_r256",
+      "started_at": "2026-09-23T12:02:58.077984",
       "retries": 0,
       "status": "done"
     }
