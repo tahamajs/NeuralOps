@@ -29,4 +29,4 @@ TODO: Identify specific limitations and edge cases for this module.
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **59.50%** | +8.50% | 0.5023 | 1.18x | 6 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **35.00%** | -39.50% | 0.2763 | 1.12x | 12 | N/A | 2026-09-18 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **59.50%** | -20.20% | 0.5597 | 1.20x | 12 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **84.86%** | -5.74% | 0.8510 | 1.18x | 6 | [svd-linear-attention-distilbert-sst2-aegis-hybrid-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-hybrid-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.88%** | -8.72% | 0.8229 | 1.21x | 6 | [svd-linear-attention-distilbert-sst2-aegis-hybrid-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-hybrid-attention) | 2026-09-23 |
