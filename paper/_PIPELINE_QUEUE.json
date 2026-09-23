@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "flash3_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash3 --rank 32 --parallel 1 --batch_size 16 --output_suffix flash3_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "flash3_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash3 --rank 64 --parallel 1 --batch_size 16 --output_suffix flash3_bert_sst2_r64",
@@ -65517,16 +65510,9 @@
       "retries": 0
     },
     {
-      "id": "flap_bert_sst2_r128",
+      "id": "flash3_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flap --rank 128 --parallel 1 --batch_size 16 --output_suffix flap_bert_sst2_r128",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "flap_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flap --rank 256 --parallel 1 --batch_size 16 --output_suffix flap_bert_sst2_r256",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flash3 --rank 32 --parallel 1 --batch_size 16 --output_suffix flash3_bert_sst2_r32",
       "status": "active",
       "retries": 0
     }
@@ -70290,6 +70276,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flap --rank 64 --parallel 1 --batch_size 16 --output_suffix flap_bert_sst2_r64",
       "started_at": "2026-09-23T13:31:35.191195",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flap_bert_sst2_r128",
+      "id": "flap_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flap --rank 128 --parallel 1 --batch_size 16 --output_suffix flap_bert_sst2_r128",
+      "started_at": "2026-09-23T13:31:54.293031",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "flap_bert_sst2_r256",
+      "id": "flap_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules flap --rank 256 --parallel 1 --batch_size 16 --output_suffix flap_bert_sst2_r256",
+      "started_at": "2026-09-23T13:31:54.452795",
       "retries": 0,
       "status": "done"
     }
