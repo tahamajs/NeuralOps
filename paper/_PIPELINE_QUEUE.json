@@ -2,13 +2,6 @@
   "max_parallel": 6,
   "jobs": [
     {
-      "id": "p3_gpt2_drone",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_delta_kv_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor",
@@ -12361,13 +12354,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_astro_quantizer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_quantizer",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cur_moe_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor",
@@ -12392,6 +12378,13 @@
       "id": "p3_gpt2_proxsparse_pruner",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules proxsparse_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_proxsparse_pruner",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_drone",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone",
       "status": "active",
       "retries": 0
     }
@@ -13024,6 +13017,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_class",
       "started_at": "2026-09-24T03:14:53.590996",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_astro_quantizer",
+      "id": "p3_gpt2_astro_quantizer",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules astro_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_astro_quantizer",
+      "started_at": "2026-09-24T03:15:24.477377",
       "retries": 0,
       "status": "done"
     }
