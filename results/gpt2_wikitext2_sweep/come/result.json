@@ -1,17 +1,17 @@
 {
   "module_name": "come",
   "status": "PASS_DEGRADED",
-  "perplexity": 144.82,
-  "baseline_ppl": 21.71,
-  "delta_ppl": 123.11,
-  "compression_rate": 1.264,
-  "compression_ratio_pct": 20.89,
-  "peak_vram_mb": 841.6,
-  "latency_ms_per_token": 0.142,
-  "throughput_tok_per_sec": 7061.9,
-  "elapsed_s": 14.16,
+  "perplexity": 590.39,
+  "baseline_ppl": 25.88,
+  "delta_ppl": 564.51,
+  "compression_rate": 1.2691,
+  "compression_ratio_pct": 21.2,
+  "peak_vram_mb": 839.32,
+  "latency_ms_per_token": 0.029,
+  "throughput_tok_per_sec": 34052.2,
+  "elapsed_s": 2.94,
   "total_params_before": 124439808,
-  "total_params_after": 98447620,
+  "total_params_after": 98054404,
   "error": "",
-  "timestamp": "2026-09-21T10:34:16"
+  "timestamp": "2026-09-23T09:02:57"
 }
