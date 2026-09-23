@@ -204,7 +204,7 @@ class CompressedDistilBertAttention(nn.Module):
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **76.20%** | +25.20% | 0.7581 | 1.00x | 0 | N/A | 2026-09-18 |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.42%** | -9.18% | 0.7970 | 1.22x | 6 | [svd-linear-attention-distilbert-sst2-compressed-mha-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-compressed-mha-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **81.88%** | -8.72% | 0.8248 | 1.18x | 6 | [svd-linear-attention-distilbert-sst2-compressed-mha-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-compressed-mha-attention) | 2026-09-23 |
 
 
 > [!NOTE]
