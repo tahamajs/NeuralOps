@@ -30,13 +30,6 @@
       "retries": 0
     },
     {
-      "id": "process_papers_batch1",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 10",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "process_papers_batch2",
       "type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 10 20",
@@ -68336,15 +68329,7 @@
       "retries": 0
     }
   ],
-  "active": [
-    {
-      "id": "rpca_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules rpca --parallel 1 --batch_size 32 --output_suffix rpca_mnli --fresh",
-      "status": "active",
-      "retries": 0
-    }
-  ],
+  "active": [],
   "completed": [
     {
       "job_id": "aasvd_r128_seed456",
@@ -68856,6 +68841,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
       "started_at": "2026-09-23T09:06:30.708506",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "rpca_mnli_sweep",
+      "id": "rpca_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules rpca --parallel 1 --batch_size 32 --output_suffix rpca_mnli --fresh",
+      "started_at": "2026-09-23T09:06:49.646270",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "process_papers_batch1",
+      "id": "process_papers_batch1",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 10",
+      "started_at": "2026-09-23T09:07:08.546907",
       "retries": 0,
       "status": "done"
     }
