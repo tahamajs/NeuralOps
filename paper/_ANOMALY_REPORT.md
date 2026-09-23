@@ -1,6 +1,6 @@
 # AASVD vs. FWSVD Rank-128 Anomaly Report
 
-*Generated: 2026-09-23T11:24:31.583005*
+*Generated: 2026-09-23T11:25:27.915869*
 
 | Module | Seed | Accuracy (%) | Fallback | Rec. Error |
 | :--- | :---: | :---: | :---: | :---: |
