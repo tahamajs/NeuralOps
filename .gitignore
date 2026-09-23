@@ -333,3 +333,4 @@ debug_*.py
 .idea/
 *.code-workspace
 
+paper/_PROGRESS.md

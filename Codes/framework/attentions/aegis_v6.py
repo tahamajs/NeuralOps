@@ -106,36 +106,89 @@ class AegisConfigV3:
 # Factorised projection
 # ===========================================================================
 
-class FactorisedLowRankProjection(nn.Module):
+class FactorisedLinear(nn.Module):
+    """
+    SVD-factorized linear layer with trainable LoRA adapters.
+
+    Naming convention matches PEFT and framework detection:
+      * lora_A: (lora_rank, in_features)   -- down projection, trainable
+      * lora_B: (out_features, lora_rank)  -- up projection, trainable
+
+    Base SVD tensors (U, S, V, bias) are stored as frozen Parameters so that
+    they appear in `model.parameters()` and are counted by the framework's
+    parameter counter (which uses `model.parameters()`, not buffers).
+
+    Forward: y = (x @ V @ diag(S) @ U^T) + (x @ lora_A^T @ lora_B^T) + bias
+    """
+
     is_custom_attention: bool = True
 
-    def __init__(self, in_features, out_features, svd_rank, lora_rank,
-                 pretrained_weight=None, pretrained_bias=None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        svd_rank: int,
+        lora_rank: int,
+        pretrained_weight: Optional[torch.Tensor] = None,
+        pretrained_bias: Optional[torch.Tensor] = None,
+    ):
         super().__init__()
+
         self.in_features = in_features
         self.out_features = out_features
         self.svd_rank = min(svd_rank, in_features, out_features)
         self.lora_rank = lora_rank
+
         device = pretrained_weight.device if pretrained_weight is not None else torch.device("cpu")
         dtype = pretrained_weight.dtype if pretrained_weight is not None else torch.float32
-        self.register_buffer("U", torch.zeros(out_features, self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("S", torch.ones(self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("V", torch.zeros(in_features, self.svd_rank, device=device, dtype=dtype))
-        self.register_buffer("bias", torch.zeros(out_features, device=device, dtype=dtype))
+
+        # FIX 3: store SVD tensors as frozen Parameters so they are counted
+        # by model.parameters() (framework uses .parameters(), not buffers).
+        self.U = nn.Parameter(
+            torch.zeros(out_features, self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.S = nn.Parameter(
+            torch.ones(self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.V = nn.Parameter(
+            torch.zeros(in_features, self.svd_rank, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+        self.bias = nn.Parameter(
+            torch.zeros(out_features, device=device, dtype=dtype),
+            requires_grad=False,
+        )
+
+        # FIX 2: rename A -> lora_B, B -> lora_A with PEFT shapes.
+        # Old: A (out, r), B (r, in).  New: lora_A (r, in), lora_B (out, r).
         if lora_rank > 0:
-            self.A = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
-            self.B = nn.Parameter(torch.zeros(lora_rank, in_features, device=device, dtype=dtype))
-            nn.init.kaiming_uniform_(self.B, a=math.sqrt(5))
-            nn.init.zeros_(self.A)
+            self.lora_A = nn.Parameter(
+                torch.zeros(lora_rank, in_features, device=device, dtype=dtype)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros(out_features, lora_rank, device=device, dtype=dtype)
+            )
+            # Same init as before: kaiming on the (r, in) tensor, zeros on (out, r).
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
         else:
-            self.register_parameter("A", None)
-            self.register_parameter("B", None)
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
         if pretrained_weight is not None:
             self.decompose_from_weight(pretrained_weight, pretrained_bias)
 
-    def decompose_from_weight(self, weight, bias=None):
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+    ) -> None:
         with torch.no_grad():
             W = weight.float()
+
+            # Shape alignment (unchanged from original)
             if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
                 rep = self.out_features // W.shape[0]
                 W = W.repeat(rep, 1)
@@ -147,49 +200,81 @@ class FactorisedLowRankProjection(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
-                r = min(self.out_features, W.shape[0]); c = min(self.in_features, W.shape[1])
+                padded = torch.zeros(
+                    self.out_features, self.in_features,
+                    device=W.device, dtype=W.dtype,
+                )
+                r = min(self.out_features, W.shape[0])
+                c = min(self.in_features, W.shape[1])
                 padded[:r, :c] = W[:r, :c]
                 W = padded
+
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.svd_rank, U.size(1), Vt.size(0))
-            self.U.zero_(); self.V.zero_(); self.S.zero_()
-            self.U[:, :r].copy_(U[:, :r].to(self.U.dtype))
-            self.S[:r].copy_(S[:r].to(self.S.dtype))
-            self.V[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype))
+
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.S.data.zero_()
+            self.U.data[:, :r].copy_(U[:, :r].to(self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(self.S.dtype))
+            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(self.V.dtype))
+
             if bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias[:n].copy_(bias[:n].to(self.bias.dtype))
+                self.bias.data[:n].copy_(bias[:n].to(self.bias.dtype))
+
+    def freeze_base_weights(self) -> None:
+        # Base SVD weights are already frozen via requires_grad=False on construction.
+        # LoRA tensors are trainable by default.
+        self.U.requires_grad = False
+        self.S.requires_grad = False
+        self.V.requires_grad = False
+        self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
 
     @property
-    def lora_A(self): return self.A
-    @property
-    def lora_B(self): return self.B
+    def base_weight(self) -> torch.Tensor:
+        return (
+            (self.U.float() * self.S.float().unsqueeze(0))
+            @ self.V.float().t().contiguous()
+        ).to(self.U.dtype)
 
     @property
-    def base_weight(self):
-        return ((self.U.float() * self.S.float().unsqueeze(0))
-                @ self.V.float().t().contiguous()).to(self.U.dtype)
-
-    @property
-    def weight(self):
+    def weight(self) -> torch.Tensor:
         svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
-        if self.lora_rank > 0 and self.A is not None and self.B is not None:
-            return (svd_w + self.A.float() @ self.B.float()).to(self.A.dtype)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_w = self.lora_B.float() @ self.lora_A.float()  # (out,r) @ (r,in) = (out,in)
+            return (svd_w + lora_w).to(self.lora_B.dtype)
         return svd_w.to(self.U.dtype)
 
-    def forward(self, x):
+    # Backward-compat aliases for code that still refers to A / B.
+    @property
+    def A(self) -> Optional[nn.Parameter]:
+        return self.lora_B
+
+    @property
+    def B(self) -> Optional[nn.Parameter]:
+        return self.lora_A
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
         x_f = x.float()
+
+        # SVD branch: x @ V @ diag(S) @ U^T + bias
         xV = torch.matmul(x_f, self.V.float())
         xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
         out = torch.matmul(xV_S, self.U.float().t().contiguous()) + self.bias.float()
-        if self.lora_rank > 0 and self.A is not None and self.B is not None:
-            xB = torch.matmul(x_f, self.B.float().t().contiguous())
-            out = out + torch.matmul(xB, self.A.float().t().contiguous())
+
+        # LoRA branch: x @ lora_A^T @ lora_B^T
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())   # (B, N, r)
+            out = out + torch.matmul(xa, self.lora_B.float().t().contiguous())
+
         return out.to(orig_dtype)
 
-
+    
 # ===========================================================================
 # Kernel feature map
 # ===========================================================================
@@ -351,10 +436,10 @@ class AegisAttentionV3(BaseAttention):
         self.is_nested_encoder = False
         self.chunk_size = config.chunk_size
 
-        self.q_proj = FactorisedLowRankProjection(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update)
-        self.k_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
-        self.v_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
-        self.out_proj = FactorisedLowRankProjection(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update)
+        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update)
+        self.k_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.v_proj = FactorisedLinear(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update)
 
         self.pre_norm = config.use_pre_norm
         if self.pre_norm:
@@ -440,60 +525,134 @@ class AegisAttentionV3(BaseAttention):
             return v.to(torch.bool)
         raise ValueError(f"Unsupported attention_mask dim: {mask.dim()}")
 
-    def _prepare_valid_mask(self, attention_mask, B, N_q, N_kv, device, is_cross):
-        raw = self._raw_valid(attention_mask, B, N_kv, device)
+    def _prepare_valid_mask(
+        self,
+        attention_mask: Optional[torch.Tensor],
+        B: int,
+        N_q: int,
+        N_kv: int,
+        device: torch.device,
+        is_cross: bool,
+    ) -> torch.Tensor:
+        """
+        Build a boolean validity mask of shape (B, 1, N_q, N_kv).
+        True = key is allowed for the corresponding query.
+
+        Causal masking is applied ONLY when:
+        - the module is a decoder, AND
+        - this is self-attention (not cross-attention).
+
+        Handles three decoding regimes correctly via absolute positions:
+        * prefill:       N_q == N_kv   (full sequence, causal mask diag-aligned)
+        * single decode: N_q == 1      (single query sees all past keys)
+        * multi decode:  N_q > 1, N_q < N_kv (chunked decode with past cache)
+        In all three cases the query at absolute position `past_len + i` can attend
+        to keys at absolute positions `<= past_len + i`.
+        """
+        # 1) Raw validity from padding (before any causal logic)
+        raw = self._raw_valid(attention_mask, B, N_kv, device)  # (B, 1, 1 or N_q, N_kv)
+
+        # 2) Broadcast padding along query dim if needed
         if raw.shape[-2] == 1 and N_q != 1:
             raw = raw.expand(B, 1, N_q, N_kv)
-        if self.is_decoder and not is_cross:
-            if raw.shape[-2] != N_q or raw.shape[-1] != N_kv:
-                raise ValueError(f"mask shape mismatch: {tuple(raw.shape)} vs ({B},1,{N_q},{N_kv})")
 
-            # FIX: Causal mask only valid when N_q == N_kv (full sequence).
-            # For decode (N_q=1, N_kv=past+1), the single query attends to ALL keys → no causal mask needed.
-            if N_q == N_kv:
-                idx_q = torch.arange(N_q, device=device).unsqueeze(1)
-                idx_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
-                raw = raw & causal
-            # For decode: raw already correct (all past keys valid for the single query)
+        # 3) Causal mask (decoder self-attention only)
+        if self.is_decoder and not is_cross:
+            # Sanity check: shapes must line up
+            if raw.shape[-2] != N_q or raw.shape[-1] != N_kv:
+                raise ValueError(
+                    f"_prepare_valid_mask: shape mismatch: raw={tuple(raw.shape)} "
+                    f"expected (B, 1, {N_q}, {N_kv})"
+                )
+
+            # Absolute positions: query i has absolute index (past_len + i).
+            # past_len = N_kv - N_q is exact for both prefill and decode-with-cache.
+            past_len = N_kv - N_q
+            idx_q = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)  # (N_q, 1)
+            idx_k = torch.arange(N_kv, device=device).unsqueeze(0)              # (1, N_kv)
+
+            # Causal: query q can attend to key k iff abs_k <= abs_q
+            causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)                 # (1, 1, N_q, N_kv)
+            raw = raw & causal
+
         return raw
+
 
 
     # ------------------------------------------------------------------
     # Sliding window — FIX-S1, FIX-S2
     # ------------------------------------------------------------------
-    def _sliding_window_attention(self, Q, K, V, valid, is_cross, return_attn=False):
+    def _sliding_window_attention(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        valid: torch.Tensor,
+        is_cross: bool,
+        return_attn: bool = False,
+    ):
+        """
+        Sliding-window + causal attention.
+
+        Args:
+            Q:       (B, h, N, d)
+            K:       (B, h, N_kv, d)
+            V:       (B, h, N_kv, d)
+            valid:   (B, 1, N, N_kv) boolean — padding + causal pre-computed
+                    by `_prepare_valid_mask`. This function additionally restricts
+                    attention to a local band of width `self.window`.
+            is_cross: whether this call is cross-attention (skip causal band).
+            return_attn: if True, also return the attention matrix.
+
+        Returns:
+            (out, attn) if return_attn else (out, None)
+        """
         B, h, N, d = Q.shape
         N_k = K.shape[2]
         W = self.window
         scale = d ** -0.5
+
+        # 1) Raw scores (full N x N_kv matrix; for production replace with a
+        #    FlashAttention / Triton kernel to actually get O(N*W) memory).
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
-        # FIX: Absolute positions. For decode (N != N_k), past_len = N_k - N.
+        # 2) Absolute positions
+        #    past_len is exact for prefill (0), single decode (N_kv-1),
+        #    and multi decode (N_kv-N).
         past_len = (N_k - N) if (self.is_decoder and not is_cross and N_k >= N) else 0
-        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
-        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)   # (N, 1)
+        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)              # (1, N_k)
 
-        # Band: |q - k| <= W
-        dist = (abs_q - abs_k).abs()
-        band = (dist <= W).unsqueeze(0).unsqueeze(0)
+        # 3) Local band: |abs_q - abs_k| <= W
+        dist = (abs_q - abs_k).abs()                                         # (N, N_k)
+        band = (dist <= W).unsqueeze(0).unsqueeze(0)                         # (1, 1, N, N_k)
 
-        # FIX: Causal band only when N == N_k (full sequence). For decode (N_q=1),
-        # the single query legitimately attends to all past keys.
-        if self.is_decoder and not is_cross and N == N_k:
-            causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+        # 4) Causal band: query at abs_q can attend to key at abs_k iff abs_k <= abs_q.
+        #    Applied for ALL decoder self-attention cases (prefill, single decode,
+        #    multi-token decode). It degenerates to "all keys allowed" when N == 1
+        #    because abs_q = N_k-1 >= every abs_k.
+        if self.is_decoder and not is_cross:
+            causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)              # (1, 1, N, N_k)
             band = band & causal
 
+        # 5) Apply band + caller-provided valid mask (padding + causal).
         mask_val = -1e4
         scores = scores.masked_fill(~band, mask_val)
         scores = scores.masked_fill(~valid, mask_val)
         scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
 
-        any_valid = valid.any(dim=-1, keepdim=True).to(scores.dtype)
+        # 6) Safe softmax: rows with no valid key → zero output (not uniform).
+        any_valid = valid.any(dim=-1, keepdim=True).to(scores.dtype)         # (B, 1, N, 1)
         attn = F.softmax(scores.float(), dim=-1).to(Q.dtype) * any_valid
         attn = F.dropout(attn, p=self.cfg.dropout, training=self.training)
+
+        # 7) Weighted sum
         out = torch.matmul(attn, V)
-        return (out, attn) if return_attn else (out, None)
+
+        if return_attn:
+            return out, attn
+        return out, None
+
 
     # ------------------------------------------------------------------
     # Non-causal linear attention (encoder)
@@ -923,7 +1082,7 @@ def inject_aegis_v6(layer=None, model=None, model_config=None, comp_config=None,
             hidden_size=h_size, num_heads=n_heads, num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
             window_size=getattr(comp_config, "window_size", 64),
-            svd_rank=getattr(comp_config, "svd_rank", 384),
+            svd_rank=getattr(comp_config, "svd_rank", 192),
             low_rank_update=getattr(comp_config, "low_rank_update", 16),
             kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
             dropout=getattr(comp_config, "dropout", 0.1),

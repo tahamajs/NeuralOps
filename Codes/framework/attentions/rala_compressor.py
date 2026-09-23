@@ -1,9 +1,19 @@
 r"""
-Rank-Augmented Linear Attention Compressor (RALA Compressor) – Production-Hardened.
+Rank-Augmented Linear Attention Compressor (RALA Compressor) – Corrected.
 Maps to and aliases framework.attentions.rala_attention.RALALinearAttention.
+
+Bug-fix map:
+  RALAC-FIX-01  Added missing `import torch` (was used in ModuleList check,
+                causing NameError when target.h was a ModuleList).
+  RALAC-FIX-02  Removed dead `'comp_config' in locals()` check (always True
+                since comp_config is a function parameter).
+  RALAC-FIX-03  Recursion guard (`_depth`).
+  RALAC-FIX-04  Clean separation of whole-model vs single-layer dispatch.
 """
 
 from typing import Any, Optional
+
+import torch                              # RALAC-FIX-01
 import torch.nn as nn
 
 from framework.core.registry import ATTENTION_REGISTRY
@@ -13,6 +23,7 @@ from framework.attentions.rala_attention import (
     inject_rala_attention,
     inject_rala_model,
 )
+
 
 @ATTENTION_REGISTRY.register("rala_compressor")
 class RALACompressorAttention(RALALinearAttention):
@@ -29,8 +40,12 @@ def inject_rala_compressor(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    _depth: int = 0,                     # RALAC-FIX-03
     **kwargs: Any,
 ):
+    if _depth > 8:
+        return None
+
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer", None))
@@ -39,7 +54,7 @@ def inject_rala_compressor(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
+    # ---- Whole-model traversal ----
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
         layer_list = target.distilbert.transformer.layer
@@ -65,22 +80,25 @@ def inject_rala_compressor(
             res = inject_rala_compressor(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
+                _depth=_depth + 1,
                 **kwargs,
             )
             if res is not None:
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    layer = target
+    # ---- Single-layer dispatch ----
+    if model is not None and target is model:
+        return inject_rala_model(
+            model, model_config=cfg, comp_config=comp_config, **kwargs,
+        )
 
-    if model is not None:
-        return inject_rala_model(model, **kwargs)
     return inject_rala(
-        layer=layer,
-        model_config=model_config,
+        layer=target,
+        model_config=cfg,
         comp_config=comp_config,
         layer_idx=layer_idx,
         total_layers=total_layers,
