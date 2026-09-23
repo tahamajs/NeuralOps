@@ -2,69 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "granite_hybrid_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 32 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 64 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 128 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 256 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_block_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 32 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_block_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 64 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_block_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 128 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "granite_hybrid_block_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 256 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "grecodec_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grecodec --rank 32 --parallel 1 --batch_size 16 --output_suffix grecodec_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "grecodec_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grecodec --rank 64 --parallel 1 --batch_size 16 --output_suffix grecodec_bert_sst2_r64",
@@ -64787,6 +64724,20 @@
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 210 217",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "granite_hybrid_block_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 128 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r128",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "granite_hybrid_block_bert_sst2_r256",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 256 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r256",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -70522,6 +70473,15 @@
       "started_at": "2026-09-23T14:23:50.595800",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "grecodec_bert_sst2_r32",
+      "id": "grecodec_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grecodec --rank 32 --parallel 1 --batch_size 16 --output_suffix grecodec_bert_sst2_r32",
+      "started_at": "2026-09-23T15:56:20.258591",
+      "retries": 0,
+      "status": "done"
     }
   ],
   "failed": [
@@ -70551,6 +70511,66 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules factorised_matrix_state --rank 128 --parallel 1 --batch_size 16 --output_suffix factorised_matrix_state_bert_sst2_r128",
       "started_at": "2026-09-23T12:57:04.433540",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_bert_sst2_r32",
+      "id": "granite_hybrid_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 32 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r32",
+      "started_at": "2026-09-23T14:32:06.620970",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_bert_sst2_r64",
+      "id": "granite_hybrid_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 64 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r64",
+      "started_at": "2026-09-23T14:32:06.791075",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_bert_sst2_r128",
+      "id": "granite_hybrid_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 128 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r128",
+      "started_at": "2026-09-23T14:32:25.744039",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_bert_sst2_r256",
+      "id": "granite_hybrid_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid --rank 256 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_bert_sst2_r256",
+      "started_at": "2026-09-23T15:26:10.597395",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_block_bert_sst2_r32",
+      "id": "granite_hybrid_block_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 32 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r32",
+      "started_at": "2026-09-23T15:26:10.969377",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    },
+    {
+      "job_id": "granite_hybrid_block_bert_sst2_r64",
+      "id": "granite_hybrid_block_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules granite_hybrid_block --rank 64 --parallel 1 --batch_size 16 --output_suffix granite_hybrid_block_bert_sst2_r64",
+      "started_at": "2026-09-23T15:26:11.231519",
       "retries": 0,
       "status": "failed",
       "reason": "timeout_1800s"
