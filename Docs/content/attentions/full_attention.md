@@ -249,6 +249,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | **distilbert-mnli** | mnli | `PASS` | N/A | **53.10%** | N/A | 0.4636 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | N/A | **81.80%** | N/A | 0.8177 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | N/A | **94.30%** | N/A | 0.9390 | 1.00x | 0 | N/A | 2026-09-19 |
+| **distilbert-base-uncased-finetuned-sst-2-english** | sst2 | `PASS` | N/A | **90.60%** | N/A | 0.9099 | 1.00x | 0 | N/A | 2026-09-23 |
 
 
 The empirical evaluation of `full_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
