@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "asvd_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 256 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "asvd_attention_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix asvd_attention_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "asvd_attention_bert_sst2_r64",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix asvd_attention_bert_sst2_r64",
@@ -67209,24 +67195,6 @@
       "retries": 0
     },
     {
-      "job_id": "asvd_bert_sst2_r256",
-      "id": "asvd_bert_sst2_r256",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 256 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r256",
-      "started_at": "2026-09-23T09:38:15.978597",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "asvd_attention_bert_sst2_r32",
-      "id": "asvd_attention_bert_sst2_r32",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix asvd_attention_bert_sst2_r32",
-      "started_at": "2026-09-23T09:38:16.121893",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "asvd_attention_bert_sst2_r64",
       "id": "asvd_attention_bert_sst2_r64",
       "job_type": "gpu",
@@ -67331,23 +67299,16 @@
       "retries": 0
     },
     {
-      "id": "asvd_bert_sst2_r32",
+      "id": "asvd_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 32 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 256 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r256",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "asvd_bert_sst2_r64",
+      "id": "asvd_attention_bert_sst2_r32",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 64 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r64",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "asvd_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 128 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix asvd_attention_bert_sst2_r32",
       "status": "active",
       "retries": 0
     }
@@ -69897,6 +69858,33 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules astro --rank 256 --parallel 1 --batch_size 16 --output_suffix astro_bert_sst2_r256",
       "started_at": "2026-09-23T11:48:00.908338",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "asvd_bert_sst2_r32",
+      "id": "asvd_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 32 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r32",
+      "started_at": "2026-09-23T11:48:01.040717",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "asvd_bert_sst2_r64",
+      "id": "asvd_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 64 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r64",
+      "started_at": "2026-09-23T11:48:20.355577",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "asvd_bert_sst2_r128",
+      "id": "asvd_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules asvd --rank 128 --parallel 1 --batch_size 16 --output_suffix asvd_bert_sst2_r128",
+      "started_at": "2026-09-23T11:48:39.942883",
       "retries": 0,
       "status": "done"
     }
