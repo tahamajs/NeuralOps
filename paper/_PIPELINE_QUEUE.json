@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "hybrid_svd_layer_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_ranks_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules adaptive_ranks --parallel 1 --batch_size 32 --output_suffix adaptive_ranks_mnli --fresh",
@@ -68352,16 +68345,9 @@
   ],
   "active": [
     {
-      "id": "come_mnli_sweep",
+      "id": "hybrid_svd_layer_mnli_sweep",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules come --parallel 1 --batch_size 32 --output_suffix come_mnli --fresh",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "swift_svd_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd --parallel 1 --batch_size 32 --output_suffix swift_svd_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules hybrid_svd_layer --parallel 1 --batch_size 32 --output_suffix hybrid_svd_layer_mnli --fresh",
       "status": "active",
       "retries": 0
     }
@@ -68850,6 +68836,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules spectron --parallel 1 --batch_size 32 --output_suffix spectron_mnli --fresh",
       "started_at": "2026-09-23T09:05:52.974744",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "come_mnli_sweep",
+      "id": "come_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules come --parallel 1 --batch_size 32 --output_suffix come_mnli --fresh",
+      "started_at": "2026-09-23T09:06:11.732400",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "swift_svd_mnli_sweep",
+      "id": "swift_svd_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules swift_svd --parallel 1 --batch_size 32 --output_suffix swift_svd_mnli --fresh",
+      "started_at": "2026-09-23T09:06:11.898192",
       "retries": 0,
       "status": "done"
     }
