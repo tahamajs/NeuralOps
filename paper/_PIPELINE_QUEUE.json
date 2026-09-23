@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "res_svd_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules res_svd --parallel 1 --batch_size 32 --output_suffix res_svd_mnli --fresh",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "salt_mnli_sweep",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules salt --parallel 1 --batch_size 32 --output_suffix salt_mnli --fresh",
@@ -68394,16 +68387,9 @@
   ],
   "active": [
     {
-      "id": "aegis_v6_mnli_sweep",
+      "id": "res_svd_mnli_sweep",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules aegis_v6 --parallel 1 --batch_size 32 --output_suffix aegis_v6_mnli --fresh",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "cur_moe_mnli_sweep",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules cur_moe --parallel 1 --batch_size 32 --output_suffix cur_moe_mnli --fresh",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules res_svd --parallel 1 --batch_size 32 --output_suffix res_svd_mnli --fresh",
       "status": "active",
       "retries": 0
     }
@@ -68838,6 +68824,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules vspec --parallel 1 --batch_size 32 --output_suffix vspec_mnli --fresh",
       "started_at": "2026-09-23T09:04:36.871185",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "aegis_v6_mnli_sweep",
+      "id": "aegis_v6_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules aegis_v6 --parallel 1 --batch_size 32 --output_suffix aegis_v6_mnli --fresh",
+      "started_at": "2026-09-23T09:04:56.063605",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "cur_moe_mnli_sweep",
+      "id": "cur_moe_mnli_sweep",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model D:\\SVD_Project\\models\\distilbert_mnli_full --dataset mnli --modules cur_moe --parallel 1 --batch_size 32 --output_suffix cur_moe_mnli --fresh",
+      "started_at": "2026-09-23T09:04:56.243591",
       "retries": 0,
       "status": "done"
     }
