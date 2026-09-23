@@ -205,6 +205,13 @@ Issue native FP8 WGMMA matrix instructions on Consumer warps, achieving up to $2
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **90.60%** | +0.00% | 0.9091 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-flash-attention3-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-flash-attention3-fp8) | 2026-09-23 |
+
+
 The empirical evaluation of `flash_attention3_fp8` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -486,4 +493,3 @@ The `FlashAttention3FP8` architecture incorporates telemetry hooks for tracking 
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
