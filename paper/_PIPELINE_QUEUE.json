@@ -2,20 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "grouped_query_attention_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "grouped_query_attention_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "grouped_query_attention_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 256 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r256",
@@ -64642,9 +64628,16 @@
       "retries": 0
     },
     {
-      "id": "grouped_query_attention_bert_sst2_r32",
+      "id": "grouped_query_attention_bert_sst2_r64",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r32",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 64 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r64",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "grouped_query_attention_bert_sst2_r128",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 128 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r128",
       "status": "active",
       "retries": 0
     }
@@ -70488,6 +70481,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules griffin_ssd_block --rank 256 --parallel 1 --batch_size 16 --output_suffix griffin_ssd_block_bert_sst2_r256",
       "started_at": "2026-09-23T16:28:50.208441",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "grouped_query_attention_bert_sst2_r32",
+      "id": "grouped_query_attention_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules grouped_query_attention --rank 32 --parallel 1 --batch_size 16 --output_suffix grouped_query_attention_bert_sst2_r32",
+      "started_at": "2026-09-23T16:28:50.376196",
       "retries": 0,
       "status": "done"
     }
