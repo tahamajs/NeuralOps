@@ -333,6 +333,11 @@ def fields(name: str) -> Tuple[str, Optional[str]]:
         return ("sentence1", "sentence2")
     if name == "mnli":
         return ("premise", "hypothesis")
+    if "wikitext" in name.lower():
+        raise ValueError(
+            f"Dataset '{name}' is not a classification dataset. "
+            f"Use perplexity evaluation instead."
+        )
     return ("sentence1", "sentence2")
 
 
@@ -775,6 +780,8 @@ def evaluate_comprehensive(
 
         unique_classes = set(all_targets_flat)
         n_classes = len(unique_classes)
+        if n_classes <= 1:
+            raise RuntimeError(f"Evaluation set has only one class {unique_classes} — invalid for accuracy")
         if n_classes <= 2:
             f1 = float(f1_score(all_targets_flat, all_preds_flat, average="binary", zero_division=0))
         else:
