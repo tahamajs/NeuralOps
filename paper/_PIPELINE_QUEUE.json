@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "bonsai_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bonsai --rank 256 --parallel 1 --batch_size 16 --output_suffix bonsai_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "cachenotes_bert_sst2_r32",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules cachenotes --rank 32 --parallel 1 --batch_size 16 --output_suffix cachenotes_bert_sst2_r32",
@@ -68024,9 +68017,9 @@
       "retries": 0
     },
     {
-      "id": "bonsai_bert_sst2_r128",
+      "id": "bonsai_bert_sst2_r256",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bonsai --rank 128 --parallel 1 --batch_size 16 --output_suffix bonsai_bert_sst2_r128",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bonsai --rank 256 --parallel 1 --batch_size 16 --output_suffix bonsai_bert_sst2_r256",
       "status": "active",
       "retries": 0
     }
@@ -69235,6 +69228,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bonsai --rank 64 --parallel 1 --batch_size 16 --output_suffix bonsai_bert_sst2_r64",
       "started_at": "2026-09-23T09:40:26.075400",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "bonsai_bert_sst2_r128",
+      "id": "bonsai_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules bonsai --rank 128 --parallel 1 --batch_size 16 --output_suffix bonsai_bert_sst2_r128",
+      "started_at": "2026-09-23T09:40:45.255002",
       "retries": 0,
       "status": "done"
     }
