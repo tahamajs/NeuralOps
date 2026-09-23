@@ -2,48 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "adaptive_ranks_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_ranks_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_ranks_bert_sst2_r256",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r256",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_span_bert_sst2_r32",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r32",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_span_bert_sst2_r64",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r64",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "adaptive_span_bert_sst2_r128",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r128",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "adaptive_span_bert_sst2_r256",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r256",
@@ -70458,6 +70416,60 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r32",
       "started_at": "2026-09-23T11:08:46.304810",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_ranks_bert_sst2_r64",
+      "id": "adaptive_ranks_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r64",
+      "started_at": "2026-09-23T11:09:05.011028",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_ranks_bert_sst2_r128",
+      "id": "adaptive_ranks_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r128",
+      "started_at": "2026-09-23T11:09:05.157167",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_ranks_bert_sst2_r256",
+      "id": "adaptive_ranks_bert_sst2_r256",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_ranks --rank 256 --parallel 1 --batch_size 16 --output_suffix adaptive_ranks_bert_sst2_r256",
+      "started_at": "2026-09-23T11:09:05.329989",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_span_bert_sst2_r32",
+      "id": "adaptive_span_bert_sst2_r32",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 32 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r32",
+      "started_at": "2026-09-23T11:09:23.921223",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_span_bert_sst2_r64",
+      "id": "adaptive_span_bert_sst2_r64",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 64 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r64",
+      "started_at": "2026-09-23T11:09:24.099926",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "adaptive_span_bert_sst2_r128",
+      "id": "adaptive_span_bert_sst2_r128",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_sst2 --model_family bert --dataset sst2 --modules adaptive_span --rank 128 --parallel 1 --batch_size 16 --output_suffix adaptive_span_bert_sst2_r128",
+      "started_at": "2026-09-23T11:09:24.263821",
       "retries": 0,
       "status": "done"
     }
