@@ -335,7 +335,7 @@ class IdentityOutProj(nn.Identity):
 @ATTENTION_REGISTRY.register("adaptive_span_attention")
 class AdaptiveSpanAttention(BaseAttention):
     supports_causal: bool = True
-    supports_bidirectional: bool = True
+    supports_bidirectional: bool = False
     supports_gqa: bool = True
     supports_rope: bool = True
     is_custom_attention: bool = True
