@@ -281,6 +281,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("kvtc")
+@COMPRESSOR_REGISTRY.register("kvtc_compressor")
 @COMPRESSOR_REGISTRY.register("kvtc_quantizer")
 @COMPRESSOR_REGISTRY.register("pca_quant")
 @COMPRESSOR_REGISTRY.register("pca_quant_compressor")
