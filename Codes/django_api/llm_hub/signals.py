@@ -1,1 +1,0 @@
-# Placeholder for future signals (e.g., auto-create default prompts)

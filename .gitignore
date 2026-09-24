@@ -176,7 +176,13 @@ desktop.ini
 *.synctex.gz\.fls
 
 
-Codes/MasterHttpRelayVPN
+# ============================================================
+# Standalone Subsystems & Web Applications
+# ============================================================
+Codes/MasterHttpRelayVPN/
+Codes/django_api/
+Codes/frontend/
+Codes/neuralops-agent/
 
 # ============================================================
 # Experiments, Results & Checkpoint Artifacts
