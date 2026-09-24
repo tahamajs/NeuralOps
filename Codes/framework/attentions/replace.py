@@ -647,7 +647,7 @@ class ReplaceAttention(BaseAttention):
             # RE-22: handle GQA-aware chunking.
             hidden = w_all.shape[0] if w_all.shape[0] < w_all.shape[1] else w_all.shape[1]
             if w_all.shape[0] == 3 * hidden or w_all.shape[1] == 3 * hidden:
-                if w_all.shape[0] == 3 * hidden:   # Conv1D (in, 3*out)
+                if w_all.shape[1] == 3 * hidden:   # Conv1D (in, 3*out)
                     chunks = w_all.chunk(3, dim=1)
                     w_q, w_k, w_v = [c.t().contiguous() for c in chunks]
                 else:                               # Linear (3*out, in)
@@ -739,6 +739,10 @@ class ReplaceAttention(BaseAttention):
                     if norm < 1e-4:
                         logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
             self._first_copy_done = True
+
+        if w_q is not None and hasattr(self, "q_proj") and hasattr(self.q_proj, "weight"):
+            if w_q.dtype != self.q_proj.weight.dtype:
+                self.to(w_q.dtype)
 
         self._copy_into(self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size)
         self._copy_into(self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size)
