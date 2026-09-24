@@ -288,5 +288,25 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T21:05:21.299429"
+  },
+  {
+    "module": "frandi_compressor_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 265.377977,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (265.38) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:06:29.911961"
+  },
+  {
+    "module": "zerokv",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 995.771836,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:06:41.051979"
   }
 ]
