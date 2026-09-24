@@ -878,5 +878,17 @@ The `A3Compressor` architecture incorporates telemetry hooks for tracking singul
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate a3_compressor compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("a3_compressor")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with a3_compressor")
 ```

@@ -792,7 +792,23 @@ The `LowRankSparseLinear` architecture incorporates telemetry hooks for tracking
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.attentions.spectron import SpectronAttention, inject_spectron
+
+# 1. Module instantiation
+attn = SpectronAttention(
+    d_model=768,
+    num_heads=12,
+    spectral_rank=32,
+)
+
+x = torch.randn(2, 128, 768)
+out = attn(x)
+
+# 2. Inject into HuggingFace model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+injected_model = inject_spectron(model=model, spectral_rank=32)
 ```
 
 ## Benchmark Results
@@ -807,7 +823,8 @@ The `LowRankSparseLinear` architecture incorporates telemetry hooks for tracking
 
 ## Limitations & Future Work
 
-TODO: Identify specific limitations and edge cases for this module.
+1. **Iterative Spectral SVD Overhead**: Real-time batch-wise singular spectrum recomputations incur latency bottlenecks without precomputed or amortization bases.
+2. **Eigenvector Phase Ambiguity**: Sign ambiguities in truncated singular vectors across batches require explicit phase alignment conventions.
 
 ## Empirical Benchmark Results
 

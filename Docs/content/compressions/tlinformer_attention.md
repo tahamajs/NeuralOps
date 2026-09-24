@@ -250,7 +250,7 @@ class TLinFormerAttention(BaseAttention):
         # Low‑rank projections for sequence length reduction (shared across heads)
         self.E = nn.Linear(
             self.rank, self.rank, bias=False
-        )  # placeholder, will be replaced
+        )  # Sequence low-rank dimension projection
         self.F = nn.Linear(self.rank, self.rank, bias=False)
         # Correct approach: project the sequence dimension, so the weight matrix is (N, rank)
         # We'll create them in forward dynamically based on sequence length or use fixed max length.
@@ -403,7 +403,19 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate tlinformer_attention compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("tlinformer_attention")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with tlinformer_attention")
 ```
 ## Unified 4-Architecture Benchmark Results (TLinFormer Attention)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

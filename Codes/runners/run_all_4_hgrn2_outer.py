@@ -7,8 +7,8 @@ os.environ.pop("TRANSFORMERS_OFFLINE", None)
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
-if os.path.exists(r"D:\svd_project"):
-    os.chdir(r"D:\svd_project")
+if os.path.exists(r"PROJECT_ROOT"):
+    os.chdir(r"PROJECT_ROOT")
 
 MODULE = "hgrn2_outer"
 DESCRIPTION = "HGRN-2 Outer-Product Recurrent Linear Attention Module"

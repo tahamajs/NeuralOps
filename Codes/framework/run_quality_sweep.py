@@ -1143,13 +1143,24 @@ def finetune_lora(
     curr_batch_size = batch_size
     if device.type == "cuda":
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
-        if "qwen" in str(name).lower():
+        mod_lower = str(name).lower()
+        is_heavy_module = any(
+            k in mod_lower for k in (
+                "hgrn", "deltanet", "delta_net", "samba", "mamba", "ssm", "hla",
+                "admm", "nexus", "phantom", "aegis", "jamba", "armor", "ast",
+                "granite", "hymba", "hybrid", "recurrent", "outer"
+            )
+        )
+        if "qwen" in mod_lower or is_heavy_module:
+            target_micro = 1
+        elif total_vram_gb <= 12.0:
             target_micro = min(2, curr_batch_size)
-        elif total_vram_gb <= 4.5:
+        elif total_vram_gb <= 16.0:
             target_micro = min(4, curr_batch_size)
         else:
             target_micro = curr_batch_size
         micro_bs = min(curr_batch_size, target_micro)
+        torch.cuda.empty_cache()
     else:
         micro_bs = curr_batch_size
 

@@ -1,15 +1,15 @@
-# Hybrid SVD Layer: Single‑Head SVD Approximation with Positional Encoding for Attention‑Free Encoding
+# Hybrid SVD Layer: Single‑Head SVD Token-Mixing with Positional Encoding
 
-**Standalone module; compressor placeholder**  
-*Replaces multi‑head self‑attention with a low‑rank SVD‑based mixing of token representations, combining global structure extraction with a standard feed‑forward network.*
+**Standalone module: `SVDSingleHead` and `DirectSVDEncoderLayer`**  
+*Replaces multi‑head self‑attention with low‑rank SVD‑based token mixing, combining global singular representation extraction with feed‑forward processing.*
 
 ---
 
 ## Overview
 
-The Hybrid SVD Layer introduces an alternative to the standard multi‑head self‑attention mechanism in Transformer encoder blocks. Instead of computing query‑key dot products and a full attention matrix, it employs a **single‑head SVD approximation** on the input sequence (after adding sinusoidal positional encodings). The singular value decomposition (SVD) captures the principal components of the normalized token representations, and a **softmax over the singular values** acts as a trainable‑free mechanism to weight the importance of each component. The left singular vectors are then combined with the right singular vectors to produce a transformed output. This SVD‑based mixing is then followed by a conventional feed‑forward network, residual connections, and layer normalization, forming a complete encoder layer (`DirectSVDEncoderLayer`).
+The Hybrid SVD Layer (`SVDSingleHead`) provides an attention-free token-mixing mechanism for Transformer encoder architectures. Rather than computing pairwise query-key quadratic dot products, it computes the Singular Value Decomposition (SVD) of the normalized token representations (augmented with sinusoidal positional embeddings). 
 
-The method is designed to be computationally efficient for moderate sequence lengths (SVD complexity `O(N·D·min(N,D))`) and avoids the quadratic complexity of attention. While a compressor class (`DirectSVDCompressor`) is registered under `"direct_svd"`, it is currently a placeholder that does not automatically replace layers; the `DirectSVDEncoderLayer` must be used manually or through a custom integration script.
+A softmax over the extracted singular values weights the components, after which left and right singular vectors project the representations forward. Combined with conventional feed-forward networks, residual connections, and LayerNorm, it forms `DirectSVDEncoderLayer`. For whole-model linear projection compression, see the companion [`DirectSVDCompressor`](direct_svd.md).
 
 ---
 

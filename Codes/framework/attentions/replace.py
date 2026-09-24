@@ -80,6 +80,12 @@ def _build_attention_from_registry(
     except (ValueError, TypeError):
         params = {}
 
+    kwargs_clean = dict(kwargs)
+    cfg_val = kwargs_clean.pop("config", None)
+    kwargs_clean.pop("hidden_size", None)
+    kwargs_clean.pop("num_heads", None)
+    kwargs_clean.pop("num_attention_heads", None)
+
     attempts = []
 
     if "config" in params:
@@ -88,25 +94,28 @@ def _build_attention_from_registry(
             num_attention_heads=num_heads,
             num_heads=num_heads,
             head_dim=hidden_size // max(1, num_heads),
-            **kwargs,
+            **kwargs_clean,
         )
-        attempts.append(lambda: attn_cls(config=ns, **kwargs))
+        if cfg_val is not None:
+            attempts.append(lambda: attn_cls(config=cfg_val, **kwargs_clean))
+        attempts.append(lambda: attn_cls(config=ns, **kwargs_clean))
 
     if "num_attention_heads" in params:
         attempts.append(lambda: attn_cls(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,
-            **kwargs,
+            **kwargs_clean,
         ))
 
     if "num_heads" in params:
         attempts.append(lambda: attn_cls(
             hidden_size=hidden_size,
             num_heads=num_heads,
-            **kwargs,
+            **kwargs_clean,
         ))
 
-    attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs))
+    attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs_clean))
+    attempts.append(lambda: attn_cls(**kwargs_clean))
 
     last_exc: Optional[Exception] = None
     for fn in attempts:
@@ -177,7 +186,7 @@ def _replace_layers(
                     _attach_new_attention(layer, attn_attr, new_attn, model_type)
                     continue
             except Exception as e:
-                logger.debug(
+                logger.warning(
                     "Injector '%s' failed for layer %d: %s. Falling back to builder.",
                     getattr(inject_fn, "__name__", "?"), idx, e,
                 )
@@ -189,12 +198,23 @@ def _replace_layers(
         try:
             hidden_size = _infer_hidden_size(old_attn, attn_attr, model_type)
             num_heads = _infer_num_heads(old_attn, attn_attr, model_type)
+            cls_name = _resolve_class_name(inject_fn, model_type)
             new_attn = _build_attention_from_registry(
-                _resolve_class_name(inject_fn, model_type),
+                cls_name,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
+                config=model_config,
+                old_attn=old_attn,
                 **safe_params,
             )
+            if hasattr(new_attn, "copy_weights"):
+                try:
+                    new_attn.copy_weights(old_attn)
+                except Exception as ex:
+                    logger.warning("copy_weights failed: %s", ex)
+            p = next(old_attn.parameters(), None)
+            if p is not None and isinstance(p.dtype, torch.dtype):
+                new_attn.to(p.dtype)
             _attach_new_attention(layer, attn_attr, new_attn, model_type)
         except Exception as e:
             logger.error("Failed to build attention for layer %d: %s", idx, e)
@@ -217,51 +237,66 @@ def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> Op
     return container
 
 
-def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module,
+def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[nn.Module],
                           model_type: str) -> None:
     """RE-06: attach with proper guard for nested encoders."""
+    if new_attn is None:
+        logger.error(
+            "Cannot attach None attention to layer %s (attr=%s)",
+            type(layer).__name__, attn_attr
+        )
+        return
     container = getattr(layer, attn_attr, None)
     if container is not None and hasattr(container, "self"):
         container.self = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = True
         return
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
-            if hasattr(new_attn, "is_nested_encoder"):
-                new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
-            if hasattr(new_attn, "is_nested_encoder"):
-                new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "self_attn"):
         layer.self_attn = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "attn"):
         layer.attn = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "self"):
         layer.self = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = True
+
+
+INJECT_TO_CLASS_MAP: Dict[str, str] = {
+    "inject_replace": "replace_class",
+    "inject_replace_attention": "replace_class",
+    "inject_gqa": "gqa_attention_class",
+    "inject_moba": "moba_class",
+}
 
 
 def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
-    """Infer registered attention name from the injector (heuristic)."""
+    """Infer registered attention class name from the injector or class."""
+    if inspect.isclass(inject_fn):
+        for k, v in ATTENTION_REGISTRY.items():
+            if v is inject_fn:
+                return k
+        return getattr(inject_fn, "__name__", "replace_class")
     name = getattr(inject_fn, "__name__", "")
+    if name in INJECT_TO_CLASS_MAP:
+        return INJECT_TO_CLASS_MAP[name]
+    # Fallback: strip 'inject_' and append '_class'
     if name.startswith("inject_"):
-        name = name[len("inject_"):]
-    return name or "replace"
+        candidate = name[len("inject_"):] + "_class"
+        if ATTENTION_REGISTRY.get(candidate) is not None:
+            return candidate
+        candidate2 = name[len("inject_"):]
+        if ATTENTION_REGISTRY.get(candidate2) is not None:
+            return candidate2
+    return "replace_class"
 
 
 def _infer_hidden_size(old_attn: nn.Module, attn_attr: str, model_type: str) -> int:
@@ -278,7 +313,13 @@ def _infer_hidden_size(old_attn: nn.Module, attn_attr: str, model_type: str) -> 
             if model_type == "gpt2" or obj.__class__.__name__ == "Conv1D":
                 return int(w.shape[0])
             return int(w.shape[1])
-    return 768
+    # Also try nested attention.self.query
+    if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
+        return int(old_attn.self.query.in_features)
+    raise ValueError(
+        f"Cannot infer hidden_size from {type(old_attn).__name__} "
+        f"(model_type={model_type}, attn_attr={attn_attr})"
+    )
 
 
 def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> int:
@@ -286,7 +327,21 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> in
         val = getattr(old_attn, attr, None)
         if isinstance(val, int) and val > 0:
             return val
-    return 12
+    # Check config attached to old_attn
+    cfg = getattr(old_attn, "config", None)
+    if cfg is not None:
+        for attr in ("num_attention_heads", "num_heads", "n_heads"):
+            val = getattr(cfg, attr, None)
+            if isinstance(val, int) and val > 0:
+                return val
+    # Infer from q_proj and head_dim (Qwen, LLaMA)
+    if hasattr(old_attn, "q_proj") and hasattr(old_attn, "head_dim"):
+        q_proj = old_attn.q_proj
+        if hasattr(q_proj, "out_features") and old_attn.head_dim > 0:
+            return int(q_proj.out_features // old_attn.head_dim)
+    raise ValueError(
+        f"Cannot infer num_heads from {type(old_attn).__name__}"
+    )
 
 
 # ===========================================================================
@@ -305,6 +360,12 @@ def replace_attention_in_model(
         attention_params = {}
 
     model_type = getattr(getattr(model, "config", None), "model_type", None)
+
+    if model_type in ("t5", "mt5", "bart", "mbart", "pegasus", "marian"):
+        raise NotImplementedError(
+            f"replace_attention_in_model does not support encoder-decoder "
+            f"models (model_type={model_type}). Cross-attention is not implemented."
+        )
 
     inject_fn = ATTENTION_REGISTRY.get(attention_name)
     if inject_fn is None:
@@ -386,11 +447,36 @@ def _get_valid_mask(
 
     if attention_mask.dim() == 4:
         v = attention_mask if attention_mask.dtype == torch.bool else (
-            attention_mask > -1e4 if attention_mask.dtype.is_floating_point else attention_mask > 0
+            attention_mask > -1e4 if attention_mask.dtype.is_floating_point 
+            else attention_mask > 0
         )
-        return v.any(dim=-2).squeeze(1)
+        v = v.any(dim=-2)  # (B, H, N)
+        if v.size(1) == 1:
+            v = v.squeeze(1)
+        else:
+            v = v.any(dim=1)  # (B, N)
+        return v
 
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
+
+
+def _randomized_svd(W: torch.Tensor, rank: int):
+    """Faster randomized SVD for large matrices."""
+    n_iter = 4
+    rank = max(1, min(rank, W.shape[0], W.shape[1]))
+    target_k = min(rank + 10, W.shape[0], W.shape[1])
+    omega = torch.randn(W.shape[1], target_k, device=W.device, dtype=W.dtype)
+    Y = W @ omega
+    for _ in range(n_iter):
+        Q, _ = torch.linalg.qr(Y)
+        Z = W.T @ Q
+        Q_z, _ = torch.linalg.qr(Z)
+        Y = W @ Q_z
+    Q, _ = torch.linalg.qr(Y)
+    B = Q.T @ W
+    U_b, S, Vh = torch.linalg.svd(B, full_matrices=False)
+    U = Q @ U_b
+    return U, S, Vh
 
 
 # ===========================================================================
@@ -473,6 +559,14 @@ class ReplaceAttention(BaseAttention):
         self.head_dim = max(1, self.hidden_size // self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
 
+        # GQA support (Fix 1)
+        self.num_kv_heads = int(
+            _cfg_get(config, "num_key_value_heads", 
+                     _cfg_get(config, "num_kv_heads", self.num_heads))
+        )
+        if self.num_kv_heads <= 0 or self.num_kv_heads > self.num_heads:
+            self.num_kv_heads = self.num_heads
+
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -484,14 +578,14 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
-            self.k_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
-            self.v_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True)
+            self.k_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
+            self.v_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
             self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
         else:
-            self.q_proj = nn.Linear(self.hidden_size, self.all_head_size)
-            self.k_proj = nn.Linear(self.hidden_size, self.all_head_size)
-            self.v_proj = nn.Linear(self.hidden_size, self.all_head_size)
+            self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
+            self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
+            self.v_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
             self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
 
         self.dropout = nn.Dropout(dropout)
@@ -532,33 +626,48 @@ class ReplaceAttention(BaseAttention):
             if isinstance(target_proj, _FactorizedLinear):
                 try:
                     W = w.detach().float()
+                    # Warn on shape mismatch
                     if W.shape[0] != target_out or W.shape[1] != target_in:
-                        padded = torch.zeros(target_out, target_in, dtype=W.dtype, device=W.device)
-                        r = min(target_out, W.shape[0])
-                        c = min(target_in, W.shape[1])
-                        padded[:r, :c] = W[:r, :c]
-                        W = padded
-                    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                        logger.warning(
+                            "Shape mismatch in copy_into: source %s, target (%d, %d). "
+                            "Using SVD rank-reduction.",
+                            tuple(W.shape), target_out, target_in
+                        )
+                    if W.shape[0] > 512 and W.shape[1] > 512:
+                        U, S, Vh = _randomized_svd(W, target_proj.rank)
+                    else:
+                        U, S, Vh = torch.linalg.svd(W, full_matrices=False)
                     rank = min(target_proj.rank, U.size(1), Vh.size(0))
                     target_proj.down.weight.data.zero_()
                     target_proj.up.weight.data.zero_()
-                    target_proj.down.weight.data[:rank, :].copy_(Vh[:rank, :].to(target_proj.down.weight.dtype))
+                    target_proj.down.weight.data[:rank, :].copy_(
+                        Vh[:rank, :].to(target_proj.down.weight.dtype)
+                    )
                     US = U[:, :rank] @ torch.diag(S[:rank])
-                    target_proj.up.weight.data[:, :rank].copy_(US.to(target_proj.up.weight.dtype))
+                    target_proj.up.weight.data[:, :rank].copy_(
+                        US.to(target_proj.up.weight.dtype)
+                    )
                     if b is not None and target_proj.up.bias is not None:
                         n = min(b.numel(), target_proj.up.bias.numel())
                         target_proj.up.bias.data[:n].copy_(b[:n].to(target_proj.up.bias.dtype))
                 except Exception as e:
-                    logger.warning("SVD init failed: %s", e)
+                    logger.error("SVD init failed: %s", e)
             else:
-                r = min(target_out, w.shape[0])
-                c = min(target_in, w.shape[1])
-                target_proj.weight.data.zero_()
-                target_proj.weight.data[:r, :c].copy_(w[:r, :c].to(target_proj.weight.dtype))
+                # Raise on shape mismatch
+                if w.shape != target_proj.weight.shape:
+                    raise ValueError(
+                        f"Weight shape mismatch: source {tuple(w.shape)} != "
+                        f"target {tuple(target_proj.weight.shape)}. "
+                        f"Refusing to silently zero-pad."
+                    )
+                target_proj.weight.data.copy_(w.to(target_proj.weight.dtype))
                 if b is not None and target_proj.bias is not None:
-                    n = min(b.numel(), target_proj.bias.numel())
-                    target_proj.bias.data.zero_()
-                    target_proj.bias.data[:n].copy_(b[:n].to(target_proj.bias.dtype))
+                    if b.shape != target_proj.bias.shape:
+                        raise ValueError(
+                            f"Bias shape mismatch: {tuple(b.shape)} != "
+                            f"{tuple(target_proj.bias.shape)}"
+                        )
+                    target_proj.bias.data.copy_(b.to(target_proj.bias.dtype))
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal weight extraction for all supported architectures."""
@@ -578,7 +687,7 @@ class ReplaceAttention(BaseAttention):
             # RE-22: handle GQA-aware chunking.
             hidden = w_all.shape[0] if w_all.shape[0] < w_all.shape[1] else w_all.shape[1]
             if w_all.shape[0] == 3 * hidden or w_all.shape[1] == 3 * hidden:
-                if w_all.shape[0] == 3 * hidden:   # Conv1D (in, 3*out)
+                if w_all.shape[1] == 3 * hidden:   # Conv1D (in, 3*out)
                     chunks = w_all.chunk(3, dim=1)
                     w_q, w_k, w_v = [c.t().contiguous() for c in chunks]
                 else:                               # Linear (3*out, in)
@@ -661,17 +770,23 @@ class ReplaceAttention(BaseAttention):
                 if w_o is None:
                     w_o, b_o = adapter.get_weight_bias(old_attn, "o")
             except Exception as e:
-                logger.debug("UniversalAdapter fallback failed: %s", e)
+                logger.warning("UniversalAdapter fallback failed: %s", e)
 
-        for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v), ("w_o", w_o)]:
-            if w is not None:
-                norm = float(torch.linalg.norm(w.float()).item())
-                if norm < 1e-4:
-                    logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
+        if getattr(self, '_first_copy_done', False) is False:
+            for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v), ("w_o", w_o)]:
+                if w is not None:
+                    norm = float(torch.linalg.norm(w.float()).item())
+                    if norm < 1e-4:
+                        logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
+            self._first_copy_done = True
 
-        self._copy_into(self.q_proj, w_q, b_q, self.all_head_size, self.hidden_size)
-        self._copy_into(self.k_proj, w_k, b_k, self.all_head_size, self.hidden_size)
-        self._copy_into(self.v_proj, w_v, b_v, self.all_head_size, self.hidden_size)
+        if w_q is not None and hasattr(self, "q_proj") and hasattr(self.q_proj, "weight"):
+            if w_q.dtype != self.q_proj.weight.dtype:
+                self.to(w_q.dtype)
+
+        self._copy_into(self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size)
+        self._copy_into(self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size)
+        self._copy_into(self.v_proj, w_v, b_v, self.num_kv_heads * self.head_dim, self.hidden_size)
 
         if not self.is_nested_encoder:
             self._copy_into(self.out_proj, w_o, b_o, self.hidden_size, self.all_head_size)
@@ -700,8 +815,14 @@ class ReplaceAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        # Add repeat_kv for GQA:
+        if self.num_kv_heads < self.num_heads:
+            repeat = self.num_heads // self.num_kv_heads
+            K = K.repeat_interleave(repeat, dim=1)
+            V = V.repeat_interleave(repeat, dim=1)
 
         is_causal = self.is_decoder and N > 1
 
@@ -714,28 +835,29 @@ class ReplaceAttention(BaseAttention):
             elif attention_mask.dim() == 4:
                 attn_mask_sdpa = attention_mask.to(Q.dtype)
 
-        # RE-21: causal is enabled only when attn_mask is None.
-        try:
-            q_sdpa = Q.half() if Q.dtype == torch.float32 else Q
-            k_sdpa = K.half() if K.dtype == torch.float32 else K
-            v_sdpa = V.half() if V.dtype == torch.float32 else V
+        # SDPA does not support returning attention weights or arbitrary head_mask
+        if not output_attentions and head_mask is None:
+            try:
+                q_sdpa = Q.half() if Q.dtype == torch.float32 else Q
+                k_sdpa = K.half() if K.dtype == torch.float32 else K
+                v_sdpa = V.half() if V.dtype == torch.float32 else V
 
-            out_sdpa = F.scaled_dot_product_attention(
-                q_sdpa, k_sdpa, v_sdpa,
-                attn_mask=attn_mask_sdpa,
-                is_causal=is_causal and attn_mask_sdpa is None,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                out_sdpa = F.scaled_dot_product_attention(
+                    q_sdpa, k_sdpa, v_sdpa,
+                    attn_mask=attn_mask_sdpa,
+                    is_causal=is_causal and attn_mask_sdpa is None,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            if self.is_nested_encoder:
-                return out, None
-            result = self.out_proj(out)
-            result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
-            return result, None
-        except Exception as e:
-            logger.debug("SDPA path failed (%s); falling back to explicit attention.", e)
+                if self.is_nested_encoder:
+                    return out, None
+                result = self.out_proj(out)
+                result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
+                return result, None
+            except Exception as e:
+                logger.debug("SDPA path failed (%s); falling back to explicit attention.", e)
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -765,7 +887,7 @@ class ReplaceAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask[:, :, :1].unsqueeze(-1)
+                head_mask = head_mask.unsqueeze(2)  # (B, H, 1, N) for broadcasting
             probs = probs * head_mask
 
         context = torch.matmul(probs, V)

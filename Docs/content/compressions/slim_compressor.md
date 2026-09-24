@@ -448,7 +448,19 @@ The `SLiMCompressor` architecture incorporates telemetry hooks for tracking sing
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate slim_compressor compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("slim_compressor")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with slim_compressor")
 ```
 ## Unified 4-Architecture Benchmark Results (SLiM Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
