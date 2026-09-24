@@ -1,3 +1,0 @@
-"""
-NeuralOps Agent Test Suite.
-"""
