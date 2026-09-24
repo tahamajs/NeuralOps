@@ -49,7 +49,7 @@ def available_modules() -> list[str]:
     # Registry population is module-import driven; importing only the package
     # leaves most optional attention/compressor implementations undiscovered.
     for package in ("framework.attentions", "framework.compression_engine"):
-        package_dir = WORKDIR / ("attentions" if package.endswith("attentions") else "compression_engine")
+        package_dir = WORKDIR.parent / ("attentions" if package.endswith("attentions") else "compression_engine")
         for source in package_dir.glob("*.py"):
             if source.stem.startswith("__"):
                 continue
