@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_armor_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_svd_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_compressor",
@@ -8107,13 +8100,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_pca_quant_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dynamic_rank_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_factory",
@@ -8124,6 +8110,13 @@
       "id": "p3_gpt2_admm_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_armor_compressor_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_compressor_factory",
       "status": "active",
       "retries": 0
     }
@@ -9152,6 +9145,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone_compressor",
       "started_at": "2026-09-24T06:44:29.126859",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_pca_quant_compressor",
+      "id": "p3_gpt2_pca_quant_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_compressor",
+      "started_at": "2026-09-24T06:47:19.695799",
       "retries": 0,
       "status": "done"
     }
