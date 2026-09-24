@@ -75,3 +75,6 @@ hamming,run_all_4_hamming.py,0,0.0,SKIPPED_EXISTING,,2026-09-24T19:18:34.721005
 hashed_linear,run_all_4_hashed_linear.py,0,0.0,SKIPPED_EXISTING,,2026-09-24T19:18:34.721933
 compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,233.19,PASS,,2026-09-24T19:18:37.053241
 fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,346.78,PASS,,2026-09-24T19:20:40.140214
+hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,0.0,SKIPPED_EXISTING,,2026-09-24T19:20:40.150853
+hgrn2,run_all_4_hgrn2.py,0,192.51,PASS,,2026-09-24T19:21:49.565208
+hashednets,run_all_4_hashednets.py,0,494.91,PASS,,2026-09-24T19:26:49.629340
