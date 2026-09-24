@@ -28,7 +28,7 @@ except ImportError:
     CompressedAttentionLayer = None
 
 from framework.compression_engine.aa_svd_compressor import SVDLinear
-from framework.compression_engine.pruning_utils import get_calibration_tensors
+from framework.core.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
