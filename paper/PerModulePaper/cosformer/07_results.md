@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ | Time | Status |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s | PASS |
-| DistilBERT | **Cosformer** | **77.75** | **-12.96** | 0.7651 | +5.73% | 3.5 | PASS |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s | PASS |
-| RoBERTa | **Cosformer** | **58.72** | **-19.84** | 0.6629 | +5.84% | 7.5 | PASS_LOW |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s | PASS |
-| GPT-2 | **Cosformer** | **70.18** | **-9.18** | 0.7510 | +1.76% | 20.5 | PASS |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Cosformer** | **77.75%** | -13.19% | PASS | 0.7651 | 24 | **0.99x** | 334.8 MB | 15.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Cosformer** | **58.72%** | -16.74% | PASS | 0.6629 | 48 | **0.94x** | 659.1 MB | 29.0s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Cosformer** | **70.18%** | -17.66% | PASS | 0.7510 | 72 | **1.00x** | 1283.1 MB | 50.4s |
 
 **Key observations:**
 

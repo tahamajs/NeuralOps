@@ -7,17 +7,20 @@ We evaluate \texttt{enlighten\_compressor} across three canonical language under
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 89.11\% & 0.8957 & 1.00$\times$ & 0.2868 & 324.5 MB & 109556 & 5.87 s \\
-MNLI & PASS & 78.10\% & 0.7796 & 1.00$\times$ & 0.2869 & 305.8 MB & 38022 & 17.10 s \\
-AG News & PASS & 93.80\% & 0.9354 & 1.00$\times$ & 0.2868 & 327.2 MB & 100130 & 7.35 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Enlighten} & \textbf{89.33\%} & -1.15\% & PASS & 0.8970 & 36 & \textbf{1.00$\times$} & 338.8 MB & 17.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Enlighten} & \textbf{80.73\%} & -8.03\% & PASS & 0.8197 & 72 & \textbf{1.00$\times$} & 337.2 MB & 27.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Enlighten} & \textbf{73.85\%} & -7.46\% & PASS & 0.7824 & 48 & \textbf{1.00$\times$} & 413.5 MB & 25.5 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{enlighten\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_enlighten_compressor}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

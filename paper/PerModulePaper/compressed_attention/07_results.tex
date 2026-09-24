@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_compressedattention} details empirical evaluation met
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_compressed\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_compressed\_attention/distilbert/summary.csv} & distilbert & compressed\_attention & PASS & 74.54 & 0.7711 \\
-\texttt{results/unified\_compressed\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_compressed\_attention/gpt2/summary.csv} & gpt2 & compressed\_attention & PASS\_LOW & 50.92 & 0.6748 \\
-\texttt{results/unified\_compressed\_attention/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_compressed\_attention/roberta/summary.csv} & roberta & compressed\_attention & PASS\_LOW & 50.92 & 0.6743 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Compressed Attention Layer} & \textbf{69.84\%} & -21.10\% & PASS & 0.7650 & 0 & \textbf{1.24$\times$} & 183.8 MB & 11.6 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Compressed Attention Layer} & \textbf{50.92\%} & +0.00\% & PASS_LOW & 0.6748 & 0 & \textbf{1.18$\times$} & 338.2 MB & 22.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Compressed Attention Layer} & \textbf{50.92\%} & +1.38\% & PASS_LOW & 0.6748 & 0 & \textbf{1.26$\times$} & 285.9 MB & 24.3 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{compressedattention}.}
-\label{tab:results_acc_compressedattention}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

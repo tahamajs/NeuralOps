@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: Accuracy on SST-2 validation.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Time} & \textbf{Status} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s & PASS \\
-DistilBERT & \textbf{Cosformer} & \textbf{77.75} & \textbf{-12.96} & 0.7651 & +5.73\% & 3.5 & PASS \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s & PASS \\
-RoBERTa & \textbf{Cosformer} & \textbf{58.72} & \textbf{-19.84} & 0.6629 & +5.84\% & 7.5 & PASS\_LOW \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s & PASS \\
-GPT-2 & \textbf{Cosformer} & \textbf{70.18} & \textbf{-9.18} & 0.7510 & +1.76\% & 20.5 & PASS \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Cosformer} & \textbf{77.75\%} & -13.19\% & PASS & 0.7651 & 24 & \textbf{0.99$\times$} & 334.8 MB & 15.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Cosformer} & \textbf{58.72\%} & -16.74\% & PASS & 0.6629 & 48 & \textbf{0.94$\times$} & 659.1 MB & 29.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Cosformer} & \textbf{70.18\%} & -17.66\% & PASS & 0.7510 & 72 & \textbf{1.00$\times$} & 1283.1 MB & 50.4 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Key observations:}
 

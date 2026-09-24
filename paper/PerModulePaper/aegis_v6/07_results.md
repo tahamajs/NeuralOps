@@ -1,3 +1,12 @@
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Aegis V6** | **48.85%** | -42.09% | PASS_LOW | 0.0176 | 0 | **1.25x** | 189.7 MB | 22.3s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Aegis V6** | **50.92%** | +0.00% | PASS_LOW | 0.6748 | 0 | **1.19x** | 350.3 MB | 44.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Aegis V6** | **50.92%** | +1.38% | PASS_LOW | 0.6748 | 0 | **1.28x** | 287.7 MB | 44.8s |
+
 # 7. Empirical Results and Benchmark Evaluations
 
 ## 7.1 Downstream Accuracy and Classification Performance

@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & \textbf{AdaSplash} & \textbf{90.25} & -0.46 & 0.9055 & 67.55M & 195 MB \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & \textbf{AdaSplash} & \textbf{77.5} & -1.06 & 0.780 & 125.8M & 730 MB \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & \textbf{AdaSplash} & \textbf{78.78} & -0.58 & 0.7891 & 125.63M & 810 MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Adasplash} & \textbf{90.94\%} & +0.92\% & PASS & 0.9125 & 0 & \textbf{1.00$\times$} & 389.5 MB & 3.1 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Adasplash} & \textbf{75.46\%} & +11.24\% & PASS & 0.7277 & 0 & \textbf{1.00$\times$} & 712.3 MB & 7.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Adasplash} & \textbf{87.84\%} & +5.16\% & PASS & 0.8776 & 48 & \textbf{1.00$\times$} & 391.2 MB & 6.1 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Key observations:}
 

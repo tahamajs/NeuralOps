@@ -69,7 +69,7 @@
   "G_RED": "46.0\\%",
   "D_SPEEDUP": "1.42x",
   "D_TIME": "1.42x",
-  "D_VRAM": "341 MB",
+  "D_VRAM": "340.6 MB",
   "D_MHA_VRAM": "620 MB",
   "D_STORAGE": "256 MB",
   "D_TOTAL": "66.4M",
@@ -251,10 +251,10 @@
   "D_DELTA": "-2.06",
   "R_DELTA": "+6.76",
   "R_F1": "0.8702",
-  "R_VRAM": "329 MB",
+  "R_VRAM": "328.5 MB",
   "G_DELTA": "+2.52",
   "G_F1": "0.8394",
-  "G_VRAM": "403 MB",
+  "G_VRAM": "402.9 MB",
   "Q_ACC": "89.22",
   "Q_VRAM": "1858 MB"
 }

@@ -12,14 +12,14 @@
 ### Table 7.1: Main results on SST-2 validation.
 
 <!-- source: results/unified_a3/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Comp. | Ratio | VRAM | Time |
-|---|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **A3** | **77.98** | -12.73 | 0.7975 | 36 | **5.0×** | 774 MB | 2.4 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **A3** | **85.67** | +7.11 | 0.8931 | 72 | **4.5×** | 390 MB | 5.2 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **A3** | **75.34** | -4.02 | 0.7898 | 72 | **4.5×** | 469 MB | 5.5 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **A3** | **72.82** | -- | PASS | -- | 0 | **1.00x** | -- | -- |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **A3** | **50.92** | -- | PASS_LOW | -- | 0 | **1.00x** | -- | -- |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **A3** | **--** | -- | PASS | -- | 0 | **1.00x** | -- | -- |
 
 **Key observations:**
 

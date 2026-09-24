@@ -12,14 +12,14 @@
 ### Table 7.1: Main results on SST-2 validation.
 
 <!-- source: results/unified_adaptive_svd_attention/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **Adaptive SVD** | **88.0** | -2.7 | 0.880 | 24 | **3.0×** | 130 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **Adaptive SVD** | **74.0** | -4.6 | 0.740 | 48 | **2.5×** | 550 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **Adaptive SVD** | **75.5** | -3.9 | 0.750 | 48 | **2.5×** | 600 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Adaptive Svd Attention** | **87.84%** | -3.10% | PASS | 0.8850 | 0 | **1.15x** | 290.4 MB | 15.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Adaptive Svd Attention** | **70.99%** | -4.47% | PASS | 0.7389 | 0 | **1.09x** | 585.7 MB | 30.8s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Adaptive Svd Attention** | **69.38%** | -18.46% | PASS | 0.7652 | 24 | **1.17x** | 306.5 MB | 36.2s |
 
 **Key observations:**
 

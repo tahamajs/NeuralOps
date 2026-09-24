@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & \textbf{Adaptive SVD} & \textbf{88.0} & -2.7 & 0.880 & 24 & \textbf{3.0$\times$} & 130 MB \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & \textbf{Adaptive SVD} & \textbf{74.0} & -4.6 & 0.740 & 48 & \textbf{2.5$\times$} & 550 MB \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$\times$} & 600 MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Adaptive Svd Attention} & \textbf{87.84\%} & -3.10\% & PASS & 0.8850 & 0 & \textbf{1.15$\times$} & 290.4 MB & 15.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Adaptive Svd Attention} & \textbf{70.99\%} & -4.47\% & PASS & 0.7389 & 0 & \textbf{1.09$\times$} & 585.7 MB & 30.8 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Adaptive Svd Attention} & \textbf{69.38\%} & -18.46\% & PASS & 0.7652 & 24 & \textbf{1.17$\times$} & 306.5 MB & 36.2 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Key observations:}
 

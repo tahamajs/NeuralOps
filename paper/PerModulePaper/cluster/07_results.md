@@ -4,14 +4,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | VRAM | Time |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 1.90 s |
-| DistilBERT | **ClusterFormer** | **90.02** | -0.69 | 0.9039 | 332 MB | 2.10 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 4.10 s |
-| RoBERTa | **ClusterFormer** | **72.02** | -6.54 | 0.7724 | 660 MB | 4.50 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 4.20 s |
-| GPT-2 | **ClusterFormer** | **87.96** | +8.60 | 0.8850 | 397 MB | 4.80 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Cluster** | **90.02%** | -0.92% | PASS | 0.9039 | 24 | **0.99x** | 331.9 MB | 65.2s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Cluster** | **72.02%** | -3.44% | PASS | 0.7724 | 48 | **0.94x** | 659.6 MB | 137.1s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Cluster** | **87.96%** | +0.12% | PASS | 0.8850 | 72 | **1.00x** | 397.2 MB | 27.2s |
 
 ## 7.2 Parameter Analysis
 

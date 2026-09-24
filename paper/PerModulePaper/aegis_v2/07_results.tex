@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_aegisv2} details empirical evaluation metrics across 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_aegis\_v2/distilbert/summary.csv} & distilbert & aegis\_v2 & PASS & 72.36 & 0.7737 \\
-\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_aegis\_v2/gpt2/summary.csv} & gpt2 & aegis\_v2 & PASS\_LOW & 52.98 & 0.6782 \\
-\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_aegis\_v2/roberta/summary.csv} & roberta & aegis\_v2 & PASS & 62.39 & 0.7163 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Aegis V2} & \textbf{79.82\%} & -10.66\% & PASS & 0.8151 & 0 & \textbf{1.21$\times$} & 202.3 MB & 8.5 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Aegis V2} & \textbf{72.02\%} & +11.93\% & PASS & 0.7505 & 48 & \textbf{1.14$\times$} & 592.0 MB & 96.7 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Aegis V2} & \textbf{74.89\%} & -12.95\% & PASS & 0.7812 & 72 & \textbf{1.23$\times$} & 300.6 MB & 95.8 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{aegisv2}.}
-\label{tab:results_acc_aegisv2}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

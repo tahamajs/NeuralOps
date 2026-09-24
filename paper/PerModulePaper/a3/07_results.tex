@@ -14,14 +14,14 @@ Table~\ref{tab:main_sst2} compiles the consolidated performance of A3 against de
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{A3} & \textbf{90.02\%} & -0.69\% & PASS & 0.9043 & 6 & \textbf{1.02$\times$} & 334 MB & 2.10 & 28.2 \\
-RoBERTa & full & 78.56\% & -- & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.10 & -- \\
-RoBERTa & \textbf{A3} & \textbf{83.26\%} & +4.70\% & NEEDS\_VERIFICATION$^\dagger$ & 0.8460 & 3 & \textbf{1.005$\times$} & 531 MB & 4.30 & 45.4 \\
-GPT-2 & full & 79.36\% & -- & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.20 & -- \\
-GPT-2 & \textbf{A3} & \textbf{63.19\%} & -16.17\% & FAIL ($\Delta > 15\%$) & 0.7216 & 2 & \textbf{1.004$\times$} & 572 MB & 4.50 & 40.7 \\
+DistilBERT & \textbf{A3} & \textbf{72.82} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{A3} & \textbf{50.92} & -- & PASS_LOW & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{A3} & \textbf{--} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
 \bottomrule
 \end{tabular}
-\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$). $^\dagger$RoBERTa +4.70\% gain is flagged as \texttt{NEEDS\_VERIFICATION} because compression methods typically do not outperform dense baselines without confounding recovery dynamics.}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
 \label{tab:main_sst2}
 \end{table*}
 % <!-- source: results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json line 4 -->

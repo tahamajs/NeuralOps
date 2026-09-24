@@ -12,14 +12,14 @@
 ### Table 7.1: Accuracy on SST-2 validation.
 
 <!-- source: results/unified_Galerkin/distilbert/summary.csv line 2 -->
-| Model | Path | Accuracy | Δ | F1 | Status |
-|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | PASS |
-| DistilBERT | **Galerkin** | **50.92** | **-39.79** | 0.6748 | PASS |
-| RoBERTa | full | 78.56% | — | 0.8124 | PASS |
-| RoBERTa | **Galerkin** | **50.92** | **-27.64** | 0.6748 | PASS_LOW |
-| GPT-2 | full | 79.36% | — | 0.7978 | PASS |
-| GPT-2 | **Galerkin** | **51.26** | **-28.10** | 0.6763 | PASS |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Galerkin** | **66.06%** | -24.65% | PASS | 0.6442 | 24 | **0.99x** | 194.0 MB | 16.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Galerkin** | **49.43%** | -29.13% | PASS_LOW | 0.4481 | 48 | **0.94x** | 685.4 MB | 26.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Galerkin** | **74.66%** | +0.12% | PASS | 0.7163 | 48 | **0.99x** | 326.3 MB | 23.8s |
 
 **Key observations:**
 

@@ -12,14 +12,14 @@
 ### Table 7.1: Main results on SST-2 validation.
 
 <!-- source: results/unified_adasplash/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Params | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AdaSplash** | **67.09** | -11.47 | 0.780 | 125.8M | 730 MB |
-| GPT-2 | full | 79.37% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AdaSplash** | **79.37** | +0.00 | 0.7891 | 125.63M | 810 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Adasplash** | **90.94%** | +0.92% | PASS | 0.9125 | 0 | **1.00x** | 389.5 MB | 3.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Adasplash** | **75.46%** | +11.24% | PASS | 0.7277 | 0 | **1.00x** | 712.3 MB | 7.0s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Adasplash** | **87.84%** | +5.16% | PASS | 0.8776 | 48 | **1.00x** | 391.2 MB | 6.1s |
 
 **Key observations:**
 

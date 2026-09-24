@@ -12,14 +12,14 @@
 ### Table 7.1: Main results on SST-2 validation.
 
 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
-| Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **Adaptive SVD** | **88.0** | -2.7 | 0.880 | 24 | **3.0×** | 130 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **Adaptive SVD** | **74.0** | -4.6 | 0.740 | 48 | **2.5×** | 550 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **Adaptive SVD** | **75.5** | -3.9 | 0.750 | 48 | **2.5×** | 600 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Adaptive Svd Attn** | **88.19%** | -2.75% | PASS | 0.8874 | 0 | **1.15x** | 290.4 MB | 16.5s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Adaptive Svd Attn** | **71.33%** | -4.13% | PASS | 0.7490 | 0 | **1.09x** | 585.1 MB | 31.3s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Adaptive Svd Attn** | **68.35%** | -19.49% | PASS | 0.7583 | 24 | **1.17x** | 301.2 MB | 35.2s |
 
 **Key observations:**
 

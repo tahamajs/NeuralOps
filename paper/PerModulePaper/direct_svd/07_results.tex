@@ -7,17 +7,20 @@ We evaluate \texttt{direct\_svd} across three canonical language understanding t
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.60\% & 0.9107 & 1.00$\times$ & -- & 324.5 MB & 112046 & 6.12 s \\
-MNLI & PASS & 82.10\% & 0.8202 & 1.00$\times$ & 0.6341 & 305.3 MB & 54235 & 15.37 s \\
-AG News & PASS & 94.40\% & 0.9401 & 1.00$\times$ & 0.6339 & 327.2 MB & 87425 & 9.73 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Direct Svd} & \textbf{89.33\%} & -1.15\% & PASS & 0.8959 & 11 & \textbf{1.02$\times$} & 357.8 MB & 33.1 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Direct Svd} & \textbf{84.98\%} & -3.78\% & PASS & 0.8665 & 23 & \textbf{1.03$\times$} & 347.0 MB & 71.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Direct Svd} & \textbf{81.77\%} & +0.46\% & PASS & 0.8239 & 6 & \textbf{1.01$\times$} & 406.3 MB & 58.6 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{direct\_svd} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_direct_svd}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}
