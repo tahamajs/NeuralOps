@@ -369,24 +369,31 @@ def sync_all():
     pull_results_from_gpu()
 
     summary_file = RESULTS_DIR / "master_queue_benchmark_summary.csv"
-    if not summary_file.exists():
-        print("No master_queue_benchmark_summary.csv found.")
-        return
+    completed_modules = set()
 
-    completed_modules = []
-    with open(summary_file, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            status = row.get("status", "").upper()
-            if status in ("PASS", "SKIPPED_EXISTING"):
-                completed_modules.append(row.get("module"))
+    if summary_file.exists():
+        with open(summary_file, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                status = row.get("status", "").upper()
+                if status in ("PASS", "SKIPPED_EXISTING"):
+                    mod = row.get("module")
+                    if mod:
+                        completed_modules.add(mod)
 
-    print(f"\n>>> Total completed/passed modules in queue: {len(completed_modules)}")
+    # Also discover all unified_* directories with completed evaluations
+    for d in RESULTS_DIR.glob("unified_*"):
+        if d.is_dir():
+            name = d.name[len("unified_"):]
+            if name and name not in ("baseline", "full"):
+                completed_modules.add(name)
+
+    print(f"\n>>> Total completed/passed modules discovered: {len(completed_modules)}")
     
     updated_count = 0
     matched_papers = 0
 
-    for mod in completed_modules:
+    for mod in sorted(completed_modules):
         paper_dir = find_paper_dir(mod)
         if not paper_dir:
             print(f"[-] Paper dir not found for module '{mod}'")
