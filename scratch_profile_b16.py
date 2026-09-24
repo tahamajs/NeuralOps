@@ -16,7 +16,7 @@ with torch.no_grad():
     for _ in range(3): model(input_ids)
 
 with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CUDA],
+    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
     record_shapes=True,
 ) as prof_full:
     with torch.no_grad():
@@ -37,7 +37,7 @@ with torch.no_grad():
     for _ in range(3): model_perf(input_ids)
 
 with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CUDA],
+    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
     record_shapes=True,
 ) as prof_perf:
     with torch.no_grad():
@@ -59,7 +59,7 @@ with torch.no_grad():
     for _ in range(3): model_cos(input_ids)
 
 with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CUDA],
+    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
     record_shapes=True,
 ) as prof_cos:
     with torch.no_grad():
