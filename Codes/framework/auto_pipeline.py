@@ -192,7 +192,7 @@ MODULE_VRAM_ROBERTA: Dict[str, float] = {
 
 MODULE_VRAM_HIST: Dict[str, float] = MODULE_VRAM_ROBERTA
 
-HEAVY_THRESHOLD_GB: float = 4.0
+HEAVY_THRESHOLD_GB: float = 3.5
 VRAM_SAFETY_FRACTION: float = 0.85   # 6.8 GB on 8.0 GB card (~1.2 GB headroom)
 VRAM_CRITICAL_FREE_GB: float = 0.50  # 500 MB critical free threshold
 
