@@ -154,6 +154,16 @@ class _ModuleAliasFinder(MetaPathFinder):
         "framework.attentions.token_compressed": "framework.attentions.token_compressed_attention",
         "framework.attentions.tt": "framework.attentions.token_compressed_attention",
         "framework.attentions.upi_mamba": "framework.attentions.upi_stuffed_mamba",
+        "framework.attentions.mamba": "framework.attentions.mamba_block",
+        "framework.attentions.mamba_inject": "framework.attentions.mamba_block",
+        "framework.attentions.simple_ssm": "framework.attentions.selective_ssm",
+        "framework.attentions.smart_weighted_ensemble": "framework.attentions.weighted_ensemble",
+        "framework.attentions.spectron_attention": "framework.attentions.spectron",
+        "framework.attentions.squeezing_heads": "framework.attentions.squeezing_heads_distill",
+        "framework.attentions.squeezing_heads_distiller": "framework.attentions.squeezing_heads_distill",
+        "framework.attentions.spectral_mamba_attention": "framework.attentions.spectral_mamba",
+        "framework.attentions.svd_sequence_attention": "framework.attentions.svd_attention",
+        "framework.attentions.rala_compressor": "framework.compression_engine.rala_compressor",
         # Compressors
         "framework.compression_engine.aasvd": "framework.compression_engine.aa_svd_compressor",
         "framework.compression_engine.adasvd": "framework.compression_engine.adasvd_compressor",
@@ -173,6 +183,14 @@ class _ModuleAliasFinder(MetaPathFinder):
         "framework.compression_engine.soka": "framework.compression_engine.soka_compressor",
         "framework.compression_engine.swift_svd_compressor": "framework.compression_engine.swift_svd_act",
         "framework.compression_engine.zerokv_neo": "framework.compression_engine.zerokv_neo_compressor",
+        "framework.compression_engine.cure": "framework.compression_engine.cur_moe_compressor",
+        "framework.compression_engine.dobi": "framework.compression_engine.dobi_svd",
+        "framework.compression_engine.dynamic_entropy": "framework.compression_engine.dynamic_rank",
+        "framework.compression_engine.tomoe": "framework.compression_engine.tomoe_compressor",
+        "framework.compression_engine.adaptive_compressor": "framework.compression_engine.adaptive_ranks",
+        "framework.compression_engine.padre_attention": "framework.attentions.padre_attention",
+        "framework.compression_engine.spectraformer_attention": "framework.attentions.spectraformer_attention",
+        "framework.compression_engine.tlinformer_attention": "framework.attentions.tlinformer_attention",
     }
 
     def find_spec(self, fullname, path, target=None):

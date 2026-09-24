@@ -235,3 +235,10 @@ class SelectiveSSM(BaseAttention):
             out = out + self.out_proj_bwd(y_bwd)
 
         return (out, None)
+
+
+SimpleSSM = SelectiveSSM
+ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
+ATTENTION_REGISTRY.register("simplessm")(SimpleSSM)
+
+__all__ = ["SelectiveSSM", "SimpleSSM"]
