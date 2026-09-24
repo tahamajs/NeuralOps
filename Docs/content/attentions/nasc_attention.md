@@ -449,7 +449,20 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base transformer model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Inject nasc_attention module dynamically
+injected_model = inject_attention(model, attn_type="nasc_attention")
+
+# 3. Verify forward pass
+input_ids = torch.randint(0, 1000, (2, 64))
+outputs = injected_model(input_ids)
+print(f"[PASS] nasc_attention forward logits shape:", outputs.logits.shape)
 ```
 ## Empirical Benchmark Results
 

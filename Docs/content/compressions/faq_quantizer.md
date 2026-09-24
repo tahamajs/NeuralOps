@@ -470,7 +470,19 @@ Evaluations across sequence lengths and model scales:
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate faq_quantizer compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("faq_quantizer")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with faq_quantizer")
 ```
 
 ## Benchmark Results
