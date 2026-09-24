@@ -107,6 +107,7 @@ FIELDS = [
     "latency_ms_per_token",
     "throughput_tok_per_sec",
     "perplexity",
+    "ppl_status",
     "long_context_accuracy",
     "error",
     "path",
@@ -150,10 +151,14 @@ SLOW_MODULE_TIMEOUT_OVERRIDES: Dict[str, int] = {
     "tomoe": 500,
     "hgrn2": 500,
     "hgrn2_gated_deltanet": 500,
-    "hgrn2_layer": 500,
     "hybrid_svd_layer": 1800,
     "run_quality_sweep": 600,
     "svd_whitened": 1200,
+    "aa_svd_compressor": 3600,
+    "mamba_block": 3600,
+    "inject_leka_v1": 3600,
+    "inject_gated_delta_net": 3600,
+    "inject_minimal_nova": 3600,
 }
 
 # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
@@ -212,6 +217,30 @@ def _now_iso() -> str:
 
 def _get_family_slug(family: str) -> str:
     return family if family else "unknown"
+
+
+def _get_git_sha() -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).decode("utf-8").strip()
+        return out if out else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _get_git_dirty() -> bool:
+    try:
+        out = subprocess.check_output(
+            ["git", "status", "--porcelain"],
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).decode("utf-8").strip()
+        return len(out) > 0
+    except Exception:
+        return False
 
 
 # ============================================================================
@@ -528,7 +557,7 @@ def compute_compression_metrics(
         "avg_reconstruction_error": avg_reconstruction_error,
         "per_layer_reconstruction_errors": layer_errors,
         "per_layer_ranks": layer_ranks,
-        "is_unstructured_sparsity": bool("admm" in module_name.lower() or "sparse" in module_name.lower() or "prun" in module_name.lower() and compression_rate <= 1.001),
+        "is_unstructured_sparsity": bool(("admm" in module_name.lower() or "sparse" in module_name.lower() or "prun" in module_name.lower()) and compression_rate <= 1.001),
     }
 
 
@@ -669,8 +698,8 @@ def collect_and_export_full_metrics(
         },
         "scalability": scalability,
         "seed": 42,
-        "git_sha": "39b204a16",
-        "git_dirty": False,
+        "git_sha": _get_git_sha(),
+        "git_dirty": _get_git_dirty(),
         "torch_version": torch.__version__,
         "transformers_version": getattr(__import__("transformers"), "__version__", "unknown"),
         "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
@@ -2822,9 +2851,11 @@ def run_single_module_main(args) -> dict:
             if cfg.model_type in ("distilbert", "bert", "roberta", "albert", "deberta", "deberta-v2", "electra"):
                 LOG.warning("Skipping model %s on wikitext because it lacks an LM head.", args.model)
                 out = Path(args.output_dir)
-                with open(out / f"summary_{args.output_suffix}.csv", "w", newline="") as f:
+                out.mkdir(parents=True, exist_ok=True)
+                csv_name = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
+                with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
                     f.write("module_name,status,accuracy_pct\n")
-                sys.exit(0)
+                return {}
                 
             try:
                 base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device)
@@ -2838,7 +2869,8 @@ def run_single_module_main(args) -> dict:
     except torch.OutOfMemoryError as e:
         LOG.critical("CUDA OOM while loading base model: %s", e)
         sys.exit(1)
-    base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
+    base.config.pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    install_qwen_aliases(base)
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
         pass  # removed base.config.tokenizer = tokenizer
@@ -3143,9 +3175,16 @@ def run_single_module_main(args) -> dict:
             except Exception as e: pass
 
     base.to(device)
-    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+    base_benchmark_ppl = None
+    if "wikitext" in args.dataset.lower():
+        base_eval = evaluate_perplexity(base, tokenizer, val, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16")
+        base_benchmark_ppl = base_eval.get("perplexity")
+        base_benchmark_acc = 0.0
+        LOG.info("Baseline model benchmark perplexity on validation set: %s (loss=%.4f)", base_benchmark_ppl, base_eval.get("val_loss", 0.0))
+    else:
+        base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+        LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
     base.to("cpu")
-    LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
 
     # -------------------------------------------------------------------------
     # STEP 0: Dynamically Compute True Majority-Class Baseline & Statistical Margin
@@ -3346,39 +3385,10 @@ def run_single_module_main(args) -> dict:
         had_nan = False
         path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
-        # Hard timeout enforcing max timeout across injection, recovery, and eval
-        # Slow modules get extended timeout across all model families
-        _SLOW_MODULE_TIMEOUT_OVERRIDES = {
-            "grecodec": 600, "grecodec_compressor": 600,
-            "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
-            "primal": 400, "primal_attention": 400,
-            "fused_svd_kernel": 400, "hla": 400, "nmf": 400,
-            "rotational_slicegpt": 400, "rotational_slicegpt_int4": 400,
-            "slicegpt": 400, "slicegpt_pca": 400, "slicegpt_compressor": 400,
-            "sparsegpt": 400, "granite_hybrid": 400, "mamba_svd_flash": 400,
-            "uniql": 400, "vspec": 400, "saes": 400, "hymba_transx": 400,
-            "orion": 400, "phantom": 400, "soka": 400, "sdrm": 400,
-            "hybridkv": 400, "jamba_info": 400, "kmeans": 400,
-            "kronecker": 400, "kvtc": 400, "lsc": 400, "mgie": 400,
-            "mgie_budget": 400, "mixattention_moska": 400, "modegpt": 400,
-            "nli_softmax": 400, "oats": 400, "optimal_subspace_projection": 400,
-            "rpc": 400, "rpca": 400, "samba_moe": 400, "slim": 400,
-            "soa_attn": 400, "soa_fused_attn": 400, "spectral_residual_lora": 400,
-            "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
-            "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
-            "svd_projection": 400,
-            "aegis_spectron_fp8": 1500,
-            "asvd": 1500,
-            "asvd_attention": 1500,
-            "tomoe": 500,
-            "hgrn2": 500,
-            "hgrn2_gated_deltanet": 500,
-            "hgrn2_layer": 500,
-        }
         # Slow module or configured timeout (default minimum: 1200s = 20 minutes)
-        override_to = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
+        override_to = SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
         cli_timeout = getattr(args, "timeout", None) or 1200
-        effective_timeout = cli_timeout
+        effective_timeout = max(cli_timeout, override_to) if override_to > 0 else cli_timeout
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
@@ -3540,8 +3550,8 @@ def run_single_module_main(args) -> dict:
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
                 elif (comp_metrics.get("num_compressed_layers", 0) == 0
                       and comp_metrics.get("num_injected_attention_layers", 0) == 0
-                      and not injected
-                      and not name.startswith("inject_")):
+                      and not name.startswith("inject_")
+                      and base_params_after >= p_before * 0.99):
                     status = "PASS_NO_COMPRESSION"
                     err = "note: zero compressed layers, zero injected layers, model unchanged"
 
@@ -3558,16 +3568,34 @@ def run_single_module_main(args) -> dict:
             except Exception:
                 pass
 
+        ppl_val_raw = perf_metrics.get("perplexity", "")
+        if "wikitext" in args.dataset.lower():
+            try:
+                ppl_float = float(ppl_val_raw)
+                if not math.isfinite(ppl_float):
+                    ppl_status = "NAN"
+                elif ppl_float > 100.0:
+                    ppl_status = "DIVERGED"
+                elif ppl_float > 50.0:
+                    ppl_status = "HIGH"
+                else:
+                    ppl_status = "OK"
+            except (ValueError, TypeError):
+                ppl_status = "NAN"
+        else:
+            ppl_status = ""
+
         row = {
             "module_name": name,
             "status": status,
             "accuracy_pct": acc,
+            "ppl_status": ppl_status,
             "f1_score": perf_metrics.get("f1_score", 0.0),
             "f1_macro": perf_metrics.get("f1_macro", 0.0),
             "precision": perf_metrics.get("precision", 0.0),
             "recall": perf_metrics.get("recall", 0.0),
             "val_loss": perf_metrics.get("val_loss", 0.0),
-            "perplexity": perf_metrics.get("perplexity", ""),
+            "perplexity": ppl_val_raw,
             "elapsed_s": round(time.monotonic() - t, 2),
             "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
             "latency_ms": perf_metrics.get("latency_ms", 0.0),
@@ -3603,7 +3631,7 @@ def run_single_module_main(args) -> dict:
                  n, len(names), name, status, acc, f1_disp, vram_disp)
 
         if "wikitext" in args.dataset.lower():
-            is_successful_run = status in ("PASS", "PASS_LOW_PPL")
+            is_successful_run = status in ("PASS", "PASS_LOW_PPL") and (name == "full" or comp_metrics.get("num_compressed_layers", 0) > 0 or comp_metrics.get("num_injected_attention_layers", 0) > 0)
         else:
             is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
 
@@ -3621,14 +3649,17 @@ def run_single_module_main(args) -> dict:
                      name, status, acc, pass_threshold_pct)
             # Log failed run to failed_runs.json
             try:
-                failed_json_path = Path("failed_runs.json")
+                failed_json_path = out / "failed_runs.json"
                 failed_data = []
                 if failed_json_path.exists():
                     try:
                         failed_data = json.loads(failed_json_path.read_text(encoding="utf-8"))
+                        if not isinstance(failed_data, list):
+                            failed_data = []
                     except Exception:
                         failed_data = []
-                failed_data.append({
+                # Deduplicate by (module, model, dataset, status)
+                new_entry = {
                     "module": name,
                     "model": str(args.model),
                     "dataset": args.dataset,
@@ -3637,8 +3668,16 @@ def run_single_module_main(args) -> dict:
                     "accuracy_pct": row.get("accuracy_pct", 0.0),
                     "error": err[:1000] if err else "",
                     "timestamp": row.get("timestamp", datetime.now().isoformat())
-                })
-                failed_json_path.write_text(json.dumps(failed_data, indent=2), encoding="utf-8")
+                }
+                deduped = [
+                    e for e in failed_data
+                    if not (e.get("module") == new_entry["module"]
+                            and e.get("model") == new_entry["model"]
+                            and e.get("dataset") == new_entry["dataset"]
+                            and e.get("status") == new_entry["status"])
+                ]
+                deduped.append(new_entry)
+                failed_json_path.write_text(json.dumps(deduped, indent=2), encoding="utf-8")
             except Exception as f_err:
                 LOG.debug("Could not update failed_runs.json: %s", f_err)
 
@@ -3868,17 +3907,6 @@ import json
 from pathlib import Path
 import torch
 
-_SLOW_MODULE_TIMEOUT_OVERRIDES = {
-    "hybrid_svd_layer": 1800,
-    "run_quality_sweep": 600,
-    "svd_whitened": 1200,
-    "aa_svd_compressor": 3600,
-    "mamba_block": 3600,
-    "inject_leka_v1": 3600,
-    "inject_gated_delta_net": 3600,
-    "inject_minimal_nova": 3600,
-}
-
 def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     import os, sys
     tmp_dir = Path("logs/isolated_results")
@@ -4041,7 +4069,7 @@ def main():
     }
     
     FIELDS = [
-        "module_name", "status", "accuracy_pct", "perplexity", "f1_score", "f1_macro",
+        "module_name", "status", "accuracy_pct", "perplexity", "ppl_status", "f1_score", "f1_macro",
         "precision", "recall", "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec",
         "total_params_before", "total_params_after", "trainable_recovery_params",
         "compression_rate", "compression_ratio_pct", "flops_reduction_pct",
@@ -4054,7 +4082,9 @@ def main():
     csv_write_lock = threading.Lock()
 
     def _execute_single(name):
-        timeout_s = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, getattr(args, "timeout", 600))
+        override_to = SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
+        cli_timeout = getattr(args, "timeout", None) or 1200
+        timeout_s = max(cli_timeout, override_to) if override_to > 0 else cli_timeout
         result = run_module_isolated(name, args, timeout_s)
         row = {
             "module_name": name,
@@ -4067,10 +4097,11 @@ def main():
             "val_loss":                      result.get("val_loss", 0.0),
             "elapsed_s":                     result.get("elapsed_s", 0.0),
             "peak_vram_mb":                  result.get("peak_vram_mb", 0.0),
-            "tokens_per_sec":                result.get("tokens_per_sec", 0.0),
+            "tokens_per_sec":                result.get("tokens_per_sec") if result.get("tokens_per_sec") is not None else result.get("throughput_tok_per_sec", 0.0),
             "latency_ms_per_token":         result.get("latency_ms_per_token", result.get("latency_ms", 0.0)),
             "throughput_tok_per_sec":       result.get("throughput_tok_per_sec", result.get("tokens_per_sec", 0.0)),
             "perplexity":                   result.get("perplexity", ""),
+            "ppl_status":                   result.get("ppl_status", ""),
             "long_context_accuracy":        result.get("long_context_accuracy", ""),
             "total_params_before":           result.get("total_params_before", result.get("params_before", 0)),
             "total_params_after":            result.get("total_params_after", result.get("params_after", 0)),
@@ -4136,9 +4167,14 @@ def main():
     compressor_modules = [name for name in pending_names if name in COMPRESSOR_REGISTRY and name not in attention_modules]
 
     if compressor_modules:
-        LOG.info("Running %d compressor modules via isolated subprocesses", len(compressor_modules))
-        for name in compressor_modules:
-            _execute_single(name)
+        LOG.info("Running %d compressor modules via isolated subprocesses (workers=%d)", len(compressor_modules), workers)
+        if workers > 1:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                list(executor.map(_execute_single, compressor_modules))
+        else:
+            for name in compressor_modules:
+                _execute_single(name)
 
     if attention_modules:
         LOG.info("Running %d attention modules in-memory sequentially", len(attention_modules))
