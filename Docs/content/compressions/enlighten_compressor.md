@@ -335,6 +335,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 89.22% | 0.8937 | 1.0 | 36 | 301.18 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-enlighten) |
-| ROBERTA | 51.03% | 0.6748 | 1.0 | 72 | 520.68 | `PASS_LOW` | N/A |
-| GPT2 | 61.12% | 0.3936 | 1.0 | 48 | 628.28 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-enlighten) |
+| DISTILBERT | 90.14% | 0.9036 | 1.0 | 24 | 174.83 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-enlighten) |
+| ROBERTA | 92.66% | 0.9297 | 1.0 | 48 | 292.72 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-enlighten) |
+| GPT2 | 85.78% | 0.8661 | 1.0 | 36 | 382.63 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-enlighten) |
