@@ -1,0 +1,77 @@
+\section{ماژول rotational\_slicegpt\_int4 (Rotational SliceGPT INT4)}
+\label{sec:module_rotational_slicegpt_int4}
+
+\subsection{معرفی و انگیزه}
+کاهش هم‌زمان ابعاد فضای ویژگی و دقت عددی پارامترها یکی از موثرترین راهکارها برای فشرده‌سازی حداکثری مدل‌های بزرگ زبانی (\lr{LLMs}) به شمار می‌آید. روش‌های کلاسیک برش زیرفضا (\lr{Subspace Slicing}) مانند \lr{SliceGPT}، ابعاد با کمترین اهمیت را بر اساس توزیع فعال‌سازی‌ها حذف می‌نمایند. با این حال، در حضور ناهمگونی شدید و کانال‌های پرت (\lr{Activation Outliers})، حذف مستقیم ابعاد منجر به افت چشمگیر دقت می‌گردد. از سوی دیگر، کوانتیزاسیون یکنواخت ۴ بیتی بدون جبران مرتبه دوم، خطای تقریب را به سرعت در طول لایه‌های عمیق منتشر می‌سازد.
+
+ماژول فشرده‌سازی ترکیبی \lr{rotational\_slicegpt\_int4} با نام فارسی «فشرده‌ساز کوانتیزه‌شده چرخشی ۴ بیتی SliceGPT» با تلفیق سه اصل ریاضی طراحی شده است: چرخش یکامتعامد مختصات فعال‌سازی‌ها (\lr{Orthogonal Coordinate Rotation})، برش ابعاد بر مبنای بیشینه واریانس فعال‌سازی چرخیده‌شده، و کوانتیزاسیون غیریکنواخت ۴ بیتی مبتنی بر الگوریتم جراح بهینه مغز مرتبه دوم (\lr{Second-Order Optimal Brain Surgeon})، تا فشرده‌سازی فوق‌متراکم بدون تخریب ساختاری تضمین شود.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی این الگوریتم در سه گام ریاضی پیوسته انجام می‌گیرد:
+\begin{enumerate}
+    \item \textbf{چرخش یکامتعامد مختصات (\lr{Orthogonal Coordinate Rotation}):}
+    جهت همگن‌سازی توزیع مقادیر پرت فعال‌سازی‌ها در تمامی جهات، یک ماتریس یکامتعامد تصادفی هاار $\mathbf{Q} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ با شرط $\mathbf{Q}^\top \mathbf{Q} = \mathbf{I}$ با استفاده از تجزیه \lr{QR} تولید می‌گردد. با توجه به نامتغیر بودن ضرب ماتریسی تحت نگاشت یکامتعامد:
+    \begin{equation}
+    \mathbf{W} \mathbf{X} = (\mathbf{W} \mathbf{Q}) (\mathbf{Q}^\top \mathbf{X}) = \tilde{\mathbf{W}} \tilde{\mathbf{X}}
+    \end{equation}
+    که در آن $\tilde{\mathbf{W}} = \mathbf{W} \mathbf{Q}$ و $\tilde{\mathbf{X}} = \mathbf{Q}^\top \mathbf{X}$ مقادیر وزن و فعال‌سازی در فضای مختصات چرخیده‌شده هستند.
+
+    \item \textbf{برش زیرفضا بر پایه واریانس فعال‌سازی‌ها (\lr{Variance-Based Subspace Slicing}):}
+    واریانس کانال‌های فعال‌سازی چرخیده‌شده محاسبه گردیده و $r = \lfloor d_{\text{in}} \cdot \rho \rfloor$ کانال با بیشترین واریانس به عنوان زیرفضای بااهمیت انتخاب می‌شوند:
+    \begin{equation}
+    \mathcal{I} = \operatorname{Top-}r(\operatorname{Var}(\tilde{\mathbf{X}})), \quad \mathbf{P}_r = [\mathbf{e}_i]_{i \in \mathcal{I}} \in \mathbb{R}^{d_{\text{in}} \times r}
+    \end{equation}
+    ماتریس‌های وزن و ورودی برش‌یافته به صورت زیر حاصل می‌گردند:
+    \begin{equation}
+    \mathbf{W}_{\text{sliced}} = \tilde{\mathbf{W}} \mathbf{P}_r \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{X}_{\text{sliced}} = \mathbf{P}_r^\top \tilde{\mathbf{X}} \in \mathbb{R}^{r \times N}
+    \end{equation}
+
+    \item \textbf{کوانتیزاسیون غیریکنواخت ۴ بیتی با جبران هسیان مرتبه دوم (\lr{Second-Order OBS INT4}):}
+    ماتریس هسیان تجربی به همراه جمله میراسازی تیخونوف $\lambda$ تشکیل می‌شود:
+    \begin{equation}
+    \mathbf{H} = \frac{2}{N} \mathbf{X}_{\text{sliced}} \mathbf{X}_{\text{sliced}}^\top + \lambda \mathbf{I}_r
+    \end{equation}
+    سپس عناصر ستون‌های وزن به ترتیب با کتاب‌کد گوسی \lr{AstroQuantizer} کوانتیزه شده و خطای گردکردن به صورت معکوس روی ستون‌های بعدی جبران می‌گردد:
+    \begin{equation}
+    \mathbf{W}_{:, j+1:r} \leftarrow \mathbf{W}_{:, j+1:r} - \left( \mathbf{w}_j - q(\mathbf{w}_j) \right) \frac{[\mathbf{H}^{-1}]_{j, j+1:r}}{[\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+    که در آن $q(\cdot)$ نگاشت به نزدیک‌ترین مرکز خوشه غیرخطی در کتاب‌کد بهینه‌شده توزیع نرمال است.
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/rotational\_slicegpt\_int4.py} انجام شده و تحت نام‌های \lr{rotational\_slicegpt\_int4} و \lr{rotational\_slicegpt} در رجیستری فشرده‌سازی ثبت گردیده است. ساختار پیاده‌سازی شامل موارد زیر است:
+\begin{itemize}
+    \item \textbf{کوانتیزه‌ساز \lr{AstroQuantizer}:} تعبیه جدول توزیع گاوسی غیریکنواخت با پشتیبانی از دقت‌های ۲، ۴ و ۸ بیتی که با استفاده از مقیاس‌بندی بلوکی و نقطه صفر بهینه کمترین خطای کوانتیزاسیون را ایجاد می‌نماید.
+    \item \textbf{لایه خطی فشرده \lr{RotationalSliceGPTINT4Linear}:} لایه پیاده‌سازی‌شده با پیش‌محاسبه بافر پروجکشن ترکیبی $\mathbf{Q} \mathbf{P}_r \in \mathbb{R}^{d_{\text{in}} \times r}$، خروجی را با رابطه سریع $\mathbf{y} = (\mathbf{x} (\mathbf{Q} \mathbf{P}_r)) \mathbf{W}_{\text{quant}}^\top + \mathbf{b}$ بدون نیاز به بازسازی ماتریس متراکم اولیه در زمان اجرا محاسبه می‌کند.
+    \item \textbf{پایداری عددی در محاسبات اعشاری (\lr{FP32 Precision}):} تمامی محاسبات ماتریس هسیان، معکوس‌سازی با میرایی و جبران \lr{OBS} در فرمت \lr{float32} انجام گرفته و خطای بازسازی نسبی فروبنیوس اعتبارسنجی می‌شود.
+    \item \textbf{مسیر خروج اضطراری خودکار (\lr{Safety Fallback}):} در صورت تخطی خطای بازسازی از آستانه مجاز (\lr{max\_error} پیش‌فرض $0.20$)، لایه به ساختار اولیه بازمی‌گردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+یافته‌های تجربی بنچ‌مارک برای ماژول \lr{rotational\_slicegpt\_int4} بر پایه ارزیابی‌های مستند در پایگاه داده اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_rotational_slicegpt_int4} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز کوانتیزه‌شده چرخشی \lr{rotational\_slicegpt\_int4} روی مدل‌های پایه}
+\label{tab:benchmark_rotational_slicegpt_int4}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.99\%} & \lr{0.8987} & \lr{339.84 MB} & \lr{143,879.83 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.50\%} & \lr{0.8771} & \lr{360.79 MB} & \lr{97,994.80 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{61.70\%} & \lr{0.6706} & \lr{636.04 MB} & \lr{65,800.77 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه داده‌های جدول، ترکیب برش ابعادی با چرخش یکامتعامد و کوانتیزاسیون ۴ بیتی به نتایج فوق‌العاده‌ای در دقت و سرعت دست یافته است؛ در مدل \lr{DistilBERT} دقت ممتاز \lr{88.99\%} با توان محاسباتی فراتر از $143$ هزار توکن بر ثانیه، و در مدل \lr{RoBERTa} دقت بسیار بالای \lr{87.50\%} احراز گردیده است. هم‌چنین در مدل تولیدی \lr{GPT-2} با وجود برش و کوانتیزاسیون سنگین، دقت باثبات \lr{61.70\%} با وضعیت موفقیت‌آمیز \lr{PASS} حاصل شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+محدودیت‌های ساختاری و عملیاتی این ماژول به شرح زیر است:
+\begin{itemize}
+    \item \textbf{هزینه محاسباتی معکوس‌سازی هسیان در ابعاد بزرگ:} فرآیند به‌روزرسانی \lr{OBS} نیازمند معکوس‌سازی ماتریس هسیان $\mathbf{H} \in \mathbb{R}^{r \times r}$ است؛ در لایه‌های با رتبه بالا، این محاسبه سربار زمانی پیش‌پردازش کالیبراسیون را افزایش می‌دهد.
+    \item \textbf{حساسیت ماتریس هسیان به رگولاریزاسیون:} در صورت ناکافی بودن مقدار میرایی $\lambda$ در داده‌های با تنوع آماری کم، ماتریس هسیان بدشرط شده و جبران معکوس مقادیر ستون‌های بعدی منجر به واگرایی وزن‌ها می‌گردد که لزوم اعتبارسنجی مداوم خطای فروبنیوس را اجتناب‌ناپذیر می‌سازد.
+\end{itemize}

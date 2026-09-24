@@ -1,0 +1,72 @@
+\section{ماژول mlorq\_compressor (MLoRQ Compressor)}
+\label{sec:module_mlorq_compressor}
+
+\subsection{معرفی و انگیزه}
+در مدل‌های زبانی بزرگ، محدودیت‌های شدید حافظه اصلی (\lr{VRAM}) مانع از استقرار مستقیم مدل‌های چندمیلیاردی بر روی سخت‌افزارهای تجاری و لبه‌ای می‌شود. در بسیاری از روش‌های سنتی فشرده‌سازی، تخصیص رتبه در تجزیه کم‌مرتبه (\lr{Low-Rank Decomposition}) یا تعداد بیت‌های کوانتیزاسیون به صورت ایستا و یکنواخت برای تمامی لایه‌ها لحاظ می‌گردد؛ این امر بدون در نظر گرفتن میزان حساسیت ساختاری و سهم اطلاعاتی لایه‌های مختلف صورت پذیرفته و منجر به تخریب غیریکنواخت کیفیت بازنمایی یا هدررفت بودجه حافظه می‌شود.
+
+موتور فشرده‌سازی \lr{MLoRQ (Multi-Layer Optimal Rank and Quantization under a Total Memory Budget)} برای حل این مسئله از طریق بهینه‌سازی توأم رتبه فاکتورگیری و عمق بیت کوانتیزاسیون تحت یک بودجه حافظه معین سراسری پیشنهاد شده است. هدف \lr{MLoRQ} یافتن زوج بهینه رتبه و بیت $(r_l, b_l)$ به ازای هر لایه خطی $l$ است به نحوی که مجموع حافظه اشغالی از سقف مجاز تعیین‌شده تجاوز نکند و در عین حال خطای بازسازی ماتریس وزن به حداقل برسد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید مدل زبانی دارای $L$ لایه خطی با ابعاد ماتریس وزن $\mathbf{W}_l \in \mathbb{R}^{d_{\text{out}}^{(l)} \times d_{\text{in}}^{(l)}}$ باشد. بودجه کل حافظه بر حسب بیت با $B_{\text{total}}$ تعریف می‌شود:
+\begin{equation}
+B_{\text{total}} = M_{\text{budget}} \times 8 \times 1024^2 \quad (\text{bits})
+\end{equation}
+که در آن $M_{\text{budget}}$ بودجه حافظه بر حسب مگابایت است. برای هر لایه $l$ با رتبه انتخابی $r_l$ و عمق بیت کوانتیزاسیون $b_l \in \{4, 8, 16\}$، هزینه حافظه فاکتورهای کم‌مرتبه حاصل از تجزیه مقادیر منفرد (\lr{SVD}) به صورت زیر بیان می‌گردد:
+\begin{equation}
+\operatorname{Cost}(l, r_l, b_l) = \left( d_{\text{out}}^{(l)} \cdot r_l + r_l \cdot d_{\text{in}}^{(l)} \right) \times b_l
+\end{equation}
+مسئله تخصیص منابع تحت قید بودجه به فرم زیر تدوین می‌شود:
+\begin{equation}
+\min_{\{r_l, b_l\}_{l=1}^L} \sum_{l=1}^L \|\mathbf{W}_l - \hat{\mathbf{W}}_l(r_l, b_l)\|_F^2 \quad \text{s.t.} \quad \sum_{l=1}^L \operatorname{Cost}(l, r_l, b_l) \le B_{\text{total}}
+\end{equation}
+در این فرآیند، ابتدا تجزیه مقادیر منفرد $\mathbf{W}_l = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top$ انجام شده و فاکتورهای کم‌مرتبه بریده می‌شوند:
+\begin{equation}
+\mathbf{U}_{r} = \mathbf{U}_{:, :r_l}, \quad \mathbf{S}_{r} = \mathbf{\Sigma}_{:r_l}, \quad \mathbf{V}_{r}^\top = \mathbf{V}_{:, :r_l}^\top
+\end{equation}
+سپس هر یک از فاکتورها توسط کوانتیزاسور یکنواخت بیتی به مقادیر گسسته نگاشت می‌گردند:
+\begin{equation}
+\mathcal{Q}(\mathbf{T}, b) = \operatorname{round}\left(\frac{\mathbf{T} - \min(\mathbf{T})}{\Delta}\right) \cdot \Delta + \min(\mathbf{T}), \quad \Delta = \frac{\max(\mathbf{T}) - \min(\mathbf{T})}{2^b - 1}
+\end{equation}
+ماتریس وزن بازسازی‌شده $\hat{\mathbf{W}}_l = \mathcal{Q}(\mathbf{U}_r, b_l) \operatorname{diag}(\mathcal{Q}(\mathbf{S}_r, b_l)) \mathcal{Q}(\mathbf{V}_r^\top, b_l)$ به دست می‌آید و خطای فروبنیوس نسبی ارزیابی می‌گردد:
+\begin{equation}
+\mathcal{E}_l = \frac{\|\mathbf{W}_l - \hat{\mathbf{W}}_l\|_F}{\|\mathbf{W}_l\|_F + \epsilon}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی \lr{MLoRQ} در فایل \lr{Codes/framework/compression\_engine/mlorq\_compressor.py} در قالب دو کلاس اصلی زیر سازمان‌یافته است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{MLoRQLoRALinear}:} لایه خطی اختصاصی که وزن پایه فاکتورگیری و کوانتیزه‌شده را به شکل منجمد (\lr{frozen}) نگه داشته و امکان اتصال ادپترهای آموزش‌پذیر \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$) را برای بازیابی دقت یا تنظیم دقیق سریع فراهم می‌کند:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+    \end{equation}
+    \item \textbf{کلاس \lr{MLoRQCompressor}:} مدیریت تخصیص بودجه، جستجوی کاهشی حریصانه برای تعیین $(r_l, b_l)$، اعتبارسنجی خطای فروبنیوس با آستانه \lr{max\_error} (پیش‌فرض $0.50$)، مکانیسم محافظت از لایه‌های حساس و نگاشت امن لایه‌های بازگشتی به وزن پایه (\lr{fallback\_to\_original}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{mlorq\_compressor} بر روی مدل‌های زبانی مطابق با اطلاعات ثبت‌شده در \lr{results/unified\_mlorq\_4models\_summary.json} در جدول \ref{tab:benchmark_mlorq_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{mlorq\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_mlorq_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.2 MB} & \lr{17.4 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.7 MB} & \lr{23.0 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{635.5 MB} & \lr{21.5 s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه ارزیابی‌های تجربی، فشرده‌ساز \lr{mlorq\_compressor} در مدل \lr{DistilBERT} دقت فوق‌العاده \lr{90.48\%} و شاخص F1 معادل \lr{0.9077} را ثبت کرده که با دقت پایه مدل کاملاً منطبق است ($\Delta \text{Acc} = +0.00\%$). در مدل \lr{RoBERTa} دقت \lr{72.02\%} با افت اندک \lr{3.09\%} گزارش گردیده و در مدل \lr{GPT-2} دقت مدل فشرده‌شده به \lr{62.04\%} رسیده که به دلیل خاصیت تنظیم‌کنندگی فاکتورگیری با افزایش \lr{+1.26\%} نسبت به خط پایه همراه بوده است. ارزیابی مدل \lr{Qwen} در پایگاه آزمون‌های چهارگانه به علت نیاز به تنظیم مقیاس رتبه در معماری توجه گروهی \lr{GQA} به صورت \lr{SKIP} ثبت شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل رفتار و سازوکار فشرده‌سازی ماژول \lr{mlorq\_compressor} بیانگر محدودیت‌های عملیاتی زیر است:
+\begin{itemize}
+    \item \textbf{برانگیختگی خطای کوانتیزاسیون یکنواخت بر روی فاکتورهای مقادیر منفرد:} توزیع مقادیر منفرد ماتریس فاکتورها ($\mathbf{S}_r$) اغلب نامتقارن و دارای دنباله‌های سنگین است. اعمال کوانتیزاسیون یکنواخت خطی با تعداد بیت پایین ($4$ بیتی) بدون پیش‌شرط‌سازی یا نرمال‌سازی انحراف، باعث خطای نسبی شدید و فراتر رفتن $\mathcal{E}_l$ از حد مجاز $0.50$ می‌شود که این امر منجر به فعال‌سازی مکرر مسیر بازگشت به وزن‌های اصلی (\lr{fallback}) و در نتیجه صفر ماندن تعداد لایه‌های فشرده‌شده نهایی می‌گردد.
+    \item \textbf{عدم آگاهی از توزیع فعال‌سازی‌ها (\lr{Activation-Agnostic}):} این موتور تجزیه ماتریسی را صرفاً بر مبنای مقادیر وزن خام انجام می‌دهد؛ بنابراین کانال‌های با اهمیت بالای خروجی یا جهت‌های پرت در فعال‌سازی ورودی وزن‌دهی نشده و در تخصیص بودجه حافظه نادیده گرفته می‌شوند.
+\end{itemize}

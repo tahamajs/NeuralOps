@@ -1,0 +1,72 @@
+\section{ماژول oats\_compressor (OATS Compressor)}
+\label{sec:module_oats_compressor}
+
+\subsection{معرفی و انگیزه}
+یکی از مهم‌ترین یافته‌ها در زمینه فشرده‌سازی مدل‌های زبانی بزرگ، پدیده مقادیر پرت فعال‌سازی (\lr{Activation Outliers}) است. تحقیقات اخیر نشان داده‌اند که در مدل‌های ترانسفورمر، بخش بسیار کوچکی از ویژگی‌ها (کانال‌های خاص) دارای انرژی و بزرگی فوق‌العاده بالایی هستند؛ این کانال‌های پرت اگرچه از نظر تعداد اندک هستند، اما نقشی حیاتی در توانایی استدلال و توجه شبکه ایفا می‌کنند و هرگونه تقریب با رتبه پایین بر روی آن‌ها به فروپاشی عملکرد مدل می‌انجامد.
+
+الگوریتم \lr{OATS (Outlier-Aware Training \& Saliency-Based Sparsification with Low-Rank Matrix Decomposition)} با هدف جداسازی و مدیریت اختصاصی این دو ماهیت ساختاری توسعه یافته است. در این شیوه، ماتریس وزن پس از پیش‌شرط‌سازی مبتنی بر گشتاور دوم فعال‌سازی‌ها، به دو مؤلفه متعامد تجزیه می‌شود: یک مؤلفه کم‌مرتبه متراکم (\lr{Low-Rank Component}) برای جذب جهت‌های پرت پرانرژی، و یک مؤلفه تنک ساختاریافته (\lr{Sparse Residual Component}) با الگوی $2:4$ برای حفظ جزئیات باقیمانده بدون تحمیل حافظه اضافه.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی \lr{OATS} در پنج مرحله ریاضی منسجم تدوین می‌گردد:
+\begin{enumerate}
+    \item \textbf{محاسبه ماتریس گشتاور دوم فعال‌سازی‌ها:} با استفاده از داده‌های کالیبراسیون ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$:
+    \begin{equation}
+    \mathbf{M} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه چولسکی ماتریس گشتاور:}
+    \begin{equation}
+    \mathbf{M} = \mathbf{L}_M \mathbf{L}_M^\top
+    \end{equation}
+    \item \textbf{پیش‌شرط‌سازی ماتریس وزن:} ماتریس وزن لایه خطی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ در فاکتور چولسکی ضرب می‌شود:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \mathbf{L}_M
+    \end{equation}
+    \item \textbf{تجزیه تناوبی کم‌مرتبه و تنک (\lr{Alternating Decomposition}):} مؤلفه کم‌مرتبه $\mathbf{L}$ و مؤلفه تنک $\mathbf{S}$ به صورت متناوب بهینه‌سازی می‌شوند:
+    \begin{equation}
+    \mathbf{L} = \operatorname{SVD}_r(\tilde{\mathbf{W}} - \mathbf{S})
+    \end{equation}
+    \begin{equation}
+    \mathbf{S} = \Pi_{2:4}(\tilde{\mathbf{W}} - \mathbf{L}) \quad \text{یا} \quad \operatorname{Top-}(1-s)(\tilde{\mathbf{W}} - \mathbf{L})
+    \end{equation}
+    که در آن $\Pi_{2:4}$ عملگر تصویر بر ساختار تنک $2:4$ (پشتیبانی‌شده در شتاب‌دهنده‌های سخت‌افزاری) است.
+    \item \textbf{بازگشت از پیش‌شرط‌سازی (\lr{De-conditioning}):} وزن‌های بازسازی‌شده با اعمال معکوس تبدیل چولسکی به دست می‌آیند:
+    \begin{equation}
+    \mathbf{W}_{\text{oats}} = (\mathbf{L} + \mathbf{S}) \mathbf{L}_M^{-1}
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی \lr{OATS} در فایل \lr{Codes/framework/compression\_engine/oats\_compressor.py} مستقر بوده و شامل مؤلفه‌های زیر است:
+\begin{itemize}
+    \item \textbf{لایه \lr{OATSLoRALinear}:} لایه ترکیبی که ماتریس کم‌مرتبه و ماسک تنک ذخیره‌شده را نگهداری کرده و با لایه‌های \lr{Linear} و \lr{Conv1D} سازگاری کامل دارد. این لایه همچنین از ادپترهای \lr{LoRA} برای تنظیم مجدد پس از فشرده‌سازی بهره می‌گیرد.
+    \item \textbf{کلاس \lr{OATSCompressor}:} مدیریت استخراج تانسورهای کالیبراسیون فعال‌سازی، تضمین پایداری تجزیه چولسکی با تنظیم پارامتر نظم‌دهی $\epsilon$، اجرای تناوب میان تجزیه مقادیر منفرد و تنک‌سازی برجستگی (\lr{Saliency-based Sparsification})، و اعمال آستانه اعتبارسنجی خطای فروبنیوس.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی سخت‌افزاری و کیفی فشرده‌ساز \lr{oats\_compressor} بر پایه داده‌های ثبت‌شده در پایگاه \lr{results/unified\_oats\_4models\_summary.json} در جدول \ref{tab:benchmark_oats_compressor} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{oats\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_oats_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9058} & \lr{401.5 MB} & \lr{27.2 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{59.06\%} & \lr{0.7128} & \lr{539.7 MB} & \lr{44.2 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{32.1 s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های تجربی، فشرده‌ساز \lr{oats\_compressor} در مدل \lr{DistilBERT} عملکردی فوق‌العاده برجسته نشان داده و توانسته است تمامی ۳۶ لایه خطی را به شکل ساختاریافته فشرده ساخته و دقت عالی \lr{90.37\%} را با شاخص F1 معادل \lr{0.9058} ثبت نماید (افت تنها \lr{-0.11\%}). در مدل \lr{RoBERTa} نیز ۷۲ لایه خطی فشرده شده و دقت \lr{59.06\%} با شاخص F1 معادل \lr{0.7128} حاصل شده و وضعیت \lr{PASS} به دست آمده است. با این وجود، در مدل \lr{GPT-2} دقت مدل فشرده‌شده به \lr{0.00\%} افت کرده و وضعیت \lr{FAIL} گزارش شده است. ارزیابی مدل \lr{Qwen} نیز با وضعیت \lr{SKIP} تعیین گردیده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل فنی شکست فرآیند ارزیابی در مدل \lr{GPT-2} و پیچیدگی‌های ساختاری \lr{oats\_compressor} به شرح زیر است:
+\begin{itemize}
+    \item \textbf{انحراف جهت‌گیری وزن‌های \lr{Conv1D} در بازسازی تنک مدل \lr{GPT-2}:} لایه‌های خطی در مدل \lr{GPT-2} به صورت ترانهاده در قالب \lr{Conv1D} ذخیره می‌شوند. در الگوریتم پیش‌شرط‌سازی و معکوس‌سازی چولسکی $\mathbf{L}_M^{-1}$، اعمال ماسک تنک $2:4$ بر روی بعد غیرمنطبق منجر به برهم‌خوردن چینش کانال‌ها و عدم تقارن در نگاشت تانسورهای خروجی شده است که در نتیجه پیش‌بینی‌های مدل را در آزمون دقت کاملاً مخدوش ساخته و به دقت \lr{0.00\%} انجامیده است.
+    \item \textbf{بدحالت بودن ماتریس گشتاور در غیاب نمونه‌های کافی کالیبراسیون:} در صورتی که تعداد نمونه‌های کالیبراسیون $N$ کمتر از بعد ورودی $d_{\text{in}}$ باشد یا متن‌های کالیبراسیون تنوع کافی نداشته باشند، ماتریس گشتاور $\mathbf{M}$ تکین یا نزدیک به تکین می‌شود؛ این امر پایداری عددی فاکتورگیری چولسکی و معکوس آن را با خطر جدی روبرو ساخته و نیازمند افزایش پارامتر مهارسازی عددی $\epsilon$ می‌گردد.
+\end{itemize}

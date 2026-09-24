@@ -1,0 +1,65 @@
+\section{ماژول nmf\_compressor (NMF Compressor)}
+\label{sec:module_nmf_compressor}
+
+\subsection{معرفی و انگیزه}
+تجزیه ماتریسی غیرمنفی (\lr{Non-negative Matrix Factorization - NMF}) یکی از روش‌های پایه‌ای در یادگیری ماشین برای استخراج ویژگی‌های تفسیرپذیر و مبتنی بر تجمیع بخش‌ها (\lr{Part-Based Representation}) به شمار می‌رود. برخلاف تجزیه مقادیر منفرد (\lr{SVD}) که مقادیر مثبت و منفی را ترکیب کرده و اثرات خنثی‌کننده پیچیده‌ای ایجاد می‌کند، \lr{NMF} تمام درایه‌ها را به مقادیر غیرمنفی مقید می‌سازد؛ این ویژگی پدیدآورنده افزونگی ساختاری اندک و فاکتورهایی با پراکندگی طبیعی است.
+
+با این وجود، اعمال مستقیم \lr{NMF} بر روی شبکه‌های عصبی عمیق همواره با دو چالش بزرگ روبرو بوده است: اولاً وزن‌های شبکه‌های ترانسفورمر حول صفر توزیع شده و دارای مقادیر منفی هستند، و ثانیاً الگوریتم‌های کلاسیک \lr{NMF} نظیر به‌روزرسانی ضربی (\lr{Multiplicative Updates}) سرعت همگرایی بسیار کندی بر روی پردازنده‌های گرافیکی دارند. موتور فشرده‌سازی \lr{NMF Compressor} با تفکیک علامت و قدرمطلق ماتریس وزن و بهره‌گیری از اولیه‌سازی سریع \lr{NNDSVD} شتاب‌یافته روی \lr{GPU}، امکان فشرده‌سازی لایه‌های خطی ترانسفورمر را با حفظ توان بازنمایی فراهم می‌آورد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن لایه خطی با $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ مشخص شود. در روش تفکیک علامت و بزرگی، ماتریس به دو بخش ماتریس علامت $\mathbf{S}_{\mathbf{W}} = \operatorname{sgn}(\mathbf{W})$ و ماتریس قدرمطلق غیرمنفی $\mathbf{A} = |\mathbf{W}| \ge 0$ تفکیک می‌گردد. هدف \lr{NMF} تقریب ماتریس $\mathbf{A}$ با دو ماتریس کم‌مرتبه غیرمنفی $\mathbf{H} \in \mathbb{R}_{+}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}_{+}^{r \times d_{\text{in}}}$ است:
+\begin{equation}
+\min_{\mathbf{H} \ge 0, \mathbf{V} \ge 0} \|\mathbf{A} - \mathbf{H}\mathbf{V}\|_F^2
+\end{equation}
+برای دستیابی به همگرایی سریع و پایدار، از الگوریتم اولیه‌سازی \lr{NNDSVD (Non-negative Double Singular Value Decomposition)} استفاده می‌شود. با محاسبه تجزیه کم‌مرتبه $\mathbf{A} \approx \sum_{j=1}^r \sigma_j \mathbf{u}_j \mathbf{v}_j^\top$، مؤلفه‌های مثبت و منفی بردارهای منفرد تفکیک می‌گردند:
+\begin{equation}
+\mathbf{u}_j^+ = \max(\mathbf{u}_j, 0), \quad \mathbf{u}_j^- = \max(-\mathbf{u}_j, 0)
+\end{equation}
+ستون‌های اولیه $\mathbf{H}$ و سطرهای $\mathbf{V}$ بر اساس بزرگترین حاصل‌ضرب نرم برگزیده می‌شوند. در ادامه، قواعد به‌روزرسانی ضربی (\lr{Lee \& Seung}) روی کارت گرافیک اجرا می‌گردند:
+\begin{equation}
+\mathbf{V} \leftarrow \mathbf{V} \odot \frac{\mathbf{H}^\top \mathbf{A}}{\mathbf{H}^\top \mathbf{H} \mathbf{V} + \epsilon}, \quad \mathbf{H} \leftarrow \mathbf{H} \odot \frac{\mathbf{A} \mathbf{V}^\top}{\mathbf{H} \mathbf{V} \mathbf{V}^\top + \epsilon}
+\end{equation}
+در نهایت، ماتریس وزن بازسازی‌شده با اعمال مجدد ماتریس علامت حاصل می‌شود:
+\begin{equation}
+\hat{\mathbf{W}} = (\mathbf{H}\mathbf{V}) \odot \mathbf{S}_{\mathbf{W}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+ساختار پیاده‌سازی در فایل \lr{Codes/framework/compression\_engine/nmf\_compressor.py} طراحی شده و شامل موارد زیر است:
+\begin{itemize}
+    \item \textbf{لایه \lr{NMFLinear}:} جایگزین لایه‌های متراکم خطی که محاسبات ضرب را به شکل زنجیره‌ای از دو تبدیل کم‌مرتبه انجام می‌دهد:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b}
+    \end{equation}
+    همچنین پشتیبانی از نگاشت‌های ادپتر \lr{LoRA} برای جبران افت‌های ناشی از تجزیه مقادیر غیرمنفی تعبیه شده است.
+    \item \textbf{کلاس \lr{NMFCompressor}:} مدیریت فرآیند استخراج وزن، کنترل سقف رتبه پارامتری (\lr{param\_cap}) جهت تضمین سودمندی فشرده‌سازی، و اجرای حلقه‌های به‌روزرسانی ضربی بهینه‌شده به صورت کاملاً برداری بر روی تانسورهای \lr{GPU}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{nmf\_compressor} بر مبنای داده‌های ثبت‌شده در پایگاه \lr{results/unified\_nmf\_4models\_summary.json} در جدول \ref{tab:benchmark_nmf_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{nmf\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_nmf_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.8993} & \lr{337.6 MB} & \lr{84.3 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{49.08\%} & \lr{0.0000} & \lr{374.7 MB} & \lr{212.9 s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{58.03\%} & \lr{0.6460} & \lr{634.9 MB} & \lr{65.2 s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در نتایج تجربی مشاهده می‌شود، فشرده‌ساز \lr{nmf\_compressor} در مدل \lr{DistilBERT} به دقت چشمگیر \lr{89.91\%} با شاخص F1 معادل \lr{0.8993} دست یافته که تنها با افت اندک \lr{-0.57\%} همراه بوده و وضعیت \lr{PASS} را دریافت کرده است. در مدل زبانی \lr{GPT-2} دقت \lr{58.03\%} حاصل گردیده است. با این حال، در مدل \lr{RoBERTa} دقت مدل فشرده‌شده به \lr{49.08\%} کاهش یافته و شاخص F1 معادل \lr{0.0000} ثبت شده است که سبب تخصیص وضعیت \lr{PASS\_LOW} به این مدل گردیده است. مدل \lr{Qwen} نیز در این بنچ‌مارک با وضعیت \lr{SKIP} مشخص شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل عوامل افت دقت در مدل \lr{RoBERTa} و مشخصه‌های محاسباتی ماژول \lr{nmf\_compressor} به شرح زیر است:
+\begin{itemize}
+    \item \textbf{فروپاشی طبقه‌بندی و پیش‌بینی تک‌کلاسه در \lr{RoBERTa}:} دقت \lr{49.08\%} در کنار شاخص F1 برابر صفر نشان‌دهنده سقوط مدل به نقطه تعادل بی‌اثر پیش‌بینی برچسب اکثریت است. مدل \lr{RoBERTa} حساسیت فوق‌العاده‌ای به توزیع علامت و فاز وزن‌های خود دارد؛ بازسازی مجزای قدرمطلق با \lr{NMF} و ضرب نقطه به نقطه در ماتریس علامت منجر به بروز ناپیوستگی در مرزهای تصمیم‌گیری و اعوجاج در فعال‌سازی‌های انتهایی لایه‌ها شده است.
+    \item \textbf{سربار محاسباتی و زمان بالای اجرای الگوریتم تکرار شونده:} برخلاف روش‌های تحلیلی تک‌گامی مبتنی بر \lr{SVD}، الگوریتم به‌روزرسانی ضربی \lr{NMF} نیازمند تکرارهای متوالی ضرب ماتریسی است. همان‌طور که در زمان اجرای لایه‌ها مشهود است (نظیر \lr{212.9 s} در \lr{RoBERTa})، زمان فشرده‌سازی بسیار طولانی‌تر از سایر روش‌ها بوده و برای مدل‌های بسیار بزرگ مقیاس‌پذیری پایینی دارد.
+\end{itemize}

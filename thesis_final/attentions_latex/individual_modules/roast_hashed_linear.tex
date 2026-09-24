@@ -1,0 +1,73 @@
+\section{ماژول roast\_hashed\_linear (ROAST Hashed Linear)}
+\label{sec:module_roast_hashed_linear}
+
+\subsection{معرفی و انگیزه}
+اشتراک‌گذاری پارامترها با استفاده از توابع درهم‌سازی تصادفی (\lr{Random Hashing}) رویکردی کارآمد برای کاهش ردپای حافظه ماتریس‌های وزن بدون نیاز به نگهداری ماتریس‌های کامل در فضای رم به شمار می‌رود. با این وجود، روش‌های سنتی مانند ترفند درهم‌سازی اسکالر (\lr{Scalar Hashing}) به دلیل عدم تطابق با الگوهای دسترسی حافظه در پردازنده‌های گرافیکی و نقض محلی بودن داده‌ها (\lr{Spatial Locality})، منجر به ناکارآمدی حافظه نهان و افت فاحش سرعت اجرای مدل می‌گردند.
+
+ماژول \lr{roast\_hashed\_linear} با نام فارسی «لایه خطی درهم‌سازی‌شده با کاشی‌بندی ROAST» مبتنی بر ایده مقاله مرجع \lr{ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks} توسعه یافته است. در این الگوریتم، وزن‌های شبکه به جای عناصر اسکالر منفرد، در سطح بلوک‌ها یا کاشی‌های دوبعدی (\lr{Tiling}) با جدول کوچکی از مقادیر به اشتراک گذاشته می‌شوند که سازگاری کاملی با سلسله‌مراتب حافظه سخت‌افزاری ایجاد می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی باشد. در الگوریتم \lr{ROAST}، ماتریس وزن به کاشی‌های مربعی با اندازه $B \times B$ افراز می‌شود:
+\begin{equation}
+T_{\text{out}} = \left\lceil \frac{d_{\text{out}}}{B} \right\rceil, \quad T_{\text{in}} = \left\lceil \frac{d_{\text{in}}}{B} \right\rceil
+\end{equation}
+تعداد کل کاشی‌ها برابر با $T_{\text{out}} \times T_{\text{in}}$ است. به جای ذخیره مقادیر مجزا، یک جدول وزن فشرده شامل $K$ باکت آموزش‌پذیر با پارامتر $\boldsymbol{\theta} \in \mathbb{R}^K$ تعبیه می‌شود ($K \ll d_{\text{out}} \cdot d_{\text{in}}$).
+
+برای نگاشت هر کاشی در مختصات $(i, j)$ با $i \in \{0, \dots, T_{\text{out}}-1\}$ و $j \in \{0, \dots, T_{\text{in}}-1\}$ به یک باکت مشخص در جدول وزن، یک تابع درهم‌سازی با آنتروپی بالا و ترکیب بیتی (\lr{Bitwise Mixing}) فرمول‌بندی می‌شود:
+\begin{align}
+h_0 &= (i \cdot \mathtt{0x9E3779B1}) \oplus (j \cdot \mathtt{0x85EBCA77}) \\
+h_1 &= h_0 \oplus (h_0 \gg 16) \\
+h_2 &= h_1 \cdot \mathtt{0x7FEB352D} \\
+h_3 &= (h_2 \oplus (h_2 \gg 15)) \ \& \ \mathtt{0x7FFFFFFF} \\
+\operatorname{idx}(i, j) &= h_3 \bmod K
+\end{align}
+مقدار پارامتر کاشی $(i, j)$ از باکت استخراج می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{tile}}(i, j) = \boldsymbol{\theta}[\operatorname{idx}(i, j)] \cdot \mathbf{1}_{B \times B}
+\end{equation}
+ماتریس کامل بازسازی‌شده با تکرار مقادیر کاشی‌ها تشکیل و به ابعاد مجاز برش داده می‌شود:
+\begin{equation}
+\hat{\mathbf{W}} = \left( \boldsymbol{\theta}[\operatorname{idx}(i, j)] \otimes \mathbf{1}_{B \times B} \right)_{:d_{\text{out}}, :d_{\text{in}}}
+\end{equation}
+همچنین در صورت استفاده از تطبیق کم‌مرتبه، اثر آداپتورهای \lr{LoRA} به صورت مستقیم در گذر پیشرو محاسبه می‌گردد:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b} + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این الگوریتم در فایل \lr{Codes/framework/compression\_engine/roast\_hashed\_linear.py} قرار گرفته و با شناسه‌های \lr{roast} و \lr{roast\_hashed\_linear} در رجیستری فشرده‌سازی سیستم موجود است. نقاط تمایز پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{لایه برداری‌شده \lr{ROASTLinear}:} محاسبه ماتریس بازسازی‌شده با استفاده از عملگرهای سریع \lr{torch.repeat\_interleave} بدون هیچ‌گونه حلقه تکرار پایتونی پیاده‌سازی شده است.
+    \item \textbf{حافظه نهان وزن بازسازی‌شده (\lr{Weight Caching}):} به منظور تسریع چشمگیر در زمان ارزیابی و استنتاج (\lr{eval mode})، وزن موثر بازسازی‌شده یک‌بار محاسبه و ذخیره موقت می‌شود تا از تکرار عملیات درهم‌سازی پرهیز گردد.
+    \item \textbf{جدول بافت‌های تصادفی با قابلیت انجماد:} در زمان ریزتنظیم با \lr{LoRA}، جدول باکت‌های وزن منجمد گردیده و تنها ماتریس‌های کم‌مرتبه به‌روزرسانی می‌شوند تا همگرایی پایدار تضمین شود.
+    \item \textbf{جایگزینی هوشمند با متد \lr{from\_linear}:} قابلیت دریافت وزن‌های لایه‌های چگال موجود، محاسبه میانگین بر روی کاشی‌ها، و مقداردهی متناسب جدول باکت‌ها به منظور تقریب اولیه مناسب وزن‌های پیش‌آموزش‌دیده.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی‌های تجربی ثبت‌شده برای ماژول \lr{roast\_hashed\_linear} در پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_roast_hashed_linear} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز درهم‌ساز سخت‌افزار-آگاه \lr{roast\_hashed\_linear} روی مدل‌های پایه}
+\label{tab:benchmark_roast_hashed_linear}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9040} & \lr{337.59 MB} & \lr{54,047.60 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{86.81\%} & \lr{0.8791} & \lr{583.49 MB} & \lr{28,100.97 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{634.91 MB} & \lr{27,781.01 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های حاصل از بنچ‌مارک تجربی، ماژول \lr{roast\_hashed\_linear} پایداری و دقت بسیار بالایی در مدل‌های انکودر متراکم از خود نشان داده است؛ به طوری که در مدل \lr{DistilBERT} به دقت فوق‌العاده \lr{90.14\%} با F1 معادل \lr{0.9040} رسیده و در \lr{RoBERTa} دقت \lr{86.81\%} را احراز کرده است. در مدل خودبازگشت \lr{GPT-2} دقت برابر با \lr{51.72\%} و وضعیت \lr{PASS\_LOW} ثبت گردیده و در مدل \lr{Qwen} به علت ناسازگاری لایه‌های چندگروهی در نسخه ارزیابی اولیه، وضعیت به صورت \lr{SKIP} گزارش شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل نقاط ضعف و علل نوسان عملکرد در این ماژول به شرح زیر است:
+\begin{itemize}
+    \item \textbf{تصادم در درهم‌سازی کاشی‌ها (\lr{Hash Collisions}):} هنگامی که ابعاد ماتریس وزن بسیار بزرگ باشد، اشتراک‌گذاری ناگزیر چندین کاشی با رفتارهای آماری متفاوت در یک باکت واحد موجب نویز گرادیان و تداخل وزن‌ها می‌شود؛ این پدیده علت اصلی افت دقت در مدل \lr{GPT-2} ارزیابی شده است.
+    \item \textbf{هزینه بازسازی برخط در غیاب کَشینگ سخت‌افزاری:} در محیط‌هایی با حافظه محدود که ذخیره ماتریس بازسازی‌شده امکان‌پذیر نیست، تکرار عملیات \lr{repeat\_interleave} در هر گام محاسباتی منجر به کاهش توان عملیاتی نسبت به لایه‌های استاندارد متراکم می‌گردد.
+\end{itemize}

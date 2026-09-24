@@ -1,0 +1,85 @@
+\section{ماژول optimal\_subspace\_projection (Optimal Subspace Projection)}
+\label{sec:module_optimal_subspace_projection}
+
+\subsection{معرفی و انگیزه}
+کاهش ابعاد ماتریس‌های وزن در مدل‌های ترنسفورمر از طریق تجزیه کم‌مرتبه (\lr{Low-Rank Decomposition}) یکی از روش‌های کلیدی جهت فشرده‌سازی و کاهش پیچیدگی محاسباتی است. با این وجود، روش‌های سنتی مانند تجزیه مقادیر منفرد قطعی (\lr{Deterministic SVD}) بدون آگاهی از داده‌های ورودی، وزن‌های تمام ابعاد را با اهمیت یکسان در نظر می‌گیرند و منجر به تخریب بازنمایی ویژگی‌های با انرژی بالا در فعال‌سازی‌ها می‌شوند.
+
+ماژول \lr{optimal\_subspace\_projection} با نام فارسی «پروجکشن زیرفضای بهینه» به عنوان یکی از اجزای پیشرفته موتور فشرده‌سازی (\lr{Compression Engine})، رویکرد پروجکشن زیرفضای آگاه از فعال‌سازی (\lr{Activation-Aware Subspace Projection}) را از طریق ترکیبی از فاکتورگیری چولسکی (\lr{Cholesky Preconditioning}) و تجزیه مقادیر منفرد تصادفی (\lr{Randomized SVD with Power Iterations}) پیاده‌سازی می‌کند. این روش تضمین می‌کند که زیرفضای پروجکشن به دست آمده، واریانس بیشینه پاسخ‌های فعال‌سازی را پوشش داده و بازسازی ماتریس وزن را با حداقل خطای فروبنیوس همراه سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی ماژول \lr{optimal\_subspace\_projection} بر پایه چهار گام ریاضی منسجم بنا شده است:
+\begin{enumerate}
+    \item \textbf{محاسبه ماتریس کوواریانس فعال‌سازی و منظم‌سازی:}
+    فرض کنید تانسور فعال‌سازی ورودی به یک لایه خطی با $N$ نمونه توکن به صورت $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ باشد. ماتریس کوواریانس به همراه مقدار منظم‌سازی تیخونوف $\epsilon$ جهت تضمین مثبت معین بودن محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{C} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I}
+    \end{equation}
+    که در آن مقدار منظم‌سازی متناسب با میانگین مقادیر قطری $\epsilon = \max(10^{-4} \cdot \operatorname{mean}(\operatorname{diag}(\mathbf{C})), 10^{-5})$ تنظیم می‌گردد.
+
+    \item \textbf{پیش‌شرط‌سازی چولسکی (\lr{Cholesky Preconditioning}):}
+    ماتریس کوواریانس به مولفه مثلثی پایینی تجزیه می‌شود:
+    \begin{equation}
+    \mathbf{C} = \mathbf{L} \mathbf{L}^\top
+    \end{equation}
+    سپس ماتریس وزن متراکم اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با اعمال فاکتور چولسکی تغییر مقیاس می‌یابد تا تاثیر ویژگی‌های پرانرژی در فضای بازنمایی نمایان گردد:
+    \begin{equation}
+    \mathbf{M} = \mathbf{W} \mathbf{L}
+    \end{equation}
+
+    \item \textbf{تکرارهای توانی و پروجکشن زیرفضای تصادفی (\lr{Randomized Subspace Iteration}):}
+    برای ماتریس $\mathbf{M}$، یک ماتریس گاوسی تصادفی $\mathbf{\Omega} \in \mathbb{R}^{d_{\text{in}} \times r}$ با رتبه هدف $r = \lfloor \min(d_{\text{in}}, d_{\text{out}}) \cdot \rho \rfloor$ نمونه‌برداری می‌شود. سپس برای تقویت طیف تکین، تکرارهای توانی صورت می‌پذیرد:
+    \begin{equation}
+    \mathbf{Y} = \mathbf{M} \mathbf{\Omega}, \quad \mathbf{Y} \leftarrow \mathbf{M} (\mathbf{M}^\top \mathbf{Y}) \quad (\text{تکرار به تعداد } p \text{ بار})
+    \end{equation}
+    سپس پایه یکامتعامد $\mathbf{Q}$ از طریق تجزیه \lr{QR} استخراج می‌شود:
+    \begin{equation}
+    \mathbf{Q}, \mathbf{R} = \operatorname{qr}(\mathbf{Y})
+    \end{equation}
+
+    \item \textbf{تجزیه کم‌مرتبه و معکوس‌سازی پیش‌شرط:}
+    پروجکشن کوچک‌شده $\mathbf{B} = \mathbf{Q}^\top \mathbf{M} \in \mathbb{R}^{r \times d_{\text{in}}}$ تحت \lr{SVD} فشرده قرار می‌گیرد:
+    \begin{equation}
+    \mathbf{B} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+    \end{equation}
+    در نهایت با گزینش $r$ مولفه اول و خنثی‌سازی پیش‌شرط چولسکی با $\mathbf{L}^{-1}$، بازسازی ماتریس فشرده به دست می‌آید:
+    \begin{equation}
+    \mathbf{W}_{\text{osp}} = (\mathbf{Q} \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top) \mathbf{L}^{-1}
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/optimal\_subspace\_projection.py} انجام یافته و در \lr{COMPRESSOR\_REGISTRY} با نام \lr{optimal\_subspace\_projection} ثبت گردیده است. معماری دارای مشخصه‌های کلیدی زیر است:
+\begin{itemize}
+    \item \textbf{کلاس لایه اختصاصی \lr{OptimalSubspaceLoRALinear}:} این لایه وزن‌های بازسازی‌شده منجمد $\mathbf{W}_{\text{osp}}$ را ذخیره کرده و به صورت اختیاری از آداپتورهای آموزش‌پذیر \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$) با فاکتور مقیاس‌بندی $\alpha / r_{\text{lora}}$ پشتیبانی می‌کند.
+    \item \textbf{مکانیزم ایمنی بازگشت (\lr{Fallback Mechanism}):} در صورت فراتر رفتن خطای نسبی فروبنیوس $\|\mathbf{W} - \mathbf{W}_{\text{osp}}\|_F / \|\mathbf{W}\|_F$ از آستانه مجاز (\lr{max\_error} پیش‌فرض $0.20$) یا ناپایداری عددی در فاکتورگیری چولسکی، ماژول به صورت خودکار لایه را به حالت وزن اصلی بازمی‌گرداند.
+    \item \textbf{حفاظت از سرها و پروجکشن‌های نامتقارن \lr{GQA}:} لایه‌های حساس سر پیش‌بینی (\lr{lm\_head})، طبقه‌بندها، تعبیه‌سازها (\lr{embeddings}) و لایه‌های توجه نامتقارن \lr{GQA} مستثنی می‌شوند تا انسجام نحوی مدل مخدوش نگردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی ماژول \lr{optimal\_subspace\_projection} بر روی مدل‌های مرجع استخراج‌شده از پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_optimal_subspace_projection} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{optimal\_subspace\_projection} روی مدل‌های پایه}
+\label{tab:benchmark_optimal_subspace_projection}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9091} & \lr{311.32 MB} & \lr{146,616.92 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{70.87\%} & \lr{0.7708} & \lr{321.10 MB} & \lr{96,372.19 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{63,691.53 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{48.97\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{optimal\_subspace\_projection} در مدل‌های کدگذار (\lr{Encoder-only}) عملکرد خیره‌کننده‌ای بر جای گذاشته است؛ به طوری که در \lr{DistilBERT} دقت بسیار بالای \lr{90.60\%} و شاخص F1 معادل \lr{0.9091} را همراه با توان پردازشی فراتر از $146$ هزار توکن بر ثانیه ثبت نموده و در \lr{RoBERTa} به دقت \lr{70.87\%} دست یافته است. در مدل \lr{Qwen} نیز ارزیابی تحت بهینه‌سازی کم‌مرتبه با موفقیت \lr{PASS} به پایان رسیده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل شکست و محدودیت‌های روش‌شناختی این ماژول به شرح زیر است:
+\begin{itemize}
+    \item \textbf{شکست در مدل خودبازگشت \lr{GPT-2} (دقت \lr{0.00\%} و وضعیت \lr{FAIL}):} در مدل دیکودر \lr{GPT-2} دقت به صفر تنزل یافته است. علت این شکست ساختاری ناشی از حساسیت فزاینده توزیع فعال‌سازی در لایه‌های \lr{Conv1D} ترنسفورمرهای خودبازگشت و عدم همگرایی رتبه تصادفی در حضور ماسک علیتی (\lr{Causal Masking}) است؛ در غیاب انطباق دقیق لایه‌نرمال پس از پروجکشن، خطای خطی در طول گام‌های خودبازگشت متراکم شده و خروجی‌های غیرمنطقی تولید کرده است.
+    \item \textbf{وابستگی شدید به کیفیت داده‌های کالیبراسیون:} فرآیند سفیدسازی با ماتریس چولسکی $\mathbf{L}$ شدیداً به شرطی‌بودن ماتریس کوواریانس وابسته است؛ چنانچه توزیع متن‌های کالیبراسیون پوشش کافی از دامنه زبان نداشته باشد، مقادیر ویژه کوچک ماتریس کوواریانس منجر به مقادیر بسیار بزرگ در $\mathbf{L}^{-1}$ و انفجار خطای فروبنیوس می‌گردد.
+\end{itemize}

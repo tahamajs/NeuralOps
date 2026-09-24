@@ -1,0 +1,71 @@
+\section{ماژول kmeans\_quantize (K-Means Weight Quantizer)}
+\label{sec:module_kmeans_quantize}
+
+\subsection{معرفی و انگیزه}
+کوانتایش اسکالر بر پایه خوشه‌بندی، یکی از کارآمدترین روش‌ها برای کاهش حجم حافظه پارامترهای مدل‌های زبانی بزرگ بدون نیاز به دگرگونی در ابعاد فضایی بردارها است. با این وجود، روش‌های مرسوم خوشه‌بندی وزن‌ها با الگوریتم کی-میانگین (\lr{K-Means}) معمولاً ناپیوسته و غیرقابل مشتق‌گیری بوده و اعمال پس‌انتشار خطا برای کالیبراسیون مجدد مقادیر پس از کوانتایش با چالش جدی روبرو است.
+
+ماژول \lr{kmeans\_quantize} با پیاده‌سازی مکانیزم برآوردگر عبور مستقیم (\lr{Straight-Through Estimator - STE}) و ساختار لایه اختصاصی \lr{KMeansLinear} توسعه داده شده است. این ماژول وزن‌های لایه‌های خطی را به $k$ مرکز خوشه تصویر کرده و شاخص‌های حافظه را با نگاشت به صورت شاخص‌های فشرده ذخیره می‌کند. هم‌زمان، به منظور حفظ قابلیت یادگیری و بازیابی دقت، از آداپتورهای با رتبه پایین \lr{LoRA} در کنار مراکز خوشه‌ها بهره می‌گیرد تا بدون تغییر ابعاد شبکه، دقت مدل در سطح بالایی بازیابی شود.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن اولیه یک لایه به صورت $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ باشد. برای تعداد خوشه‌های مشخص $k \le 256$ (معادل کوانتایش ۸ بیتی یا کمتر)، الگوریتم یک‌بعدی لوید (\lr{Lloyd's Algorithm}) با مقداردهی اولیه مبتنی بر چندک‌ها بر روی بردار تخت‌شده وزن‌ها اجرا می‌شود:
+\begin{equation}
+\mathcal{C} = \{c_1, c_2, \dots, c_k\}, \quad c_j \in \mathbb{R}
+\end{equation}
+شاخص هر درایه وزن به نزدیک‌ترین مرکز خوشه تخصیص می‌یابد:
+\begin{equation}
+I_{ij} = \arg\min_{m \in \{1, \dots, k\}} |W_{ij} - c_m|
+\end{equation}
+ماتریس بازسازی‌شده وزن‌ها $\mathbf{\hat{W}}$ به صورت زیر بازتعریف می‌گردد:
+\begin{equation}
+\hat{W}_{ij} = c_{I_{ij}}
+\end{equation}
+در حین گذر پیشرو، خروجی به کمک ماتریس بازسازی‌شده و آداپتور کم‌مرتبه \lr{LoRA} محاسبه می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{\hat{W}}^\top + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+\end{equation}
+که در آن $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ پارامترهای کم‌رتبه انطباقی هستند.
+
+به دلیل گسسته بودن نگاشت شاخص‌ها، گرادیان نسبت به ورودی و مراکز خوشه‌ها در گذر برگشتی با استفاده از قاعده \lr{STE} محاسبه می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial \mathbf{x}} = \frac{\partial \mathcal{L}}{\partial \mathbf{y}} \mathbf{\hat{W}}, \quad \frac{\partial \mathcal{L}}{\partial c_m} = \sum_{(i, j): I_{ij} = m} \left( \frac{\partial \mathcal{L}}{\partial \hat{W}_{ij}} \right)
+\end{equation}
+که از طریق عملگر پاشش تجمعی (\lr{scatter\_add}) روی مراکز خوشه‌ها با بازدهی بالا قابل محاسبه است.
+
+\subsection{معماری و پیاده‌سازی}
+این ماژول در فایل \lr{Codes/framework/compression\_engine/kmeans\_quantize.py} پیاده‌سازی شده و کلاس‌های اصلی آن عبارتند از:
+\begin{itemize}
+    \item \textbf{کلاس \lr{KMeansSTEFunction}:} یک تابع خودکار از نوع \lr{torch.autograd.Function} که در گذر پیشرو عملگر وزن را با $\mathbf{\hat{W}} = \mathbf{c}[\mathbf{I}]$ ترکیب نموده و در گذر پس‌انتشار، گرادیان خروجی را مستقیماً به مراکز خوشه پاشش می‌دهد.
+    \item \textbf{تابع \lr{fast\_kmeans\_1d}:} پیاده‌سازی الگوریتم بهینه‌سازی‌شده لوید یک‌بعدی با استفاده از \lr{torch.sort} و \lr{torch.searchsorted} برای همگرایی سریع در حداکثر ۲۰ تکرار بر روی حافظه \lr{GPU}.
+    \item \textbf{کلاس \lr{KMeansLinear}:} لایه سفارشی جایگزین \lr{nn.Linear} و \lr{Conv1D} که وزن را در قالب بافر شاخص‌های گسسته (\lr{indices}) و پارامتر بهینه‌پذیر مراکز خوشه‌ها (\lr{centroids}) نگهداری می‌کند.
+    \item \textbf{کلاس \lr{KMeansCompressor}:} مدیریت پیمایش لایه‌های مدل، جایگزینی ساختاری، پایش خطای فروبنیوس بازسازی و جلوگیری از تخریب لایه‌های حساس با مکانیزم بازگشت ایمن (\lr{Fallback}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{kmeans\_quantize} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_kmeans_quantize} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{kmeans\_quantize} روی مدل‌های پایه}
+\label{tab:benchmark_kmeans_quantize}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{81.19\%} & \lr{0.8182} & \lr{2494.40 MB} & \lr{70,013.90 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج مدون، این روش در ارزیابی مدل \lr{DistilBERT} به دقت تاییدشده \lr{81.19\%} و امتیاز \lr{F1} معادل \lr{0.8182} با توان عملیاتی پایدار \lr{70,013.90 tok/s} دست یافته است. برای مدل‌های \lr{RoBERTa}، \lr{GPT-2} و \lr{Qwen} نتایج رسمی در ماتریس جامع بنچ‌مارک نهایی ثبت نشده و با وضعیت \lr{NOT\_RUN} مستند شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل عملکردی و معماری ماژول \lr{kmeans\_quantize} نقاط ضعف زیر را آشکار می‌سازد:
+\begin{itemize}
+    \item \textbf{سربار حافظه در مرحله بازیابی و جدول مراکز:} اگرچه ذخیره شاخص‌ها در ابعاد بیتی پایین صرفه‌جویی تئوریک ایجاد می‌کند، اما بازسازی ماتریس شناور در حین گذر پیشرو یا نگهداری بافرهای فعال‌سازی در گراف محاسباتی \lr{STE} نیازمند مصرف حافظه موقت بالا در کارت گرافیک است (\lr{2494.40 MB} در مدل \lr{DistilBERT}).
+    \item \textbf{عدم کاهش زمان ضرب ماتریسی در غیاب هسته‌های اختصاصی:} در صورتی که سخت‌افزار از فرمت شاخص‌بندی‌شده به صورت سخت‌افزاری پشتیبانی نکند، عمل دکوانتایز برخط پیش از ضرب ماتریسی، مزیتی در شتاب‌بخشی محاسباتی (\lr{GEMM Speedup}) نسبت به محاسبات چگال شناور استاندارد ایجاد نخواهد کرد.
+    \item \textbf{حساسیت بالا به انحراف توزیع مقادیر دورافتاده (\lr{Outliers}):} در لایه‌هایی که دارای مقادیر دورافتاده با دامنه بزرگ هستند، خوشه‌بندی یک‌بعدی مراکز زیادی را به پوشش کران‌های دور اختصاص داده و وضوح بازنمایی مقادیر حول میانگین صفر دچار افت می‌گردد.
+\end{itemize}

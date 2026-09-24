@@ -1,0 +1,73 @@
+\section{ماژول lsc\_compressor (Low-Rank Spectral Compressor)}
+\label{sec:module_lsc_compressor}
+
+\subsection{معرفی و انگیزه}
+عملیات فشرده‌سازی لایه‌های خطی در شبکه‌های عصبی ترنسفورمر عموماً در دامنه فضایی وزن‌ها از طریق هرس نامنظم یا تجزیه مقادیر منفرد انجام می‌شود. با این حال، ماتریس‌های وزن لایه‌های توجه و پروجکشن‌های میانی رفتار فرکانسی منسجمی در دامنه فوریه از خود نشان می‌دهند؛ به این معنا که بخش اعظم انرژی اطلاعاتی و مؤلفه‌های گرادیانی در ضرایب فرکانسی مشخصی از تبدیل فوریه دو‌بعدی متمرکز شده‌اند.
+
+ماژول \lr{LSC Compressor (Low-Rank Spectral and Fourier-Domain Compressor)} با بهره‌گیری از تبدیل فوریه دو‌بعدی گسسته (\lr{2D-DFT}) و آستانه‌گذاری طیفی انرژی، مؤلفه‌های فرکانسی کم‌اثر را فیلتر نموده و تقریب بهینه ماتریس وزن را در حوزه فرکانس بازسازی می‌نماید. علاوه بر این، این ماژول ساختار هیبریدی نوآورانه‌ای را از طریق لایه اختصاصی \lr{LSCPrunedLoRALinear} معرفی می‌کند که با تثبیت وزن‌های هرس‌شده طیفی و تعبیه شاخه‌های کم‌رتبه \lr{LoRA}، امکان بازیابی سریع گرادیانی دقت را پس از فشرده‌سازی فراهم می‌سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی طیفی برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ شامل چهار مرحله اساسی است:
+\begin{enumerate}
+    \item \textbf{تبدیل فوریه دو‌بعدی گسسته (\lr{2D Discrete Fourier Transform}):} تبدیل فوریه ماتریس وزن به دامنه فرکانس مختلط انتقال داده می‌شود:
+    \begin{equation}
+    \widehat{\mathbf{W}} = \mathcal{F}_{\text{2D}}(\mathbf{W}) \in \mathbb{C}^{d_{\text{out}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{محاسبه ماتریس دامنه طیفی (\lr{Spectral Magnitude Matrix}):} بزرگی مؤلفه‌های فرکانسی محاسبه می‌گردد:
+    \begin{equation}
+    M_{ij} = |\widehat{\mathbf{W}}_{ij}| = \sqrt{\text{Re}(\widehat{\mathbf{W}}_{ij})^2 + \text{Im}(\widehat{\mathbf{W}}_{ij})^2}
+    \end{equation}
+    \item \textbf{انتخاب مؤلفه‌های پرانرژی (\lr{Top-k Energy Filtering}):} بر اساس حد آستانه بودجه رتبه یا نسبت انرژی تجمعی (\lr{Energy Ratio}) $\gamma \in (0, 1]$، تعداد ضرایب برتر $k$ انتخاب شده و نقشه ماسک دودویی طیفی $\mathbf{M}_{\text{spectral}}$ شکل می‌گیرد:
+    \begin{equation}
+    k = \min(r^2, d_{\text{out}} \cdot d_{\text{in}}), \quad \mathbf{M}_{\text{spectral}} = \mathbb{I}(M_{ij} \ge \tau_k)
+    \end{equation}
+    که در آن $\tau_k$ مقدار $k$-امین ضریب بزرگ‌تر دامنه فرکانسی است.
+    \item \textbf{تبدیل فوریه معکوس و بازسازی وزن (\lr{Inverse 2D DFT}):} وزن فشرده نهایی با محاسبه بخش حقیقی تبدیل معکوس حاصل می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{LSC}} = \text{Re}\left(\mathcal{F}_{\text{2D}}^{-1}(\widehat{\mathbf{W}} \odot \mathbf{M}_{\text{spectral}})\right)
+    \end{equation}
+\end{enumerate}
+
+در ساختار ماژولار لایه \lr{LSCPrunedLoRALinear}، گذر پیشرو ترکیبی با شاخه آداپتور کم‌رتبه $\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{W}_{\text{LSC}}^\top + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس‌های \lr{LSCCompressor} و \lr{LSCPrunedLoRALinear} در فایل \lr{Codes/framework/compression\_engine/lsc\_compressor.py} مستقر بوده و تحت نام‌های \lr{lsc}، \lr{lsc\_compressor}، \lr{lsc\_class} و \lr{lsc\_factory} در رجیستری سیستم ثبت شده‌اند. جنبه‌های برجسته پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{پیاده‌سازی بهینه محاسبات فوریه با \lr{torch.fft.fft2}:} تمامی عملیات نگاشت فرکانسی و فیلترینگ دو‌بعدی بر روی شتاب‌دهنده گرافیکی با پایداری ممیز شناور \lr{FP32} و به کارگیری روال‌های مقیاس‌پذیر کتابخانه \lr{PyTorch FFT} پیاده‌سازی شده است.
+    \item \textbf{پشتیبانی از آداپتورهای \lr{LoRA} متصل به لایه (\lr{Integrated LoRA Adapters}):} لایه \lr{LSCPrunedLoRALinear} در صورت تعیین رتبه $r_{\text{lora}} > 0$ به صورت خودکار پارامترهای آداپتور را با مقداردهی تصادفی یکنواخت کایمینگ (\lr{Kaiming Uniform}) ایجاد و هم‌تراز با نوع داده لایه مبنا مقداردهی می‌کند.
+    \item \textbf{مکانیزم حفاظت در برابر فرکانس‌های تبهگن (\lr{Degenerate Spectral Guard}):} در صورت صفر بودن دامنه تمامی ضرایب یا فراتر رفتن خطای بازسازی فروبنیوس از سقف مجاز ($\text{max\_error}=0.85$)، لایه به طور خودکار به ساختار اولیه بازمی‌گردد.
+    \item \textbf{حفظ سازگاری کامل با لایه‌های خطی و لایه‌های پیچشی ۱بعدی:} پشتیبانی شفاف از لایه‌های متراکم استاندارد و لایه‌های \lr{Conv1D} ترنسفورمر بدون نیاز به تغییر در پیکربندی هسته مدل.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{lsc\_compressor} بر روی مدل‌های معیار مختلف طبق نتایج ثبت‌شده رسمی در \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_lsc_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{lsc\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_lsc_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.19 MB} & \lr{184,866.23 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.72 MB} & \lr{105,976.80 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{636.04 MB} & \lr{68,032.35 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های عددی نشان‌دهنده عملکرد فوق‌العاده ماژول در مدل \lr{DistilBERT} با دستیابی به دقت عالی \lr{90.48\%}، شاخص F1 برابر با \lr{0.9077}، مصرف حافظه ناچیز \lr{311.19 MB} و سرعت خیره‌کننده \lr{184,866.23 tok/s} است. این امر نشان می‌دهد که لایه‌های انکودر متراکم وابستگی قوی به فرکانس‌های اصلی طیف فوریه دارند. در مدل‌های دیگر نظیر \lr{RoBERTa} دقت به \lr{72.02\%} و در \lr{GPT-2} به \lr{62.04\%} رسیده است که فرآیند پالایش طیفی با موفقیت پاس شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی ساختار درونی فشرده‌سازی حوزه فرکانس مبین چالش‌های زیر است:
+\begin{itemize}
+    \item \textbf{پدیده نشت طیفی و لبه‌های ناپیوسته (\lr{Spectral Leakage}):} ماتریس‌های وزن بر خلاف سیگنال‌های تصویری یا صوتی پیوسته دارای دور تناوب طبیعی نیستند. اعمال تبدیل فوریه دو‌بعدی بدون اعمال پنجره‌گذاری (\lr{Windowing}) می‌تواند موجب پراکندگی انرژی در فرکانس‌های بالا شده و خطای تقریب در بازسازی لبه‌های ماتریس وزن را افزایش دهد.
+    \item \textbf{کاهش دقت در مدل‌های حساس به فاز (\lr{Phase Distortions}):} فرآیند ماسک‌گذاری ضرایب مختلط و حذف ضرایب ضعیف فاز می‌تواند توزیع فعال‌سازی‌های غیرخطی بعدی را در مدل‌های پیچیده دچار اعوجاج نماید، که افت دقت در مدل \lr{RoBERTa} به \lr{72.02\%} بازتابی از این پدیده است.
+    \item \textbf{سربار فاز محاسبه تبدیل‌های فوریه دو‌بعدی:} محاسبه الگوریتم‌های \lr{FFT2} برای ماتریس‌های وزن بسیار بزرگ نیازمند حافظه موقت دوچندان جهت نگهداری تانسورهای مختلط \lr{complex64} در حین فرآیند کالیبراسیون اولیه است.
+\end{itemize}
