@@ -41,10 +41,13 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         w = w.data.clone()
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
-        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
-            w = w.t()
-        elif w.ndim == 2 and w.shape[0] < w.shape[1]:
-            w = w.t()
+        is_conv1d = (
+            hasattr(base, "nf")
+            or "Conv1D" in cls_name
+            or "Conv1D" in base_cls_name
+        )
+        if is_conv1d and w.ndim == 2:
+            w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -328,7 +331,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("hgrn2_gated_deltanet_inject")
-@ATTENTION_REGISTRY.register("hgrn2_inject")
+@ATTENTION_REGISTRY.register("inject_hgrn2_gated_deltanet")
 def inject_hgrn2_gated_deltanet(
     layer: Any = None,
     model: Any = None,
