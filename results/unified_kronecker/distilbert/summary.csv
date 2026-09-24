@@ -1,2 +1,2 @@
 module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-kronecker,PASS,90.25,0.0,,0.9067,0.9023,0.9039,0.902,0.4053,11.72,341.75,29662.61,66955010,62826242,589824,1.0657,6.17,0.0,24,0,,,0,589824,,legacy_bert,2026-09-24T05:25:15.737897
+kronecker,PASS,90.48,0.0,,0.9083,0.9047,0.9056,0.9044,0.3061,12.68,341.75,29486.46,66955010,62826242,589824,1.0657,6.17,0.0,24,0,,,0,589824,,legacy_bert,2026-09-24T11:20:01.009963

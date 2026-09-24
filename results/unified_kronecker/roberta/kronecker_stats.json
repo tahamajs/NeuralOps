@@ -3,5 +3,5 @@
   "num_fallback": 4,
   "compression_method": "kronecker",
   "effective_parameter_ratio": 0.7329865626354573,
-  "avg_reconstruction_error": 0.4002053081448334
+  "avg_reconstruction_error": 0.40023952128641904
 }

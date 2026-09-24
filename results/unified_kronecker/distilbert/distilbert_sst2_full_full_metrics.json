@@ -1,15 +1,15 @@
 {
     "model": "distilbert_sst2_full",
     "performance": {
-        "accuracy_pct": 91.06,
-        "f1_score": 0.9137,
-        "f1_macro": 0.9104,
-        "precision": 0.9113,
-        "recall": 0.9102,
-        "val_loss": 0.3902,
+        "accuracy_pct": 90.71,
+        "f1_score": 0.9099,
+        "f1_macro": 0.907,
+        "precision": 0.9075,
+        "recall": 0.9068,
+        "val_loss": 0.3027,
         "perplexity": null,
         "status": "PASS",
-        "elapsed_s": 2.99
+        "elapsed_s": 3.22
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -29,7 +29,7 @@
     },
     "hardware": {
         "peak_vram_mb": 380.26,
-        "tokens_per_sec": 51574.46
+        "tokens_per_sec": 47138.1
     },
     "architecture": {
         "span_distribution": {},
@@ -43,10 +43,10 @@
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
     "seed": 42,
-    "git_sha": "f5cca438d",
+    "git_sha": "b77235a46",
     "git_dirty": true,
     "torch_version": "2.6.0+cu124",
     "transformers_version": "5.5.0",
     "cuda_version": "12.4",
-    "timestamp": "2026-09-24T05:25:26.693995+00:00"
+    "timestamp": "2026-09-24T11:20:12.933531+00:00"
 }
