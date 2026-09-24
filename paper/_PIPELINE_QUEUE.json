@@ -12293,13 +12293,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_tomoe_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_inject",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_soa_attn_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules soa_attn_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_soa_attn_inject",
@@ -13062,6 +13055,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_compressor",
       "started_at": "2026-09-24T03:28:47.319548",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_tomoe_inject",
+      "id": "p3_gpt2_tomoe_inject",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_inject",
+      "started_at": "2026-09-24T03:29:55.783639",
       "retries": 0,
       "status": "done"
     }
