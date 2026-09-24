@@ -70,6 +70,8 @@ CANONICAL_MODULE_ALIASES = {
     "flash_attention3": "flash3",
     "flash_attention3_fp8": "flash3",
     "flash3_fp8": "flash3",
+    "fms": "factorised_matrix_state",
+    "fasa": "mixattention_moska",
     "galerkin": "galerkin_attention",
     "hla_attention": "hla",
     "infini_attention": "infini",

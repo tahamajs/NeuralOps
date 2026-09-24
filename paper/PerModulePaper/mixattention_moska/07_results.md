@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Path | Time | Status |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | Full | 1.9 s | PASS |
-| DistilBERT | **FASA** | **90.94** | **+0.23** | 0.9131 | Pruned | 1.42x | PASS |
-| RoBERTa | full | 78.56% | — | 0.8124 | Full | 4.1 s | PASS |
-| RoBERTa | **FASA** | **86.24** | **+7.68** | 0.8739 | Pruned | 2.3 s | PASS |
-| GPT-2 | full | 79.36% | — | 0.7978 | Full | 4.2 s | PASS |
-| GPT-2 | **FASA** | **87.27** | **+7.91** | 0.8835 | **No prune** | 2.3 s | PASS |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Fasa** | **90.71%** | +0.23% | PASS | 0.9107 | 0 | **0.99x** | 321.7 MB | 3.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Fasa** | **90.94%** | +2.18% | PASS | 0.9135 | 0 | **0.95x** | 400.1 MB | 8.8s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Fasa** | **87.50%** | +6.19% | PASS | 0.8832 | 0 | **1.00x** | 339.8 MB | 7.4s |
 
 **Key observations:**
 
