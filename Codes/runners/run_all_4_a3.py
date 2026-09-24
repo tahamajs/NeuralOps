@@ -5,13 +5,13 @@ import time
 import json
 import pandas as pd
 
-os.chdir(r"D:\svd_project")
+os.chdir(r"PROJECT_ROOT")
 
 models = [
     {
         "name": "DistilBERT",
         "cmd": (
-            r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
+            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
             r"--model models\distilbert_sst2 "
             r"--model_family bert "
             r"--dataset sst2 "
@@ -29,7 +29,7 @@ models = [
     {
         "name": "RoBERTa",
         "cmd": (
-            r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
+            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
             r"--model models\roberta_sst2 "
             r"--model_family roberta "
             r"--dataset sst2 "
@@ -48,7 +48,7 @@ models = [
     {
         "name": "GPT-2",
         "cmd": (
-            r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
+            r'"sys.executable" -u Codes\framework\run_quality_sweep.py '
             r"--model models\gpt2_sst2 "
             r"--model_family gpt "
             r"--dataset sst2 "
