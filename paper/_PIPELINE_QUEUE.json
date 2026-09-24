@@ -2,62 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_hybridkv_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybridkv_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybridkv_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_ast_pruner_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ast_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ast_pruner_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_liftr_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules liftr_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_liftr_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_swift_svd_act",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_fwsvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_kmeans_quantize",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_quantize --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_quantize",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_dynamic_entropy_svd_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_coopq",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_bonsai_pruner_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules bonsai_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_bonsai_pruner_factory",
@@ -8157,13 +8101,71 @@
       "started_at": "2026-09-24T05:57:16.878380",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_saes_svd",
+      "id": "p3_gpt2_saes_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd",
+      "started_at": "2026-09-24T05:57:45.737621",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "id": "p3_gpt2_hybridkv_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybridkv_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybridkv_factory",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_ast_pruner_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ast_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ast_pruner_factory",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_liftr_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules liftr_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_liftr_factory",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_swift_svd_act",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act",
+      "status": "pending",
+      "retries": 0
     }
   ],
   "active": [
     {
-      "id": "p3_gpt2_saes_svd",
+      "id": "p3_gpt2_fwsvd",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_kmeans_quantize",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_quantize --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_quantize",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_dynamic_entropy_svd_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_coopq",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq",
       "status": "active",
       "retries": 0
     }
