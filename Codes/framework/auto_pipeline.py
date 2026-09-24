@@ -772,33 +772,10 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
 
             # --- 3. Read queue ---
             state = qm.read()
-            max_parallel = min(
-                state.get("max_parallel", GPU_SAFE_MAX_PARALLEL),
-                GPU_SAFE_MAX_PARALLEL,
-            )
-            
-            # --- Dynamic Scaling ---
-            if stats.ok:
-                if stats.utilization_pct < 60:
-                    if util_below_60_start is None:
-                        util_below_60_start = time.time()
-                    elif time.time() - util_below_60_start > 60 and max_parallel < 8:
-                        max_parallel += 1
-                        state["max_parallel"] = max_parallel
-                        qm.write(state)
-                        util_below_60_start = None
-                else:
-                    util_below_60_start = None
-                
-                if stats.vram_used_gb > 7.5:
-                    max_parallel = max(1, max_parallel - 1)
-                    state["max_parallel"] = max_parallel
-                    qm.write(state)
-                
-                if stats.temperature_c > 82.0:
-                    max_parallel = max(1, max_parallel - 1)
-                    state["max_parallel"] = max_parallel
-                    qm.write(state)
+            max_parallel = GPU_SAFE_MAX_PARALLEL
+            if state.get("max_parallel") != GPU_SAFE_MAX_PARALLEL:
+                state["max_parallel"] = GPU_SAFE_MAX_PARALLEL
+                qm.write(state)
 
             # --- 4. Auto-refill ---
             if time.time() - last_refill > AUTO_REFILL_INTERVAL_S:
