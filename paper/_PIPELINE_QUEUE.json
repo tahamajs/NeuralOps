@@ -1,27 +1,6 @@
 {
-  "max_parallel": 5,
+  "max_parallel": 1,
   "jobs": [
-    {
-      "id": "p3_gpt2_inject_adaptive_sparse_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_adaptive_sparse_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_adaptive_sparse_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_zerokv_neo_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules zerokv_neo_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_zerokv_neo_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_flat_llm_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_svd_llm_compressor",
       "type": "gpu",
@@ -8929,6 +8908,20 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distill_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distill_inject",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "p3_gpt2_inject_adaptive_sparse_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_adaptive_sparse_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_adaptive_sparse_attention",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_flat_llm_compressor_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor_factory",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -9694,6 +9687,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
       "started_at": "2026-09-24T04:28:59.495679",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_zerokv_neo_compressor_factory",
+      "id": "p3_gpt2_zerokv_neo_compressor_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules zerokv_neo_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_zerokv_neo_compressor_factory",
+      "started_at": "2026-09-24T04:30:34.490949",
       "retries": 0,
       "status": "done"
     }
