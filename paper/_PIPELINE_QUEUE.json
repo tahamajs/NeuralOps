@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_tt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_coopq_quantizer",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq_quantizer",
@@ -7755,13 +7748,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_tt_linear_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_adaptive_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_compressor_factory",
@@ -7779,6 +7765,13 @@
       "id": "p3_gpt2_armor_pruner_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_tt_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_factory",
       "status": "active",
       "retries": 0
     }
@@ -9248,6 +9241,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flap_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flap_factory",
       "started_at": "2026-09-24T21:56:27.548741",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_tt_linear_compressor",
+      "id": "p3_gpt2_tt_linear_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_compressor",
+      "started_at": "2026-09-24T21:56:14.214290",
       "retries": 0,
       "status": "done"
     }
