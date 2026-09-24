@@ -319,25 +319,40 @@ class HybridSVDCompressor(BaseCompressor):
 
             try:
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=raw_w.dtype, device=raw_w.device)
-                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=raw_w.dtype, device=raw_w.device)
+                for escalation_step in range(4):
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=raw_w.dtype, device=raw_w.device)
+                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=raw_w.dtype, device=raw_w.device)
 
-                W_recon = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
-                err = (torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)).item()
-                self.layer_errors[name] = float(err)
+                    W_recon = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
+                    err = (torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)).item()
+                    self.layer_errors[name] = float(err)
 
-                if err > self.max_error:
-                    logger.warning(
-                        "HybridSVD: layer %s reconstruction error %.4f > max_error %.4f",
-                        name, err, self.max_error,
-                    )
-                    if self.fallback_to_original:
-                        self.fallback_layers.append(name)
-                        for p in module.parameters():
-                            p.requires_grad = False
-                        total_comp_params += orig_params
-                        continue
+                    if err > self.max_error and r < min(bound_r, max_rank):
+                        r_new = min(int(r * 1.5), bound_r, max_rank)
+                        if r_new > r:
+                            logger.info(
+                                "HybridSVD: %s err=%.4f at rank=%d, escalating to rank=%d",
+                                name, err, r, r_new,
+                            )
+                            r = r_new
+                            continue
+
+                    if err > self.max_error:
+                        logger.warning(
+                            "HybridSVD: layer %s reconstruction error %.4f > max_error %.4f (final rank=%d)",
+                            name, err, self.max_error, r,
+                        )
+                        if self.fallback_to_original:
+                            self.fallback_layers.append(name)
+                            for p in module.parameters():
+                                p.requires_grad = False
+                            total_comp_params += orig_params
+                            break
+                    break
+
+                if name in self.fallback_layers:
+                    continue
 
                 # Detect existing LoRA rank.
                 existing_lora_A = getattr(module, "lora_A", None)

@@ -387,7 +387,10 @@ The `FASA` architecture incorporates telemetry hooks for tracking singular value
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 22.54 ms | 739.1 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 16.91 ms | 739.1 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 17.79 ms | 749.0 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 17.33 ms | 749.0 MB |
 

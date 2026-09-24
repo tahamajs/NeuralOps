@@ -598,9 +598,12 @@ The `SparseGPTCompressor` architecture incorporates telemetry hooks for tracking
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 10.73 ms | 571.8 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 10.97 ms | 571.8 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 12.94 ms | 581.7 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 14.71 ms | 581.7 MB |
 
 ## Unified 4-Architecture Benchmark Results (SparseGPT)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

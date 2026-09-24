@@ -450,13 +450,6 @@ The `SLiMCompressor` architecture incorporates telemetry hooks for tracking sing
 ```python
 # TODO: Add specific usage example
 ```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
 ## Unified 4-Architecture Benchmark Results (SLiM Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
 

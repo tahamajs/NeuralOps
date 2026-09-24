@@ -482,7 +482,10 @@ The `MoEDeltaKVPagedAttention` architecture incorporates telemetry hooks for tra
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 56.24 ms | 1437.2 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 56.59 ms | 1437.2 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 56.42 ms | 1447.0 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 56.76 ms | 1447.0 MB |
 

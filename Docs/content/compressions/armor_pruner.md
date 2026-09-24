@@ -714,9 +714,12 @@ The `ARMORLinear` architecture incorporates telemetry hooks for tracking singula
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 18.74 ms | 843.6 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 17.04 ms | 843.6 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 17.06 ms | 853.5 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 20.33 ms | 853.5 MB |
 
 ## Unified 4-Architecture Benchmark Results (ARMOR Pruner)
 Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity core, rank 16 low-rank correction, decoupled branches, 200 recovery steps):

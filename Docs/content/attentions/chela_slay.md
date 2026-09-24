@@ -323,13 +323,6 @@ The `ChelaSlayAttention` architecture incorporates telemetry hooks for tracking 
 ```python
 # TODO: Add specific usage example
 ```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
 ## Empirical Benchmark Results
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |

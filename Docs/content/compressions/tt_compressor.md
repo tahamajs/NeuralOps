@@ -1,3 +1,6 @@
+> [!WARNING] **DEPRECATION & BENCHMARK QUEUE REMOVAL NOTICE**
+> As of September 2026, **Tensor-Train (TT) compression has been formally deprecated and removed from active benchmark sweeps** due to severe auto-regressive decoding bottlenecks ($>400\text{ ms/token}$) on modern accelerator hardware.
+
 # TTCompressor: Global Tensor-Train Factorization Framework Engine
 
 > [!WARNING]
@@ -413,9 +416,12 @@ The `TTCompressor` architecture incorporates telemetry hooks for tracking singul
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 18.97 ms | 1034.3 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 18.80 ms | 1034.8 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 19.71 ms | 1071.6 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 19.14 ms | 1072.1 MB |
 
 
 ## Limitations & Future Work

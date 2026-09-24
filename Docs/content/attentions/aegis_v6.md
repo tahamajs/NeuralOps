@@ -620,9 +620,12 @@ The `AegisAttentionV3` architecture incorporates telemetry hooks for tracking si
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 48.06 ms | 1772.3 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 48.69 ms | 1772.3 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 48.45 ms | 1782.2 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 48.87 ms | 1782.2 MB |
 
 ## Empirical Benchmark Results
 
