@@ -412,6 +412,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
-| ROBERTA | 70.07% | 0.7603 | 1.0 | 0 | 299.09 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-kronecker) |
-| GPT2 | 51.61% | 0.6667 | 1.0032 | 2 | 400.13 | `PASS_LOW` | N/A |
+| DISTILBERT | 90.48% | 0.9083 | 1.0657 | 24 | 341.75 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-kronecker) |
+| ROBERTA | 89.56% | 0.8986 | 1.0647 | 44 | 596.0 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-kronecker) |
+| GPT2 | 85.09% | 0.8575 | 1.0328 | 13 | 638.83 | `PASS` | [`gpt2`](Upload error: [WinError 10054] An existing connection was forcibly closed by the remote host) |
