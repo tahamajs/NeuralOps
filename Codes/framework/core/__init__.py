@@ -60,6 +60,12 @@ _MODULE_MAP: Dict[str, str] = {
     "get_device": "utils",
     "human_readable_time": "utils",
     "set_seed": "utils",
+    "_cfg_get": "common",
+    "repeat_kv": "common",
+    "_detect_decoder": "common",
+    "_apply_rope": "common",
+    "LoRALinear": "common",
+    "FactorizedLinear": "common",
 }
 
 

@@ -25,3 +25,37 @@ for file in os.listdir(_curr_dir):
                         __all__.append(attr)
         except Exception as e:
             logger.warning(f"Skipping compression_engine module '{module_name}' due to: {e}")
+
+import importlib
+import sys
+
+_LEGACY_MAP = {
+    "aasvd": "aa_svd_compressor",
+    "adasvd": "adasvd_compressor",
+    "cur_moe": "cur_moe_compressor",
+    "frandi": "frandi_compressor",
+    "grecodec": "grecodec_compressor",
+    "hybridkv": "hybridkv_compressor",
+    "kvtc": "kvtc_compressor",
+    "modegpt": "modegpt_compressor",
+    "oats": "oats_compressor",
+    "proxsparse_pruner": "proxsparse",
+    "rpca": "rpca_compressor",
+    "saes_svd": "saes_svd_v2",
+    "saes_svd_compressor": "saes_svd_v2",
+    "sdrm": "sdrm_compressor",
+    "slicegpt_compressor": "slicegpt",
+    "soka": "soka_compressor",
+    "swift_svd_compressor": "swift_svd_act",
+    "zerokv_neo": "zerokv_neo_compressor",
+}
+
+
+def __getattr__(name: str):
+    if name in _LEGACY_MAP:
+        target = _LEGACY_MAP[name]
+        mod = importlib.import_module(f".{target}", __name__)
+        sys.modules[f"{__name__}.{name}"] = mod
+        return mod
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+

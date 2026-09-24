@@ -35,3 +35,45 @@ try:
     sys.modules.setdefault(f"{__name__}.Mamba", _mamba_mod)
 except Exception as e:
     logger.warning("Could not install Mamba compatibility alias: %s", e)
+
+_LEGACY_MAP = {
+    "gqa": "gqa_attention",
+    "galerkin": "galerkin_attention",
+    "galerkin_inject": "galerkin_attention",
+    "adaptive_span_inject": "adaptive_span_attention",
+    "adaptive_sparse_inject": "adaptive_sparse_attention",
+    "adasplash_inject": "adasplash_attention",
+    "aegis_hybrid_attention": "aegis_hybrid",
+    "cluster_inject": "cluster_attention",
+    "compressed_mha": "compressed_mha_attention",
+    "cosformer_inject": "cosformer",
+    "hla_inject": "hla_attention",
+    "kda_inject": "kda_attention",
+    "leka_v1_inject": "leka_v1",
+    "leka_v2_inject": "leka_v2",
+    "leka_v3_inject": "leka_v3",
+    "mamba_attention": "mamba_block",
+    "moba": "moba_attention",
+    "nha_compressor": "nha_attention",
+    "rpc": "rpc_attention",
+    "salt": "salt_attention",
+    "soa_fused_module": "SOAFusedAttention",
+    "soa_module": "soa_attn",
+    "spectra_v2_attention": "spectra_v2",
+    "svd_compressed_attention": "svd_compressed",
+    "svd_llm_v2": "svd_llm_v2_attention",
+    "svd_proj_attn": "svd_projection_attention",
+    "token_compressed": "token_compressed_attention",
+    "tt": "token_compressed_attention",
+    "upi_mamba": "upi_stuffed_mamba",
+}
+
+
+def __getattr__(name: str):
+    if name in _LEGACY_MAP:
+        target = _LEGACY_MAP[name]
+        mod = importlib.import_module(f".{target}", __name__)
+        sys.modules[f"{__name__}.{name}"] = mod
+        return mod
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+

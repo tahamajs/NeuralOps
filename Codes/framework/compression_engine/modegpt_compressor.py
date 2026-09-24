@@ -142,6 +142,7 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("modegpt")
+@COMPRESSOR_REGISTRY.register("modegpt_compressor")
 class MoDeGPTCompressor(BaseCompressor):
     """
     MoDeGPT: Modular Decomposition of Transformer Projection Blocks.
