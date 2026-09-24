@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_direct_svd_encoder",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_encoder --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_encoder",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hashednets_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashednets_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashednets_factory",
@@ -7727,13 +7720,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_tt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_coopq_quantizer",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq_quantizer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq_quantizer",
@@ -7751,6 +7737,13 @@
       "id": "p3_gpt2_frandi_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_direct_svd_encoder",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_encoder --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_encoder",
       "status": "active",
       "retries": 0
     }
@@ -9256,6 +9249,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner_factory",
       "started_at": "2026-09-24T22:04:12.778332",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_tt_factory",
+      "id": "p3_gpt2_tt_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_factory",
+      "started_at": "2026-09-24T22:05:36.537162",
       "retries": 0,
       "status": "done"
     }
