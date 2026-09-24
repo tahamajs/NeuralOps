@@ -177,7 +177,7 @@ def _replace_layers(
                     _attach_new_attention(layer, attn_attr, new_attn, model_type)
                     continue
             except Exception as e:
-                logger.debug(
+                logger.warning(
                     "Injector '%s' failed for layer %d: %s. Falling back to builder.",
                     getattr(inject_fn, "__name__", "?"), idx, e,
                 )
@@ -420,6 +420,25 @@ def _get_valid_mask(
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
 
+def _randomized_svd(W: torch.Tensor, rank: int):
+    """Faster randomized SVD for large matrices."""
+    n_iter = 4
+    rank = max(1, min(rank, W.shape[0], W.shape[1]))
+    target_k = min(rank + 10, W.shape[0], W.shape[1])
+    omega = torch.randn(W.shape[1], target_k, device=W.device, dtype=W.dtype)
+    Y = W @ omega
+    for _ in range(n_iter):
+        Q, _ = torch.linalg.qr(Y)
+        Z = W.T @ Q
+        Q_z, _ = torch.linalg.qr(Z)
+        Y = W @ Q_z
+    Q, _ = torch.linalg.qr(Y)
+    B = Q.T @ W
+    U_b, S, Vh = torch.linalg.svd(B, full_matrices=False)
+    U = Q @ U_b
+    return U, S, Vh
+
+
 # ===========================================================================
 # RE-07 / RE-19: factorized linear with bias property
 # ===========================================================================
@@ -574,7 +593,10 @@ class ReplaceAttention(BaseAttention):
                             "Using SVD rank-reduction.",
                             tuple(W.shape), target_out, target_in
                         )
-                    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+                    if W.shape[0] > 512 and W.shape[1] > 512:
+                        U, S, Vh = _randomized_svd(W, target_proj.rank)
+                    else:
+                        U, S, Vh = torch.linalg.svd(W, full_matrices=False)
                     rank = min(target_proj.rank, U.size(1), Vh.size(0))
                     target_proj.down.weight.data.zero_()
                     target_proj.up.weight.data.zero_()
@@ -589,7 +611,7 @@ class ReplaceAttention(BaseAttention):
                         n = min(b.numel(), target_proj.up.bias.numel())
                         target_proj.up.bias.data[:n].copy_(b[:n].to(target_proj.up.bias.dtype))
                 except Exception as e:
-                    logger.warning("SVD init failed: %s", e)
+                    logger.error("SVD init failed: %s", e)
             else:
                 # Raise on shape mismatch
                 if w.shape != target_proj.weight.shape:
@@ -708,13 +730,15 @@ class ReplaceAttention(BaseAttention):
                 if w_o is None:
                     w_o, b_o = adapter.get_weight_bias(old_attn, "o")
             except Exception as e:
-                logger.debug("UniversalAdapter fallback failed: %s", e)
+                logger.warning("UniversalAdapter fallback failed: %s", e)
 
-        for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v), ("w_o", w_o)]:
-            if w is not None:
-                norm = float(torch.linalg.norm(w.float()).item())
-                if norm < 1e-4:
-                    logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
+        if getattr(self, '_first_copy_done', False) is False:
+            for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v), ("w_o", w_o)]:
+                if w is not None:
+                    norm = float(torch.linalg.norm(w.float()).item())
+                    if norm < 1e-4:
+                        logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
+            self._first_copy_done = True
 
         self._copy_into(self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size)
         self._copy_into(self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size)
