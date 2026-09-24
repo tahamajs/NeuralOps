@@ -30,6 +30,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 @COMPRESSOR_REGISTRY.register('rpca')
+@COMPRESSOR_REGISTRY.register('rpca_compressor')
 class RPCACompressor(BaseCompressor):
     is_custom_attention: bool = True
     """

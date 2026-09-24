@@ -41,6 +41,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
+@COMPRESSOR_REGISTRY.register("swift_svd")
+@COMPRESSOR_REGISTRY.register("swift_svd_compressor")
 class SwiftSVDActivationCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """

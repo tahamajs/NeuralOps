@@ -11,6 +11,59 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_ATTENTION_FILE_MAP: Dict[str, str] = {
+    "gqa": "gqa_attention",
+    "galerkin": "galerkin_attention",
+    "galerkin_inject": "galerkin_attention",
+    "adaptive_span_inject": "adaptive_span_attention",
+    "adaptive_sparse_inject": "adaptive_sparse_attention",
+    "adasplash_inject": "adasplash_attention",
+    "aegis_hybrid_attention": "aegis_hybrid",
+    "cluster_inject": "cluster_attention",
+    "compressed_mha": "compressed_mha_attention",
+    "cosformer_inject": "cosformer",
+    "hla_inject": "hla_attention",
+    "kda_inject": "kda_attention",
+    "leka_v1_inject": "leka_v1",
+    "leka_v2_inject": "leka_v2",
+    "leka_v3_inject": "leka_v3",
+    "mamba_attention": "mamba_block",
+    "moba": "moba_attention",
+    "nha_compressor": "nha_attention",
+    "rpc": "rpc_attention",
+    "salt": "salt_attention",
+    "soa_fused_module": "SOAFusedAttention",
+    "soa_module": "soa_attn",
+    "spectra_v2_attention": "spectra_v2",
+    "svd_compressed_attention": "svd_compressed",
+    "svd_llm_v2": "svd_llm_v2_attention",
+    "svd_proj_attn": "svd_projection_attention",
+    "token_compressed": "token_compressed_attention",
+    "tt": "token_compressed_attention",
+    "upi_mamba": "upi_stuffed_mamba",
+}
+
+_COMPRESSOR_FILE_MAP: Dict[str, str] = {
+    "aasvd": "aa_svd_compressor",
+    "adasvd": "adasvd_compressor",
+    "cur_moe": "cur_moe_compressor",
+    "frandi": "frandi_compressor",
+    "grecodec": "grecodec_compressor",
+    "hybridkv": "hybridkv_compressor",
+    "kvtc": "kvtc_compressor",
+    "modegpt": "modegpt_compressor",
+    "oats": "oats_compressor",
+    "proxsparse_pruner": "proxsparse",
+    "rpca": "rpca_compressor",
+    "saes_svd": "saes_svd_v2",
+    "saes_svd_compressor": "saes_svd_v2",
+    "sdrm": "sdrm_compressor",
+    "slicegpt_compressor": "slicegpt",
+    "soka": "soka_compressor",
+    "swift_svd_compressor": "swift_svd_act",
+    "zerokv_neo": "zerokv_neo_compressor",
+}
+
 
 class Registry:
     """A named dictionary that maps string keys to classes or factory functions with capability metadata."""
@@ -83,14 +136,13 @@ class Registry:
         if k in self._dict:
             return
         if self.name == "compressors":
+            canonical = _COMPRESSOR_FILE_MAP.get(k, k)
             try:
                 import framework.compression_engine as _ce
-                # Try accessing key from compression_engine
                 _ = getattr(_ce, key, None)
                 if k not in self._dict:
-                    # Try importing module by key directly
                     import importlib
-                    importlib.import_module(f"framework.compression_engine.{k}")
+                    importlib.import_module(f"framework.compression_engine.{canonical}")
             except ImportError:
                 pass
             except Exception as e:
@@ -99,12 +151,13 @@ class Registry:
                     raise
                 logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
         elif self.name == "attentions":
+            canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
                 import framework.attentions as _att
                 _ = getattr(_att, key, None)
                 if k not in self._dict:
                     import importlib
-                    importlib.import_module(f"framework.attentions.{k}")
+                    importlib.import_module(f"framework.attentions.{canonical}")
             except ImportError:
                 pass
             except Exception as e:
