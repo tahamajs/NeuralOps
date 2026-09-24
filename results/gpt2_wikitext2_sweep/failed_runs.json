@@ -338,5 +338,15 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T21:22:10.057379"
+  },
+  {
+    "module": "rotational_slicegpt_int4_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:24:47.359561"
   }
 ]

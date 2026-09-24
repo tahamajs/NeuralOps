@@ -7673,15 +7673,6 @@
       "status": "pending"
     },
     {
-      "job_id": "p3_gpt2_asvd",
-      "id": "p3_gpt2_asvd",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd",
-      "started_at": "2026-09-24T02:58:09.173534",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "p3_gpt2_nha_compressor",
       "id": "p3_gpt2_nha_compressor",
       "job_type": "gpu",
@@ -7883,13 +7874,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_cur_moe_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_rotational_slicegpt_int4_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
@@ -7909,6 +7893,13 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd",
       "status": "active",
       "retries": 0
+    },
+    {
+      "id": "p3_gpt2_asvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd",
+      "status": "active",
+      "retries": 1
     }
   ],
   "completed": [
@@ -9214,6 +9205,15 @@
       "job_type": "cpu",
       "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 220",
       "started_at": "2026-09-24T21:19:06.335690",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_cur_moe_factory",
+      "id": "p3_gpt2_cur_moe_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_factory",
+      "started_at": "2026-09-24T21:13:12.037022",
       "retries": 0,
       "status": "done"
     }
