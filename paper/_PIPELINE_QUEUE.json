@@ -2,13 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "p3_gpt2_fwsvd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_roast_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules roast_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_roast_factory",
@@ -8232,16 +8225,16 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_hybrid_svd",
+      "id": "p3_gpt2_admm_compressor",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybrid_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybrid_svd",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_compressor",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_admm_compressor",
+      "id": "p3_gpt2_fwsvd_compressor",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_compressor",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd_compressor",
       "status": "active",
       "retries": 0
     }
@@ -9108,6 +9101,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv",
       "started_at": "2026-09-24T05:01:59.693915",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_hybrid_svd",
+      "id": "p3_gpt2_hybrid_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybrid_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybrid_svd",
+      "started_at": "2026-09-24T05:02:57.308730",
       "retries": 0,
       "status": "done"
     }
