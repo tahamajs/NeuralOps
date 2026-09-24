@@ -420,14 +420,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 truncated SVD, max e
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 88.99% | 0.8977 | 1.0248 | 11 | 355.29 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-direct-svd) |
-| ROBERTA | 71.10% | 0.7544 | 1.028 | 23 | 567.52 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-direct-svd) |
-| GPT2 | 68.46% | 0.5827 | 1.0084 | 6 | 646.14 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-direct-svd) |
-
-## Empirical Benchmark Results
-
-| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9107 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-direct-svd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-direct-svd) | 2026-09-19 |
-| **distilbert-mnli-full** | mnli | `PASS` | 81.80% | **82.10%** | +0.30% | 0.8202 | 1.00x | 0 | N/A | 2026-09-19 |
-| **distilbert-agnews-full** | ag_news | `PASS` | 94.30% | **94.40%** | +0.10% | 0.9401 | 1.00x | 0 | N/A | 2026-09-19 |
+| DISTILBERT | 88.99% | 0.8979 | 1.0248 | 11 | 220.8 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-direct-svd) |
+| ROBERTA | 92.43% | 0.9257 | 1.028 | 23 | 558.5 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-direct-svd) |
+| GPT2 | 87.84% | 0.879 | 1.0084 | 6 | 389.94 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-direct-svd) |

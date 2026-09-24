@@ -298,9 +298,9 @@ Continuously monitor output activation norms during inference to adjust $\eta$ d
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert** | sst2 | `PASS` | N/A | **90.14%** | N/A | 0.9051 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive-ranks) | 2026-09-10 |
-| **roberta** | sst2 | `PASS` | N/A | **66.97%** | N/A | 0.7338 | 1.00x | 0 | [svd-linear-attention-roberta-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-ranks) | 2026-09-10 |
-| **gpt2** | sst2 | `PASS` | N/A | **76.95%** | N/A | 0.8016 | 1.00x | 1 | [svd-linear-attention-gpt2-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive-ranks) | 2026-09-15 |
+| **distilbert** | sst2 | `PASS` | N/A | **82.11%** | N/A | 0.8408 | 1.17x | 24 | [svd-linear-attention-distilbert-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive-ranks) | 2026-09-24 |
+| **roberta** | sst2 | `PASS` | N/A | **79.47%** | N/A | 0.8172 | 1.19x | 48 | [svd-linear-attention-roberta-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-ranks) | 2026-09-24 |
+| **gpt2** | sst2 | `PASS` | N/A | **79.82%** | N/A | 0.8182 | 1.17x | 24 | [svd-linear-attention-gpt2-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive-ranks) | 2026-09-24 |
 | **qwen3_5** | sst2 | `PASS` | N/A | **81.88%** | N/A | 0.7980 | 1.00x | 0 | [svd-linear-attention-qwen3_5-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-qwen3_5-adaptive-ranks) | 2026-09-10 |
 | **gpt2** | ag_news | `PASS` | 79.70% | **84.50%** | +4.80% | 0.8376 | 1.00x | 1 | N/A | 2026-09-18 |
 
