@@ -449,9 +449,12 @@ The `LowRankCompressor` architecture incorporates telemetry hooks for tracking s
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 14.15 ms | 711.7 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 13.89 ms | 711.7 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 14.59 ms | 721.6 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 14.84 ms | 721.6 MB |
 
 ## Unified 4-Architecture Benchmark Results (SOKA Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

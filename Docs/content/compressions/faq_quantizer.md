@@ -475,9 +475,12 @@ Evaluations across sequence lengths and model scales:
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 10.83 ms | 571.8 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 10.99 ms | 571.8 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 11.31 ms | 581.7 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 10.94 ms | 581.7 MB |
 
 ## Unified 4-Architecture Benchmark Results (FAQ Quantizer)
 Evaluated on SST-2 sentiment classification (FP16, 8-bit SmoothQuant STE, alpha 0.5, lora_r 16, max error 0.35, target attention only, 200 recovery steps):

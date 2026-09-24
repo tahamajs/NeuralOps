@@ -378,7 +378,10 @@ The `HGRN2Layer` architecture incorporates telemetry hooks for tracking singular
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 440.14 ms | 755.2 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 427.22 ms | 755.2 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 454.60 ms | 765.1 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 429.82 ms | 765.1 MB |
 

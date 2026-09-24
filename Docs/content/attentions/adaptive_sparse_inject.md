@@ -548,13 +548,6 @@ The `AdaptiveSparseAttention` architecture incorporates telemetry hooks for trac
 ```python
 # TODO: Add specific usage example
 ```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
 ## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
 Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):
 

@@ -16,9 +16,12 @@ from Codes.framework.attentions import DecayGatedLinearAttention
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 14.24 ms | 719.1 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 14.89 ms | 719.1 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 15.73 ms | 729.0 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 15.01 ms | 729.0 MB |
 
 ## Limitations & Future Work
 

@@ -775,20 +775,3 @@ print("Output logits shape:", outputs.logits.shape)
 1. **Rank Saturation**: If factor rank $r \le 4$, outer product matrices span a restricted subspace in $\mathbb{R}^{r^2}$, limiting expressive capacity on complex syntax tasks.
 2. **Intermediate Tensor Materialization**: Computing un-fused einsum outer products materializes 5D tensors `[B, L, H, r, r]` in memory before scaling.
 3. **Small Context Overhead**: For small sequence lengths ($L < 64$), factor projection computation overhead outweighs memory savings.
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.

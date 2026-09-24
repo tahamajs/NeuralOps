@@ -451,18 +451,6 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ```python
 # TODO: Add specific usage example
 ```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.
-
 ## Empirical Benchmark Results
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
