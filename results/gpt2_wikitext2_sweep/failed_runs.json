@@ -508,5 +508,15 @@
     "accuracy_pct": 0.0,
     "error": "FAIL_PPL_DIVERGED: perplexity (174.32) exceeded threshold 100.0",
     "timestamp": "2026-09-24T22:05:40.121440"
+  },
+  {
+    "module": "dobi_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T22:11:40.762963"
   }
 ]
