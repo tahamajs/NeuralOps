@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_rotational_slicegpt_int4_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_lora_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attn",
@@ -7904,13 +7897,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_armor_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_armor_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_compressor",
@@ -7928,6 +7914,13 @@
       "id": "p3_gpt2_cur_moe_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_rotational_slicegpt_int4_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
       "status": "active",
       "retries": 0
     }
@@ -9208,6 +9201,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_compressor_factory",
       "started_at": "2026-09-24T21:05:58.583463",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_armor_pruner",
+      "id": "p3_gpt2_armor_pruner",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
+      "started_at": "2026-09-24T21:05:18.634047",
       "retries": 0,
       "status": "done"
     }
