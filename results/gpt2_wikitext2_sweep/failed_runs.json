@@ -198,5 +198,15 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T20:40:05.773405"
+  },
+  {
+    "module": "grecodec_compressor_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T20:42:22.809209"
   }
 ]
