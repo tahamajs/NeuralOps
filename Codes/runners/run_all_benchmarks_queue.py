@@ -12,11 +12,13 @@ Runs each module benchmark (`run_all_4_<module>.py`) one-by-one sequentially:
 """
 
 import argparse
+import concurrent.futures
 import glob
 import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -92,6 +94,7 @@ def run_single_module(
     batch_size: Optional[int],
     timeout_s: int = 7200,
     log_dir: Optional[Path] = None,
+    echo_stdout: bool = True,
 ) -> Dict[str, Any]:
     """Execute a single run_all_4_<module>.py runner with standard arguments."""
     module_name = extract_module_name(runner_path)
@@ -113,8 +116,9 @@ def run_single_module(
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file_path = log_dir / f"benchmark_{module_name}.log"
 
-    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] >>> STARTING BENCHMARK: {module_name}", flush=True)
-    print(f"Command: {' '.join(cmd)}", flush=True)
+    if echo_stdout:
+        print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] >>> STARTING BENCHMARK: {module_name}", flush=True)
+        print(f"Command: {' '.join(cmd)}", flush=True)
 
     process = None
     exit_code = -1
@@ -133,8 +137,9 @@ def run_single_module(
             )
             with open(log_file_path, "w", encoding="utf-8", errors="replace") as f:
                 for line in process.stdout:
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
+                    if echo_stdout:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
                     f.write(line)
                     f.flush()
             process.wait(timeout=timeout_s)
@@ -163,7 +168,8 @@ def run_single_module(
 
     elapsed_s = round(time.time() - start_time, 2)
     status_str = "SUCCESS" if exit_code == 0 else f"FAILED (exit: {exit_code})"
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] <<< FINISHED BENCHMARK: {module_name} -> {status_str} in {elapsed_s:.1f}s\n", flush=True)
+    if echo_stdout:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] <<< FINISHED BENCHMARK: {module_name} -> {status_str} in {elapsed_s:.1f}s\n", flush=True)
 
     return {
         "module": module_name,
@@ -242,6 +248,12 @@ def main():
     )
 
     parser.add_argument(
+        "--parallel",
+        type=int,
+        default=3,
+        help="Number of parallel module benchmarks to run simultaneously (default: 3)",
+    )
+    parser.add_argument(
         "--exclude",
         type=str,
         default="",
@@ -283,13 +295,14 @@ def main():
     print("=" * 80)
     print(f"Repository Root : {repo_dir}")
     print(f"Total Runners   : {len(runners)} (out of {len(all_runners)} total)")
+    print(f"Parallel Workers: {args.parallel}")
     print(f"Target Models   : {', '.join(models_list)}")
     print(f"Recovery Steps  : {args.recovery_steps}")
     print(f"Batch Size      : {args.batch_size or 'Module Default'}")
     print(f"Skip Existing   : {args.skip_existing}")
     print(f"Timeout / Module: {args.timeout}s")
     print(f"Log Directory   : {log_dir}")
-    print("=" * 80)
+    print("=" * 80, flush=True)
 
     queue_results: List[Dict[str, Any]] = []
     summary_csv_path = results_root / "master_queue_benchmark_summary.csv"
@@ -302,34 +315,38 @@ def main():
     total_modules = len(runners)
     overall_start_time = time.time()
 
-    for idx, runner in enumerate(runners, 1):
-        module_name = extract_module_name(runner)
-        print(f"\n[{idx}/{total_modules}] Checking module: '{module_name}' ({runner.name})", flush=True)
+    write_lock = threading.Lock()
+    active_count = 0
+    active_lock = threading.Lock()
 
-        # Auto-update from origin/main so GPU server picks up latest fixes continuously
-        try:
-            subprocess.run(
-                ["git", "pull", "--autostash", "--rebase", "origin", "main"],
-                cwd=str(repo_dir),
-                capture_output=True,
-                timeout=60,
-            )
-        except Exception as pull_err:
-            pass
+    def process_module(item):
+        nonlocal passed_count, failed_count, skipped_count, active_count
+        idx, runner = item
+        module_name = extract_module_name(runner)
 
         if args.skip_existing and is_module_already_done(module_name, results_root, models_list):
-            print(f"  -> SKIPPED: All target models {models_list} already finished in results/unified_{module_name}/", flush=True)
-            skipped_count += 1
-            queue_results.append({
-                "module": module_name,
-                "runner": runner.name,
-                "exit_code": 0,
-                "elapsed_s": 0.0,
-                "status": "SKIPPED_EXISTING",
-                "error": None,
-                "timestamp": datetime.now().isoformat(),
-            })
-            continue
+            with write_lock:
+                skipped_count += 1
+                res = {
+                    "module": module_name,
+                    "runner": runner.name,
+                    "exit_code": 0,
+                    "elapsed_s": 0.0,
+                    "status": "SKIPPED_EXISTING",
+                    "error": None,
+                    "timestamp": datetime.now().isoformat(),
+                }
+                queue_results.append(res)
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] [{idx}/{total_modules}] SKIPPED: '{module_name}' (already done & passed)", flush=True)
+            return
+
+        with active_lock:
+            active_count += 1
+            curr_active = active_count
+
+        echo = (args.parallel == 1)
+        with write_lock:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [{idx}/{total_modules}] >>> START '{module_name}' (active: {curr_active}/{args.parallel})", flush=True)
 
         result = run_single_module(
             python_exec=args.python_exec,
@@ -339,26 +356,46 @@ def main():
             batch_size=args.batch_size,
             timeout_s=args.timeout,
             log_dir=log_dir,
+            echo_stdout=echo,
         )
 
-        queue_results.append(result)
-        if result["status"] == "PASS":
-            passed_count += 1
-        else:
-            failed_count += 1
+        with active_lock:
+            active_count -= 1
 
-        results_root.mkdir(parents=True, exist_ok=True)
-        try:
-            import pandas as pd
-            pd.DataFrame(queue_results).to_csv(summary_csv_path, index=False)
-        except Exception as csv_err:
-            print(f"[WARN] Could not write summary CSV: {csv_err}", flush=True)
+        with write_lock:
+            queue_results.append(result)
+            if result["status"] == "PASS":
+                passed_count += 1
+            else:
+                failed_count += 1
 
-        try:
-            with open(summary_json_path, "w", encoding="utf-8") as f:
-                json.dump(queue_results, f, indent=2)
-        except Exception as json_err:
-            print(f"[WARN] Could not write summary JSON: {json_err}", flush=True)
+            total_done = passed_count + failed_count + skipped_count
+            print(
+                f"[{datetime.now().strftime('%H:%M:%S')}] [{total_done}/{total_modules}] <<< FINISH '{module_name}' -> {result['status']} in {result['elapsed_s']:.1f}s (Passed: {passed_count}, Failed: {failed_count}, Skipped: {skipped_count})",
+                flush=True,
+            )
+
+            results_root.mkdir(parents=True, exist_ok=True)
+            try:
+                import pandas as pd
+                pd.DataFrame(queue_results).to_csv(summary_csv_path, index=False)
+            except Exception:
+                pass
+            try:
+                with open(summary_json_path, "w", encoding="utf-8") as f:
+                    json.dump(queue_results, f, indent=2)
+            except Exception:
+                pass
+
+    indexed_runners = list(enumerate(runners, 1))
+
+    if args.parallel > 1:
+        print(f"\nLaunching parallel queue execution with {args.parallel} concurrent workers...\n", flush=True)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as executor:
+            list(executor.map(process_module, indexed_runners))
+    else:
+        for item in indexed_runners:
+            process_module(item)
 
     total_wall_s = round(time.time() - overall_start_time, 2)
     print("\n" + "=" * 80)
