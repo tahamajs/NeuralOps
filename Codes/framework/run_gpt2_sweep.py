@@ -40,33 +40,39 @@ from framework.eval_all_models_datasets import apply_module_to_model
 LOG = logging.getLogger("GPT2Sweep")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# Canonical compression & attention modules suitable for decoder/causal evaluation
-DEFAULT_DECODER_MODULES = [
-    "full",
-    "a3",
-    "aasvd",
-    "adaptive",
-    "adaptive_svd",
-    "adasvd",
-    "aegis_hybrid",
-    "aegis_v6",
-    "cur_moe",
-    "fused_svd_kernel",
-    "hybrid_svd",
-    "kmeans",
-    "kronecker",
-    "lola",
-    "minimal_svd",
-    "mla",
-    "res_svd",
-    "salt",
-    "soa_attn",
-    "spectral_residual_lora",
-    "spectron",
-    "svd_compressed",
-    "svd_linear",
-    "swift_svd",
-]
+def get_all_decoder_modules(category: str = "all") -> List[str]:
+    """Dynamically discover all registered attention and compressor modules compatible with GPT-2 decoder."""
+    import framework.attentions
+    import framework.compression_engine
+    from framework.core.registry import (
+        ATTENTION_REGISTRY,
+        COMPRESSOR_REGISTRY,
+        is_helper_module,
+        is_module_declared_compatible,
+    )
+
+    by_factory: Dict[Any, List[str]] = {}
+    items_to_check = []
+    if category in ("all", "attentions"):
+        items_to_check.extend(list(ATTENTION_REGISTRY.items()))
+    if category in ("all", "compressors"):
+        items_to_check.extend(list(COMPRESSOR_REGISTRY.items()))
+
+    for name, factory in items_to_check:
+        if name == "full" or is_helper_module(name):
+            continue
+        is_compat, _ = is_module_declared_compatible(name, "gpt2")
+        if is_compat:
+            by_factory.setdefault(factory, []).append(name)
+
+    canonical = ["full"]
+    for aliases in by_factory.values():
+        canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
+
+    return sorted(list(set(canonical)), key=lambda item: (item != "full", item))
+
+
+DEFAULT_DECODER_MODULES = ["all"]
 
 CSV_FIELDS = [
     "module_name",
