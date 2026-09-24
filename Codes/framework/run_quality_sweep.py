@@ -450,10 +450,12 @@ def compute_compression_metrics(
     if univ_count > 0:
         num_injected_attention = univ_count
     else:
+        _ATTN_CLASS_HINTS = ("attention", "attentionv2", "attentionv3", "attentionv5", "attentionv6", "mamba", "attn")
         num_injected_attention = sum(
             1
             for m in model.modules()
-            if hasattr(m, "is_custom_attention") or hasattr(m, "span_logits")
+            if any(h in m.__class__.__name__.lower() for h in _ATTN_CLASS_HINTS)
+            and getattr(m, "is_custom_attention", False)
         )
     lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
     raw_params_after = total_params_after - lora_params
@@ -743,10 +745,20 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         target_chunk = input_chunk.clone()
         target_chunk[:, :-trg_len] = -100  # ignore overlap
         
-        # Force fp32 for stability in perplexity by disabling autocast
-        with torch.autocast(device_type=device_type, enabled=False):
-            outputs = model(input_chunk, labels=target_chunk)
-            loss = outputs.loss
+        try:
+            with torch.autocast(device_type=device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+                outputs = model(input_chunk, labels=target_chunk)
+                loss = outputs.loss.float()
+        except Exception as e:
+            from framework.utils.logger import LOG
+            LOG.warning("evaluate_perplexity: forward crashed: %s", e)
+            return {
+                "status": "FAIL_PPL_NAN",
+                "accuracy_pct": 0.0,
+                "perplexity": float("inf"),
+                "val_loss": float("nan"),
+                "error": str(e),
+            }
             
         nlls.append(loss.item() * trg_len)
         total_tokens += trg_len
@@ -2653,6 +2665,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     trainable = [p for p in trainable if id(p) not in clf_param_ids]
                 if trainable:
                     trainable_recovery_params = sum(p.numel() for p in trainable)
+                    model._trainable_recovery_params = trainable_recovery_params
                     trainable_ids = {id(p) for p in trainable}
                     for p in model.parameters():
                         p.requires_grad = (id(p) in trainable_ids)
@@ -2822,7 +2835,11 @@ def run_single_module_main(args) -> dict:
         ds = load_from_disk(str(fallback_sst2))
     train, val = ds["train"], ds["validation"]
     tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "right"
-    if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
+    if tokenizer.pad_token_id is None:
+        if tokenizer.eos_token:
+            tokenizer.pad_token = tokenizer.eos_token
+        else:
+            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     # Train the newly initialized classifier in fp32. GradScaler cannot
     # unscale gradients belonging to fp16 parameters. Cast the trained model
     # to the requested sweep precision immediately afterwards.
@@ -3479,7 +3496,7 @@ def run_single_module_main(args) -> dict:
             comp_metrics = {
                 "total_params_before": total_params_before,
                 "total_params_after": total_params_before,
-                "trainable_recovery_params": 0,
+                "trainable_recovery_params": getattr(model, "_trainable_recovery_params", 0),
                 "compression_rate": 1.0,
                 "compression_rate_raw": 1.0,
                 "compression_rate_net": 1.0,
@@ -3911,7 +3928,10 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     import os, sys
     tmp_dir = Path("logs/isolated_results")
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    result_json = tmp_dir / f"{module_name}_{int(time.time())}.json"
+    result_json = tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
+    if result_json.exists():
+        try: result_json.unlink()
+        except Exception: pass
 
     child_script = (HERE / "run_one_module_isolated.py").resolve()
     cmd = [
