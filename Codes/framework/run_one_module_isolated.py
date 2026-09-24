@@ -9,6 +9,12 @@ import argparse, json, sys, traceback
 from pathlib import Path
 from datetime import datetime
 
+HERE = Path(__file__).resolve().parent
+CODES = HERE.parent
+ROOT = CODES.parent
+for p in [str(CODES), str(ROOT), str(ROOT / "Codes")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 def main():
     from framework.run_quality_sweep import parse_args, run_single_module_main
