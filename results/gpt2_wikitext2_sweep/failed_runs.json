@@ -108,5 +108,15 @@
     "accuracy_pct": 0.0,
     "error": "FAIL_PPL_DIVERGED: perplexity (284.32) exceeded threshold 100.0",
     "timestamp": "2026-09-24T20:19:29.833056"
+  },
+  {
+    "module": "kronecker_tt_lora_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": 54.945977,
+    "accuracy_pct": 0.0,
+    "error": "base_before=124439808 base_after=130136064 delta=+4.58%",
+    "timestamp": "2026-09-24T20:23:55.133124"
   }
 ]
