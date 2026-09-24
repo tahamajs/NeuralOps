@@ -2813,6 +2813,33 @@ def run_single_module_main(args) -> dict:
             if cand.exists():
                 args.dataset_dir = str(cand)
                 break
+
+    # Auto-resolve base models (e.g. roberta-base, gpt2) to fine-tuned classification checkpoints if running on SST-2
+    if args.dataset and "wikitext" not in args.dataset.lower():
+        model_p = Path(args.model)
+        m_name = model_p.name.lower()
+        if "roberta" in m_name and "sst2" not in m_name and args.dataset == "sst2":
+            cand_roberta = [
+                model_p.parent / "roberta_sst2",
+                Path("models/roberta_sst2"),
+                Path("D:/SVD_Project/models/roberta_sst2"),
+            ]
+            for c in cand_roberta:
+                if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
+                    LOG.info("Auto-resolving base model '%s' to fine-tuned SST-2 model: %s", args.model, c)
+                    args.model = str(c)
+                    break
+        elif "gpt2" in m_name and "sst2" not in m_name and args.dataset == "sst2":
+            cand_gpt2 = [
+                model_p.parent / "gpt2_sst2",
+                Path("models/gpt2_sst2"),
+                Path("D:/SVD_Project/models/gpt2_sst2"),
+            ]
+            for c in cand_gpt2:
+                if c.exists() and ((c / "config.json").exists() or (c / "model.safetensors").exists()):
+                    LOG.info("Auto-resolving base model '%s' to fine-tuned SST-2 model: %s", args.model, c)
+                    args.model = str(c)
+                    break
     try:
         if "wikitext" in args.dataset.lower():
             ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
@@ -2959,10 +2986,16 @@ def run_single_module_main(args) -> dict:
 
         model_st = target_model.state_dict()
         matching_keys = [k for k in st if k in model_st and hasattr(st[k], "shape") and hasattr(model_st[k], "shape") and st[k].shape == model_st[k].shape]
-        match_ratio = len(matching_keys) / max(1, len(model_st))
+        is_partial = (
+            len(st) < len(model_st) * 0.7
+            or any(".lora_" in k for k in st)
+            or all(any(h in k for h in ("score", "classifier")) for k in st if "weight" in k or "bias" in k)
+        )
+        denom = len(st) if is_partial else len(model_st)
+        match_ratio = len(matching_keys) / max(1, denom)
         if match_ratio < 0.5:
             LOG.warning(
-                "Checkpoint only matches %.1f%% of model keys (need >=50%%); skipping load to prevent weight corruption.",
+                "Checkpoint only matches %.1f%% of required keys (need >=50%%); skipping load to prevent weight corruption.",
                 match_ratio * 100.0,
             )
             return
