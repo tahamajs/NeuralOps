@@ -54,7 +54,7 @@ models = [
     {
         "name": "roberta",
         "slug": "roberta",
-        "model_path": r"models\roberta-base",
+        "model_path": r"models\roberta_sst2",
         "family": "roberta",
         "parent_checkpoint": r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
         "out_dir": r"results\unified_adaptive_ranks\roberta",
@@ -62,7 +62,7 @@ models = [
     {
         "name": "gpt2",
         "slug": "gpt2",
-        "model_path": r"models\gpt2",
+        "model_path": r"models\gpt2_sst2",
         "family": "gpt",
         "parent_checkpoint": r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
         "out_dir": r"results\unified_adaptive_ranks\gpt2",

@@ -30,7 +30,7 @@ models = [
         "name": "RoBERTa",
         "cmd": (
             r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
-            r"--model models\roberta-base "
+            r"--model models\roberta_sst2 "
             r"--model_family roberta "
             r"--dataset sst2 "
             r"--dataset_dir Codes\framework\data\glue_data\sst2 "
@@ -49,7 +49,7 @@ models = [
         "name": "GPT-2",
         "cmd": (
             r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
-            r"--model models\gpt2 "
+            r"--model models\gpt2_sst2 "
             r"--model_family gpt "
             r"--dataset sst2 "
             r"--dataset_dir Codes\framework\data\glue_data\sst2 "
