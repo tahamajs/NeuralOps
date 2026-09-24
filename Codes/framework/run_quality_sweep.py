@@ -3135,6 +3135,7 @@ def run_single_module_main(args) -> dict:
     # -------------------------------------------------------------------------
     if "wikitext" in args.dataset.lower():
         total_val_samples = 1000
+        majority_count = 500
         majority_baseline_ratio = 0.5
     else:
         val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
