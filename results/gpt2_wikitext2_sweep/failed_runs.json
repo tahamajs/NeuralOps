@@ -398,5 +398,15 @@
     "accuracy_pct": 0.0,
     "error": "ImportError: cannot import name 'LOG' from 'framework.utils.logger' (D:\\SVD_PROJECT\\Codes\\framework\\utils\\logger.py)",
     "timestamp": "2026-09-24T21:39:50.185285"
+  },
+  {
+    "module": "svd_proj_attn",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 984.570343,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (984.57) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:44:26.749240"
   }
 ]
