@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_kmeans_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cur_moe",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe",
@@ -8009,13 +8002,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_salr_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules salr_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_salr_compressor_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_replaceme_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules replaceme_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_replaceme_compressor_factory",
@@ -8026,6 +8012,13 @@
       "id": "p3_gpt2_naive_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules naive_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_naive_svd",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_kmeans_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_class",
       "status": "active",
       "retries": 0
     }
@@ -9180,6 +9173,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules grecodec_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_grecodec_compressor_class",
       "started_at": "2026-09-24T20:35:15.462334",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_salr_compressor_factory",
+      "id": "p3_gpt2_salr_compressor_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules salr_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_salr_compressor_factory",
+      "started_at": "2026-09-24T20:37:20.608655",
       "retries": 0,
       "status": "done"
     }
