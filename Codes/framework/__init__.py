@@ -12,6 +12,119 @@ from typing import Any, List
 
 __version__ = "0.1.0"
 
+# Transparent Import Hook for Cleaned Submodule Aliases
+import sys
+import importlib
+import importlib.util
+import importlib.machinery
+from importlib.abc import MetaPathFinder
+
+class _AliasLoader:
+    def __init__(self, mod):
+        self.mod = mod
+    def create_module(self, spec):
+        return self.mod
+    def exec_module(self, module):
+        pass
+
+class _ModuleAliasFinder(MetaPathFinder):
+    _ALIASES = {
+        # Attentions
+        "framework.attentions.gqa": "framework.attentions.gqa_attention",
+        "framework.attentions.galerkin": "framework.attentions.galerkin_attention",
+        "framework.attentions.galerkin_inject": "framework.attentions.galerkin_attention",
+        "framework.attentions.adaptive_span_inject": "framework.attentions.adaptive_span_attention",
+        "framework.attentions.adaptive_sparse_inject": "framework.attentions.adaptive_sparse_attention",
+        "framework.attentions.adasplash_inject": "framework.attentions.adasplash_attention",
+        "framework.attentions.aegis_hybrid_attention": "framework.attentions.aegis_hybrid",
+        "framework.attentions.cluster_inject": "framework.attentions.cluster_attention",
+        "framework.attentions.compressed_mha": "framework.attentions.compressed_mha_attention",
+        "framework.attentions.cosformer_inject": "framework.attentions.cosformer",
+        "framework.attentions.hla_inject": "framework.attentions.hla_attention",
+        "framework.attentions.kda_inject": "framework.attentions.kda_attention",
+        "framework.attentions.leka_v1_inject": "framework.attentions.leka_v1",
+        "framework.attentions.leka_v2_inject": "framework.attentions.leka_v2",
+        "framework.attentions.leka_v3_inject": "framework.attentions.leka_v3",
+        "framework.attentions.mamba_attention": "framework.attentions.mamba_block",
+        "framework.attentions.moba": "framework.attentions.moba_attention",
+        "framework.attentions.nha_compressor": "framework.attentions.nha_attention",
+        "framework.attentions.rpc": "framework.attentions.rpc_attention",
+        "framework.attentions.salt": "framework.attentions.salt_attention",
+        "framework.attentions.soa_fused_module": "framework.attentions.soa_attn",
+        "framework.attentions.SOAFusedAttention": "framework.attentions.soa_attn",
+        "framework.attentions.soa_module": "framework.attentions.soa_attn",
+        "framework.attentions.spectra_v2_attention": "framework.attentions.spectra_v2",
+        "framework.attentions.svd_compressed_attention": "framework.attentions.svd_compressed",
+        "framework.attentions.svd_llm_v2": "framework.attentions.svd_llm_v2_attention",
+        "framework.attentions.svd_proj_attn": "framework.attentions.svd_projection_attention",
+        "framework.attentions.token_compressed": "framework.attentions.token_compressed_attention",
+        "framework.attentions.tt": "framework.attentions.token_compressed_attention",
+        "framework.attentions.upi_mamba": "framework.attentions.upi_stuffed_mamba",
+        "framework.attentions.mamba": "framework.attentions.mamba_block",
+        "framework.attentions.mamba_inject": "framework.attentions.mamba_block",
+        "framework.attentions.simple_ssm": "framework.attentions.selective_ssm",
+        "framework.attentions.smart_weighted_ensemble": "framework.attentions.hybrid_attention",
+        "framework.attentions.weighted_ensemble": "framework.attentions.hybrid_attention",
+        "framework.attentions.spectron_attention": "framework.attentions.spectron",
+        "framework.attentions.squeezing_heads": "framework.attentions.squeezing_heads_distill",
+        "framework.attentions.squeezing_heads_distiller": "framework.attentions.squeezing_heads_distill",
+        "framework.attentions.spectral_mamba_attention": "framework.attentions.spectral_mamba",
+        "framework.attentions.svd_sequence_attention": "framework.attentions.svd_attention",
+        "framework.attentions.rala_compressor": "framework.attentions.rala_attention",
+        "framework.attentions.selective_scan": "framework.core.selective_scan",
+        "framework.attentions.ssm_scan": "framework.core.selective_scan",
+        "framework.attentions.legacy_ensemble": "framework.core.legacy_ensemble",
+        # Compressors
+        "framework.compression_engine.aasvd": "framework.compression_engine.aa_svd_compressor",
+        "framework.compression_engine.adasvd": "framework.compression_engine.adasvd_compressor",
+        "framework.compression_engine.cur_moe": "framework.compression_engine.cur_moe_compressor",
+        "framework.compression_engine.frandi": "framework.compression_engine.frandi_compressor",
+        "framework.compression_engine.grecodec": "framework.compression_engine.grecodec_compressor",
+        "framework.compression_engine.hybridkv": "framework.compression_engine.hybridkv_compressor",
+        "framework.compression_engine.kvtc": "framework.compression_engine.kvtc_compressor",
+        "framework.compression_engine.modegpt": "framework.compression_engine.modegpt_compressor",
+        "framework.compression_engine.oats": "framework.compression_engine.oats_compressor",
+        "framework.compression_engine.proxsparse_pruner": "framework.compression_engine.proxsparse",
+        "framework.compression_engine.rpca": "framework.compression_engine.rpca_compressor",
+        "framework.compression_engine.saes_svd": "framework.compression_engine.saes_svd_v2",
+        "framework.compression_engine.saes_svd_compressor": "framework.compression_engine.saes_svd_v2",
+        "framework.compression_engine.sdrm": "framework.compression_engine.sdrm_compressor",
+        "framework.compression_engine.slicegpt_compressor": "framework.compression_engine.slicegpt",
+        "framework.compression_engine.soka": "framework.compression_engine.soka_compressor",
+        "framework.compression_engine.swift_svd_compressor": "framework.compression_engine.swift_svd_act",
+        "framework.compression_engine.zerokv_neo": "framework.compression_engine.zerokv_neo_compressor",
+        "framework.compression_engine.cure": "framework.compression_engine.cur_moe_compressor",
+        "framework.compression_engine.dobi": "framework.compression_engine.dobi_svd",
+        "framework.compression_engine.dynamic_entropy": "framework.compression_engine.dynamic_rank",
+        "framework.compression_engine.tomoe": "framework.compression_engine.tomoe_compressor",
+        "framework.compression_engine.adaptive_compressor": "framework.compression_engine.adaptive_ranks",
+        "framework.compression_engine.padre_attention": "framework.attentions.padre_attention",
+        "framework.compression_engine.spectraformer_attention": "framework.attentions.spectraformer_attention",
+        "framework.compression_engine.tlinformer_attention": "framework.attentions.tlinformer_attention",
+        "framework.compression_engine.pruning_utils": "framework.core.pruning_utils",
+        "framework.compression_engine.cur_linear": "framework.compression_engine.cur_compressor",
+        "framework.compression_engine.kronecker_linear": "framework.compression_engine.kronecker_compressor",
+        "framework.compression_engine.tt_linear": "framework.compression_engine.tt_compressor",
+        "framework.compression_engine.hashed_linear": "framework.compression_engine.hashed_net_compressor",
+        "framework.compression_engine.come": "framework.compression_engine.come_compressor",
+        "framework.compression_engine.rala_compressor": "framework.attentions.rala_attention",
+    }
+
+    def find_spec(self, fullname, path, target=None):
+        if fullname in self._ALIASES:
+            canonical = self._ALIASES[fullname]
+            try:
+                mod = importlib.import_module(canonical)
+                sys.modules[fullname] = mod
+                return importlib.machinery.ModuleSpec(fullname, _AliasLoader(mod), origin=canonical)
+            except Exception:
+                pass
+        return None
+
+if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _ModuleAliasFinder())
+
+
 # Symbol to (module_path, attr_name) mapping for fast, lazy resolution
 _LAZY_EXPORTS = {
     # Core Interfaces & Registries
@@ -115,94 +228,3 @@ def __getattr__(name: str) -> Any:
 
 def __dir__() -> List[str]:
     return sorted(list(globals().keys()) + __all__)
-
-
-# Transparent Import Hook for Cleaned Submodule Aliases
-import sys
-import importlib.util
-from importlib.abc import MetaPathFinder
-
-class _ModuleAliasFinder(MetaPathFinder):
-    _ALIASES = {
-        # Attentions
-        "framework.attentions.gqa": "framework.attentions.gqa_attention",
-        "framework.attentions.galerkin": "framework.attentions.galerkin_attention",
-        "framework.attentions.galerkin_inject": "framework.attentions.galerkin_attention",
-        "framework.attentions.adaptive_span_inject": "framework.attentions.adaptive_span_attention",
-        "framework.attentions.adaptive_sparse_inject": "framework.attentions.adaptive_sparse_attention",
-        "framework.attentions.adasplash_inject": "framework.attentions.adasplash_attention",
-        "framework.attentions.aegis_hybrid_attention": "framework.attentions.aegis_hybrid",
-        "framework.attentions.cluster_inject": "framework.attentions.cluster_attention",
-        "framework.attentions.compressed_mha": "framework.attentions.compressed_mha_attention",
-        "framework.attentions.cosformer_inject": "framework.attentions.cosformer",
-        "framework.attentions.hla_inject": "framework.attentions.hla_attention",
-        "framework.attentions.kda_inject": "framework.attentions.kda_attention",
-        "framework.attentions.leka_v1_inject": "framework.attentions.leka_v1",
-        "framework.attentions.leka_v2_inject": "framework.attentions.leka_v2",
-        "framework.attentions.leka_v3_inject": "framework.attentions.leka_v3",
-        "framework.attentions.mamba_attention": "framework.attentions.mamba_block",
-        "framework.attentions.moba": "framework.attentions.moba_attention",
-        "framework.attentions.nha_compressor": "framework.attentions.nha_attention",
-        "framework.attentions.rpc": "framework.attentions.rpc_attention",
-        "framework.attentions.salt": "framework.attentions.salt_attention",
-        "framework.attentions.soa_fused_module": "framework.attentions.soa_attn",
-        "framework.attentions.SOAFusedAttention": "framework.attentions.soa_attn",
-        "framework.attentions.soa_module": "framework.attentions.soa_attn",
-        "framework.attentions.spectra_v2_attention": "framework.attentions.spectra_v2",
-        "framework.attentions.svd_compressed_attention": "framework.attentions.svd_compressed",
-        "framework.attentions.svd_llm_v2": "framework.attentions.svd_llm_v2_attention",
-        "framework.attentions.svd_proj_attn": "framework.attentions.svd_projection_attention",
-        "framework.attentions.token_compressed": "framework.attentions.token_compressed_attention",
-        "framework.attentions.tt": "framework.attentions.token_compressed_attention",
-        "framework.attentions.upi_mamba": "framework.attentions.upi_stuffed_mamba",
-        "framework.attentions.mamba": "framework.attentions.mamba_block",
-        "framework.attentions.mamba_inject": "framework.attentions.mamba_block",
-        "framework.attentions.simple_ssm": "framework.attentions.selective_ssm",
-        "framework.attentions.smart_weighted_ensemble": "framework.attentions.hybrid_attention",
-        "framework.attentions.weighted_ensemble": "framework.attentions.hybrid_attention",
-        "framework.attentions.spectron_attention": "framework.attentions.spectron",
-        "framework.attentions.squeezing_heads": "framework.attentions.squeezing_heads_distill",
-        "framework.attentions.squeezing_heads_distiller": "framework.attentions.squeezing_heads_distill",
-        "framework.attentions.spectral_mamba_attention": "framework.attentions.spectral_mamba",
-        "framework.attentions.svd_sequence_attention": "framework.attentions.svd_attention",
-        "framework.attentions.rala_compressor": "framework.compression_engine.rala_compressor",
-        # Compressors
-        "framework.compression_engine.aasvd": "framework.compression_engine.aa_svd_compressor",
-        "framework.compression_engine.adasvd": "framework.compression_engine.adasvd_compressor",
-        "framework.compression_engine.cur_moe": "framework.compression_engine.cur_moe_compressor",
-        "framework.compression_engine.frandi": "framework.compression_engine.frandi_compressor",
-        "framework.compression_engine.grecodec": "framework.compression_engine.grecodec_compressor",
-        "framework.compression_engine.hybridkv": "framework.compression_engine.hybridkv_compressor",
-        "framework.compression_engine.kvtc": "framework.compression_engine.kvtc_compressor",
-        "framework.compression_engine.modegpt": "framework.compression_engine.modegpt_compressor",
-        "framework.compression_engine.oats": "framework.compression_engine.oats_compressor",
-        "framework.compression_engine.proxsparse_pruner": "framework.compression_engine.proxsparse",
-        "framework.compression_engine.rpca": "framework.compression_engine.rpca_compressor",
-        "framework.compression_engine.saes_svd": "framework.compression_engine.saes_svd_v2",
-        "framework.compression_engine.saes_svd_compressor": "framework.compression_engine.saes_svd_v2",
-        "framework.compression_engine.sdrm": "framework.compression_engine.sdrm_compressor",
-        "framework.compression_engine.slicegpt_compressor": "framework.compression_engine.slicegpt",
-        "framework.compression_engine.soka": "framework.compression_engine.soka_compressor",
-        "framework.compression_engine.swift_svd_compressor": "framework.compression_engine.swift_svd_act",
-        "framework.compression_engine.zerokv_neo": "framework.compression_engine.zerokv_neo_compressor",
-        "framework.compression_engine.cure": "framework.compression_engine.cur_moe_compressor",
-        "framework.compression_engine.dobi": "framework.compression_engine.dobi_svd",
-        "framework.compression_engine.dynamic_entropy": "framework.compression_engine.dynamic_rank",
-        "framework.compression_engine.tomoe": "framework.compression_engine.tomoe_compressor",
-        "framework.compression_engine.adaptive_compressor": "framework.compression_engine.adaptive_ranks",
-        "framework.compression_engine.padre_attention": "framework.attentions.padre_attention",
-        "framework.compression_engine.spectraformer_attention": "framework.attentions.spectraformer_attention",
-        "framework.compression_engine.tlinformer_attention": "framework.attentions.tlinformer_attention",
-    }
-
-    def find_spec(self, fullname, path, target=None):
-        if fullname in self._ALIASES:
-            canonical = self._ALIASES[fullname]
-            spec = importlib.util.find_spec(canonical)
-            if spec:
-                return spec
-        return None
-
-if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
-    sys.meta_path.insert(0, _ModuleAliasFinder())
-
