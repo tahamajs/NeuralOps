@@ -8223,13 +8223,6 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2",
       "status": "active",
       "retries": 0
-    },
-    {
-      "id": "p3_gpt2_a3_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3_v2",
-      "status": "active",
-      "retries": 0
     }
   ],
   "completed": [
@@ -9121,6 +9114,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_encoder_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_encoder_factory",
       "started_at": "2026-09-24T05:11:40.745006",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_a3_v2",
+      "id": "p3_gpt2_a3_v2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3_v2",
+      "started_at": "2026-09-24T05:11:03.643136",
       "retries": 0,
       "status": "done"
     }
