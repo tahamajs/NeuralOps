@@ -75,7 +75,7 @@
 کارنامه تجربی ارزیابی ماژول \lr{nha\_compressor} بر روی مجموعه داده \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA RTX 4070}:
 \textbf{نکته کلیدی:} این ارزیابی و مقادیر ثبت‌شده به طور مستقیم بر روی مدل پایه سبک‌وزن \lr{DistilBERT} حاصل گردیده است.
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{nha\_compressor} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}}
@@ -128,7 +128,7 @@
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
 دیاگرام جریان فشرده‌سازی و تقطیر در ماژول \lr{nha\_compressor}:
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     scale=0.72, every node/.style={scale=0.72},
@@ -154,14 +154,14 @@
 \label{fig:arch_nha_compressor}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \fbox{\parbox{0.85\textwidth}{\centering \vspace{1.2cm} \textbf{نمودار تحلیلی توزیع توجه و تحلیل طیفی مقادیر منفرد}\\\lr{Spectral Distribution and Attention Weights Heatmap}\\\vspace{1.2cm}}}
 \caption{تحلیل طیفی و الگوی پراکندگی وزن‌های توجه در ماژول \lr{nha\_compressor}}
 \label{fig:spectral_nha_compressor}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \fbox{\parbox{0.85\textwidth}{\centering \vspace{1.2cm} \textbf{نمودار ستونی مقایسه کارایی با خط پایه در ۳ شاخص دقت، حافظه و سرعت}\\\lr{Performance Benchmark Bar Chart: Baseline vs nha\_compressor}\\\vspace{1.2cm}}}
 \caption{مقایسه عملکرد ماژول \lr{nha\_compressor} با خط پایه بر روی مدل \lr{DistilBERT}}

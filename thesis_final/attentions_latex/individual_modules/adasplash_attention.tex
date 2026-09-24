@@ -158,7 +158,7 @@ I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from/to HBM}}}
 \end{itemize}
 
 جدول مقیاس‌پذیری حافظه بر حسب طول دنباله ورودی ($L$) پایداری ماژول را در طول‌های مختلف اثبات می‌کند:
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{پروفایل ردپای حافظه گرافیکی \lr{(VRAM)} بر حسب طول دنباله بر روی سخت‌افزار \lr{RTX 4070}}
@@ -178,7 +178,7 @@ I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from/to HBM}}}
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی آزمایشگاهی ماژول \lr{adasplash\_attention} در قالب پیمایش یکپارچه چهار مدلی بر روی مجموعه داده اعتبارسنجی \lr{SST-2} با پروتکل استاندارد بازیافت سریع در ۵۰ گام گرادیانی با بهینه‌ساز \lr{AdamW}، نرخ یادگیری $5 \times 10^{-5}$، دقت محاسباتی \lr{FP16} و آستانه قبولی آماری ۵۶.۰۰٪ انجام پذیرفته است. نتایج استخراج‌شده مستقیماً از مرجع حقیقت آزمون‌ها در جدول زیر گزارش شده‌اند:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{adasplash\_attention} بر روی مدل‌های چهارگانه}
@@ -197,7 +197,7 @@ I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from/to HBM}}}
 \subsubsection*{مقایسه سر‌به‌سر با روش‌های رقیب}
 جدول زیر عملکرد ماژول حاضر را در مقایسه با مدل پایه کامل، تنظیم لورای استاندارد و روش تجزیه مقادیر منفرد تطبیقی \lr{(Adaptive SVD)} در شرایط ۵۰ گام همسان نشان می‌دهد:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{مقایسه سر‌به‌سر عملکرد ماژول \lr{adasplash\_attention} با سایر روش‌های فشرده‌سازی در ۵۰ گام بازیافت}

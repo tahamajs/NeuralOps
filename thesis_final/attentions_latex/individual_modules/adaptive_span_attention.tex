@@ -89,7 +89,7 @@ S_{h, ij} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}}
 \end{equation}
 که در آن $b_e$ تعداد بایت‌های نمایش هر عنصر داده (مثلاً ۲ بایت برای دقت \lr{FP16}) است. در مقایسه با استاندارد $2 B N D \cdot b_e$، میزان صرفه‌جویی به طور مستقیم برابر با نسبت $1 - \frac{\bar{S}}{N}$ خواهد بود.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     scale=0.78, every node/.style={scale=0.78},
@@ -137,7 +137,7 @@ self.span_logits = nn.Parameter(torch.full((self.num_heads,), 5.0, dtype=torch.f
 \paragraph{۴. ردگیری گام‌به‌گام تانسورها در متد \lr{forward}:}
 جدول \ref{tab:adaptive_span_tensor_trace} دگرگونی ابعاد تانسورها را در جریان اجرای گذر پیشرو نمایش می‌دهد:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{ردگیری گام‌به‌گام ابعاد تانسورها در گذر پیشرو ماژول \lr{adaptive\_span\_attention}}
@@ -213,7 +213,7 @@ I_{\text{\lr{dense}}} = \frac{4 B H N^2 d}{4 B H N^2} = d\text{\lr{ FLOPs/Byte}}
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی تجربی ماژول \lr{adaptive\_span\_attention} بر روی دادگان استاندارد \lr{GLUE SST-2} و تحت سناریوی پیوند جراحی به همراه بازیابی پارامتریک با آداپتورهای رتبه پایین \lr{(LoRA)} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با طول دنباله ورودی ۵۱۲ توکن انجام پذیرفته است. تمامی داده‌ها و معیارهای گزارش‌شده در جدول \ref{tab:adaptive_span_master_benchmark} مستقیماً از مرجع حقیقت آزمایشگاهی پروژه (\nolinkurl{master_verified_results.json}) استخراج شده‌اند.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی و شاخص‌های اعتبارسنجی ماژول \lr{adaptive\_span\_attention} بر روی مدل‌های مختلف پایگاه ارزیابی}
@@ -241,7 +241,7 @@ I_{\text{\lr{dense}}} = \frac{4 B H N^2 d}{4 B H N^2} = d\text{\lr{ FLOPs/Byte}}
 \paragraph{مقایسه عملکرد و مقیاس‌پذیری طول دنباله:}
 جدول \ref{tab:adaptive_span_scalability} نشان‌دهنده رفتار مقیاس‌پذیری حافظه و توان عملیاتی با افزایش طول دنباله ورودی در مقایسه با توجه چندسره استاندارد \lr{(Standard MHA)} است:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{مقایسه مقیاس‌پذیری حافظه \lr{VRAM} و توان عملیاتی با افزایش طول دنباله ($L$)}

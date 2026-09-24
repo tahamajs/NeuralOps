@@ -68,11 +68,13 @@ M_{\text{\lr{causal}}}(i, j) = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{c
 پیاده‌سازی کلاس \lr{SpanExpandedAttention} بر پایه وراثت از کلاس پایه \lr{BaseAttention} و ثبت در \lr{ATTENTION\_REGISTRY} انجام گرفته است. در متد راه‌انداز \lr{(\_\_init\_\_)}، مشخصات ابعادی از تنظیمات استخراج می‌شوند: بُعد مدل \lr{hidden\_size} ($D=768$)، تعداد سرهای توجه \lr{num\_heads} ($H=12$)، بُعد هر سر \lr{head\_dim} ($d_h=64$) و رتبه لورا \lr{lora\_rank} ($r=8$). لایه‌های پروجکشن از کلاس سفارشی \lr{LoRALinear} ساخته شده و وزن‌های پایه آن‌ها منجمد می‌گردند.
 
 در متد \lr{forward}، تانسور ورودی با شکل $[B, L, D]$ دریافت می‌شود. تصویر کوئری، کلید و مقدار با فراخوانی لایه‌های پروجکشن محاسبه شده و با بازآرایی ابعاد به فرمت استاندارد چهاربعدی سرهای توجه تبدیل می‌گردد:
+\begin{latin}
 \begin{verbatim}
 q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3)
 k = self.k_proj(hidden_states).view(B, L, H_kv, Dh).permute(0, 2, 1, 3)
 v = self.v_proj(hidden_states).view(B, L, H_kv, Dh).permute(0, 2, 1, 3)
 \end{verbatim}
+\end{latin}
 این تغییر ساختار داده‌ها را برای محاسبات تانسوری موازی آماده می‌سازد.
 
 در مرحله بعدی، تعبیه موقعیت چرخشی \lr{(RoPE)} در صورت فراهم بودن ارزیابی می‌گردد. تابع \lr{apply\_rotary\_pos\_emb} مختصات زاویه‌ای سینوسی و کسینوسی را دریافت کرده و با چرخش نیمه ابعاد، پیوستگی مکانی را در زیرفضای توجه تثبیت می‌کند. چنانچه ابعاد روتاری از بُعد سر کمتر باشد، بردار به بخش‌های روتاری و عبوری افراز شده و پس از اعمال دوران الحاق می‌گردد.
@@ -93,7 +95,7 @@ v = self.v_proj(hidden_states).view(B, L, H_kv, Dh).permute(0, 2, 1, 3)
 \subsection*{بخش ۷: نتایج تجربی \lr{(Experimental Results)}}
 ارزیابی تجربی ماژول \lr{span\_expanded\_attention} بر روی مدل پایه \lr{DistilBERT} در مقایسه با ساختار استاندارد بدون فشرده‌سازی انجام پذیرفت. جدول زیر شاخص‌های تجربی و عملکرد سخت‌افزاری را به تصویر می‌کشد:
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{مقایسه عملکرد تجربی ماژول \lr{span\_expanded\_attention} در برابر ساختار مبنا}
 \label{tab:span_expanded_perf}
@@ -110,7 +112,7 @@ v = self.v_proj(hidden_states).view(B, L, H_kv, Dh).permute(0, 2, 1, 3)
 \end{table}
 
 ماتریس درهم‌ریختگی به دست آمده در ارزیابی دسته‌بندی باینری:
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{ماتریس درهم‌ریختگی ارزیابی ماژول \lr{span\_expanded\_attention}}
 \label{tab:span_expanded_cm}
@@ -125,7 +127,7 @@ v = self.v_proj(hidden_states).view(B, L, H_kv, Dh).permute(0, 2, 1, 3)
 \end{table}
 
 جدول تحلیل ابطال اجزای معماری \lr{(Ablation Study)}:
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{تحلیل ابطال اجزای سازنده در \lr{span\_expanded\_attention}}
 \label{tab:span_expanded_ablation}
