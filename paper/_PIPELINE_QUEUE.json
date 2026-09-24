@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_adaptive_sparse",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_soa_fused_attn_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules soa_fused_attn_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_soa_fused_attn_inject",
@@ -12307,16 +12300,9 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_minimal_aurora",
+      "id": "p3_gpt2_adaptive_sparse",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_aurora --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_aurora",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lsc_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_factory",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse",
       "status": "active",
       "retries": 0
     }
@@ -13066,6 +13052,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_pruner",
       "started_at": "2026-09-24T04:15:50.920242",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_minimal_aurora",
+      "id": "p3_gpt2_minimal_aurora",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_aurora --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_aurora",
+      "started_at": "2026-09-24T04:16:21.673346",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_lsc_factory",
+      "id": "p3_gpt2_lsc_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_factory",
+      "started_at": "2026-09-24T04:16:34.120323",
       "retries": 0,
       "status": "done"
     }
