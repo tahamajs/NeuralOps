@@ -238,5 +238,15 @@
     "accuracy_pct": 0.0,
     "error": "FAIL_PPL_DIVERGED: perplexity (3408.97) exceeded threshold 100.0",
     "timestamp": "2026-09-24T20:48:08.528647"
+  },
+  {
+    "module": "naive_svd",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 842.140399,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (842.14) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T20:51:04.673730"
   }
 ]
