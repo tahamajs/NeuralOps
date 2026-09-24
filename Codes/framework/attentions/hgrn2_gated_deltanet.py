@@ -252,18 +252,34 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         if w_o is not None:
             with torch.no_grad():
-                if w_o.shape == self.out_proj.weight.shape:
-                    self.out_proj.weight.copy_(w_o)
-                elif w_o.t().shape == self.out_proj.weight.shape:
-                    self.out_proj.weight.copy_(w_o.t())
-                elif w_o.numel() == self.out_proj.weight.numel():
-                    self.out_proj.weight.copy_(w_o.reshape(self.out_proj.weight.shape))
+                tw = self.out_proj.weight
+                if w_o.shape == tw.shape:
+                    tw.copy_(w_o.to(tw.dtype))
+                elif w_o.t().shape == tw.shape:
+                    tw.copy_(w_o.t().to(tw.dtype))
+                elif w_o.numel() == tw.numel():
+                    tw.copy_(w_o.reshape(tw.shape).to(tw.dtype))
+                else:
+                    min_r = min(tw.shape[0], w_o.shape[0])
+                    min_c = min(tw.shape[1], w_o.shape[1])
+                    tw.data.zero_()
+                    tw.data[:min_r, :min_c].copy_(w_o[:min_r, :min_c].to(tw.dtype))
+                    logger.warning(
+                        "Out projection weight shape mismatch: %s → %s; "
+                        "used top-left block copy.",
+                        tuple(w_o.shape), tuple(tw.shape)
+                    )
 
                 if b_o is not None and self.out_proj.bias is not None:
-                    if b_o.shape == self.out_proj.bias.shape:
-                        self.out_proj.bias.copy_(b_o)
-                    elif b_o.numel() == self.out_proj.bias.numel():
-                        self.out_proj.bias.copy_(b_o.reshape(self.out_proj.bias.shape))
+                    tb = self.out_proj.bias
+                    if b_o.shape == tb.shape:
+                        tb.copy_(b_o.to(tb.dtype))
+                    elif b_o.numel() == tb.numel():
+                        tb.copy_(b_o.reshape(tb.shape).to(tb.dtype))
+                    else:
+                        min_b = min(tb.numel(), b_o.numel())
+                        tb.data.zero_()
+                        tb.data[:min_b].copy_(b_o[:min_b].to(tb.dtype))
         else:
             logger.warning(
                 f"Output projection weight not found for {type(old_attn).__name__}. "
@@ -293,11 +309,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
         """Forward propagation across hybrid HGRN-2 and Gated DeltaNet branches."""
         # Nested encoder cross-attention bypass
         if encoder_hidden_states is not None:
-            logger.warning(
-                "HGRN2GatedDeltaNet received encoder_hidden_states but cross-attention "
-                "is not implemented. Returning raw hidden_states (identity)."
+            raise NotImplementedError(
+                "HGRN2GatedDeltaNet does not support cross-attention. "
+                "Use replace_attention or a different module for encoder-decoder models."
             )
-            return hidden_states, None
 
         hgrn_res = self.hgrn(
             hidden_states, attention_mask=attention_mask, head_mask=head_mask, **kwargs
