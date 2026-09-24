@@ -2,34 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_tomoe_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_compot_compressor_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_compressor_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_projection",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_projection --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_projection",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_linear",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_svd_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_factory",
@@ -8218,9 +8190,16 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_svd_llm_v2",
+      "id": "p3_gpt2_svd_projection",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_projection --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_projection",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_svd_linear",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear",
       "status": "active",
       "retries": 0
     }
@@ -9125,8 +9104,37 @@
       "started_at": "2026-09-24T05:11:03.643136",
       "retries": 0,
       "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_tomoe_compressor_factory",
+      "id": "p3_gpt2_tomoe_compressor_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_factory",
+      "started_at": "2026-09-24T05:43:15.832571",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_compot_compressor_class",
+      "id": "p3_gpt2_compot_compressor_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_compressor_class",
+      "started_at": "2026-09-24T05:43:46.594879",
+      "retries": 0,
+      "status": "done"
     }
   ],
-  "failed": [],
+  "failed": [
+    {
+      "job_id": "p3_gpt2_svd_llm_v2",
+      "id": "p3_gpt2_svd_llm_v2",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2",
+      "started_at": "2026-09-24T05:10:32.927772",
+      "retries": 0,
+      "status": "failed",
+      "reason": "timeout_1800s"
+    }
+  ],
   "blocked": []
 }
