@@ -7802,13 +7802,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_swift_svd_act",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_token_compressed",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules token_compressed --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_token_compressed",
@@ -7874,13 +7867,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_rotational_slicegpt_int4_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_lora_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attn",
@@ -7900,6 +7886,13 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd",
       "status": "active",
       "retries": 1
+    },
+    {
+      "id": "p3_gpt2_swift_svd_act",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act",
+      "status": "active",
+      "retries": 0
     }
   ],
   "completed": [
@@ -9214,6 +9207,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_factory",
       "started_at": "2026-09-24T21:13:12.037022",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_rotational_slicegpt_int4_factory",
+      "id": "p3_gpt2_rotational_slicegpt_int4_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
+      "started_at": "2026-09-24T21:13:52.000340",
       "retries": 0,
       "status": "done"
     }
