@@ -2733,17 +2733,31 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     "module_state_dict": module_state,
                     "lora_state_dict": lora_state,
                 }
-                ckpt_file = weights_dir / "weights.pt"
-                torch.save(checkpoint_payload, ckpt_file)
-                LOG.info("Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
-                         ckpt_file, len(module_state), len(lora_state))
+                save_heavy = (os.environ.get("SAVE_HEAVY_WEIGHTS", "0") == "1")
+                if save_heavy:
+                    ckpt_file = weights_dir / "weights.pt"
+                    torch.save(checkpoint_payload, ckpt_file)
+                    LOG.info("Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
+                             ckpt_file, len(module_state), len(lora_state))
+                else:
+                    meta_file = weights_dir / "checkpoint_meta.json"
+                    lean_payload = {
+                        k: v for k, v in checkpoint_payload.items()
+                        if k not in ("module_state_dict", "lora_state_dict")
+                    }
+                    try:
+                        with open(meta_file, "w", encoding="utf-8") as f:
+                            json.dump(lean_payload, f, indent=2, default=str)
+                    except Exception:
+                        pass
 
                 # Export lean factorized SVD checkpoint artifacts (~20-90 MB) for automated publishing
                 hf_export_dir = weights_dir / "hf_export"
                 if eval_acc >= pass_threshold_pct:
                     hf_export_dir.mkdir(parents=True, exist_ok=True)
                 try:
-                    torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
+                    if save_heavy:
+                        torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
                     if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
                         try:
                             tokenizer.save_pretrained(hf_export_dir)
