@@ -281,6 +281,7 @@ class TTLinearLayer(nn.Module):
         fallback_to_svd: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        fallback_to_none: bool = False,
     ) -> Optional["TTLinearLayer"]:
         """
         Decompose a pretrained nn.Linear, Conv1D, or LoRALinear layer into TT-cores using TT-SVD.
@@ -426,7 +427,7 @@ class TTLinearLayer(nn.Module):
                     break
 
                 if cur_tt_rank >= max_rank_for_compression:
-                    if max_retries > 0:
+                    if max_retries > 0 and fallback_to_none:
                         # Cannot reach error threshold without exceeding parameter budget during retries.
                         # Fall back to the original module.
                         import logging
@@ -635,6 +636,7 @@ class TTCompressor(BaseCompressor):
                     tt_rank=self.tt_rank,
                     max_error=self.max_error,
                     max_retries=self.max_retries,
+                    fallback_to_none=self.fallback_to_original,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
