@@ -1,0 +1,62 @@
+\section{ماژول compressed\_mha\_attention (Compressed Multi-Head Attention via Joint SVD)}
+\label{sec:module_compressed_mha_attention}
+
+\subsection{معرفی و انگیزه}
+مکانیزم توجه چندسره فشرده‌شده (\lr{Compressed Multi-Head Attention via Joint SVD}) با هدف مهار بار محاسباتی و کاهش ردپای حافظه پارامترهای تبدیل خطی در لایه‌های توجه ترنسفورمر توسعه یافته است. در لایه‌های توجه چندسره استاندارد (\lr{Standard MHA})، محاسبات نگاشت پروجکشن ماتریس‌های پرس‌وجو، کلید و مقدار ($\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$) و پروجکشن خروجی ($\mathbf{W}_O$) بخش قابل‌توجهی از وزن‌های مدل و حافظه دسترسی به پارامترها را به خود اختصاص می‌دهند.
+
+ایده بنیادین در ماژول \lr{compressed\_mha\_attention}، ادغام و انباشت ماتریس‌های تصویرسازی ورودی به یک ماتریس تجمیعی $\mathbf{W}_{QKV}$ و اعمال تجزیه مقادیر منفرد برشی مشترک (\lr{Joint Truncated SVD}) بر روی آن است. در این فرآیند، پایه‌های اصلی فضا به عنوان وزن‌های منجمد (\lr{Frozen Base Weights}) ذخیره شده و برای جبران خطای تقریب رتبه پایین و بازیابی توانایی بازنمایی، آداپتورهای کم‌مرتبه قابل آموزش لورا (\lr{LoRA Residual Adapters}) به موازات آن‌ها تعبیه می‌شوند. این معماری به طور کامل با سرهای گروه‌بندی‌شده (\lr{GQA})، کدگذاری مکانی چرخشی (\lr{RoPE}) و دیکودینگ علّی (\lr{Causal Decoding}) سازگار گردیده است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ نمایش پنهان ورودی باشد، که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. در پروجکشن فشرده مشترک، ماتریس‌های نگاشت به یک بلوک ماتریسی متراکم با ابعاد $D \times (d_{all} + 2 d_{kv})$ الحاق می‌گردند که در آن $d_{all} = H \cdot d$ و $d_{kv} = H_{kv} \cdot d$ است. تجزیه مقادیر منفرد برشی مشترک با رتبه هدف $r_{qkv}$ به صورت زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{W}_{QKV} \approx \mathbf{U}_{qkv} \mathbf{\Sigma}_{qkv} \mathbf{V}_{qkv}^\top + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora}
+\end{equation}
+که در آن $\mathbf{U}_{qkv} \in \mathbb{R}^{(d_{all} + 2 d_{kv}) \times r_{qkv}}$، $\mathbf{\Sigma}_{qkv} \in \mathbb{R}^{r_{qkv} \times r_{qkv}}$ و $\mathbf{V}_{qkv}^\top \in \mathbb{R}^{r_{qkv} \times D}$ ماتریس‌های تجزیه SVD پایدار هستند. خروجی تانسورهای پرس‌وجو، کلید و مقدار به صورت همزمان محاسبه شده و سپس تفکیک می‌گردند:
+\begin{equation}
+[\mathbf{Q}, \mathbf{K}, \mathbf{V}] = \mathbf{X} \mathbf{W}_{QKV}^\top + \mathbf{b}_{qkv}
+\end{equation}
+سپس سرهای کلید و مقدار در صورت استفاده از GQA با عملگر تکرار به تعداد سرهای پرس‌وجو تعمیم می‌یابند:
+\begin{equation}
+\mathbf{K}_{rep} = \operatorname{repeat\_kv}(\mathbf{K}, \frac{H}{H_{kv}}), \quad \mathbf{V}_{rep} = \operatorname{repeat\_kv}(\mathbf{V}, \frac{H}{H_{kv}})
+\end{equation}
+ماتریس شباهت توجه با احتساب ماسک علّی یا ماسک توجه انکودر $\mathbf{M}$ محاسبه شده و با مقادیر ترکیب می‌گردد:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{rep}^\top}{\sqrt{d}} + \mathbf{M}, \quad \mathbf{A} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{Context} = \mathbf{A} \mathbf{V}_{rep}
+\end{equation}
+در مرحله نهایی، تصویرسازی خروجی نیز از طریق فاکتورسازی SVD منجمد همراه با شاخه لورا به بعد پنهان بازمی‌گردد:
+\begin{equation}
+\mathbf{O} = \mathbf{Context} \left( \mathbf{U}_{out} \mathbf{\Sigma}_{out} \mathbf{V}_{out}^\top + \frac{\alpha}{r_{lora}} \mathbf{B}_{out} \mathbf{A}_{out} \right)^\top + \mathbf{b}_{out}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی این ماژول تحت عنوان \lr{CompressedDistilBertAttention} در فایل \lr{Codes/framework/attentions/compressed\_mha\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. از جمله ویژگی‌های برجسته این پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item آرگومان‌های کنترلی کلیدی شامل \lr{rank\_qkv} (رتبه پروجکشن تجمیعی)، \lr{rank\_out} (رتبه پروجکشن خروجی)، \lr{lora\_rank} (رتبه جبران‌ساز لورا، با مقدار پیش‌فرض ۱۶)، و \lr{dropout} با نرخ ۰.۱.
+    \item نگاشت چندمعماری با بهره‌گیری از \lr{ModelAdapter} برای استخراج دقیق وزن‌های پیش‌آموزش‌دیده از ساختارهای ناهمگون (\lr{q\_lin} در DistilBERT، پروجکشن‌های مجزای RoBERTa، لایه‌های \lr{c\_attn} ترکیبی GPT-2 و بلوک‌های مدرن Qwen).
+    \item پشتیبانی پیش‌ساخته از RoPE در ابعاد پنهان با متد اختصاصی \lr{apply\_rotary\_pos\_emb} و سازگاری کامل با ماسک‌گذاری متغیر.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{compressed\_mha\_attention} بر روی بنچمارک استاندارد طبقه بندی متن GLUE SST-2 با شرایط سخت‌افزاری کاملاً یکسان روی پردازنده گرافیکی NVIDIA RTX 4070 نتایج مندرج در جدول \ref{tab:benchmark_compressed_mha_attention} را حاصل کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{compressed\_mha\_attention} روی ۴ مدل پایه}
+\label{tab:benchmark_compressed_mha_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{291.06 MB} & \lr{30,900.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{575.31 MB} & \lr{14,871.76 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.53 MB} & \lr{12,135.73 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.82\%} & \lr{--} & \lr{1188.94 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های عددی تایید می‌کند که این ماژول با مصرف حافظه گرافیکی بسیار پایین ۲۹۱.۰۶ مگابایت در DistilBERT و توان پردازشی فراتر از ۳۰ هزار توکن بر ثانیه، بهینگی فیزیکی قابل‌ملاحظه‌ای ارائه می‌دهد. با این حال، مقدار دقت در هر سه مدل انکودر و دیکودر بر روی ۵۰.۹۲٪ قرار گرفته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+افت دقت مدل به تراز ۵۰.۹۲٪ (وضعیت \lr{PASS\_LOW}) که دقیقاً منطبق بر توزیع کلاس اکثریت در مجموعه آزمون SST-2 است، به عنوان یک پدیده انجماد خطی و عدم تقارن فضای فاکتورگیری‌شده تحلیل می‌شود. از منظر ناسازگاری ساختاری، هنگامی که وزن‌های پروجکشن $Q$، $K$ و $V$ به صورت مشترک تحت یک تجزیه مقادیر منفرد واحد ($Joint\ SVD$) خرد می‌شوند، مولفه‌های فرکانس بالای فضای بردارهای کلید و پرس‌وجو که مسئولیت جهت‌دهی دقیق به ضرب داخلی $\mathbf{Q}\mathbf{K}^\top$ را بر عهده دارند، در زیرفضای مشترک فشرده حذف می‌گردند. در غیاب آموزش عمیق چندمرحله‌ای برای وزن‌های پایه، آداپتور لورا به تنهایی نمی‌تواند اعوجاج زاویه‌ای شدید ایجادشده در ضرب داخلی را در تعداد گام‌های محدود بازیابی جبران نماید؛ در نتیجه لایه خروجی به پیش‌بینی میانگین بردار کلاس اکثریت همگرا شده است.

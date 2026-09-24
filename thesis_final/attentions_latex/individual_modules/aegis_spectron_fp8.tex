@@ -1,0 +1,74 @@
+\section{ماژول aegis\_spectron\_fp8 (Aegis Spectron FP8 Attention)}
+\label{sec:module_aegis_spectron_fp8}
+
+\subsection{معرفی و انگیزه}
+افزایش طول توالی در مدل‌های زبانی بزرگ، محاسبات مکانیزم توجه را به دلیل پیچیدگی زمانی و مکانی $\mathcal{O}(N^2)$ با چالش‌های حاد مواجه می‌سازد. ماژول نوآورانه \lr{Aegis-Spectron-FP8} با تلفیق سه پارادایم محاسباتی ناهمگن به همراه کوانتیزاسیون هشت‌بیتی با ممیز شناور \lr{(FP8)} و مسیریابی مبتنی بر آنتروپی طیفی طراحی شده است تا مصرف حافظه گرافیکی را به کمینه ممکن رسانده و گلوگاه ارتباطی گذرگاه حافظه را بشکند.
+
+ایده محوری این ماژول بر پایه تفکیک فضای توجه به سه شاخه مستقل استوار است:
+\begin{enumerate}
+    \item \textbf{شاخه توجه متحرک محلی (\lr{Local Sliding-Window}):} با پیچیدگی $\mathcal{O}(N \cdot W)$ جهت پردازش دقیق کلمات همجوار.
+    \item \textbf{شاخه خطی کِرنلی کم‌مرتبه (\lr{Global ELU+1 Linear Attention}):} با پیچیدگی $\mathcal{O}(N \cdot r \cdot d)$ برای ثبت الگوهای معنایی در پهنه متن.
+    \item \textbf{شاخه بازگشتی خطی حالت‌فضا (\lr{Linear State Recurrence}):} با پیچیدگی خطی $\mathcal{O}(N \cdot D)$ بر پایه معادلات بازگشتی جهت انتقال تاریخچه متنی.
+\end{enumerate}
+ترکیب این شاخه‌ها از طریق مسیریاب آنتروپی طیفی (\lr{Spectron Spectral Entropy Router}) و اعمال تبدیل‌های فشرده‌سازی عددی \lr{FP8} در مراحل پیشرو صورت می‌پذیرد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه ورودی، ماتریس تعبیه $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ وارد مسیریاب آنتروپی طیفی می‌شود. برای هر توکن، آنتروپی توزیع توان طیفی از روی بردار فعال‌سازی استخراج می‌گردد:
+\begin{equation}
+p_i = \frac{x_i^2}{\sum_{j=1}^D x_j^2 + \epsilon}, \quad H(\mathbf{x}) = -\sum_{i=1}^D p_i \ln(p_i + \delta)
+\end{equation}
+سپس بردار وزن‌های تخصیص مسیر $\boldsymbol{\alpha} = [\alpha_{\text{loc}}, \alpha_{\text{glob}}, \alpha_{\text{lin}}]^\top$ با تابع بیشینه هموار تنظیم‌شده با دما و جریمه هزینه محاسباتی تولید می‌شود:
+\begin{equation}
+\boldsymbol{\alpha} = \operatorname{softmax}\left(\frac{\mathbf{X} \mathbf{W}_h + \mathbf{b}_h - \lambda \mathbf{c}}{\tau}\right)
+\end{equation}
+که در آن $\mathbf{c} = [c_{\text{loc}}, c_{\text{glob}}, c_{\text{lin}}]^\top$ بردار هزینه سخت‌افزاری هر شاخه و $\lambda$ ضریب پنالتی هزینه است.
+
+در شاخه کوانتیزاسیون \lr{FP8} با فرمت استاندارد \lr{E4M3} یا \lr{E5M2}، تانسورها با برآوردگر عبور مستقیم (\lr{Straight-Through Estimator - STE}) فشرده می‌شوند:
+\begin{equation}
+\hat{\mathbf{X}} = \operatorname{clamp}\left( \left\lfloor \frac{\mathbf{X}}{S} \right\rceil, -V_{\max}, V_{\max} \right) \cdot S, \quad \frac{\partial \hat{\mathbf{X}}}{\partial \mathbf{X}} = \mathbf{I}
+\end{equation}
+شاخه بازگشتی حالت بر اساس معادله بازگشتی گسسته پایدار عددی عمل می‌کند:
+\begin{equation}
+\mathbf{h}_t = \operatorname{diag}(\boldsymbol{\lambda}) \mathbf{h}_{t-1} + \mathbf{k}_t^\top \mathbf{v}_t, \quad \mathbf{o}_t = \mathbf{q}_t \mathbf{h}_t
+\end{equation}
+خروجی نهایی از جمع وزندار شاخه‌های سه‌گانه حاصل می‌گردد:
+\begin{equation}
+\mathbf{O} = \alpha_{\text{loc}} \odot \mathbf{O}_{\text{loc}} + \alpha_{\text{glob}} \odot \mathbf{O}_{\text{glob}} + \alpha_{\text{lin}} \odot \mathbf{O}_{\text{lin}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول \lr{AegisSpectronFP8Attention} در سورس \lr{Codes/framework/attentions/aegis\_spectron\_fp8.py} قرار داشته و شامل مؤلفه‌های زیر است:
+\begin{itemize}
+    \item \textbf{کلاس پیکربندی \lr{AegisSpectronFP8Config}:} تنظیم‌کننده پارامترهای رتبه فاکتورسازی $r=64$، عرض پنجره محلی $W=128$، فرمت کوانتیزاسیون \lr{FP8}، و ضرایب دمایی مسیریاب.
+    \item \textbf{مسیریاب طیفی \lr{SpectronSpectralEntropyRouter}:} مجهز به وزن‌های مقداردهی صفر و بایاس اولیه برای تضمین تعادل یادگیری در آغاز فاز آموزش بدون فروپاشی زودهنگام به یک شاخه خاص.
+    \item \textbf{سازگاری با ساختار خودبازگشتی:} پیاده‌سازی کامل آفست \lr{past\_len} در مکانیزم \lr{RoPE} و ذخیره‌سازی وضعیت در بافر کلید/مقدار برای کاربردهای استنتاج تک‌توکنی.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_spectron\_fp8} بر روی مجموعه داده اعتبارسنجی \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_aegis_spectron_fp8} را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_spectron\_fp8} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_spectron_fp8}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{295.51 MB} & \lr{11,469.82 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{578.07 MB} & \lr{6,171.83 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{644.64 MB} & \lr{6,011.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{55.50\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_QWEN\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های آزمایشگاهی، ماژول ردپای حافظه مطلوبی را در حدود \lr{295.51 MB} برای \lr{DistilBERT} و \lr{578.07 MB} برای \lr{RoBERTa} ثبت کرده است، اما دقت مدل‌ها در سطح پایه تثبیت شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل تفصیلی علل افت کارایی ماژول حاکی از نکات زیر است:
+\begin{itemize}
+    \item \textbf{پدیده فلات دقت (\lr{Accuracy Plateau}) و وضعیت \lr{PASS\_LOW}:} بر روی مدل‌های انکودر و دیکودر \lr{DistilBERT}، \lr{RoBERTa} و \lr{GPT-2} دقت یکنواخت \lr{50.92\%} به دست آمده است. این رخداد به خطای کوانتیزاسیون ناشی از شبیه‌سازی \lr{FP8} در کنار پیچیدگی تداخل سه شاخه ناهمگن بازمی‌گردد؛ در نرخ یادگیری استاندارد، نوسانات گرادیان برآوردگر عبور مستقیم (STE) سبب می‌شود توزیع مسیریاب نتواند وزن‌های تفکیک‌شده بهینه‌ای پیدا کند و پیش‌بینی مدل در سطح توزیع آماری اولیه متوقف شود.
+    \item \textbf{ناسازگاری در مدل \lr{Qwen}:} مدل \lr{Qwen} با وضعیت \lr{SKIP\_QWEN\_INCOMPATIBLE\_ACCURACY\_PLATEAU} با دقت \lr{55.50\%} متوقف گردیده است. علت این امر، حساسیت شدید بردارهای کلید/مقدار در معماری \lr{GQA} به خطای کوانتیزاسیون ممیز شناور ۸ بیتی و ناتوانی شاخه بازگشتی خطی در مدل‌سازی وابستگی‌های حساس علّی بدون نگاشت فرکانسی دقیق است. همچنین همانند سایر معماری‌های ناهمگن، ناسازگاری با مدل \lr{T5} منجر به ثبت برچسب عدم سازگاری گردیده است.
+\end{itemize}

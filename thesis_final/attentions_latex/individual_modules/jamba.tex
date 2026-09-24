@@ -1,0 +1,81 @@
+\section{ماژول معماری هیبریدی جامبا (Jamba Attention Block)}
+\label{sec:module_jamba}
+
+\subsection{معرفی و انگیزه}
+معماری \lr{Jamba} یک الگوی ساختاری پیشگام و ترکیبی (\lr{Hybrid Transformer-SSM}) است که با هدف ادغام مزایای بنیادین مدل‌های فضای حالت گزینشی (\lr{Selective State Space Models}) نظیر \lr{Mamba} با توانایی بازیابی دقیق و همبستگی دوربرد مکانیزم توجه چندسر (\lr{Multi-Head Attention - MHA}) به همراه افزایش ظرفیت پارامتری از طریق لایه‌های خبره ناهمگن (\lr{Expert Choice Mixture of Experts - MoE}) معرفی گردیده است. 
+
+در مدل‌های استاندارد توجه چندسر، هزینه محاسباتی و اندازه کش حافظه برای ذخیره تانسورهای کلید و مقدار (\lr{KV-Cache}) به صورت خطی با طول زمینه رشد می‌کند که عملکرد مدل در زمینه‌های طویل را به شدت محدود می‌نماید. در نقطه مقابل، اگرچه مدل‌های فضای حالت با وضعیت پنهان متراکم خود دارای هزینه زمانی $\mathcal{O}(1)$ در مرحله تولید توکن و پیچیدگی خطی در طول توالی هستند، اما در وظایفی که نیازمند توجه دقیق به تمام نشانه‌های قبلی در پنجره‌های متن حجیم است (همچون استدلال و پاسخگویی به سوالات طولانی)، با افت ظرفیت مواجه می‌گردند. ساختار \lr{Jamba} با درهم‌آمیزی متناوب شاخه‌های \lr{SVD-Mamba}، لایه سنتی \lr{MHA} با سازوکارهای مدرن \lr{GQA}، و سامانه گزینش هوشمند خبرگان (\lr{Expert Choice MoE})، پاسخی یکپارچه به چالش مقیاس‌پذیری طول دنباله بدون فدا کردن دقت ارائه می‌دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+بلوک \lr{Jamba} شامل پردازش سه‌مرحله‌ای پیوسته در طول لایه‌ها به صورت زنجیره‌ای از اتصالات باقیمانده و بهنجارسازی لایه‌ای (\lr{LayerNorm}) است. فرض کنید بردار ورودی $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ باشد:
+
+\begin{enumerate}
+    \item \textbf{شاخه فضای حالت پیوسته-گسسته (\lr{SVD-Mamba Branch}):}
+    در این شاخه، ورودی پس از نگاشت خطی اولیه وارد مدل فضای حالت گزینشی با پارامترهای وابسته به ورودی می‌گردد:
+    \begin{equation}
+    \mathbf{h}'_t = \mathbf{A}_t \mathbf{h}'_{t-1} + \mathbf{B}_t \mathbf{x}_t, \quad \mathbf{y}_t^{\text{ssm}} = \mathbf{C}_t \mathbf{h}'_t + \mathbf{D} \mathbf{x}_t
+    \end{equation}
+    بردار خروجی این بخش به همراه اتصال باقیمانده نخست بهنجار می‌شود:
+    \begin{equation}
+    \mathbf{X}_1 = \operatorname{LayerNorm}_1\left(\mathbf{X} + \mathbf{y}^{\text{ssm}} \mathbf{W}_{\text{out}}^{\text{ssm}}\right)
+    \end{equation}
+
+    \item \textbf{شاخه توجه چندسر با نگاشت آداپتور رتبه-پایین (\lr{MHA with LoRA Branch}):}
+    بر روی نمایش $\mathbf{X}_1$، عملگر توجه همراه با وزن‌های پایه تثبیت‌شده و تنظیم‌پذیری کم‌مرتبه (\lr{LoRA}) اعمال می‌گردد:
+    \begin{equation}
+    \mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}}
+    \end{equation}
+    سپس تانسورهای پروجکشن با اعمال توابع موقعیت چرخشی (\lr{RoPE}) و مکانیزم \lr{GQA} محاسبه شده و خروجی با نگاشت اتصال باقیمانده دوم به دست می‌آید:
+    \begin{equation}
+    \mathbf{O}^{\text{attn}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}\right)\mathbf{V}
+    \end{equation}
+    \begin{equation}
+    \mathbf{X}_2 = \operatorname{LayerNorm}_2\left(\mathbf{X}_1 + \operatorname{Dropout}\left(\mathbf{O}^{\text{attn}} \mathbf{W}^O\right)\right)
+    \end{equation}
+
+    \item \textbf{شاخه تخصیص خبرگان با گزینش هوشمند (\lr{Expert Choice MoE Branch}):}
+    در این مرحله، بر خلاف روش سنتی که توکن‌ها خبرگان را انتخاب می‌کنند، هر خبره از میان تمامی توکن‌های دنباله بر اساس ماتریس امتیازدهی نرمال گیتینگ $\mathbf{S} = \operatorname{Softmax}(\mathbf{X}_2 \mathbf{W}_g)$، توکن‌های با بالاترین رتبه را تحت یک ضریب ظرفیت ثابت (\lr{Capacity Factor}) انتخاب و پردازش می‌کند:
+    \begin{equation}
+    \mathbf{y}^{\text{moe}} = \sum_{e \in \text{Selected}} \mathbf{S}_{t, e} \cdot \operatorname{FFN}_e(\mathbf{X}_{2, t})
+    \end{equation}
+    \begin{equation}
+    \mathbf{X}_3 = \operatorname{LayerNorm}_3\left(\mathbf{X}_2 + \operatorname{Dropout}\left(\mathbf{y}^{\text{moe}}\right)\right)
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس مرجع \lr{Jamba2Block} در فایل \lr{Codes/framework/attentions/jamba.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} بهره می‌گیرد. نکات برجسته معماری آن عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژولار بودن اجزا:} تلفیق ماژول \lr{SimpleSSM} و \lr{SVDMambaSub}، استفاده از لایه‌های خطی سازگار \lr{LoRALinear} با فاکتورگیری رتبه $r=16$ و ماتریس‌های تطبیقی آلفا $\alpha=32$.
+    \item \textbf{سازگاری با ساختارهای چندگانه:} پشتیبانی کامل از انتقال وزن‌های مدل‌های مختلف (\lr{copy\_weights}) شامل ترنسفورمرهای انکودر تو در تو، ترنسفورمرهای دیکودر (\lr{GPT-2} و \lr{Qwen}) با ترازگذاری ابعاد سرها از طریق تکرار کلید-مقدار (\lr{repeat\_kv}).
+    \item \textbf{مسیر بهینه \lr{Flash/SDPA}:} تعبیه الگوریتم \lr{scaled\_dot\_product\_attention} برای ممانعت از پر شدن حافظه گرافیکی (\lr{OOM}) در محاسبات شاخه \lr{MHA}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{jamba} در چارچوب آزمایشی جامع رساله، نتایج عددی اعتبارسنجی‌شده جدول \ref{tab:benchmark_jamba} را ثبت نموده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج ارزیابی تجربی و سخت‌افزاری ماژول \lr{jamba} روی مدل‌های پایه}
+\label{tab:benchmark_jamba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه (\lr{Base Model})} & \textbf{دقت (\lr{Accuracy})} & \textbf{شاخص \lr{F1}} & \textbf{حافظه (\lr{Peak VRAM})} & \textbf{توان (\lr{Throughput})} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.16\%} & \lr{0.8756} & \lr{695.65 MB} & \lr{2396.61 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.03\%} & \lr{0.6748} & \lr{1303.95 MB} & \lr{1209.74 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.26\%} & \lr{0.6703} & \lr{1363.82 MB} & \lr{1909.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ماژول روی مدل \lr{DistilBERT} عملکرد بسیار بالایی معادل ۸۷.۱۶٪ دقت و شاخص اف‌وان ۰.۸۷۵۶ از خود نشان داده است که نشان‌دهنده توانایی عالی ترکیب \lr{Mamba} و \lr{MoE} در بازسازی اتصالات لایه‌های انکودر متراکم است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل رفتار ماژول در مدل‌های بزرگ‌تر و دیکودرها نکات تحلیلی زیر را نشان می‌دهد:
+\begin{itemize}
+    \item \textbf{افت دقت روی مدل‌های عمیق (\lr{RoBERTa} و \lr{GPT-2}):} ثبت دقت‌های ۵۱.۰۳٪ و ۵۱.۲۶٪ (وضعیت \lr{PASS\_LOW}) بیانگر عدم همگرایی سریع پارامترهای جدید شاخه \lr{SSM} و گیت‌های انتخاب خبره (\lr{MoE}) در رژیم‌های بدون بازیابی گرادیان بلندمدت است. با توجه به این‌که وزن‌های اولیه پایه به صورت فریز شده نگهداری شده و بخش‌های فضای حالت با نگاشت‌های تصادفی یا تخمین مقادیر ویژه مقداردهی می‌شوند، مدل برای بازیافت اتصالات بافت‌های زبانی پیچیده نیازمند مراحل آموزش توازنی (\lr{Recovery steps}) بیشتری است.
+    \item \textbf{مصرف حافظه بالاتر (\lr{Peak VRAM}):} حافظه اوج مصرفی نزدیک به ۱.۳ گیگابایت در \lr{GPT-2} و \lr{RoBERTa} و افت توان پردازشی به حدود ۱۲۰۰ توکن در ثانیه، ناشی از انباشت سه بخش محاسباتی سنگین به ازای هر لایه (حالت‌های پنهان \lr{SSM}، ماتریس توجه متراکم و بافرهای چندگانه خبرگان \lr{MoE}) است که بار پردازشی بالاتری را نسبت به یک لایه توجه منفرد ایجاد می‌کند.
+\end{itemize}

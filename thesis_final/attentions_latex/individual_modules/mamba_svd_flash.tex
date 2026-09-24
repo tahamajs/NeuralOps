@@ -1,39 +1,41 @@
-\section{ماژول mamba_svd_flash (Mamba-SVD Flash Hybrid Attention)}
+\section{ماژول mamba\_svd\_flash (Mamba-SVD Flash Hybrid Attention)}
 \label{sec:module_mamba_svd_flash}
 
 \subsection{معرفی و انگیزه}
 مکانیزم \lr{Mamba-SVD Flash Hybrid Attention} با نام فارسی «معماری تلفیقی شتاب‌یافته مامبا و تجزیه مقادیر منفرد فلش» به منظور رفع تنگنای محاسباتی $\mathcal{O}(N^2)$ لایه‌های توجه کلاسیک توسعه یافته است. در طول پردازش دنباله‌های متنی با طول بلند، انباشت ماتریس‌های موقت توجه در حافظه کارت گرافیک مانع از استقرار مدل در سخت‌افزارهای تجاری می‌گردد. این ماژول با استفاده از فاکتورسازی ساختاریافته و نگاشت‌های کم‌مرتبه، وابستگی‌های متنی را با کمترین میزان مصرف حافظه تقریب می‌زند.
 
 \subsection{مبانی نظری و فرمول‌بندی ریاضی}
-فرض کنید $\mathbf{X} \in \mathbb{R}^{B 	imes N 	imes D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته  \ll D$ فرمول‌بندی می‌گردد:
-egin{equation}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته $r \ll D$ فرمول‌بندی می‌گردد:
+ \begin{equation}
 \mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
 \end{equation}
-egin{equation}
-\mathbf{O} = \operatorname{Softmax}\left(rac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}ight) \mathbf{V}
+ \begin{equation}
+\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}
+\right) \mathbf{V}
 \end{equation}
 در معماری‌های حالت‌فضا یا تقریب مقادیر منفرد، محاسبات به فرم بازگشتی خطی یا زیرفضای تجزیه‌شده با پیچیدگی $\mathcal{O}(N \cdot d \cdot r)$ تبدیل می‌شوند.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی پیاده‌سازی‌شده در فایل \lr{Codes/framework/attentions/mamba_svd_flash.py} به عنوان یک لایه توجه ماژولار پیاده‌سازی شده است که تانسورهای پرس‌وجو، کلید و مقدار را در فرمت چندسره 0$ پردازش کرده و با سیستم ماسک‌گذاری علّی و پروجکشن‌های لایه هماهنگ است.
+کلاس اصلی پیاده‌سازی‌شده در فایل \lr{Codes/framework/attentions/mamba\_svd\_flash.py} به عنوان یک لایه توجه ماژولار پیاده‌سازی شده است که تانسورهای پرس‌وجو، کلید و مقدار را در فرمت چندسره $H$ پردازش کرده و با سیستم ماسک‌گذاری علّی و پروجکشن‌های لایه هماهنگ است.
 
 \subsection{نتایج تجربی}
-ارزیابی تجربی ماژول \lr{mamba_svd_flash} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول ef{tab:benchmark_mamba_svd_flash} را به ثبت رسانده است:
+ارزیابی تجربی ماژول \lr{mamba\_svd\_flash} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_mamba_svd_flash} را به ثبت رسانده است:
 
-egin{table}[H]
+ \begin{table}[H]
 \centering
 \small
-\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{mamba_svd_flash} روی مدل‌های پایه}
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{mamba\_svd\_flash} روی مدل‌های پایه}
 \label{tab:benchmark_mamba_svd_flash}
-egin{tabular}{lccccc}
-	oprule
-	extbf{مدل پایه \lr{(Base Model)}} & 	extbf{دقت \lr{(Accuracy)}} & 	extbf{شاخص \lr{F1}} & 	extbf{حافظه \lr{(Peak VRAM)}} & 	extbf{توان \lr{(Throughput)}} & 	extbf{وضعیت} \\
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
 \lr{DistilBERT} & \lr{84.17\%} & \lr{0.8421} & \lr{1668.4 MB} & \lr{1,059 tok/s} & \lr{PASS} \\
 \lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.7 MB} & \lr{92,803 tok/s} & \lr{FAIL} \\
 \lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{64,043 tok/s} & \lr{FAIL} \\
 \lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
-ottomrule
+\bottomrule
 \end{tabular}
 \end{table}
 

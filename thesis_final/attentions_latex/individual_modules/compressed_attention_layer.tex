@@ -66,15 +66,15 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{compressed_attention_layer} روی مدل‌های پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{compressed\_attention\_layer} روی مدل‌های پایه}
 \label{tab:benchmark_compressed_attention_layer}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
 \lr{DistilBERT} & \lr{77.18\%} & \lr{0.7858} & \lr{287.6 MB} & \lr{111,055 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{341.1 MB} & \lr{54,528 tok/s} & \lr{PASS_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.5 MB} & \lr{53,058 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{341.1 MB} & \lr{54,528 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.5 MB} & \lr{53,058 tok/s} & \lr{PASS\_LOW} \\
 \lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
 \bottomrule
 \end{tabular}

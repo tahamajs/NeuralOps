@@ -1,108 +1,75 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 109: \lr{zeros\_attention}}
-\label{sec:mod_zeros_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
+\section{ماژول zeros\_attention (Zero-Mean Linear Attention)}
+\label{sec:module_zeros_attention}
 
-\subsection{کالبدشکافی ماژول \lr{zeros\_attention}}
+\subsection{معرفی و انگیزه}
+یکی از مشکلات بنیادین در مکانیزم‌های توجه خطی کِرنلی استاندارد (مانند کِرنل‌های \lr{ELU+1} یا \lr{ReLU})، وجود سوگیری غیرصفر در بازنمایی بردارها و انباشت پتانسیل مقدار ثابت در طول دنباله است که به «پدیده غلبه مؤلفه مشترک» معروف است. این پدیده سبب می‌شود که با افزایش طول دنباله، تمایزپذیری میان توکن‌ها در فضای توجه خطی به شدت کاهش یافته و خروجی به سمت بردار میانگین توکن‌های گذشته میل کند.
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم انقلابی \lr{zeros\_attention} با معرفی \textbf{توجه خطی با میانگین‌زدایی صفر \lr{(Zero-Mean Normalized Linear Attention)}}، مشکل بنیادین رانش و اشباع حالت در مدل‌های خطی را حل کرده است.
+مکانیزم توجه \lr{Zero-Mean Linear Attention (ZeroS Attention)} با هدف بازتولید خاصیت تمایزپذیری توجه چگال در ساختار محاسباتی خطی معرفی شده است. ایده بنیادین در \lr{ZeroS}، صفرسازی میانگین بردارهای کلید (\lr{Mean-Centering}) پیش از اعمال نگاشت فعال‌سازی نامنفی \lr{ReLU} است. با کسر کردن میانگین هندسی کلیدها، مؤلفه همبستگی همگانی حذف شده و تنها الگوهای تفاضلی و متمایزکننده توکن‌ها در ماتریس‌های حافظه خطی ذخیره می‌شوند.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل \textbf{مدار حذف ولتاژ آفست مستقیم \lr{(DC-Blocker Capacitor)} در تقویت‌کننده‌های صوتی پیشرفته}: خازن‌های مدار ولتاژ پیوسته و مزاحم DC را به طور کامل مسدود می‌کنند تا مانع از اشباع ترانزیستورها شوند؛ با این فیلتراسیون، موج نوسانی خالص صوت می‌تواند تا بی‌نهایت بدون ذره‌ای اعوجاج یا بریدگی تقویت گردد.
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تانسورهای پرس‌وجو، کلید و مقدار پس از تفکیک سرها و اعمال احتمالی تعبیه‌های چرخشی مکانی (\lr{RoPE}) به صورت $\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}$ و $\mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N_k \times d}$ باشند. 
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
+در پردازش دوطرفه انکودر (\lr{Bidirectional})، میانگین فضایی کلیدها با در نظر گرفتن ماسک توکن‌های معتبر محاسبه و کسر می‌گردد:
 \begin{equation}
-\tilde{\phi}(\mathbf{X}) = \phi(\mathbf{X}) - \mathbb{E}[\phi(\mathbf{X})], \quad \mathbf{S}_t = \mathbf{S}_{t-1} + \tilde{\phi}(\mathbf{K}_t)^T \mathbf{V}_t, \quad \mathbf{O}_t = \frac{\tilde{\phi}(\mathbf{Q}_t) \mathbf{S}_t}{\tilde{\phi}(\mathbf{Q}_t) \sum_{j=1}^N \tilde{\phi}(\mathbf{K}_j)^T}
+\boldsymbol{\mu}_k = \frac{1}{\sum_{j=1}^{N_k} m_j} \sum_{j=1}^{N_k} \mathbf{K}_j \cdot m_j, \quad \tilde{\mathbf{K}} = \mathbf{K} - \boldsymbol{\mu}_k
 \end{equation}
-با تضمین میانگین صفر $\mathbb{E}[\tilde{\phi}(\mathbf{X})] = \mathbf{0}$ برای حفظ ثبات دینامیکی انباشتگر حالت در دنباله‌های طولانی.
+سپس نگاشت غیرخطی نامنفی جهت تضمین مثبت‌بودن شباهت به کار می‌رود:
+\begin{equation}
+\hat{\mathbf{Q}} = \operatorname{ReLU}(\mathbf{Q}) + \epsilon, \quad \hat{\mathbf{K}} = \operatorname{ReLU}(\tilde{\mathbf{K}}) + \epsilon
+\end{equation}
+به واسطه خاصیت خطی، ماتریس تجمعی کلید-مقدار با پیچیدگی $\mathcal{O}(N \cdot d^2)$ تشکیل می‌شود:
+\begin{equation}
+\mathbf{S}_{\text{kv}} = \hat{\mathbf{K}}^\top \mathbf{V} \in \mathbb{R}^{B \times H \times d \times d}, \quad \mathbf{z} = \sum_{j=1}^{N_k} \hat{\mathbf{K}}_j^\top
+\end{equation}
+و خروجی توجه با ضرب برداری و نرمال‌سازی به دست می‌آید:
+\begin{equation}
+\mathbf{O} = \frac{\hat{\mathbf{Q}} \mathbf{S}_{\text{kv}}}{\hat{\mathbf{Q}} \mathbf{z} + \epsilon}
+\end{equation}
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{zeros\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
-\begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} محاسبه میانگین ویژگی‌های کرنل، تفریق میانگین جهت صفرسازی بایاس و انباشت حالات بدون اشباع عددی.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
-\end{enumerate}
+در پردازش علّی دیکودر (\lr{Causal Decoding})، میانگین متحرک توکن‌های گذشته در هر گام زمانی به صورت بازگشتی یا با استفاده از جمع تجمعی محاسبه می‌شود تا از نشت اطلاعات آینده جلوگیری به عمل آید:
+\begin{equation}
+\boldsymbol{\mu}_{k, t} = \frac{1}{t} \sum_{\tau=1}^t \mathbf{K}_\tau, \quad \tilde{\mathbf{K}}_t = \mathbf{K}_t - \boldsymbol{\mu}_{k, t}
+\end{equation}
+و حالت بازگشتی پنهان با رابطه زیر به‌روزرسانی می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \mathbf{S}_{t-1} + \hat{\mathbf{K}}_t^\top \mathbf{V}_t, \quad \mathbf{O}_t = \frac{\hat{\mathbf{Q}}_t \mathbf{S}_t}{\hat{\mathbf{Q}}_t \sum_{\tau=1}^t \hat{\mathbf{K}}_\tau^\top + \epsilon}
+\end{equation}
 
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\subsection{معماری و پیاده‌سازی}
+کلاس \lr{ZeroSAttention} در فایل \lr{Codes/framework/attentions/zeros\_attention.py} پیاده‌سازی شده و تحت نام \lr{zeros\_attention} در رجیستری توجه سامانه ثبت شده است. این پیاده‌سازی شامل راهکارهای فنی زیر است:
 \begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
+    \item \textbf{استخراج تجمعی موازی (\lr{Vectorized Cumulative Operations}):} در مدل‌های دیکودر (نظیر \lr{GPT-2})، میانگین متحرک کلیدها و حالت‌های تجمیعی \lr{KV} با توابع بهینه‌سازی‌شده \lr{torch.cumsum} پیاده‌سازی شده‌اند تا از حلقه‌های کند پایتونی اجتناب شده و از شتاب سخت‌افزاری تانسورها بهره‌برداری کامل به عمل آید.
+    \item \textbf{پایداری در برابر ناپایداری‌های ممیز شناور:} استفاده از ضرایب پایدارکننده $\epsilon = 10^{-6}$ و توابع مقیدسازی مخرج با متد \lr{clamp(min=eps)} مانع از رخداد خطاهای تقسیم بر صفر یا ایجاد مقادیر نامعتبر (\lr{NaN/Inf}) در مخرج کسرهای تجمعی می‌شود.
+    \item \textbf{پشتیبانی از \lr{GQA} و \lr{RoPE}:} پشتیبانی جامع از مدل‌های چندگروهی و چرخش مکانی فرکانسی با استخراج ابعاد و گسترش سرها.
+    \item \textbf{تزریق آداپتورهای LoRA:} مجهز به کلاس \lr{LoRALinear} در پروجکشن‌های لایه برای حفظ وزن‌های اصلی مدل و اعمال تنظیم ظریف سریع.
 \end{itemize}
 
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{zeros\_attention} بر روی آزمون استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_zeros_attention} را حاصل کرده است (استخراج‌شده از \lr{thesis\_final/master\_verified\_results.json}):
+
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{zeros_attention} روی مدل‌های پایه}
+\caption{نتایج تجربی و اعتبارسنجی سخت‌افزاری مکانیزم \lr{zeros\_attention} روی مدل‌های پایه}
 \label{tab:benchmark_zeros_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{330.5 MB} & \lr{90,013 tok/s} & \lr{PASS_LOW} \\
-\lr{RoBERTa} & \lr{51.15\%} & \lr{0.6698} & \lr{380.5 MB} & \lr{47,175 tok/s} & \lr{PASS_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1221.3 MB} & \lr{9,567 tok/s} & \lr{PASS_LOW} \\
-\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{330.51 MB} & \lr{90,013.36 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{51.15\%} & \lr{0.6698} & \lr{380.50 MB} & \lr{47,175.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1,221.30 MB} & \lr{9,567.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.95\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-تقلیل اوج حافظه به \lr{۳۸۰.۵ MB} (کاهش ۹۱ درصدی نسبت به \lr{۴۲۰۰ MB} مبنا) همراه با دستیابی به توان عملیاتی فوق‌العاده \lr{۴۲,۸۰۰} توکن بر ثانیه، کارآمدی سخت‌افزاری میانگین‌زدایی صفر را در ماندگاری در حافظه کش SRAM اثبات می‌کند؛ ثبت دقت ۵۱.۱۵٪ و F1 معادل ۶۶.۹۸٪ ناشی از تفاوت توزیع فیچرهای صفر-میانگین در وظایف انکودری دوطرفه بدون کوک اختصاصی لایه‌هاست، در حالی که برای مدل‌سازی توالی‌های فوق‌طویل یک شاهکار مهندسی به شمار می‌رود.
+از منظر کارایی پردازشی، مکانیزم \lr{ZeroS} بر روی مدل \lr{DistilBERT} به توان پردازشی خیره‌کننده \lr{90,013.36 tok/s} با مصرف حافظه ناچیز \lr{330.51 MB} دست یافته است که تاییدی عملی بر کم‌هزینه بودن محاسبات خطی تجمیعی است.
 
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
-    \node [block, right=1.2cm of k] (acc) {تجمع ماتریس حافظه $\mathbf{S}_t$};
-    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی};
-
-    \draw [->, thick, draw=blue!80] (input) -- (k);
-    \draw [->, thick, draw=orange!80] (k) -- (acc);
-    \draw [->, thick, draw=blue!80] (acc) -- (out);
-\end{tikzpicture}
-\end{center}
-
-
-
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{zeros\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{img/architecture/zeros_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(zeros\_attention)}}
-\label{fig:arch_zeros_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{img/comparison/zeros_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(zeros\_attention)}}
-\label{fig:comp_zeros_attention}
-\end{figure}
-
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل داده‌های به‌دست‌آمده ابعاد فنی مهمی از رفتار الگوریتم را نمایان می‌سازد:
+\begin{itemize}
+    \item \textbf{فلات دقت پایین (\lr{PASS\_LOW}) در مدل‌های پایه:} مقادیر دقت در مدل‌های \lr{DistilBERT} (\lr{50.92\%})، \lr{RoBERTa} (\lr{51.15\%}) و \lr{GPT-2} (\lr{50.92\%}) همگی در حوالی مرز پایه ۵۱ درصد قرار گرفته‌اند. علت اصلی این رخداد، تلفات اطلاعاتی ناشی از کسر میانگین در بردارهای کلیدی است؛ اگرچه صفرسازی میانگین سوگیری مقیاس را خنثی می‌کند، اما در غیاب یک تابع نگاشت بسامدی یا لایه‌های بهینه‌ساز پیشرفته، بخشی از انرژی کلیدها که حامل مفاهیم موقعیتی یا کلمات کلیدی پرتکرار متن هستند، از بین می‌رود و منجر به کاهش تمایز سیگنال به نویز در لایه‌های ابتدایی می‌گردد.
+    \item \textbf{افزایش مصرف حافظه در مدل دیکودر علّی (\lr{GPT-2}):} ثبت حافظه \lr{1,221.30 MB} و کاهش توان به \lr{9,567.80 tok/s} در \lr{GPT-2} به دلیل ساختار تانسوری عملیات \lr{cumsum} بر روی ضرب خارجی تانسورهای سه‌بعدی ابعاد بالا است؛ این امر موجب تشکیل تانسورهای موقت بزرگ با اندازه $[B, H, N_k, d, d]$ در حین فراخوانی عملیات می‌شود که راندمان حافظه پردازنده گرافیکی را در طول‌های دنباله بلندتر تحت تاثیر قرار می‌دهد.
+    \item \textbf{همگرایی در مدل \lr{Qwen}:} مدل \lr{Qwen} با دستیابی به دقت \lr{51.95\%} و وضعیت \lr{PASS}، توانایی سازگاری بدون خطای زمان اجرا با ساختار علّی و سرهای گروهی را به نمایش گذاشته است.
+\end{itemize}

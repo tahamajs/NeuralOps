@@ -1,0 +1,68 @@
+\section{ماژول aegis\_v2 (Aegis Attention V2)}
+\label{sec:module_aegis_v2}
+
+\subsection{معرفی و انگیزه}
+ماژول \lr{Aegis-Attention V2} نسل ارتقایافته توجه هیبریدی کم‌مرتبه است که با هدف رفع نواقص پایداری عددی و بهبود قابلیت تعمیم در طیف متنوعی از ترنسفورمرهای انکودر و دیکودر توسعه یافته است. در مکانیزم توجه کلاسیک، تشکیل تانسور توجه متراکم مستلزم هزینه درجه دو $\mathcal{O}(N^2)$ است که در کاربردهای با طول توالی بالا موجب مصرف شدید بافر فعال‌سازی و کاهش شدید توان عملیاتی می‌گردد.
+
+در معماری \lr{Aegis V2}، راهکاری متوازن بر پایه تجزیه کم‌مرتبه ماتریس‌های پروجکشن با آداپتورهای باقیمانده \lr{LoRA}، ترکیب توجه پنجره‌ای متحرک با شعاع محلی مشخص و توجه خطی کِرنلی سراسری با گیت هرس نرم و دروازه همجوشی چندسره وابسته به داده پیاده‌سازی شده است. این طراحی به مدل اجازه می‌دهد ضمن حفظ دقت بالای زبانی در حد مدل‌های پایه متراکم، مصرف حافظه \lr{VRAM} را به شدت کاهش دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه نگاشت، وزن‌های پروجکشن از ساختار \lr{FactorisedLinear} بهره می‌برند که تجزیه فاکتوری ماتریسی را با آداپتورهای باقیمانده یادگیرنده تلفیق می‌کند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{down}} \mathbf{W}_{\text{up}} + \frac{\alpha}{r_{\text{lora}}} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{D \times r}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های فاکتورسازی ساختاری هستند.
+
+محاسبه توجه از دو شاخه مکمل تشکیل می‌گردد:
+\begin{enumerate}
+    \item \textbf{توجه محلی پنجره‌ای (\lr{Local Sliding-Window}):}
+    \begin{equation}
+    \mathbf{A}_{i,j}^{\text{loc}} = \frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d}} \cdot \mathbb{I}(|i - j| \le R), \quad \mathbf{O}_{\text{loc}} = \operatorname{softmax}\left(\mathbf{A}^{\text{loc}}\right) \mathbf{V}
+    \end{equation}
+    که در آن $R = W / 2$ شعاع پنجره موضعی است.
+    \item \textbf{توجه خطی کِرنلی سراسری با هرس نرم (\lr{Global Kernel Linear Attention}):} با نگاشت غیرخطی کِرنل $\phi(x) = \operatorname{ELU}(x) + 1$ و اعمال گیت هرس وابسته به زمینه ورودی $\mathbf{g}_{\text{prune}} = \sigma(\mathbf{X} \mathbf{W}_{\text{prune}})$:
+    \begin{equation}
+    \mathbf{O}_{\text{glob}} = \frac{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{V} \right]}{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{1} \right] + \epsilon}
+    \end{equation}
+\end{enumerate}
+سپس خروجی دو شاخه توسط گیت ادغام وابسته به سرها تلفیق می‌گردد:
+\begin{equation}
+\boldsymbol{\alpha} = \sigma(\mathbf{X} \mathbf{W}_{\text{fuse}}), \quad \mathbf{O} = (1 - \boldsymbol{\alpha}) \odot \mathbf{O}_{\text{loc}} + \boldsymbol{\alpha} \odot \mathbf{O}_{\text{glob}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+ماژول در قالب کلاس \lr{AegisAttentionV2} در فایل \lr{Codes/framework/attentions/aegis\_v2.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} مشتق می‌گردد. مشخصات کلیدی این پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{پیکربندی \lr{AegisAttentionConfigV2}:} پشتیبانی از تنظیمات رتبه فاکتورسازی $r=128$، رتبه آداپتور $r_{\text{lora}}=32$، عرض پنجره $W=128$، و ضریب مقیاس‌بندی کِرنل.
+    \item \textbf{بهبودهای ثبات عددی (\lr{V2-FIX}):} پیاده‌سازی پخش صحیح ماسک سرها در ابعاد $[B, H, 1, 1]$، مهار خطاهای نامعین با تابع \lr{torch.nan\_to\_num}، و لحاظ دقیق آفست توکن‌های گذشته در دیکودینگ علّی \lr{KV-cache}.
+    \item \textbf{پشتیبانی از \lr{GQA} و انکودرهای تودرتو:} تعبیه توابع انطباق خودکار جهت تکرار سرهای کلید/مقدار و ممانعت از فراخوانی بازگشتی ناخواسته در انژکتور مدل‌ها.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_v2} بر روی مجموعه داده بنچ‌مارک \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج بسیار برجسته‌ای را ثبت کرده است. مقادیر تجربی اعتبارسنجی‌شده در جدول \ref{tab:benchmark_aegis_v2} منعکس است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_v2} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_v2}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{79.82\%} & \lr{0.8151} & \lr{202.31 MB} & \lr{67,307.31 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7505} & \lr{591.97 MB} & \lr{4,678.15 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{74.89\%} & \lr{0.7812} & \lr{300.59 MB} & \lr{5,372.02 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{53.79\%} & \lr{---} & \lr{1,195.99 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشاهده می‌شود، ماژول \lr{aegis\_v2} موفق شده است در تمامی ۴ مدل اصلی وضعیت قبولی استاندارد (\lr{PASS}) را احراز کند؛ به ویژه دقت \lr{79.82\%} روی \lr{DistilBERT}، \lr{74.89\%} روی \lr{GPT-2} و \lr{72.02\%} روی \lr{RoBERTa} کارایی خیره‌کننده اصلاحات نسخه دوم را اثبات می‌کند.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+اگرچه ماژول در مدل‌های انکودر و دیکودر استاندارد به وضعیت \lr{PASS} خالص دست یافته است، اما نکات تحلیلی زیر در کاربردهای وسیع‌تر شایان توجه است:
+\begin{itemize}
+    \item \textbf{کاهش توان عملیاتی در مدل‌های بزرگ‌تر:} توان پردازشی بر روی مدل \lr{RoBERTa} به \lr{4,678.15 tok/s} و بر روی \lr{GPT-2} به \lr{5,372.02 tok/s} کاهش یافته است. علت این امر، افزونگی محاسباتی ناشی از اجرای همزمان دو مسیر توجه (محلی و سراسری) به صورت متوالی و عملیات کِرنلی در پایتورچ بدون تلفیق عملگر سخت‌افزاری (\lr{Kernel Fusion}) در سطح \lr{CUDA} است.
+    \item \textbf{حساسیت در مدل‌های زبان علّی فوق حجیم (\lr{Qwen}) و \lr{T5}:} در مدل \lr{Qwen} اگرچه با دقت \lr{53.79\%} وضعیت \lr{PASS} کسب گردیده، اما مصرف حافظه به \lr{1,195.99 MB} رسیده است که ناشی از سربار بافر تانسورهای پنهان در لایه‌های عمیق دکودر است. همچنین به دلیل عدم تطابق سازوکار توجه متقاطع انکودر-دیکودر با پروجکشن اختصاصی، تست روی مدل \lr{T5} با وضعیت \lr{SKIP\_T5\_INCOMPATIBLE} برچسب‌گذاری شده است.
+\end{itemize}

@@ -1,108 +1,78 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 105: \lr{vig\_attention}}
-\label{sec:mod_vig_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
+\section{ماژول vig\_attention (ViG Attention)}
+\label{sec:module_vig_attention}
 
-\subsection{کالبدشکافی ماژول \lr{vig\_attention}}
+\subsection{معرفی و انگیزه}
+مکانیزم توجه \lr{ViG Attention} با الهام از شبکه‌های عصبی گرافی بینایی (\lr{Vision GNN یا ViG}) برای غلبه بر پیچیدگی محاسباتی و حافظه‌ای مربع $\mathcal{O}(N^2)$ در پردازش توالی‌های طولانی طراحی شده است. در مدل‌های ترنسفورمر استاندارد، ضرب کامل ماتریس‌های پرس‌وجو و کلید نیازمند تشکیل نقشه توجه چگال با ابعاد $N \times N$ است که در توالی‌های طویل موجب انفجار ترافیک گذرگاه حافظه و مصرف شدید حافظه گرافیکی (\lr{VRAM}) می‌گردد.
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم \lr{vig\_attention} از پارادایم \textbf{گراف‌های بینایی و شبکه‌های شطرنجی دوطرفه \lr{(Row-Column Grid Attention)}} برای شکستن ماتریس دو بعدی توجه بهره می‌برد.
-
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل \textbf{طراحی خیابان‌بندی شطرنجی منهتن نیویورک}: عبور و مرور خودروها به جای کشیدن بزرگراه‌های مستقیم میان هر دو ساختمان دلخواه، در مسیرهای متقاطع افقی (خیابان‌ها) و عمودی (بلوارها) جریان می‌یابد تا هیچ تقاطعی دچار گره کور ترافیکی نشود.
-
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-\begin{equation}
-\mathbf{Z}_{\text{\lr{row}}} = \operatorname{ELU-Lin}(\mathbf{X}), \quad \mathbf{Z}_{\text{\lr{col}}} = \operatorname{ELU-Lin}(\mathbf{X}^T)^T, \quad \mathbf{Y} = \sigma(\mathbf{Z}_{\text{\lr{row}}}) \odot \mathbf{Z}_{\text{\lr{col}}}
-\end{equation}
-با شکستن توجه دوبعدی به دو مرحله یک‌بعدی متوالی در راستای سطرها و ستون‌های شبکه ویژگی.
-
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{vig\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+ایده محوری در \lr{ViG Attention}، ترکیب دو شاخه محاسباتی مکمل از طریق یک ساختار همجوشی دروازه‌بندی‌شده (\lr{Gated Fusion}):
 \begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} اجرای مستقل توجه خطی روی سطرهای ماتریس و تلفیق آن با توجه روی ستون‌های ماتریس ویژگی.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
+    \item \textbf{شاخه توجه گرافی توپولوژیکی (\lr{Topological Graph Attention}):} ایجاد یک گراف مجاورت خلوت روی توالی با پیوند دادن همسایگی‌های محلی (شعاع پنجره $\pm 16$) به همراه گره‌های لنگر سراسری (\lr{Global Anchor Tokens} شامل توکن ابتدایی $0$ و پایانی $N-1$) جهت تبادل مستقیم اطلاعات میان دو انتهای توالی.
+    \item \textbf{شاخه توجه خطی سراسری (\lr{Global Linear Recurrence/Attention}):} بهره‌گیری از نگاشت‌های فعال‌سازی نامنفی کِرنل $\phi(x) = \operatorname{ELU}(x) + 1$ با ترتیب محاسباتی خطی و پایدارسازی مقیاس با مخرج مقید.
 \end{enumerate}
+این دو شاخه از طریق ضرایب تطبیقی پیش‌بینی‌شده توسط یک شبکه دروازه (\lr{Gate Network}) با یکدیگر ترکیب می‌شوند تا هم وابستگی‌های موضعی دقیق و هم الگوهای سراسری در سطح توالی حفظ گردند.
 
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تانسور حالت‌های پنهان ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ باشد. پروجکشن‌های پرس‌وجو، کلید و مقدار با استفاده از لایه‌های خطی سازگار با آداپتورهای کم‌مرتبه (\lr{LoRALinear}) به صورت زیر استخراج می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N \times d}
+\end{equation}
+در صورت عدم تقارن تعداد سرهای پرس‌وجو و کلید/مقدار (\lr{GQA})، تانسورهای $\mathbf{K}$ و $\mathbf{V}$ با فاکتور تکرار $R = H / H_{\text{kv}}$ به ابعاد متناظر با $\mathbf{Q}$ گسترش می‌یابند.
+
+ماتریس مجاورت گرافی $\mathbf{A} \in \{0, 1\}^{N \times N}$ بر اساس فاصله مکانی توکن‌ها و گره‌های لنگر به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{A}_{i, j} = \begin{cases} 
+1 & \text{if } |i - j| \le 16 \lor i \in \{0, N-1\} \lor j \in \{0, N-1\} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+در مدل‌های دیکودر خودبازگشتی، ماسک علّی بر روی گراف اعمال می‌شود ($\mathbf{A}_{i,j}^{\text{causal}} = \mathbf{A}_{i,j} \land (i \ge j)$). امتیازات توجه گرافی با مقیاس‌بندی $\frac{1}{\sqrt{d}}$ و ماسک‌گذاری مواضع نامعتبر به دست می‌آیند:
+\begin{equation}
+\mathbf{S}_{\text{graph}} = \operatorname{masked\_fill}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}, \neg \mathbf{A}, -\infty\right), \quad \mathbf{O}_{\text{graph}} = \operatorname{softmax}(\mathbf{S}_{\text{graph}}) \mathbf{V}
+\end{equation}
+
+در شاخه سراسری، با اعمال نگاشت غیرخطی نامنفی $\phi(x) = \operatorname{ELU}(x) + 1$، توجه خطی در حالت انکودر دوطرفه با تغییر ترتیب ضرب ماتریسی محاسبه می‌شود:
+\begin{equation}
+\mathbf{M}_{\text{kv}} = \phi(\mathbf{K})^\top \mathbf{V} \in \mathbb{R}^{B \times H \times d \times d}, \quad \mathbf{O}_{\text{global}} = \frac{\phi(\mathbf{Q}) \mathbf{M}_{\text{kv}}}{\phi(\mathbf{Q}) \sum_{j=1}^N \phi(\mathbf{K}_j)^\top + \epsilon}
+\end{equation}
+و در حالت علّی ديكودر از جمع تجمعی ضرب خارجی توکن‌ها در راستای زمان استفاده می‌گردد. در پایان، شبکه دروازه بردار وزن‌های تلفیق را تولید کرده و خروجی نهایی شکل می‌گیرد:
+\begin{equation}
+[\mathbf{g}_{\text{graph}}, \mathbf{g}_{\text{global}}] = \sigma(\mathbf{X} \mathbf{W}_{\text{gate}} + \mathbf{b}_{\text{gate}}), \quad \mathbf{O} = \mathbf{g}_{\text{graph}} \odot \mathbf{O}_{\text{graph}} + \mathbf{g}_{\text{global}} \odot \mathbf{O}_{\text{global}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول \lr{ViGAttention} در فایل \lr{Codes/framework/attentions/vig\_attention.py} پیاده‌سازی شده و در رجیستری سامانه تحت نام‌های \lr{vig} و \lr{vig\_attention} به ثبت رسیده است. ویژگی‌های معماری و فنی پیاده‌سازی شامل موارد زیر است:
 \begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
+    \item \textbf{لایه‌های پروجکشن مجهز به \lr{LoRALinear}:} تمام ماتریس‌های پروجکشن شامل $\mathbf{W}_q$، $\mathbf{W}_k$، $\mathbf{W}_v$ و $\mathbf{W}_o$ بر پایه ساختار \lr{LoRALinear} با امکان انجماد وزن‌های مبنا (\lr{freeze\_base}) و تزریق آداپتورهای باقیمانده کم‌مرتبه با رتبه $r=16$ و مقیاس‌دهی $\alpha=32.0$ تعبیه شده‌اند.
+    \item \textbf{انتقال امن وزن‌ها (\lr{UniversalAdapter}):} متد \lr{copy\_weights} از استخراج خودکار وزن‌ها از انواع سرخوان‌های \lr{DistilBERT}، لایه‌های تودرتوی \lr{RoBERTa SelfAttention}، ساختار فشرده \lr{c\_attn} در \lr{GPT-2 Conv1D} و نگاشت‌های \lr{Qwen/LLaMA} پشتیبانی می‌کند.
+    \item \textbf{پشتیبانی کامل از \lr{GQA} و تعبیه‌های مکانی چرخشی (\lr{RoPE}):} هماهنگی دقیق با سرهای نامتقارن کلید/مقدار با تابع \lr{repeat\_kv} و اعمال زاویه‌ای توابع چرخشی مکانی از طریق متد \lr{apply\_rotary\_pos\_emb} جهت پایداری در مدل‌های نوین زبانی.
 \end{itemize}
 
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{vig\_attention} بر روی بنچ‌مارک استاندارد طبقه‌بندی احساسات \lr{SST-2} در طول دنباله ۵۱۲ با سناریوهای آزمون یکنواخت استخراج شده از پایگاه داده مستند \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_vig_attention} خلاصه گردیده است:
+
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{vig} روی مدل‌های پایه}
-\label{tab:benchmark_vig}
+\caption{نتایج تجربی و اعتبارسنجی سخت‌افزاری مکانیزم \lr{vig\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_vig_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{375.0 MB} & \lr{52,731 tok/s} & \lr{PASS_LOW} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{425.2 MB} & \lr{33,616 tok/s} & \lr{PASS_LOW} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{68,665 tok/s} & \lr{FAIL} \\
-\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP_QWEN_INCOMPATIBLE} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{374.99 MB} & \lr{52,731.95 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{425.18 MB} & \lr{33,616.49 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{68,665.61 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_QWEN\_INCOMPATIBLE} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-مصرف \lr{۷۵۰.۰ MB} حافظه در برابر \lr{۴۲۰۰ MB} مدل مبنا حاکی از راندمان بالای محاسباتی است؛ دقت ۵۱.۰۳٪ به این دلیل است که فرضیات شطرنجی دوبعدی گراف بینایی با ساختار خطی گرامری زبان طبیعی کاملاً منطبق نیست و ذاتاً برای پردازش تصاویر یا داده‌های جدولی توسعه یافته است.
+بر پایه مقادیر ثبت‌شده، ماژول از منظر مصرف حافظه پایداری بالایی از خود نشان داده است (\lr{374.99 MB} در \lr{DistilBERT} و توان پردازشی \lr{52,731.95 tok/s}). با این وجود، از بعد راندمان بازنمایی معنایی رفتارهای متفاوتی در خانواده‌های گوناگون به ثبت رسیده است.
 
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
-    \node [block, right=1.2cm of k] (acc) {تجمع ماتریس حافظه $\mathbf{S}_t$};
-    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی};
-
-    \draw [->, thick, draw=blue!80] (input) -- (k);
-    \draw [->, thick, draw=orange!80] (k) -- (acc);
-    \draw [->, thick, draw=blue!80] (acc) -- (out);
-\end{tikzpicture}
-\end{center}
-
-
-
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{vig\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{img/architecture/vig_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(vig\_attention)}}
-\label{fig:arch_vig_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{img/comparison/vig_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(vig\_attention)}}
-\label{fig:comp_vig_attention}
-\end{figure}
-
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل ساختاری نتایج تجربی ماژول شواهد آسیب‌شناختی روشنی را نشان می‌دهد:
+\begin{itemize}
+    \item \textbf{فلات دقت شانس در مدل‌های انکودر (\lr{PASS\_LOW}):} دستیابی به دقت یکنواخت \lr{50.92\%} در مدل‌های \lr{DistilBERT} و \lr{RoBERTa} بیانگر توقف مدل در آستانه حدس تصادفی طبقه‌بندی دوکلاسه است. این شکست ناشی از فرض شطرنجی گراف دوبعدی است؛ در گراف‌های تصویری \lr{ViG} همسایگی‌های پیکسلی دوبعدی معنا دارند، اما در توالی‌های یک‌بعدی زبان طبیعی اعمال یک پنجره مجاورت ثابت به همراه دو گره لنگر انتها، ساختار غنی همبستگی‌های نحوی چندسطحی را خفه کرده و مانع همگرایی گرادیان لایه‌های بالاتر می‌گردد.
+    \item \textbf{شکست کامل در دیکودر علّی \lr{GPT-2} (\lr{FAIL} با دقت \lr{0.00\%}):} در مدل \lr{GPT-2} دقت به صفر مطلق نزول کرده است. ریشه این خطای ساختاری به تعارض میان لنگرهای دوطرفه گراف ($j=N-1$ یا $j=0$) با ماسک علّی دیکودر بازمی‌گردد. در دیکودرهای خودبازگشتی هر توکن تنها حق مشاهده گذشته را دارد، اما فعال‌سازی گره‌های لنگر بدون بازطراحی علی سخت‌گیرانه موجب ایجاد تداخل در مخرج نرمال‌سازی شاخه خطی و در نتیجه تخریب کامل احتمالات خروجی سر طبقه‌بند شده است.
+    \item \textbf{عدم سازگاری با معماری \lr{Qwen} (\lr{SKIP\_QWEN\_INCOMPATIBLE}):} در مدل زبانی \lr{Qwen} به دلیل ناسازگاری لایه‌های داخلی توجه و تفاوت نگاشت سرها با فرضیات ساختاری گراف یک‌بعدی، ماژول با برچسب عدم سازگاری ساختاری متوقف گردیده است.
+\end{itemize}

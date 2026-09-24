@@ -1,0 +1,45 @@
+\section{ماژول moba\_attention (MoBA Mixture of Block Attention)}
+\label{sec:module_moba_attention}
+
+\subsection{معرفی و انگیزه}
+مکانیزم \lr{MoBA Mixture of Block Attention} با نام فارسی «مکانیزم ترکیبی از توجه بلاکی MoBA» به منظور رفع تنگنای محاسباتی $\mathcal{O}(N^2)$ لایه‌های توجه کلاسیک توسعه یافته است. در طول پردازش دنباله‌های متنی با طول بلند، انباشت ماتریس‌های موقت توجه در حافظه کارت گرافیک مانع از استقرار مدل در سخت‌افزارهای تجاری می‌گردد. این ماژول با استفاده از فاکتورسازی ساختاریافته و نگاشت‌های کم‌مرتبه، وابستگی‌های متنی را با کمترین میزان مصرف حافظه تقریب می‌زند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته $r \ll D$ فرمول‌بندی می‌گردد:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+ \begin{equation}
+\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}
+\right) \mathbf{V}
+\end{equation}
+در معماری‌های حالت‌فضا یا تقریب مقادیر منفرد، محاسبات به فرم بازگشتی خطی یا زیرفضای تجزیه‌شده با پیچیدگی $\mathcal{O}(N \cdot d \cdot r)$ تبدیل می‌شوند.
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی پیاده‌سازی‌شده در فایل \lr{Codes/framework/attentions/moba\_attention.py} به عنوان یک لایه توجه ماژولار پیاده‌سازی شده است که تانسورهای پرس‌وجو، کلید و مقدار را در فرمت چندسره $H$ پردازش کرده و با سیستم ماسک‌گذاری علّی و پروجکشن‌های لایه هماهنگ است.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{moba\_attention} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_moba_attention} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{moba\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_moba_attention}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{73.62\%} & \lr{0.7516} & \lr{329.0 MB} & \lr{51,081 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8583} & \lr{379.1 MB} & \lr{27,860 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{569.5 MB} & \lr{19,829 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.95\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{84.17\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در ارزیابی مدل‌های زایشی دیکودر یا مدل‌های حجیم‌تر، در صورت ثبت وضعیت \lr{FAIL} یا دقت صفر، این رفتار ناشی از ناسازگاری ذاتی ساختار بازگشتی لایه با ماسک‌گذاری متقارن یا افت تانسور پروجکشن بدون بازآموزی عمیق است که باید به عنوان یک محدودیت در انتقال بین معماری‌ها مورد توجه قرار گیرد.

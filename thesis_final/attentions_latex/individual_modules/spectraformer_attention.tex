@@ -1,0 +1,45 @@
+\section{ماژول spectraformer\_attention (Spectraformer Spectral Attention)}
+\label{sec:module_spectraformer_attention}
+
+\subsection{معرفی و انگیزه}
+مکانیزم \lr{Spectraformer Spectral Attention} با عنوان فارسی «مکانیزم توجه طیفی اسپکترافرمر» به عنوان راهکاری کارآمد برای عبور از پیچیدگی مربعی $\mathcal{O}(N^2)$ در پردازش توالی‌های طولانی توسعه یافته است. در لایه‌های سنتی توجه، رشد غیرخطی محاسبات مانع از تعمیم‌پذیری به پنجره‌های زمینه بزرگ می‌شود. این معماری با بازفرمول‌بندی معادلات و بهره‌گیری از نگاشت‌های زیرفضایی یا مدل‌سازی حالت‌فضا، شدت تبادل با حافظه سراسری را مهار می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی لایه باشد. در این معماری، پروجکشن‌های لایه از طریق نگاشت‌های زیرفضایی یا عملگرهای پیوسته زمان فرمول‌بندی می‌گردند:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+در تقریب‌های مرتبه‌دوم یا بازگشتی، معادله خروجی به شکل زیر ساده‌سازی می‌شود:
+ \begin{equation}
+\mathbf{O} = \operatorname{LayerNorm}\left(\mathbf{X} + \operatorname{Scan}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+\right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی این ماژول در فایل \lr{Codes/framework/attentions/spectraformer\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. این ساختار مجهز به مدیریت ماسک‌گذاری علّی و پشتیبانی از ابعاد چندسره است.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{spectraformer\_attention} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_spectraformer_attention} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{spectraformer\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_spectraformer_attention}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.64\%} & \lr{0.7782} & \lr{325.4 MB} & \lr{64,654 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{57.45\%} & \lr{0.6986} & \lr{376.2 MB} & \lr{34,387 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.8 MB} & \lr{30,632 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{77.64\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در صورت ثبت دقت صفر یا وضعیت \lr{FAIL} بر روی برخی مدل‌ها (نظیر مدلهای زایشی دیکودر)، این رفتار نشانه ناسازگاری ساختار لایه با ماسک‌گذاری یک‌طرفه یا انحراف دامنه توکن‌ها حین استنتاج بدون گام‌های بازیابی گرادیانی کافی است که صریحاً به عنوان محدودیت ساختاری ماژول قید می‌گردد.

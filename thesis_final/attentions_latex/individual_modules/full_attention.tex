@@ -1,0 +1,64 @@
+\section{ماژول full\_attention (Standard Multi-Head Attention Baseline)}
+\label{sec:module_full_attention}
+
+\subsection{معرفی و انگیزه}
+مکانیزم توجه کامل (\lr{Full Attention}) پیاده‌سازی مرجع و خط پایه توجه چندسره استاندارد ضرب داخلی مقیاس‌شده (\lr{Standard Multi-Head Scaled Dot-Product Attention}) مبتنی بر معماری واسوانی و همکاران (Vaswani et al., 2017) است. هدف از توسعه این ماژول در چارچوب پروژه، ارائه یک نقطه اتکای آزمایشگاهی خالص (\lr{Gold Standard Baseline}) است که با تزریق وزن‌های منجمد مدل پایه و آداپتورهای کم‌مرتبه لورا (\lr{LoRA}) تجهیز شده تا رفتار ترنسفورمر بدون اعمال هیچ‌گونه فشرده‌سازی رتبه یا تغییر در پیچیدگی $\mathcal{O}(N^2)$ ارزیابی گردد.
+
+این ماژول به عنوان کنترل‌کننده تجربی فرضیه‌ها عمل می‌کند؛ بدین معنا که عملکرد آن در چارچوب یکپارچه جایگزینی لایه‌ها، حد بالای دقت قابل دستیابی با آداپتورهای با رتبه پایین و نیز هزینه واقعی محاسبات و مصرف حافظه بدون تکنیک‌های تقریب طیفی را به عنوان خط مبنا در معرض سنجش قرار می‌دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در این مکانیزم، برای تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$، نگاشت‌های خطی کامل به فضاهای پرس‌وجو، کلید و مقدار انجام می‌شود:
+\begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q + \mathbf{b}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K + \mathbf{b}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V + \mathbf{b}_V
+\end{equation}
+که در آن وزن‌های پروجکشن با استفاده از لایه خطی سازگار با لورا منجمد بوده و تغییرات به موازات آن محاسبه می‌شوند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora}
+\end{equation}
+سپس تانسورها به سرهای چندگانه $[B, H, N, d]$ بازآرایی شده و در صورت نیاز سرهای کلید/مقدار هماهنگ می‌گردند. ماتریس شباهت کامل دو‌به‌دو میان تمامی جفت‌های توکنی از طریق ضرب ماتریسی مستقیم به دست می‌آید:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}
+\end{equation}
+توزیع وزن‌های توجه با تابع فعال‌سازی غیرخطی سافت‌مکس استخراج شده و در ماتریس مقادیر ضرب می‌گردد:
+\begin{equation}
+\mathbf{A} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{O}_{\text{heads}} = \mathbf{A} \mathbf{V}
+\end{equation}
+خروجی الحاق‌شده سرها از طریق پروجکشن پایانی به فضای ابعادی اصلی نگاشت داده می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{O}_{\text{heads}} \mathbf{W}_O + \mathbf{b}_O
+\end{equation}
+پیچیدگی محاسباتی و حافظه این لایه صریحاً برابر $\mathcal{O}(N^2 \cdot d)$ است که گلوگاه مقیاس‌پذیری در دنباله‌های متنی طولانی محسوب می‌شود.
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی این مکانیزم تحت عنوان \lr{FullAttention} در فایل \lr{Codes/framework/attentions/full\_attention.py} پیاده‌سازی شده و از کلاس مرجع \lr{BaseAttention} ارث‌بری می‌کند. مشخصات معماری و پیاده‌سازی این ماژول عبارتند از:
+\begin{itemize}
+    \item استفاده از لایه‌های اختصاصی \lr{LoRALinear} برای تمام پروجکشن‌های چهارگانه (\lr{query}, \lr{key}, \lr{value}, \lr{out\_proj}) با پارامترهای منجمد پایه و آداپتورهای با رتبه قابل تنظیم (پیش‌فرض ۱۶).
+    \item بهره‌گیری از شیء \lr{ModelAdapter} جهت پشتیبانی چندمعماری برای استخراج بدون افت وزن‌ها از ترنسفورمرهای انکودر و دیکودر.
+    \item اعمال ماسک معتبر توکن‌ها از طریق تابع \lr{get\_token\_valid\_mask} و پشتیبانی کامل از RoPE با تفکیک ابعاد زاویه‌ای.
+    \item آرگومان‌های سازنده شامل \lr{config}، \lr{rank} (اختیاری جهت هماهنگی با چارچوب)، \lr{lora\_rank}، و \lr{pretrained\_attn}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{full\_attention} در بنچمارک یکنواخت GLUE SST-2 بر روی کارت گرافیک NVIDIA RTX 4070 نتایج ارائه‌شده در جدول \ref{tab:benchmark_full_attention} را حاصل نموده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول خط پایه \lr{full\_attention} روی مدل‌های مورد ارزیابی}
+\label{tab:benchmark_full_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{389.03 MB} & \lr{101,969.09 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{630.79 MB} & \lr{6,347.08 tok/s} & \lr{MODERATE\_EXPANSION} \\
+\lr{GPT-2} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های ارزیابی تجربی نشان می‌دهند که خط لوله پیاده‌سازی استاندارد در DistilBERT به توان عملیاتی بسیار بالای ۱۰۱,۹۶۹ توکن بر ثانیه با اوج حافظه ۳۸۹.۰۳ مگابایت دست یافته است. در مدل RoBERTa به علت دو برابر بودن تعداد لایه‌ها و وزن‌ها، اوج حافظه به ۶۳۰.۷۹ مگابایت افزایش یافته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+توقف دقت در مقدار ۵۰.۹۲٪ و وضعیت \lr{PASS\_LOW} / \lr{MODERATE\_EXPANSION} پدیده‌ای حائز اهمیت است که ریشه در سازوکار جایگزینی بدون آموزش مجدد عمیق (\lr{Zero-shot Injection with Parameter-Frozen LoRA}) دارد. در این سناریو، گرچه معماری توجه استاندارد و بدون تقریب کم‌مرتبه است، اما منجمد بودن وزن‌های اصلی مدل و اتکا به تنظیم صرفاً آداپتورهای لورا در گام‌های محدود ارزیابی سریع (بدون طی کامل فازهای آموزش انطباقی)، اجازه بازتنظیم توزیع سافت‌مکس لایه‌ها پس از تزریق ماژول جدید را نداده است. در مدل RoBERTa، ساختار انکودر تودرتو و تفکیک لایه‌ای در غیاب بهینه‌سازی سراسری، موجب تفاوت جزئی در پارامترهای فعال و بروز خطای گسترش ابعاد (\lr{MODERATE\_EXPANSION}) نسبت به خط مبنای تقطیرشده گردیده است.

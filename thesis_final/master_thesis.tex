@@ -445,12 +445,12 @@
     edge from parent/.style={draw=blue!70, thick, -Stealth},
     every node/.style={rectangle, draw=blue!80, fill=blue!10, rounded corners, font=\footnotesize}
 ]
-\node[fill=blue!20, draw=blue, font=\small\bfseries] {\parbox{3.5cm}{\centering Efficient Attention\$\mathcal{O}(N)$}}
-    child { node {\parbox{2.8cm}{\centering \textbf{1. Linear \& Kernel}\Linear, Cosformer\Performer, Galerkin}} }
-    child { node {\parbox{2.8cm}{\centering \textbf{2. Low-Rank \& SVD}\SVD, Linformer\ASVD, Res-SVD, MLA}} }
+\node[fill=blue!20, draw=blue, font=\small\bfseries] {\parbox{3.5cm}{\centering Efficient Attention$\mathcal{O}(N)$}}
+    child { node {\parbox{2.8cm}{\centering \textbf{1. Linear \& Kernel}\\ Linear, Cosformer \\ Performer, Galerkin}} }
+    child { node {\parbox{2.8cm}{\centering \textbf{2. Low-Rank \& SVD}\\ SVD, Linformer \\ ASVD, Res-SVD, MLA}} }
     child { node {\textbf{3. Sparse \& Local}} }
-    child { node {\parbox{2.8cm}{\centering \textbf{4. State-Space Models}\Mamba, HGRN2\Griffin, Jamba}} }
-    child { node {\parbox{2.8cm}{\centering \textbf{5. Pruning \& Compression}\Token Pruning\Squeezing Heads}} };
+    child { node {\parbox{2.8cm}{\centering \textbf{4. State-Space Models}\\ Mamba, HGRN2 \\ Griffin, Jamba}} }
+    child { node {\parbox{2.8cm}{\centering \textbf{5. Pruning \& Compression}\\ Token Pruning \\ Squeezing Heads}} };
 \end{tikzpicture}
 \end{latin}
 \caption{درخت طبقه‌بندی خانواده‌های مکانیزم‌های توجه کارآمد در مدل‌های زبانی}
@@ -609,10 +609,10 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
     phase/.style={rectangle, draw=blue!80, fill=blue!10, rounded corners, minimum width=9cm, minimum height=1.1cm, font=\small},
     arrow/.style={-Stealth, very thick, draw=blue!70}
 ]
-\node[phase] (p1) {\parbox{8.6cm}{\centering \textbf{Step 1: Drop-in Surgical Injection}\Direct layer replacement preserving tensor layouts and causal masks}};
-\node[phase, below=of p1] (p2) {\parbox{8.6cm}{\centering \textbf{Step 2: SVD/LoRA Weight Alignment}\Singular value decomposition of weights and rank calibration}};
-\node[phase, below=of p2] (p3) {\parbox{8.6cm}{\centering \textbf{Step 3: Fast Gradient Recovery}\Target task calibration (50--250 steps, AdamW, lr=1e-4)}};
-\node[phase, below=of p3] (p4) {\parbox{8.6cm}{\centering \textbf{Step 4: Hardware \& Language Profiling}\Peak VRAM, forward/backward latency, tokens/sec, and Quality Gate}};
+\node[phase] (p1) {\parbox{8.6cm}{\centering \textbf{Step 1: Drop-in Surgical Injection}\\ Direct layer replacement preserving tensor layouts and causal masks}};
+\node[phase, below=of p1] (p2) {\parbox{8.6cm}{\centering \textbf{Step 2: SVD/LoRA Weight Alignment}\\ Singular value decomposition of weights and rank calibration}};
+\node[phase, below=of p2] (p3) {\parbox{8.6cm}{\centering \textbf{Step 3: Fast Gradient Recovery}\\ Target task calibration (50--250 steps, AdamW, lr=1e-4)}};
+\node[phase, below=of p3] (p4) {\parbox{8.6cm}{\centering \textbf{Step 4: Hardware \& Language Profiling}\\ Peak VRAM, forward/backward latency, tokens/sec, and Quality Gate}};
 \draw[arrow] (p1) -- (p2);
 \draw[arrow] (p2) -- (p3);
 \draw[arrow] (p3) -- (p4);
@@ -626,7 +626,7 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
     \item \textbf{گام اول (تزریق درجا):} استخراج خودکار لایه توجه متراکم و جایگزینی با ماژول هدف، در حالی که لایه‌های فیدفوروارد و نرمال‌سازی بدون دستکاری باقی می‌مانند.
     \item \textbf{گام دوم (تراز پارامتری):} اِعمال تجزیه مقادیر منفرد بر روی ماتریس‌های وزن پروجکشن با آستانه حفظ انرژی $\tau \ge 0.90$ و تنظیم شاخه \lr{LoRA} با رتبه $r=16$ و ضریب مقیاس $\alpha=32$.
     \item \textbf{گام سوم (فاز بازیابی سریع):} آموزش سریع شبکه بر روی داده‌های وظیفه هدف با نرخ یادگیری $1 \times 10^{-4}$ و بهینه‌ساز \lr{AdamW} برای ۵۰ الی ۲۵۰ گام به منظور بازتنظیم گرادیان‌ها و بازیابی افت دقت.
-    \item \textbf{گام چهارم (پروفایلینگ سخت‌افزاری):} سنکرون‌سازی پردازنده و کارت گرافیک با رویدادهای \lr{torch.cuda.Event} جهت محاسبه دقیق زمان تاخیر گام رو به جلو \lr{(Forward Latency)} و پسرو \lr{(Backward Latency)}، پایش اوج مصرف حافظه با \lr{torch.cuda.max_memory_allocated()}، و محاسبه دقیق ماتریس درهم‌ریختگی، دقت و \lr{F1-Score}.
+    \item \textbf{گام چهارم (پروفایلینگ سخت‌افزاری):} سنکرون‌سازی پردازنده و کارت گرافیک با رویدادهای \lr{torch.cuda.Event} جهت محاسبه دقیق زمان تاخیر گام رو به جلو \lr{(Forward Latency)} و پسرو \lr{(Backward Latency)}، پایش اوج مصرف حافظه با \lr{torch.cuda.max\_memory\_allocated()}، و محاسبه دقیق ماتریس درهم‌ریختگی، دقت و \lr{F1-Score}.
 \end{enumerate}
 
 \section{معیار دروازه کیفیت \lr{(Quality Gate)}}
@@ -751,13 +751,13 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
 
 \begin{itemize}
     \item \textbf{پاسخ به فرضیه اول (نرخ فشرده‌سازی و دقت):}
-    \textit{فرضیه کاملاً تایید شد.} داده‌های تجربی ماژول‌هایی نظیر \lr{asvd_attention} (دقت ۹۰.۳۷٪ با VRAM معادل ۳۴۴ مگابایت) و \lr{minimal_aurora} (دقت ۸۵.۴۴٪ با VRAM معادل ۲۹۳ مگابایت) اثبات نمودند که با تعیین آستانه انرژی تکین $\tau \ge 0.90$، افت دقت دسته‌بندی در سطح کمتر از ۵٪ کنترل شده و اوج مصرف حافظه بیش از ۷۵٪ کاهش می‌یابد.
+    \textit{فرضیه کاملاً تایید شد.} داده‌های تجربی ماژول‌هایی نظیر \lr{asvd\_attention} (دقت ۹۰.۳۷٪ با VRAM معادل ۳۴۴ مگابایت) و \lr{minimal\_aurora} (دقت ۸۵.۴۴٪ با VRAM معادل ۲۹۳ مگابایت) اثبات نمودند که با تعیین آستانه انرژی تکین $\tau \ge 0.90$، افت دقت دسته‌بندی در سطح کمتر از ۵٪ کنترل شده و اوج مصرف حافظه بیش از ۷۵٪ کاهش می‌یابد.
 
     \item \textbf{پاسخ به فرضیه دوم (اثر آداپتورهای LoRA در فاز بازیابی):}
     \textit{فرضیه کاملاً تایید شد.} پایش مسیر آموزش در شکل \ref{fig:loss_convergence} نشان می‌دهد که ماژول‌های دارای شاخه LoRA ظرف کمتر از ۱۰۰ گام اول به همگرایی با امتیاز \lr{F1 $\ge$ 0.88} دست می‌یابند، در حالی که ماژول‌های فاقد آداپتور در فلات دقت گرفتار شده و در فاز دروازه کیفیت مردود شدند.
 
     \item \textbf{پاسخ به فرضیه سوم (شتاب توان عملیاتی سخت‌افزار):}
-    \textit{فرضیه تایید شد.} در ماژول‌هایی نظیر \lr{eat_attention} (ثبت توان ۱۱۰,۰۵۰ توکن بر ثانیه در برابر ۶۱,۱۵۳ توکن مدل پایه) و \lr{zeros_attention} (ثبت توان ۹۰,۰۱۳ توکن بر ثانیه)، شتاب پردازشی واقعی بین \lr{1.25x} تا \lr{1.80x} حاصل گردید که اثبات‌کننده رهایی از وضعیت محدود به پهنای باند حافظه \lr{(Memory-Bound)} است.
+    \textit{فرضیه تایید شد.} در ماژول‌هایی نظیر \lr{eat\_attention} (ثبت توان ۱۱۰,۰۵۰ توکن بر ثانیه در برابر ۶۱,۱۵۳ توکن مدل پایه) و \lr{zeros\_attention} (ثبت توان ۹۰,۰۱۳ توکن بر ثانیه)، شتاب پردازشی واقعی بین \lr{1.25x} تا \lr{1.80x} حاصل گردید که اثبات‌کننده رهایی از وضعیت محدود به پهنای باند حافظه \lr{(Memory-Bound)} است.
 
     \item \textbf{پاسخ به فرضیه چهارم (فروپاشی به رده اکثریت):}
     \textit{فرضیه تایید شد.} در بررسی ماژول‌های با رتبه تقریب بسیار پایین، پدیده Majority Class Collapse با دقت فلات ۵۰.۹۲٪ و افت F1 مشاهده شد. ماتریس‌های درهم‌ریختگی شکل \ref{fig:confusion_matrices} نشان دادند که این پدیده در انکودرهای دوطرفه نسبت به دیکودرهای خودبازگشتی با شدت بیشتری رخ می‌دهد و نیازمند کالیبراسیون دقیق ضرایب نرمال‌سازی لایه‌هاست.
@@ -766,7 +766,7 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
 \section{درس‌آموخته‌های فنی و مهندسی در طراحی سیستم‌ها}
 \begin{enumerate}
     \item \textbf{اهمیت حافظه تانسورهای موقت \lr{(Transient Tensors)}:} در پیاده‌سازی پایتورچ، عملیات جابجایی تانسورها نظیر \lr{.transpose()} و \lr{.permute()} بدون تخصیص حافظه رخ می‌دهند، اما فراخوانی عملگرهایی نظیر \lr{.contiguous()} یا \lr{.reshape()} نیازمند تخصیص بافر جدید هستند که می‌تواند در اوج حافظه تداخل ایجاد کند. استفاده بهینه از عملگرهای درجا \lr{(In-place operations)} مصرف اوج را به شدت مهار می‌سازد.
-    \item \textbf{پایداری محاسبات ممیز شناور نیم‌دقت \lr{(FP16 vs BF16)}:} در محاسبات کِرنل‌های خطی بدون Softmax، مقادیر مخرج کسر تجمعی به صفر نزدیک می‌شوند. استفاده از \lr{torch.nan_to_num} با مقدار اپسیلون $\epsilon = 10^{-6}$ برای جلوگیری از سرریز مقادیر یا ایجاد مقادیر بی‌نهایت ضروری است.
+    \item \textbf{پایداری محاسبات ممیز شناور نیم‌دقت \lr{(FP16 vs BF16)}:} در محاسبات کِرنل‌های خطی بدون Softmax، مقادیر مخرج کسر تجمعی به صفر نزدیک می‌شوند. استفاده از \lr{torch.nan\_to\_num} با مقدار اپسیلون $\epsilon = 10^{-6}$ برای جلوگیری از سرریز مقادیر یا ایجاد مقادیر بی‌نهایت ضروری است.
     \item \textbf{سازگاری ماسک‌گذاری علّی در دیکودرها:} در تبدیل توجه مربعی به خطی، پیاده‌سازی ماسک مثلثی علّی با استفاده از فرمول‌های بازگشتی تجمعی \lr{(Prefix-sum)} انجام می‌پذیرد و نباید از ماسک‌های سنتی ماتریسی استفاده شود زیرا مزیت خطی‌بودن الگوریتم را خنثی می‌نماید.
 \end{enumerate}
 

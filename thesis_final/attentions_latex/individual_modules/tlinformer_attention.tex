@@ -1,0 +1,77 @@
+\section{ماژول توجه لینفورمر با انقباض رتبه بریده‌شده (TLinFormer Attention)}
+\label{sec:module_tlinformer_attention}
+
+\subsection{معرفی و انگیزه}
+مکانیزم توجه لینفورمر بریده‌شده \lr{(Truncated LinFormer Attention - TLinFormer)} با الهام از معماری برجسته \lr{LinFormer} (ارائه‌شده توسط وانگ و همکاران، ۲۰۲۰) و با هدف شکستن دیوار پیچیدگی محاسباتی درجه دو $\mathcal{O}(N^2)$ طراحی شده است. ایده بنیادین لینفورمر بر این فرض ریاضی استوار است که ماتریس شباهت توجه با ابعاد $N \times N$ را می‌توان از طریق پروجکشن‌های خطی با رتبه کم $r \ll N$ بر روی محور طول دنباله تقریب زد، به گونه‌ای که ابعاد دنباله کلید و مقدار به عددی ثابت و بسیار کوچک تقلیل یابد.
+
+ماژول \lr{TLinFormerAttention} (ثبت‌شده در رجیستری با شناسه‌های \lr{tlinformer} و \lr{tlinformer\_attention}) این مفهوم را برای سازگاری کامل با مدل‌های روز مهندسی و سخت‌سازی کرده است. ویژگی اصلی پیاده‌سازی حاضر، تعبیه ماتریس‌های پروجکشن یادگیرنده دنباله، پشتیبانی از تعبیه مکانی دورانی (\lr{RoPE})، تطابق با سرهای گروه‌بندی‌شده (\lr{GQA}) و ماسک‌گذاری پیش‌گیرانه پدینگ جهت ممانعت از نشت اطلاعات توکن‌های زاید است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ ماتریس حالت‌های پنهان ورودی باشد. ابتدا پروجکشن‌های پرس‌وجو، کلید و مقدار با استفاده از نگاشت‌های خطی مجهز به لورا تشکیل می‌شوند:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) \in \mathbb{R}^{B \times H \times N \times d}, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}) \in \mathbb{R}^{B \times H_{kv} \times N \times d}, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}) \in \mathbb{R}^{B \times H_{kv} \times N \times d}
+\end{align}
+
+\paragraph{۱. انقباض خطی بعد دنباله (Sequence Contraction):}
+ماژول مجهز به دو ماتریس پروجکشن دنباله یادگیرنده $\mathbf{P}_K, \mathbf{P}_V \in \mathbb{R}^{r \times N_{\text{max}}}$ است که بعد طول دنباله کلید و مقدار را از $N$ به $r$ منقبض می‌نمایند. برای طول دنباله جاری $N$، ماتریس برش‌خورده $\mathbf{P} \in \mathbb{R}^{r \times N}$ بر روی کلید و مقدار ضرب می‌شود:
+\begin{align}
+\mathbf{K}_{\text{proj}} &= \mathbf{P}_K \mathbf{K}_{\text{masked}} \in \mathbb{R}^{B \times H \times r \times d}, \\
+\mathbf{V}_{\text{proj}} &= \mathbf{P}_V \mathbf{V}_{\text{masked}} \in \mathbb{R}^{B \times H \times r \times d}
+\end{align}
+پیش از اعمال این ضرب، به منظور ممانعت از نشت نویز توکن‌های پدینگ به داخل فضای فشرده زیرفضا، ماسک باینری معتبرسازی توکن‌ها اعمال می‌گردد:
+\begin{equation}
+\mathbf{K}_{\text{masked}} = \mathbf{K} \odot \mathbf{M}_{\text{valid}}, \quad \mathbf{V}_{\text{masked}} = \mathbf{V} \odot \mathbf{M}_{\text{valid}}
+\end{equation}
+
+\paragraph{۲. محاسبه ماتریس توجه نامتقارن و خروجی:}
+ماتریس همبستگی توجه میان پرس‌وجو با ابعاد کامل $N$ و کلید فشرده با طول $r$ با پیچیدگی $\mathcal{O}(N \cdot r \cdot d)$ تشکیل می‌گردد:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{proj}}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times r}
+\end{equation}
+\begin{equation}
+\mathbf{A} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{O}_{\text{heads}} = \mathbf{A} \mathbf{V}_{\text{proj}} \in \mathbb{R}^{B \times H \times N \times d}
+\end{equation}
+در نهایت، سرها ادغام شده و از لایه پروجکشن خروجی عبور داده می‌شوند:
+\begin{equation}
+\mathbf{Y} = \operatorname{LoRA-Linear}_O(\mathbf{O}_{\text{heads}}) \in \mathbb{R}^{B \times N \times D}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/attentions/tlinformer\_attention.py} دارای ویژگی‌های زیر است:
+\begin{itemize}
+    \item \textbf{انتقال چندمعماری وزن‌ها (\lr{copy\_weights}):} قابلیت انتقال پارامترها از انواع معماری‌های \lr{DistilBERT, RoBERTa, GPT-2} و \lr{Qwen} با اعتبارسنجی نُرم فروبنیوس ($\ge 10^{-4}$).
+    \item \textbf{انقباض ایمن دنباله:} پیاده‌سازی ضرب انقباضی $\mathbf{K}_{\text{proj}} = \mathbf{P} \mathbf{K}$ با رعایت ترتیب ابعاد تانسوری و حفظ پایداری گرادیان.
+    \item \textbf{انطباق با RoPE و ماسک علّی:} پشتیبانی از امبدینگ موقعیتی چرخشی و اعمال ماسک در دیکودرها.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{tlinformer\_attention} بر روی آزمون \lr{GLUE SST-2} ثبت شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_tlinformer_attention} درج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{tlinformer\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_tlinformer_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{331.47 MB} & \lr{69,131.42 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{382.74 MB} & \lr{36,104.16 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{574.72 MB} & \lr{32,163.65 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان‌دهنده راندمان مصرف حافظه بسیار درخشان است؛ اوج مصرف حافظه در تمام مدل‌ها زیر \lr{575 MB} باقی مانده و توان پردازشی به مرز \lr{69,131.42 tok/s} در \lr{DistilBERT} رسیده است. وضعیت کلی ماژول در دروازه کیفیت بر روی \lr{PASS\_LOW} با دقت \lr{50.92\%} تثبیت گردیده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل رفتار عملکردی ماژول بر روی شاخص‌های دقت و علت قرارگیری در رده \lr{PASS\_LOW} به شرح زیر است:
+\begin{enumerate}
+    \item \textbf{تحلیل همگرایی دقت روی ۵۰.۹۲٪ و شاخص F1 معادل ۰.۶۷۴۸:} ثبت رقم یکنواخت دقت \lr{50.92\%} در هر سه مدل \lr{DistilBERT}، \lr{RoBERTa} و \lr{GPT-2}، بیانگر پدیده کلاسیک «پیش‌بینی اکثریت رده \lr{(Majority Class Collapse)}» در مجموعه آزمون \lr{SST-2} است (که توزیع کلاس مثبت آن دقیقاً ۵۰.۹۲٪ است).
+    \item \textbf{ناسازگاری پروجکشن تصادفی اولیه در گام‌های محدود بازیابی:} ماتریس‌های انقباض دنباله $\mathbf{P}_K$ و $\mathbf{P}_V$ با توزیع تصادفی مقداردهی اولیه می‌شوند. در فرآیند ارزیابی بنچمارک با تعداد گام‌های کم بازیابی \lr{(Few-step Recovery)}، گرادیان‌های لورا قادر به آموزش کامل نگاشت فضای دنباله $N \to r$ نبوده‌اند؛ در نتیجه خروجی توجه به یک بردار میانگین‌گیری شبه‌یکنواخت تبدیل شده و مدل به سمت پیش‌بینی کلاس اکثریت میل کرده است.
+    \item \textbf{تخریب ساختار ترتیبی در دیکودر علّی (\lr{GPT-2}):} اعمال ضرب ماتریسی $\mathbf{P} \mathbf{K}$ در سراسر محور توالی، تفکیک زمانی توکن‌های قبل و بعد را مختل نموده و ماهیت جهت‌دار زنجیره استنتاج در مدل‌های خودبازگشتی را تضعیف می‌کند.
+\end{enumerate}

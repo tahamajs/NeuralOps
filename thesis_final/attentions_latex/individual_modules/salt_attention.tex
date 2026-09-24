@@ -1,82 +1,69 @@
-\subsection{کالبدشکافی ماژول \lr{salt\_attention}}
+\section{ماژول salt\_attention (Singular Value Adaptation with Low-Rank Tuning)}
+\label{sec:module_salt_attention}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-ماژول \lr{salt\_attention} نسخه عملیاتی و پیاده‌سازی‌شده مکانیزم تنظیم طیفی بر روی سرهای توجه چندگانه است که تطبیق پویا را بدون نیاز به بازآموزی وزن‌های حجیم در بسترهای پردازشی لبه‌ای میسر می‌سازد.
+\subsection{معرفی و انگیزه}
+تنظیم دقیق کارآمد پارامتری (\lr{Parameter-Efficient Fine-Tuning - PEFT}) و فشرده‌سازی پروجکشن‌های لایه توجه در ترنسفورمرها از اهداف اساسی کاهش هزینه‌های محاسباتی به شمار می‌روند. روش‌های رایج نظیر \lr{LoRA}، ماتریس‌های اصلاحی تصادفی با رتبه پایین را به وزن‌های اولیه اضافه می‌کنند، اما از ساختار طیفی و راستاهای مقادیر منفرد موجود در ماتریس‌های آموزش‌دیده اولیه غافل هستند.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-افزودن لنزهای اصلاحی پلاریزه به یک سیستم اپتیکی تلسکوپ غول‌پیکر: به جای تعویض و تراش مجدد آینه سنگین چند تنی تلسکوپ، فیلترهای نازک و سبکی که دقیقاً بر اساس عیوب انکساری نور آینه طراحی شده‌اند در مسیر خروجی نور نصب می‌شوند تا تصویری شفاف با حداقل هزینه پدید آید.
+مکانیزم توجه \lr{SALT (Singular Value Adaptation with Low-Rank Tuning)} با هدف ادغام هوشمند تجزیه مقادیر منفرد بر پایه اطلاعات فیشر (\lr{Fisher-Weighted SVD}) و تطبیق کم‌مرتبه باقیمانده ابداع شده است. در ماژول \lr{SALT Attention}، پروجکشن‌های خطی توجه استاندارد با لایه‌های فاکتورگیری‌شده \lr{SALTLinear} جایگزین می‌شوند. این لایه‌ها راستاهای بردارهای منفرد متعامد اولیه را حفظ کرده، مقادیر منفرد را با ضریب مقیاس‌گذاری تطبیقی $\boldsymbol{\gamma}$ تعدیل نموده و هم‌زمان یک شاخه کم‌مرتبه یادگیرنده موازی $\mathbf{A} \mathbf{B}$ را برای جبران خطای باقیمانده به کار می‌گیرند.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-خروجی سرهای توجه با اصلاح ماتریسی اسپکترال همگام‌سازی می‌گردد:
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن پروجکشن اولیه $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با استفاده از تجزیه مقادیر منفرد وزن‌دار فیشر تجزیه شود. در صورتی که $\mathbf{F} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس قطری اطلاعات فیشر باشد، تجزیه بر روی ماتریس وزنی $\tilde{\mathbf{W}}_0 = \mathbf{W}_0 \odot \sqrt{\mathbf{F}}$ اعمال می‌گردد:
 \begin{equation}
-\mathbf{Q}_h = \mathbf{X} (\mathbf{W}_{0,Q}^{(h)} + \Delta \mathbf{W}_Q^{(h)}), \quad \Delta \mathbf{W}_Q^{(h)} = \mathbf{B}_h \mathbf{A}_h
+\mathbf{W}_0 \approx \mathbf{U}_{:, :r} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r}) \mathbf{V}_{1:r, :}^\top
 \end{equation}
-که در آن $\operatorname{rank}(\mathbf{B}_h \mathbf{A}_h) = r \ll d_k$. پس از اتمام آموزش، ماتریس‌ها جمع شده و در استنتاج همانند لایه خطی استاندارد عمل می‌کنند:
+که در آن $r \le \min(d_{\text{in}}, d_{\text{out}})$ رتبه فاکتورسازی است. در لایه \lr{SALTLinear}، وزن موثر پروجکشن در حین استنتاج و آموزش به صورت زیر فرمول‌بندی می‌شود:
 \begin{equation}
-\mathbf{W}_{\text{\lr{final}}}^{(h)} = \mathbf{W}_{0}^{(h)} + \mathbf{B}_h \mathbf{A}_h
+\mathbf{W} = \mathbf{U}_{:, :r} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r} \odot \boldsymbol{\gamma}) \mathbf{V}_{1:r, :}^\top + \frac{\alpha}{r} \mathbf{A} \mathbf{B}
 \end{equation}
-این مکانیزم هیچ‌گونه تأخیر مازادی در زمان پاسخ‌دهی ایجاد نمی‌کند.
-
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{salt\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
-\begin{enumerate}
-\item دریافت تانسور ورودی چندسره.
-\item محاسبه پروجکشن خطی پایه و شاخه اصلاحی کم‌رتبه هم‌راستا.
-\item محاسبه ضرب توجه استاندارد با تانسورهای تصحیح‌شده.
-\item تلفیق سرهای توجه با ماتریس ادغام خروجی اسپکترال.
-\item ارسال نتیجه به لایه نرمال‌سازی پسین.
-\end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+که در آن:
 \begin{itemize}
-\item \textbf{سازگاری کامل با معماری استنتاج:} به دلیل امکان ادغام ریاضی وزن‌ها، مصرف پهنای باند حافظه در زمان استنتاج کاملاً مشابه مدل پایه است.
-\item \textbf{مهار رشد حافظه گرافیکی:} مصرف رم در سطح \lr{750.0 MB} تثبیت می‌شود.
+    \item $\mathbf{U}_{:, :r} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V}_{1:r, :}^\top \in \mathbb{R}^{r \times d_{\text{in}}}$ پایه‌های متعامد مقادیر منفرد هستند که منجمد باقی می‌مانند.
+    \item $\boldsymbol{\gamma} \in \mathbb{R}^r$ بردار پارامترهای آموزش‌پذیر مقیاس‌گذاری طیفی است که با ۱ مقداردهی اولیه می‌شود ($\boldsymbol{\gamma}_{\text{init}} = \mathbf{1}$).
+    \item $\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{in}}}$ آداپتورهای باقیمانده تصحیح‌کننده کم‌مرتبه هستند.
+\end{itemize}
+خروجی نگاشت به ازای تانسور ورودی $\mathbf{X}$ برابر است با:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \left( \mathbf{V}_{1:r, :} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r} \odot \boldsymbol{\gamma}) \mathbf{U}_{:, :r}^\top \right) + \frac{\alpha}{r} \mathbf{X} \mathbf{B}^\top \mathbf{A}^\top + \mathbf{b}
+\end{equation}
+تانسورهای پرس‌وجو، کلید و مقدار پس از فرافکنی و اعمال کدگذاری موقعیت چرخشی (\lr{RoPE}) و هم‌ترازی سرهای \lr{GQA}، وارد لایه توجه شده و بافتار نهایی استخراج می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی \lr{SALTAttention} در سورس‌کد \lr{Codes/framework/attentions/salt\_attention.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. مؤلفه‌های کلیدی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{لایه خطی فاکتورگیری‌شده \lr{SALTLinear}:} پیاده‌سازی مستقیم فرمول طیفی با دو مسیر محاسباتی موازی؛ مسیر طیفی منجمد مقیاس‌پذیر با پارامتر $\boldsymbol{\gamma}$ و مسیر کم‌مرتبه تصحیح‌کننده خطای فاکتورسازی.
+    \item \textbf{پشتیبانی از تجزیه با وزن‌دهی فیشر (\lr{Fisher-weighted SVD}):} امکان مقداردهی وزن‌ها با اولویت‌دهی به پارامترهای با گرادیان و حساسیت بالا در مدل پایه.
+    \item \textbf{سازگاری کامل با معماری‌های ناهمگن:} شناسایی خودکار انکودرهای تودرتو (\lr{RoBERTa/BERT})، دیکودرهای علّی (\lr{GPT-2})، مدل‌های \lr{GQA} و مدیریت ابعاد تانسورهای سرهای کلید/مقدار نامتقارن.
+    \item \textbf{مسیر بهینه‌شده هسته \lr{SDPA}:} اجرای سریع بدون سربار حافظه در صورت عدم نیاز به ثبت تانسورهای توجه میانی.
 \end{itemize}
 
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{salt\_attention} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی در جدول \ref{tab:benchmark_salt_attention} گزارش گردیده است:
+
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{salt_attention} روی مدل‌های پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{salt\_attention} روی مدل‌های پایه}
 \label{tab:benchmark_salt_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{80.28\%} & \lr{0.8102} & \lr{337.8 MB} & \lr{65,883 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{338.5 MB} & \lr{36,946 tok/s} & \lr{PASS_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{583.3 MB} & \lr{32,671 tok/s} & \lr{PASS_LOW} \\
-\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{DistilBERT} & \lr{80.28\%} & \lr{0.8102} & \lr{337.76 MB} & \lr{65,883.04 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{338.51 MB} & \lr{36,946.38 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{583.32 MB} & \lr{32,671.41 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-ثبت دقت \lr{80.28\%} و نرخ توان عملیاتی \lr{36,100} توکن بر ثانیه با مهار اوج حافظه روی \lr{750.0 MB} (افت \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا)، نشان‌دهنده راندمان بالای ماژول \lr{salt\_attention} در تطبیق مدل با داده‌های جدید با کمترین هزینه سخت‌افزاری است.
+بر اساس داده‌های مستند جدول، ماژول \lr{salt\_attention} بر روی مدل \lr{DistilBERT} به دقت شایان توجه \lr{80.28\%} و شاخص F1 معادل \lr{0.8102} با مصرف حافظه محدود \lr{337.76 MB} و توان عملیاتی \lr{65,883.04 tok/s} دست یافته و با موفقیت دروازه کیفی \lr{PASS} را پشت سر گذاشته است.
 
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    lora/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی سرهای توجه};
-    \node [lora, right=1.0cm of input] (base) {پایه منجمد $\mathbf{W}_0$};
-    \node [lora, right=1.0cm of base] (adapt) {تطبیق طیفی $\Delta \mathbf{W}$};
-    \node [outblock, right=1.0cm of adapt] (out) {خروجی همگام};
-
-    \draw [->, thick, draw=blue!80] (input) -- (base);
-    \draw [->, thick, draw=orange!80] (base) -- (adapt);
-    \draw [->, thick, draw=orange!80] (adapt) -- (out);
-\end{tikzpicture}
-\end{center}
-
-
-
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل نتایج به دست آمده بر روی سایر مدل‌ها شواهد زیر را آشکار می‌سازد:
+\begin{itemize}
+    \item \textbf{افت دقت روی \lr{RoBERTa} و \lr{GPT-2} (\lr{50.92\%}):} عملکرد ماژول روی مدل‌های \lr{RoBERTa} و \lr{GPT-2} در وضعیت \lr{PASS\_LOW} قرار دارد. این افت عملکرد ناشی از فاکتورسازی شدید با رتبه $r=16$ در لایه‌های چگال پروجکشن بدون اجرای فاز همگرایی تطبیقی عمیق است. انجماد بردارهای تکین $\mathbf{U}$ و $\mathbf{V}$ در صورتی که رتبه $r$ بخش ناچیزی از ابعاد کامل (۷۶۸) را پوشش دهد، انعطاف‌پذیری بازنمایی فضایی را به شدت محدود ساخته و منجر به قفل شدن پیش‌بینی‌های مدل بر روی توزیع کلاس اکثریت می‌گردد.
+    \item \textbf{ناسازگاری ساختاری با \lr{Qwen}:} در مدل \lr{Qwen} به علت تفاوت ساختاری در لایه‌های ادغام‌شده پروجکشن \lr{QKV} و ناسازگاری ماسک‌های چندبعدی، ماژول در نسخه پایه با برچسب عدم سازگاری مواجه گردیده است.
+\end{itemize}

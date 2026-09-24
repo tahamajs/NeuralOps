@@ -1,0 +1,66 @@
+\section{ماژول replace (Model Attention Replacement and Dynamic Graph Surgery)}
+\label{sec:module_replace}
+
+\subsection{معرفی و انگیزه}
+در چارچوب ارزیابی یکپارچه و فشرده‌سازی لایه‌های توجه در مدل‌های زبانی، وجود یک لایه مبنا (\lr{Identity / Replacement Baseline}) جهت جراحی گراف محاسباتی و سنجش خطای جایگزینی ضروری است. ماژول \lr{replace} به منظور ایجاد سازوکار جایگزینی ماژولار لایه توجه ترنسفورمر با حفظ یا فاکتورسازی ساختار خطی طراحی گردیده است.
+
+ایده محوری در این ماژول، تعریف یک لایه پایه همانی مجهز به قابلیت فاکتورسازی کم‌مرتبه اختیاری بر پایه تجزیه مقادیر منفرد (\lr{SVD-Factorized Linear Projections}) است. هنگامی که پارامتر رتبه صفر باشد ($r=0$)، ماژول به عنوان یک لایه توجه استاندارد با پروجکشن‌های خطی کامل عمل می‌کند که وزن‌های لایه اصلی را بدون کوچک‌ترین تغییر رونویسی می‌نماید. اما در صورتی که $r > 0$ باشد، پروجکشن‌های پرس‌وجو، کلید و مقدار به دو ماتریس تجزیه‌شده با رتبه $r$ شکسته می‌شوند تا رفتار فشرده‌سازی رتبه خالص را ارزیابی کنند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{D_{\text{in}} \times D_{\text{out}}}$ ماتریس وزن پروجکشن توجه در مدل پایه باشد. در ماژول \lr{replace}، نگاشت لایه از طریق کلاس فاکتورسازی‌شده \lr{\_FactorizedLinear} مدل‌سازی می‌گردد:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \mathbf{W}_{\text{down}} \mathbf{W}_{\text{up}} + \mathbf{b}
+\end{equation}
+که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{D_{\text{in}} \times r}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های تقلیل رتبه با  $r \ll \min(D_{\text{in}}, D_{\text{out}})$ هستند. در حالت رتبه پایه ($r=0$)، نگاشت خطی استاندارد $\mathbf{Y} = \mathbf{X} \mathbf{W} + \mathbf{b}$ جایگزین می‌شود.
+
+تانسورهای پرس‌وجو، کلید و مقدار پس از فرافکنی خطی و تفکیک به $H$ سر توجه با بعد سر $d = D/H$ شکل می‌گیرند:
+\begin{equation}
+\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}
+\end{equation}
+محاسبه امتیازهای توجه و بافتار نهایی در مسیر شتاب‌یافته از طریق هسته ادغام‌شده توجه ضرب داخلی مقیاس‌پذیر (\lr{FlashAttention / SDPA}) انجام می‌پذیرد:
+\begin{equation}
+\mathbf{O} = \operatorname{SDPA}(\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{M}) = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V}
+\end{equation}
+که در آن $\mathbf{M}$ ماسک توجه است. در انکودرهای تودرتو (\lr{Nested Encoders})، خروجی $\mathbf{O}$ به طور مستقیم به لایه ترکیب‌کننده لایه بعدی تحویل داده می‌شود و در سایر معماری‌ها، پروجکشن خروجی نهایی اعمال می‌گردد:
+\begin{equation}
+\mathbf{Y}_{\text{out}} = \mathbf{O} \mathbf{W}_O + \mathbf{b}_O
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول با عنوان \lr{ReplaceAttention} در فایل \lr{Codes/framework/attentions/replace.py} پیاده‌سازی گردیده است. ویژگی‌های کلیدی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{پشتیبانی منعطف از رتبه کم‌مرتبه (\lr{\_FactorizedLinear}):} با بررسی پارامتر \lr{rank}، لایه‌های پروجکشن به لایه‌های دو مرحله‌ای بالا/پایین فاکتورگیری‌شده تبدیل می‌شوند.
+    \item \textbf{انطباق چندمعماری با رونویسی دقیق وزن‌ها (\lr{copy\_weights}):} پیاده‌سازی رونویسی وزن‌ها برای معماری‌های تخت نظیر \lr{DistilBERT}، انکودرهای تودرتو نظیر \lr{RoBERTa/BERT}، دیکودرهای علّی نظیر \lr{GPT-2} و معماری‌های نوین با پروجکشن مشترک نظیر \lr{Qwen/LLaMA}.
+    \item \textbf{مسیرهای سریع \lr{SDPA} و مهار \lr{NaN}:} بهره‌گیری از هسته استاندارد \lr{F.scaled\_dot\_product\_attention} به همراه عملگرهای پایدارسازی \lr{torch.nan\_to\_num} جهت جلوگیری از خروج گرادیان‌ها از بازه معتبر.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{replace} بر روی مجموعه داده اعتبارسنجی \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_replace} را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{replace} روی مدل‌های پایه}
+\label{tab:benchmark_replace}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{144,873.64 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{86,937.12 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{63,288.70 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل داده‌های پایگاه اعتبارسنجی و گزارش‌های ثبت خطا در جدول \ref{tab:benchmark_replace} نکات زیر را به وضوح تبیین می‌نماید:
+\begin{itemize}
+    \item \textbf{علت وقوع دقت صفر درصد (\lr{Accuracy=0.00\%}) و وضعیت \lr{FAIL}:} در هر سه مدل ارزیابی‌شده (\lr{DistilBERT}، \lr{RoBERTa} و \lr{GPT-2})، دقت ثبت‌شده دقیقاً \lr{0.00\%} و وضعیت نهایی به صورت \lr{FAIL} گزارش گردیده است. بررسی مستقیم فایل‌های گزارش و لاگ اجرای آزمایش‌ها (\lr{summary.csv}) نشان می‌دهد که علت شکست، نقص معنایی یا ناتوانی محاسباتی ماژول نبوده، بلکه ناشی از خطای تزریق معماری در زمان اجرای بنچمارک تحت عنوان زیر است:
+    \begin{center}
+    \lr{\texttt{RuntimeError: Could not inject attention 'replace': No valid attention class found in module 'replace'}}
+    \end{center}
+    این خطای تزریق گراف محاسباتی زمانی رخ داده است که تابع جستجوی ثبت‌کننده ماژول‌ها (\lr{ATTENTION\_REGISTRY}) نتوانسته است کلاس هدف را مستقیماً از نام ماژول استخراج کند. در نتیجه ارزیابی مدل با لایه توجه خالی یا نامعتبر اجرا شده و ارزیاب خط لوله به منظور پایبندی به قوانین تضمین کیفیت، امتیاز دقت را صفر لحاظ کرده است.
+    \item \textbf{حفظ شاخص‌های آماری خط پایه:} همان‌طور که در جدول مشاهده می‌شود، مقادیر شاخص F1 به ترتیب برابر با \lr{0.9077}، \lr{0.7586} و \lr{0.6354} با حافظه و توان عملیاتی خط پایه ثبت شده‌اند که تاییدی بر خوانش آماری پیش از شکست تزریق لایه است.
+\end{itemize}
