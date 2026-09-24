@@ -388,5 +388,15 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T21:38:37.440706"
+  },
+  {
+    "module": "mlorq_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 0.0,
+    "error": "ImportError: cannot import name 'LOG' from 'framework.utils.logger' (D:\\SVD_PROJECT\\Codes\\framework\\utils\\logger.py)",
+    "timestamp": "2026-09-24T21:39:50.185285"
   }
 ]
