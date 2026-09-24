@@ -1,0 +1,8 @@
+KEY: liu2024efficient
+URL: https://doi.org/10.1109/icdcs60910.2024.00036
+FETCHED_AT_UTC: 2026-09-20T14:45:30.476425+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 427f6c2193ef6837c5505d69c4f512d4cf09f243e0f57831e669f4c0711b5787
+BODY_BYTES_LEN: 8369
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,8,18]],"date-time":"2026-08-18T00:14:58Z","timestamp":1787012098716,"version":"build-2736575974"},"reference-count":43,"publisher":"IEEE","license":[{"start":{"date-parts":[[2024,7,23]],"date-time":"2024-07-23T00:00:00Z","timestamp":1721692800000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2024,7,23]],"date-time":"2024-07-23T00:00:00Z","timestamp":1721692800000},"content-version":"stm-asf

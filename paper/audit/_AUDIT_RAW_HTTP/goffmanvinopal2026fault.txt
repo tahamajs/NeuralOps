@@ -1,0 +1,8 @@
+KEY: goffmanvinopal2026fault
+URL: https://doi.org/10.1109/access.2026.3692463
+FETCHED_AT_UTC: 2026-09-20T14:44:20.356712+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: a27c8ec7dc8f9d9c53b1035400324abec59a4484e8b126f3707cb0a35f538fac
+BODY_BYTES_LEN: 4608
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,5,19]],"date-time":"2026-05-19T05:12:06Z","timestamp":1779167526190,"version":"3.51.4"},"reference-count":19,"publisher":"Institute of Electrical and Electronics Engineers (IEEE)","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"vor","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/legalcode"}],"funder":[{"name":"Faculty of Engineering, Bar-Ilan University"}],"

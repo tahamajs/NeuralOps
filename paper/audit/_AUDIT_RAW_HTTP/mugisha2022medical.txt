@@ -1,0 +1,8 @@
+KEY: mugisha2022medical
+URL: https://doi.org/10.36227/techrxiv.21673598.v2
+FETCHED_AT_UTC: 2026-09-20T14:45:39.584491+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 9730e87ad72a8c17bd5a623a4e6bb026a1b9a2812af7e93b74cbc5058934bfa3
+BODY_BYTES_LEN: 3598
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,6,3]],"date-time":"2026-06-03T19:07:17Z","timestamp":1780513637790,"version":"3.54.1"},"posted":{"date-parts":[[2022,12,24]]},"reference-count":0,"publisher":"Institute of Electrical and Electronics Engineers (IEEE)","license":[{"start":{"date-parts":[[2022,12,24]],"date-time":"2022-12-24T00:00:00Z","timestamp":1671840000000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"domain":[]

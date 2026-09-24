@@ -1,0 +1,15 @@
+KEY: dong2024hymba
+URL: https://arxiv.org/abs/2411.13676
+FETCHED_AT_UTC: 2026-09-20T14:44:08.873364+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: dabe342901d52665ac4497c74a55a9b26ef2803f38881061f6089ac87b71df33
+BODY_BYTES_LEN: 42780
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2411.13676] Hymba: A Hybrid-head Architecture for Small Language Models</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <link rel="icon

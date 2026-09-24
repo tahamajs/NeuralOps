@@ -1,0 +1,14 @@
+KEY: deepseek2024mla
+URL: https://arxiv.org/abs/2405.04434
+FETCHED_AT_UTC: 2026-09-20T14:44:00.965661+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 6b2464b5d8d5ef270cad7b7dd691afa295546d8e2eecf8ef9082b50f548d3c73
+BODY_BYTES_LEN: 67380
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2405.04434] DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.

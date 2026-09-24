@@ -1,0 +1,8 @@
+KEY: chuang2024energy
+URL: https://doi.org/10.36227/techrxiv.173397945.52437090/v1
+FETCHED_AT_UTC: 2026-09-20T14:43:53.358034+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 33f16115300466c7083966a568aef443f5ece55db8642dfbcbb9c280379ea41a
+BODY_BYTES_LEN: 3259
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,6,12]],"date-time":"2026-06-12T16:01:06Z","timestamp":1781280066815,"version":"3.54.1"},"posted":{"date-parts":[[2024,12,12]]},"reference-count":0,"publisher":"Institute of Electrical and Electronics Engineers (IEEE)","license":[{"start":{"date-parts":[[2024,12,12]],"date-time":"2024-12-12T00:00:00Z","timestamp":1733961600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"domain":[

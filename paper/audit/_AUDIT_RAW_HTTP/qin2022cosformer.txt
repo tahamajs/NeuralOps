@@ -1,0 +1,15 @@
+KEY: qin2022cosformer
+URL: https://arxiv.org/abs/2202.08791
+FETCHED_AT_UTC: 2026-09-20T14:46:15.376815+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 89a52cc6405367beccb851e611da952318fd98d9b1865d16ec524eee9a45e244
+BODY_BYTES_LEN: 42506
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2202.08791] cosFormer: Rethinking Softmax in Attention</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png

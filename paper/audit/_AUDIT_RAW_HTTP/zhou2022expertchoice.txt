@@ -1,0 +1,15 @@
+KEY: zhou2022expertchoice
+URL: https://arxiv.org/abs/2202.09368
+FETCHED_AT_UTC: 2026-09-20T14:47:50.395854+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 971ab6269942dc9569def38365309575315351dda4d7139e5f5e9f3628a46a0d
+BODY_BYTES_LEN: 43525
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2202.09368] Mixture-of-Experts with Expert Choice Routing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <link rel="icon" type="image/

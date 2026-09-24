@@ -1,0 +1,15 @@
+KEY: choromanski2021rethinking
+URL: https://arxiv.org/abs/2009.14794
+FETCHED_AT_UTC: 2026-09-20T14:43:52.375536+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 155b95705096b3927bd004c072cedaa2c298f627feb29702b5e4e5831ff5f10d
+BODY_BYTES_LEN: 46566
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2009.14794] Rethinking Attention with Performers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" size

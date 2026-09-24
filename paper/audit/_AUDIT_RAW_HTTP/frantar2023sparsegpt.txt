@@ -1,0 +1,15 @@
+KEY: frantar2023sparsegpt
+URL: https://arxiv.org/abs/2301.00774
+FETCHED_AT_UTC: 2026-09-20T14:44:17.905405+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 3e05bc0656b9f67751b241ba74ccef05f64755dc91e4127375b9216158b1ba89
+BODY_BYTES_LEN: 41311
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2301.00774] SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+  <li

@@ -1,0 +1,8 @@
+KEY: dewangga2025comparative
+URL: https://doi.org/10.30595/juita.v13i3.26479
+FETCHED_AT_UTC: 2026-09-20T14:44:05.429095+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 6ec9c44f43fa69ea4c3a259ea880071ec51b6b90a3a5050f84348440be4f956a
+BODY_BYTES_LEN: 3690
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,9,1]],"date-time":"2026-09-01T15:40:57Z","timestamp":1788277257863,"version":"build-2803163510"},"reference-count":0,"publisher":"Lembaga Publikasi Ilmiah dan Penerbitan Universitas Muhammadiyah Purwokerto","license":[{"start":{"date-parts":[[2025,11,8]],"date-time":"2025-11-08T00:00:00Z","timestamp":1762560000000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0"}],"content-domain":{"domain":[],"crossmark-r

@@ -1,0 +1,8 @@
+KEY: deng2025why
+URL: https://doi.org/10.1109/bigdata66926.2025.11400978
+FETCHED_AT_UTC: 2026-09-20T14:44:02.196842+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 029bc7c77f8bb925931ff20436d9970e7746c8059acb943fd1dd62ddcf1ccb71
+BODY_BYTES_LEN: 20823
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2026,3,8]],"date-time":"2026-03-08T01:37:13Z","timestamp":1772933833902,"version":"3.50.1"},"reference-count":108,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,12,8]],"date-time":"2025-12-08T00:00:00Z","timestamp":1765152000000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,12,8]],"date-time":"2025-12-08T00:00:00Z","timestamp":1765152000000},"content-version":"stm-asf","delay-i

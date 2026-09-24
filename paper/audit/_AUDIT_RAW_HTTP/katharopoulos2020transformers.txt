@@ -1,0 +1,14 @@
+KEY: katharopoulos2020transformers
+URL: https://arxiv.org/abs/2006.16236
+FETCHED_AT_UTC: 2026-09-20T14:44:59.685036+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 26f4c1e48758850d54104327eeb9443ac3aae3d0908e918e4828817122bf630a
+BODY_BYTES_LEN: 42988
+BODY_PREVIEW_FIRST_500_CHARS:
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>document.documentElement.classList.add('js');</script>  <title>[2006.16236] Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/browse/0.3.4/images/icons/favicon-32x32.png">

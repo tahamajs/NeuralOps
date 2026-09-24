@@ -1,0 +1,8 @@
+KEY: arya2025development
+URL: https://doi.org/10.1109/ncc63735.2025.10983860
+FETCHED_AT_UTC: 2026-09-20T14:43:03.244081+00:00
+RAW_HTTP_STATUS: 200
+BODY_SHA256: 2a8510795630485f1f638f76a96e5e3e24b50197f49593b4314bf9449cf52f95
+BODY_BYTES_LEN: 5157
+BODY_PREVIEW_FIRST_500_CHARS:
+{"indexed":{"date-parts":[[2025,5,14]],"date-time":"2025-05-14T06:10:08Z","timestamp":1747203008173,"version":"3.40.5"},"reference-count":21,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,3,6]],"date-time":"2025-03-06T00:00:00Z","timestamp":1741219200000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,3,6]],"date-time":"2025-03-06T00:00:00Z","timestamp":1741219200000},"content-version":"stm-asf","delay-in-
