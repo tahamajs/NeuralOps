@@ -3629,7 +3629,7 @@ def run_single_module_main(args) -> dict:
                     status = "FAIL_RECOVERY_NAN"
                     err = "note: recovery_loss_nan"
                 elif acc < pass_threshold_pct and status != "EVAL_FAILED":
-                    err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
+                    err = f"FAIL: accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
             # Check parameter expansion — exclude LoRA adapter params from base model count
             p_before = comp_metrics.get("total_params_before", total_params_before)
