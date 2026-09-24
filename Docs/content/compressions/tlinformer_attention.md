@@ -405,18 +405,6 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ```python
 # TODO: Add specific usage example
 ```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.
-
 ## Unified 4-Architecture Benchmark Results (TLinFormer Attention)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
 

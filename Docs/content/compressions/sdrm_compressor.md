@@ -312,9 +312,12 @@ The `SDRMCompressor` architecture incorporates telemetry hooks for tracking sing
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 10.78 ms | 571.8 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 10.71 ms | 571.8 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 10.96 ms | 581.7 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 11.30 ms | 581.7 MB |
 
 ## Unified 4-Architecture Benchmark Results (SDRM Compressor)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

@@ -313,9 +313,12 @@ The `MinimalMoEFallback` architecture incorporates telemetry hooks for tracking 
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 899.04 ms | 5085.0 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 878.57 ms | 5085.0 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 875.84 ms | 5094.8 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 888.87 ms | 5094.8 MB |
 
 ## Empirical Benchmark Results
 

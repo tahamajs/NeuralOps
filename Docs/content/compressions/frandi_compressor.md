@@ -573,9 +573,12 @@ The `FRanDICompressor` architecture incorporates telemetry hooks for tracking si
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 14.23 ms | 581.9 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 14.00 ms | 581.9 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 14.36 ms | 591.9 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 13.86 ms | 591.9 MB |
 
 ## Unified 4-Architecture Benchmark Results (FRanDI)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

@@ -240,9 +240,12 @@ The `FactorisedMatrixState` architecture incorporates telemetry hooks for tracki
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 1902.71 ms | 3811.3 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1895.71 ms | 3811.3 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1892.66 ms | 3821.2 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1907.72 ms | 3821.2 MB |
 
 ## Empirical Benchmark Results
 

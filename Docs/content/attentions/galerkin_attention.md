@@ -391,9 +391,12 @@ The `GalerkinAttention` architecture incorporates telemetry hooks for tracking s
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 17.48 ms | 497.4 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 17.54 ms | 497.4 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 18.23 ms | 507.3 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 18.55 ms | 507.3 MB |
 
 
 ## Limitations & Future Work

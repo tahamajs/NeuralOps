@@ -519,9 +519,12 @@ The `BAMUMoEBlock` architecture incorporates telemetry hooks for tracking singul
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 47.64 ms | 2945.5 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 45.54 ms | 2945.5 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 47.68 ms | 2955.4 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 49.08 ms | 2955.4 MB |
 
 ## Empirical Benchmark Results
 
