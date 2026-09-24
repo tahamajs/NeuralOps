@@ -3298,6 +3298,25 @@ def run_single_module_main(args) -> dict:
 
     path = out / "summary.csv"
     summary_dict = {}
+
+    def _flush_summary_csv():
+        try:
+            _tmp = path.with_suffix(".tmp")
+            with _tmp.open("w", newline="", encoding="utf8") as _f:
+                _w = csv.DictWriter(_f, fieldnames=FIELDS, extrasaction="ignore")
+                _w.writeheader()
+                for _m in summary_dict:
+                    _w.writerow(summary_dict[_m])
+            if _tmp.exists():
+                if path.exists():
+                    try:
+                        path.unlink()
+                    except Exception:
+                        pass
+                _tmp.rename(path)
+        except Exception as _csv_err:
+            LOG.warning("Could not write summary.csv to %s: %s", path, _csv_err)
+
     if path.exists():
         backup_path = path.with_suffix(".csv.bak")
         if not backup_path.exists():
@@ -3667,6 +3686,7 @@ def run_single_module_main(args) -> dict:
             "timestamp": datetime.now().isoformat(),
         }
         summary_dict[name] = row
+        _flush_summary_csv()
 
         f1_disp = row["f1_score"] if row.get("f1_score") not in ("", None) else "N/A"
         vram_disp = row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
@@ -3935,6 +3955,7 @@ def run_single_module_main(args) -> dict:
     except Exception as rep_err:
         LOG.debug("Report generation info: %s", rep_err)
 
+    _flush_summary_csv()
 
     if len(names) == 1 and names[0] in summary_dict:
         return summary_dict[names[0]]
