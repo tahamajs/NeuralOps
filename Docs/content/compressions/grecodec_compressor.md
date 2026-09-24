@@ -515,16 +515,3 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 90.37% | 0.9069 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-grecodec) |
 | ROBERTA | 88.53% | 0.8936 | 1.0 | 0 | 321.64 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-grecodec) |
 | GPT2 | 82.57% | 0.838 | 1.0 | 0 | 398.74 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-grecodec) |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-

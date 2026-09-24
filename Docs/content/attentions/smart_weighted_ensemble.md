@@ -547,20 +547,3 @@ def run_smart_ensemble(config: dict, dataset_path: str) -> None:
     """Command-line entry point for running smart ensemble."""
     print("Use the class 'SmartWeightedEnsemble' directly in your training/evaluation script.")
 ```
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.

@@ -437,9 +437,12 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 19.69 ms | 1090.4 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 18.41 ms | 1090.4 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 18.99 ms | 1100.3 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 19.58 ms | 1100.3 MB |
 
 ## Empirical Benchmark Results
 

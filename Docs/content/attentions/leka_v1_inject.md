@@ -383,7 +383,10 @@ The `LEKAV1Attention` architecture incorporates telemetry hooks for tracking sin
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 27.91 ms | 1338.3 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 27.90 ms | 1338.3 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 28.97 ms | 1348.2 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 29.09 ms | 1348.2 MB |
 

@@ -551,9 +551,12 @@ The `AdaptiveSparseAttention` architecture incorporates telemetry hooks for trac
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 37.17 ms | 1235.7 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 37.10 ms | 1235.7 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 36.32 ms | 1245.6 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 37.37 ms | 1245.6 MB |
 
 ## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
 Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):

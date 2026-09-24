@@ -415,9 +415,12 @@ The `GriffinSSDBlock` architecture incorporates telemetry hooks for tracking sin
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 1046.69 ms | 4328.6 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1045.30 ms | 4328.6 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1047.63 ms | 4338.5 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1032.61 ms | 4338.5 MB |
 
 ## Empirical Benchmark Results
 

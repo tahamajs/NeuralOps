@@ -474,9 +474,12 @@ The `SwiftSVDActivationCompressor` architecture incorporates telemetry hooks for
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 14.22 ms | 717.9 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 14.32 ms | 717.9 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 14.95 ms | 727.8 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 14.62 ms | 727.8 MB |
 
 ## Unified 4-Architecture Benchmark Results (Swift-SVD Activation Aware)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

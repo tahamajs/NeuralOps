@@ -785,20 +785,3 @@ print("Output logits shape:", outputs.logits.shape)
 1. **Information Loss at Aggressive Compression Ratios**: When $r_{\text{comp}} < 0.25$, sequence contexts with distributed semantic cues may lose vital tokens.
 2. **Causal Decoders with Top-k Saliency**: Saliency selection on early tokens can omit future information needed for bidirectional understanding if misconfigured in encoder tasks.
 3. **Short Sequence Overhead**: When $L \le 2$, compression is bypassed automatically, but for sequences under 32 tokens, sorting overhead provides negligible speedup over dense attention.
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.

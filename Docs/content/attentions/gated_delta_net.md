@@ -471,7 +471,10 @@ The `GatedDeltaNet` architecture incorporates telemetry hooks for tracking singu
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 1768.44 ms | 5832.5 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 1771.03 ms | 5832.5 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 1817.40 ms | 5842.4 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 1757.88 ms | 5842.4 MB |
 

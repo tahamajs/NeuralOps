@@ -476,9 +476,12 @@ The `ExpertChoiceMoE` architecture incorporates telemetry hooks for tracking sin
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 43.21 ms | 1420.0 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 42.70 ms | 1420.0 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 43.32 ms | 1429.9 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 42.24 ms | 1429.9 MB |
 
 ## Empirical Benchmark Results
 

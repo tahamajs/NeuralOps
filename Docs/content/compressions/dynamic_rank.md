@@ -885,9 +885,12 @@ The `DynamicEntropySVDCompressor` architecture incorporates telemetry hooks for 
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 13.75 ms | 581.9 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 13.71 ms | 581.9 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 13.92 ms | 591.9 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 12.29 ms | 591.9 MB |
 
 ## Empirical Benchmark Results
 

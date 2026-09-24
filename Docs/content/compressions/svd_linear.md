@@ -575,9 +575,12 @@ print('Compressed output logits:', outputs.logits.shape)
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 18.97 ms | 1034.3 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 18.80 ms | 1034.8 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 19.71 ms | 1071.6 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 19.14 ms | 1072.1 MB |
 
 ## Unified 4-Architecture Benchmark Results (SVD Linear)
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):

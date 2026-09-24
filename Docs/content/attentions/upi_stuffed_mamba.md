@@ -690,20 +690,3 @@ print("Output logits shape:", outputs.logits.shape)
 1. **Recurrent Sequential Latency without Triton**: In standard PyTorch, Python loop recurrence over sequence length $L$ incurs CPU dispatch and kernel launch overhead.
 2. **Extreme State Dimension Bottlenecks**: Very small state dimension ($d_{\text{state}} \le 4$) risks associative recall degradation on high-entropy reasoning tasks.
 3. **Uncertainty Saturation**: If $\gamma_t \to 1$ across all tokens, state decay accelerates excessively, causing premature forgetting of early sequence history.
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.

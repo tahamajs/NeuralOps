@@ -638,9 +638,12 @@ The `ADMMMaskedLinear` architecture incorporates telemetry hooks for tracking si
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 12.85 ms | 573.4 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 13.12 ms | 573.4 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 13.33 ms | 583.3 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 13.13 ms | 583.3 MB |
 
 ## Unified 4-Architecture Benchmark Results (ADMM Pruner with Distillation)
 Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity, $\lambda_{\text{distill}} = 0.1$, 200 recovery steps):

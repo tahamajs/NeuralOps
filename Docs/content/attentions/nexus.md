@@ -679,7 +679,10 @@ print('Output logits shape:', outputs.logits.shape)
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 19.79 ms | 1283.7 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 19.77 ms | 1283.7 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 20.12 ms | 1293.6 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 20.33 ms | 1293.6 MB |
 

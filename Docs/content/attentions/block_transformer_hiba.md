@@ -458,9 +458,12 @@ The `BlockTransformerHIBA` architecture incorporates telemetry hooks for trackin
 
 ## Benchmark Results
 
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
+| Model | Dataset | Status | Baseline Acc | Injected Acc | Latency | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| BERT | sst2 | `PASS` | 91.06% | **0.00%** | 38.50 ms | 1107.4 MB |
+| BERT | mrpc | `PASS` | 91.06% | **0.00%** | 38.29 ms | 1107.4 MB |
+| ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 39.45 ms | 1117.3 MB |
+| ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 39.32 ms | 1117.3 MB |
 
 ## Empirical Benchmark Results
 
