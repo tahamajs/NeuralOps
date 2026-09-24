@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_lora_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hashed_net_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashed_net_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashed_net_factory",
@@ -7457,13 +7450,6 @@
       "retries": 0
     },
     {
-      "id": "p12_fill_papers",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 220",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p1_adaptive_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/distilbert_mnli_full --dataset mnli --modules adaptive_svd --parallel 1 --batch_size 8 --output_suffix adaptive_svd_mnli_p1",
@@ -7904,13 +7890,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_ressvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ressvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ressvd",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cur_moe_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_factory",
@@ -7921,6 +7900,20 @@
       "id": "p3_gpt2_rotational_slicegpt_int4_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_int4_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_int4_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_lora_attn",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attn",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p12_fill_papers",
+      "type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 220",
       "status": "active",
       "retries": 0
     }
@@ -9210,6 +9203,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
       "started_at": "2026-09-24T21:05:18.634047",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_ressvd",
+      "id": "p3_gpt2_ressvd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ressvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ressvd",
+      "started_at": "2026-09-24T21:07:04.087182",
       "retries": 0,
       "status": "done"
     }
