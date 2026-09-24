@@ -45,15 +45,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{zeros\_attention} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{zeros_attention} روی مدل‌های پایه}
 \label{tab:benchmark_zeros_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{51.83\%} & \lr{0.6789} & \lr{330.5 MB} & \lr{90,013 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa-base} & \lr{51.15\%} & \lr{0.6698} & \lr{380.5 MB} & \lr{47,176 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{59.75\%} & \lr{0.7023} & \lr{1221.3 MB} & \lr{9,568 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{330.5 MB} & \lr{90,013 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{51.15\%} & \lr{0.6698} & \lr{380.5 MB} & \lr{47,175 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1221.3 MB} & \lr{9,567 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
 \bottomrule
 \end{tabular}
 \end{table}

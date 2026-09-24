@@ -37,15 +37,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{mamba\_inject} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{mamba_inject} روی مدل‌های پایه}
 \label{tab:benchmark_mamba_inject}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{---} & \lr{0.9125} & \lr{389.5 MB} & \lr{53,560 tok/s} & \lr{SKIP\_ARCH} \\
-\lr{RoBERTa-base} & \lr{---} & \lr{0.7277} & \lr{712.3 MB} & \lr{28,487 tok/s} & \lr{SKIP\_ARCH} \\
-\lr{GPT-2} & \lr{---} & \lr{0.3010} & \lr{793.2 MB} & \lr{28,204 tok/s} & \lr{SKIP\_ARCH} \\
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9125} & \lr{389.5 MB} & \lr{53,560 tok/s} & \lr{SKIP_BERT_ARCHITECTURAL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7277} & \lr{712.3 MB} & \lr{28,486 tok/s} & \lr{SKIP_ROBERTA_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.3010} & \lr{793.2 MB} & \lr{28,203 tok/s} & \lr{SKIP_GPT_ARCHITECTURAL} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -530,20 +530,20 @@ Table~\ref{tab:results_acc_hammingattention} details empirical evaluation metric
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_hamming/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_hamming/distilbert/summary.csv} & distilbert & hamming & PASS & 79.13 & 0.8154 \\
-\texttt{results/unified\_hamming/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_hamming/gpt2/summary.csv} & gpt2 & hamming & PASS & 71.22 & 0.7239 \\
-\texttt{results/unified\_hamming/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_hamming/roberta/summary.csv} & roberta & hamming & PASS\_LOW & 50.92 & 0.6748 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hamming} & \textbf{77.06\%} & -13.88\% & PASS & 0.8066 & 0 & \textbf{0.99$\times$} & 336.2 MB & 3.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hamming} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 664.6 MB & 6.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hamming} & \textbf{55.50\%} & -2.41\% & PASS_LOW & 0.6896 & 0 & \textbf{0.99$\times$} & 569.5 MB & 6.7 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{hammingattention}.}
-\label{tab:results_acc_hammingattention}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

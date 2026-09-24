@@ -36,15 +36,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{hgrn2\_outer} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{hgrn2_outer} روی مدل‌های پایه}
 \label{tab:benchmark_hgrn2_outer}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{68.46\%} & \lr{0.7114} & \lr{357.1 MB} & \lr{16,854 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{50.34\%} & \lr{0.4355} & \lr{685.6 MB} & \lr{8,865 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{48.62\%} & \lr{0.6203} & \lr{569.8 MB} & \lr{9,387 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{43.81\%} & \lr{0.4068} & \lr{357.1 MB} & \lr{16,854 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.34\%} & \lr{0.4355} & \lr{685.6 MB} & \lr{8,864 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{48.62\%} & \lr{0.6203} & \lr{569.8 MB} & \lr{9,386 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{50.46\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

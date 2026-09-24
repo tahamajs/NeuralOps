@@ -78,18 +78,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{nha\_compressor} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}}
-\begin{tabular}{lcccc}
-\hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه (Baseline)} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
-\hline
-مدل ارزیابی‌شده & \lr{DistilBERT} & \lr{DistilBERT} & --- & \lr{TARGET} \\
-دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{90.71\%} & \lr{-0.49\%} & \lr{PASS} \\
-شاخص آماری \lr{(F1-Score)} & \lr{88.40\%} & \lr{91.07\%} & \lr{+2.67\%} & \lr{CONFIRMED} \\
-اوج مصرف حافظه \lr{(Peak VRAM)} & \lr{4200 MB} & \lr{335.47 MB} & \lr{-92.0\%} & \lr{OPTIMAL} \\
-توان عملیاتی \lr{(Throughput)} & \lr{15,400 tok/s} & \lr{18,502.55 tok/s} & \lr{1.20x} & \lr{HIGH SPEED} \\
-پیچیدگی محاسباتی & $\mathcal{O}(N^2)$ & $\mathcal{O}(N \cdot d^2 + N \cdot w)$ & تقطیر هیبریدی & \lr{VERIFIED} \\
-\hline
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{nha_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_nha_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9107} & \lr{335.5 MB} & \lr{18,502 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{667.7 MB} & \lr{9,146 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1510.8 MB} & \lr{6,494 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
 \end{tabular}
 \end{table}
 

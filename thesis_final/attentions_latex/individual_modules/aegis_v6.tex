@@ -39,15 +39,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_v6} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis_v6} روی مدل‌های پایه}
 \label{tab:benchmark_aegis_v6}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{87.04\%} & \lr{0.8791} & \lr{305.0 MB} & \lr{13,376 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{59.98\%} & \lr{0.6161} & \lr{599.3 MB} & \lr{6,637 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{51.61\%} & \lr{0.6713} & \lr{494.7 MB} & \lr{6,970 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{52.87\%} & \lr{0.5827} & \lr{305.0 MB} & \lr{13,376 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{599.3 MB} & \lr{6,637 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.46\%} & \lr{0.6620} & \lr{494.7 MB} & \lr{6,969 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{47.71\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

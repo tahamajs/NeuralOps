@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 (Path A: use_full_attention=True).**
 
-| Model | Module | Accuracy | Δ | Params Δ | Time | Status |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | — | 1.9 s | PASS |
-| DistilBERT | **Block (MHA)** | **86.5** | **0.85** | +66.4M | 2.3 s | 84.5 |
-| RoBERTa | full | 78.56% | — | — | 4.1 s | PASS |
-| RoBERTa | **Block (MHA)** | **86.4\%** | 0.85 | +66.4M | 2.3 s | 84.5 |
-| GPT-2 | full | 79.36% | — | — | 4.2 s | PASS |
-| GPT-2 | **Block (MHA)** | **86.4\%** | 0.85 | +66.4M | 2.3 s | 84.5 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Gated Deltanet Block** | **0.00%** | -90.94% | FAIL | 0.9125 | 0 | **1.00x** | 389.5 MB | 6.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Gated Deltanet Block** | **50.92%** | -24.08% | PASS_LOW | 0.6748 | 0 | **0.74x** | 736.5 MB | 65.3s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Gated Deltanet Block** | **51.49%** | -9.29% | PASS_LOW | 0.6635 | 0 | **0.68x** | 788.5 MB | 49.8s |
 
 **Table 7.2: Accuracy on SST-2 (Path B: use_full_attention=False).**
 

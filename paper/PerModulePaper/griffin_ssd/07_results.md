@@ -1,3 +1,12 @@
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Griffin Ssd** | **88.30%** | -2.64% | PASS | 0.8884 | 30 | **0.94x** | 364.0 MB | 17.4s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Griffin Ssd** | **59.06%** | -16.40% | PASS | 0.6992 | 60 | **0.89x** | 710.7 MB | 35.8s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Griffin Ssd** | **84.40%** | -3.44% | PASS | 0.8528 | 84 | **0.94x** | 430.8 MB | 38.6s |
+
 # 7. Empirical Results and Benchmark Evaluations
 
 ## 7.1 Downstream Accuracy and Classification Performance

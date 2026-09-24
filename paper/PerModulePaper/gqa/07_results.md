@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 accuracy with $G = H/2$.**
 
-| Model | Config | Acc | Δ | F1 | $H_{KV}$ | KV ratio | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | MHA | 90.71% | — | 0.9099 | 12 | 1.00× | 183 MB |
-| DistilBERT | **GQA** | **89.91** | -0.80 | 0.9033 | 6 | **2.0×** | 325 MB MB |
-| RoBERTa | MHA | 78.56% | — | 0.8124 | 12 | 1.00× | 712 MB |
-| RoBERTa | **GQA** | **84.40** | +5.84 | 0.8623 | 6 | **2.0×** | 401 MB MB |
-| GPT-2 | MHA | 79.36% | — | 0.7978 | 12 | 1.00× | 793 MB |
-| GPT-2 | **GQA** | **82.00** | +2.64 | 0.8265 | 6 | **2.0×** | 340 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Gqa** | **89.91%** | -0.57% | PASS | 0.9033 | 0 | **0.99x** | 324.7 MB | 3.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Gqa** | **84.40%** | -4.36% | PASS | 0.8623 | 0 | **0.95x** | 400.6 MB | 6.7s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Gqa** | **82.00%** | +0.69% | PASS | 0.8265 | 0 | **1.00x** | 339.8 MB | 6.5s |
 
 ## 7.2 KV Cache Analysis
 

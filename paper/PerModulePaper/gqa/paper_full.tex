@@ -917,22 +917,24 @@ python run_all_4_gqa.py \
 
 \textbf{Table 7.1: SST-2 accuracy with $G = H/2$.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{$H_{KV}$} & \textbf{KV ratio} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & MHA & 90.71\% & -- & 0.9099 & 12 & 1.00$\times$ & 183 MB \\
-DistilBERT & \textbf{GQA} & \textbf{88.5} & -2.2 & 0.885 & 6 & \textbf{2.0$\times$} & 150 MB \\
-RoBERTa & MHA & 78.56\% & -- & 0.8124 & 12 & 1.00$\times$ & 712 MB \\
-RoBERTa & \textbf{GQA} & \textbf{75.5} & -3.1 & 0.755 & 6 & \textbf{2.0$\times$} & 650 MB \\
-GPT-2 & MHA & 79.36\% & -- & 0.7978 & 12 & 1.00$\times$ & 793 MB \\
-GPT-2 & \textbf{GQA} & \textbf{77.0} & -2.4 & 0.770 & 6 & \textbf{2.0$\times$} & 700 MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Gqa} & \textbf{89.91\%} & -0.57\% & PASS & 0.9033 & 0 & \textbf{0.99$\times$} & 324.7 MB & 3.1 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Gqa} & \textbf{84.40\%} & -4.36\% & PASS & 0.8623 & 0 & \textbf{0.95$\times$} & 400.6 MB & 6.7 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Gqa} & \textbf{82.00\%} & +0.69\% & PASS & 0.8265 & 0 & \textbf{1.00$\times$} & 339.8 MB & 6.5 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{KV Cache Analysis}
 

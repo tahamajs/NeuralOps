@@ -45,15 +45,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{upi\_stuffed\_mamba} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{upi_stuffed_mamba} روی مدل‌های پایه}
 \label{tab:benchmark_upi_stuffed_mamba}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{360.9 MB} & \lr{2,402 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.6748} & \lr{402.1 MB} & \lr{1,202 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{51.15\%} & \lr{0.5807} & \lr{861.5 MB} & \lr{9,790 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{360.9 MB} & \lr{2,401 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{402.1 MB} & \lr{1,201 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.5807} & \lr{861.5 MB} & \lr{9,789 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP_NO_SUPPORT} \\
 \bottomrule
 \end{tabular}
 \end{table}

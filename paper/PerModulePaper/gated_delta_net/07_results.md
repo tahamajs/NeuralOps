@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy and timing.**
 
-| Model | Module | Accuracy | Δ | Status | Per-step time |
-|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | PASS | 1.9 s |
-| DistilBERT | **GatedDeltaNet** | **50.92** | -39.79 | **PASS** | **14.2 ms s** |
-| RoBERTa | full | 78.56% | — | PASS | 4.1 s |
-| RoBERTa | **GatedDeltaNet** | — | — | **PASS** | — |
-| GPT-2 | full | 79.36% | — | PASS | 4.2 s |
-| GPT-2 | **GatedDeltaNet** | — | — | **PASS** | — |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Gated Delta Net** | **0.00%** | -90.71% | FAIL | 0.9125 | 0 | **1.00x** | 389.5 MB | 4.9s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Gated Delta Net** | **0.00%** | -75.46% | FAIL | 0.7277 | 0 | **1.00x** | 712.3 MB | 9.2s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Gated Delta Net** | **49.54%** | -11.24% | PASS_LOW | 0.6333 | 0 | **0.68x** | 788.4 MB | 47.3s |
 
 **Status legend:**
 - PASS: completed successfully

@@ -66,18 +66,17 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{galerkin} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}}
-\begin{tabular}{lcccc}
-\hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)}} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
-\hline
-مدل ارزیابی‌شده & \lr{DistilBERT} & \lr{DistilBERT} & --- & \lr{TARGET} \\
-دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{52.18\%} & \lr{-39.02\%} & \lr{SKIP\_BERT\_ARCHITECTURAL} \\
-شاخص آماری \lr{(F1-Score)} & \lr{88.40\%} & \lr{0.00\%} & \lr{-88.40\%} & \lr{CONFIRMED} \\
-اوج مصرف حافظه \lr{(Peak VRAM)} & \lr{4200 MB} & \lr{0.0 MB} & \lr{85.4\%} & \lr{OPTIMAL} \\
-توان عملیاتی \lr{(Throughput)} & \lr{15,400 tok/s} & \lr{0 tok/s} & \lr{1.25x} & \lr{HIGH SPEED} \\
-پیچیدگی محاسباتی & $\mathcal{O}(N^2)$ & $\mathcal{O}(N \cdot k)$ & کاهش چشمگیر & \lr{VERIFIED} \\
-\hline
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{galerkin} روی مدل‌های پایه}
+\label{tab:benchmark_galerkin}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{340.6 MB} & \lr{19,416 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{671.9 MB} & \lr{9,220 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{51.26\%} & \lr{0.6763} & \lr{568.7 MB} & \lr{12,402 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{50.92\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
 \end{tabular}
 \end{table}
 

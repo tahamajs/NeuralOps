@@ -45,15 +45,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{vig\_attention} روی سه مدل پایه}
-\label{tab:benchmark_vig_attention}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{vig} روی مدل‌های پایه}
+\label{tab:benchmark_vig}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{88.30\%} & \lr{0.8854} & \lr{375.0 MB} & \lr{52,732 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{61.24\%} & \lr{0.7188} & \lr{425.2 MB} & \lr{33,616 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{61.35\%} & \lr{0.7185} & \lr{793.2 MB} & \lr{68,666 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{375.0 MB} & \lr{52,731 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{425.2 MB} & \lr{33,616 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{68,665 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP_QWEN_INCOMPATIBLE} \\
 \bottomrule
 \end{tabular}
 \end{table}

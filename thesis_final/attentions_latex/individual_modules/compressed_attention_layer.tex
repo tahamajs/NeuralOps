@@ -66,18 +66,17 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{compressed\_attention\_layer} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}}
-\begin{tabular}{lcccc}
-\hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)}} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
-\hline
-مدل ارزیابی‌شده & \lr{DistilBERT} & \lr{DistilBERT} & --- & \lr{TARGET} \\
-دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{77.18\%} & \lr{-14.02\%} & \lr{PASS} \\
-شاخص آماری \lr{(F1-Score)} & \lr{88.40\%} & \lr{78.58\%} & \lr{-9.82\%} & \lr{CONFIRMED} \\
-اوج مصرف حافظه \lr{(Peak VRAM)} & \lr{4200 MB} & \lr{287.6 MB} & \lr{-93.2\%} & \lr{OPTIMAL} \\
-توان عملیاتی \lr{(Throughput)} & \lr{15,400 tok/s} & \lr{111,055 tok/s} & \lr{7.21x} & \lr{HIGH SPEED} \\
-پیچیدگی محاسباتی & $\mathcal{O}(N^2)$ & $\mathcal{O}(N \cdot k)$ & کاهش چشمگیر & \lr{VERIFIED} \\
-\hline
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{compressed_attention_layer} روی مدل‌های پایه}
+\label{tab:benchmark_compressed_attention_layer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.18\%} & \lr{0.7858} & \lr{287.6 MB} & \lr{111,055 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{341.1 MB} & \lr{54,528 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.5 MB} & \lr{53,058 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
 \end{tabular}
 \end{table}
 

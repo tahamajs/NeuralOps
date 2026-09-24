@@ -34,15 +34,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{token\_compressed} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{token_compressed} روی مدل‌های پایه}
 \label{tab:benchmark_token_compressed}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{323.2 MB} & \lr{56,091 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.6748} & \lr{369.2 MB} & \lr{32,660 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.0 MB} & \lr{25,188 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{323.2 MB} & \lr{56,090 tok/s} & \lr{PASS_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{369.2 MB} & \lr{32,660 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.0 MB} & \lr{25,188 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{50.46\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

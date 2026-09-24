@@ -39,15 +39,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{rala\_compressor} روی سه مدل پایه}
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{rala_compressor} روی مدل‌های پایه}
 \label{tab:benchmark_rala_compressor}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{60.09\%} & \lr{0.6306} & \lr{335.1 MB} & \lr{21,424 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{50.80\%} & \lr{0.6305} & \lr{666.2 MB} & \lr{10,485 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.9 MB} & \lr{8,015 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{60.09\%} & \lr{0.6306} & \lr{335.1 MB} & \lr{21,423 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.80\%} & \lr{0.6305} & \lr{666.2 MB} & \lr{10,485 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.9 MB} & \lr{8,014 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP_QWEN_INCOMPATIBLE} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -45,14 +45,18 @@ def pull_results_from_gpu():
         "import tarfile, glob, sys; "
         "tf = tarfile.open(fileobj=sys.stdout.buffer, mode='w|gz'); "
         "[tf.add(f) for f in glob.glob('results/unified_*/**/*.csv', recursive=True) "
-        "+ glob.glob('results/unified_*_4models_summary.*') "
-        "+ glob.glob('results/master_queue_benchmark_summary.csv')]; "
+        "+ glob.glob('results/unified_*_4models_summary.*')]; "
         "tf.close()"
     )
     cmd = f'ssh -o StrictHostKeyChecking=no gpu "python -c \\"{remote_code}\\"" | tar -xzf -'
     print(">>> Syncing latest benchmark results from GPU server...")
     try:
         subprocess.run(cmd, shell=True, cwd=str(REPO_ROOT), check=True, capture_output=True)
+        # Directly pull master summary to guarantee fresh overwrite
+        subprocess.run(
+            'scp -o StrictHostKeyChecking=no gpu:"D:/SVD_Project/results/master_queue_benchmark_summary.csv" results/master_queue_benchmark_summary.csv',
+            shell=True, cwd=str(REPO_ROOT), check=True, capture_output=True
+        )
         print(">>> GPU results synced successfully.")
     except subprocess.CalledProcessError as e:
         print(f"!!! Error syncing from GPU: {e.stderr.decode() if e.stderr else e}")
@@ -172,10 +176,12 @@ def parse_module_results(module_name: str) -> dict:
         except Exception as e:
             print(f"Warning reading {summary_4m}: {e}")
 
-    # Fallback: check individual per-model summary.csv
+    # Fallback / fill-in: check individual per-model summary.csv
     mod_dir = RESULTS_DIR / f"unified_{module_name}"
     if mod_dir.exists():
         for m_key in MODELS:
+            if m_key in res:
+                continue
             sub_csv = mod_dir / m_key / "summary.csv"
             if sub_csv.exists():
                 try:

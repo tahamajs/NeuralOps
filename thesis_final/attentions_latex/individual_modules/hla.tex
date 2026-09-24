@@ -66,18 +66,17 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{hla} در مقایسه با خط پایه بر روی مدل \lr{RoBERTa-base}}
-\begin{tabular}{lcccc}
-\hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)}} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
-\hline
-مدل ارزیابی‌شده & \lr{RoBERTa-base} & \lr{RoBERTa-base} & --- & \lr{TARGET} \\
-دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{51.26\%} & \lr{-39.94\%} & \lr{PASS} \\
-شاخص آماری \lr{(F1-Score)} & \lr{88.40\%} & \lr{0.00\%} & \lr{-88.40\%} & \lr{CONFIRMED} \\
-اوج مصرف حافظه \lr{(Peak VRAM)} & \lr{4200 MB} & \lr{3402.5 MB} & \lr{-19.0\%} & \lr{OPTIMAL} \\
-توان عملیاتی \lr{(Throughput)} & \lr{15,400 tok/s} & \lr{0 tok/s} & \lr{1.25x} & \lr{HIGH SPEED} \\
-پیچیدگی محاسباتی & $\mathcal{O}(N^2)$ & $\mathcal{O}(N \cdot k)$ & کاهش چشمگیر & \lr{VERIFIED} \\
-\hline
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{hla} روی مدل‌های پایه}
+\label{tab:benchmark_hla}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{11411.3 MB} & \lr{181 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{49.08\%} & \lr{0.0000} & \lr{667.3 MB} & \lr{9,183 tok/s} & \lr{PASS_LOW} \\
+\lr{GPT-2} & \lr{49.08\%} & \lr{0.0000} & \lr{567.6 MB} & \lr{10,548 tok/s} & \lr{PASS_LOW} \\
+\lr{Qwen} & \lr{51.26\%} & \lr{--} & \lr{3402.5 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
 \end{tabular}
 \end{table}
 

@@ -15,11 +15,11 @@
 | Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
-| DistilBERT | **Adaptive Svd Attn** | **88.19%** | -2.75% | PASS | 0.8874 | 0 | **1.15x** | 290.4 MB | 16.5s |
+| DistilBERT | **Adaptive Svd Attention** | **87.84%** | -3.10% | PASS | 0.8850 | 0 | **1.15x** | 290.4 MB | 15.8s |
 | RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
-| RoBERTa | **Adaptive Svd Attn** | **71.33%** | -4.13% | PASS | 0.7490 | 0 | **1.09x** | 585.1 MB | 31.3s |
+| RoBERTa | **Adaptive Svd Attention** | **70.99%** | -4.47% | PASS | 0.7389 | 0 | **1.09x** | 585.7 MB | 30.8s |
 | GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
-| GPT-2 | **Adaptive Svd Attn** | **68.35%** | -19.49% | PASS | 0.7583 | 24 | **1.17x** | 301.2 MB | 35.2s |
+| GPT-2 | **Adaptive Svd Attention** | **69.38%** | -18.46% | PASS | 0.7652 | 24 | **1.17x** | 306.5 MB | 36.2s |
 
 **Key observations:**
 
