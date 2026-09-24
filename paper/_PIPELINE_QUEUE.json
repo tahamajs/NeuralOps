@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_delta_kv_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dynamic_entropy_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_factory",
@@ -7804,13 +7797,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_dynamic_entropy_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_kronecker_tt_lora_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_factory",
@@ -7828,6 +7814,13 @@
       "id": "p3_gpt2_adasvd_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_delta_kv_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_class",
       "status": "active",
       "retries": 0
     }
@@ -9234,6 +9227,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha",
       "started_at": "2026-09-24T21:36:18.635009",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dynamic_entropy_compressor",
+      "id": "p3_gpt2_dynamic_entropy_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_compressor",
+      "started_at": "2026-09-24T21:40:01.082797",
       "retries": 0,
       "status": "done"
     }
