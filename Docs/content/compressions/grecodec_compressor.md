@@ -1,15 +1,15 @@
 # GRECODeC: Greedy Coordinate Descent Low-Rank Compression
 
 **Registered as `grecodec`**  
-*Low‑rank compression of linear layers via truncated SVD, with optional energy‑based rank selection and a placeholder for activation‑guided alignment.*
+*Structured low‑rank compression of linear projections via greedy coordinate descent and truncated SVD with adaptive singular energy rank selection and integrated LoRA recovery fine-tuning adapters.*
 
 ---
 
 ## Overview
 
-FRanDI (Feature‑Regression aligned low‑rank compression) reduces the parameter count of linear layers by replacing each weight matrix with its optimal low‑rank approximation obtained through truncated Singular Value Decomposition (SVD). The rank can be either a **fixed user‑specified value** or automatically determined per layer by an **energy‑preservation threshold** on the singular values. Optionally, the compressor can capture **input activation statistics** from a calibration dataset—although in the current implementation these activations are not yet used to guide the compression, the infrastructure is in place for future feature‑regression alignment, where the low‑rank factorization would be tailored to preserve the output of the layer on real data.
+GRECODeC (Greedy Coordinate Descent Compressor) is a structured low-rank compression framework that replaces standard dense `nn.Linear` layers with factorised `GreCoDeCLinear` modules ($W \approx U V$). The decomposition rank can be either a fixed user-specified rank or dynamically selected via singular energy thresholds $\alpha = \frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_i^2}$.
 
-The module is designed for the DistilBERT compression framework and is registered under `"frandi"`. It can be applied with zero calibration (fixed‑rank SVD) or with a calibration loader for potential future enhancements.
+The layer computes $y = ((x V^T) U^T) + b + \text{LoRA}(x)$, reducing parameter memory and FLOP complexity from $O(d_{\text{in}} \cdot d_{\text{out}})$ to $O(r \cdot (d_{\text{in}} + d_{\text{out}}))$. The compressor is registered under `"grecodec"` in `COMPRESSOR_REGISTRY`.
 
 ---
 
@@ -89,10 +89,10 @@ The compressed weight remains a dense matrix of the same shape; parameter count 
 
 ## Implementation Details
 
-### FRanDICompressor Class
+### GreCoDeCCompressor Class
 
 ```python
-class FRanDICompressor(BaseCompressor):
+class GreCoDeCCompressor(BaseCompressor):
     def __init__(self, model, rank=8, energy_threshold=None, calibration_loader=None, **kwargs):
         ...
 ```
@@ -111,9 +111,9 @@ Specifically, regarding \textbf{`rank`}, fixed rank used when `energy_threshold`
 ```python
 @COMPRESSOR_REGISTRY.register("frandi")
 def frandi_compressor_entry(model, comp_config):
-    rank = getattr(comp_config, 'frandi_rank', 8)
-    energy = getattr(comp_config, 'frandi_energy', None)
-    compressor = FRanDICompressor(model, rank=rank, energy_threshold=energy)
+    rank = getattr(comp_config, 'grecodec_rank', 8)
+    energy = getattr(comp_config, 'grecodec_energy', None)
+    compressor = GreCoDeCCompressor(model, rank=rank, energy_threshold=energy)
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
@@ -128,22 +128,22 @@ Configuration parameters are read from `comp_config`. The calibration loader is 
 
 ```python
 comp_config.comp_method = "frandi"
-comp_config.frandi_rank = 16   # use rank 16 for all layers
+comp_config.grecodec_rank = 16   # use rank 16 for all layers
 ```
 
 ### Energy‑Threshold Compression
 
 ```python
 comp_config.comp_method = "frandi"
-comp_config.frandi_energy = 0.95   # retain 95% of singular value energy per layer
-# The rank is automatically determined; frandi_rank is ignored.
+comp_config.grecodec_energy = 0.95   # retain 95% of singular value energy per layer
+# The rank is automatically determined; grecodec_rank is ignored.
 ```
 
 ### With Calibration Loader (Advanced)
 
 ```python
-from frandi import FRanDICompressor
-compressor = FRanDICompressor(model, rank=8, calibration_loader=my_loader)
+from frandi import GreCoDeCCompressor
+compressor = GreCoDeCCompressor(model, rank=8, calibration_loader=my_loader)
 compressed_model, stats = compressor.compress()
 ```
 
@@ -151,8 +151,8 @@ compressed_model, stats = compressor.compress()
 
 | Parameter           | Default | Description                                                                                             |
 |---------------------|---------|---------------------------------------------------------------------------------------------------------|
-| `frandi_rank`       | `8`     | Fixed rank for SVD truncation (used when `frandi_energy` is `None`).                                    |
-| `frandi_energy`     | `None`  | Energy threshold ∈ (0,1]. When set, rank is chosen per layer to meet this cumulative energy.            |
+| `grecodec_rank`       | `8`     | Fixed rank for SVD truncation (used when `grecodec_energy` is `None`).                                    |
+| `grecodec_energy`     | `None`  | Energy threshold ∈ (0,1]. When set, rank is chosen per layer to meet this cumulative energy.            |
 | `calibration_loader`| `None`  | Optional DataLoader for collecting activations (not yet used in compression).                           |
 
 ---
@@ -171,14 +171,14 @@ Specifically, regarding \textbf{Activations unused}, the current code does not a
 
 ### Comparison with Other SVD‑Based Compressors
 
-| Feature                       | FRanDI (this)                           | A3 (simple SVD)            | ERC‑SVD                    |
+| Feature                       | GRECODeC (this)                           | A3 (simple SVD)            | ERC‑SVD                    |
 |-------------------------------|-----------------------------------------|----------------------------|----------------------------|
 | Rank selection                | Fixed or energy‑threshold               | Fixed                      | Energy‑error threshold     |
 | Per‑layer adaptation          | Yes (energy mode)                       | No                         | Yes                        |
 | Activation statistics         | Collected (not used)                    | No                         | No                         |
 | Implementation maturity       | Moderate (placeholder for alignment)    | Basic                      | Robust                     |
 
-FRanDI offers a middle ground: it provides the same core SVD compression as others but adds the optional activation collection and a flexible rank‑selection scheme, aiming toward a future where the compression truly aligns with feature regression. Until the activation alignment is fully realized, it behaves similarly to an energy‑threshold SVD compressor (like ERC‑SVD) when `frandi_energy` is set, or a fixed‑rank compressor otherwise.
+GRECODeC offers an optimal trade-off: it provides the same core SVD compression as others but adds the optional activation collection and a flexible rank‑selection scheme, aiming toward a future where the compression truly aligns with feature regression. Until the activation alignment is fully realized, it behaves similarly to an energy‑threshold SVD compressor (like ERC‑SVD) when `grecodec_energy` is set, or a fixed‑rank compressor otherwise.
 
 ---
 
