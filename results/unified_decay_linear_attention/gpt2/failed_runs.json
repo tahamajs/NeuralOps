@@ -1,0 +1,12 @@
+[
+  {
+    "module": "decay_linear_attention",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 71.67,
+    "error": "base_before=124441344 base_after=124552224 delta=+0.09%",
+    "timestamp": "2026-09-24T18:09:06.416288"
+  }
+]

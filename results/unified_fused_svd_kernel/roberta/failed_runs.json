@@ -1,0 +1,12 @@
+[
+  {
+    "module": "fused_svd_kernel",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "PASS_LOW",
+    "perplexity": "",
+    "accuracy_pct": 53.33,
+    "error": "note: evaluated accuracy (53.33%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-24T19:17:21.313685"
+  }
+]

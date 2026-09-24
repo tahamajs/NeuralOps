@@ -1,0 +1,32 @@
+2026-09-24 19:34:48,728 [INFO] QwenQualitySweep: GPU VRAM: 6.85 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:34:48,728 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:34:48,753 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:34:49,312 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 149/149 [00:00<00:00, 2667.34it/s]
+2026-09-24 19:34:50,573 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 19:34:50,573 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:34:50,573 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:34:50,573 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:34:50,573 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:34:50,574 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:34:50,575 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:34:50,575 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:34:50,577 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 19:34:53,891 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.1143
+2026-09-24 19:34:55,407 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.3716
+2026-09-24 19:34:56,893 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.4990
+2026-09-24 19:34:58,454 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4857
+2026-09-24 19:34:59,996 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0739
+2026-09-24 19:35:01,553 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.6662
+2026-09-24 19:35:03,016 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1685
+2026-09-24 19:35:04,519 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2618
+2026-09-24 19:35:04,528 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_hla\gpt2\finetuned_model.pt
+2026-09-24 19:35:05,931 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_hla\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 19:35:05,931 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.

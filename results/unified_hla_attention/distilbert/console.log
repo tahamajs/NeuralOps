@@ -1,0 +1,21 @@
+2026-09-24 19:35:07,236 [INFO] QwenQualitySweep: GPU VRAM: 6.02 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:35:07,237 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:35:07,261 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:35:07,457 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2528.87it/s]
+2026-09-24 19:35:08,499 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep:   family:            bert
+2026-09-24 19:35:08,500 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:35:08,501 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 19:35:08,501 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:35:08,501 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:35:08,501 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:35:08,501 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:35:08,501 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:35:08,503 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)

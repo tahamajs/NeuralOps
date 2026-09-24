@@ -1,0 +1,12 @@
+[
+  {
+    "module": "expert_choice_moe",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 88.99,
+    "error": "base_before=124441344 base_after=131579148 delta=+5.74%",
+    "timestamp": "2026-09-24T18:17:18.798377"
+  }
+]

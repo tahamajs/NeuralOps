@@ -2,34 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_dobi_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_nmf_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nmf_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nmf_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_flat_llm_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_kronecker_tt_lora_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_tt_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_compressor_factory",
@@ -8089,34 +8061,62 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_act",
       "status": "pending",
       "retries": 0
-    }
-  ],
-  "active": [
+    },
     {
       "id": "p3_gpt2_token_compressed",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules token_compressed --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_token_compressed",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_dynamic_rank_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_factory",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_admm_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_factory",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_armor_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_compressor_factory",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [
+    {
+      "id": "p3_gpt2_dobi_svd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_nmf_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nmf_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nmf_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_flat_llm_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_kronecker_tt_lora_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_class",
       "status": "active",
       "retries": 0
     }

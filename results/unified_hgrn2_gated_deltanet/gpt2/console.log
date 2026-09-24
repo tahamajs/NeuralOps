@@ -1,0 +1,57 @@
+2026-09-24 19:20:51,325 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:20:51,326 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=4 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:20:51,348 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:20:51,753 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/149 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 149/149 [00:00<00:00, 3147.89it/s]
+2026-09-24 19:20:52,625 [INFO] QwenQualitySweep: model=models\gpt2_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-24 19:20:52,626 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:20:52,626 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:20:52,626 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:20:52,626 [INFO] QwenQualitySweep:   model:             models\gpt2_sst2
+2026-09-24 19:20:52,626 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep:   batch_size:        4
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:20:52,627 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:20:52,627 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:20:52,629 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-24 19:20:54,737 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.3128
+2026-09-24 19:20:56,073 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.1358
+2026-09-24 19:20:57,384 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6181
+2026-09-24 19:20:58,688 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.1872
+2026-09-24 19:20:59,964 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0603
+2026-09-24 19:21:01,283 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.4652
+2026-09-24 19:21:02,615 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.1956
+2026-09-24 19:21:03,886 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0752
+2026-09-24 19:21:03,892 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_hgrn2_gated_deltanet\gpt2\finetuned_model.pt
+2026-09-24 19:21:05,342 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_hgrn2_gated_deltanet\gpt2\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 19:21:05,342 [INFO] QwenQualitySweep: Prepared 218 eval batches and 50 train batches directly on GPU.
+2026-09-24 19:21:14,395 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 87.84%
+2026-09-24 19:21:14,571 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:14,571 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 19:21:14,571 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 19:21:14,572 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:14,576 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 19:21:14,755 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-24 19:21:44,500 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_gated_deltanet\gpt2\gpt2_sst2_full_full_metrics.json
+2026-09-24 19:21:45,573 [INFO] QwenQualitySweep: [1/2] full -> PASS 87.84% (F1: 0.8868, Peak VRAM: 321.23 MB)
+2026-09-24 19:21:45,574 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_gated_deltanet\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 19:21:45,574 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=30.82s
+2026-09-24 19:21:45,574 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 19:21:45,869 [WARNING] QwenQualitySweep: >>> Skipping DEPRECATED module [2/2]: hgrn2_gated_deltanet (same as gated_delta_net)
+2026-09-24 19:21:45,873 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:21:45,874 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2_sst2 on sst2)
+2026-09-24 19:21:45,884 [INFO] QwenQualitySweep: 
+                               Module          Status Accuracy    Delta Acc     F1 Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                 full            PASS   87.84% 0.00% (base) 0.8868                 0            1.00x  321.2 MB              25.95             29.76
+hgrn2_gated_deltanet (efficient-attn) SKIP_DEPRECATED    0.00%      -87.84%    N/A                 0            1.00x       N/A               0.00               N/A
+2026-09-24 19:21:45,884 [INFO] QwenQualitySweep: ================================================================================

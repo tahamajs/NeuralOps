@@ -1,0 +1,12 @@
+[
+  {
+    "module": "gated_linear_attention",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 52.75,
+    "error": "base_before=124647170 base_after=138896942 delta=+11.43%",
+    "timestamp": "2026-09-24T18:40:42.782731"
+  }
+]

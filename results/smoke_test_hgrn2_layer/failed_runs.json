@@ -1,0 +1,12 @@
+[
+  {
+    "module": "hgrn2_layer",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 51.49,
+    "error": "base_before=124647170 base_after=131743490 delta=+5.69%",
+    "timestamp": "2026-09-24T19:52:27.040278"
+  }
+]

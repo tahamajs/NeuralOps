@@ -1,0 +1,118 @@
+2026-09-24 19:27:16,550 [INFO] QwenQualitySweep: GPU VRAM: 5.41 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 19:27:16,550 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 19:27:16,572 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 19:27:16,820 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2163.78it/s]
+2026-09-24 19:27:17,951 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-24 19:27:17,951 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   family:            bert
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 19:27:17,952 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 19:27:17,953 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 19:27:17,953 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:17,953 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-24 19:27:17,974 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_hla\distilbert\finetuned_model.pt
+2026-09-24 19:27:17,995 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-24 19:27:18,163 [INFO] QwenQualitySweep: Loading pre-cached batches from results\unified_hla\distilbert\batch_cache_sst2 (skipping tokenization)
+2026-09-24 19:27:21,178 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 19:27:31,236 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 19:27:31,402 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 19:27:31,403 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 19:27:31,405 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 19:27:31,875 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:27:41,317 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hla\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-24 19:27:41,568 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 380.26 MB)
+2026-09-24 19:27:41,568 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hla\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 19:27:41,569 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=9.69s
+2026-09-24 19:27:41,569 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 19:27:41,879 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hla (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 19:27:42,699 [INFO] QwenQualitySweep: module=hla path=legacy_bert
+2026-09-24 19:27:42,700 [INFO] QwenQualitySweep: module=hla injection summary: 0 SVDLinear layers active
+2026-09-24 19:27:42,700 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hla (lr=2.0e-04)
+2026-09-24 19:27:42,753 [INFO] framework.utils.compat: Recovery fine-tuning selected 589902 trainable parameters across 60 tensors.
+2026-09-24 19:27:42,753 [INFO] framework.utils.compat: Discovered 60 trainable tensors (589902 params)
+2026-09-24 19:27:42,756 [INFO] QwenQualitySweep: LoRA fine-tuning: 589902 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 19:27:46,693 [INFO] QwenQualitySweep: Step 1/50 took 3.92s (loss=0.2904, bs=8, micro=8)
+2026-09-24 19:27:49,907 [INFO] QwenQualitySweep: Step 5/50 took 0.78s (loss=1.0176, bs=8, micro=8)
+2026-09-24 19:27:54,121 [INFO] QwenQualitySweep: Step 10/50 took 0.91s (loss=0.5838, bs=8, micro=8)
+2026-09-24 19:27:59,968 [INFO] QwenQualitySweep: Step 15/50 took 1.14s (loss=0.3718, bs=8, micro=8)
+2026-09-24 19:28:06,046 [INFO] QwenQualitySweep: Step 20/50 took 1.20s (loss=0.4148, bs=8, micro=8)
+2026-09-24 19:28:12,141 [INFO] QwenQualitySweep: Step 25/50 took 1.25s (loss=0.4494, bs=8, micro=8)
+2026-09-24 19:28:18,193 [INFO] QwenQualitySweep: Step 30/50 took 1.22s (loss=0.4067, bs=8, micro=8)
+2026-09-24 19:28:24,452 [INFO] QwenQualitySweep: Step 35/50 took 1.24s (loss=0.3543, bs=8, micro=8)
+2026-09-24 19:28:30,669 [INFO] QwenQualitySweep: Step 40/50 took 1.20s (loss=0.5424, bs=8, micro=8)
+2026-09-24 19:28:36,760 [INFO] QwenQualitySweep: Step 45/50 took 1.27s (loss=0.2719, bs=8, micro=8)
+2026-09-24 19:28:42,876 [INFO] QwenQualitySweep: Step 50/50 took 1.14s (loss=0.4093, bs=8, micro=8)
+2026-09-24 19:29:41,244 [ERROR] QwenQualitySweep: Module hla execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2685, in _run_candidate_pipeline
+    perf_metrics = evaluate_comprehensive(
+        model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device,
+        fp16=args.precision == "fp16", precomputed_batches=eval_batches
+    )
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 856, in evaluate_comprehensive
+    raise exc
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 830, in evaluate_comprehensive
+    ).item()
+      ~~~~^^
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 3499, in run_single_module_main
+    perf_metrics, comp_metrics, injected, path_name, had_nan = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2787, in _run_candidate_pipeline
+    torch.cuda.empty_cache()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\cuda\memory.py", line 218, in empty_cache
+    torch._C._cuda_emptyCache()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-09-24 19:29:41,267 [INFO] QwenQualitySweep: [2/2] hla -> FAIL 0.00% (F1: 0.9099, Peak VRAM: 380.26 MB)
+2026-09-24 19:29:41,267 [INFO] QwenQualitySweep: [Quality Guard] Module 'hla' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 19:29:41,272 [INFO] QwenQualitySweep: [2/2] hla Timing: eval_time=119.39s
+2026-09-24 19:29:41,273 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 4291, in <module>
+    main()
+    ~~~~^^
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 4276, in main
+    run_single_module_main(args)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 3876, in run_single_module_main
+    base_snapshot.restore()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\SVD_Project\Codes\framework\core\snapshot_restore.py", line 61, in restore
+    k: v.to(device) for k, v in self.clean_state_dict.items()
+       ~~~~^^^^^^^^
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

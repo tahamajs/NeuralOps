@@ -1,0 +1,70 @@
+2026-09-24 17:28:11,038 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-24 17:28:11,038 [INFO] QwenQualitySweep: Configured execution sizing: parallel=4, batch_size=8 (explicit_parallel=False, explicit_batch=True)
+2026-09-24 17:28:11,061 [INFO] QwenQualitySweep: Running 2 attention modules in-memory sequentially
+2026-09-24 17:28:11,242 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2970.15it/s]
+2026-09-24 17:28:11,759 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-24 17:28:11,759 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-24 17:28:11,759 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 17:28:11,759 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-24 17:28:11,759 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   family:            bert
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-24 17:28:11,760 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 17:28:11,786 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-24 17:28:11,793 [WARNING] QwenQualitySweep: Missing keys during load: ['distilbert.embeddings.word_embeddings.weight', 'distilbert.embeddings.position_embeddings.weight', 'distilbert.embeddings.LayerNorm.weight', 'distilbert.embeddings.LayerNorm.bias', 'distilbert.transformer.layer.0.attention.q_lin.weight', 'distilbert.transformer.layer.0.attention.q_lin.bias', 'distilbert.transformer.layer.0.attention.k_lin.weight', 'distilbert.transformer.layer.0.attention.k_lin.bias', 'distilbert.transformer.layer.0.attention.v_lin.weight', 'distilbert.transformer.layer.0.attention.v_lin.bias']
+2026-09-24 17:28:13,098 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\unified_bam_umoe\distilbert\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-09-24 17:28:13,098 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-24 17:28:15,997 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-24 17:28:16,120 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 17:28:16,120 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-24 17:28:16,120 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92% (444/872), SE=1.693%, 3*SE=5.080%
+2026-09-24 17:28:16,121 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 17:28:16,122 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-09-24 17:28:16,219 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 17:28:19,146 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_bam_umoe\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-24 17:28:19,301 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 380.26 MB)
+2026-09-24 17:28:19,301 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_bam_umoe\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-24 17:28:19,301 [INFO] QwenQualitySweep: [1/2] full Timing: eval_time=3.08s
+2026-09-24 17:28:19,304 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 17:28:19,595 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: bam_umoe (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-24 17:28:20,197 [INFO] QwenQualitySweep: module=bam_umoe path=legacy_bert
+2026-09-24 17:28:20,199 [INFO] QwenQualitySweep: module=bam_umoe injection summary: 0 SVDLinear layers active
+2026-09-24 17:28:20,199 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for bam_umoe (lr=2.0e-04)
+2026-09-24 17:28:20,338 [INFO] framework.utils.compat: Recovery fine-tuning selected 589830 trainable parameters across 54 tensors.
+2026-09-24 17:28:20,338 [INFO] framework.utils.compat: Discovered 54 trainable tensors (589830 params)
+2026-09-24 17:28:20,343 [INFO] QwenQualitySweep: LoRA fine-tuning: 589830 trainable parameters across 54 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-09-24 17:28:20,741 [INFO] QwenQualitySweep: Step 1/50 took 0.40s (loss=0.3599, bs=8, micro=8)
+2026-09-24 17:28:21,327 [INFO] QwenQualitySweep: Step 5/50 took 0.15s (loss=0.5954, bs=8, micro=8)
+2026-09-24 17:28:22,073 [INFO] QwenQualitySweep: Step 10/50 took 0.15s (loss=0.1714, bs=8, micro=8)
+2026-09-24 17:28:22,804 [INFO] QwenQualitySweep: Step 15/50 took 0.15s (loss=0.2247, bs=8, micro=8)
+2026-09-24 17:28:23,552 [INFO] QwenQualitySweep: Step 20/50 took 0.15s (loss=0.1600, bs=8, micro=8)
+2026-09-24 17:28:24,288 [INFO] QwenQualitySweep: Step 25/50 took 0.15s (loss=0.0416, bs=8, micro=8)
+2026-09-24 17:28:25,009 [INFO] QwenQualitySweep: Step 30/50 took 0.14s (loss=0.0372, bs=8, micro=8)
+2026-09-24 17:28:25,769 [INFO] QwenQualitySweep: Step 35/50 took 0.16s (loss=0.0567, bs=8, micro=8)
+2026-09-24 17:28:26,509 [INFO] QwenQualitySweep: Step 40/50 took 0.14s (loss=0.2105, bs=8, micro=8)
+2026-09-24 17:28:27,250 [INFO] QwenQualitySweep: Step 45/50 took 0.16s (loss=0.0916, bs=8, micro=8)
+2026-09-24 17:28:28,017 [INFO] QwenQualitySweep: Step 50/50 took 0.17s (loss=0.1034, bs=8, micro=8)
+2026-09-24 17:28:34,704 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_bam_umoe\distilbert\distilbert_sst2_bam_umoe_full_metrics.json
+2026-09-24 17:28:34,952 [INFO] QwenQualitySweep: [2/2] bam_umoe -> MODERATE_EXPANSION 90.71% (F1: 0.9103, Peak VRAM: 386.38 MB)
+2026-09-24 17:28:34,952 [INFO] QwenQualitySweep: [Quality Guard] Module 'bam_umoe' did not pass quality criteria (status=MODERATE_EXPANSION, acc=90.71%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-24 17:28:34,958 [INFO] QwenQualitySweep: [2/2] bam_umoe Timing: eval_time=15.36s
+2026-09-24 17:28:34,958 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-09-24 17:28:35,239 [INFO] QwenQualitySweep: ================================================================================
+2026-09-24 17:28:35,240 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-24 17:28:35,247 [INFO] QwenQualitySweep: 
+                   Module             Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                     full               PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  380.3 MB               2.21              2.54
+bam_umoe (efficient-attn) MODERATE_EXPANSION   90.71%       +0.00% 0.9103                  0            1.00x  386.4 MB               6.23              7.14
+2026-09-24 17:28:35,247 [INFO] QwenQualitySweep: ================================================================================

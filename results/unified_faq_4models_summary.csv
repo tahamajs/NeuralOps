@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,FAQ Quantizer Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.71%,90.83%,+0.12%,0.9111,PASS,24,0.99x,212.7 MB,150.3
+roberta,0,94.38%,0.00%,-94.38%,0.0000,TIMEOUT,0,1.00x,0.0 MB,242.3
+gpt2,0,89.33%,0.00%,-89.33%,0.0000,CRASH,0,1.00x,0.0 MB,176.7

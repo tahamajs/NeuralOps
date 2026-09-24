@@ -1,0 +1,12 @@
+[
+  {
+    "module": "fms",
+    "model": "models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 70.87,
+    "error": "base_before=124647170 base_after=132324242 delta=+6.16%",
+    "timestamp": "2026-09-24T18:29:17.234538"
+  }
+]

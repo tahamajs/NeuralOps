@@ -1,0 +1,12 @@
+[
+  {
+    "module": "entropy_budget",
+    "model": "models\\gpt2_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 89.33,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T18:17:18.422877"
+  }
+]
