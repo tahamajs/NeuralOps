@@ -58,10 +58,45 @@ def pull_results_from_gpu():
         print(f"!!! Error syncing from GPU: {e.stderr.decode() if e.stderr else e}")
 
 
+CANONICAL_MODULE_ALIASES = {
+    "aa_svd_compressor": "aasvd",
+    "adaptive_sparse": "adaptive_sparse_attention",
+    "adaptive_span": "adaptive_span_attention",
+    "adaptive_svd_attn": "adaptive_svd_attention",
+    "aegis_v1_module": "aegis_v1",
+    "aegis_v3_module": "aegis_v3",
+    "aegis_v4_module": "aegis_v4",
+    "aegis_v5_module": "aegis_v5",
+    "flash_attention3": "flash3",
+    "flash_attention3_fp8": "flash3",
+    "flash3_fp8": "flash3",
+    "galerkin": "galerkin_attention",
+    "hla_attention": "hla",
+    "infini_attention": "infini",
+    "lsh_attention": "lsh",
+    "nasc_attention": "nasc",
+    "nha_compressor": "nha",
+    "nsa_attention": "nsa",
+    "orion_module": "orion",
+    "proxsparse_pruner": "proxsparse",
+    "rala_compressor": "rala",
+    "salt_attention": "salt",
+    "soa_fused": "soa_fused_module",
+    "soafusedattention": "soa_fused_module",
+    "spectraformer_attention": "spectraformer",
+    "svd_sequence_attention": "svd_sequence",
+    "tlinformer_attention": "tlinformer",
+    "tomoe_compressor": "tomoe",
+}
+
+
 def find_paper_dir(module_name: str) -> Path:
     """Finds the paper directory for a given module name."""
     if not PAPER_ROOT.exists():
         return None
+
+    # Map alias to canonical if applicable
+    module_name = CANONICAL_MODULE_ALIASES.get(module_name, module_name)
 
     # 1. Exact match
     direct = PAPER_ROOT / module_name
