@@ -28,11 +28,24 @@ DEPRECATED_MODULES = {"tt", "tt_linear"}
 
 def get_all_runner_scripts(repo_dir: Path) -> List[Path]:
     """Find all run_all_4_*.py files in the repository, excluding deprecated modules."""
-    runners = [
-        p for p in sorted(repo_dir.glob("run_all_4_*.py"))
-        if extract_module_name(p) not in DEPRECATED_MODULES
-    ]
-    return runners
+    search_dirs = [repo_dir]
+    for sub in [
+        repo_dir / "Codes" / "runners",
+        repo_dir / "runners",
+        repo_dir / "Codes" / "experimental" / "runners",
+        Path(__file__).resolve().parent,
+    ]:
+        if sub.is_dir() and sub not in search_dirs:
+            search_dirs.append(sub)
+
+    runners_map: Dict[str, Path] = {}
+    for d in search_dirs:
+        for p in sorted(d.glob("run_all_4_*.py")):
+            name = extract_module_name(p)
+            if name not in DEPRECATED_MODULES and name not in runners_map:
+                runners_map[name] = p
+
+    return [runners_map[k] for k in sorted(runners_map.keys())]
 
 
 def extract_module_name(runner_path: Path) -> str:
