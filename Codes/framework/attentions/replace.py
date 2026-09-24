@@ -80,6 +80,12 @@ def _build_attention_from_registry(
     except (ValueError, TypeError):
         params = {}
 
+    kwargs_clean = dict(kwargs)
+    cfg_val = kwargs_clean.pop("config", None)
+    kwargs_clean.pop("hidden_size", None)
+    kwargs_clean.pop("num_heads", None)
+    kwargs_clean.pop("num_attention_heads", None)
+
     attempts = []
 
     if "config" in params:
@@ -88,25 +94,28 @@ def _build_attention_from_registry(
             num_attention_heads=num_heads,
             num_heads=num_heads,
             head_dim=hidden_size // max(1, num_heads),
-            **kwargs,
+            **kwargs_clean,
         )
-        attempts.append(lambda: attn_cls(config=ns, **kwargs))
+        if cfg_val is not None:
+            attempts.append(lambda: attn_cls(config=cfg_val, **kwargs_clean))
+        attempts.append(lambda: attn_cls(config=ns, **kwargs_clean))
 
     if "num_attention_heads" in params:
         attempts.append(lambda: attn_cls(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,
-            **kwargs,
+            **kwargs_clean,
         ))
 
     if "num_heads" in params:
         attempts.append(lambda: attn_cls(
             hidden_size=hidden_size,
             num_heads=num_heads,
-            **kwargs,
+            **kwargs_clean,
         ))
 
-    attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs))
+    attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs_clean))
+    attempts.append(lambda: attn_cls(**kwargs_clean))
 
     last_exc: Optional[Exception] = None
     for fn in attempts:
@@ -189,12 +198,23 @@ def _replace_layers(
         try:
             hidden_size = _infer_hidden_size(old_attn, attn_attr, model_type)
             num_heads = _infer_num_heads(old_attn, attn_attr, model_type)
+            cls_name = _resolve_class_name(inject_fn, model_type)
             new_attn = _build_attention_from_registry(
-                _resolve_class_name(inject_fn, model_type),
+                cls_name,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
+                config=model_config,
+                old_attn=old_attn,
                 **safe_params,
             )
+            if hasattr(new_attn, "copy_weights"):
+                try:
+                    new_attn.copy_weights(old_attn)
+                except Exception as ex:
+                    logger.warning("copy_weights failed: %s", ex)
+            p = next(old_attn.parameters(), None)
+            if p is not None and isinstance(p.dtype, torch.dtype):
+                new_attn.to(p.dtype)
             _attach_new_attention(layer, attn_attr, new_attn, model_type)
         except Exception as e:
             logger.error("Failed to build attention for layer %d: %s", idx, e)
@@ -259,7 +279,12 @@ INJECT_TO_CLASS_MAP: Dict[str, str] = {
 
 
 def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
-    """Infer registered attention class name from the injector."""
+    """Infer registered attention class name from the injector or class."""
+    if inspect.isclass(inject_fn):
+        for k, v in ATTENTION_REGISTRY.items():
+            if v is inject_fn:
+                return k
+        return getattr(inject_fn, "__name__", "replace_class")
     name = getattr(inject_fn, "__name__", "")
     if name in INJECT_TO_CLASS_MAP:
         return INJECT_TO_CLASS_MAP[name]
@@ -268,6 +293,9 @@ def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
         candidate = name[len("inject_"):] + "_class"
         if ATTENTION_REGISTRY.get(candidate) is not None:
             return candidate
+        candidate2 = name[len("inject_"):]
+        if ATTENTION_REGISTRY.get(candidate2) is not None:
+            return candidate2
     return "replace_class"
 
 
@@ -299,6 +327,18 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> in
         val = getattr(old_attn, attr, None)
         if isinstance(val, int) and val > 0:
             return val
+    # Check config attached to old_attn
+    cfg = getattr(old_attn, "config", None)
+    if cfg is not None:
+        for attr in ("num_attention_heads", "num_heads", "n_heads"):
+            val = getattr(cfg, attr, None)
+            if isinstance(val, int) and val > 0:
+                return val
+    # Infer from q_proj and head_dim (Qwen, LLaMA)
+    if hasattr(old_attn, "q_proj") and hasattr(old_attn, "head_dim"):
+        q_proj = old_attn.q_proj
+        if hasattr(q_proj, "out_features") and old_attn.head_dim > 0:
+            return int(q_proj.out_features // old_attn.head_dim)
     raise ValueError(
         f"Cannot infer num_heads from {type(old_attn).__name__}"
     )
