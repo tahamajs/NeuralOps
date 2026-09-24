@@ -164,15 +164,22 @@ print("\n" + "=" * 85, flush=True)
 print("STAGE 2: BATCH EXPORTING QUALIFIED MODELS TO HUGGING FACE & GITHUB", flush=True)
 print("=" * 85, flush=True)
 
-from Codes.framework.utils.hf_git_exporter import (
-    find_documentation_file,
-    upload_to_huggingface,
-    update_documentation_table,
-    commit_and_push_git,
-)
+try:
+    from Codes.framework.utils.hf_git_exporter import (
+        find_documentation_file,
+        upload_to_huggingface,
+        update_documentation_table,
+        commit_and_push_git,
+    )
+except Exception as _e_imp:
+    print(f"[NOTE] Automated HF/Git export module not loaded: {_e_imp}", flush=True)
+    find_documentation_file = None
+    upload_to_huggingface = None
+    update_documentation_table = None
+    commit_and_push_git = None
 
 hf_org = "Hooshaai"
-doc_path = find_documentation_file("adaptive_ranks")
+doc_path = find_documentation_file("adaptive_ranks") if find_documentation_file else None
 pass_count = 0
 uploaded_repos = []
 
@@ -272,6 +279,7 @@ for r in eval_results:
 target_branch = "benchmark-results-adaptive-ranks"
 print(f"\nCommitting results and documentation updates to dedicated branch '{target_branch}'...", flush=True)
 commit_msg = f"feat(benchmark): AdaptiveRanks 4-model evaluation ({pass_count}/4 passed on SST-2)"
+push_res = None
 # push_res = commit_and_push_git(commit_msg, branch=target_branch)
 
 if push_res:
