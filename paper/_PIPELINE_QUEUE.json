@@ -2,13 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "p3_gpt2_adasvd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_modegpt_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules modegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_modegpt_factory",
@@ -8267,16 +8260,16 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_aa_svd_factory",
+      "id": "p3_gpt2_rotational_slicegpt_factory",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_factory",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_factory",
       "status": "active",
       "retries": 0
     },
     {
-      "id": "p3_gpt2_rotational_slicegpt_factory",
+      "id": "p3_gpt2_adasvd_compressor",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_factory",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_compressor",
       "status": "active",
       "retries": 0
     }
@@ -9098,6 +9091,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_factory",
       "started_at": "2026-09-24T04:54:28.834177",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_aa_svd_factory",
+      "id": "p3_gpt2_aa_svd_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_factory",
+      "started_at": "2026-09-24T04:54:59.567226",
       "retries": 0,
       "status": "done"
     }
