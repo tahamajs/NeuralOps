@@ -249,11 +249,17 @@ def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[n
     container = getattr(layer, attn_attr, None)
     if container is not None and hasattr(container, "self"):
         container.self = new_attn
+        if hasattr(new_attn, "is_nested_encoder"):
+            new_attn.is_nested_encoder = True
+            new_attn.out_proj = nn.Identity()
         return
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
+            if hasattr(new_attn, "is_nested_encoder"):
+                new_attn.is_nested_encoder = True
+                new_attn.out_proj = nn.Identity()
         else:
             layer.attention = new_attn
         return
@@ -300,6 +306,16 @@ def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
 
 
 def _infer_hidden_size(old_attn: nn.Module, attn_attr: str, model_type: str) -> int:
+    for attr in ("hidden_size", "embed_dim", "d_model"):
+        val = getattr(old_attn, attr, None)
+        if isinstance(val, int) and val > 0:
+            return val
+    cfg = getattr(old_attn, "config", None)
+    if cfg is not None:
+        for attr in ("hidden_size", "embed_dim", "d_model"):
+            val = getattr(cfg, attr, None)
+            if isinstance(val, int) and val > 0:
+                return val
     for attr_path in ("query", "q_lin", "q_proj", "c_attn", "self.query"):
         obj = old_attn
         for part in attr_path.split("."):
@@ -716,6 +732,7 @@ class ReplaceAttention(BaseAttention):
                 w_o = src.output.dense.weight.data
                 b_o = src.output.dense.bias.data if src.output.dense.bias is not None else None
             self.is_nested_encoder = True
+            self.out_proj = nn.Identity()
 
         # Pattern 3: Flat query/key/value
         elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
@@ -732,6 +749,9 @@ class ReplaceAttention(BaseAttention):
                         w_o = proj.weight.data
                         b_o = proj.bias.data if getattr(proj, "bias", None) is not None else None
                     break
+            if w_o is None:
+                self.is_nested_encoder = True
+                self.out_proj = nn.Identity()
 
         # Pattern 4: DistilBERT
         elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
@@ -984,7 +1004,7 @@ def inject_replace(
                 if hasattr(target, attr):
                     cand = getattr(target, attr)
                     if isinstance(cand, nn.Module) and cand is not target:
-                        src = getattr(cand, "self", cand)
+                        src = cand
                         break
         if src is None:
             src = target
@@ -1018,6 +1038,21 @@ inject_replace_attention = inject_replace
 inject_replace_attention_v2 = inject_replace
 
 
+def _replace_bert_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
+    """Compatibility wrapper for BERT attention replacement."""
+    _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "bert")
+
+
+def _replace_gpt_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
+    """Compatibility wrapper for GPT attention replacement."""
+    _replace_layers([layer], "attn", inject_fn, model_config, kwargs, "gpt2")
+
+
+def _replace_distilbert_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
+    """Compatibility wrapper for DistilBERT attention replacement."""
+    _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "distilbert")
+
+
 __all__ = [
     "replace_attention_in_model",
     "build_attention",
@@ -1025,6 +1060,9 @@ __all__ = [
     "Replace",
     "inject_replace",
     "inject_replace_attention",
+    "_replace_bert_attention",
+    "_replace_gpt_attention",
+    "_replace_distilbert_attention",
     "_get_valid_mask",
     "_cfg_get",
 ]
