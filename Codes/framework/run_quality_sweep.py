@@ -526,9 +526,9 @@ def compute_compression_metrics(
         "num_injected_attention_layers": num_injected_attention,
         "lora_params": lora_params,
         "avg_reconstruction_error": avg_reconstruction_error,
-        "weighted_reconstruction_error": weighted_reconstruction_error,
         "per_layer_reconstruction_errors": layer_errors,
         "per_layer_ranks": layer_ranks,
+        "is_unstructured_sparsity": bool("admm" in module_name.lower() or "sparse" in module_name.lower() or "prun" in module_name.lower() and compression_rate <= 1.001),
     }
 
 
@@ -3528,6 +3528,7 @@ def run_single_module_main(args) -> dict:
             "precision": perf_metrics.get("precision", 0.0),
             "recall": perf_metrics.get("recall", 0.0),
             "val_loss": perf_metrics.get("val_loss", 0.0),
+            "perplexity": perf_metrics.get("perplexity", ""),
             "elapsed_s": round(time.monotonic() - t, 2),
             "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
             "latency_ms": perf_metrics.get("latency_ms", 0.0),
@@ -3805,6 +3806,11 @@ _SLOW_MODULE_TIMEOUT_OVERRIDES = {
     "hybrid_svd_layer": 1800,
     "run_quality_sweep": 600,
     "svd_whitened": 1200,
+    "aa_svd_compressor": 3600,
+    "mamba_block": 3600,
+    "inject_leka_v1": 3600,
+    "inject_gated_delta_net": 3600,
+    "inject_minimal_nova": 3600,
 }
 
 def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
