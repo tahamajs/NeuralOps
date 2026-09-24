@@ -149,13 +149,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_linear_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_linear_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_linear_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_erc_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_factory",
@@ -520,13 +513,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_squeezing_heads_distill",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distill --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distill",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_saes_svd_v2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd_v2",
@@ -572,13 +558,6 @@
       "id": "p3_gpt2_armor_pruner",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_mamba --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_mamba",
       "status": "pending",
       "retries": 0
     },
@@ -684,13 +663,6 @@
       "id": "p3_gpt2_mlorq_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mamba_shedder_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_shedder_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_shedder_compressor",
       "status": "pending",
       "retries": 0
     },
@@ -859,13 +831,6 @@
       "id": "p3_gpt2_frandi_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mamba_shedder_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_shedder_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_shedder_factory",
       "status": "pending",
       "retries": 0
     },
@@ -1297,13 +1262,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd-mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd-mamba --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd-mamba",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_tt_linear_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_factory",
@@ -1356,13 +1314,6 @@
       "id": "p3_gpt2_salr_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules salr_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_salr_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mamba_svd_flash",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_svd_flash --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_svd_flash",
       "status": "pending",
       "retries": 0
     },
@@ -1584,13 +1535,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_squeezing_heads_distiller_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distiller_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distiller_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_kronecker_tt_lora_compressor_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_compressor_class",
@@ -1682,13 +1626,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd_linear_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_inject_svd_sequence",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_sequence --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_sequence",
@@ -1706,13 +1643,6 @@
       "id": "p3_gpt2_mgie_budget_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_budget_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_budget_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_mamba_svd_flash",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_mamba_svd_flash --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_mamba_svd_flash",
       "status": "pending",
       "retries": 0
     },
@@ -1755,13 +1685,6 @@
       "id": "p3_gpt2_asvd_fn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_fn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_mamba_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_mamba_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_mamba_inject",
       "status": "pending",
       "retries": 0
     },
@@ -1857,13 +1780,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_squeezing_heads_distill",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_squeezing_heads_distill --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_squeezing_heads_distill",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hybrid_svd_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybrid_svd_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybrid_svd_compressor_factory",
@@ -1895,13 +1811,6 @@
       "id": "p3_gpt2_direct_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd-mamba_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd-mamba_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd-mamba_inject",
       "status": "pending",
       "retries": 0
     },
@@ -2004,20 +1913,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_mamba_svd_flash_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_svd_flash_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_svd_flash_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_squeezing_heads_distiller",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_squeezing_heads_distiller --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_squeezing_heads_distiller",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_delta_kv_compressor_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_compressor_class",
@@ -2077,13 +1972,6 @@
       "id": "p3_gpt2_admm_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_mamba_shedder_compressor_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mamba_shedder_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mamba_shedder_compressor_class",
       "status": "pending",
       "retries": 0
     },
@@ -8775,15 +8663,6 @@
       "status": "pending"
     },
     {
-      "job_id": "p3_gpt2_squeezing_heads_distiller",
-      "id": "p3_gpt2_squeezing_heads_distiller",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distiller --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distiller",
-      "started_at": "2026-09-24T02:45:58.980010",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "p3_gpt2_compressed_mha_inject",
       "id": "p3_gpt2_compressed_mha_inject",
       "job_type": "gpu",
@@ -8866,13 +8745,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_mamba --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_mamba",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_lsc_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_compressor",
@@ -8887,15 +8759,7 @@
       "retries": 0
     }
   ],
-  "active": [
-    {
-      "id": "p3_gpt2_svd_llm_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_compressor",
-      "status": "active",
-      "retries": 0
-    }
-  ],
+  "active": [],
   "completed": [
     {
       "job_id": "p1_galerkin_attention",
