@@ -15,8 +15,8 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:64"
 
 # Switch to project directory if on Windows GPU server
-if os.path.exists(r"D:\svd_project"):
-    os.chdir(r"D:\svd_project")
+if os.path.exists(r"PROJECT_ROOT"):
+    os.chdir(r"PROJECT_ROOT")
 
 models = [
     {
