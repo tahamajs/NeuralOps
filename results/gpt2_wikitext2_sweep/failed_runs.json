@@ -488,5 +488,15 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T22:03:59.190084"
+  },
+  {
+    "module": "tt_linear_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 2182.472257,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (2182.47) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T22:05:23.853351"
   }
 ]
