@@ -3640,7 +3640,6 @@ def run_single_module_main(args) -> dict:
             except Exception as f_err:
                 LOG.debug("Could not update failed_runs.json: %s", f_err)
 
-            if weights_dir.exists():
             # Always preserve a compact metrics record (no heavy weights.pt) so the
             # analytics dashboard and auto-uploader can track every module outcome.
             if weights_dir.exists():
