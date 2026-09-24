@@ -59,19 +59,15 @@ class CoMeBridge(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
         self.bridge_rank = min(bridge_rank, hidden_size)
-        self.V = nn.Linear(hidden_size, self.bridge_rank, bias=False)
-        self.U = nn.Linear(self.bridge_rank, hidden_size, bias=False)
+        self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
         with torch.no_grad():
-            nn.init.zeros_(self.V.weight)
-            nn.init.normal_(self.U.weight, std=0.02)
+            nn.init.eye_(self.linear.weight)
         self.alpha = nn.Parameter(torch.tensor(float(alpha_init)))
 
     def _bridge_tensor(self, t: torch.Tensor) -> torch.Tensor:
         if t.ndim >= 2 and t.shape[-1] == self.hidden_size:
-            v_w = self.V.weight.to(device=t.device, dtype=t.dtype)
-            u_w = self.U.weight.to(device=t.device, dtype=t.dtype)
-            bottleneck = F.linear(t, v_w)
-            recon = F.linear(bottleneck, u_w)
+            w = self.linear.weight.to(device=t.device, dtype=t.dtype)
+            recon = F.linear(t, w)
             return t + self.alpha.to(device=t.device, dtype=t.dtype) * (recon - t)
         return t
 

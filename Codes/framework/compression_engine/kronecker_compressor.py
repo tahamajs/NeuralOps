@@ -26,8 +26,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -227,14 +229,6 @@ class KroneckerLinear(nn.Module):
         # Fallback: should never happen for a properly initialized layer.
         raise RuntimeError("KroneckerLinear has no valid parameter set.")
 
-    @property
-    def bias(self):  # override via instance
-        return self._parameters.get("bias", None)
-
-    @bias.setter
-    def bias(self, value):
-        # nn.Module.__setattr__ handles Parameter vs None.
-        self.__setattr__("bias", value)
 
     # ------------------------------------------------------------------
     # Forward
