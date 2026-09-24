@@ -566,6 +566,6 @@ Evaluated on SST-2 sentiment classification (FP16, allowed error 0.20, max error
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 301.18 | `PASS_NO_COMPRESSION` | N/A |
-| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.68 | `PASS_NO_COMPRESSION` | N/A |
-| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS_NO_COMPRESSION` | N/A |
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 174.83 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 94.38% | 0.9445 | 1.0 | 0 | 292.22 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 89.33% | 0.8942 | 1.0 | 0 | 382.13 | `PASS_NO_COMPRESSION` | N/A |
