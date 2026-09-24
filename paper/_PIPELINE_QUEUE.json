@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_armor_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_compot_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_compressor_factory",
@@ -7939,13 +7932,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_cur_moe_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_class",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_frandi_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor",
@@ -7963,6 +7949,13 @@
       "id": "p3_gpt2_zerokv",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules zerokv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_zerokv",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_armor_pruner",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor_pruner",
       "status": "active",
       "retries": 0
     }
@@ -9198,6 +9191,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules replace --parallel 1 --batch_size 4 --output_suffix roberta_replace",
       "started_at": "2026-09-24T20:57:41.406475",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_cur_moe_class",
+      "id": "p3_gpt2_cur_moe_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_class",
+      "started_at": "2026-09-24T20:57:45.694032",
       "retries": 0,
       "status": "done"
     }
