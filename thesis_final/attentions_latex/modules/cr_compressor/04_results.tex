@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{cr\_compressor} بر روی مجموعه‌داده \lr{GLUE SST-2} نتایج جدول \ref{tab:benchmark_cr_compressor} را نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{cr\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_cr_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{66.51\%} & \lr{0.9099} & \lr{357.28 MB} & \lr{97,565.29 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{503.28 MB} & \lr{12,488.03 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{58.37\%} & \lr{0.6842} & \lr{457.35 MB} & \lr{117,095.44 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول در غربالگری سریع \lr{DistilBERT} به دقت ۶۶٫۵۱٪ و در آزمون‌های جاروب رتبه‌ای به دقت ۹۰٫۶۰٪ با شاخص F1 معادل ۰٫۹۰۹۹ دست یافته است. در مدل دیکودری \lr{GPT-2}، دقت ۵۸٫۳۷٪ با توان عملیاتی تحسین‌برانگیز ۱۱۷,۰۹۵ توکن بر ثانیه و ردپای حافظه ۴۵۷٫۳۵ مگابایت به ثبت رسیده است. در \lr{RoBERTa}، به دلیل عدم اجرای گام‌های بازیابی گرادیانی کافی، مدل در خط شانس متوقف و برچسب رد دریافت نموده است (اگرچه در جاروب تخصصی رتبه ۶۴ به دقت ۹۴٫۱۵٪ با شاخص F1 معادل ۰٫۹۴۲۵ رسیده است).

@@ -1,0 +1,27 @@
+\subsection{نتایج تجربی}
+یافته‌های تجربی حاصل از بنچ‌مارک ماژول \lr{sdrm\_compressor} بر روی مدل‌های زبانی استاندارد در جدول \ref{tab:benchmark_sdrm} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز مدولاسیون رتبه \lr{sdrm\_compressor}}
+\label{tab:benchmark_sdrm}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{85.78\%} & \lr{0.8631} & \lr{338.98 MB} & \lr{32,743.48 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{781.79 MB} & \lr{16,739.56 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{67.66\%} & \lr{0.7482} & \lr{446.90 MB} & \lr{10,921.04 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج به دست آمده:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، با فشرده‌سازی فیزیکی ۳۶ لایه و کاهش حجم پارامترها با نرخ فشرده‌سازی حقیقی \lr{1.24x}، دقت پایدار \lr{85.78\%} و شاخص \lr{F1} معادل \lr{0.8631} به دست آمده و وضعیت \lr{PASS} ثبت شده است.
+    \item در مدل \lr{GPT-2}، با فشرده‌سازی ۱۵۲ لایه ساختاری و دستیابی به کاهش پارامتر با نسبت \lr{1.26x}، مدل دقت قابل توجه \lr{67.66\%} و شاخص \lr{F1} معادل \lr{0.7482} را در پیش‌بینی توکن‌ها کسب کرده است.
+    \item در مدل \lr{RoBERTa}، به دلیل حساسیت شدید لایه‌های توجه این مدل نسبت به فشرده‌سازی فیزیکی ۶۸ لایه بدون فاین‌تیونینگ تکمیلی، دقت مدل به \lr{50.92\%} کاهش یافته که در سطح خطای تصادفی ارزیابی شده و وضعیت \lr{PASS\_LOW} را ایجاد نموده است.
+    \item اجرای مدل \lr{Qwen} به علت محدودیت‌های زمانی ارزیابی در این نسخه انجام نگرفته و در وضعیت \lr{SKIP} گزارش شده است.
+\end{itemize}

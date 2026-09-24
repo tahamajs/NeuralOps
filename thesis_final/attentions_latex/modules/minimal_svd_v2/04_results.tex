@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{minimal\_svd\_v2} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_minimal_svd_v2} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{minimal\_svd\_v2} روی مدل‌های پایه}
+\label{tab:benchmark_minimal_svd_v2}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{85.44\%} & \lr{0.8670} & \lr{293.2 MB} & \lr{64,703 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{339.0 MB} & \lr{35,021 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{494.7 MB} & \lr{30,591 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.89\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{85.44\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

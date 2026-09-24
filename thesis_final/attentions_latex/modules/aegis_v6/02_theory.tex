@@ -1,0 +1,23 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه پروجکشن، وزن‌ها با تلفیق مقادیر تجزیه‌شده مقادیر منفرد ماتریس و مسیر باقیمانده بازسازی می‌شوند:
+\begin{equation}
+\mathbf{W} = \mathbf{V} \mathbf{\Sigma} \mathbf{U}^\top + \frac{\alpha}{r_{\text{lora}}} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+در شاخه توجه خطی سراسری، از نگاشت ویژگی کِرنل پایدار بر پایه پروجکشن‌های متعامد تصادفی استفاده می‌شود:
+\begin{equation}
+\phi(\mathbf{x}) = \frac{1}{\sqrt{M}} \exp\left( \mathbf{x} \mathbf{\Omega}^\top - \frac{\|\mathbf{x}\|^2}{2} \right)
+\end{equation}
+که در آن $\mathbf{\Omega} \in \mathbb{R}^{M \times d}$ ماتریس پروجکشن تصادفی با بلوک‌های متعامد حاصل از تجزیه QR است تا واریانس برآورد کِرنل کاهش یابد.
+
+حاصلضرب ضرب داخلی کِرنلی در حالت علّی با جمع تجمعی پیشرو و ضرب خارجی برداری هدایت می‌شود:
+\begin{equation}
+\mathbf{S}_t = \sum_{\tau=1}^t \phi(\mathbf{k}_\tau)^\top \mathbf{v}_\tau, \quad \mathbf{o}_t^{\text{glob}} = \frac{\phi(\mathbf{q}_t) \mathbf{S}_t}{\phi(\mathbf{q}_t) \sum_{\tau=1}^t \phi(\mathbf{k}_\tau)^\top + \epsilon}
+\end{equation}
+در کنار شاخه خطی، شاخه پنجره‌ای متحرک با شعاع موضعی $R$ وظیفه استخراج الگوهای همسایگی را بر عهده دارد:
+\begin{equation}
+\mathbf{o}_t^{\text{loc}} = \sum_{j=\max(0, t-R)}^{\min(N, t+R)} \operatorname{softmax}\left(\frac{\mathbf{q}_t \mathbf{k}_j^\top}{\sqrt{d}}\right) \mathbf{v}_j
+\end{equation}
+سپس دو خروجی از طریق گیت تلفیق زمینه (\lr{ContextFusionGate}) با یکدیگر ترکیب می‌گردند:
+\begin{equation}
+\mathbf{g} = \sigma(\mathbf{X} \mathbf{W}_g + \mathbf{b}_g), \quad \mathbf{O} = (1 - \mathbf{g}) \odot \mathbf{O}^{\text{loc}} + \mathbf{g} \odot \mathbf{O}^{\text{glob}}
+\end{equation}

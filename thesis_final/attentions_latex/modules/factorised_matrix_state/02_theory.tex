@@ -1,0 +1,22 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{x}_t \in \mathbb{R}^D$ بردار ورودی در گام زمانی $t$ باشد. تانسورهای ویژگی غیرخطی با استفاده از توابع فعال‌سازی مشتق‌پذیر $\phi(\cdot)$ نگاشت می‌شوند:
+\begin{equation}
+\mathbf{q}_t = \phi(\mathbf{x}_t \mathbf{W}_Q), \quad \mathbf{k}_t = \phi(\mathbf{x}_t \mathbf{W}_K), \quad \mathbf{v}_t = \mathbf{x}_t \mathbf{W}_V
+\end{equation}
+حالت حافظه ماتریسی تجمعی $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ از طریق معادله بازگشتی به‌روزرسانی می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \gamma_t \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top
+\end{equation}
+که در آن $\gamma_t = \sigma(\mathbf{x}_t \mathbf{w}_g)$ ضریب زوال حافظه وابسته به محتوا است که نرخ فراموشی اطلاعات گذشته را کنترل می‌کند. به منظور جلوگیری از واگرایی عددی، بردار پایدارکننده نرمال‌سازی $\mathbf{z}_t \in \mathbb{R}^d$ به موازات آن محاسبه می‌شود:
+\begin{equation}
+\mathbf{z}_t = \gamma_t \mathbf{z}_{t-1} + \mathbf{k}_t
+\end{equation}
+پاسخ توجه در گام $t$ با اعمال ضرب داخلی در حالت ماتریسی و نرمال‌سازی به دست می‌آید:
+\begin{equation}
+\mathbf{y}_t = \frac{\mathbf{q}_t \mathbf{S}_t}{\mathbf{q}_t \mathbf{z}_t + \epsilon}
+\end{equation}
+در مرحله نهایی، فاکتورسازی کم‌مرتبه خروجی با رتبه $r \ll D$ به همراه جبران‌سازی لورا اعمال می‌گردد:
+\begin{equation}
+\mathbf{O}_t = \mathbf{y}_t \left( \mathbf{W}_{down} \mathbf{W}_{up} + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora} \right)
+\end{equation}
+این ساختار به دلیل بی‌نیازی از محاسبه صریح ماتریس توجه دو‌به‌دو، پیچیدگی زمانی را از $\mathcal{O}(N^2)$ به $\mathcal{O}(N \cdot d)$ و پیچیدگی حافظه استنتاج را به $\mathcal{O}(d^2)$ کاهش می‌دهد.

@@ -1,0 +1,30 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گام نخست، ماتریس کوواریانس فعال‌سازی‌های ورودی $\mathbf{C}_X \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ با میانگین‌گیری تانسورهای ورودی محاسبه و منظم‌سازی می‌شود:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{C}_X + \lambda_{\text{reg}} \mathbf{I}, \quad \lambda_{\text{reg}} = 10^{-4} \frac{\text{Tr}(\mathbf{C}_X)}{d_{\text{in}}}
+\end{equation}
+سپس فاکتورگیری چولسکی برای به دست آوردن ماتریس مثلثی پایین $\mathbf{L}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{L} \mathbf{L}^\top
+\end{equation}
+ماتریس وزن اصلی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در فاکتور چولسکی سفیدسازی می‌شود:
+\begin{equation}
+\widetilde{\mathbf{W}} = \mathbf{W} \mathbf{L}
+\end{equation}
+بر روی ماتریس سفیدشده $\widetilde{\mathbf{W}}$، تجزیه مقادیر منفرد تقلیل‌یافته با رتبه $r$ اجرا می‌شود:
+\begin{equation}
+\widetilde{\mathbf{W}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با تخصیص جذر مقادیر منفرد $\mathbf{\Sigma}_r^{1/2}$ به ماتریس‌های بازنمایی، فاکتور خروجی $\mathbf{B}$ و فاکتور سفیدشده ورودی $\widetilde{\mathbf{A}}$ حاصل می‌شوند:
+\begin{equation}
+\mathbf{B} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \widetilde{\mathbf{A}} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+جهت رفع اثر تبدیل چولسکی بر روی پایه ویژگی‌های ورودی، معادله مثلثی زیر برای ماتریس $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ با پایداری کامل در دقت \lr{FP32} حل می‌گردد:
+\begin{equation}
+\mathbf{L} \mathbf{A}^\top = \widetilde{\mathbf{A}}^\top \implies \mathbf{A} = (\mathbf{L}^{-1} \widetilde{\mathbf{A}}^\top)^\top
+\end{equation}
+در نتیجه تجزیه نهایی به فرم فاکتورگیری‌شده کم‌مرتبه درمی‌آید:
+\begin{equation}
+\mathbf{W} \approx \mathbf{B} \mathbf{A}, \quad \mathbf{y} = (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}
+که در آن تعداد پارامترهای هر لایه از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌یابد.

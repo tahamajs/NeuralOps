@@ -1,0 +1,114 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{leka\_v2}}
+\label{sec:mod_leka_v2}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+مسئله مقیاس‌پذیری مکانیزم توجه استاندارد \lr{(Standard Attention)} همواره به دلیل پیچیدگی زمانی و فضایی $\mathcal{O}(N^2)$ نسبت به طول دنباله $N$، مانعی جدی در پردازش متون طولانی بوده است. ایده محوری ماژول \lr{leka\_v2} \lr{(Linear-time Efficient Kernel Attention)} عبور از این سد محاسباتی از طریق معرفی یک معماری خطی و ترکیبی است که از فیلترینگ نقاط برجسته \lr{(Landmark Distillation)}، تقریب‌های هسته تصادفی دوجانبه \lr{(Dual-Scale Random Projections)}، و ترکیب توجه محلی \lr{(Local Window Attention)} با یک گیت هموار بهره می‌برد.
+برخلاف رویکردهای هرس سخت \lr{(Hard Pruning)} که به گسستگی گرادیان‌ها می‌انجامند، این معماری با انتقال ماتریس‌های پرس‌وجو و کلید به یک فضای ویژگی هسته \lr{(Kernel Feature Space)} و انتخاب زیرمجموعه‌ای ثابت از توکن‌های برجسته، توجه دوربرد \lr{(Long-Range)} را با هزینه زمانی $\mathcal{O}(N \times L)$ مدل می‌کند (که در آن $L \ll N$ تعداد لندمارک‌هاست). در کنار آن، یک توجه محلی درهم‌تنیده با پنجره محدود، بافتار معنایی محلی را تضمین می‌سازد و خروجی نهایی از طریق یک دروازه محلی \lr{(Local Gate)} پویا ترکیب می‌گردد. این دوگانگی به شبکه اجازه می‌دهد که ظرفیت بیانی خود را در هر دو سطح انتزاعی کلان و خرد به شکل تفکیک‌شده‌ای بهینه‌سازی کند.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+در این ماژول، ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ با نگاشت‌های خطی تطبیقی مبتنی بر \lr{LoRA} به تانسورهای $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ تبدیل می‌شود. به منظور خطی‌سازی، به جای ضرب مستقیم، بردارهای $\mathbf{q}_i$ و $\mathbf{k}_j$ با استفاده از ماتریس‌های پروجکشن تصادفی $\mathbf{W}_1 \in \mathbb{R}^{d \times f}$ و $\mathbf{W}_2 \in \mathbb{R}^{d \times (f/2)}$ به فرم فضاهای هسته $\phi(\cdot)$ تقریب زده می‌شوند:
+\begin{equation}
+\phi(\mathbf{x}) = \left[ \frac{\cos(\mathbf{x} \mathbf{W}_1)}{\sqrt{f}}, \frac{\sin(\mathbf{x} \mathbf{W}_1)}{\sqrt{f}}, \frac{\cos(\mathbf{x} \mathbf{W}_2)}{\sqrt{f/2}}, \frac{\sin(\mathbf{x} \mathbf{W}_2)}{\sqrt{f/2}} \right]
+\end{equation}
+ابعاد فضای ویژگی $f$ و $f/2$ برای استخراج فرکانس‌های فضایی متفاوت طراحی شده‌اند.
+پس از آن، با استفاده از یک تابع امتیازدهی \lr{(Landmark Scorer)} مجهز به شبکه‌ای دو‌لایه \lr{(MLP)} روی $\phi(\mathbf{K})$، زیرمجموعه‌ای از $L$ توکن برجسته \lr{(Landmarks)} انتخاب می‌شود:
+\begin{equation}
+\mathbf{K}_{\text{\lr{land}}}, \mathbf{V}_{\text{\lr{land}}} = \operatorname{TopK}_{L} \left( \operatorname{Score}(\phi(\mathbf{K})) \right)
+\end{equation}
+تانسور توجه دوربرد $\mathbf{A}_{\text{\lr{leka}}}$ با پیچیدگی $\mathcal{O}(N L d)$ با استفاده از عملگر هموارساز \lr{Softpick} شکل می‌گیرد:
+\begin{equation}
+\mathbf{A}_{\text{\lr{leka}}} = \operatorname{Softpick} \left( \phi(\mathbf{Q}) \phi(\mathbf{K}_{\text{\lr{land}}})^\top \right) \mathbf{V}_{\text{\lr{land}}} \mathbf{W}_{\text{\lr{corr}}}
+\end{equation}
+به صورت همزمان، توجه محلی با اندازه پنجره $w$ استخراج می‌گردد:
+\begin{equation}
+\mathbf{A}_{\text{\lr{local}}} = \operatorname{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}^\top_{\text{\lr{local}}}}{\sqrt{d}} \right) \mathbf{V}_{\text{\lr{local}}}
+\end{equation}
+و خروجی نهایی از طریق گیتینگ یادگیرنده $g = \sigma(\theta_{\text{\lr{gate}}})$ ترکیب می‌شود:
+\begin{equation}
+\mathbf{O} = g \cdot \mathbf{A}_{\text{\lr{leka}}} + (1 - g) \cdot \mathbf{A}_{\text{\lr{local}}}
+\end{equation}
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+معماری کد شامل کلاس \lr{LEKAv2Attention} بوده که از وراثت ساختار \lr{BaseAttention} استفاده می‌کند.
+\begin{itemize}
+    \item \textbf{ابعاد میانی:} ورودی $[B, N, D]$ ابتدا از طریق کلاس \lr{LoRALinear} با فریز شدن پایه‌ها و فعال‌سازی آداپتورهای \lr{LoRA} پروجکت شده و به شکل $[B, H, N, d]$ بازآرایی می‌گردد. در صورت نیاز به \lr{GQA}، با متد \lr{repeat\_kv} کلیدها و مقادیر بسط می‌یابند.
+    \item \textbf{رمزگذاری موقعیت:} از کدهای موقعیت دورانی \lr{(RoPE)} پیش از ورود به فاز هسته استفاده شده که تانسورها را در فضای هندسی قطبی دَوَران می‌دهد.
+    \item \textbf{هسته و پروجکشن تصادفی:} بافرهای \lr{rand\_proj1} و \lr{rand\_proj2} به صورت قطعی در طول استنتاج ثابت نگه داشته می‌شوند. تابع \lr{kernel\_feature\_map} نگاشت‌ها را شکل می‌دهد.
+    \item \textbf{مدیریت دیکودر:} برای مدل‌های بازتولیدی، ماسک علّی \lr{(Causal Mask)} بر روی اندیس‌های لندمارک‌های استخراج‌شده اعمال شده تا نشت اطلاعات از توکن‌های آینده به گذشته جلوگیری شود (شرط $j > i$).
+    \item \textbf{هموارسازی:} تابع استاتیک \lr{softpick} به عنوان یک تقریب مقاوم به مقیاس عمل کرده و از سرریز \lr{NaN} در بردارهای با توزیع تنک جلوگیری می‌کند.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+استقرار ماژول \lr{leka\_v2} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} رفتار سخت‌افزاری کاملاً متمایزی از مدل پایه ارائه می‌دهد. تقلیل پیچیدگی مکانی ماتریس توجه از $\mathcal{O}(N^2)$ به $\mathcal{O}(NL + Nw)$ باعث می‌شود تا تانسورهای میانی به راحتی در سلسله‌مراتب کش \lr{(L2 Cache)} جا شوند و از ارجاعات پرهزینه به حافظه اصلی \lr{(HBM)} پرهیز گردد.
+شدت محاسباتی \lr{(Arithmetic Intensity)} به دلیل تقلیل محسوس ابعاد تانسور کلیدها و مقادیر با لندمارک‌ها کاهش می‌یابد؛ اما به واسطه ممانعت از سرریز حافظه نهان، نرخ بهره‌وری هسته‌های تنسوری \lr{(Tensor Cores)} افزایش می‌یابد. محاسبات پروجکشن هسته و نگاشت دوجانبه مقداری سربار محاسباتی بر ثبات‌های پردازشی \lr{(SRAM)} تحمیل می‌کند، اما در مقابل، حذف محاسبه کامل سافت‌مکس روی تمامی اندیس‌ها، ماژول را از گلوگاه پهنای باند حافظه \lr{(Memory-Bound)} به سوی تراز ایده‌آل پردازشی \lr{(Compute-Bound)} سوق می‌دهد.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+نتایج استنتاج بر روی دادگان استاندارد ارزیابی متن \lr{(GLUE SST-2)} مطابق با مشخصات مندرج در فایل آزمایشگاهی به شرح جدول زیر است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی ارزیابی ماژول \lr{leka\_v2} بر روی پایه‌های مختلف}
+\label{tab:leka_v2_metrics}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص اف‌یک \lr{(F1)}} & \textbf{مصرف حافظه \lr{(VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.01\%} & \lr{0.8688} & \lr{369.48 MB} & \lr{44990.91 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{422.93 MB} & \lr{25751.32 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{596.78 MB} & \lr{21692.58 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{48.97\%} & - & - & - & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+داده‌ها نشان‌دهنده یک الگوی دوگانه \lr{(Dichotomy)} در قابلیت اقتباس ماژول بر روی پایه‌های معماری است. در معماری \lr{DistilBERT}، ماژول ضمن کسب دقت خیره‌کننده \lr{86.01\%} و \lr{F1} معادل \lr{0.8688}، توانست نرخ پردازش توکن بر ثانیه بالایی را نیز ثبت کند. این بدان معناست که گیت‌های محلی و استخراج‌گر ویژگی در پایه‌های تقطیرشده قادرند با سرعت بالا به بازنمایی‌های معنایی معتبر دست یابند و فشرده‌سازی لندمارک‌ها حداقل تخریب اطلاعات را به همراه داشته است.
+از سوی دیگر، در خانواده مدل‌های \lr{RoBERTa} و \lr{GPT-2} که از تنظیمات لایه‌ای پیچیده‌تری برخوردارند، افت دقت به سطح پایه \lr{50.92\%} حاکی از عدم تطابق ماتریس‌های \lr{rand\_proj} از پیش تنظیم‌شده با پراکندگی فضایی بردارهای این مدل‌هاست. در این حالت، مکانیسم \lr{Softpick} و فیلتر لندمارک منجر به نوعی «فروپاشی توجه» \lr{(Attention Collapse)} به سمت توکن‌های پرت شده‌اند و از آنجا که نرخ تنظیم دقیق آداپتورهای \lr{LoRA} برای احیای دانش ضمنی آن‌ها کفایت نکرده، شاخص \lr{F1-Score} دچار افت مشهود به عدد \lr{0.6748} شده است.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت:}
+    \begin{itemize}
+        \item خطی‌سازی کامل پیچیدگی توجه با رویکرد لندمارک‌های دوگانه، که افت محسوس مصرف حافظه در طول‌های استنتاج بالا را تضمین می‌کند.
+        \item قابلیت پشتیبانی یکپارچه از کدهای \lr{RoPE} و مکانیزم‌های علّی نظیر دیکودرهای نسل جدید \lr{GQA}.
+        \item مکانیزم گیتینگ ظریف بین توجه محلی قطعی و توجه سراسری فشرده که بازنمایی کانتکست را مستحکم می‌کند.
+    \end{itemize}
+    \item \textbf{محدودیت‌ها:}
+    \begin{itemize}
+        \item وابستگی عملکرد استخراج لندمارک‌ها به مقیاس \lr{Temperature} تابع \lr{Softpick} که در مدل‌های با انتروپی بالاتر \lr{(RoBERTa)} به فروپاشی دقت منجر می‌شود.
+        \item ثابت بودن ماتریس‌های پروجکشن تصادفی حین استنتاج می‌تواند توزیع‌های متغیر داده‌ها را در طول زمان به خوبی مدل نکند.
+    \end{itemize}
+    \item \textbf{پیشنهادات توسعه:}
+    \begin{itemize}
+        \item به‌کارگیری ماتریس‌های پروجکشن یادگیرنده فازدار \lr{(Phased Trainable Projections)} به جای مقادیر تصادفی ثابت.
+        \item اضافه کردن تنظیم‌کننده انتروپی در فاز پس‌انتشار لندمارک‌ها، تا تنوع نقاط انتخاب‌شده توسط \lr{Scorer} را بیشینه‌سازی کند و از تجمع توجه در چند نقطه خاص بپرهیزد.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{leka\_v2} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_leka_v2.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(leka\_v2)}}
+\label{fig:arch_leka_v2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/leka_v2_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(leka\_v2)}}
+\label{fig:comp_leka_v2}
+\end{figure}

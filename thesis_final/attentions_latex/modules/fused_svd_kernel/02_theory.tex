@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در این لایه، تبدیل ماتریسی وزن‌های پروجکشن با تجزیه مقادیر منفرد فاکتورگیری شده به صورت دو مؤلفه متعامد $\mathbf{V} \in \mathbb{R}^{r \times D_{in}}$ و $\mathbf{U} \in \mathbb{R}^{D_{out} \times r}$ بازتعریف می‌شود:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U} \mathbf{\Sigma} \mathbf{V}
+\end{equation}
+فرآیند محاسباتی یکپارچه درون ثبات‌ها و حافظه اشتراکی پردازنده (\lr{SRAM}) به صورت زنجیره زیر تعریف می‌گردد:
+\begin{enumerate}
+    \item تصویرسازی کاهشی به زیرفضای رتبه $r$:
+    \begin{equation}
+    \mathbf{Z} = \mathbf{X} \mathbf{V}^\top \in \mathbb{R}^{B \times N \times r}
+    \end{equation}
+    \item اعمال نرمال‌سازی \lr{RMSNorm} بدون خروج داده از حافظه \lr{SRAM}:
+    \begin{equation}
+    \mathbf{Z}_{\text{norm}} = \frac{\mathbf{Z}}{\sqrt{\frac{1}{r} \sum_{i=1}^r Z_i^2 + \epsilon}} \odot \boldsymbol{\gamma}
+    \end{equation}
+    \item تصویرسازی افزایشی بلافاصله به فضای خروجی:
+    \begin{equation}
+    \mathbf{Y} = \mathbf{Z}_{\text{norm}} \mathbf{U}^\top + \mathbf{b} \in \mathbb{R}^{B \times N \times D_{out}}
+    \end{equation}
+\end{enumerate}
+سپس جریان ضرب داخلی خطی یا فاکتورگیری‌شده جهت محاسبه خروجی توجه با عبور از نگاشت‌های کرنل فرمول‌بندی شده و تانسور خروجی نهایی شکل می‌گیرد.

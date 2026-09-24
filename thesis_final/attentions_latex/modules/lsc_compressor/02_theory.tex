@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی طیفی برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ شامل چهار مرحله اساسی است:
+\begin{enumerate}
+    \item \textbf{تبدیل فوریه دو‌بعدی گسسته (\lr{2D Discrete Fourier Transform}):} تبدیل فوریه ماتریس وزن به دامنه فرکانس مختلط انتقال داده می‌شود:
+    \begin{equation}
+    \widehat{\mathbf{W}} = \mathcal{F}_{\text{2D}}(\mathbf{W}) \in \mathbb{C}^{d_{\text{out}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{محاسبه ماتریس دامنه طیفی (\lr{Spectral Magnitude Matrix}):} بزرگی مؤلفه‌های فرکانسی محاسبه می‌گردد:
+    \begin{equation}
+    M_{ij} = |\widehat{\mathbf{W}}_{ij}| = \sqrt{\text{Re}(\widehat{\mathbf{W}}_{ij})^2 + \text{Im}(\widehat{\mathbf{W}}_{ij})^2}
+    \end{equation}
+    \item \textbf{انتخاب مؤلفه‌های پرانرژی (\lr{Top-k Energy Filtering}):} بر اساس حد آستانه بودجه رتبه یا نسبت انرژی تجمعی (\lr{Energy Ratio}) $\gamma \in (0, 1]$، تعداد ضرایب برتر $k$ انتخاب شده و نقشه ماسک دودویی طیفی $\mathbf{M}_{\text{spectral}}$ شکل می‌گیرد:
+    \begin{equation}
+    k = \min(r^2, d_{\text{out}} \cdot d_{\text{in}}), \quad \mathbf{M}_{\text{spectral}} = \mathbb{I}(M_{ij} \ge \tau_k)
+    \end{equation}
+    که در آن $\tau_k$ مقدار $k$-امین ضریب بزرگ‌تر دامنه فرکانسی است.
+    \item \textbf{تبدیل فوریه معکوس و بازسازی وزن (\lr{Inverse 2D DFT}):} وزن فشرده نهایی با محاسبه بخش حقیقی تبدیل معکوس حاصل می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{LSC}} = \text{Re}\left(\mathcal{F}_{\text{2D}}^{-1}(\widehat{\mathbf{W}} \odot \mathbf{M}_{\text{spectral}})\right)
+    \end{equation}
+\end{enumerate}
+
+در ساختار ماژولار لایه \lr{LSCPrunedLoRALinear}، گذر پیشرو ترکیبی با شاخه آداپتور کم‌رتبه $\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{W}_{\text{LSC}}^\top + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+\end{equation}

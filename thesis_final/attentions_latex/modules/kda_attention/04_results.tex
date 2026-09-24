@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی ماژول \lr{kda\_attention} بر روی مجموعه‌داده اعتبارسنجی SST-2 در جدول \ref{tab:benchmark_kda} گردآوری شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و کیفی ماژول \lr{kda\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_kda}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه (\lr{Base Model})} & \textbf{دقت (\lr{Accuracy})} & \textbf{شاخص \lr{F1}} & \textbf{حافظه (\lr{Peak VRAM})} & \textbf{توان (\lr{Throughput})} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{76.83\%} & \lr{0.7584} & \lr{349.30 MB} & \lr{18111.80 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{52.87\%} & \lr{0.6807} & \lr{680.32 MB} & \lr{9031.79 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{567.69 MB} & \lr{10504.81 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.80\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که مشاهده می‌شود، ماژول روی مدل \lr{DistilBERT} موفق به کسب دقت ۷۶.۸۳٪ و شاخص اف‌وان ۰.۷۵۸۴ همراه با توان پردازشی بسیار مناسب ۱۸,۱۱۱ توکن در ثانیه و مصرف حافظه ناچیز ۳۴۹ مگابایت گردیده است.

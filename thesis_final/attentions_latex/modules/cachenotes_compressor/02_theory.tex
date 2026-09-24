@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در \lr{CacheNotes} از دو مولفه ریاضی وابسته تشکیل شده است:
+\begin{enumerate}
+    \item \textbf{تولیدکننده پیوسته توکن برنامه‌ریزی فشرده‌سازی (\lr{CPT Generator}):} با دریافت توصیف متنی وظیفه $T_{\text{task}}$، ابتدا امبدینگ توکن‌ها توسط یک شبکه رمزگذار به بردار حالت $\mathbf{h} \in \mathbb{R}^{d_h}$ تبدیل می‌شود. برای تولید اهمیت در هر بعد دلخواه $d$ (حتی ابعاد پیوسته)، موقعیت کانال‌ها به صورت فرکانسی در قالب مختصات \lr{NeRF} کدگذاری می‌شود:
+    \begin{equation}
+    \gamma(c) = \left[ \sin(2^0 \pi c), \cos(2^0 \pi c), \dots, \sin(2^{F-1} \pi c), \cos(2^{F-1} \pi c) \right], \quad c = \frac{j}{d}, \quad j \in \{1, \dots, d\}
+    \end{equation}
+    بردار اهمیت نهایی کانال‌ها توسط شبکه پروجکشن بر روی بازه پیوسته $[0.1, 2.0]$ نگاشته می‌شود:
+    \begin{equation}
+    \mathbf{s} = \operatorname{Sigmoid}(\text{MLP}([\mathbf{h}; \gamma(\mathbf{c})])) \cdot 1.9 + 0.1 \in \mathbb{R}^d
+    \end{equation}
+    \item \textbf{تجزیه کم‌مرتبه هدایت‌شده (\lr{CPT-Guided SVD}):} ماتریس وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در قطر بردار اهمیت ورودی یا خروجی پیش‌شرط‌سازی می‌گردد:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \operatorname{diag}(\mathbf{s})
+    \end{equation}
+    سپس بر روی $\tilde{\mathbf{W}}$ تجزیه مقادیر منفرد برشی اعمال شده و فاکتورهای کم‌مرتبه پس از بازگردانی مقیاس تشکیل می‌گردند:
+    \begin{equation}
+    \tilde{\mathbf{W}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \hat{\mathbf{W}} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \operatorname{diag}(\mathbf{s})^{-1}
+    \end{equation}
+    \item \textbf{فشرده‌سازی پویای حافظه پنهان (\lr{KV Cache Compression}):} در زمان استنتاج، توکن‌های حافظه پنهان کلید و مقدار با ضرب در وزن‌های اهمیت $\mathbf{s}$ ارزیابی شده و کم‌اهمیت‌ترین توکن‌ها تا رسیدن به بودجه فشرده‌سازی هرس می‌شوند.
+\end{enumerate}

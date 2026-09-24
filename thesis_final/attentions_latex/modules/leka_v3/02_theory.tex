@@ -1,0 +1,124 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{leka\_v3}}
+\label{sec:mod_leka_v3}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+مکانیزم نوآورانه \lr{leka\_v3} \lr{(Linear-time Efficient Kernel Attention)} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های زبانی است: تقلیل پیچیدگی پردازشی و حافظه توجه از $\mathcal{O}(N^2)$ به خطی $\mathcal{O}(N)$ ضمن حفظ ظرفیت بازنمایی دقیق نشانه‌گذاری \lr{(Token Landmarks)}. این معماری با ترکیب روش‌های کرنل خطی، تخصیص پویای نشانه‌گذارها \lr{(Value-Scored Landmarks)} و پنجره توجه محلی، نیاز به ذخیره‌سازی کامل تاریخچه را مرتفع می‌سازد. به جای محاسبه وزن توجه برای تمامی جفت توکن‌ها، \lr{leka\_v3} تنها نشانه‌های کلیدی را با استفاده از یک شبکه‌ امتیازده ارزش‌محور، گزینش کرده و مابقی اطلاعات را با نگاشت‌های تصادفی سینوسی تقریب می‌زند، بدین ترتیب همبستگی‌های بلند‌مدت و کوتاه‌مدت به شکلی بهینه مهار می‌شوند.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+فرمول‌بندی این ماژول بر پایه همجوشی کرنل اختصاصی تایل‌بندی‌شده با اسکن پیشوندی پایا طراحی شده است. ویژگی‌های ورودی با استفاده از یک نگاشت تصادفی متعامد به فضای کرنل $\phi(\cdot)$ انتقال می‌یابند:
+\begin{align}
+\phi(\mathbf{x}) &= \frac{1}{\sqrt{d}} [\cos(\mathbf{x}\mathbf{W}), \sin(\mathbf{x}\mathbf{W})] \\
+\mathbf{S}_c &= \mathbf{S}_{c-1} + \sum_{i \in \text{\lr{Tile}}_c} \phi(\mathbf{k}_i) \mathbf{v}_i^T \\
+\mathbf{o}_i &= \phi(\mathbf{q}_i) \mathbf{S}_{c-1} + \sum_{j \le i, j \in \text{\lr{Tile}}_c} (\phi(\mathbf{q}_i) \phi(\mathbf{k}_j)^T) \mathbf{v}_j
+\end{align}
+همچنین برای تمرکز بر نواحی مهم، نشانه‌گذارهای برجسته با تابع $\text{\lr{softpick}}$ انتخاب شده و با توجه محلی محصور \lr{(Local Window Attention)} تجمیع می‌گردند. پیچیدگی زمانی از $\mathcal{O}(N^2 D)$ به $\mathcal{O}(N D d)$ تقلیل می‌یابد که در آن $d$ بعد ویژگی نگاشت شده است.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
+    \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
+    \node [state, right=1.0cm of disc] (recurr) {بروزرسانی حالت $h_t = \bar{\mathbf{A}} h_{t-1} + \bar{\mathbf{B}} x_t$};
+    \node [outblock, right=1.0cm of recurr] (out) {خروجی خطی $y_t = \mathbf{C} h_t$};
+
+    \draw [->, thick, draw=blue!80] (input) -- (disc);
+    \draw [->, thick, draw=teal!80] (disc) -- (recurr);
+    \draw [->, thick, draw=orange!80] (recurr) -- (out);
+
+    \path [->, thick, draw=orange!90] (recurr) edge [loop above] node [font=\footnotesize] {حافظه $\mathcal{O}(1)$} (recurr);
+\end{tikzpicture}
+\end{center}
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+در پیاده‌سازی سورس پایتون در فایل \lr{leka\_v3.py} کلاس \lr{LEKAV3Attention} از \lr{BaseAttention} ارث‌بری می‌کند:
+\begin{enumerate}
+\item \textbf{ورودی تانسور:} تانسور ورودی $\mathbf{X}$ با ابعاد \lr{[B, N, D]} وارد می‌شود.
+\item \textbf{پروجکشن خطی و تطبیق \lr{(LoRA Adapters)}:} تانسورهای $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ تولید شده و تغییر شکل می‌دهند \lr{([B, H, N, d])}. ماژول به صورت درونی از آداپتورهای \lr{LoRA} برای فریز کردن وزن‌های پایه و آموزش‌دهی پایدار بهره می‌برد.
+\item \textbf{پشتیبانی از \lr{GQA} و \lr{RoPE}:} از تکنیک گسسته‌سازی \lr{Grouped-Query Attention} از طریق بسط \lr{repeat\_kv} پشتیبانی کرده و جاسازی‌های دورانی موقعیت \lr{RoPE} اعمال می‌گردند.
+\item \textbf{انتخاب نشانه‌گذارها \lr{(Landmarks)}:} مکانیزم \lr{select\_landmarks} متغیرهای نشانه‌گذار را بر حسب \lr{Scores} ارزش‌گذاری می‌کند.
+\item \textbf{همجوشی ویژگی‌های کرنلی:} ضرب نقطه‌ای میان ویژگی‌های تصادفی کسینوسی و سینوسی، وزن‌های نرم‌سازی‌شده \lr{softpick} را تولید می‌کند. در نهایت خروجی به بعد \lr{[B, N, D]} باز می‌گردد.
+\end{enumerate}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+از دیدگاه مدل سقف کارایی و معماری پردازنده‌های مدرن (نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}):
+\begin{itemize}
+\item \textbf{مهار عطش پهنای باند حافظه \lr{(Memory-Bound Relief)}:} تقلیل توجه به حالت خطی و نشانه‌گذار محدود، باعث می‌شود بخش عمده ترافیک به حافظه سریع \lr{SRAM} منتقل شود و نیازی به خوانش مداوم کل حافظه کلید/ارزش از \lr{HBM/DRAM} نباشد.
+\item \textbf{ارتقای شدت محاسباتی \lr{(Arithmetic Intensity)}:} با استفاده از توابع فعال‌سازی سخت‌افزاری \lr{GELU} و تقریب سینوسی در لایه کش سطح اول \lr{L1}، بار اصلی پردازش در رژیم \lr{Compute-Bound} قرار می‌گیرد و تأخیر به حداقل می‌رسد.
+\end{itemize}
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+جدول زیر نتایج ارزیابی رسمی این ماژول را در خط لوله \lr{DistilBERT} بر روی سخت‌افزار \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{leka\_v3}}
+\label{tab:benchmark_leka_v3}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل میزبان} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{اوج حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{70.53\%} & \lr{0.7653} & \lr{353.85 MB} & \lr{46,742 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+با توجه به ثبت دقت \lr{70.53\%} و امتیاز \lr{F1-Score} معادل \lr{0.7653}، ماژول توانسته است به پایداری معنایی معقولی دست یابد. افت نسبی دقت در قیاس با توجه دقیق متراکم \lr{(Dense Attention)} جبرانی است برای سرعت خارق‌العاده \lr{46,742 tok/s} و کاهش چشمگیر حافظه مصرفی به مرز \lr{353.85 MB}. این ماژول نشان می‌دهد که تخصیص گیت‌های \lr{Gate} میان نمایه‌های محلی و کلی و ارزش‌گذاری مبتنی بر نماینده‌های کلیدی \lr{(Landmarks)} از بروز خطاهای فاجعه‌بار ناشی از فشرده‌سازی کورکورانه ممانعت می‌کند.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+\item \textbf{نقاط قوت:} 
+  \begin{itemize}
+    \item پیچیدگی زمانی و حافظه کاملاً خطی ایده‌آل برای دنباله‌های به شدت طویل.
+    \item مصرف وی‌رم \lr{(VRAM)} بسیار پایین روی معماری‌های محدود.
+    \item انطباق با \lr{LoRA} و \lr{RoPE} بدون سربار اضافی.
+  \end{itemize}
+\item \textbf{محدودیت‌ها:}
+  \begin{itemize}
+    \item وابستگی به پروجکشن‌های تصادفی \lr{Gaussian} که ممکن است در برخی لایه‌های عمیق به تضعیف گرادیان منجر شود.
+    \item ناتوانی در پوشش همه‌جانبه‌ی ارتباطات غیرخطی پیچیده بدون فزونی خطا.
+  \end{itemize}
+\item \textbf{پیشنهادات توسعه:}
+  \begin{itemize}
+    \item بکارگیری یادگیری خودتطبیقی پروجکشن‌ها برای حذف نیاز به مقادیر ثابت تصادفی.
+    \item ارتقاء پنجره توجه محلی به حالت تطبیقی مبتنی بر توجه دینامیک.
+  \end{itemize}
+\end{itemize}
+
+
+\vspace*{0.5cm}
+\textbf{تصاویر و نمودارهای مرجع:}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{leka\_v3} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_leka_v3.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(leka\_v3)}}
+\label{fig:arch_leka_v3}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/leka_v3_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(leka\_v3)}}
+\label{fig:comp_leka_v3}
+\end{figure}

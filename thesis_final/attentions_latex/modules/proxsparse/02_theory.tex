@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+مسئله بهینه‌سازی هرس مجاورتی برای ماتریس وزن اولیه $\mathbf{W}_0$ به صورت ترکیب کمینه‌سازی خطای بازسازی فروبنیوس با جریمه تنک‌سازی و قید هندسی ساختاریافته تعریف می‌شود:
+\begin{equation}
+\min_{\mathbf{W}} \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda \|\mathbf{W}\|_1 + \mathcal{I}_{\mathcal{S}}(\mathbf{W})
+\end{equation}
+که در آن $\lambda > 0$ ضریب منظم‌سازی مجاورتی، $\|\mathbf{W}\|_1 = \sum_{i,j} |W_{ij}|$ نرم $\ell_1$ جهت ترویج تنکی و $\mathcal{I}_{\mathcal{S}}(\mathbf{W})$ تابع نشانگر مجموعه مقید تنک $\mathcal{S}$ است:
+\begin{equation}
+\mathcal{I}_{\mathcal{S}}(\mathbf{W}) = \begin{cases} 0 & \mathbf{W} \in \mathcal{S} \\ +\infty & \mathbf{W} \notin \mathcal{S} \end{cases}
+\end{equation}
+
+الگوریتم حل از طریق عملگرهای تکراری زیر پیاده‌سازی می‌گردد:
+\begin{enumerate}
+    \item \textbf{عملگر آستانه‌گذاری نرم (\lr{Soft-Thresholding Operator}):}
+    عملگر مجاورتی نرم $\ell_1$ جهت صفرسازی مقادیر ناچیز و انقباض وزن‌ها اعمال می‌شود:
+    \begin{equation}
+    \mathcal{S}_{\lambda}(\mathbf{W}) = \operatorname{sign}(\mathbf{W}) \odot \max(|\mathbf{W}| - \lambda, 0)
+    \end{equation}
+
+    \item \textbf{پروجکشن روی مجموعه مقید تنکی (\lr{Sparsity Projection}):}
+    تصویر ماتریس روی ساختار نیمه‌ساختاریافته انویدیا $\Pi_{2:4}$ (حفظ ۲ عنصر با بیشترین قدرمطلق در هر بلوک ۴ تایی) یا تصویر بلوکی/صدکی $\Pi_{\mathcal{S}}$ انجام می‌پذیرد:
+    \begin{equation}
+    \Pi_{\mathcal{S}}(\mathbf{W}) = \operatorname{Top-}(1-s)(\mathbf{W}) \quad \text{یا} \quad \Pi_{2:4}(\mathbf{W})
+    \end{equation}
+
+    \item \textbf{تکرارهای گرادیان مجاورتی متناوب:}
+    در هر گام تکرار $t \in \{1, \dots, T\}$ با نرخ گام $\eta$:
+    \begin{equation}
+    \mathbf{W}^{(t+1)} = \mathbf{W}^{(t)} - \eta \left( \mathbf{W}^{(t)} - \Pi_{\mathcal{S}}(\mathcal{S}_{\lambda}(\mathbf{W}^{(t)})) \right)
+    \end{equation}
+    در پایان، ماسک باینری دائمی $\mathbf{M} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ تشکیل شده و وزن منجمد نهایی با رابطه $\mathbf{W}_{\text{final}} = \mathbf{W}_0 \odot \mathbf{M}$ تولید می‌شود.
+\end{enumerate}

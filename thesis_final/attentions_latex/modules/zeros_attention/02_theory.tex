@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تانسورهای پرس‌وجو، کلید و مقدار پس از تفکیک سرها و اعمال احتمالی تعبیه‌های چرخشی مکانی (\lr{RoPE}) به صورت $\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}$ و $\mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N_k \times d}$ باشند. 
+
+در پردازش دوطرفه انکودر (\lr{Bidirectional})، میانگین فضایی کلیدها با در نظر گرفتن ماسک توکن‌های معتبر محاسبه و کسر می‌گردد:
+\begin{equation}
+\boldsymbol{\mu}_k = \frac{1}{\sum_{j=1}^{N_k} m_j} \sum_{j=1}^{N_k} \mathbf{K}_j \cdot m_j, \quad \tilde{\mathbf{K}} = \mathbf{K} - \boldsymbol{\mu}_k
+\end{equation}
+سپس نگاشت غیرخطی نامنفی جهت تضمین مثبت‌بودن شباهت به کار می‌رود:
+\begin{equation}
+\hat{\mathbf{Q}} = \operatorname{ReLU}(\mathbf{Q}) + \epsilon, \quad \hat{\mathbf{K}} = \operatorname{ReLU}(\tilde{\mathbf{K}}) + \epsilon
+\end{equation}
+به واسطه خاصیت خطی، ماتریس تجمعی کلید-مقدار با پیچیدگی $\mathcal{O}(N \cdot d^2)$ تشکیل می‌شود:
+\begin{equation}
+\mathbf{S}_{\text{kv}} = \hat{\mathbf{K}}^\top \mathbf{V} \in \mathbb{R}^{B \times H \times d \times d}, \quad \mathbf{z} = \sum_{j=1}^{N_k} \hat{\mathbf{K}}_j^\top
+\end{equation}
+و خروجی توجه با ضرب برداری و نرمال‌سازی به دست می‌آید:
+\begin{equation}
+\mathbf{O} = \frac{\hat{\mathbf{Q}} \mathbf{S}_{\text{kv}}}{\hat{\mathbf{Q}} \mathbf{z} + \epsilon}
+\end{equation}
+
+در پردازش علّی دیکودر (\lr{Causal Decoding})، میانگین متحرک توکن‌های گذشته در هر گام زمانی به صورت بازگشتی یا با استفاده از جمع تجمعی محاسبه می‌شود تا از نشت اطلاعات آینده جلوگیری به عمل آید:
+\begin{equation}
+\boldsymbol{\mu}_{k, t} = \frac{1}{t} \sum_{\tau=1}^t \mathbf{K}_\tau, \quad \tilde{\mathbf{K}}_t = \mathbf{K}_t - \boldsymbol{\mu}_{k, t}
+\end{equation}
+و حالت بازگشتی پنهان با رابطه زیر به‌روزرسانی می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \mathbf{S}_{t-1} + \hat{\mathbf{K}}_t^\top \mathbf{V}_t, \quad \mathbf{O}_t = \frac{\hat{\mathbf{Q}}_t \mathbf{S}_t}{\hat{\mathbf{Q}}_t \sum_{\tau=1}^t \hat{\mathbf{K}}_\tau^\top + \epsilon}
+\end{equation}

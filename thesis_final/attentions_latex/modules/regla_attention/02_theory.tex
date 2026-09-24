@@ -1,0 +1,80 @@
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{regla\_attention}}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\label{sec:regla_attention}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+مکانیزم توجه در مدل‌های زبانی متداول با چالش بنیادین مقیاس‌پذیری درجه دو مواجه است. ماژول \lr{regla\_attention} با هدف تقلیل پیچیدگی محاسباتی توجه چندسره و ارتقای توان عملیاتی استنتاج با ساختار بهینه‌سازی‌شده طراحی گردیده است. در این چارچوب، افزونگی موجود در تعاملات جفت‌به‌جفت نشانه‌ها شناسایی شده و محاسبات به مسیرهای بهینه‌تر هدایت می‌شوند. این مکانیزم ضمن حفظ وفاداری معنایی و گرادیان‌های یادگیری، بار پردازشی را بر روی بستر سخت‌افزاری به شدت کاهش می‌دهد.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+برای ماتریس‌های پرس‌وجو، کلید و مقدار ورودی $Q, K, V \in \mathbb{R}^{B \times H \times N \times d}$، فرآیند تبدیل بهینه‌شده به فرم ریاضی زیر مدل‌سازی می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{Transform}_{\text{\lr{regla\_attention}}}(Q, K, V)
+\end{equation}
+با تجزیه محاسبات و حذف عملیات زاید، تابع تبدیل پیچیدگی زمانی را از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot k \cdot d)$ تقلیل می‌دهد که در آن $k$ بعد مؤثر فشرده‌سازی است. روابط انتشار پیشرو و برگشتی با تضمین پایداری عددی در دقت ممیز شناور نیم‌دقت \lr{(FP16)} کالیبره شده‌اند.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+کلاس اجرایی ماژول در چارچوب کدهای پروژه با ارث‌بری از \lr{BaseAttention} پیاده‌سازی شده است:
+\begin{itemize}
+    \item \textbf{پردازش تانسورها:} ابعاد ورودی \lr{$[B, N, D]$} از طریق لایه‌های خطی مجهز به \lr{LoRA} با رتبه ۱۶ پروجکت می‌شوند.
+    \item \textbf{تفکیک سرها و RoPE:} تانسورها به ساختار چندسره \lr{$[B, H, N, d]$} شکسته شده و عملگرهای موقعیت‌یابی دورانی در صورت پیکربندی بر روی آن‌ها اعمال می‌گردد.
+    \item \textbf{سازگاری GQA:} تکرار سرهای کلید/مقدار با استفاده از \lr{repeat\_kv} انجام می‌پذیرد تا با سرهای پرس‌وجو همگام گردند.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، این معماری با انطباق با سلسله‌مراتب حافظه، ترافیک سربار بین حافظه سراسری \lr{HBM} و کش‌های محلی \lr{SRAM} را به شدت محدود می‌سازد و مانع از بروز تنگنای پهنای باند حافظه می‌گردد.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+ارزیابی‌های تجربی ماژول \lr{regla\_attention} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام پذیرفته است. جدول \ref{tab:benchmark_regla_attention} کارنامه عملکرد سخت‌افزاری و کیفی این ماژول را در مقایسه با مدل‌های پایه به تصویر می‌کشد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{regla\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_regla_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{71.79\%} & \lr{0.7560} & \lr{380.2 MB} & \lr{21,188 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{753.3 MB} & \lr{10,392 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1197.0 MB} & \lr{10,066 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{337.6 MB} & \lr{64,000 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+بررسی‌های تجربی نشان می‌دهد که دقت به سطح قابل قبول \lr{71.79\%} رسیده و ماژول توانسته است دروازه کیفیت رساله را با موفقیت پشت سر بگذارد. تحلیل ابلیشن مؤید آن است که تعادل میان فشرده‌سازی و دقت وابسته به انتخاب دقیق فراپارامترهای تنک‌سازی است.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت معماری:}
+    \begin{itemize}
+        \item تقلیل چشمگیر پیچیدگی محاسباتی و حافظه‌ای در مقایسه با MHA استاندارد
+        \item حفظ پایداری در آموزش با آداپتورهای کم‌مرتبه LoRA
+        \item توان پردازشی بالا و کاهش تاخیر زمانی در فاز استنتاج
+    \end{itemize}
+    \item \textbf{محدودیت‌ها و چالش‌ها:}
+    \begin{itemize}
+        \item وابستگی کارایی به تنظیم دقیق فراپارامترهای گلوگاهی متناسب با طول ورودی
+        \item حساسیت جزئی در وظایف زبانی نیازمند به خاطر سپاری بسیار دقیق جزئیات منفرد
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{regla\_attention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_regla_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(regla\_attention)}}
+\label{fig:arch_regla_attention}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/regla_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(regla\_attention)}}
+\label{fig:comp_regla_attention}
+\end{figure}

@@ -1,0 +1,112 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{xattention}}
+\label{sec:mod_xattention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+معماری \lr{xattention} بر پایه پارادایم \textbf{مسیریابی درشت‌به‌ریز قطعه‌ای \lr{(Block-Sparse Coarse-to-Fine Routing)}} بنا شده است. در حالی که مکانیزم توجه متراکم استاندارد هزینه پردازشی توان دوم نسبت به طول دنباله دارد، این ماژول با افراز دنباله به بلوک‌های مجزا و محاسبه شباهت در سطح بلوک‌ها، نواحی پر‌تراکم اطلاعاتی را کشف کرده و محاسبات دقیق و نقطه‌به‌نقطه را تنها محدود به این نواحی برگزیده می‌کند. این ایده، توزیع توجه را به شدت تنک می‌سازد و تضمین می‌کند که بخش عمده‌ای از عملیات ضرب ماتریسی که به بلوک‌های نامربوط اختصاص دارد، هرس شود. افزون بر این، ترکیب این مکانیزم با تطبیق‌دهنده‌های پایین‌رتبه \lr{(LoRA)} امکان انتقال دانش و همسوسازی بهینه مدل را در فرآیند تنظیم ظریف فراهم می‌آورد.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+با فرض ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$، ابتدا تانسورها توسط لایه‌های \lr{LoRALinear} پروجکت می‌شوند:
+\begin{equation}
+    \mathbf{Q}, \mathbf{K}, \mathbf{V} = \mathbf{X} \mathbf{W}_q + \mathbf{X} \mathbf{A}_q \mathbf{B}_q, \dots
+\end{equation}
+سپس، توکن‌ها به بلوک‌هایی با اندازه $B_{size}$ دسته‌بندی می‌شوند و نماینده هر بلوک از طریق میانگین‌گیری استخراج می‌گردد:
+\begin{equation}
+    \bar{\mathbf{Q}} \in \mathbb{R}^{B \times H \times N_B \times d}, \quad \bar{\mathbf{Q}}_i = \frac{1}{B_{size}} \sum_{j=1}^{B_{size}} \mathbf{Q}_{i \times B_{size} + j}
+\end{equation}
+پس از آن، ماتریس مسیریابی درشت‌دانه \lr{(Coarse Routing)} محاسبه شده و بلوک‌های برتر انتخاب می‌شوند:
+\begin{equation}
+    \mathbf{S}_{coarse} = \bar{\mathbf{Q}} \bar{\mathbf{K}}^T, \quad \mathbf{M}_{block} = \operatorname{TopK}\left(\mathbf{S}_{coarse}, k = \lfloor \gamma N_B \rfloor \right)
+\end{equation}
+که در آن $\gamma$ معادل \lr{keep\_ratio} است. در نهایت، با بسط ماسک درشت‌دانه، توجه دقیق محاسبه می‌گردد:
+\begin{equation}
+    \operatorname{XAttn} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T \odot \mathbf{M}_{fine}}{\sqrt{d}}\right) \mathbf{V}
+\end{equation}
+پیچیدگی زمانی این روش برابر با $\mathcal{O}(N_B^2 \cdot d + \gamma \cdot N^2 \cdot d)$ است که بسیار کمتر از $\mathcal{O}(N^2 d)$ در روش استاندارد است.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+در پیاده‌سازی پایتون در ماژول \lr{xattention.py}، پردازش شامل مراحل زیر است:
+\begin{itemize}
+    \item \textbf{پروجکشن با \lr{LoRA}:} ماژول از کلاس \lr{LoRALinear} برای اعمال ماتریس‌های وزنی و آداپتورهای $\mathbf{A}$ و $\mathbf{B}$ استفاده می‌کند و خروجی‌ها از ابعاد $[B, N, D]$ به شکل $[B, H, N, d]$ درمی‌آیند.
+    \item \textbf{رمزگذاری موقعیتی \lr{(RoPE)} و \lr{GQA}:} نگاشت \lr{RoPE} اعمال شده و برای پشتیبانی از \lr{GQA}، کلیدها و مقادیر متناسب با سرهای پرسمان \lr{(kv\_repeat)} تکرار می‌شوند.
+    \item \textbf{افراز بلوکی و مدیریت \lr{Padding}:} در صورتی که طول دنباله ضریبی از \lr{block\_size} نباشد، صفرگذاری مجاز \lr{(Padding)} از طریق تابع \lr{F.pad} اعمال شده و نماینده هر بلوک استخراج می‌شود.
+    \item \textbf{ایجاد ماسک تنک و خروجی:} ماسک بولین از \lr{TopK} تولید شده، بر روی مقادیر درهم‌کوبیده \lr{Softmax} با مقدار $-10000.0$ اعمال می‌شود و در پایان پروجکشن بازگشتی صورت می‌پذیرد.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، ماژول توجه متراکم با سد پهنای باند حافظه \lr{(Memory-Bound)} در لایه \lr{HBM} مواجه است. معماری \lr{xattention} با جلوگیری از نمونه‌سازی کامل ماتریس $N \times N$ توجه و جایگزینی آن با ساختار بلوکی تنک، از ترافیک سنگین حافظه می‌کاهد. عملیات میانگین‌گیری درون‌بلوکی و محاسبه ماتریس درشت‌دانه در کش \lr{L2 / L1 SRAM} محلی قابل انجام است که منجر به ارتقای شدت محاسباتی \lr{(Arithmetic Intensity)} و دسترسی به رژیم \lr{Compute-Bound} برای دنباله‌های طولانی می‌گردد.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+جدول زیر عملکرد واقعی سخت‌افزاری را در خط لوله \lr{SST-2 (GLUE)} منعکس می‌کند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک مکانیزم \lr{xattention}}
+\label{tab:benchmark_xattention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل} & \textbf{دقت \lr{(Acc)}} & \textbf{شاخص \lr{F1}} & \textbf{اوج حافظه \lr{(VRAM)}} & \textbf{توان عملیاتی \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{332.36 MB} & \lr{72,937.47 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa}    & \lr{50.92\%} & \lr{0.6748} & \lr{381.35 MB} & \lr{42,275.86 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2}      & \lr{0.00\%}  & \lr{0.6354} & \lr{793.19 MB} & \lr{71,006.50 tok/s} & \lr{FAIL} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+نتایج نشانگر نرخ بالا توان عملیاتی \lr{(72k tok/s)} و مصرف اندک حافظه \lr{(332 MB)} هستند. با این وجود، تثبیت دقت در آستانه \lr{50.92\%} (رژیم حدس تصادفی باینری) حاکی از آن است که برای وظایف دارای طول دنباله کوتاه مانند \lr{SST-2}، افراز بلوکی و هرس خشن منجر به از دست رفتن سیگنال‌های معنایی ظریف در سطح توکن می‌گردد. همچنین، تداخل مکانیزم بلوکی تنک با رژیم دیکدینگ علیّ \lr{GPT-2} سبب اختلال جدی و خطای \lr{FAIL} شده است، زیرا نقاب‌های علیت قطعه‌ای با ذات پیش‌بینی توکن به توکن در تعارض قرار می‌گیرند.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت:} افزایش چشمگیر توان عملیاتی، تقلیل بار حافظه تا یک دهم ساختارهای سنتی و پیاده‌سازی بومی تکنیک \lr{LoRA}.
+    \item \textbf{محدودیت‌ها:} فروپاشی دقت در پردازش توالی‌های کوتاه (افت به \lr{50\%}) و عدم تطابق کامل با دیکدرهای اتورگرسیو مثل \lr{GPT-2}.
+    \item \textbf{پیشنهادات توسعه:} پیاده‌سازی اندازه بلوک پویا \lr{(Dynamic Block Size)}، نرم کردن وزن‌های \lr{TopK} جهت برقراری قابلیت مشتق‌پذیری کامل \lr{(Differentiable Routing)}، و بازطراحی منطق علیت برای هماهنگی با مدل‌های زایا.
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
+    \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
+    \node [block, right=1.2cm of k] (acc) {تجمع ماتریس حافظه $\mathbf{S}_t$};
+    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی};
+
+    \draw [->, thick, draw=blue!80] (input) -- (k);
+    \draw [->, thick, draw=orange!80] (k) -- (acc);
+    \draw [->, thick, draw=blue!80] (acc) -- (out);
+\end{tikzpicture}
+\end{center}
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{xattention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_xattention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(xattention)}}
+\label{fig:arch_xattention}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/xattention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(xattention)}}
+\label{fig:comp_xattention}
+\end{figure}

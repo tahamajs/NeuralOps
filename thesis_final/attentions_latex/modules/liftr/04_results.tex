@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{liftr} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_liftr} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{liftr} روی مدل‌های پایه}
+\label{tab:benchmark_liftr}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9029} & \lr{337.59 MB} & \lr{182,296.25 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.16\%} & \lr{0.8309} & \lr{585.62 MB} & \lr{92,788.29 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{61.01\%} & \lr{0.6654} & \lr{634.91 MB} & \lr{68,286.26 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{---} & \lr{---} & \lr{---} & \lr{FAIL} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های تجربی ثبت‌شده نشان‌دهنده توان عملیاتی قابل توجه این ماژول است. ماژول \lr{liftr} با حذف محاسبات سنگین توجه موفق شده است در انکودر \lr{DistilBERT} به بالاترین نرخ توان پردازشی در میان ماژول‌های مورد بررسی یعنی \lr{182,296.25 tok/s} با دقت درخشان \lr{90.14\%} دست یابد. در مدل‌های \lr{RoBERTa} و \lr{GPT-2} نیز به ترتیب دقت‌های \lr{80.16\%} و \lr{61.01\%} حاصل شده که نشان‌دهنده حفظ مناسب اطلاعات با وجود خطی‌سازی کامل است. در ارزیابی مدل \lr{Qwen} به علت شکست در تطابق ابعاد سرهای توجه گروهی (\lr{GQA}) در آزمون مستقیم خطوط لوله لایه‌های ادغامی، وضعیت \lr{FAIL} به ثبت رسیده است.

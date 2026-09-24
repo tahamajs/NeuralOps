@@ -1,0 +1,27 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی باشد. در الگوریتم \lr{ROAST}، ماتریس وزن به کاشی‌های مربعی با اندازه $B \times B$ افراز می‌شود:
+\begin{equation}
+T_{\text{out}} = \left\lceil \frac{d_{\text{out}}}{B} \right\rceil, \quad T_{\text{in}} = \left\lceil \frac{d_{\text{in}}}{B} \right\rceil
+\end{equation}
+تعداد کل کاشی‌ها برابر با $T_{\text{out}} \times T_{\text{in}}$ است. به جای ذخیره مقادیر مجزا، یک جدول وزن فشرده شامل $K$ باکت آموزش‌پذیر با پارامتر $\boldsymbol{\theta} \in \mathbb{R}^K$ تعبیه می‌شود ($K \ll d_{\text{out}} \cdot d_{\text{in}}$).
+
+برای نگاشت هر کاشی در مختصات $(i, j)$ با $i \in \{0, \dots, T_{\text{out}}-1\}$ و $j \in \{0, \dots, T_{\text{in}}-1\}$ به یک باکت مشخص در جدول وزن، یک تابع درهم‌سازی با آنتروپی بالا و ترکیب بیتی (\lr{Bitwise Mixing}) فرمول‌بندی می‌شود:
+\begin{align}
+h_0 &= (i \cdot \mathtt{0x9E3779B1}) \oplus (j \cdot \mathtt{0x85EBCA77}) \\
+h_1 &= h_0 \oplus (h_0 \gg 16) \\
+h_2 &= h_1 \cdot \mathtt{0x7FEB352D} \\
+h_3 &= (h_2 \oplus (h_2 \gg 15)) \ \& \ \mathtt{0x7FFFFFFF} \\
+\operatorname{idx}(i, j) &= h_3 \bmod K
+\end{align}
+مقدار پارامتر کاشی $(i, j)$ از باکت استخراج می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{tile}}(i, j) = \boldsymbol{\theta}[\operatorname{idx}(i, j)] \cdot \mathbf{1}_{B \times B}
+\end{equation}
+ماتریس کامل بازسازی‌شده با تکرار مقادیر کاشی‌ها تشکیل و به ابعاد مجاز برش داده می‌شود:
+\begin{equation}
+\hat{\mathbf{W}} = \left( \boldsymbol{\theta}[\operatorname{idx}(i, j)] \otimes \mathbf{1}_{B \times B} \right)_{:d_{\text{out}}, :d_{\text{in}}}
+\end{equation}
+همچنین در صورت استفاده از تطبیق کم‌مرتبه، اثر آداپتورهای \lr{LoRA} به صورت مستقیم در گذر پیشرو محاسبه می‌گردد:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b} + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}

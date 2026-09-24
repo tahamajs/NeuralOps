@@ -1,0 +1,29 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی الگوریتمی \lr{compot\_compressor} به صورت فاکتورسازی ضربی دوگانه بیان می‌شود:
+\begin{equation}
+W \approx B \cdot A
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $A \in \mathbb{R}^{r \times D_{\text{in}}}$: ماتریس تصویر متعامد ورودی (\lr{Input-Orthogonal Projection Matrix}) با شرط تعامد نسبی $A A^\top \approx I$.
+    \item $B \in \mathbb{R}^{D_{\text{out}} \times r}$: ماتریس واژه‌نامه خروجی (\lr{Output Dictionary Matrix}) متناظر با ضرایب بازسازی.
+\end{itemize}
+
+\subsubsection*{یادگیری واژه‌نامه متعامد از تانسورهای فعال‌سازی کالیبراسیون}
+در صورت در دسترس بودن ماتریس فعال‌سازی‌های ورودی کالیبراسیون $X \in \mathbb{R}^{N_{\text{calib}} \times D_{\text{in}}}$، فاکتورسازی \lr{QR} به کار گرفته می‌شود:
+\begin{equation}
+X = Q_X R_X
+\end{equation}
+که در آن $Q_X$ متعامد و $R_X$ بالا‌مثلثی است. به منظور حفظ انرژی پاسخ خروجی $Y = X W^\top$، ماتریس میانجی $D$ به شکل زیر محاسبه می‌شود:
+\begin{equation}
+D = W R_X^\top \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد بر روی $D$ اجرا می‌گردد:
+\begin{equation}
+D = U_D \Sigma_D V_D^\top
+\end{equation}
+با گزینش $r$ مؤلفه برتر، مؤلفه‌های فاکتورسازی‌شده به دست می‌آیند:
+\begin{equation}
+B = U_D[:, :r] \cdot \Sigma_D[:r], \quad A = V_D[:r, :] \cdot (R_X^\top)^\dagger
+\end{equation}
+که در آن $(R_X^\top)^\dagger$ شبه‌وارون ماتریس بالامثلثی است. در حالت فاقد فعال‌سازی، ماتریس $A$ به صورت متعامد یکانی (\lr{nn.init.orthogonal\_}) و $B$ با استفاده از روش زاویر یکنواخت (\lr{nn.init.xavier\_uniform\_}) مقداردهی می‌گردد.

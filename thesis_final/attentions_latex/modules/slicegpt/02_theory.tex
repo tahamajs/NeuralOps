@@ -1,0 +1,29 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+اصول ریاضی \lr{SliceGPT} در سه گام متوالی تدوین می‌گردد:
+
+\begin{enumerate}
+    \item \textbf{اصل نامتغیری مختصات یکامتعامد:}
+    اگر $\mathbf{Q} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ یک ماتریس یکامتعامد باشد به نحوی که $\mathbf{Q} \mathbf{Q}^\top = \mathbf{I}$، ضرب ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ در فعال‌سازی ورودی $\mathbf{X}$ را می‌توان بدون تغییر در مقدار خروجی بازنویسی نمود:
+    \begin{equation}
+    \mathbf{W} \mathbf{X} = (\mathbf{W} \mathbf{Q}) (\mathbf{Q}^\top \mathbf{X}) = \tilde{\mathbf{W}} \tilde{\mathbf{X}}
+    \end{equation}
+    که در آن $\tilde{\mathbf{W}} = \mathbf{W} \mathbf{Q}$ ماتریس وزن چرخانده‌شده و $\tilde{\mathbf{X}} = \mathbf{Q}^\top \mathbf{X}$ فعال‌سازی‌های نگاشت‌شده به دستگاه مختصات جدید هستند.
+
+    \item \textbf{محاسبه ماتریس کوواریانس و تجزیه ویژه‌مقدار (\lr{PCA Rotation}):}
+    با استفاده از تانسورهای کالیبراسیون، ماتریس کوواریانس تجربی فعال‌سازی‌ها استخراج می‌شود:
+    \begin{equation}
+    \mathbf{C} = \frac{1}{N} \mathbf{X} \mathbf{X}^\top = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\top
+    \end{equation}
+    که در آن $\mathbf{Q}$ ماتریس بردارهای ویژه و $\mathbf{\Lambda}$ ماتریس قطری ویژه‌مقادیر (واریانس در امتداد هر محور) است. ستون‌های $\mathbf{Q}$ به ترتیب نزولی واریانس مرتب می‌گردند.
+
+    \item \textbf{برش ابعادی و پروجکشن فیزیکی (\lr{Subspace Slicing}):}
+    با انتخاب ابعاد برش‌یافته $r = \lfloor d_{\text{in}} \cdot (1 - \alpha) \rfloor$ که در آن $\alpha$ نسبت برش کانال‌ها است، ماتریس پروجکشن برش $\mathbf{P}_r \in \mathbb{R}^{d_{\text{in}} \times r}$ با انتخاب $r$ ستون نخست ماتریس یکه تشکیل می‌شود:
+    \begin{equation}
+    \mathbf{P}_r = [\mathbf{I}_r, \mathbf{0}]^\top
+    \end{equation}
+    ماتریس وزن جدید به صورت فیزیکی به ابعاد کوچکتری فشرده می‌گردد:
+    \begin{equation}
+    \mathbf{W}_{\text{sliced}} = \tilde{\mathbf{W}} \mathbf{P}_r = \mathbf{W} \mathbf{Q} \mathbf{P}_r \in \mathbb{R}^{d_{\text{out}} \times r}
+    \end{equation}
+    این تبدیل اندازه بعد پنهان شبکه را در عمل به $r$ کاهش می‌دهد.
+\end{enumerate}

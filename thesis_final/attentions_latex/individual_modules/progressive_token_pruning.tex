@@ -1,6 +1,8 @@
 \clearpage
 \phantomsection
 \vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{kim2022learned} است.
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{progressive\_token\_pruning}}
@@ -128,7 +130,7 @@ I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Peak Memory Band
         \item حافظه اختصاص‌یافته هسته \lr{PyTorch/CUDA Runtime}: حدود \lr{87.85 MB}.
     \end{itemize}
 \end{itemize}
-این بهینه‌سازی بنیادین موجب صرفه‌جویی \lr{-92.1\%} در حافظه فعال نسبت به خط پایه سنتی \lr{(4200 MB)} شده و توان عملیاتی را به رقم استثنایی \lr{57,650.25 tok/s} (شتاب \lr{3.74x}) ارتقا داده است.
+این بهینه‌سازی بنیادین موجب صرفه‌جویی \lr{-92.1\%} در حافظه فعال نسبت به خط پایه سنتی \lr{(4200 MB)} شده و توان عملیاتی را به رقم بالا \lr{57,650.25 tok/s} (شتاب \lr{3.74x}) ارتقا داده است.
 
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی تجربی ماژول \lr{progressive\_token\_pruning} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ورودی ۵۱۲ بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. داده‌های ارائه‌شده در جدول \ref{tab:benchmark_progressive_token_pruning} مستقیماً از پرونده تجربی تاییدشده استخراج شده‌اند:

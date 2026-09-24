@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{jamba} در چارچوب آزمایشی جامع رساله، نتایج عددی اعتبارسنجی‌شده جدول \ref{tab:benchmark_jamba} را ثبت نموده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج ارزیابی تجربی و سخت‌افزاری ماژول \lr{jamba} روی مدل‌های پایه}
+\label{tab:benchmark_jamba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه (\lr{Base Model})} & \textbf{دقت (\lr{Accuracy})} & \textbf{شاخص \lr{F1}} & \textbf{حافظه (\lr{Peak VRAM})} & \textbf{توان (\lr{Throughput})} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.16\%} & \lr{0.8756} & \lr{695.65 MB} & \lr{2396.61 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.03\%} & \lr{0.6748} & \lr{1303.95 MB} & \lr{1209.74 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.26\%} & \lr{0.6703} & \lr{1363.82 MB} & \lr{1909.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ماژول روی مدل \lr{DistilBERT} عملکرد بسیار بالایی معادل ۸۷.۱۶٪ دقت و شاخص اف‌وان ۰.۸۷۵۶ از خود نشان داده است که نشان‌دهنده توانایی عالی ترکیب \lr{Mamba} و \lr{MoE} در بازسازی اتصالات لایه‌های انکودر متراکم است.

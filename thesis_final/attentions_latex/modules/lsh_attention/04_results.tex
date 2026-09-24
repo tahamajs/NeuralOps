@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی ماژول \lr{lsh\_attention} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_lsh_attention} گزارش گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی و اعتبارسنجی ماژول \lr{lsh\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_lsh_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه (\lr{Base Model})} & \textbf{دقت (\lr{Accuracy})} & \textbf{شاخص \lr{F1}} & \textbf{حافظه (\lr{Peak VRAM})} & \textbf{توان (\lr{Throughput})} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{80.28\%} & \lr{0.8097} & \lr{341.15 MB} & \lr{39634.50 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{49.54\%} & \lr{0.6064} & \lr{390.89 MB} & \lr{20285.62 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6774} & \lr{568.80 MB} & \lr{39935.93 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.92\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ماژول روی مدل \lr{DistilBERT} توانسته است به دقت چشمگیر ۸۰.۲۸٪ و شاخص اف‌وان ۰.۸۰۹۷ با مصرف حافظه ناچیز ۳۴۱ مگابایت و توان پردازش نزدیک به ۴۰ هزار توکن در ثانیه دست یابد که بازتاب‌دهنده توانایی عالی الگوریتم درهم‌سازی زاویه‌ای در بازتولید روابط متنی در انکودرهای سبُک است.

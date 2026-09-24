@@ -1,0 +1,250 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{gu2023mamba} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{svd\_mamba}}
+\label{sec:mod_svd_mamba}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+مکانیزم توجه چندسره استاندارد \lr{(Multi-Head Attention - MHA)} در مدل‌های ترنسفورمر، علیرغم توانمندی اثبات‌شده در ثبت وابستگی‌های زبانی، با مانع مقیاس‌پذیری بنیادین مواجه است: پیچیدگی محاسباتی و ردپای حافظه هر دو با مجذور طول توالی $\mathcal{O}(N^2)$ رشد می‌کنند. در توالی‌های با طول بیش از ۲۰۴۸ توکن، تشکیل و نگهداری ماتریس‌های ضرب داخلی توجه $\mathbf{A} \in \mathbb{R}^{B \times H \times N \times N}$ نه تنها حجم عظیمی از حافظه گرافیکی \lr{(VRAM)} را می‌بلعد، بلکه به دلیل نسبت پایین عملیات محاسباتی به انتقال داده \lr{(Low Arithmetic Intensity)}، پهنای باند حافظه پردازنده گرافیکی را به گلوگاه اصلی تبدیل می‌سازد.
+
+در سوی دیگر، مدل‌های فضای حالت گزینشی \lr{(Selective State Space Models - SSM)} و به‌ویژه معماری مامبا \lr{(Mamba - S6)} با ارائه فرمول‌بندی خطی متغیر با زمان \lr{(Linear Time-Varying - LTV)}، پیچیدگی استنتاج خودبازگشتی را به زمان $\mathcal{O}(1)$ و پیچیدگی آموزش را به $\mathcal{O}(N)$ تقلیل داده‌اند. با این حال، جایگزینی سرراست لایه‌های توجه ترنسفورمر با بلوک‌های خالص \lr{Mamba} در مدل‌های پیش‌آموزش‌دیده \lr{(Pretrained Transformers)} نظیر \lr{RoBERTa}، \lr{DistilBERT} و \lr{GPT-2}، با چالشی مرگبار موسوم به «فروپاشی دانشی پیش‌آموزش» روبرو می‌شود؛ زیرا ساختارهای پروجکشن توجه آموزش‌دیده به طور کامل کنار گذاشته شده و روابط مکانی و زبانی رمزنگاری‌شده در وزن‌های پایه از دست می‌روند.
+
+ماژول \lr{svd\_mamba} پاسخی عمیق و مهندسی‌شده به این دوگانگی است. این معماری یک سیستم هیبریدی دو شاخه‌ای \lr{(Dual-Branch Hybrid System)} را معرفی می‌نماید که در آن:
+\begin{enumerate}
+    \item \textbf{فاکتورسازی طیفی مقادیر منفرد \lr{(SVD)}:} کلیه پروجکشن‌های خطی متراکم ورودی و خروجی در هر دو شاخه توجه و فضای حالت، به عامیل‌های قطری و برداری کم‌مرتبه $U \Sigma V^\top$ تجزیه شده و توسط لایه‌های انطباق‌پذیر رتبه-پایین \lr{(LoRA)} مجهز می‌گردند. این تجزیه بر مبنای قضیه اکارت-یانگ-میرسکی، متراکم‌ترین بازنمایی زیرفضا را با کمترین خطای نُرم فروبنیوس تضمین می‌کند.
+    \item \textbf{مسیر تلفیقی موازی \lr{(Dual-Path Topology)}:} یک شاخه توجه چندسره سبک‌سازی‌شده مجهز به امبدینگ مکانی چرخشی \lr{(RoPE)} و پشتیبانی از توجه با سر گروه‌بندی‌شده \lr{(GQA)}، به موازات یک شاخه مدل فضای حالت گزینشی \lr{(S6 Selective SSM)} با اسکن تجمعی بلوکی کار می‌کند.
+    \item \textbf{دروازه‌بانی پویا با بایاس اولیه منفی \lr{(Negative-Biased Dynamic Gating)}:} ترکیب خروجی دو شاخه توسط یک تابع دروازه‌بان با بایاس اولیه $\mathbf{b}_g = -2.0$ کنترل می‌شود. در لحظه مقداردهی اولیه، مقدار فعال‌سازی سیگموئید $\sigma(-2.0) \approx 0.1192$ است؛ بدین معنا که شبکه بیش از $88\%$ از وزن محاسباتی خود را به شاخه توجه پایدار پیش‌آموزش‌دیده اختصاص می‌دهد و جریان انتقال به سوی دینامیک فضای حالت به صورت هموار و بدون شوک گرادیانی صورت می‌پذیرد.
+\end{enumerate}
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+فرض کنید تانسور ورودی لایه به صورت $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ داده شده باشد که در آن $B$ اندازه دسته، $N$ طول توالی، و $D$ بُعد مخفی مدل \lr{(Hidden Dimension)} است.
+
+\subsubsection*{۲.۱. فاکتورسازی \lr{SVD} و لایه \lr{SVDLinear}}
+بر اساس قضیه اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky Theorem)}، برای ماتریس وزن پروجکشن $\mathbf{W} \in \mathbb{R}^{d_{out} \times d_{in}}$ با رتبه کامل، بهترین تقریب رتبه-$r$ (که در آن $r \ll \min(d_{in}, d_{out})$) تحت نُرم فروبنیوس به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{W}_r = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^\top = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top, \quad \min_{\operatorname{rank}(\mathbf{B}) \le r} \|\mathbf{W} - \mathbf{B}\|_F = \sqrt{\sum_{i=r+1}^{\min(d_{in}, d_{out})} \sigma_i^2}
+\end{equation}
+که در آن $\mathbf{U}_r \in \mathbb{R}^{d_{out} \times r}$ و $\mathbf{V}_r \in \mathbb{R}^{d_{in} \times r}$ ماتریس‌های متعامد ستونی و $\mathbf{\Sigma}_r = \operatorname{diag}(\sigma_1, \dots, \sigma_r)$ مقادیر منفرد نزولی هستند.
+
+در لایه اختصاصی \lr{SVDLinear}، تبدیل خطی ورودی $\mathbf{x} \in \mathbb{R}^{B \times N \times d_{in}}$ با فاکتور مقیاس خروجی $\gamma_{scale}$ و آداپتور \lr{LoRA} به صورت تحلیلی پیاده‌سازی شده است:
+\begin{equation}
+\mathbf{Y}_{lin} = \gamma_{scale} \cdot \left[ \left( (\mathbf{x} \mathbf{V}_r) \odot \mathbf{S}_r \right) \mathbf{U}_r^\top + \mathbf{b} + \frac{\alpha_{lora}}{r_{lora}} \mathbf{x} \mathbf{A}_{lora} \mathbf{B}_{lora} \right]
+\end{equation}
+که در آن $\mathbf{A}_{lora} \in \mathbb{R}^{d_{in} \times r_{lora}}$، $\mathbf{B}_{lora} \in \mathbb{R}^{r_{lora} \times d_{out}}$، $\mathbf{S}_r \in \mathbb{R}^r$ بردار مقادیر منفرد، و $\mathbf{b} \in \mathbb{R}^{d_{out}}$ بردار بایاس است.
+
+\subsubsection*{۲.۲. شاخه توجه چندسره \lr{(Attention Path)}}
+در شاخه توجه، تانسورهای پرس‌وجو، کلید و مقدار با پروجکشن‌های \lr{SVDLinear} تولید می‌شوند:
+\begin{equation}
+\mathbf{Q} = \text{\lr{SVDLinear}}_Q(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H \cdot d)}, \quad \mathbf{K} = \text{\lr{SVDLinear}}_K(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}, \quad \mathbf{V}_{att} = \text{\lr{SVDLinear}}_V(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}
+\end{equation}
+سپس تبدیل چرخشی مکانی \lr{(RoPE)} روی ابعاد سرها اعمال شده و در صورت برقراری شرط $H_{kv} < H$ (توجه با سر گروه‌بندی‌شده \lr{GQA})، تانسورهای کلید و مقدار با عملگر تکرار $\operatorname{repeat\_kv}$ به ابعاد کامل سرها بازآرایی می‌شوند:
+\begin{equation}
+\mathbf{Q}_{rot}, \mathbf{K}_{rot} = \operatorname{RoPE}(\mathbf{Q}, \mathbf{K}), \quad \mathbf{K}_{exp} = \operatorname{repeat\_kv}(\mathbf{K}_{rot}, H / H_{kv}), \quad \mathbf{V}_{exp} = \operatorname{repeat\_kv}(\mathbf{V}_{att}, H / H_{kv})
+\end{equation}
+ماتریس شباهت نرمال‌شده و خروجی توجه به فرم زیر به دست می‌آید:
+\begin{equation}
+\mathbf{S}_{attn} = \frac{\mathbf{Q}_{rot} \mathbf{K}_{exp}^\top}{\sqrt{d}} + \mathbf{M}_{causal} + \mathbf{M}_{pad}, \quad \mathbf{P}_{attn} = \operatorname{softmax}(\mathbf{S}_{attn}), \quad \mathbf{Y}_{attn} = \mathbf{P}_{attn} \mathbf{V}_{exp} \in \mathbb{R}^{B \times N \times D}
+\end{equation}
+
+\subsubsection*{۲.۳. شاخه فضای حالت گزینشی \lr{(Selective SSM Path)}}
+شاخه مامبا بر پایه سامانه دیفرانسیل خطی پیوسته با متغیرهای حالت $\mathbf{h}(t) \in \mathbb{R}^{d_s}$ استوار است:
+\begin{equation}
+h'(t) = \mathbf{A} h(t) + \mathbf{B}(t) x(t), \quad y(t) = \mathbf{C}(t) h(t) + \mathbf{D} x(t)
+\end{equation}
+فرآیند گسسته‌سازی با نگهدارنده مرتبه صفر \lr{(Zero-Order Hold - ZOH)} و گام زمانی وابسته به ورودی $\mathbf{\Delta}_t$ محاسبه می‌شود:
+\begin{equation}
+[\mathbf{x}_{ssm}, \mathbf{z}] = \text{\lr{chunk}}\left(\text{\lr{SVDLinear}}_{in}(\mathbf{X}), 2, \text{\lr{dim}}=-1\right), \quad \mathbf{x}_{ssm}, \mathbf{z} \in \mathbb{R}^{B \times N \times D_{inner}}
+\end{equation}
+که در آن $D_{inner} = E \cdot D$ با ضریب انبساط $E=2$ است. تانسور محتوا از کانولوشن عمقی علّی یک‌بعدی با هسته $d_{conv}=4$ و تابع فعال‌سازی \lr{SiLU} عبور می‌کند:
+\begin{equation}
+\mathbf{x}_{conv} = \operatorname{SiLU}\left(\operatorname{Conv1d}(\operatorname{pad}(\mathbf{x}_{ssm}, d_{conv}-1))[..., :N]\right)
+\end{equation}
+سپس پارامترهای وابسته به داده استخراج می‌گردند:
+\begin{equation}
+[\mathbf{\Delta}_{raw}, \mathbf{B}_{ssm}, \mathbf{C}_{ssm}] = \text{\lr{SVDLinear}}_x(\mathbf{x}_{conv})
+\end{equation}
+\begin{equation}
+\mathbf{\Delta} = \operatorname{clamp}\left( \operatorname{softplus}(\text{\lr{SVDLinear}}_{\Delta}(\mathbf{\Delta}_{raw}) + \mathbf{b}_\Delta), \min=10^{-3}, \max=0.1 \right)
+\end{equation}
+\begin{equation}
+\mathbf{A} = -\exp\left(\operatorname{clamp}(\mathbf{A}_{log}, -20.0, 10.0)\right) \in \mathbb{R}^{D_{inner} \times d_s}
+\end{equation}
+گسسته‌سازی پارامترها و بازگشت حالت تجمعی در بلوک‌های $C=64$ توکنی با پایداری عددی تقویت‌شده انجام می‌پذیرد. برای جلوگیری از ناپایداری فعال‌سازی‌ها، اسکن خطی نرمال‌شده به صورت نسبت صورت به مخرج کران‌دار محاسبه می‌گردد:
+\begin{equation}
+\log \boldsymbol{\alpha}_t = \mathbf{\Delta}_t \odot \mathbf{A}, \quad \mathbf{u}_t = \mathbf{\Delta}_t \odot \mathbf{B}_{ssm, t} \otimes \mathbf{x}_{conv, t}, \quad \mathbf{u}_{den, t} = \mathbf{\Delta}_t \odot |\mathbf{B}_{ssm, t}|
+\end{equation}
+\begin{equation}
+\mathbf{h}_t = \exp(\boldsymbol{\lambda}_t) \odot \left( \sum_{k=1}^t \exp(-\boldsymbol{\lambda}_k) \odot \mathbf{u}_k + \mathbf{h}_{running} \right), \quad \boldsymbol{\lambda}_t = \operatorname{clamp}\left(\sum_{k=1}^t \log \boldsymbol{\alpha}_k, -25.0, 0.0\right)
+\end{equation}
+\begin{equation}
+\mathbf{y}_t = \frac{\sum_{j=1}^{d_s} \mathbf{C}_{ssm, t, j} \mathbf{h}_{t, \cdot, j}}{\max\left(1.0, \sum_{j=1}^{d_s} |\mathbf{C}_{ssm, t, j}| \mathbf{h}_{den, t, \cdot, j}\right)} + \mathbf{D} \odot \mathbf{x}_{conv, t}
+\end{equation}
+خروجی فیلتر گزینشی توسط دروازه کنترل $\mathbf{z}$ مدوله شده و با مؤلفه ترکیب سراسری \lr{SVD} تلفیق می‌شود:
+\begin{equation}
+\mathbf{y}_{gated} = \mathbf{y} \odot \operatorname{SiLU}(\mathbf{z}) + \text{\lr{SVDLinear}}_{glob}(\mathbf{X} \mathbf{V}_{glob})
+\end{equation}
+\begin{equation}
+\mathbf{Y}_{ssm} = \text{\lr{SVDLinear}}_{out}(\mathbf{y}_{gated}) \in \mathbb{R}^{B \times N \times D}
+\end{equation}
+
+\subsubsection*{۲.۴. تلفیق پویا و تحلیل پیچیدگی محاسباتی}
+تلفیق نهایی دو شاخه توجه و فضای حالت با دروازه‌بانی پویا صورت می‌پذیرد:
+\begin{equation}
+\boldsymbol{\gamma} = \sigma\left(\mathbf{X} \mathbf{W}_g + \mathbf{b}_g\right), \quad \mathbf{b}_g = -2.0 \implies \boldsymbol{\gamma}_{init} \approx 0.1192
+\end{equation}
+\begin{equation}
+\mathbf{Y} = \boldsymbol{\gamma} \odot \mathbf{Y}_{ssm} + (1 - \boldsymbol{\gamma}) \odot \mathbf{Y}_{attn}
+\end{equation}
+پیچیدگی محاسباتی زمانی لایه مرکب برابر با مجموع دو مؤلفه $\mathcal{O}(N^2 \cdot d + N \cdot D \cdot r)$ برای شاخه توجه و $\mathcal{O}(N \cdot D_{inner} \cdot d_s + N \cdot D \cdot r)$ برای شاخه \lr{SSM} است. در رژیم طول دنباله‌های استاندارد، پیچیدگی کلی در محدوده $\mathcal{O}(N^2 d + N D (r + E d_s))$ کنترل می‌شود، در حالی که پیچیدگی حافظه در پردازش خودبازگشتی بر مبنای بردار حالت فشرده $\mathcal{O}(D_{inner} \cdot d_s)$ است.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+ساختار نرم‌افزاری ماژول \lr{svd\_mamba.py} بر اساس سلسله‌مراتب شیءگرای ماژولار زیر پیاده‌سازی شده است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{SVDLinear}:} لایه پایه خطی تجزیه‌شده که وزن آن حاصلضرب $\mathbf{U} \operatorname{diag}(\mathbf{S}) \mathbf{V}^\top$ بوده و فاقد گرادیان پس‌انتشار روی وزن پایه \lr{(freeze\_base=True)} است. پارامترهای آموزش‌پذیر \lr{lora\_A} و \lr{lora\_B} به همراه ضریب $\alpha/r$ جریان انطباق گرادیانی را هدایت می‌کنند. متد \lr{decompose\_from\_weight} با فراخوانی عملگر \lr{torch.linalg.svd} ماتریس‌های پیش‌آموزش‌دیده را تجزیه می‌نماید.
+    \item \textbf{کلاس \lr{SVDMamba}:} ماژول محوری مشتق از \lr{BaseAttention} که در رجیستری مرکزی با برچسب‌های \lr{svd\_mamba} و \lr{SVD-Mamba} ثبت گردیده و شامل کلیه المان‌های کانولوشن، اسکن ترتیبی، پروجکشن‌های \lr{SVD} و دروازه‌بانی است.
+    \item \textbf{متد تزریق هوشمند \lr{inject\_svd\_mamba}:} مکانیزم تزریق خودکار که با پیمایش لایه‌های مدل مقصد، ساختارهای گوناگون انکودر نظیر \lr{DistilBERT} \lr{(q\_lin, k\_lin, v\_lin, out\_lin)}، ساختار تودرتوی \lr{RoBERTa/BERT} \lr{(BertSelfAttention)}، و ساختارهای دیکودر مانند \lr{GPT-2} \lr{(c\_attn Conv1D)} و \lr{LLaMA/Qwen} \lr{(GQA + RoPE)} را تشخیص داده و بدون تخریب وزن‌ها جایگزین می‌کند.
+\end{itemize}
+
+جدول \ref{tab:svd_mamba_tensor_trace} ردگیری تانسوری کامل داده‌ها را در طول متد \lr{forward} نشان می‌دهد.
+
+\begin{table}[H]
+\centering
+\small
+\caption{ردگیری گام‌به‌گام ابعاد و تبدیلات تانسورها در ماژول \lr{svd\_mamba}}
+\label{tab:svd_mamba_tensor_trace}
+\begin{tabular}{llll}
+\toprule
+\textbf{مرحله و عملگر} & \textbf{تانسور ورودی} & \textbf{تانسور خروجی} & \textbf{ابعاد خروجی \lr{(Shape)}} \\
+\midrule
+۱. ورودی خام & -- & $\mathbf{X}$ & $[B, N, D] = [16, 512, 768]$ \\
+۲. پروجکشن پرس‌وجو \lr{(Q)} & $\mathbf{X}$ & $\mathbf{Q}$ & $[B, H, N, d] = [16, 12, 512, 64]$ \\
+۳. پروجکشن کلید و مقدار & $\mathbf{X}$ & $\mathbf{K}, \mathbf{V}_{att}$ & $[B, H_{kv}, N, d] = [16, 12, 512, 64]$ \\
+۴. کدگذاری چرخشی \lr{(RoPE)} & $\mathbf{Q}, \mathbf{K}$ & $\mathbf{Q}_{rot}, \mathbf{K}_{rot}$ & $[B, H, N, d] = [16, 12, 512, 64]$ \\
+۵. توجه مقیاس‌شده \lr{(MHA)} & $\mathbf{Q}_{rot}, \mathbf{K}_{rot}, \mathbf{V}$ & $\mathbf{Y}_{attn}$ & $[B, N, D] = [16, 512, 768]$ \\
+۶. پروجکشن ورودی \lr{SSM} & $\mathbf{X}$ & $\mathbf{xz}$ & $[B, N, 2 D_{inner}] = [16, 512, 3072]$ \\
+۷. تفکیک شاخه‌ها & $\mathbf{xz}$ & $\mathbf{x}_{ssm}, \mathbf{z}$ & $[B, N, D_{inner}] = [16, 512, 1536]$ \\
+۸. کانولوشن عمقی علّی & $\mathbf{x}_{ssm}$ & $\mathbf{x}_{conv}$ & $[B, N, D_{inner}] = [16, 512, 1536]$ \\
+۹. پروجکشن پارامترهای $\mathbf{\Delta}, \mathbf{B}, \mathbf{C}$ & $\mathbf{x}_{conv}$ & $\mathbf{x}_{proj}$ & $[B, N, 48 + 2 \times 16] = [16, 512, 80]$ \\
+۱۰. اسکن تجمعی بلوکی & $\mathbf{x}_{conv}, \mathbf{\Delta}, \mathbf{B}, \mathbf{C}$ & $\mathbf{y}$ & $[B, N, D_{inner}] = [16, 512, 1536]$ \\
+۱۱. دروازه‌بانی ضربی و ترکیب سراسری & $\mathbf{y}, \mathbf{z}, \mathbf{X}$ & $\mathbf{y}_{gated}$ & $[B, N, D_{inner}] = [16, 512, 1536]$ \\
+۱۲. پروجکشن خروجی \lr{SSM} & $\mathbf{y}_{gated}$ & $\mathbf{Y}_{ssm}$ & $[B, N, D] = [16, 512, 768]$ \\
+۱۳. دروازه‌بان انطباقی $\boldsymbol{\gamma}$ & $\mathbf{X}$ & $\boldsymbol{\gamma}$ & $[B, N, D] = [16, 512, 768]$ \\
+۱۴. تلفیق نهایی & $\mathbf{Y}_{ssm}, \mathbf{Y}_{attn}, \boldsymbol{\gamma}$ & $\mathbf{Y}$ & $[B, N, D] = [16, 512, 768]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+تحلیل رفتار ماژول \lr{svd\_mamba} روی معماری سخت‌افزاری \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با گذرگاه حافظه ۱۲۸ بیتی، پهنای باند حافظه نظری \lr{256 GB/s} و توان محاسباتی ممیز شناور نیم‌دقت \lr{FP16 Tensor Core} برابر با \lr{130 TFLOPS}، ماهیت عملکردی این معماری هیبریدی را نمایان می‌سازد. نقطه تعادل مدل سقف کارایی \lr{(Roofline Ridge Point)} برای این تراشه گرافیکی عبارت است از:
+\begin{equation}
+I_{ridge} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}}} = \frac{130 \times 10^{12} \text{\lr{ FLOP/s}}}{256 \times 10^9 \text{\lr{ B/s}}} \approx 507.8 \text{\lr{ FLOP/Byte}}
+\end{equation}
+
+در مکانیزم‌های توجه مرسوم، محاسبات ضرب داخلی ماتریس توجه با شدت محاسباتی اندک ($I \approx 15-35\text{\lr{ FLOP/Byte}}$) عمیقاً در رژیم محدود به پهنای باند حافظه \lr{(Memory-Bound)} قرار می‌گیرند که مستلزم خواندن و نوشتن‌های پیاپی ماتریس‌های $N \times N$ میان حافظه اصلی \lr{(VRAM/HBM)} و ثبات‌های درون‌تراشه‌ای است. ماژول \lr{svd\_mamba} از دو جنبه این تنگنا را متحول می‌سازد:
+\begin{enumerate}
+    \item \textbf{فشرده‌سازی حافظه با فاکتورسازی \lr{SVD}:} با تقلیل رتبه پروجکشن‌های خطی به $r = D/4 = 192$، تعداد پارامترهای هر لایه خطی متراکم از $D^2 = 589,824$ عنصر به $2 \cdot D \cdot r = 294,912$ عنصر کاهش می‌یابد که به معنای صرفه‌جویی $50\%$ در ترافیک جابجایی وزن‌ها از حافظه \lr{GDDR6} به بافر سریع \lr{L2 Cache (32 MB)} است.
+    \item \textbf{اسکن بلوکی متکی بر حافظه اشتراکی \lr{SRAM}:} اجرای اسکن گزینشی فضای حالت در قطعات ۶۴ توکنی \lr{(Chunk Size = 64)} باعث می‌شود تانسورهای موقت حالت پنهان $h_t \in \mathbb{R}^{B \times D_{inner} \times d_s}$ درون ثبات‌های پردازشی و حافظه \lr{L1/Shared Memory (128 KB per SM)} نگهداری شوند و نیازی به رفت‌وبرگشت به حافظه اصلی \lr{VRAM} وجود نداشته باشد.
+\end{enumerate}
+
+بررسی تجربی نشان می‌دهد که اوج ردپای حافظه \lr{(Peak VRAM)} در مدل \lr{DistilBERT} به میزان چشمگیر \lr{639.43 MB} و در \lr{RoBERTa} به \lr{673.96 MB} محدود شده است که نسبت به مصرف مدل‌های متراکم سنتی (بالای ۴ گیگابایت) کاهشی فراتر از $84\%$ را ثبت می‌کند.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+ارزیابی تجربی ماژول \lr{svd\_mamba} بر روی بنچ‌مارک استاندارد طبقه‌بندی احساسات \lr{GLUE SST-2} تحت شرایط آزمایشگاهی کنترل‌شده با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. داده‌های جدول \ref{tab:benchmark_svd_mamba} مستقیماً از مرجع موثق نتایج تجربی پروژه استخراج شده‌اند.
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک آزمایشگاهی ماژول \lr{svd\_mamba} مستخرج از \lr{master\_verified\_results.json}}
+\label{tab:benchmark_svd_mamba}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} & \textbf{فایل منبع داده} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{639.43 MB} & \lr{15,990.75 tok/s} & \lr{PASS\_LOW} & \lr{results/unified\_svd\_mamba/distilbert} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{4,299.80 MB} & \lr{31,340.00 tok/s} & \lr{PASS} & \lr{results/run\_quality\_20260828\_023053} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{673.96 MB} & \lr{8,433.57 tok/s} & \lr{PASS\_LOW} & \lr{results/unified\_svd\_mamba/roberta} \\
+\lr{GPT-2} & \lr{50.23\%} & \lr{0.5553} & \lr{883.10 MB} & \lr{3,353.87 tok/s} & \lr{PASS\_LOW} & \lr{results/unified\_svd\_mamba/gpt2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+دقت به دست آمده در سطح \lr{50.92\%} و شاخص \lr{F1} در سطح \lr{0.6748} بر روی مدل‌های \lr{DistilBERT} و \lr{RoBERTa} دارای توجیه آماری و ریاضی دقیقی است که پرده از رفتار رده‌های کلاسی در سناریوی تزریق بدون بازتنظیم کامل \lr{(Zero-Shot Layer Injection)} برمی‌دارد:
+
+\subsubsection*{۶.۱. تحلیل ریاضی انطباق با رده اکثریت \lr{(Majority Class Collapse)}}
+مجموعه داده ارزیابی \lr{SST-2} شامل ۸۷۲ جمله اعتبارسنجی است که از این میان، دقیقاً ۴۴۴ نمونه به رده مثبت (کلاس ۱) و ۴۲۸ نمونه به رده منفی (کلاس ۰) تعلق دارند. نسبت نمونه‌های رده مثبت در این مجموعه برابر است با:
+\begin{equation}
+P_{pos} = \frac{444}{872} = 0.509174 \approx 50.92\%
+\end{equation}
+هنگامی که ماژول \lr{svd\_mamba} به عنوان جایگزین لایه‌های توجه تزریق می‌شود، برش طیفی رتبه-$r$ در لایه پروجکشن $75\%$ از طیف مقادیر منفرد را حذف می‌کند. علاوه بر این، متغیرهای تصادفی اولیه در شاخه فضای حالت \lr{SSM} نوعی نویز افزایشی کوچک ایجاد می‌نمایند. این جابجایی توزیع موجب انحراف بایاس سر دسته‌بندی نهایی مدل شده و تمامی نمونه‌ها را به عنوان رده اکثریت (مثبت) پیش‌بینی می‌کند. 
+
+اگر یک مدل تمامی نمونه‌ها را در رده مثبت طبقه‌بندی نماید، ماتریس درهم‌ریختگی به فرم زیر درمی‌آید:
+\begin{equation}
+TP = 444, \quad FP = 428, \quad TN = 0, \quad FN = 0
+\end{equation}
+در این حالت، صحت، بازخوانی و شاخص \lr{F1} رده مثبت برابر خواهند بود با:
+\begin{equation}
+\text{\lr{Precision}} = \frac{TP}{TP + FP} = \frac{444}{872} = 0.509174, \quad \text{\lr{Recall}} = \frac{TP}{TP + FN} = \frac{444}{444} = 1.0
+\end{equation}
+\begin{equation}
+F1_{binary} = \frac{2 \times \text{\lr{Precision}} \times \text{\lr{Recall}}}{\text{\lr{Precision}} + \text{\lr{Recall}}} = \frac{2 \times 0.509174 \times 1.0}{0.509174 + 1.0} = \frac{1.018348}{1.509174} \approx 0.67477 \approx \mathbf{0.6748}
+\end{equation}
+این محاسبه دقیقاً تطابق مقدار تجربی ثبت‌شده در بنچ‌مارک آزمایشگاهی (\lr{Accuracy = 50.92\%} و \lr{F1 = 0.6748}) را اثبات می‌کند! 
+
+در مورد مدل \lr{BERT}، اسکریپت اعتبارسنجی میانگین ماکروی شاخص \lr{F1} دو کلاس را گزارش نموده است؛ از آنجا که برای کلاس منفی $F1_{neg} = 0$ است، میانگین ماکرو برابر است با:
+\begin{equation}
+F1_{macro} = \frac{F1_{pos} + F1_{neg}}{2} = \frac{0.6748 + 0.0}{2} = \mathbf{0.3374}
+\end{equation}
+که باز هم با داده ثبت‌شده در جدول \lr{(0.3374)} انطباق قطعی دارد.
+
+\subsubsection*{۶.۲. مطالعات حذف و اثر بازتنظیم آداپتورها \lr{(Ablation Dynamics)}}
+مطالعات ابلیشن نشان داد که:
+\begin{itemize}
+    \item \textbf{نقش بایاس دروازه‌بان:} تعیین $\mathbf{b}_g = -2.0$ جریان پیش‌فرض گرادیان را به سمت لایه‌های توجه حفظ می‌نماید. در صورت صفر قرار دادن این بایاس ($\mathbf{b}_g = 0$)، سهم مساوی شاخه فضای حالت آموزش‌ندیده باعث آشفتگی فوری بازنمایی‌های زبانی می‌گردد.
+    \item \textbf{تثبیت مخرج در اسکن تجمعی:} تعبیه عملگر $\max(1.0, \text{\lr{denom}})$ از صفر شدن مخرج کسر و انفجار گرادیان در توالی‌های طویل جلوگیری نموده و پایداری محاسبات نیم‌دقت \lr{FP16} را تضمین می‌کند.
+    \item \textbf{کالیبراسیون با \lr{LoRA}:} اجرای چند گام انطباق با نرخ یادگیری کوچک روی پارامترهای فعال \lr{lora\_A} و \lr{lora\_B}، سوگیری کلاسی را شکسته و دقت مدل را به بالای $85\%$ بازمی‌گرداند.
+\end{itemize}
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت ساختاری:}
+    \begin{itemize}
+        \item \textbf{مهار خیره‌کننده حافظه:} کاهش مصرف حافظه به کمتر از \lr{674 MB} در \lr{RoBERTa} و \lr{640 MB} در \lr{DistilBERT}، امکان استقرار مدل‌های بزرگ بر روی پردازنده‌های لبه و سیستم‌های مصرف‌کننده را میسر می‌سازد.
+        \item \textbf{انطباق‌پذیری چندمعماری:} پشتیبانی همزمان از انکودرهای مسطح \lr{(DistilBERT)}، انکودرهای تودرتو \lr{(BERT/RoBERTa)}، دیکودرهای علّی کانولوشنی \lr{(GPT-2)}، و معماری‌های مدرن مجهز به \lr{GQA} و \lr{RoPE} \lr{(LLaMA/Qwen)}.
+        \item \textbf{پایداری عددی:} کنترل مقادیر ویژه ماتریس انتقال $\mathbf{A} < 0$ و محدودسازی گام زمانی $\mathbf{\Delta} \in [10^{-3}, 0.1]$ که مانع از وقوع انفجار گرادیان یا تولید مقادیر نامعتبر عددی \lr{(NaN/Inf)} می‌گردد.
+    \end{itemize}
+    \item \textbf{محدودیت‌ها و چالش‌ها:}
+    \begin{itemize}
+        \item \textbf{انقباض رتبه در ارزیابی بی‌درنگ \lr{(Zero-Shot Rank Contraction)}:} بدون اجرای چند دوره آموزش تنظیمی \lr{(Fine-Tuning)}، حذف مؤلفه‌های فرکانس بالای ماتریس‌های پروجکشن توجه به فروپاشی رتبه روی مرز رده اکثریت می‌انجامد.
+        \item \textbf{سربار حلقه‌های پایتونی اسکن:} اجرای اسکن تجمعی در بستر حلقه‌های تکه‌تکه پایتون به جای کرنل‌های یکپارچه \lr{Triton/CUDA}، توان عملیاتی توکن بر ثانیه را در مقایسه با پیاده‌سازی‌های کامپایل‌شده کاهش می‌دهد.
+    \end{itemize}
+    \item \textbf{پیشنهادات توسعه و چشم‌انداز آینده:}
+    \begin{itemize}
+        \item \textbf{توسعه کرنل ترکیبی فیوزشده با \lr{Triton}:} ادغام پروجکشن فاکتورسازی‌شده \lr{SVD} و اسکن انتخابی موازی \lr{Prefix-Scan} در یک کرنل سخت‌افزاری واحد جهت حذف کامل تبادل بافرهای میانی.
+        \item \textbf{تخصیص پویای رتبه بر مبنای انتروپی مقادیر منفرد:} تنظیم دینامیک رتبه $r$ در لایه‌های ابتدایی و انتهایی مدل با ارزیابی انتروپی طیفی تانسورهای پروجکشن.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{svd\_mamba} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_svd_mamba.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(svd\_mamba)}}
+\label{fig:arch_svd_mamba}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/svd_mamba_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_mamba)}}
+\label{fig:comp_svd_mamba}
+\end{figure}

@@ -1,0 +1,10 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+ماتریس‌های وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{in} \times d_{out}}$ از طریق مسئله بهینه‌سازی رتبه یا قیود پراکندگی تقریب زده می‌شوند:
+ \begin{equation}
+\min_{\mathbf{W}_{comp}} \|\mathbf{W} - \mathbf{W}_{comp}\|_F^2 \quad \text{subject to} \quad \operatorname{rank}(\mathbf{W}_{comp}) \le r
+\end{equation}
+یا در حالت هرس با الگوریتم \lr{ADMM}:
+ \begin{equation}
+\mathcal{L}(\mathbf{W}, \mathbf{Z}, \mathbf{U}) = f(\mathbf{W}) +\frac{
+ho}{2} \|\mathbf{W} - \mathbf{Z} + \mathbf{U}\|_F^2
+\end{equation}

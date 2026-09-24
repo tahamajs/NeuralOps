@@ -1,0 +1,112 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{orion}}
+\label{sec:mod_orion}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+ماژول \lr{ORION} (مخفف \lr{Optimized Rectified Input-aware Orthogonal Network}) یک معماری توجه چندسره هیبریدی است که برای غلبه بر گلوگاه پیچیدگی مربعی لایه توجه استاندارد، یعنی $\mathcal{O}(N^2)$، طراحی شده است. برخلاف روش‌های سنتی تقریب که معمولاً به تخریب ارتباطات دوربرد می‌انجامند، این معماری از استراتژی تقسیم وظایف در سطح سرهای توجه \lr{(Head-wise Bifurcation)} بهره می‌گیرد. در این رویکرد، سرهای توجه به دو گروه مجزا تقسیم می‌شوند: سرهای کرنلی \lr{(Kernel Heads)} و سرهای کامل \lr{(Full Heads)}.
+سرهای کرنلی با استفاده از ویژگی‌های تصادفی فوریه \lr{(Random Fourier Features - RFF)}، مکانیسم توجه را به یک ضرب داخلی خطی کاهش می‌دهند که مسئول مدل‌سازی وابستگی‌های دوربرد با هزینه محاسباتی خطی است. در مقابل، سرهای کامل با بهره‌گیری از مکانیسم توجه \lr{Softpick}، وظیفه استخراج الگوهای محلی دقیق و برجسته را بر عهده دارند.
+علاوه بر این، در سطح پروجکشن‌ها، این ماژول از ترکیب تجزیه مقادیر منفرد \lr{(SVD)} بدون نیاز به آموزش مجدد و آداپتورهای \lr{LoRA} برای فشرده‌سازی ماتریس‌های وزن استفاده می‌کند تا ردپای حافظه گرافیکی در طول آموزش و استنتاج به حداقل برسد.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+در این معماری، ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ با استفاده از لایه‌های خطی فاکتورشده \lr{(FactorisedLinear)} به بردارهای پرس‌وجو، کلید و مقدار نگاشت می‌شود. ماتریس وزن $\mathbf{W}$ با استفاده از تجزیه \lr{SVD} تحت آستانه انرژی $\eta = 0.95$ به مؤلفه‌های کم‌رتبه تقریب زده شده و با آداپتور \lr{LoRA} ترکیب می‌گردد:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top + \frac{\alpha}{r_{\text{\lr{lora}}}} \mathbf{B} \mathbf{A}
+\end{equation}
+پس از نگاشت، سرهای توجه $H$ به $H_k$ سر کرنلی و $H_f$ سر کامل تقسیم می‌شوند.
+برای سرهای کرنلی، از ماتریس پروجکشن $\mathbf{P} \in \mathbb{R}^{d \times F_{\text{\lr{dim}}}}$ برای تولید ویژگی‌های فوریه استفاده می‌شود:
+\begin{equation}
+\mathbf{Q}_{\text{\lr{proj}}} = \frac{\mathbf{Q}_k \mathbf{P}}{\sqrt{d}}, \quad \phi(\mathbf{Q}_k) = \frac{1}{\sqrt{2 F_{\text{\lr{dim}}}}} \left[ \cos(\mathbf{Q}_{\text{\lr{proj}}}), \sin(\mathbf{Q}_{\text{\lr{proj}}}) \right]
+\end{equation}
+مکانیسم توجه خطی از طریق ضرب $\phi(\mathbf{Q}_k)$ و انباشت جمعی ماتریس‌های کلید و مقدار \lr{(Cumulative Scan)} با پیچیدگی $\mathcal{O}(N)$ محاسبه می‌گردد.
+برای سرهای کامل، توجه با استفاده از تابع \lr{Softpick} فرموله می‌شود که دارای رفتار یکسوساز \lr{(Rectified)} است:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q}_f \mathbf{K}_f^\top}{\sqrt{d}}, \quad p = \operatorname{ReLU}\left( \exp(\mathbf{S} / \tau) - 1.0 \right), \quad \mathbf{A} = \frac{p}{\sum p + \epsilon}
+\end{equation}
+این معماری پیچیدگی زمانی را از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N d F_{\text{\lr{dim}}} + c N^2 d)$ کاهش می‌دهد، که در آن $c$ نسبت سرهای کامل به کل سرها است.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+در سورس‌کد، کلاس \lr{ORIONAttention} از \lr{BaseAttention} ارث‌بری می‌کند. در فاز مقداردهی اولیه \lr{(\_\_init\_\_)}، لایه‌های \lr{q\_proj}، \lr{k\_proj}، \lr{v\_proj} و \lr{out\_proj} از نوع \lr{FactorisedLinear} ایجاد می‌شوند. ابعاد تانسورها در مسیر پیشرو \lr{(Forward Pass)} به شرح زیر است:
+\begin{itemize}
+    \item ورودی با ابعاد $[B, N, D]$ دریافت شده و پس از پروجکشن به پرس‌وجو، کلید و مقدار تبدیل می‌شود.
+    \item ابعاد به $[B, H, N, d]$ تغییر می‌یابد و مکانیسم کدگذاری مکانی چرخشی \lr{(RoPE)} روی آنها اعمال می‌گردد.
+    \item برای سازگاری با معماری‌هایی مانند \lr{Qwen}، سرهای کلید و مقدار با استفاده از \lr{repeat\_kv} تکرار می‌شوند \lr{(GQA)}.
+    \item تانسور پرس‌وجو به دو بخش \lr{Q\_kernel} با ابعاد $[B, H_k, N, d]$ و \lr{Q\_full} با ابعاد $[B, H_f, N, d]$ تقسیم می‌شود.
+    \item در سرهای کرنلی، تانسور $\mathbf{Z}$ و $\mathbf{S}$ وضعیت‌های انباشته را در استنتاج علی \lr{(Causal Masking)} نگهداری می‌کنند.
+    \item خروجی دو مکانیزم با ابعاد متناظر ترکیب \lr{(Concatenate)} شده و در نهایت به یک بردار با ابعاد $[B, N, D]$ تبدیل می‌گردد.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، مدل سقف کارایی نشان می‌دهد که ماژول \lr{orion} با جایگزینی ضرب‌های ماتریسی متراکم با تقریب \lr{SVD}، پهنای باند حافظه \lr{HBM} را آزاد می‌کند. 
+در سرهای کرنلی، ترافیک حافظه به دلیل محاسبه مبتنی بر انباشت ماتریس کوواریانس در طول توالی، به شدت کاهش یافته و مدل را از حالت گلوگاه حافظه \lr{(Memory-Bound)} به حالت تعادل محاسباتی نزدیک می‌سازد. از سوی دیگر، تابع \lr{Softpick} در سرهای کامل به دلیل تولید الگوهای تنک‌تر نسبت به \lr{Softmax}، نرخ برخورد حافظه نهان \lr{(L1/L2 Cache Hit Rate)} را در واحد پردازشی جریانی افزایش داده و نیاز به بارگذاری مجدد مقادیر نزدیک به صفر را برطرف می‌سازد.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+نتایج استخراج شده از مجموعه داده \lr{GLUE SST-2} و پردازش روی پلتفرم \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} در جدول زیر خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{orion} روی مدل‌های پایه}
+\label{tab:benchmark_orion}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{55.50\%} & \lr{0.696} & \lr{303.4 MB} & \lr{15,128 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675} & \lr{589.7 MB} & \lr{7,387 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{2262.8 MB} & \lr{3,933 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{81.08\%} & \lr{0.785} & \lr{1767.7 MB} & \lr{1,106 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+تحلیل آماری نتایج نشان می‌دهد که مدل \lr{Qwen} بهترین سازگاری را با این معماری هیبریدی از خود نشان داده است \lr{(دقت 81.08\%)}. دلیل این امر همسویی مکانیسم‌های نوین مانند \lr{RoPE} و \lr{GQA} در این مدل با پیش‌فرض‌های ساختاری \lr{orion} است.
+در مدل‌های \lr{DistilBERT} و \lr{RoBERTa} که ساختار انکودری دارند، افت شدید شاخص \lr{F1} (حدود 0.675) حاکی از پدیده فروپاشی در تفکیک رده‌هاست. تابع \lr{Softpick} اگرچه موجب تنک شدن خروجی می‌گردد، اما در معماری‌های دوطرفه \lr{(Bidirectional)} ممکن است به دلیل هرس افراطی مقادیر توجه میانی، مسیرهای کلیدی انتقال گرادیان مسدود شوند که در قالب افت دقت نمود پیدا کرده است.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت:}
+    \begin{itemize}
+        \item مدیریت هوشمندانه تخصیص توان محاسباتی با ترکیب توجه خطی و نرمال.
+        \item پشتیبانی بومی از پیشرفته‌ترین تکنیک‌های روز اعم از \lr{GQA}، \lr{RoPE} و \lr{LoRA}.
+        \item کاهش قابل‌توجه ردپای حافظه گرافیکی با استقرار \lr{FactorisedLinear}.
+    \end{itemize}
+    \item \textbf{محدودیت‌ها و چالش‌ها:}
+    \begin{itemize}
+        \item افت چشمگیر کیفیت بازنمایی در مدل‌های خانواده انکودر \lr{(BERT/RoBERTa)} به دلیل ناسازگاری گیتینگ یکسوساز با توجه دوطرفه.
+        \item حساسیت بالای مکانیسم \lr{Softpick} به پارامتر تنظیم دما \lr{(Temperature)}.
+    \end{itemize}
+    \item \textbf{پیشنهادات توسعه:}
+    \begin{itemize}
+        \item استفاده از تکنیک یادگیری تقطیری \lr{(Knowledge Distillation)} اختصاصی برای جبران خطای ناشی از حذف سرهای کامل.
+        \item اعمال نرخ‌های پویای انطباق‌پذیر برای نسبت سرهای کرنلی به کل سرها در لایه‌های مختلف شبکه.
+    \end{itemize}
+\end{itemize}
+
+\vspace*{0.5cm}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{orion} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/architecture/orion_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(orion)}}
+\label{fig:arch_orion}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/orion_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(orion)}}
+\label{fig:comp_orion}
+\end{figure}

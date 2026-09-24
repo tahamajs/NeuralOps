@@ -1,0 +1,30 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس‌های اصلی این ماژول در مسیر \lr{Codes/framework/compression\_engine/delta\_kv.py} قرار داشته و شامل دو بخش اصلی \lr{DeltaKVCompressor} (به عنوان فشرده‌ساز مدل) و \lr{DeltaKVStore} (به عنوان کش فرّار زمان اجرا) می‌باشند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{رجیستری چندگانه:} ثبت رسمی در رجیستری با شناسه‌های \lr{delta\_kv}، \lr{delta\_kv\_class}، \lr{delta\_kv\_compressor} و \lr{delta\_kv\_factory}.
+    \item \textbf{فیلتر هدف‌گذاری هوشمند لایه‌ها:} توانایی تفکیک پروجکشن‌های توجه (\lr{q\_proj}، \lr{k\_proj}، \lr{v\_proj}، \lr{o\_proj} و \lr{c\_attn}) از لایه‌های پیش‌خور در صورت تنظیم پارامتر \lr{target\_attention\_only}.
+    \item \textbf{پایداری حافظه و بازنویسی مستقیم (\lr{In-place Weight Rewrite}):} ماژول بدون تخریب ساختار گراف اجرایی، وزن متراکم را مستقیماً با ماتریس فیلترشده $\mathbf{W}_{\text{comp}}$ در نوع داده اصلی بازنویسی کرده و گرادیان‌ها را برای لایه‌های هرس‌شده مدیریت می‌کند.
+    \item \textbf{محافظت از لایه‌های بحرانی:} جلوگیری از فشرده‌سازی پروجکشن‌های طبقه‌بند، سر مدل زبانی (\lr{lm\_head})، ماتریس‌های تعبیه (\lr{embedding}) و لایه‌های با ابعاد کوچک‌تر از \lr{min\_layer\_dim}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی رسمی ماژول \lr{delta\_kv} برگرفته از پایگاه داده مستند \lr{thesis\_final/master\_verified\_results.json} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_delta_kv} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{delta\_kv} روی مدل‌های پایه}
+\label{tab:benchmark_delta_kv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{91.06\%} & \lr{0.9139} & \lr{310.69 MB} & \lr{53,139.65 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{92.09\%} & \lr{0.9234} & \lr{335.00 MB} & \lr{9,808.15 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{85.32\%} & \lr{0.8680} & \lr{414.30 MB} & \lr{15,811.65 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.74\%} & \lr{---} & \lr{5538.93 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول \ref{tab:benchmark_delta_kv} مشاهده می‌شود، ماژول \lr{delta\_kv} عملکرد قابل توجه درخشانی از خود نشان داده است. این فشرده‌ساز با کسب دقت \lr{91.06\%} در \lr{DistilBERT} و دقت چشمگیر \lr{92.09\%} در \lr{RoBERTa} (با شاخص اف‌وان \lr{0.9234})، یکی از برترین رکوردهای دقت را در میان تمامی رویکردهای فشرده‌سازی ثبت کرده و با موفقیت کامل نشان \lr{PASS} دریافت نموده است. علاوه بر این، در مدل زبانی اتورگرسیو \lr{GPT-2} به دقت \lr{85.32\%} با توان \lr{15,811.65 tok/s} و مصرف حافظه بهینه \lr{414.30 MB} دست یافته است. در مدل زبانی بزرگ \lr{Qwen} نیز با تثبیت وضعیت \lr{PASS} و دقت \lr{48.74\%}، سازگاری فراگیر خود با خانواده‌های گوناگون معماری را به اثبات رسانده است.

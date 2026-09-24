@@ -1,0 +1,24 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+الگوریتم \lr{ZeroKV-Neo} شامل دو سطح متمایز فشرده‌سازی است: فشرده‌سازی ایستای وزن‌ها و تخلیه پویای حافظه نهان کلید-مقدار.
+
+در سطح فشرده‌سازی وزن لایه‌های پروجکشن، فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک نگاشت توجه باشد. اهمیت هر سطر با نُرم اقلیدسی $L_2$ آن سنجیده می‌شود:
+\begin{equation}
+n_i = \|\mathbf{w}_i\|_2 = \sqrt{\sum_{j=1}^{d_{\text{in}}} W_{i, j}^2}, \quad \forall i \in \{1, \dots, d_{\text{out}}\}
+\end{equation}
+با تعیین نسبت نگه‌داری $\alpha \in (0, 1]$، تعداد سطرهای نگه‌داشته‌شده $K = \lfloor d_{\text{out}} \cdot \alpha \rfloor$ تعیین می‌شود. این بودجه به سه گروه تخصیص می‌یابد:
+\begin{enumerate}
+    \item کانال‌های پیش‌فرض چاه توجه با تعداد $N_{\text{sinks}}$ از سطرهای نخستین: $\mathcal{I}_{\text{sinks}} = \{1, \dots, N_{\text{sinks}}\}$.
+    \item کانال‌های ضربه‌زننده سنگین بر اساس بالاترین مقادیر نُرم در میان سطرهای باقی‌مانده:
+    \begin{equation}
+    \mathcal{I}_{\text{heavy}} = \operatorname{argTop-k}\left(\{n_i \mid i \notin \mathcal{I}_{\text{sinks}}\}, K - N_{\text{sinks}}\right)
+    \end{equation}
+\end{enumerate}
+ماتریس وزن هرس‌شده با ماسک باینری $\mathbf{M}$ حاصل می‌شود:
+\begin{equation}
+M_i = \begin{cases} 1 & \text{if } i \in \mathcal{I}_{\text{sinks}} \cup \mathcal{I}_{\text{heavy}} \\ 0 & \text{otherwise} \end{cases}, \quad \hat{\mathbf{W}} = \mathbf{W} \odot (\mathbf{M} \mathbf{1}^\top)
+\end{equation}
+
+در سطح پویای استنباط (\lr{ZeroKVNeoCache}) با طول حافظه مجاز $L_{\text{max}}$، هنگام فراتر رفتن طول توالی $T > L_{\text{max}}$، توکن‌های نگهداری‌شده از الحاق چاه‌های نخستین، پنجره اخیر و توکن‌های میانی با بیشترین نُرم انتخاب می‌شوند:
+\begin{equation}
+\mathbf{K}_{\text{bounded}} = \left[\mathbf{K}_{:, :, :N_s, :}; \; \mathbf{K}_{:, :, \mathcal{I}_{\text{mid\_heavy}}, :}; \; \mathbf{K}_{:, :, -N_w:, :}\right]
+\end{equation}

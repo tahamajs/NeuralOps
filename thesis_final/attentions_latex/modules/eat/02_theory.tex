@@ -1,0 +1,18 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+معماری \lr{eat} شامل دو بخش اصلی «توجه چندسره تطبیق‌یافته» و «هرس پیشرونده توکن‌ها» است. در بخش نخست، پروجکشن‌های پایه با استفاده از لایه‌های خطی سازگار با انطباق کم‌مرتبه بازسازی می‌شوند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{frozen}} + \frac{\alpha}{r} \mathbf{B} \mathbf{A}
+\end{equation}
+که در آن $\mathbf{W}_{\text{frozen}}$ وزن‌های پیش‌آموزش‌دیده منجمد بوده و $\mathbf{B} \in \mathbb{R}^{d_{out} \times r}$ و $\mathbf{A} \in \mathbb{R}^{r \times d_{in}}$ پارامترهای جبران‌ساز با رتبه $r \ll d$ هستند. پس از تولید ماتریس‌های $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ و تکرار سرهای کلید/مقدار در صورت استفاده از GQA، ماتریس توجه محاسبه می‌شود:
+\begin{equation}
+\mathbf{A}_{attn} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_k}} + \mathbf{M}\right)
+\end{equation}
+در صورتی که لایه هرس فعال باشد، اهمیت هر توکن بر اساس نمره توجه تخصیص‌یافته به آن یا امتیاز برجستگی شبکه فرعی محاسبه می‌گردد:
+\begin{equation}
+s_i = \frac{1}{H} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{attn}^{(h)}[j, i]
+\end{equation}
+سپس شاخص‌های مربوط به $K_{keep} = \lceil (1 - \rho) N \rceil$ توکن برتر با بیشترین امتیاز $s_i$ حفظ شده و سایر توکن‌ها از تانسور حالت پنهان برای لایه‌های بعدی حذف می‌شوند ($\rho$ نرخ هرس لایه است):
+\begin{equation}
+\mathbf{X}_{pruned} = \operatorname{Gather}(\mathbf{X}, \operatorname{TopK}(s, K_{keep}))
+\end{equation}
+این کاهش تعداد توکن‌ها پیچیدگی لایه‌های بعد را از $\mathcal{O}(N^2)$ به $\mathcal{O}(K_{keep}^2)$ تقلیل می‌دهد.

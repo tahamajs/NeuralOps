@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{moba\_attention} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_moba_attention} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{moba\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_moba_attention}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{73.62\%} & \lr{0.7516} & \lr{329.0 MB} & \lr{51,081 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8583} & \lr{379.1 MB} & \lr{27,860 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{569.5 MB} & \lr{19,829 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.95\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{84.17\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

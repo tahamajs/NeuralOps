@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی جامع عملکرد ماژول \lr{hgrn2\_outer} بر روی بنچمارک استاندارد \lr{GLUE SST-2} تحت شرایط آزمایشگاهی کنترل‌شده انجام شده است. نتایج قطعی استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_hgrn2_outer} خلاصه شده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{hgrn2\_outer} بر روی ۴ مدل پایه}
+\label{tab:benchmark_hgrn2_outer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{43.81\%} & \lr{0.4068} & \lr{357.08 MB} & \lr{16,854.18 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.34\%} & \lr{0.4355} & \lr{685.64 MB} & \lr{8,864.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{48.62\%} & \lr{0.6203} & \lr{569.81 MB} & \lr{9,386.81 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.46\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشاهده می‌شود، ماژول \lr{hgrn2\_outer} از منظر سخت‌افزاری بسیار کم‌مصرف بوده و اوج حافظه آن در مدل‌های سبک در محدوده \lr{357 MB} تا \lr{685 MB} مهار شده است. نرخ توان عملیاتی در \lr{DistilBERT} به میزان چشمگیر \lr{16,854 tok/s} و در \lr{GPT-2} به \lr{9,386 tok/s} رسیده است. مدل بر روی \lr{Qwen} وضعیت \lr{PASS} را با دقت \lr{50.46\%} احراز کرده است.

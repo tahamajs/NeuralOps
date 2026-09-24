@@ -1,0 +1,20 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در این ماژول، تغییرات یا مقدار مؤثر وزن لایه متراکم به صورت ترکیبی خطی از دو مؤلفه ساختاری تانسوری و انطباقی مدل‌سازی می‌گردد:
+\begin{equation}
+\Delta \mathbf{W} = \gamma \left( (\mathbf{A}_1 \otimes \mathbf{A}_2) \odot \mathcal{TT}(\mathbf{G}_1, \mathbf{G}_2, \mathbf{G}_3) \right)_{[:d_{\text{out}}, :d_{\text{in}}]} + \frac{\alpha}{r} (\mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}})
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item مؤلفه کرونکر حاصل ضرب دو ماتریس ارتوگونال با مقیاس طیفی $\mathbf{A}_1 \in \mathbb{R}^{m_1 \times n_1}$ و $\mathbf{A}_2 \in \mathbb{R}^{m_2 \times n_2}$ است به گونه‌ای که $m_1 m_2 \ge d_{\text{out}}$ و $n_1 n_2 \ge d_{\text{in}}$.
+    \item عملگر تانسوری $\mathcal{TT}$ از سه هسته تانسوری $\mathbf{G}_1 \in \mathbb{R}^{1 \times d_1 \times r_1}$، $\mathbf{G}_2 \in \mathbb{R}^{r_1 \times d_2 \times r_2}$ و $\mathbf{G}_3 \in \mathbb{R}^{r_2 \times d_3 \times 1}$ با رتبه‌های داخلی $(1, r_1, r_2, 1)$ تشکیل شده است که ضرب داخلی آن‌ها تانسوری با ابعاد کلی $d_1 \times d_2 \times d_3 = (m_1 m_2) \cdot (n_1 n_2)$ ایجاد می‌نماید:
+    \begin{equation}
+    \mathcal{TT}_{i, j, k} = \sum_{a=1}^{r_1} \sum_{b=1}^{r_2} G_{1}(1, i, a) \, G_{2}(a, j, b) \, G_{3}(b, k, 1)
+    \end{equation}
+    \item عملگر $\odot$ نشان‌دهنده ضرب مؤلفه‌ای هادامارد است که اثر مدولاسیون ساختاری ایجاد می‌کند.
+    \item شاخه آداپتور با $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{d_{\text{out}} \times r}$ با ضریب مقیاس‌بندی $\frac{\alpha}{r}$ به خروجی افزوده می‌شود.
+\end{itemize}
+
+در نتیجه، وزن کل عملگر پیشرو به صورت زیر بر بردار ورودی $\mathbf{x}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{W}_{\text{base}}^\top + \mathbf{x} \Delta \mathbf{W}^\top + \mathbf{b}
+\end{equation}

@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی لایه‌ها در الگوریتم \lr{SLiM} طی مراحل چهارگانه زیر فرمول‌بندی می‌شود:
+\begin{enumerate}
+    \item \textbf{کوانتیزاسیون $b$-بیت وزن اولیه:}
+    فرض کنید $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن اصلی باشد. عملگر کوانتیزاسیون یکنواخت با گام مقیاس‌بندی $s$ به فرم زیر اعمال می‌شود:
+    \begin{equation}
+    s = \frac{\max(|\mathbf{W}_0|)}{2^{b-1} - 1}, \quad \mathbf{W}_q = s \cdot \operatorname{clamp}\left( \left\lfloor \frac{\mathbf{W}_0}{s} \right\rceil, -2^{b-1}, 2^{b-1} - 1 \right)
+    \end{equation}
+    \item \textbf{اعمال تنک‌سازی نیمه‌ساختاریافته 2:4:}
+    روی ماتریس کوانتیده‌شده $\mathbf{W}_q$ تصویرگر الگوی تنک 2:4 اعمال می‌گردد که در هر بلوک چهارتایی از عناصر سطر، دو عنصر با کمترین اندازه مطلق را صفر می‌کند:
+    \begin{equation}
+    \mathbf{W}_{sp} = \Pi_{2:4}(\mathbf{W}_q, |\mathbf{W}_q|)
+    \end{equation}
+    \item \textbf{تشکیل ماتریس خطای باقیمانده (\lr{Residual Error}):}
+    اختلاف بین ماتریس متراکم اولیه و وزن تنکِ کوانتیده‌شده محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{R} = \mathbf{W}_0 - \mathbf{W}_{sp}
+    \end{equation}
+    \item \textbf{تقریب کم‌مرتبه باقیمانده با SVD و بازسازی وزن نهایی:}
+    ماتریس خطای باقیمانده $\mathbf{R}$ تحت تجزیه مقادیر منفرد با مرتبه $r$ قرار می‌گیرد:
+    \begin{equation}
+    \mathbf{R} \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top = \mathbf{L}_r
+    \end{equation}
+    در نهایت، ماتریس وزن بازسازی‌شده فشرده به صورت مجموع مؤلفه تنک و تقریب کم‌مرتبه حاصل می‌شود:
+    \begin{equation}
+    \mathbf{W}_{slim} = \mathbf{W}_{sp} + \mathbf{L}_r
+    \end{equation}
+\end{enumerate}

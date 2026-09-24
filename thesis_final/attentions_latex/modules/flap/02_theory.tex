@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در فاز کالیبراسیون، واریانس مشخصه‌های فعال‌سازی ورودی بر روی دسته‌های کالیبراسیون محاسبه و جمع‌آوری می‌شود. فرض کنید ورودی به لایه خطی $\mathbf{X} \in \mathbb{R}^{B \times d_{\text{in}}}$ باشد. واریانس تجربی هر ویژگی ورودی $j \in \{1, \dots, d_{\text{in}}\}$ به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{s}_j = \text{Var}_B(\mathbf{X}_{:, j}) = \frac{1}{B - 1} \sum_{i=1}^B (\mathbf{X}_{i, j} - \bar{\mathbf{X}}_j)^2
+\end{equation}
+که در آن $\bar{\mathbf{X}}_j$ میانگین فعال‌سازی ویژگی $j$-ام است. در صورتی که چند دسته کالیبراسیون موجود باشد، میانگین متحرک این واریانس‌ها در نظر گرفته می‌شود.
+
+سپس امتیاز اهمیت هر ستون ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ بر اساس یکی از معیارهای نوسانی زیر سنجیده می‌شود:
+\begin{enumerate}
+    \item \textbf{معیار واریانس نوسان وزن‌دار (\lr{WIFV - Weighted Input Fluctuation Variance}):}
+    \begin{equation}
+    \mathbf{I}_j = \mathbf{s}_j \cdot \sum_{i=1}^{d_{\text{out}}} \mathbf{W}_{i, j}^2 = \mathbf{s}_j \cdot \|\mathbf{W}_{:, j}\|_2^2
+    \end{equation}
+    \item \textbf{معیار نُرم نوسان وزن‌دار (\lr{WIFN - Weighted Input Fluctuation Norm}):}
+    \begin{equation}
+    \mathbf{I}_j = \sqrt{\mathbf{s}_j} \cdot \sum_{i=1}^{d_{\text{out}}} |\mathbf{W}_{i, j}|
+    \end{equation}
+    \item \textbf{معیار صرفاً نوسان ورودی (\lr{IFV - Input Fluctuation Variance}):}
+    \begin{equation}
+    \mathbf{I}_j = \mathbf{s}_j
+    \end{equation}
+\end{enumerate}
+
+بر اساس میزان تنکی هدف $S \in [0, 1)$، ستون‌هایی که کمترین امتیاز $\mathbf{I}_j$ را دارند ماسک شده یا در حالت تنکی ساختاریافته $2:4$، در هر بلوک ۴تایی از ماتریس، دو عنصری که کمترین ضرب اهمیت را دارند صفر می‌شوند:
+\begin{equation}
+\mathbf{W}_{\text{pruned}} = \mathbf{W} \odot \mathbf{M}, \quad \mathbf{M} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+خطای نسبی بازسازی فروبنیوس پس از اعمال ماسک ارزیابی می‌گردد:
+\begin{equation}
+\mathcal{E} = \frac{\|\mathbf{W} - \mathbf{W}_{\text{pruned}}\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+در صورتی که $\mathcal{E} > \tau_{\text{max}}$ (آستانه خطای بیشینه)، لایه به وضعیت دست‌نخورده اولیه بازگردانده می‌شود (\lr{Fallback}).

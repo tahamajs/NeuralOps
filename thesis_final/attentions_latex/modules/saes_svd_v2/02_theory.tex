@@ -1,0 +1,34 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در ماژول \lr{SAES-SVD v2} در سه مرحله ریاضی پیوسته تدوین می‌گردد:
+
+\begin{enumerate}
+    \item \textbf{تجزیه مقادیر منفرد پایه و سنجش چگالی طیفی:}
+    ماتریس وزن اولیه $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه هدف $r$ تحت تقطیع اولیه قرار می‌گیرد:
+    \begin{equation}
+    \mathbf{W}_0 \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top = \mathbf{A}_0 \mathbf{B}_0
+    \end{equation}
+    که در آن فاکتورهای اولیه به صورت $\mathbf{A}_0 = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{B}_0 = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}$ مقداردهی می‌شوند. چگالی توزیع انرژی برای هر مقدار منفرد $\sigma_k$ بر پایه رابطه زیر سنجیده می‌شود:
+    \begin{equation}
+    \rho_k = \frac{\sigma_k^2}{\sum_{j=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_j^2}
+    \end{equation}
+
+    \item \textbf{تکرارهای فرونشانی خطا بر مبنای کمترین مربعات منظم‌شده:}
+    در هر گام تکرار $t \ge 0$، ماتریس خطای تقریب باقی‌مانده محاسبه می‌گردد:
+    \begin{equation}
+    \mathbf{E}_t = \mathbf{W}_0 - \mathbf{A}_t \mathbf{B}_t
+    \end{equation}
+    سپس جهت فرونشاندن $\mathbf{E}_t$ بدون افزایش رتبه فاکتورها، ماتریس‌های $\mathbf{A}$ و $\mathbf{B}$ به ترتیب با حل فرم بسته کمترین مربعات تیخونوف به‌روزرسانی می‌شوند:
+    \begin{equation}
+    \mathbf{A}_{t+1} = \mathbf{A}_t + \mathbf{E}_t \mathbf{B}_t^\top \left(\mathbf{B}_t \mathbf{B}_t^\top + \epsilon \mathbf{I}_r\right)^{-1}
+    \end{equation}
+    \begin{equation}
+    \mathbf{B}_{t+1} = \mathbf{B}_t + \left(\mathbf{A}_{t+1}^\top \mathbf{A}_{t+1} + \epsilon \mathbf{I}_r\right)^{-1} \mathbf{A}_{t+1}^\top \mathbf{E}_t
+    \end{equation}
+    که در آن $\epsilon > 0$ ضریب تثبیت‌کننده عددی جهت تضمین خوش‌شرطی وارون ماتریس است.
+
+    \item \textbf{همگرایی و بازسازی خروجی:}
+    پس از طی $T$ گام فرونشانی، لایه خطی استاندارد به یک ساختار ترکیبی \lr{SVDLinear} تبدیل می‌گردد که خروجی را به صورت مستقیم محاسبه می‌کند:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} \mathbf{B}_T^\top \mathbf{A}_T^\top + \mathbf{b}
+    \end{equation}
+\end{enumerate}

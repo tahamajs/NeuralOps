@@ -1,0 +1,28 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این رویکرد در فایل \lr{Codes/framework/compression\_engine/subspace\_projection.py} سازمان‌دهی شده و دربرگیرنده مؤلفه‌های زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{SubspaceLinear}:} یک ماژول جایگزین کامل برای لایه‌های متراکم و \lr{Conv1D} که پارامترهای $\mathbf{A}$ و $\mathbf{B}$ را به همراه پارامترهای اختیاری \lr{lora\_A} و \lr{lora\_B} مدیریت می‌کند. این لایه مجهز به متد کارخانه‌ای \lr{from\_linear} برای تبدیل بی‌درنگ لایه‌های موجود با روش‌های تجزیه SVD یا مقداردهی تصادفی متعامد است.
+    \item \textbf{کلاس \lr{SubspaceProjectionCompressor}:} مدیریت زنجیره فشرده‌سازی مدل، فیلتر کردن لایه‌های حساس با \lr{should\_compress\_linear}، اعمال آستانه بیشینه خطای بازسازی مجاز (\lr{max\_error})، و بازگردانی لایه‌های آسیب‌پذیر از طریق قابلیت بازگشت امنیتی (\lr{fallback}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک یکپارچه برای ماژول \lr{subspace\_projection} بر روی مدل‌های زبانی هدف در جدول \ref{tab:benchmark_subspace_projection} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول تصویر زیرفضا \lr{subspace\_projection} روی مدل‌های پایه}
+\label{tab:benchmark_subspace_projection}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.8993} & \lr{338.8 MB} & \lr{18.5 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8535} & \lr{364.3 MB} & \lr{27.8 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{59.52\%} & \lr{0.6596} & \lr{637.3 MB} & \lr{24.9 s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+یافته‌های آزمایشگاهی نشان می‌دهند که فشرده‌ساز \lr{subspace\_projection} دارای عملکردی متوازن و بسیار قوی در سراسر معماری‌های ارزیابی‌شده است؛ به طوری که در تمام مدل‌های \lr{DistilBERT}، \lr{RoBERTa} و \lr{GPT-2} به وضعیت قبولی قطعی \lr{PASS} دست یافته است. نکته حائز اهمیت، بهبود قابل‌توجه دقت در مدل \lr{RoBERTa} است که از دقت پایه \lr{75.11\%} به \lr{84.17\%} (+9.06\%) ارتقا یافته است؛ پدیده‌ای که ناشی از اثر تنظیم‌کنندگی (\lr{Regularization}) تصویر زیرفضای کم‌مرتبه و حذف نویز ابعاد فرعی وزن‌ها ارزیابی می‌شود. مدل \lr{Qwen} با وضعیت \lr{NOT\_RUN} مشخص شده است.

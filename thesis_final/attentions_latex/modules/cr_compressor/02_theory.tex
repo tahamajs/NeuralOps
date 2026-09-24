@@ -1,0 +1,20 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ ماتریس وزن یک پروجکشن خطی باشد. در تجزیه ستونی درون‌یاب با رتبه هدف $r \ll \min(D_{\text{out}}, D_{\text{in}})$، تقریب ماتریس به صورت زیر تعریف می‌شود:
+\begin{equation}
+W \approx C \cdot P
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $C \in \mathbb{R}^{D_{\text{out}} \times r}$: ماتریس اسکلت ستونی متشکل از $r$ ستون گزینش‌شده یا ترکیب متناظر از ستون‌های حقیقی $W$.
+    \item $P \in \mathbb{R}^{r \times D_{\text{in}}}$: ماتریس ضرایب درون‌یابی (\lr{Interpolative Projection Matrix}).
+\end{itemize}
+
+\subsubsection*{اجرای گذر رو به جلو در فرم فاکتورسازی‌شده}
+حین گذر رو به جلو، عملگر ضرب ماتریسی به جای محاسبه گران‌قیمت $\mathcal{O}(N \cdot D_{\text{in}} \cdot D_{\text{out}})$، در دو مرحله با پیچیدگی $\mathcal{O}(N \cdot r \cdot (D_{\text{in}} + D_{\text{out}}))$ اجرا می‌گردد:
+\begin{equation}
+x_{\text{proj}} = x \cdot P^\top \in \mathbb{R}^{B \times N \times r}
+\end{equation}
+\begin{equation}
+y = (x_{\text{proj}} \cdot C^\top) + b \in \mathbb{R}^{B \times N \times D_{\text{out}}}
+\end{equation}
+این ساختار دو مرحله‌ای زنجیره‌ای، تبادل داده با حافظه اصلی سراسری پردازنده گرافیکی را مهار کرده و سربار محاسبات را به میزان چشمگیری کاهش می‌دهد.

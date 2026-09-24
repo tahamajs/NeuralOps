@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+معماری پایه بر مبنای مدل فضای حالت خطی با پارامترهای متغیر با زمان فرمول‌بندی می‌شود:
+\begin{align}
+\mathbf{h}_t &= \bar{\mathbf{A}}_t \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t \mathbf{x}_t \in \mathbb{R}^{D_{\text{in}} \times d_{\text{state}}}, \\
+\mathbf{y}_t &= \mathbf{C}_t \mathbf{h}_t + \mathbf{D} \mathbf{x}_t \in \mathbb{R}^{D_{\text{in}}}
+\end{align}
+که در آن $d_{\text{state}} = 16$ بعد فضای حالت پنهان است.
+
+\paragraph{۱. گزینش‌پذیری وابسته به ورودی و گسسته‌سازی زمانی:}
+ابتدا ورودی لایه $\mathbf{X}$ به دو شاخه تعاملی و دروازه‌بانی تقسیم شده و شاخه تعاملی از یک کانوولوشن یک‌بعدی زمانی با بعد ۴ عبور می‌کند:
+\begin{equation}
+[\mathbf{X}_{\text{in}}, \mathbf{Z}] = \operatorname{LoRA-Linear}_{\text{in}}(\mathbf{X}), \quad \mathbf{X}_{\text{ssm}} = \operatorname{SiLU}(\operatorname{Conv1D}(\mathbf{X}_{\text{in}}))
+\end{equation}
+سپس پارامترهای گسسته‌سازی $\Delta_t$ و ماتریس‌های کنترل $\mathbf{B}_t$ و $\mathbf{C}_t$ مستقیماً از روی ورودی استخراج می‌شوند:
+\begin{equation}
+[\Delta_{\text{raw}}, \mathbf{B}_t, \mathbf{C}_t] = \operatorname{Linear}_x(\mathbf{X}_{\text{ssm}}), \quad \Delta_t = \operatorname{Softplus}(\operatorname{Linear}_{\Delta}(\Delta_{\text{raw}}))
+\end{equation}
+ماتریس‌های پیوسته فضا-حالت با تقریب نگاشت نمایی مرتبه اول گسسته می‌شوند:
+\begin{equation}
+\bar{\mathbf{A}}_t = \exp(\Delta_t \cdot \mathbf{A}), \quad \bar{\mathbf{B}}_t = \Delta_t \cdot \mathbf{B}_t
+\end{equation}
+
+\paragraph{۲. اسکن دوطرفه و دروازه‌بانی ضربی:}
+برای مدل‌های دیکودر علّی، اسکن رو به جلو $\mathbf{y}^{\text{fwd}}$ محاسبه می‌شود. در انکودرهای دوطرفه، اسکن معکوس $\mathbf{y}^{\text{bwd}}$ نیز اجرا شده و خروجی به صورت میانگین متقارن حاصل می‌گردد:
+\begin{equation}
+\mathbf{y} = \frac{1}{2}\left(\mathbf{y}^{\text{fwd}} + \mathbf{y}^{\text{bwd}}\right)
+\end{equation}
+در نهایت، خروجی با شاخه گیت $\mathbf{Z}$ ادغام شده و به بعد اصلی تصویر می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{LoRA-Linear}_{\text{out}}(\mathbf{y} \odot \operatorname{SiLU}(\mathbf{Z})) \in \mathbb{R}^{B \times L \times D}
+\end{equation}

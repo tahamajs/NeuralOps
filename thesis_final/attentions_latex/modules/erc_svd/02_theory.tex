@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تجزیه مقادیر منفرد $\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top$، مقادیر منفرد به ترتیب نزولی $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_d \ge 0$ مرتب شده‌اند. انرژی کل ماتریس بر حسب نُرم فروبنیوس برابر است با:
+\begin{equation}
+\|\mathbf{W}\|_F^2 = \sum_{i=1}^d \sigma_i^2
+\end{equation}
+تقریب رتبه $r$ ماتریس وزن به صورت $\mathbf{W}_r = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^\top$ دارای خطای برشی با فرم بسته زیر است:
+\begin{equation}
+\|\mathbf{W} - \mathbf{W}_r\|_F^2 = \sum_{i=r+1}^d \sigma_i^2
+\end{equation}
+با تعیین آستانه خطای مجاز $\epsilon_{\text{allowed}} \in (0, 1)$، ماژول کمترین رتبه $r^*$ را بر اساس نسبت انرژی انباشته محاسبه می‌کند:
+\begin{equation}
+\frac{\sum_{i=r^*+1}^d \sigma_i^2}{\sum_{i=1}^d \sigma_i^2} \le \epsilon_{\text{allowed}}^2 \iff \frac{\sum_{i=1}^{r^*} \sigma_i^2}{\sum_{i=1}^d \sigma_i^2} \ge 1 - \epsilon_{\text{allowed}}^2
+\end{equation}
+با به دست آمدن $r^*$، با شرط عدم تجاوز از سقف بازدهی فشرده‌سازی $\frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}$، فاکتورهای چپ و راست با تفکیک متقارن توان مقادیر منفرد ساخته می‌شوند:
+\begin{equation}
+\mathbf{U}_{r^*} = \mathbf{U}_{:, :r^*} \mathbf{\Sigma}_{:r^*}^{1/2}, \quad \mathbf{V}_{r^*} = \mathbf{\Sigma}_{:r^*}^{1/2} \mathbf{V}_{:, :r^*}^\top
+\end{equation}
+و لایه با ماژول فاکتورگیری‌شده جایگزین می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{comp}} = \mathbf{U}_{r^*} \mathbf{V}_{r^*}, \quad \mathbf{y} = (\mathbf{x} \mathbf{V}_{r^*}^\top) \mathbf{U}_{r^*}^\top + \mathbf{b}
+\end{equation}

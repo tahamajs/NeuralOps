@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{entropy\_budget\_allocation} بر روی مدل‌های پایه بر اساس رکوردهای آزمایشگاهی ثبت‌شده در جدول \ref{tab:benchmark_entropy_budget_allocation} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{entropy\_budget\_allocation} بر روی مدل‌های پایه}
+\label{tab:benchmark_entropy_budget_allocation}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9099} & \lr{357.28 MB} & \lr{129,878.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.15\%} & \lr{0.9425} & \lr{503.28 MB} & \lr{13,889.95 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول مشاهده می‌شود، ماژول با موفقیت بر روی هر دو انکودر زبانی \lr{DistilBERT} (با دقت \lr{90.60\%} و توان بالای ۱۲۹ هزار توکن بر ثانیه) و \lr{RoBERTa} (با دقت \lr{94.15\%} و شاخص F1 معادل \lr{0.9425}) وضعیت \lr{PASS} را احراز نموده است. بنچ‌مارک بر روی \lr{GPT-2} اجرا نگردیده (\lr{NOT\_RUN}) و مدل \lr{Qwen} در فاز اولیه به دلیل حجم حافظه در حالت \lr{SKIP} قرار گرفته است.

@@ -1,0 +1,23 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه ورودی، ماتریس تعبیه $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ وارد مسیریاب آنتروپی طیفی می‌شود. برای هر توکن، آنتروپی توزیع توان طیفی از روی بردار فعال‌سازی استخراج می‌گردد:
+\begin{equation}
+p_i = \frac{x_i^2}{\sum_{j=1}^D x_j^2 + \epsilon}, \quad H(\mathbf{x}) = -\sum_{i=1}^D p_i \ln(p_i + \delta)
+\end{equation}
+سپس بردار وزن‌های تخصیص مسیر $\boldsymbol{\alpha} = [\alpha_{\text{loc}}, \alpha_{\text{glob}}, \alpha_{\text{lin}}]^\top$ با تابع بیشینه هموار تنظیم‌شده با دما و جریمه هزینه محاسباتی تولید می‌شود:
+\begin{equation}
+\boldsymbol{\alpha} = \operatorname{softmax}\left(\frac{\mathbf{X} \mathbf{W}_h + \mathbf{b}_h - \lambda \mathbf{c}}{\tau}\right)
+\end{equation}
+که در آن $\mathbf{c} = [c_{\text{loc}}, c_{\text{glob}}, c_{\text{lin}}]^\top$ بردار هزینه سخت‌افزاری هر شاخه و $\lambda$ ضریب پنالتی هزینه است.
+
+در شاخه کوانتیزاسیون \lr{FP8} با فرمت استاندارد \lr{E4M3} یا \lr{E5M2}، تانسورها با برآوردگر عبور مستقیم (\lr{Straight-Through Estimator - STE}) فشرده می‌شوند:
+\begin{equation}
+\hat{\mathbf{X}} = \operatorname{clamp}\left( \left\lfloor \frac{\mathbf{X}}{S} \right\rceil, -V_{\max}, V_{\max} \right) \cdot S, \quad \frac{\partial \hat{\mathbf{X}}}{\partial \mathbf{X}} = \mathbf{I}
+\end{equation}
+شاخه بازگشتی حالت بر اساس معادله بازگشتی گسسته پایدار عددی عمل می‌کند:
+\begin{equation}
+\mathbf{h}_t = \operatorname{diag}(\boldsymbol{\lambda}) \mathbf{h}_{t-1} + \mathbf{k}_t^\top \mathbf{v}_t, \quad \mathbf{o}_t = \mathbf{q}_t \mathbf{h}_t
+\end{equation}
+خروجی نهایی از جمع وزندار شاخه‌های سه‌گانه حاصل می‌گردد:
+\begin{equation}
+\mathbf{O} = \alpha_{\text{loc}} \odot \mathbf{O}_{\text{loc}} + \alpha_{\text{glob}} \odot \mathbf{O}_{\text{glob}} + \alpha_{\text{lin}} \odot \mathbf{O}_{\text{lin}}
+\end{equation}

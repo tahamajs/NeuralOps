@@ -1,0 +1,22 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در این مکانیزم، برای تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$، نگاشت‌های خطی کامل به فضاهای پرس‌وجو، کلید و مقدار انجام می‌شود:
+\begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q + \mathbf{b}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K + \mathbf{b}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V + \mathbf{b}_V
+\end{equation}
+که در آن وزن‌های پروجکشن با استفاده از لایه خطی سازگار با لورا منجمد بوده و تغییرات به موازات آن محاسبه می‌شوند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora}
+\end{equation}
+سپس تانسورها به سرهای چندگانه $[B, H, N, d]$ بازآرایی شده و در صورت نیاز سرهای کلید/مقدار هماهنگ می‌گردند. ماتریس شباهت کامل دو‌به‌دو میان تمامی جفت‌های توکنی از طریق ضرب ماتریسی مستقیم به دست می‌آید:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}
+\end{equation}
+توزیع وزن‌های توجه با تابع فعال‌سازی غیرخطی سافت‌مکس استخراج شده و در ماتریس مقادیر ضرب می‌گردد:
+\begin{equation}
+\mathbf{A} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{O}_{\text{heads}} = \mathbf{A} \mathbf{V}
+\end{equation}
+خروجی الحاق‌شده سرها از طریق پروجکشن پایانی به فضای ابعادی اصلی نگاشت داده می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{O}_{\text{heads}} \mathbf{W}_O + \mathbf{b}_O
+\end{equation}
+پیچیدگی محاسباتی و حافظه این لایه صریحاً برابر $\mathcal{O}(N^2 \cdot d)$ است که گلوگاه مقیاس‌پذیری در دنباله‌های متنی طولانی محسوب می‌شود.

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی‌های جامع بنچ‌مارک فشرده‌ساز \lr{zerokv\_neo\_compressor} روی مدل‌های پایه در جدول \ref{tab:benchmark_zerokv_neo_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{zerokv\_neo\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_zerokv_neo_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{75.92\%} & \lr{0.7925} & \lr{312.19 MB} & \lr{52,122.59 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{531.69 MB} & \lr{23,289.24 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.6758} & \lr{413.50 MB} & \lr{14,040.51 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج تجربی، در مدل \lr{DistilBERT} فشرده‌ساز \lr{zerokv\_neo\_compressor} با ثبت دقت \lr{75.92\%}، شاخص F1 معادل \lr{0.7925} و مصرف حافظه بسیار پایین \lr{312.19 MB} وضعیت موفقیت‌آمیز \lr{PASS} را احراز نموده است. در مدل‌های خودبازگشت و رمزگذار عمیق نظیر \lr{RoBERTa} و \lr{GPT-2}، به دلیل صفر کردن مستقیم سطرهای وزن بدون بازآموزی جبرانی، دقت مدل به حدود \lr{51\%} تنزل یافته و وضعیت \lr{PASS\_LOW} به ثبت رسیده است. این ماژول در مدل \lr{Qwen} آزمایش نشده و وضعیت \lr{NOT\_RUN} دارد.

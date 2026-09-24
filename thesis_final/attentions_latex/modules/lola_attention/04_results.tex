@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد این ماژول در آزمون‌های ارزیابی عملکرد بر روی مدل‌های استاندارد در جدول \ref{tab:benchmark_lola_attention} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک محاسباتی و زبانی ماژول \lr{lola\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_lola_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه (\lr{Base Model})} & \textbf{دقت (\lr{Accuracy})} & \textbf{شاخص \lr{F1}} & \textbf{حافظه (\lr{Peak VRAM})} & \textbf{توان (\lr{Throughput})} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.87\%} & \lr{0.8016} & \lr{338.53 MB} & \lr{77472.70 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{377.75 MB} & \lr{41543.36 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{468.69 MB} & \lr{36940.06 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{52.06\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+برجسته‌ترین ویژگی تجربی این ماژول، توان عملیاتی خارق‌العاده آن است؛ به طوری که در مدل \lr{DistilBERT} با ثبت دقت پایدار ۷۷.۸۷٪ و شاخص اف‌وان ۰.۸۰۱۶، به توان پردازشی بالغ بر ۷۷,۴۷۲ توکن در ثانیه دست یافته و در تمامی مدل‌ها اوج حافظه را در کمتر از ۴۷۰ مگابایت مهار کرده است.

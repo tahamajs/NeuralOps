@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{nmf\_compressor} بر مبنای داده‌های ثبت‌شده در پایگاه \lr{results/unified\_nmf\_4models\_summary.json} در جدول \ref{tab:benchmark_nmf_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{nmf\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_nmf_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.8993} & \lr{337.6 MB} & \lr{84.3 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{49.08\%} & \lr{0.0000} & \lr{374.7 MB} & \lr{212.9 s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{58.03\%} & \lr{0.6460} & \lr{634.9 MB} & \lr{65.2 s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در نتایج تجربی مشاهده می‌شود، فشرده‌ساز \lr{nmf\_compressor} در مدل \lr{DistilBERT} به دقت چشمگیر \lr{89.91\%} با شاخص F1 معادل \lr{0.8993} دست یافته که تنها با افت اندک \lr{-0.57\%} همراه بوده و وضعیت \lr{PASS} را دریافت کرده است. در مدل زبانی \lr{GPT-2} دقت \lr{58.03\%} حاصل گردیده است. با این حال، در مدل \lr{RoBERTa} دقت مدل فشرده‌شده به \lr{49.08\%} کاهش یافته و شاخص F1 معادل \lr{0.0000} ثبت شده است که سبب تخصیص وضعیت \lr{PASS\_LOW} به این مدل گردیده است. مدل \lr{Qwen} نیز در این بنچ‌مارک با وضعیت \lr{SKIP} مشخص شده است.

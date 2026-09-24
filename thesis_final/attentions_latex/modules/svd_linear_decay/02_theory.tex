@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در این معماری، پروجکشن‌های پرس‌وجو، کلید و مقدار با اعمال عملگر غیرخطی نامنفی کرنل $\phi(x) = \operatorname{ELU}(x) + 1.0$ فرمول‌بندی می‌شوند:
+\begin{equation}
+\tilde{\mathbf{Q}} = \operatorname{ELU}(\mathbf{Q}) + 1.0, \quad \tilde{\mathbf{K}} = \operatorname{ELU}(\mathbf{K}) + 1.0
+\end{equation}
+
+\paragraph{۱. گیت زوال وابسته به داده (Data-Dependent Decay):}
+یک لایه خطی با فعال‌سازی نرم \lr{Softplus} لگاریتم زوال را از حالت‌های پنهان ورودی استخراج می‌کند:
+\begin{equation}
+\mathbf{g}_t = \operatorname{Linear}_{\text{decay}}(\mathbf{x}_t), \quad \lambda_t = \exp\left(-\operatorname{Softplus}(\mathbf{g}_t)\right) \in (0, 1]
+\end{equation}
+در صورتی که توکن مربوط به پدینگ باشد، ضریب زوال به $\lambda_t = 1.0$ مقید می‌شود تا حافظه دست‌نخورده باقی بماند.
+
+\paragraph{۲. بازگشت پویای ماتریس حالت:}
+حالت حافظه تجمعی در گام زمانی $t$ با ادغام ماتریس‌های حالت و زوال به روزرسانی می‌گردد:
+\begin{align}
+\mathbf{S}_t &= \lambda_t \odot \mathbf{S}_{t-1} + \tilde{\mathbf{K}}_t^\top \mathbf{V}_t \in \mathbb{R}^{D_k \times D_v}, \\
+\mathbf{Z}_t &= \lambda_t \odot \mathbf{Z}_{t-1} + \tilde{\mathbf{K}}_t^\top \mathbf{1} \in \mathbb{R}^{D_k \times 1}
+\end{align}
+سپس خروجی هر گام از طریق نرمال‌سازی با ضرب داخلی بردار پرس‌وجو به دست می‌آید:
+\begin{equation}
+\mathbf{y}_t = \frac{\tilde{\mathbf{Q}}_t \mathbf{S}_t}{\tilde{\mathbf{Q}}_t \mathbf{Z}_t + \epsilon}
+\end{equation}
+در حالت پردازش دسته‌ای، این فرآیند از طریق اسکن تکه‌ای (\lr{Chunk-wise Scan}) با اندازه بلوک ۶۴ توکن به صورت کاملاً موازی روی کارت گرافیک شتاب‌بخشی می‌شود.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+علت ثبت دقت \lr{0.00\%} و وضعیت‌های \lr{SKIP\_ARCHITECTURAL} را می‌توان در ناسازگاری بنیادین الگوریتم با لایه‌های پیش‌آموزش‌دیده جستجو کرد:
+\begin{enumerate}
+    \item \textbf{ناسازگاری فرمول‌بندی بازگشتی با انکودرهای دوطرفه (\lr{DistilBERT, RoBERTa}):} انکودرهای دوطرفه بر پایه انتشار همزمان اطلاعات در تمام جهات آموزش دیده‌اند. تبدیل مکانیزم توجه آنها به یک فرآیند علّی با زوال زمانی یک‌طرفه، مسیر تبادل اطلاعات به سمت چپ را مسدود نموده و منجر به خطای ساختاری شدید در لایه طبقه‌بند نهایی می‌گردد. از این رو سیستم آزمون، آن را به عنوان ناسازگاری ساختاری انکودر (\lr{SKIP\_BERT\_ARCHITECTURAL} و \lr{SKIP\_ROBERTA\_ARCHITECTURAL}) رد کرده است.
+    \item \textbf{فروپاشی مقیاس حالت در دیکودر علّی (\lr{GPT-2}):} در مدل \lr{GPT-2}، مخرج نرمال‌سازی کسر $\tilde{\mathbf{Q}}_t \mathbf{Z}_t + \epsilon$ به دلیل ضریب زوال فزاینده در طول دنباله به سمت مقادیر بسیار کوچک میل کرده و نوسانات شدیدی در مقیاس خروجی ایجاد می‌کند که لایه سر طبقه‌بند را دچار اشباع و فروپاشی پیش‌بینی می‌سازد.
+    \item \textbf{عدم پشتیبانی از ساختار نوین در \lr{Qwen} (\lr{SKIP\_NO\_SUPPORT}):} عدم سازگاری مستقیم کرنل زوال خطی با ساختار توجه با پرس‌وجوی گروه‌بندی‌شده (\lr{GQA}) و تعبیه مکانی چندبعدی چرخان در کلاس اولیه ماژول، مانع از اجرای آزمون در این مدل شده است.
+\end{enumerate}

@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی ثبت‌شده برای فشرده‌ساز \lr{bonsai\_pruner} در سناریوهای مختلف در جدول \ref{tab:benchmark_bonsai_pruner} گزارش گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{bonsai\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_bonsai_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{90.48\%} & \lr{0.9095} & \lr{357.28 MB} & \lr{139,885.85 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{80.90\%} & \lr{0.8092} & \lr{446.34 MB} & \lr{246,370.84 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{93.35\%} & \lr{0.9358} & \lr{503.28 MB} & \lr{14,059.48 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (WikiText-2)} & \lr{0.00\%} & \lr{0.0000} & \lr{816.23 MB} & \lr{1,410.97 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشهود است، ماژول \lr{bonsai\_pruner} روی مدل‌های انکودری نتایج قابل توجه پایدار و بالایی از خود نشان داده است. در مدل \lr{RoBERTa} به دقت درخشان \lr{93.35\%} با شاخص F1 معادل \lr{0.9358} دست یافته و در مدل \lr{DistilBERT} دقت \lr{90.48\%} با توان بسیار سریع \lr{139,885} توکن بر ثانیه روی SST-2 و دقت \lr{80.90\%} با توان قابل توجه \lr{246,370} توکن بر ثانیه روی دادگان MNLI حاصل گردیده است. در مدل \lr{GPT-2} وضعیت \lr{PASS\_NO\_COMPRESSION} گزارش شده است زیرا هیچ لایه‌ای شرایط فشرده‌سازی را بدون افت خطا پاس نکرده و دست‌نخورده باقی مانده است. این ماژول بر روی مدل \lr{Qwen} اجرا نشده و در وضعیت \lr{NOT\_RUN} قرار دارد.

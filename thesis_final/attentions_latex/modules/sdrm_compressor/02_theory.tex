@@ -1,0 +1,33 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید لایه خطی مورد نظر دارای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تعداد پارامتر اولیه $P_{\text{orig}} = d_{\text{in}} \cdot d_{\text{out}}$ باشد.
+
+\begin{enumerate}
+    \item \textbf{تخصیص بودجه و تعیین رتبه مدوله‌شده:}
+    اگر نسبت بودجه مجاز برای پارامترهای لایه پس از فشرده‌سازی با $\beta \in (0, 1)$ (\lr{total\_param\_ratio}) مشخص گردد، بودجه مجاز پارامترها برابر است با:
+    \begin{equation}
+    P_{\text{allowed}} = \beta \cdot (d_{\text{in}} \cdot d_{\text{out}})
+    \end{equation}
+    در تجزیه به ساختار دو فاکتوره با رتبه $r$، تعداد پارامترهای حاصله برابر است با $P_{\text{fact}} = r \cdot (d_{\text{in}} + d_{\text{out}})$. از این رو، رتبه بهینه مدوله‌شده به صورت مستقیم از رابطه زیر تعیین می‌شود:
+    \begin{equation}
+    r_{\text{target}} = \left\lfloor \frac{P_{\text{allowed}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor = \left\lfloor \frac{\beta \cdot d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor
+    \end{equation}
+
+    \item \textbf{اعمال محدودیت‌های مرزی و سقف کاهش پارامتر:}
+    جهت تضمین کاهش قطعی حجم و ممانعت از تنزل بیش از حد رتبه، مقدار $r$ با روابط زیر مهار می‌گردد:
+    \begin{equation}
+    r_{\text{cap}} = \max\left(1, \left\lfloor \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1\right)
+    \end{equation}
+    \begin{equation}
+    r = \max\left(r_{\text{min}}, \min\left(r_{\text{target}}, \min(d_{\text{out}}, d_{\text{in}}) - 1, r_{\text{cap}}\right)\right)
+    \end{equation}
+
+    \item \textbf{تجزیه ماتریسی و ساخت لایه \lr{SVDLinear}:}
+    با تثبیت رتبه مدوله‌شده $r$، تجزیه مقادیر منفرد بر روی ماتریس وزن اعمال شده و دو فاکتور $\mathbf{V}_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{U}_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}$ استخراج می‌شوند:
+    \begin{equation}
+    \mathbf{W} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \mathbf{V}_{\text{down}} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top, \quad \mathbf{U}_{\text{up}} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2}
+    \end{equation}
+    انتشار خروجی با رابطه خطی زنجیره‌ای بدون نیاز به ساخت ماتریس متراکم اولیه انجام می‌شود:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} \mathbf{V}_{\text{down}}^\top \mathbf{U}_{\text{up}}^\top + \mathbf{b}
+    \end{equation}
+\end{enumerate}

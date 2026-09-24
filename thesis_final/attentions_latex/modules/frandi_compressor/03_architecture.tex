@@ -1,0 +1,30 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس‌های \lr{FRanDICompressor} و لایه اختصاصی \lr{FRanDILinear} در فایل \lr{Codes/framework/compression\_engine/frandi\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{frandi}، \lr{frandi\_compressor} و کارخانه‌های مربوطه ثبت شده‌اند. برجسته‌ترین نقاط پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول خطی اختصاصی \lr{FRanDILinear}:} این ماژول جایگزین لایه‌های متراکم و \lr{Conv1D} شده و علاوه بر نگهداری پارامترهای منجمد فاکتورهای $\mathbf{A}$ و $\mathbf{B}$، آداپتورهای باقیمانده \lr{LoRA} را با همان نوع داده (\lr{dtype}) در خود جای می‌دهد.
+    \item \textbf{مقداردهی اولیه پایدار در دقت \lr{FP32}:} مقداردهی اولیه ماتریس پایه $\mathbf{A}$ به صورت متعامد (\lr{Orthogonal}) در فضای اعشاری ۳۲بیتی صورت گرفته و سپس به نوع داده هدف مدل قالب‌بندی می‌شود تا از بروز مقادیر تعریف‌نشده در \lr{BF16} جلوگیری گردد.
+    \item \textbf{انطباق با توجه نامتقارن (\lr{GQA Asymmetry Protection}):} با استفاده از تابع پیش‌بینی \lr{\_is\_gqa\_asymmetric}، ماتریس‌های توجه در مدل‌های دارای سر غیرهمگون جهت پیشگیری از خطای ابعادی دست‌نخورده باقی می‌مانند.
+    \item \textbf{ارزیابی خطای فروبنیوس و مسیر برگشت خودکار:} چنانچه خطای نسبی تقریب فاکتورگیری بیش از \lr{max\_error=0.40} گردد، ماژول لایه را بدون تغییر حفظ می‌نماید.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{frandi\_compressor} بر روی مدل‌های بنچ‌مارک در \lr{thesis\_final/master\_verified\_results.json} ثبت شده و در جدول \ref{tab:benchmark_frandi_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{frandi\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_frandi_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.99\%} & \lr{0.6340} & \lr{1,352.40 MB} & \lr{90,755.90 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{67.43\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.85\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{توضیح مقایسه‌ای با نگارش پایه \lr{frandi}:} نگارش خط پایه \lr{frandi} (بدون تفکیک فیزیکی عمیق) به دقت‌های بالاتری نظیر \lr{90.37\%} در \lr{DistilBERT} و \lr{88.76\%} در \lr{RoBERTa} دست می‌یابد؛ اما پیاده‌سازی کامل ساختاری \lr{frandi\_compressor} با جایگزینی فیزیکی \lr{FRanDILinear} بر روی \lr{DistilBERT} دقت \lr{63.99\%} و بر روی \lr{GPT-2} دقت \lr{67.43\%} با توان عملیاتی پایدار \lr{90,755.90 tok/s} تولید نموده است. وضعیت مدل \lr{RoBERTa} به دلیل ساختار ترتیبی متغیر در مدل به صورت \lr{SKIP\_ROBERTA\_ARCHITECTURAL} طبقه‌بندی شده است.

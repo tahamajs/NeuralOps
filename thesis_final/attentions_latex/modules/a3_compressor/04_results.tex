@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی بنچ‌مارک سخت‌افزاری و آزمون دقت فشرده‌ساز \lr{a3\_compressor} بر روی مدل‌های گوناگون بر پایه پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_a3_compressor} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{a3\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_a3_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.98\%} & \lr{0.7975} & \lr{773.88 MB} & \lr{26,884.14 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.67\%} & \lr{0.8731} & \lr{389.89 MB} & \lr{8,249.33 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{75.34\%} & \lr{0.7898} & \lr{468.84 MB} & \lr{10,877.23 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.99\%} & \lr{---} & \lr{1,260.31 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{a3\_compressor} کارایی قابل توجه‌ای در مدل‌های متراکم نشان داده است؛ به طوری که در مدل \lr{RoBERTa} دقت بسیار بالای \lr{85.67\%} همراه با شاخص F1 معادل \lr{0.8731} به ثبت رسیده و در مدل‌های \lr{DistilBERT} و \lr{GPT-2} نیز به ترتیب دقت‌های پایدار \lr{77.98\%} و \lr{75.34\%} گزارش شده است که همگی وضعیت موفقیت‌آمیز \lr{PASS} را احراز کرده‌اند.

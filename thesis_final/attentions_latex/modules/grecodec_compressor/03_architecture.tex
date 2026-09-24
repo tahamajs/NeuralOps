@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این موتور در فایل \lr{Codes/framework/compression\_engine/grecodec\_compressor.py} قرار داشته و با شناسه‌های \lr{grecodec} و \lr{grecodec\_compressor\_class} در \lr{COMPRESSOR\_REGISTRY} به ثبت رسیده است. اجزای اصلی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول خطی \lr{GreCoDeCLinear}:} جایگزین لایه‌های \lr{nn.Linear} و \lr{Conv1D} شده و دارای دو پارامتر $\mathbf{U}$ و $\mathbf{V}$ است.
+    \item \textbf{پشتیبانی از تفکیک لایه‌های توجه (\lr{Target Attention Only}):} قابلیت محدودسازی فشرده‌سازی تنها به پروجکشن‌های توجه (\lr{q\_proj, k\_proj, v\_proj, o\_proj, c\_attn, c\_proj}) یا اعمال فراگیر بر تمام لایه‌های خطی مدل.
+    \item \textbf{مکانیزم گیت کنترل خطا (\lr{Max Error Threshold}):} اگر خطای نسبی فروبنیوس $\|\mathbf{W} - \mathbf{U}\mathbf{V}\|_F / \|\mathbf{W}\|_F$ فراتر از حد مجاز تنظیم‌شده باشد، لایه به حالت پشتیبان بازگردانده می‌شود.
+    \item \textbf{تزریق موازی آداپتور \lr{LoRA}:} تثبیت فاکتورهای پایه $\mathbf{U}$ و $\mathbf{V}$ و آموزش‌پذیر نگه داشتن آداپتورهای کم‌مرتبه \lr{LoRA} برای بازیابی سریع دقت در فاز تنظیم مجدد (\lr{Fine-tuning Recovery}).
+\end{itemize}

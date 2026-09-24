@@ -1,0 +1,30 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ابعاد بیشینه $r_{\text{max}} = \min(d_{\text{out}}, d_{\text{in}})$، تجزیه مقادیر منفرد به صورت زیر انجام می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top, \quad \mathbf{\Sigma} = \text{diag}(\sigma_1, \sigma_2, \dots, \sigma_{r_{\text{max}}})
+\end{equation}
+
+توزیع احتمالاتی انرژی مقادیر منفرد به شکل توزیع نرمال‌شده توان مقادیر منفرد تعریف می‌گردد:
+\begin{equation}
+p_i = \frac{\sigma_i^2}{\sum_{j=1}^{r_{\text{max}}} \sigma_j^2 + \epsilon}, \quad i = 1, \dots, r_{\text{max}}
+\end{equation}
+
+آنتروپی شانون طیفی مقادیر منفرد لایه بر اساس توزیع $p$ محاسبه می‌شود:
+\begin{equation}
+H(\mathbf{\Sigma}) = - \sum_{i=1}^{r_{\text{max}}} p_i \ln(p_i)
+\end{equation}
+
+آنتروپی نرمال‌شده $\bar{H} \in [0, 1]$ از طریق مقایسه با بیشینه آنتروپی تئوریک $\ln(r_{\text{max}})$ استخراج می‌گردد:
+\begin{equation}
+\bar{H} = \frac{H(\mathbf{\Sigma})}{\max(\ln(r_{\text{max}}), \epsilon)}
+\end{equation}
+
+رتبه تخصیص‌یافته به لایه بر پایه آنتروپی محاسبه شده و با اعمال کف رتبه مجاز $r_{\text{min}}$ مقید می‌شود:
+\begin{equation}
+r = \max\left(r_{\text{min}}, \min\left(r_{\text{max}}, \lfloor \bar{H} \cdot r_{\text{max}} \rceil\right)\right)
+\end{equation}
+در صورت تنظیم رتبه سقف $r_{\text{target}}$ در تنظیمات، مقدار $r \le r_{\text{target}}$ اعمال خواهد شد. فاکتورهای خطی با توزیع متقارن جذر مقادیر منفرد محاسبه می‌شوند:
+\begin{equation}
+\mathbf{U}_r = \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{V}_r = \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+و لایه متراکم با ماژول دو‌مرحله‌ای \lr{SVDLinear} جایگزین می‌گردد.

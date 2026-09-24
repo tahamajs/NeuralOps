@@ -1,0 +1,26 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی ماژول \lr{enlighten\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_enlighten_compressor} ثبت شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{enlighten\_compressor} بر روی مدل‌های پایه}
+\label{tab:benchmark_enlighten_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس مستندات خطا در نتایج بنچ‌مارک، در راندهای اولیه ارزیابی به دلیل عدم تطابق نام ثبتی در رجیستری فشرده‌ساز با خطای زیر متوقف شده است:
+\begin{center}
+\small
+\lr{RuntimeError: Compressor 'enlighten\_compressor' not found in COMPRESSOR\_REGISTRY}
+\end{center}
+این امر وضعیت اجرا را برای مدل‌های \lr{DistilBERT} و \lr{RoBERTa} در حالت \lr{FAIL} ثبت کرده است. ارزیابی مدل \lr{GPT-2} اجرا نگردیده (\lr{NOT\_RUN}) و برای \lr{Qwen} به دلیل محدودیت منابع در وضعیت \lr{SKIP} قرار گرفته است.

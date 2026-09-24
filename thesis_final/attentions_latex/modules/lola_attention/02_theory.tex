@@ -1,0 +1,23 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه‌های پروجکشن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، ماتریس وزن به حاصل‌ضرب دو ماتریس متعامد با رتبه پایین $r \ll \min(d_{\text{in}}, d_{\text{out}})$ تجزیه شده و توسط جمله باقیمانده \lr{LoRA} بازسازی می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{V} + \frac{\alpha}{r_{\text{lora}}} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}$ با شرایط ارتوگونالیتی اولیه $\mathbf{U}^T \mathbf{U} = \mathbf{I}$ مقداردهی شده و در طی فرآیند تنظیم دقیق تثبیت می‌گردند.
+
+در سمت حافظه پنهان دیکودر، تانسورهای کلید و مقدار $\mathbf{K}$ و $\mathbf{V}$ در سه مخزن زمانی مجزا با ساختار چندسطحی مدیریت می‌شوند:
+\begin{enumerate}
+    \item \textbf{بافر توکن‌های اخیر (\lr{Recent Window}):} نگهداری دقیق $W_{\text{recent}}$ توکن گذشته برای ثبت وابستگی‌های نحوی بومی:
+    \begin{equation}
+    \mathbf{K}_{\text{recent}} = \mathbf{K}_{t - W_{\text{recent}} : t}
+    \end{equation}
+    \item \textbf{بافر نمونه‌برداری تُنُک (\lr{Strided Sparse Window}):} ذخیره توکن‌ها با گام زمانی $s > 1$ برای پوشش پنجره‌های میانی:
+    \begin{equation}
+    \mathbf{K}_{\text{sparse}} = \{ \mathbf{K}_i \mid i \equiv 0 \pmod s, \; i < t - W_{\text{recent}} \}
+    \end{equation}
+    \item \textbf{بافر تصویرسازی کم‌رتبه (\lr{Low-Rank Projected Buffer}):} کاهش بعد توکن‌های باستانی با استفاده از تجزیه ارتوگونال \lr{QR} روی ماتریس تصویر تصادفی ثابت $\mathbf{P} \in \mathbb{R}^{d \times k}$:
+    \begin{equation}
+    \mathbf{Q}_r, \mathbf{R}_r = \operatorname{QR}(\mathbf{K}_{\text{history}} \mathbf{P}), \quad \mathbf{K}_{\text{compressed}} = \mathbf{Q}_r \left( \mathbf{Q}_r^T \mathbf{K}_{\text{history}} \right)
+    \end{equation}
+\end{enumerate}
+در نهایت، امتیازات توجه با الحاق این سه مخزن و با پیچیدگی بسیار کمتر از کش کامل محاسبه می‌گردد.

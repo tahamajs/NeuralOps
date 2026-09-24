@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_hybrid} بر روی بنچ‌مارک استاندارد طبقه بندی متن \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی انجام پذیرفته است. نتایج حاصل از پایگاه داده اعتبارسنجی‌شده در جدول \ref{tab:benchmark_aegis_hybrid} گزارش گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_hybrid} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_hybrid}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{78.44\%} & \lr{0.8029} & \lr{208.43 MB} & \lr{65,663.58 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{366.08 MB} & \lr{34,150.60 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.03\%} & \lr{0.6753} & \lr{476.01 MB} & \lr{45,836.71 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{44.77\%} & \lr{---} & \lr{1,195.99 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج جدول، ماژول بر روی مدل \lr{DistilBERT} به دقت \lr{78.44\%} و شاخص F1 معادل \lr{0.8029} با مصرف حافظه بسیار اندک \lr{208.43 MB} و توان عملیاتی بالای \lr{65,663.58 tok/s} دست یافته است.

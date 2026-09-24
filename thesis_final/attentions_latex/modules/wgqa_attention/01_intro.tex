@@ -1,0 +1,29 @@
+\subsection{معرفی و انگیزه}
+این مکانیزم بر مبنای مبانی نظری پیشرفته در ادبیات توجه و فشرده‌سازی \cite{ainslie2023gqa} توسعه یافته است.
+
+مکانیزم توجه گروهی بر مبنای پرس‌وجو (\lr{Grouped-Query Attention یا GQA}) به عنوان یک استاندارد صنعتی جهت کاهش حجم ترافیک بافر کلید/مقدار (\lr{KV-Cache}) در مدل‌های زبانی بزرگ مطرح شده است. در \lr{GQA} کلاسیک، چندین سر پرس‌وجو به صورت یکنواخت به یک سر مشترک کلید/مقدار نگاشت داده می‌شوند که این اشتراک‌گذاری صلب بدون لحاظ اهمیت نسبی یا تفاوت‌های نقشی کانال‌ها صورت می‌گیرد.
+
+ماژول توجه \lr{Weighted Grouped-Query Attention (WGQA)} با هدف رفع این نقیصه از طریق معرفی پارامترهای اهمیت آموزش‌پذیر برای سرهای کلید و مقدار توسعه یافته است. در این مکانیزم، هر سر اختصاصی کلید و مقدار دارای ضریب مقیاس یادگیرنده‌ای است که در طول آموزش وزن متناسب با چگالی اطلاعاتی خود را به دست می‌آورد. این رویکرد به مدل اجازه می‌دهد ضمن کاهش سربار حافظه از طریق گروه‌بندی سرها، انعطاف‌پذیری بازنمایی را حفظ کرده و افت کارایی ناشی از تجمیع سرها را به طور پویا جبران نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تعداد سرهای پرس‌وجو $H$ و تعداد سرهای کلید/مقدار $H_{\text{kv}}$ باشد به‌طوری‌که $H_{\text{kv}} \le H$ و نسبت تکرار $R = H / H_{\text{kv}}$ یک عدد صحیح مثبت باشد. تانسورهای پرس‌وجو، کلید و مقدار با ابعاد زیر استخراج می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N_q \times d}, \quad \mathbf{K} \in \mathbb{R}^{B \times H_{\text{kv}} \times N_k \times d}, \quad \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N_k \times d}
+\end{equation}
+نوآوری اصلی \lr{WGQA} در معرفی بردارهای وزنی یادگیرنده $\mathbf{w}_k \in \mathbb{R}^{H_{\text{kv}}}$ و $\mathbf{w}_v \in \mathbb{R}^{H_{\text{kv}}}$ نهفته است. پیش از عملیات تکرار سرها، مقیاس‌دهی با این ضرایب انجام می‌پذیرد:
+\begin{equation}
+\tilde{\mathbf{K}}_g = \mathbf{w}_{k, g} \cdot \mathbf{K}_g, \quad \tilde{\mathbf{V}}_g = \mathbf{w}_{v, g} \cdot \mathbf{V}_g \quad \forall g \in \{1, \dots, H_{\text{kv}}\}
+\end{equation}
+سپس تانسورهای وزن‌دار شده با استفاده از تابع تکرار کپی‌شده (\lr{repeat\_kv}) به تعداد سرهای پرس‌وجو بسط داده می‌شوند:
+\begin{equation}
+\hat{\mathbf{K}} = \operatorname{repeat\_kv}(\tilde{\mathbf{K}}, R), \quad \hat{\mathbf{V}} = \operatorname{repeat\_kv}(\tilde{\mathbf{V}}, R)
+\end{equation}
+در صورت تجهیز مدل به تعبیه‌های مکانی چرخشی (\lr{RoPE})، نگاشت زاویه‌ای بر روی جفت‌های متعامد پرس‌وجو و کلید اعمال می‌گردد:
+\begin{equation}
+\mathbf{Q}_{\text{rot}}, \hat{\mathbf{K}}_{\text{rot}} = \operatorname{apply\_rotary\_pos\_emb}(\mathbf{Q}, \hat{\mathbf{K}}, \cos, \sin)
+\end{equation}
+در نهایت، ماتریس امتیازات توجه مقیاس‌پذیر و توزیع وزن با تابع بیشینه هموار محاسبه شده و خروجی استخراج می‌گردد:
+\begin{equation}
+\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \hat{\mathbf{K}}^\top}{\sqrt{d}} + \mathbf{M}\right), \quad \mathbf{O} = \mathbf{A} \hat{\mathbf{V}}
+\end{equation}
+که در آن $\mathbf{M}$ ماتریس ماسک توجه (شامل ماسک علّی در دیکودر یا ماسک طول معتبر در انکودر) است.

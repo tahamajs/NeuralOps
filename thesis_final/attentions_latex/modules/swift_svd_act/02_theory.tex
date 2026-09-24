@@ -1,0 +1,35 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید برای یک لایه خطی با وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، جفت تانسورهای ورودی و خروجی روی $N$ توکن کالیبراسیون به ترتیب $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ و $\mathbf{Y} \in \mathbb{R}^{N \times d_{\text{out}}}$ باشند.
+
+\textbf{۱. انباشت برخط کوواریانس متقاطع (\lr{Online Cross-Covariance}):} \\
+ماتریس کوواریانس متقاطع تجربی به صورت برخط و بدون ذخیره نمونه‌های منفرد در حافظه محاسبه می‌شود:
+\begin{equation}
+\mathbf{C}_{XY} = \frac{1}{N} \mathbf{Y}^\top \mathbf{X} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+انباشت این تانسور در دقت مضاعف (\lr{torch.float64}) صورت می‌گیرد تا از خطاهای ناشی از سرریز و پدیده کم‌شدن دقت جلوگیری شود.
+
+\textbf{۲. استخراج زیرفضای فعال‌سازی (\lr{Subspace Extraction}):} \\
+تجزیه مقادیر منفرد بر روی ماتریس کوواریانس متقاطع انجام می‌شود:
+\begin{equation}
+\mathbf{C}_{XY} = \mathbf{U}_c \mathbf{\Sigma}_c \mathbf{V}_c^\top
+\end{equation}
+با برش به رتبه $r_{\text{act}} \le r$， پایه‌های قطعی فعال‌سازی خروجی و ورودی استخراج می‌گردند:
+\begin{equation}
+\mathbf{U}_{\text{act}} = \mathbf{U}_{c}[:, :r_{\text{act}}] \in \mathbb{R}^{d_{\text{out}} \times r_{\text{act}}}, \quad \mathbf{V}_{\text{act}} = \mathbf{V}_{c}[:, :r_{\text{act}}] \in \mathbb{R}^{d_{\text{in}} \times r_{\text{act}}}
+\end{equation}
+
+\textbf{۳. تصویر وزن بر زیرفضای فعال‌سازی و سنتز فاکتورها (\lr{Projection and Factor Synthesis}):} \\
+ماتریس وزن اصلی بر زیرفضای دوجانبه فعال‌سازی تصویر می‌شود:
+\begin{equation}
+\mathbf{M} = \mathbf{U}_{\text{act}}^\top \mathbf{W} \mathbf{V}_{\text{act}} \in \mathbb{R}^{r_{\text{act}} \times r_{\text{act}}}
+\end{equation}
+سپس تجزیه نهایی مقادیر منفرد بر روی این ماتریس کوچک انجام می‌پذیرد:
+\begin{equation}
+\mathbf{M} = \mathbf{U}_m \mathbf{\Sigma}_m \mathbf{V}_m^\top
+\end{equation}
+فاکتورهای نهایی بازسازی وزن با فرمول‌بندی زیر سنتز می‌شوند:
+\begin{align}
+\mathbf{A} &= (\mathbf{U}_{\text{act}} \mathbf{U}_m[:, :r]) \operatorname{diag}(\sqrt{\mathbf{\sigma}_{m, 1:r}}) \in \mathbb{R}^{d_{\text{out}} \times r} \\
+\mathbf{B} &= \operatorname{diag}(\sqrt{\mathbf{\sigma}_{m, 1:r}}) (\mathbf{V}_m^\top[:r, :] \mathbf{V}_{\text{act}}^\top) \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{align}
+به طوری که $\mathbf{W} \approx \mathbf{A} \mathbf{B}$ بوده و خطای بازسازی به صورت تابع هزینه فروبنیوس $\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{A}\mathbf{B}\|_F}{\|\mathbf{W}\|_F + 10^{-8}}$ پایش می‌گردد. در صورت عدم همگرایی مناسب، الگوریتم به صورت خودکار به \lr{SVD} مستقیم سوئیچ می‌کند.

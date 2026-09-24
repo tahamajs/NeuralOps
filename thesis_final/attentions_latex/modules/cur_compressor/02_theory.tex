@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ ماتریس وزن یک لایه متراکم با رتبه کامل باشد. هدف یافتن تقریب کم‌مرتبه به فرم زیر با رتبه هدف $r \ll \min(D_{\text{out}}, D_{\text{in}})$ است:
+\begin{equation}
+W \approx C \cdot U \cdot R
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $C \in \mathbb{R}^{D_{\text{out}} \times r}$: ماتریس اسکلت ستونی متشکل از $r$ ستون گزینش‌شده از ماتریس $W$.
+    \item $R \in \mathbb{R}^{r \times D_{\text{in}}}$: ماتریس اسکلت سطری متشکل از $r$ سطر گزینش‌شده از ماتریس $W$.
+    \item $U \in \mathbb{R}^{r \times r}$: ماتریس هسته میانی با ابعاد بسیار فشرده که تقاطع ستون‌ها و سطرها را پیوند می‌دهد.
+\end{itemize}
+
+\subsubsection*{۱. گزینش ستون‌ها و سطرها با امتیازهای اهرمی آماری (Leverage Scores)}
+برای ماتریس $W$ با تجزیه منفرد $W = \widetilde{U} \Sigma \widetilde{V}^\top$، امتیازهای اهرمی سطرها و ستون‌ها برای $r$ بردار منفرد برتر به صورت توزیع احتمال معتبر تعریف می‌شوند:
+\begin{equation}
+p_i^{\text{row}} = \frac{1}{r} \sum_{j=1}^r \widetilde{U}_{ij}^2, \quad p_j^{\text{col}} = \frac{1}{r} \sum_{i=1}^r \widetilde{V}_{ji}^2
+\end{equation}
+ستون‌ها و سطرها بر اساس بیشترین امتیازهای اهرمی یا نمونه‌برداری چندجمله‌ای انتخاب شده و ماتریس‌های $C$ و $R$ را شکل می‌دهند.
+
+\subsubsection*{۲. محاسبه هسته میانی با شبه‌وارون منظم‌شده تیخونوف (Tikhonov-Regularized Pseudo-Inverse)}
+فرض کنید ماتریس تقاطع حاصل از اشتراک سطرها و ستون‌های گزینش‌شده با $W_{\text{inter}} \in \mathbb{R}^{r \times r}$ نشان داده شود ($W_{\text{inter}} = W[I_{\text{rows}}, I_{\text{cols}}]$). هسته میانی $U$ به عنوان شبه‌وارون مور-پنروز این ماتریس با منظم‌سازی تیخونوف جهت مهار مقادیر تکین نزدیک به صفر محاسبه می‌گردد:
+\begin{equation}
+U = (W_{\text{inter}}^\top W_{\text{inter}} + \lambda I)^{-1} W_{\text{inter}}^\top
+\end{equation}
+که در آن $\lambda > 0$ پارامتر منظم‌سازی پایداری عددی است.
+
+\subsubsection*{۳. گذر رو به جلو سه‌مرحله‌ای (Three-Stage Forward Pass)}
+حین استنتاج، تانسور ورودی $x$ در سه مرحله زنجیره‌ای ضرب تانسوری بدون بازسازی ماتریس متراکم عبور داده می‌شود:
+\begin{equation}
+y = \left( \left( (x \cdot R^\top) \cdot U^\top \right) \cdot C^\top \right) + b
+\end{equation}
+این فرمول‌بندی پیچیدگی زمانی و مکانی را به شدت کاهش داده و نیاز به دسترسی به حافظه سراسری را به حداقل می‌رساند.

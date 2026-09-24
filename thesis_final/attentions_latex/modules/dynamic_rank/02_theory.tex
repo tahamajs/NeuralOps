@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن لایه $l$ به صورت $\mathbf{W}_l \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با مقادیر منفرد هموارشده $\sigma_{l, 1} \ge \sigma_{l, 2} \ge \dots \ge \sigma_{l, d}$ حاصل از کوواریانس ورودی یا خود وزن، جرم احتمالاتی هر مقدار منفرد تعریف می‌شود:
+\begin{equation}
+p_{l, i} = \frac{\sigma_{l, i} + \epsilon_{\text{tik}}}{\sum_{j=1}^d (\sigma_{l, j} + \epsilon_{\text{tik}})}
+\end{equation}
+که در آن $\epsilon_{\text{tik}} > 0$ ضریب منظم‌سازی تیکونوف جهت جلوگیری از ناپایداری محاسباتی است. آنتروپی تکین شانون به صورت زیر فرمول‌بندی می‌گردد:
+\begin{equation}
+H(\mathbf{\Sigma}_l) = -\sum_{i=1}^d p_{l, i} \ln(p_{l, i})
+\end{equation}
+در حضور قید کل بودجه پارامتری $P_{\text{budget}}$، مسئله بهینه‌سازی رتبه لایه‌ها $r_l \in [r_{\min}, r_{\max}]$ با هزینه پارامتری $r_l (d_{\text{in}} + d_{\text{out}})$ فرموله می‌شود:
+\begin{equation}
+\max_{\{r_l\}} \sum_{l=1}^L \frac{H(\mathbf{\Sigma}_l)}{\sum_k H(\mathbf{\Sigma}_k)} \cdot r_l \quad \text{subject to} \quad \sum_{l=1}^L r_l (d_{\text{in}}^{(l)} + d_{\text{out}}^{(l)}) \le P_{\text{budget}}
+\end{equation}
+تخصیص بهینه رتبه با روش تکرار دودویی مقیاس پیرامون نقطه تعادل به دست می‌آید:
+\begin{equation}
+r_l = \operatorname{clip}\left(\left\lfloor \lambda^* \frac{H(\mathbf{\Sigma}_l)}{\sum_k H(\mathbf{\Sigma}_k)} \right\rceil, r_{\min}^{(l)}, r_{\max}^{(l)}\right)
+\end{equation}
+سپس تجزیه مقادیر منفرد $\mathbf{W}_l = \mathbf{U}_l \mathbf{\Sigma}_l \mathbf{V}_l^\top$ به دو عامل تجزیه‌شده با تقسیم متقارن مقادیر منفرد شکسته می‌شود:
+\begin{equation}
+\mathbf{U}_{r_l} = \mathbf{U}_l[:, :r_l] \mathbf{\Sigma}_l[:r_l]^{1/2}, \quad \mathbf{V}_{r_l} = \mathbf{\Sigma}_l[:r_l]^{1/2} \mathbf{V}_l[:, :r_l]^\top
+\end{equation}
+خروجی لایه فشرده در فاز استنتاج برابر است با:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{V}_{r_l}^\top \mathbf{U}_{r_l}^\top + \mathbf{b}_l
+\end{equation}

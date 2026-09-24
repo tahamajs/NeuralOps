@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی کلاس \lr{DecayGatedLinearAttention} در فایل \lr{Codes/framework/attentions/svd\_linear\_decay.py} به عنوان زیرکلاسی از \lr{SVDLinearAttention} مستقر است:
+\begin{itemize}
+    \item \textbf{انتقال و تزریق:} تابع \lr{inject\_svd\_linear\_decay} سازوکار پیمایش کامل سلسله‌مراتب لایه‌های ترنسفورمر را در مدل‌های مختلف فراهم می‌آورد.
+    \item \textbf{کرنل زوال دروازه‌بانی‌شده:} تابع \lr{\_forward\_decay\_gated\_linear\_kernel} اجرای اسکن موازی تکه‌ای را در انواع دقت‌های \lr{FP32} و \lr{BF16} مدیریت می‌کند.
+    \item \textbf{انطباق پارامتری لورا:} بهره‌گیری از تطبیق‌دهنده‌های کم‌مرتبه در لایه‌های تصویربرداری جهت بازیافت توان بازنمایی بدون نیاز به تنظیم سراسری وزن‌های مدل پایه.
+\end{itemize}

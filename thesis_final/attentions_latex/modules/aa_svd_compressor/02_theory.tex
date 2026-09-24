@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در طول فاز کالیبراسیون، ماتریس کوواریانس ورودی $\mathbf{C}_X$ با استفاده از نمونه‌های ورودی و ضریب واپاشی نمایی $\beta \in [0, 1]$ به صورت جاری به‌روزرسانی می‌گردد:
+\begin{equation}
+\mathbf{C}_X^{(t)} = \beta \mathbf{C}_X^{(t-1)} + (1 - \beta) \frac{1}{B} \sum_{i=1}^B \mathbf{X}_i^\top \mathbf{X}_i
+\end{equation}
+به منظور تضمین مثبت معین بودن ماتریس، کوواریانس متقارن‌سازی و منظم‌سازی شده و تجزیه مقادیر ویژه بر روی آن اعمال می‌شود:
+\begin{equation}
+\mathbf{C}_X = \mathbf{Q}_c \mathbf{\Lambda}_c \mathbf{Q}_c^\top, \quad \mathbf{C}_X^{1/2} = \mathbf{Q}_c \mathbf{\Lambda}_c^{1/2} \mathbf{Q}_c^\top, \quad \mathbf{C}_X^{-1/2} = \mathbf{Q}_c \mathbf{\Lambda}_c^{-1/2} \mathbf{Q}_c^\top
+\end{equation}
+ماتریس وزن اولیه لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با جذر کوواریانس مقیاس‌گذاری متقارن می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{W} \mathbf{C}_X^{1/2}
+\end{equation}
+سپس تجزیه مقادیر منفرد بر روی این ماتریس وزن هم‌تراز شده اجرا می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+برای رتبه انتخابی $r \le \min(d_{\text{in}}, d_{\text{out}})$، مقادیر منفرد با قاعده جذر متقارن به فاکتورهای چپ و راست تخصیص داده شده و اثر پیش‌شرط‌سازی با ضرب معکوس جذر کوواریانس خنثی می‌گردد:
+\begin{equation}
+\mathbf{U}_r = \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{V}_r = \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \mathbf{C}_X^{-1/2} \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+در حین استنتاج، خروجی لایه فشرده با دو پروجکشن متوالی محاسبه می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}_r^\top) \mathbf{U}_r^\top + \mathbf{b}
+\end{equation}
+که در آن تعداد کل پارامترها از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ تقلیل می‌یابد.

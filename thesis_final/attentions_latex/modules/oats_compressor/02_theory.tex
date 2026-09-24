@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی \lr{OATS} در پنج مرحله ریاضی منسجم تدوین می‌گردد:
+\begin{enumerate}
+    \item \textbf{محاسبه ماتریس گشتاور دوم فعال‌سازی‌ها:} با استفاده از داده‌های کالیبراسیون ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$:
+    \begin{equation}
+    \mathbf{M} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه چولسکی ماتریس گشتاور:}
+    \begin{equation}
+    \mathbf{M} = \mathbf{L}_M \mathbf{L}_M^\top
+    \end{equation}
+    \item \textbf{پیش‌شرط‌سازی ماتریس وزن:} ماتریس وزن لایه خطی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ در فاکتور چولسکی ضرب می‌شود:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \mathbf{L}_M
+    \end{equation}
+    \item \textbf{تجزیه تناوبی کم‌مرتبه و تنک (\lr{Alternating Decomposition}):} مؤلفه کم‌مرتبه $\mathbf{L}$ و مؤلفه تنک $\mathbf{S}$ به صورت متناوب بهینه‌سازی می‌شوند:
+    \begin{equation}
+    \mathbf{L} = \operatorname{SVD}_r(\tilde{\mathbf{W}} - \mathbf{S})
+    \end{equation}
+    \begin{equation}
+    \mathbf{S} = \Pi_{2:4}(\tilde{\mathbf{W}} - \mathbf{L}) \quad \text{یا} \quad \operatorname{Top-}(1-s)(\tilde{\mathbf{W}} - \mathbf{L})
+    \end{equation}
+    که در آن $\Pi_{2:4}$ عملگر تصویر بر ساختار تنک $2:4$ (پشتیبانی‌شده در شتاب‌دهنده‌های سخت‌افزاری) است.
+    \item \textbf{بازگشت از پیش‌شرط‌سازی (\lr{De-conditioning}):} وزن‌های بازسازی‌شده با اعمال معکوس تبدیل چولسکی به دست می‌آیند:
+    \begin{equation}
+    \mathbf{W}_{\text{oats}} = (\mathbf{L} + \mathbf{S}) \mathbf{L}_M^{-1}
+    \end{equation}
+\end{enumerate}

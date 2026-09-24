@@ -1,0 +1,18 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه فاکتورگیری‌شده مبتنی بر وزن، ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه انتخابی $r \le \min(d_{\text{in}}, d_{\text{out}})$ از طریق تجزیه مقادیر منفرد اقتصادی (\lr{Thin SVD}) تجزیه می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با توزیع متقارن مقادیر منفرد بر روی مولفه‌های چپ و راست، دو ماتریس تجزیه‌شده به دست می‌آیند:
+\begin{equation}
+\mathbf{W}_1 = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}, \quad \mathbf{W}_2 = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}
+\end{equation}
+گذر پیشرو برای تانسور ورودی $\mathbf{x} \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ به دو ضرب متوالی ماتریسی شکسته می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{W}_1^\top) \mathbf{W}_2^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+خطای نسبی بازسازی فروبنیوس در هر لایه محاسبه شده و با آستانه مجاز $\tau_{\text{max}}$ مقایسه می‌گردد:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_2 \mathbf{W}_1\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+اگر $\mathcal{E}_{\text{rel}} > \tau_{\text{max}}$، فرآیند فشرده‌سازی لایه لغو شده و ساختار اصلی لایه دست‌نخورده حفظ می‌گردد.

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{coopq\_quantizer} بر روی مجموعه‌داده اعتبارسنجی \lr{GLUE SST-2} نتایج ثبت‌شده در جدول \ref{tab:benchmark_coopq_quantizer} را حاصل کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{coopq\_quantizer} روی مدل‌های پایه}
+\label{tab:benchmark_coopq_quantizer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.65\%} & \lr{0.9089} & \lr{411.35 MB} & \lr{75,271.53 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{79.93\%} & \lr{0.9342} & \lr{611.42 MB} & \lr{4,472.99 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{52.41\%} & \lr{0.6875} & \lr{511.42 MB} & \lr{12,790.26 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس جدول \ref{tab:benchmark_coopq_quantizer}، ماژول در مدل \lr{DistilBERT} به دقت برجسته ۸۸٫۶۵٪ (و در جاروب متمرکز به ۹۰٫۴۸٪ با شاخص F1 معادل ۰٫۹۰۸۹) دست یافته است. در مدل \lr{RoBERTa} نیز موفق به عبور از دروازه کیفیت با دقت ۷۹٫۹۳٪ (و در جاروب با دقت ۹۳٫۳۵٪) گردیده است که پایداری الگوریتم کالیبراسیون نامتقارن را اثبات می‌کند. در مدل دیکودری \lr{GPT-2}، کوانتایزاسیون ایستا بدون آداپتورهای ریکاوری، منجر به توقف در حد ۵۲٫۴۱٪ و برچسب رد گردید.

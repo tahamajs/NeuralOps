@@ -1,0 +1,29 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی الگوریتم \lr{SparseGPT} به شرح زیر است:
+\begin{enumerate}
+    \item \textbf{محاسبه هسیان تجربی فعال‌سازی‌ها:}
+    با عبور توالی‌های کالیبراسیون، ماتریس فعال‌سازی ورودی لایه $\mathbf{X} \in \mathbb{R}^{d_{\text{in}} \times M}$ ثبت شده و هسیان تجربی با میرایی $\lambda > 0$ تشکیل می‌گردد:
+    \begin{equation}
+    \mathbf{H} = 2 \mathbf{X} \mathbf{X}^\top + \lambda \mathbf{I} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه کالسکی و معکوس‌سازی هسیان:}
+    با تجزیه کالسکی $\mathbf{H} = \mathbf{L} \mathbf{L}^\top$، معکوس هسیان به شکل پایدار محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{H}^{-1} = (\mathbf{L}^{-1})^\top \mathbf{L}^{-1}
+    \end{equation}
+    \item \textbf{معیار برجستگی جراح مغز بهینه (\lr{OBS Saliency Metric}):}
+    برای هر درایه سطر $i$ و ستون $j$ از ماتریس وزن، هزینه هرس بر مبنای ماتریس معکوس هسیان سنجیده می‌شود:
+    \begin{equation}
+    S_{ij} = \frac{|\mathbf{W}_{ij}|^2}{2 [\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+    \item \textbf{ماسک‌گذاری تنک (الگوی بدون ساختار یا ساختاریافته 2:4):}
+    ماسک باینری $\boldsymbol{\mathcal{M}}$ بر اساس کمترین مقادیر معیار $S_{ij}$ تعیین شده و وزن هرس‌شده حاصل می‌گردد:
+    \begin{equation}
+    \mathbf{W}_{\text{pruned}} = \mathbf{W} \odot \boldsymbol{\mathcal{M}}
+    \end{equation}
+    \item \textbf{به‌روزرسانی ترمیمی ستون‌های باقیمانده:}
+    ستون‌های پسین $j+1$ تا $d_{\text{in}}$ برای جبران حذف ستون $j$ طبق رابطه تحلیلی زیر اصلاح می‌شوند:
+    \begin{equation}
+    \mathbf{W}_{:, j+1:d_{\text{in}}} \leftarrow \mathbf{W}_{:, j+1:d_{\text{in}}} - (\mathbf{W}_{:, j} - \mathbf{W}_{\text{pruned}, :, j}) \frac{[\mathbf{H}^{-1}]_{j, j+1:d_{\text{in}}}}{[\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+\end{enumerate}

@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن پروجکشن اولیه $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با استفاده از تجزیه مقادیر منفرد وزن‌دار فیشر تجزیه شود. در صورتی که $\mathbf{F} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس قطری اطلاعات فیشر باشد، تجزیه بر روی ماتریس وزنی $\tilde{\mathbf{W}}_0 = \mathbf{W}_0 \odot \sqrt{\mathbf{F}}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{W}_0 \approx \mathbf{U}_{:, :r} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r}) \mathbf{V}_{1:r, :}^\top
+\end{equation}
+که در آن $r \le \min(d_{\text{in}}, d_{\text{out}})$ رتبه فاکتورسازی است. در لایه \lr{SALTLinear}، وزن موثر پروجکشن در حین استنتاج و آموزش به صورت زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U}_{:, :r} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r} \odot \boldsymbol{\gamma}) \mathbf{V}_{1:r, :}^\top + \frac{\alpha}{r} \mathbf{A} \mathbf{B}
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $\mathbf{U}_{:, :r} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V}_{1:r, :}^\top \in \mathbb{R}^{r \times d_{\text{in}}}$ پایه‌های متعامد مقادیر منفرد هستند که منجمد باقی می‌مانند.
+    \item $\boldsymbol{\gamma} \in \mathbb{R}^r$ بردار پارامترهای آموزش‌پذیر مقیاس‌گذاری طیفی است که با ۱ مقداردهی اولیه می‌شود ($\boldsymbol{\gamma}_{\text{init}} = \mathbf{1}$).
+    \item $\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{in}}}$ آداپتورهای باقیمانده تصحیح‌کننده کم‌مرتبه هستند.
+\end{itemize}
+خروجی نگاشت به ازای تانسور ورودی $\mathbf{X}$ برابر است با:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \left( \mathbf{V}_{1:r, :} \operatorname{diag}(\boldsymbol{\Sigma}_{1:r} \odot \boldsymbol{\gamma}) \mathbf{U}_{:, :r}^\top \right) + \frac{\alpha}{r} \mathbf{X} \mathbf{B}^\top \mathbf{A}^\top + \mathbf{b}
+\end{equation}
+تانسورهای پرس‌وجو، کلید و مقدار پس از فرافکنی و اعمال کدگذاری موقعیت چرخشی (\lr{RoPE}) و هم‌ترازی سرهای \lr{GQA}، وارد لایه توجه شده و بافتار نهایی استخراج می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی \lr{SALTAttention} در سورس‌کد \lr{Codes/framework/attentions/salt\_attention.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. مؤلفه‌های کلیدی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{لایه خطی فاکتورگیری‌شده \lr{SALTLinear}:} پیاده‌سازی مستقیم فرمول طیفی با دو مسیر محاسباتی موازی؛ مسیر طیفی منجمد مقیاس‌پذیر با پارامتر $\boldsymbol{\gamma}$ و مسیر کم‌مرتبه تصحیح‌کننده خطای فاکتورسازی.
+    \item \textbf{پشتیبانی از تجزیه با وزن‌دهی فیشر (\lr{Fisher-weighted SVD}):} امکان مقداردهی وزن‌ها با اولویت‌دهی به پارامترهای با گرادیان و حساسیت بالا در مدل پایه.
+    \item \textbf{سازگاری کامل با معماری‌های ناهمگن:} شناسایی خودکار انکودرهای تودرتو (\lr{RoBERTa/BERT})، دیکودرهای علّی (\lr{GPT-2})، مدل‌های \lr{GQA} و مدیریت ابعاد تانسورهای سرهای کلید/مقدار نامتقارن.
+    \item \textbf{مسیر بهینه‌شده هسته \lr{SDPA}:} اجرای سریع بدون سربار حافظه در صورت عدم نیاز به ثبت تانسورهای توجه میانی.
+\end{itemize}

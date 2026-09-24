@@ -1,0 +1,10 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته $r \ll D$ فرمول‌بندی می‌گردد:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+ \begin{equation}
+\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}
+\right) \mathbf{V}
+\end{equation}
+در معماری‌های حالت‌فضا یا تقریب مقادیر منفرد، محاسبات به فرم بازگشتی خطی یا زیرفضای تجزیه‌شده با پیچیدگی $\mathcal{O}(N \cdot d \cdot r)$ تبدیل می‌شوند.

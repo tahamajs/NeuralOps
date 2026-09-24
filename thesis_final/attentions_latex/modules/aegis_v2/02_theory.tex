@@ -1,0 +1,23 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه نگاشت، وزن‌های پروجکشن از ساختار \lr{FactorisedLinear} بهره می‌برند که تجزیه فاکتوری ماتریسی را با آداپتورهای باقیمانده یادگیرنده تلفیق می‌کند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{down}} \mathbf{W}_{\text{up}} + \frac{\alpha}{r_{\text{lora}}} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{D \times r}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های فاکتورسازی ساختاری هستند.
+
+محاسبه توجه از دو شاخه مکمل تشکیل می‌گردد:
+\begin{enumerate}
+    \item \textbf{توجه محلی پنجره‌ای (\lr{Local Sliding-Window}):}
+    \begin{equation}
+    \mathbf{A}_{i,j}^{\text{loc}} = \frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d}} \cdot \mathbb{I}(|i - j| \le R), \quad \mathbf{O}_{\text{loc}} = \operatorname{softmax}\left(\mathbf{A}^{\text{loc}}\right) \mathbf{V}
+    \end{equation}
+    که در آن $R = W / 2$ شعاع پنجره موضعی است.
+    \item \textbf{توجه خطی کِرنلی سراسری با هرس نرم (\lr{Global Kernel Linear Attention}):} با نگاشت غیرخطی کِرنل $\phi(x) = \operatorname{ELU}(x) + 1$ و اعمال گیت هرس وابسته به زمینه ورودی $\mathbf{g}_{\text{prune}} = \sigma(\mathbf{X} \mathbf{W}_{\text{prune}})$:
+    \begin{equation}
+    \mathbf{O}_{\text{glob}} = \frac{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{V} \right]}{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{1} \right] + \epsilon}
+    \end{equation}
+\end{enumerate}
+سپس خروجی دو شاخه توسط گیت ادغام وابسته به سرها تلفیق می‌گردد:
+\begin{equation}
+\boldsymbol{\alpha} = \sigma(\mathbf{X} \mathbf{W}_{\text{fuse}}), \quad \mathbf{O} = (1 - \boldsymbol{\alpha}) \odot \mathbf{O}_{\text{loc}} + \boldsymbol{\alpha} \odot \mathbf{O}_{\text{glob}}
+\end{equation}

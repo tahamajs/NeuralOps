@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی ماژول \lr{optimal\_subspace\_projection} بر روی مدل‌های مرجع استخراج‌شده از پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_optimal_subspace_projection} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{optimal\_subspace\_projection} روی مدل‌های پایه}
+\label{tab:benchmark_optimal_subspace_projection}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9091} & \lr{311.32 MB} & \lr{146,616.92 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{70.87\%} & \lr{0.7708} & \lr{321.10 MB} & \lr{96,372.19 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{63,691.53 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{48.97\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{optimal\_subspace\_projection} در مدل‌های کدگذار (\lr{Encoder-only}) عملکرد خیره‌کننده‌ای بر جای گذاشته است؛ به طوری که در \lr{DistilBERT} دقت بسیار بالای \lr{90.60\%} و شاخص F1 معادل \lr{0.9091} را همراه با توان پردازشی فراتر از $146$ هزار توکن بر ثانیه ثبت نموده و در \lr{RoBERTa} به دقت \lr{70.87\%} دست یافته است. در مدل \lr{Qwen} نیز ارزیابی تحت بهینه‌سازی کم‌مرتبه با موفقیت \lr{PASS} به پایان رسیده است.

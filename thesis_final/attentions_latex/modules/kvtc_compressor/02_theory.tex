@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+ایده اصلی کدگذاری تبدیل (\lr{Transform Coding})، نگاشت بردارهای همبسته به زیرفضای مؤلفه‌های اصلی ارتوگونال است که در آن مؤلفه‌ها از یکدیگر ناهمبسته شده و انرژی سیگنال در ابعاد اولیه متمرکز می‌گردد. برای تانسور داده‌های ورودی کالیبراسیون $\mathbf{X} \in \mathbb{R}^{N \times D}$ با ماتریس کوواریانس نمونه:
+\begin{equation}
+\mathbf{\Sigma} = \frac{1}{N} (\mathbf{X} - \mathbf{\mu})^\top (\mathbf{X} - \mathbf{\mu})
+\end{equation}
+تجزیه مقادیر ویژه یا تجزیه مقادیر منفرد بر روی داده‌های میانگین‌زدوده اجرا می‌شود:
+\begin{equation}
+\mathbf{X} - \mathbf{\mu} = \mathbf{U} \mathbf{S} \mathbf{V}^\top \implies \mathbf{P} = \mathbf{V} \in \mathbb{R}^{D \times D}
+\end{equation}
+که در آن $\mathbf{P}$ پایه تبدیل \lr{PCA} را تشکیل می‌دهد. داده‌های تبدیل‌یافته به صورت زیر تصویر می‌شوند:
+\begin{equation}
+\mathbf{Z} = (\mathbf{X} - \mathbf{\mu}) \mathbf{P}
+\end{equation}
+سپس کوانتایش یکنواخت اسکالر بر اساس بودجه بیتی $b$ بر روی مقادیر تصویرشده اعمال می‌گردد:
+\begin{equation}
+\Delta = \frac{\max(|\mathbf{Z}|)}{2^{b-1} - 1}, \quad \mathbf{Q} = \text{clip}\left( \left\lfloor \frac{\mathbf{Z}}{\Delta} \right\rceil, -2^{b-1}+1, 2^{b-1}-1 \right)
+\end{equation}
+آنتروپی شانون مقادیر کوانتایزشده به عنوان حد پایین تئوریک نرخ فشرده‌سازی سنجیده می‌شود:
+\begin{equation}
+\mathcal{H}(\mathbf{Q}) = -\sum_{s \in \mathcal{S}} p(s) \log_2 p(s)
+\end{equation}
+در پیاده‌سازی لایه‌های وزن خطی \lr{KVTCQuantizedLoRALinear}، ماتریس وزن لایه پایه با یک بافر عدد صحیح به همراه ضریب مقیاس (\lr{Scale}) و نقطه صفر (\lr{Zero Point}) ذخیره شده و خروجی با ترکیب خروجی عدد صحیح دکوانتایزشده و مسیر کم‌رتبه به صورت زیر محاسبه می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \left( \mathbf{W}_{\text{int}} \cdot s + z_0 \right)^\top + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top + \mathbf{b}
+\end{equation}

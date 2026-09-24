@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ نمایش پنهان ورودی باشد، که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. در پروجکشن فشرده مشترک، ماتریس‌های نگاشت به یک بلوک ماتریسی متراکم با ابعاد $D \times (d_{all} + 2 d_{kv})$ الحاق می‌گردند که در آن $d_{all} = H \cdot d$ و $d_{kv} = H_{kv} \cdot d$ است. تجزیه مقادیر منفرد برشی مشترک با رتبه هدف $r_{qkv}$ به صورت زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{W}_{QKV} \approx \mathbf{U}_{qkv} \mathbf{\Sigma}_{qkv} \mathbf{V}_{qkv}^\top + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora}
+\end{equation}
+که در آن $\mathbf{U}_{qkv} \in \mathbb{R}^{(d_{all} + 2 d_{kv}) \times r_{qkv}}$، $\mathbf{\Sigma}_{qkv} \in \mathbb{R}^{r_{qkv} \times r_{qkv}}$ و $\mathbf{V}_{qkv}^\top \in \mathbb{R}^{r_{qkv} \times D}$ ماتریس‌های تجزیه SVD پایدار هستند. خروجی تانسورهای پرس‌وجو، کلید و مقدار به صورت همزمان محاسبه شده و سپس تفکیک می‌گردند:
+\begin{equation}
+[\mathbf{Q}, \mathbf{K}, \mathbf{V}] = \mathbf{X} \mathbf{W}_{QKV}^\top + \mathbf{b}_{qkv}
+\end{equation}
+سپس سرهای کلید و مقدار در صورت استفاده از GQA با عملگر تکرار به تعداد سرهای پرس‌وجو تعمیم می‌یابند:
+\begin{equation}
+\mathbf{K}_{rep} = \operatorname{repeat\_kv}(\mathbf{K}, \frac{H}{H_{kv}}), \quad \mathbf{V}_{rep} = \operatorname{repeat\_kv}(\mathbf{V}, \frac{H}{H_{kv}})
+\end{equation}
+ماتریس شباهت توجه با احتساب ماسک علّی یا ماسک توجه انکودر $\mathbf{M}$ محاسبه شده و با مقادیر ترکیب می‌گردد:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{rep}^\top}{\sqrt{d}} + \mathbf{M}, \quad \mathbf{A} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{Context} = \mathbf{A} \mathbf{V}_{rep}
+\end{equation}
+در مرحله نهایی، تصویرسازی خروجی نیز از طریق فاکتورسازی SVD منجمد همراه با شاخه لورا به بعد پنهان بازمی‌گردد:
+\begin{equation}
+\mathbf{O} = \mathbf{Context} \left( \mathbf{U}_{out} \mathbf{\Sigma}_{out} \mathbf{V}_{out}^\top + \frac{\alpha}{r_{lora}} \mathbf{B}_{out} \mathbf{A}_{out} \right)^\top + \mathbf{b}_{out}
+\end{equation}

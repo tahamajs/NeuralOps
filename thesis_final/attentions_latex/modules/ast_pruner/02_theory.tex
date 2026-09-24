@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی تصحیح‌شده و دقیق ماژول \lr{AST} در ۵ گام متوالی صورت می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{ماتریس کوواریانس فعال‌سازی و \lr{PCA}:} برای ماتریس فعال‌سازی‌های کالیبراسیون ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ با میانگین ستونی $\boldsymbol{\mu}$، ماتریس کوواریانس نمونه متقارن و تجزیه ویژه آن محاسبه می‌شود:
+    \begin{equation}
+    \boldsymbol{\Sigma}_X = \frac{1}{N-1} (\mathbf{X} - \boldsymbol{\mu})^\top (\mathbf{X} - \boldsymbol{\mu}) = \mathbf{Q} \boldsymbol{\Lambda} \mathbf{Q}^\top, \quad \mathbf{Q}^\top \mathbf{Q} = \mathbf{I}
+    \end{equation}
+    که در آن $\mathbf{Q}$ ماتریس بردارهای ویژه متعامد است.
+    \item \textbf{پراکسی حساسیت ژاکوبی تجربی (\lr{Empirical Fisher Proxy}):} با تعریف تابع هدف نرم خروجی $\mathcal{L} = \frac{1}{2} \|\mathbf{z}\|^2$ روی لاجیت‌ها، گرادیان تجربی $\mathbf{g} = \frac{\partial \mathcal{L}}{\partial \mathbf{W}}$ محاسبه و تخمین فیشر به صورت امید تجربی مجذور گرادیان‌ها استخراج می‌گردد:
+    \begin{equation}
+    \mathbf{F} = \mathbb{E}[\mathbf{g} \odot \mathbf{g}]
+    \end{equation}
+    \item \textbf{چرخش و تصویر به پایه اصلی (\lr{PCA Projection}):} ماتریس فیشر ابتدا در فضای دوران‌یافته $\tilde{\mathbf{F}} = \mathbf{F} (\mathbf{Q} \odot \mathbf{Q})$ ارزیابی شده و سپس برای بازگشت به دستگاه اولیه ضرب متعامد تصویر می‌شود:
+    \begin{equation}
+    \mathbf{F}_{\text{proj}} = \tilde{\mathbf{F}} \mathbf{Q}^\top
+    \end{equation}
+    \item \textbf{محاسبه حساسیت در پایه مبنا (\lr{Saliency Metric}):} اهمیت هر درایه وزنی در مختصات اصلی شبکه بر اساس ضرب قدرمطلق وزن در ریشه دوم فیشر تصویرشده محاسبه می‌گردد:
+    \begin{equation}
+    \mathbf{S}_{ij} = |\mathbf{W}_{ij}| \cdot \sqrt{\mathbf{F}_{{\text{proj}}_{ij}} + \epsilon}
+    \end{equation}
+    \item \textbf{اعمال عملگر هرس \lr{2:4}:} در پایان، عملگر تصویر تنک سخت‌افزاری بر روی ماتریس وزن اصلی با هدایت ماتریس حساسیت $\mathbf{S}$ اعمال می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{pruned}} = \Pi_{2:4}(\mathbf{W}, \mathbf{S})
+    \end{equation}
+\end{enumerate}
+این فرمول‌بندی مانع از چرخاندن مستقیم وزن‌های هرس‌شده می‌گردد و برخلاف نسخه‌های اولیه، الگوهای تنکی ساختاریافته \lr{2:4} را در حافظه دست‌نخورده حفظ می‌نماید.

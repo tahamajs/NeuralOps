@@ -1,0 +1,34 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+مسئله بهینه‌سازی تلفیقی برای هر لایه خطی با وزن اولیه $\mathbf{W}_0$ به صورت زیر مدل‌سازی می‌گردد:
+\begin{equation}
+\min_{\mathbf{W}, \mathbf{Z}, \mathbf{Q}} \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + g(\mathbf{Z}) + h(\mathbf{Q}) \quad \text{s.t.} \quad \mathbf{W} = \mathbf{Z}, \quad \mathbf{W} = \mathbf{Q}
+\end{equation}
+که در آن $\mathbf{Z}$ متغیر کمکی تنک، $\mathbf{Q}$ متغیر کمکی کوانتیده، $g(\mathbf{Z})$ تابع مشخصه مجموعه تنک (با نرخ تنک‌سازی هدف یا الگوی ۲:۴) و $h(\mathbf{Q})$ تابع مشخصه شبکه کوانتیزاسیون گسسته است. تابع لاگرانژی افزوده \lr{(Augmented Lagrangian)} متناظر عبارت است از:
+\begin{equation}
+\mathcal{L}_{\rho_1, \rho_2} = \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \frac{\rho_1}{2} \|\mathbf{W} - \mathbf{Z} + \mathbf{U}_1\|_F^2 + \frac{\rho_2}{2} \|\mathbf{W} - \mathbf{Q} + \mathbf{U}_2\|_F^2 + g(\mathbf{Z}) + h(\mathbf{Q})
+\end{equation}
+که در آن $\mathbf{U}_1$ و $\mathbf{U}_2$ متغیرهای دوگان مقیاس‌شده و $\rho_1, \rho_2 > 0$ ضرایب جریمه هستند. الگوریتم در هر گام تکرار $k$ مراحل متناوب زیر را طی می‌کند:
+
+\paragraph{۱. به‌روزرسانی بسته وزن‌های پیوسته ($\mathbf{W}$):}
+با صفر قرار دادن گرادیان نسبت به $\mathbf{W}$، حل بسته و یکتای زیر حاصل می‌شود:
+\begin{equation}
+\mathbf{W}^{(k+1)} = \frac{\mathbf{W}_0 + \rho_1 (\mathbf{Z}^{(k)} - \mathbf{U}_1^{(k)}) + \rho_2 (\mathbf{Q}^{(k)} - \mathbf{U}_2^{(k)})}{1 + \rho_1 + \rho_2}
+\end{equation}
+
+\paragraph{۲. تصویر بر مجموعه تنک ($\mathbf{Z}$):}
+متغیر $\mathbf{Z}$ با تصویر بر مجموعه قید $g$ به‌روزرسانی می‌گردد؛ در حالت تنک‌سازی ساختاریافته ۲:۴، از هر ۴ درایه متوالی در سطرها، ۲ درایه با کمترین قدرمطلق صفر می‌شوند:
+\begin{equation}
+\mathbf{Z}^{(k+1)} = \Pi_{\mathcal{S}}\left(\mathbf{W}^{(k+1)} + \mathbf{U}_1^{(k)}\right)
+\end{equation}
+
+\paragraph{۳. تصویر بر شبکه کوانتیزاسیون یکنواخت ($\mathbf{Q}$):}
+نگاشت به نزدیک‌ترین نقطه شبکه کوانتیده به صورت به ازای هر کانال انجام می‌پذیرد:
+\begin{equation}
+\mathbf{Q}^{(k+1)} = \Pi_{\mathcal{Q}}\left(\mathbf{W}^{(k+1)} + \mathbf{U}_2^{(k)}\right) = \operatorname{clamp}\left(\operatorname{round}\left(\frac{\mathbf{W}^{(k+1)} + \mathbf{U}_2^{(k)}}{\mathbf{s}}\right), q_{\min}, q_{\max}\right) \odot \mathbf{s}
+\end{equation}
+
+\paragraph{۴. به‌روزرسانی متغیرهای دوگان ($\mathbf{U}_1, \mathbf{U}_2$):}
+\begin{align}
+\mathbf{U}_1^{(k+1)} &= \mathbf{U}_1^{(k)} + \mathbf{W}^{(k+1)} - \mathbf{Z}^{(k+1)} \\
+\mathbf{U}_2^{(k+1)} &= \mathbf{U}_2^{(k)} + \mathbf{W}^{(k+1)} - \mathbf{Q}^{(k+1)}
+\end{align}

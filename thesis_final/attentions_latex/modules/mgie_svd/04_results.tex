@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی رسمی ماژول \lr{mgie\_svd} بر روی مدل‌های بنچ‌مارک بر اساس داده‌های تاییدشده در \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_mgie_svd} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{mgie\_svd} روی مدل‌های پایه}
+\label{tab:benchmark_mgie_svd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.19 MB} & \lr{182,179.02 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.72 MB} & \lr{107,325.79 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.09\%} & \lr{0.6463} & \lr{637.29 MB} & \lr{70,762.65 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های تجربی گویای دقت ممتاز ماژول بر روی مدل \lr{DistilBERT} با ثبت دقت \lr{90.48\%} و شاخص F1 معادل \lr{0.9077} در کنار سرعت گذر بالای \lr{182,179.02 tok/s} است. در مدل‌های \lr{RoBERTa} و \lr{GPT-2} به ترتیب دقت‌های \lr{72.02\%} و \lr{60.09\%} با وضعیت قبولی (\lr{PASS}) حاصل شده است. ارزیابی مدل \lr{Qwen} در داده‌های ثبت‌شده این شاخه اجرا نشده (\lr{SKIP}) و به عنوان عدم پوشش در بنچ‌مارک علامت‌گذاری شده است.

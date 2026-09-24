@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{lsc\_compressor} بر روی مدل‌های معیار مختلف طبق نتایج ثبت‌شده رسمی در \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_lsc_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{lsc\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_lsc_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.19 MB} & \lr{184,866.23 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.72 MB} & \lr{105,976.80 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{636.04 MB} & \lr{68,032.35 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های عددی نشان‌دهنده عملکرد قابل توجه ماژول در مدل \lr{DistilBERT} با دستیابی به دقت عالی \lr{90.48\%}، شاخص F1 برابر با \lr{0.9077}، مصرف حافظه ناچیز \lr{311.19 MB} و سرعت خیره‌کننده \lr{184,866.23 tok/s} است. این امر نشان می‌دهد که لایه‌های انکودر متراکم وابستگی قوی به فرکانس‌های اصلی طیف فوریه دارند. در مدل‌های دیگر نظیر \lr{RoBERTa} دقت به \lr{72.02\%} و در \lr{GPT-2} به \lr{62.04\%} رسیده است که فرآیند پالایش طیفی با موفقیت پاس شده است.

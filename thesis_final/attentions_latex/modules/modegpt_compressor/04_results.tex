@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد تجربی فشرده‌ساز \lr{modegpt\_compressor} بر اساس گزارش بنچ‌مارک رسمی در \lr{results/unified\_modegpt\_4models\_summary.json} در جدول \ref{tab:benchmark_modegpt_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{modegpt\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_modegpt_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.2 MB} & \lr{17.9 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.7 MB} & \lr{25.5 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.55\%} & \lr{0.6861} & \lr{639.7 MB} & \lr{25.6 s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد که ماژول \lr{modegpt\_compressor} در مدل انکودری \lr{DistilBERT} دقت قابل توجه پایدار \lr{90.48\%} و شاخص F1 معادل \lr{0.9077} را بدون کوچکترین افت ثبت کرده است. در مدل \lr{RoBERTa} دقت \lr{72.02\%} حاصل شده و در مدل دیکودری \lr{GPT-2} دقت مدل فشرده‌شده به \lr{60.55\%} رسیده که افتی ناچیز در حد \lr{-0.23\%} نسبت به مدل پایه دارد و با موفقیت کامل وضعیت \lr{PASS} را احراز کرده است. در مدل \lr{Qwen} اجرای آزمون به دلیل ناهمگونی ساختار جفت‌های خطی چندسر به صورت \lr{SKIP} گزارش شده است.

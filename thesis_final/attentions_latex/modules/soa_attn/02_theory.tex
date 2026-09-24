@@ -1,0 +1,10 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی لایه باشد. در این معماری، پروجکشن‌های لایه از طریق نگاشت‌های زیرفضایی یا عملگرهای پیوسته زمان فرمول‌بندی می‌گردند:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+در تقریب‌های مرتبه‌دوم یا بازگشتی، معادله خروجی به شکل زیر ساده‌سازی می‌شود:
+ \begin{equation}
+\mathbf{O} = \operatorname{LayerNorm}\left(\mathbf{X} + \operatorname{Scan}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+\right)
+\end{equation}

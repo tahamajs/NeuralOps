@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{flat\_llm} بر اساس معیارهای اعتبارسنجی ارائه‌شده در \lr{thesis\_final/master\_verified\_results.json} استخراج گردیده و در جدول \ref{tab:benchmark_flat_llm} به تصویر کشیده شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{flat\_llm} روی مدل‌های پایه}
+\label{tab:benchmark_flat_llm}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.69 MB} & \lr{166,422.26 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.53\%} & \lr{0.8936} & \lr{321.14 MB} & \lr{55,601.08 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.57\%} & \lr{0.8397} & \lr{401.62 MB} & \lr{58,669.32 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی نتایج نشان‌دهنده حفظ قابل توجه دقت در انکودرهای \lr{DistilBERT} با مقدار \lr{90.48\%} و \lr{RoBERTa} با مقدار \lr{88.53\%} است. همچنین توان عملیاتی لایه به سقف قابل توجه \lr{166,422.26 tok/s} در انکودر سبک و بیش از \lr{58,600 tok/s} در مدل دیکودر \lr{GPT-2} رسیده است که اثر مثبت تقریب انرژی در کاهش پیچیدگی بدون افت عملکرد را تایید می‌نماید.

@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{spectraformer\_attention} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_spectraformer_attention} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{spectraformer\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_spectraformer_attention}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.64\%} & \lr{0.7782} & \lr{325.4 MB} & \lr{64,654 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{57.45\%} & \lr{0.6986} & \lr{376.2 MB} & \lr{34,387 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.8 MB} & \lr{30,632 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{77.64\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

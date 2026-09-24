@@ -1,0 +1,24 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه توجه نرم استاندارد، خروجی به صورت زیر تعریف می‌شود:
+\begin{equation}
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{Softmax}\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} \right) \mathbf{V}
+\end{equation}
+روش \lr{LIFTR} این فرآیند را با تقریب مرتبه صفر ماتریس وزن‌های توجه جایگزین می‌نماید که در آن توزیع احتمال روی توالی با توزیع یکنواخت تقریب زده می‌شود:
+\begin{equation}
+\text{Softmax}\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} \right)_{ij} \approx \frac{1}{N}
+\end{equation}
+در نتیجه، خروجی زمینه توجه به صورت بردار میانگین توالی ارزش‌ها ساده‌سازی می‌شود:
+\begin{equation}
+\mathbf{C} = \frac{1}{N} \sum_{i=1}^N \mathbf{V}_i \in \mathbb{R}^{B \times 1 \times d_v}
+\end{equation}
+این بردار سپس در راستای بعد توالی بسط یافته (\lr{Broadcast/Expand}) و از طریق ماتریس پروجکشن خروجی پرتاب می‌گردد:
+\begin{equation}
+\mathbf{Y} = \text{expand}(\mathbf{C}, [B, N, d_v]) \, \mathbf{W}_o + \mathbf{b}
+\end{equation}
+این فرآیند نیاز به ذخیره ماتریس ضرب داخلی $N \times N$ و عملگر نمایی \lr{Softmax} را به کلی ملغی می‌سازد.
+
+همچنین برای فعال‌سازی‌های غیرخطی \lr{GELU} و \lr{SiLU}، تقریب درجه اول در همسایگی دامنه کاری متداول اعمال می‌شود:
+\begin{equation}
+\text{GELU}(x) \approx \alpha \cdot x, \quad \alpha \in [0.7, 1.0]
+\end{equation}
+که در پیاده‌سازی مرجع مقدار ضریب مقیاس به صورت پیش‌فرض $\alpha = 0.8$ تنظیم گردیده است.

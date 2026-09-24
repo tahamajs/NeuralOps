@@ -1,0 +1,17 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید یک ترنسفورمر دارای $L$ لایه متوالی به فرم نگاشت‌های $\mathcal{F}_1, \dots, \mathcal{F}_L$ باشد. در این الگوریتم، تعداد $N$ لایه انتهایی (یعنی لایه‌های $L-N+1$ تا $L$) از ساختار شبکه خارج شده و با یک بلوک منفرد جایگزین $\mathcal{G}_{\text{replace}}$ مبادله می‌شوند:
+\begin{equation}
+\mathbf{h}_{L} = \mathcal{G}_{\text{replace}}(\mathbf{h}_{L-N})
+\end{equation}
+
+فرمول‌بندی بلوک جایگزین به صورت پسماند حول لایه‌نرمال تعریف می‌شود تا در لحظه مقداردهی اولیه عملکردی دقیقاً منطبق بر تابع همانی (\lr{Identity Mapping}) داشته باشد:
+\begin{equation}
+\tilde{\mathbf{h}} = \operatorname{LayerNorm}(\mathbf{h})
+\end{equation}
+\begin{equation}
+\Delta \mathbf{h} = \mathbf{W}_{\text{linear}} \tilde{\mathbf{h}} + \mathbf{b} + \frac{\alpha}{r} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}} \tilde{\mathbf{h}}
+\end{equation}
+\begin{equation}
+\mathbf{h}_{\text{out}} = \mathbf{h} + \Delta \mathbf{h}
+\end{equation}
+که در آن وزن‌ها و بایاس لایه خطی $\mathbf{W}_{\text{linear}}$ و $\mathbf{b}$ با صفر مقداردهی اولیه می‌شوند ($\mathbf{W}_{\text{linear}} \leftarrow \mathbf{0}, \mathbf{b} \leftarrow \mathbf{0}$)؛ این مقداردهی خاص موجب می‌شود در ابتدای فرآیند فشرده‌سازی $\Delta \mathbf{h} = \mathbf{0}$ و در نتیجه خروجی بلوک دقیقاً معادل ورودی آن ($\mathbf{h}_{\text{out}} = \mathbf{h}$) باشد که از شوک سیگنالی در شبکه ممانعت به عمل می‌آورد.

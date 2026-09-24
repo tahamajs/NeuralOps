@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی متراکم و $\mathbf{X} \in \mathbb{R}^{B \cdot N \times d_{\text{in}}}$ تانسور فعال‌سازی‌های ورودی استخراج‌شده از داده‌های کالیبراسیون باشد. بردار انرژی فعال‌سازی با گشتاور دوم به صورت زیر محاسبه می‌شود:
+\begin{equation}
+\mathbf{s}_j = \sqrt{\mathbb{E}[x_j^2] + \epsilon} = \sqrt{\frac{1}{M}\sum_{i=1}^M \mathbf{X}_{i, j}^2 + \epsilon}, \quad \forall j \in \{1, \dots, d_{\text{in}}\}
+\end{equation}
+سپس ماتریس وزن‌ها با قطر این بردار مقیاس‌گذاری می‌شود تا ویژگی‌های پرانرژی تقویت گردند:
+\begin{equation}
+\tilde{\mathbf{W}} = \mathbf{W} \operatorname{diag}(\mathbf{s})
+\end{equation}
+بر روی ماتریس مقیاس‌یافته، تجزیه مقادیر منفرد فشرده اجرا می‌شود:
+\begin{equation}
+\tilde{\mathbf{W}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+فاکتورهای کم‌مرتبه متناظر با رتبه انتخابی $r \ll \min(d_{\text{in}}, d_{\text{out}})$ با توزیع متقارن مقادیر منفرد و اعمال معکوس مقیاس ورودی تشکیل می‌شوند:
+\begin{equation}
+\mathbf{U}_r = \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2}, \quad \mathbf{V}_r = \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \operatorname{diag}(\mathbf{s})^{-1}
+\end{equation}
+در نتیجه بازسازی موثر وزن‌ها به فرم فاکتورگیری‌شده کم‌مرتبه درمی‌آید:
+\begin{equation}
+\hat{\mathbf{W}} = \mathbf{U}_r \mathbf{V}_r \approx \mathbf{W}
+\end{equation}
+در گام پایانی، کالیبراسیون مجدد لایه‌های نرمال‌سازی به منظور هماهنگ‌سازی واریانس فعال‌سازی‌های جدید صورت می‌گیرد:
+\begin{equation}
+\boldsymbol{\gamma}_{\text{new}} = \boldsymbol{\gamma}_{\text{old}} \odot \frac{\boldsymbol{\sigma}_{\text{new}}}{\boldsymbol{\sigma}_{\text{old}}}
+\end{equation}

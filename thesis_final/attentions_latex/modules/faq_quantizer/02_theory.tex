@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در طول فاز کالیبراسیون با دسته‌های داده ورودی، میانگین توان دوم فعال‌سازی‌ها برای هر کانال ورودی $j \in \{1, \dots, d_{\text{in}}\}$ محاسبه می‌شود:
+\begin{equation}
+s_j = \sqrt{\mathbb{E}[x_j^2] + \epsilon}, \quad \bar{s} = \frac{1}{d_{\text{in}}} \sum_{k=1}^{d_{\text{in}}} s_k, \quad \tilde{s}_j = \frac{s_j}{\bar{s}}
+\end{equation}
+بردار مقیاس فعال‌سازی $\mathbf{s} \in \mathbb{R}^{d_{\text{in}}}$ به عنوان پیش‌شرط‌ساز در ماتریس وزن لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ضرب می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{scaled}} = \mathbf{W} \cdot \operatorname{diag}(\mathbf{s})
+\end{equation}
+سپس عملگر کوانتایزاسیون و واکوانتایزاسیون شبه‌کوانتایز (\lr{Fake Quantization}) با وضوح $b$ بیتی (به طور پیش‌فرض $b=8$) به صورت متقارن بر روی وزن مقیاس‌یافته اعمال می‌شود:
+\begin{equation}
+\Delta_i = \frac{\max_j |W_{\text{scaled}, i, j}|}{2^{b-1} - 1}, \quad \widehat{\mathbf{W}}_{\text{scaled}} = \operatorname{clip}\left(\left\lfloor \frac{\mathbf{W}_{\text{scaled}}}{\mathbf{\Delta}} \right\rceil, -2^{b-1}+1, 2^{b-1}-1\right) \odot \mathbf{\Delta}
+\end{equation}
+ماتریس وزن بازسازی‌شده با خنثی‌سازی ضریب مقیاس‌بندی کانال به دست می‌آید:
+\begin{equation}
+\widehat{\mathbf{W}} = \widehat{\mathbf{W}}_{\text{scaled}} \cdot \operatorname{diag}(\mathbf{s})^{-1}
+\end{equation}
+در حین پس‌انتشار گرادیان، از برآوردگر گرادیان سرراست (\lr{STE}) برای عبور گرادیان از عملگر گردکردن غیرمشتق‌پذیر بهره گرفته می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial \mathbf{W}_{\text{scaled}}} \approx \frac{\partial \mathcal{L}}{\partial \widehat{\mathbf{W}}_{\text{scaled}}} \cdot \mathbb{I}\left(|\mathbf{W}_{\text{scaled}}| \le \mathbf{\Delta} (2^{b-1}-1)\right)
+\end{equation}

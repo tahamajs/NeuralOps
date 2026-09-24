@@ -1,0 +1,19 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی جامع ماژول \lr{adasvd\_compressor} بر روی بنچ‌مارک رسمی پایان‌نامه نتایج مندرج در جدول~\ref{tab:benchmark_adasvd} را به همراه داشته است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری ماژول \lr{adasvd\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_adasvd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.86\%} & \lr{0.8514} & \lr{413.21 MB} & \lr{44,807.97 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.84\%} & \lr{0.8868} & \lr{318.35 MB} & \lr{12,363.56 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{77.06\%} & \lr{0.8051} & \lr{393.51 MB} & \lr{15,039.99 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{50.90\%} & \lr{--} & \lr{1,261.09 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

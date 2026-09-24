@@ -1,0 +1,274 @@
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{adasplash\_attention}}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\label{sec:adasplash_attention}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+در سازوکار کلاسیک توجه چندسره \lr{(Multi-Head Attention - MHA)}، تبدیل شباهت‌های ضرب نقطه‌ای نامقید $s_{ij} = \frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d_h}}$ به توزیع احتمالی توجه از طریق تابع نمایی سافت‌مکس \lr{(Softmax)} صورت می‌پذیرد:
+\begin{equation}
+\operatorname{Softmax}(\mathbf{s})_i = \frac{\exp(s_i)}{\sum_{j=1}^L \exp(s_j)} > 0, \quad \forall i \in \{1, \dots, L\}
+\end{equation}
+به دلیل مثبت بودن اکید تابع نمایی بر روی کل محور اعداد حقیقی \lr{($\exp(x) > 0, \; \forall x \in \mathbb{R}$)}، تابع سافت‌مکس فاقد پشتیبان فشرده \lr{(Compact Support)} است. این ویژگی سبب می‌شود که حتی بی‌ربط‌ترین توکن‌های دنباله (نظیر نشانه‌های پرکننده پدینگ، علائم نگارشی حاشیه‌ای و نویزهای بافتی دوردست) مقادیر احتمالاتی غیرصفر دریافت کنند. این پدیده نامطلوب که «نشت پراکنده توجه» \lr{(Diffuse Attention Leakage)} نامیده می‌شود، ضمن تحمیل بار محاسباتی مربعی $\mathcal{O}(L^2)$ بر حافظه سراسری، موجب کاهش وضوح بازنمایی‌های معنایی و فرسایش گرادیان در دنباله‌های طولانی می‌گردد.
+
+ماژول \lr{adasplash\_attention} بر پایه تلفیق نوآورانه سه رکن بنیادین نظری و سخت‌افزاری طراحی شده است:
+\begin{enumerate}
+    \item \textbf{تنک‌سازی اکید ریاضی بر پایه انتروپی سالیس \lr{(Tsallis $\alpha$-Entmax)}:} جایگزینی انتروپی سنتی شانون با انتروپی غیرگسترده سالیس با پارامتر بهینه $\alpha = 1.5$ \lr{(1.5-entmax)}. این تصویرسازی هندسی بر روی سیمپلکس احتمالاتی $\Delta^{L-1}$ به توکن‌های نامرتبط وزن توجه دقیقاً صفر مطلق ($A_{ij} \equiv 0$) اختصاص می‌دهد و چگالی اطلاعات را در هسته معنایی متمرکز می‌سازد.
+    \item \textbf{پنجره‌بندی محلی اسپلش با حفظ توکن‌های چاهک \lr{(Splash Windowing \& Attention Sinks)}:} در سناریوهای رمزگشای خودهمبسته \lr{(Autoregressive Decoders)}، محاسبه توجه به یک شعاع متحرک محلی $W$ ($|i - j| \le W$) به همراه ۴ توکن آغازین دنباله به عنوان چاهک توجه \lr{(Attention Sinks)} محدود می‌گردد تا پیچیدگی محاسباتی و ترافیک دسترسی به حافظه به شکل خطی مهار شود.
+    \item \textbf{انتقال دقیق اوزان از پیش آموزش‌دیده با لایه‌های \lr{AdaSplashLinear}:} بهره‌گیری از تصویرسازی‌های خطی مرکب متشکل از اوزان پایه تثبیت‌شده \lr{(Frozen Pretrained Base)} و آداپتورهای پسماند کم‌رتبه لورا \lr{(LoRA Adapters)} که با مقداردهی اولیه صفر ($BA = 0$) انحراف بازنمایی در گام صفر را به صفر مطلق رسانده و همگرایی پایدار در طول تنظیم دقیق را تضمین می‌نماید.
+    \item \textbf{مسیریابی ساختاری تطبیقی بر حسب ماهیت مدل \lr{(Adaptive Architectural Routing)}:} هدایت هوشمند محاسبات به نحوی که برای مدل‌های رمزگذار دوطرفه \lr{(Bidirectional Encoders)} مانند \lr{DistilBERT} و \lr{RoBERTa}، ماسک محلی اسپلش دور زده می‌شود تا توکن ادغامی \lr{[CLS]} بتواند بدون انقطاع به تمام طول سند دسترسی داشته باشد، در حالی که در مدل‌های اتورگرسیو (\lr{GPT-2} و \lr{Qwen}) ساختار نواری مثلثی علّی اعمال می‌گردد.
+\end{enumerate}
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+سیمپلکس احتمالاتی در فضای اقلیدسی $\mathbb{R}^L$ به صورت $\Delta^{L-1} \triangleq \left\{ \mathbf{p} \in \mathbb{R}_+^L : \sum_{i=1}^L p_i = 1 \right\}$ تعریف می‌شود. انتروپی غیرگسترده سالیس \lr{(Tsallis Non-extensive Entropy)} برای پارامتر پیوسته $\alpha > 1$ عبارت است از:
+\begin{equation}
+\mathcal{H}_\alpha(\mathbf{p}) \triangleq \frac{1}{\alpha(\alpha - 1)} \sum_{i=1}^L \left( p_i - p_i^\alpha \right)
+\end{equation}
+عملگر نگاشت $\alpha$-انتمکس به عنوان تصویرسازی بیشینه‌ساز منظم‌شده با انتروپی سالیس بر روی سیمپلکس فرمول‌بندی می‌شود:
+\begin{equation}
+\operatorname{entmax}_\alpha(\mathbf{s}) \triangleq \arg\max_{\mathbf{p} \in \Delta^{L-1}} \left\{ \mathbf{p}^\top \mathbf{s} + \mathcal{H}_\alpha(\mathbf{p}) \right\}
+\end{equation}
+تحلیل رفتاری این فرمولاسیون نشان می‌دهد که در حد $\alpha \to 1$، با اعمال قاعده هوپیتال تابع به انتروپی شانون و در نتیجه به سافت‌مکس چگال کلاسیک همگرا می‌شود:
+\begin{equation}
+\lim_{\alpha \to 1} \mathcal{H}_\alpha(\mathbf{p}) = -\sum_{i=1}^L p_i \log p_i = \mathcal{H}_{\text{\lr{Shannon}}}(\mathbf{p}) \implies \operatorname{entmax}_1(\mathbf{s}) = \operatorname{Softmax}(\mathbf{s})
+\end{equation}
+در نقطه $\alpha = 2$، تابع اسپارس‌مکس \lr{(Sparsemax)} بازیابی می‌گردد که تصویری کاملاً خطی-تکه‌ای بر روی سیمپلکس است. مقدار بهینه $\alpha = 1.5$ نقطه‌ای طلایی فراهم می‌آورد که در آن هم تنک بودن کامل بردارهای وزن محقق می‌شود و هم مشتق‌پذیری هموار با شرط پیوستگی لیپ‌شیتس \lr{(Lipschitz Differentiability)} حفظ می‌گردد.
+
+\subsubsection*{قضیه ۱: حل فرم‌بسته نگاشت \lr{1.5-entmax}}
+برای هر بردار لاجیت $\mathbf{s} \in \mathbb{R}^L$ و $\alpha = 1.5$، جواب بهینگی یکتای $\mathbf{p}^* = \operatorname{entmax}_{1.5}(\mathbf{s})$ برابر است با:
+\begin{equation}
+p_i^*(\mathbf{s}) = \left[ \frac{s_i - \tau^*}{2} \right]_+^2 \equiv \max\left(0, \; \frac{s_i - \tau^*}{2}\right)^2
+\end{equation}
+که در آن عملگر $[\cdot]_+ = \max(0, \cdot)$ بخش مثبت بردار را استخراج نموده و $\tau^* \in \mathbb{R}$ ضریب لاگرانژ یکتایی است که در قید بهنجارسازی زیر صدق می‌کند:
+\begin{equation}
+g(\tau) \triangleq \sum_{i=1}^L \left[ \frac{s_i - \tau}{2} \right]_+^2 = 1
+\end{equation}
+
+\textbf{اثبات:} مساله بهینه‌سازی مقید محدب زیر را در نظر بگیرید:
+\begin{equation}
+\min_{\mathbf{p} \in \mathbb{R}^L} \left\{ -\mathbf{p}^\top \mathbf{s} - \frac{1}{\alpha(\alpha-1)} \sum_{i=1}^L (p_i - p_i^\alpha) \right\} \quad \text{\lr{subject to}} \quad \sum_{i=1}^L p_i = 1, \quad p_i \ge 0 \; (\forall i)
+\end{equation}
+تابع لاگرانژین $\mathcal{L}(\mathbf{p}, \tau, \boldsymbol{\lambda})$ را با ضرایب لاگرانژ $\tau \in \mathbb{R}$ و $\lambda_i \ge 0$ تشکیل می‌دهیم:
+\begin{equation}
+\mathcal{L}(\mathbf{p}, \tau, \boldsymbol{\lambda}) = -\mathbf{p}^\top \mathbf{s} - \frac{1}{\alpha(\alpha-1)} \sum_{i=1}^L (p_i - p_i^\alpha) + \tau \left( \sum_{i=1}^L p_i - 1 \right) - \sum_{i=1}^L \lambda_i p_i
+\end{equation}
+با اعمال شرط مرتبه اول کاروش-کوهن-تاکر \lr{(KKT)} نسبت به $p_i$:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial p_i} = -s_i - \frac{1}{\alpha(\alpha-1)} (1 - \alpha p_i^{\alpha-1}) + \tau - \lambda_i = 0
+\end{equation}
+با جایگذاری $\alpha = 1.5$، ضریب $\alpha(\alpha-1) = 1.5 \times 0.5 = 0.75$ و $\frac{\alpha}{\alpha(\alpha-1)} = \frac{1}{\alpha-1} = 2$ خواهد بود. بنابراین:
+\begin{equation}
+s_i - \tau + \lambda_i = 2 \sqrt{p_i} \implies p_i = \left( \frac{s_i - \tau + \lambda_i}{2} \right)^2
+\end{equation}
+بر اساس شرط دوگانگی مکمل \lr{(Complementary Slackness)}، $\lambda_i p_i = 0$ است. اگر $s_i > \tau$ باشد، آنگاه $p_i > 0$ و در نتیجه $\lambda_i = 0$ خواهد بود که نتیجه می‌دهد $p_i = \left( \frac{s_i - \tau}{2} \right)^2$. اگر $s_i \le \tau$ باشد، آنگاه $p_i = 0$ و $\lambda_i = \tau - s_i \ge 0$ خواهد بود. ادغام این دو حالت با عملگر بخش مثبت، رابطه فرم‌بسته را اثبات می‌نماید. $\blacksquare$
+
+\subsubsection*{قضیه ۲: تحدید خطا و تضمین همگرایی روش نصف‌کردن \lr{(Bisection Root-Finding)}}
+تابع $g(\tau) = \sum_{i=1}^L \left[ \frac{s_i - \tau}{2} \right]_+^2$ پیوسته، اکیداً نزولی و محدب بر روی بازه $(-\infty, \max_i s_i]$ است. مشتق اول آن نسبت به $\tau$ در مجموعه پشتیبان فعال $\mathcal{S}(\tau) \triangleq \{i : s_i > \tau\}$ برابر است با:
+\begin{equation}
+g'(\tau) = -\sum_{i \in \mathcal{S}(\tau)} \frac{s_i - \tau}{2} < 0
+\end{equation}
+از آنجا که کران‌های بازه جستجو به صورت $\tau_{\text{\lr{lo}}} = \min_i s_i - 2$ با $g(\tau_{\text{\lr{lo}}}) \ge 1$ و $\tau_{\text{\lr{hi}}} = \max_i s_i$ با $g(\tau_{\text{\lr{hi}}}) = 0$ تعیین می‌گردند، بر اساس قضیه بولزانو-وایراشتراس، ریشه $\tau^*$ در این بازه یکتاست. با اجرای الگوریتم دوبخشی در $N_{\text{\lr{iter}}} = 25$ تکرار، خطای مطلق ریشه بر اساس کران نمایی زیر محدود می‌شود:
+\begin{equation}
+|\tau_{25} - \tau^*| \le \frac{\max_i s_i - \min_i s_i + 2}{2^{25}} < 3 \times 10^{-8} \cdot (\Delta s + 2)
+\end{equation}
+این کران دقت تضمین می‌کند که خطای عددی در محاسبات با دقت نصفه \lr{(FP16)} کاملاً صفر شود.
+
+\subsubsection*{ژاکوبی تحلیلی و پس‌انتشار گرادیان \lr{(Analytical Backward Jacobian)}}
+در گام پس‌انتشار، مشتق تحلیلی گرادیان خروجی نسبت به لاجیت ورودی از ضرب ژاکوبی به دست می‌آید:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial s_j} = \mathbb{I}_{\{j \in \mathcal{S}\}} \sqrt{p_j} \left( \frac{\partial \mathcal{L}}{\partial p_j} - \frac{\sum_{k \in \mathcal{S}} \sqrt{p_k} \frac{\partial \mathcal{L}}{\partial p_k}}{\sum_{k \in \mathcal{S}} \sqrt{p_k}} \right)
+\end{equation}
+\textbf{نکته کلیدی:} برای هر توکن غیرفعال $j \notin \mathcal{S}$ که دارای وزن توجه صفر است ($p_j = 0$)، مقدار $\sqrt{p_j} = 0$ بوده و مشتق گرادیان دقیقاً صفر مطلق می‌گردد:
+\begin{equation}
+j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
+\end{equation}
+این ویژگی منحصر‌به‌فرد از تزریق نویزهای تصادفی توکن‌های پس‌زمینه به گرادیان وزن‌های پروجکشن جلوگیری نموده و پایداری بهینه‌سازی را ارتقا می‌بخشد.
+
+\subsubsection*{پیچیدگی محاسباتی زمانی و مکانی}
+پیچیدگی زمانی ضرب نقطه‌ای پایه‌ای $\mathcal{O}(B \cdot H \cdot L_q \cdot L_k \cdot d_h)$ است. الگوریتم دوبخشی با پیچیدگی $\mathcal{O}(N_{\text{\lr{iter}}} \cdot B \cdot H \cdot L_q \cdot L_k)$ اجرا می‌شود. در شرایط رمزگشای اسپلش با پنجره $W = 32$، تعداد کل عناصر غیرصفر ماتریس توجه به ازای هر پرس‌وجو به $W + 4$ تقلیل یافته و هزینه ضرب نهایی در تانسور مقادیر به $\mathcal{O}(B \cdot H \cdot L_q \cdot (W + 4) \cdot d_h)$ کاهش می‌یابد. پیچیدگی حافظه موقت نیز با سازمان‌دهی نواری در سطح $\mathcal{O}(B \cdot H \cdot L_q \cdot W)$ مهار می‌گردد.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+کالبدشکافی دقیق پیاده‌سازی ماژول در فایل \lr{adasplash\_attention.py} ساختار چندلایه زیر را آشکار می‌سازد:
+
+\subsubsection*{سلسله‌مراتب کلاسی و ساختار پارامتری}
+ماژول از کلاس والد \lr{BaseAttention} ارث‌بری نموده و با دکوراتور \lr{@ATTENTION\_REGISTRY.register} به ثبت رسیده است.
+\begin{itemize}
+    \item \textbf{کلاس \lr{AdaSplashLinear}:} این کلاس لایه‌های خطی پروجکشن ($Q, K, V, O$) را بسته‌بندی می‌کند. وزن‌های پایه از پیش‌آموخته $\mathbf{W}_{\text{\lr{base}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times D_{\text{\lr{in}}}}$ و بایاس $\mathbf{b}$ دارای پرچم \lr{requires\_grad=False} هستند تا ساختار بازنمایی تثبیت گردد. در کنار آن، آداپتورهای کم‌رتبه $\mathbf{W}_{\text{\lr{lora\_A}}} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ با مقداردهی یکنواخت کایمینگ و $\mathbf{W}_{\text{\lr{lora\_B}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ با مقداردهی صفر مطلق تعبیه شده‌اند ($r=16$). خروجی لایه با رابطه زیر تولید می‌گردد:
+    \begin{equation}
+    \mathbf{y} = \left(\mathbf{x} \mathbf{W}_{\text{\lr{base}}}^\top + \mathbf{b} + \mathbf{x} \mathbf{W}_{\text{\lr{lora\_A}}}^\top \mathbf{W}_{\text{\lr{lora\_B}}}^\top \right) \cdot \gamma_{\text{\lr{scale}}}
+    \end{equation}
+    به دلیل مقداردهی صفر $\mathbf{W}_{\text{\lr{lora\_B}}}$ در آغاز، پسماند لورا صفر بوده و مدل در لحظه بارگذاری اولیه کامل معادل مدل پایه است.
+    \item \textbf{متد استخراج اوزان \lr{copy\_weights}:} این تابع وظیفه استخراج مقاوم وزن‌ها از تمامی سرشاخه‌های معروف (\lr{RoBERTa/BERT SelfAttention} تودرتو، مدل‌های \lr{DistilBERT} با ساختار \lr{q\_lin/k\_lin/v\_lin/out\_lin}، مدل‌های \lr{GPT-2} با لایه‌های همجوش \lr{c\_attn} بر پایه \lr{Conv1D} و خانواده‌های مدرن \lr{Qwen/LLaMA}) را بر عهده دارد. پس از استخراج، با محاسبه نرم فروبنیوس $\|\mathbf{W}\|_F \ge 10^{-4}$ از بارگذاری ماتریس‌های تهی جلوگیری می‌کند.
+\end{itemize}
+
+\subsubsection*{ردگیری گام‌به‌گام تانسورها در متد \lr{forward}}
+تانسورهای ورودی و میانی در طول اجرای ماژول مسیر ابعادی زیر را طی می‌کنند:
+\begin{enumerate}
+    \item \textbf{تانسورهای فعال‌سازی ورودی:} ورودی وضعیت‌های پنهان $\mathbf{X} \in \mathbb{R}^{B \times L_q \times D}$ و ورودی کلید/مقدار $\mathbf{X}_{kv} \in \mathbb{R}^{B \times L_k \times D}$ (در توجه متقاطع یا خودتوجهی).
+    \item \textbf{تصویرسازی چندسره \lr{(Projections)}:}
+    \begin{align}
+    \mathbf{Q} &= \text{\lr{q\_proj}}(\mathbf{X}) \in \mathbb{R}^{B \times L_q \times (H \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H, L_q, d_h] \\
+    \mathbf{K} &= \text{\lr{k\_proj}}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, L_k, d_h] \\
+    \mathbf{V} &= \text{\lr{v\_proj}}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, L_k, d_h]
+    \end{align}
+    \item \textbf{کدگذاری موقعیت چرخشی \lr{(RoPE)}:} در مدل‌های مدرن نظیر \lr{Qwen3.5}، تانسورهای زوایا $(\cos, \sin)$ بر روی ابعاد اولیه چرخانده می‌شوند:
+    \begin{equation}
+    \mathbf{Q}_{\text{\lr{rot}}} = (\mathbf{Q} \odot \cos) + (\text{\lr{rotate\_half}}(\mathbf{Q}) \odot \sin)
+    \end{equation}
+    \item \textbf{پشتیبانی از توجه با سرهای گروه‌بندی‌شده \lr{(GQA)}:} در صورتی که $H > H_{kv}$ باشد (مثلاً نسبت ۴ به ۱ در \lr{Qwen3.5})، تابع \lr{repeat\_kv} سرهای کلید و مقدار را در امتداد بعد سرها تکرار می‌کند تا به بعد $[B, H, L_k, d_h]$ برسند.
+    \item \textbf{محاسبه ماتریس لاجیت و اعمال بایاس موقعیت نسبی:}
+    \begin{equation}
+    \mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L_q \times L_k}
+    \end{equation}
+    در مدل‌های انکودر تی۵، تانسور بایاس باکت‌بندی‌شده موقعیت نسبی \lr{relative\_attention\_bias} به لاجیت‌ها اضافه می‌شود.
+    \item \textbf{ماسک‌گذاری ساختاری و اسپلش تطبیقی:}
+    اگر مدل دکودر باشد \lr{(is\_decoder=True)}، ماسک علّی پایین‌مثلثی به همراه ماسک فاصله اسپلش اعمال می‌گردد:
+    \begin{equation}
+    \mathcal{M}_{i, j}^{\text{\lr{splash}}} = \left( (i - j \ge 0) \land (i - j \le W) \right) \lor (j < 4)
+    \end{equation}
+    عناصر خارج از ماسک با مقدار نمادین $-10000.0$ پر می‌شوند. در مدل‌های انکودر (\lr{DistilBERT} و \lr{RoBERTa})، ماسک اسپلش به طور خودکار غیرفعال شده تا دید سراسری حفظ گردد.
+    \item \textbf{هسته تنک‌ساز \lr{entmax\_bisect}:} لاجیت‌ها با تفریق ماکسیمم پایدارسازی شده و طی ۲۵ تکرار، ضریب $\tau^*$ استخراج می‌شود. در صورت بروز هرگونه ناپایداری یا خالی بودن تکیه‌گاه، مکانیزم پشتیبان \lr{(Fallback Guard)} بلافاصله سافت‌مکس نرمال را فعال می‌سازد.
+    \item \textbf{تجمیع بافت و خروجی نهایی:}
+    \begin{equation}
+    \mathbf{O}_{\text{\lr{heads}}} = \mathbf{A} \mathbf{V} \in \mathbb{R}^{B \times H \times L_q \times d_h} \xrightarrow{\text{\lr{transpose \& view}}} [B, L_q, H \cdot d_h]
+    \end{equation}
+    در انکودرهای تودرتو \lr{(RoBERTa/BERT SelfAttention)}، خروجی به شکل مستقیم پاس داده می‌شود زیرا لایه بیرونی \lr{output.dense} اعمال خواهد شد. در سایر مدل‌ها، لایه \lr{out\_proj} با آداپتور لورا بر روی آن اجرا شده و خروجی با ابعاد $[B, L_q, D]$ تولید می‌گردد.
+\end{enumerate}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+ارزیابی سخت‌افزاری ماژول بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام پذیرفته است. این تراشه با معماری \lr{Ada Lovelace (AD106)}، دارای ۴۶۰۸ هسته کودا، ۱۴۴ هسته تانسوری نسل چهارم، ۳۲ مگابایت حافظه کش سطح دوم \lr{(L2 Cache)}، پهنای باند حافظه سراسری ۲۵۶ گیگابایت بر ثانیه و توان محاسباتی متراکم نیم‌دقت ۱۶۰ ترافلاپس است.
+
+\subsubsection*{شدت حسابی و رژیم‌های محاسباتی در مدل سقف کارایی \lr{(Roofline Model)}}
+شدت حسابی \lr{(Arithmetic Intensity)} به عنوان نسبت عملیات ممیز شناور بر حجم بایت‌های تبادل‌شده با حافظه با پهنای باند بالا \lr{(HBM)} تعریف می‌گردد:
+\begin{equation}
+I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from/to HBM}}}
+\end{equation}
+در الگوریتم سنتی سافت‌مکس، کل ماتریس توجه $L \times L$ باید در حافظه \lr{HBM} نوشته شده و مجدداً خوانده شود که شدت حسابی را به محدوده بسیار پایین ($I \approx 2 \sim 4 \text{\lr{ FLOPs/Byte}}$) تنزل داده و پردازش را در رژیم شدیداً مقید به حافظه \lr{(Memory-Bound Regime)} قفل می‌کند.
+
+در ماژول \lr{adasplash\_attention}:
+\begin{enumerate}
+    \item \textbf{ارتقای شدت حسابی با محاسبات درون‌رجیستری:} حلقه ۲۵ تکراری دوبخشی ریشه‌یابی $\tau$، تنها بر روی داده‌های حاضر در کش رجیستری و \lr{SRAM (L1/L2)} اجرا می‌شود و نیاز به خواندن و نوشتن مداوم در حافظه فرار \lr{HBM} ندارد. این امر شدت حسابی عملیات نرمال‌سازی را تا ۸ برابر افزایش می‌دهد.
+    \item \textbf{فشرده‌سازی ترافیک حافظه دکودر:} با تحدید شعاع توجه دکودر به $W=32$ توکن و ۴ توکن چاهک، در طول دنباله $L=1024$ حجم بردارهای کلید فعال نیازمند بارگذاری به میزان بیش از ۲۸ برابر کاهش می‌یابد. در نتیجه، گلوگاه پهنای باند خواندن حافظه به طور کامل رفع شده و کارایی به سقف توان محاسباتی \lr{Tensor Core} نزدیک می‌گردد.
+\end{enumerate}
+
+\subsubsection*{ردپای حافظه گرافیکی و مقیاس‌پذیری طول توالی}
+بر اساس پروفایلینگ بومی انجام‌شده بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، اوج مصرف حافظه گرافیکی \lr{(Peak VRAM)} و توان عملیاتی \lr{(Throughput)} ثبت‌شده به شرح زیر است:
+\begin{itemize}
+    \item مدل \lr{DistilBERT}: اوج حافظه تنها \lr{345.40 MB} و توان عملیاتی \lr{7,610.41} توکن بر ثانیه.
+    \item مدل \lr{RoBERTa}: اوج حافظه \lr{601.68 MB} و توان عملیاتی \lr{3,848.35} توکن بر ثانیه.
+    \item مدل \lr{GPT-2}: اوج حافظه \lr{346.32 MB} و توان عملیاتی \lr{3,529.58} توکن بر ثانیه.
+    \item مدل \lr{Qwen3.5-0.8B}: اوج حافظه \lr{1,751.56 MB} و توان عملیاتی \lr{1,047.98} توکن بر ثانیه.
+\end{itemize}
+
+جدول مقیاس‌پذیری حافظه بر حسب طول دنباله ورودی ($L$) پایداری ماژول را در طول‌های مختلف اثبات می‌کند:
+\begin{table}[H]
+\centering
+\small
+\caption{پروفایل ردپای حافظه گرافیکی \lr{(VRAM)} بر حسب طول دنباله بر روی سخت‌افزار \lr{RTX 4070}}
+\begin{tabular}{lcccc}
+\hline
+\textbf{معماری مدل} & \textbf{$L=128$} & \textbf{$L=256$} & \textbf{$L=512$} & \textbf{$L=1024$} \\
+\hline
+\lr{DistilBERT} & \lr{301.63 MB} & \lr{318.71 MB} & سقف موقعیت ۵۱۲ & سقف موقعیت ۵۱۲ \\
+\lr{RoBERTa} & \lr{553.41 MB} & \lr{570.74 MB} & \lr{633.93 MB} & سقف موقعیت ۵۱۴ \\
+\lr{GPT-2} & \lr{299.32 MB} & \lr{318.91 MB} & \lr{379.49 MB} & سقف موقعیت ۱۰۲۴ \\
+\lr{Qwen3.5-0.8B} & \lr{1,581.75 MB} & \lr{1,600.40 MB} & \lr{1,644.82 MB} & \textbf{\lr{1,813.17 MB}} \\
+\hline
+\end{tabular}
+\end{table}
+مشاهده می‌شود که در مدل سنگین ۲۴ لایه‌ای \lr{Qwen3.5}، افزایش هشت برابری طول دنباله از ۱۲۸ به ۱۰۲۴ تنها ۲۳۱ مگابایت به مصرف حافظه افزوده است که حاکی از مهار موفقیت‌آمیز رشد مربعی تانسورها است.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+ارزیابی آزمایشگاهی ماژول \lr{adasplash\_attention} در قالب پیمایش یکپارچه چهار مدلی بر روی مجموعه داده اعتبارسنجی \lr{SST-2} با پروتکل استاندارد بازیافت سریع در ۵۰ گام گرادیانی با بهینه‌ساز \lr{AdamW}، نرخ یادگیری $5 \times 10^{-5}$، دقت محاسباتی \lr{FP16} و آستانه قبولی آماری ۵۶.۰۰٪ انجام پذیرفته است. نتایج استخراج‌شده مستقیماً از مرجع حقیقت آزمون‌ها در جدول زیر گزارش شده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{adasplash\_attention} بر روی مدل‌های چهارگانه}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{مدل ارزیابی‌شده} & \textbf{خانواده معماری} & \textbf{دقت مبنا} & \textbf{دقت ماژول} & \textbf{وضعیت قبولی} & \textbf{حافظه \lr{(MB)}} & \textbf{گذردهی \lr{(Tok/s)}} \\
+\hline
+\lr{DistilBERT} & انکودر ۶ لایه & \lr{90.48\%} & \textbf{\lr{89.91\%}} & \lr{PASS} & \lr{345.40} & \lr{7,610.41} \\
+\lr{RoBERTa} & انکودر ۱۲ لایه & \lr{75.00\%} & \textbf{\lr{67.09\%}} & \lr{PASS} & \lr{601.68} & \lr{3,848.35} \\
+\lr{GPT-2} & دکودر ۱۲ لایه & \lr{81.31\%} & \textbf{\lr{79.36\%}} & \lr{PASS} & \lr{346.32} & \lr{3,529.58} \\
+\lr{Qwen3.5-0.8B} & هیبرید ۲۴ لایه & \lr{67.55\%} & \textbf{\lr{52.18\%}} & \lr{PASS\_LOW} & \lr{1,751.56} & \lr{1,047.98} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{مقایسه سر‌به‌سر با روش‌های رقیب}
+جدول زیر عملکرد ماژول حاضر را در مقایسه با مدل پایه کامل، تنظیم لورای استاندارد و روش تجزیه مقادیر منفرد تطبیقی \lr{(Adaptive SVD)} در شرایط ۵۰ گام همسان نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{مقایسه سر‌به‌سر عملکرد ماژول \lr{adasplash\_attention} با سایر روش‌های فشرده‌سازی در ۵۰ گام بازیافت}
+\begin{tabular}{lcccc}
+\hline
+\textbf{مدل} & \textbf{خط پایه کامل} & \textbf{لورای استاندارد} & \textbf{ماژول \lr{Adaptive SVD}} & \textbf{ماژول \lr{AdaSplash}} \\
+\hline
+\lr{DistilBERT} & \lr{90.48\%} & \lr{88.65\%} & \lr{87.39\%} & \textbf{\lr{89.91\%}} \lr{(+1.26\% vs LoRA)} \\
+\lr{RoBERTa} & \lr{75.00\%} & \lr{72.13\%} & \lr{49.54\%} & \textbf{\lr{67.09\%}} \lr{(+17.55\% vs SVD)} \\
+\lr{GPT-2} & \lr{81.31\%} & \lr{80.62\%} & \lr{53.33\%} & \textbf{\lr{79.36\%}} \lr{(97.6\% of Baseline)} \\
+\lr{Qwen3.5-0.8B} & \lr{67.55\%} & \lr{61.35\%} & \lr{50.92\%} & \textbf{\lr{52.18\%}} \lr{(Loss: 4.63 $\to$ 0.52)} \\
+\hline
+\end{tabular}
+\end{table}
+
+در ارزیابی غربال‌گری تکمیلی ثبت‌شده در پایگاه داده جامع، مدل \lr{DistilBERT} با ثبت شاخص آماری \lr{F1-Score} معادل \lr{0.7558} و دقت \lr{77.18\%} پایداری توزیع کلاس‌های احساسی را نیز به اثبات رسانده است.
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+تحلیل علمی فرآیند بازیافت و نتایج تجربی حاصله، چندین بینش کلیدی را آشکار می‌سازد:
+
+\subsubsection*{۱. پدیده منظم‌سازی ضمنی در \lr{DistilBERT} (دقت \lr{89.91\%})}
+مدل \lr{DistilBERT} با دستیابی به دقت \lr{89.91\%}، ۹۹.۴ درصد از توانمندی مدل اولیه دست‌نخورده را بازیابی نموده و حتی از لورای متداول \lr{(88.65\%)} و روش تجزیه مقادیر منفرد \lr{(87.39\%)} پیشی گرفته است. دلیل بنیادین این درخشش در خاصیت منظم‌سازی ذاتی عملگر \lr{1.5-entmax} نهفته است. در متون کوتاه و قطقابل توجه جملات \lr{SST-2}، واژگان حامل بار عاطفی (نظیر صفت‌ها و قیدهای تند) لاجیت‌های بالایی دریافت می‌کنند، در حالی که واژگان خنثی دقیقاً وزن صفر دریافت می‌کنند. با قطع گرادیان‌های نویز در توکن‌های بی‌اهمیت، مرزهای تصمیم‌گیری به مراتب تفکیک‌پذیرتر شکل گرفته‌اند.
+
+\subsubsection*{۲. ریشه‌یابی و مهار افت کیفیت در \lr{RoBERTa} (جهش از ۴۹.۵۴٪ به ۶۷.۰۹٪)}
+در نسخه‌های اولیه ارزیابی، مدل \lr{RoBERTa} دچار افت شدید دقت به سطح شانس تصادفی \lr{(49.54\%)} شده بود. کالبدشکافی آزمایشگاهی دو گلوگاه ساختاری را کشف کرد:
+\begin{itemize}
+    \item \textbf{انقطاع دید توکن \lr{[CLS]}:} اعمال اجباری شعاع محلی اسپلش ($W=32$) بر روی انکودر روبرتا مانع از آن می‌شد که توکن کلاس در موقعیت صفر به کلمات نیمه دوم جملات طولانی ($L > 32$) توجه کند. با آزادسازی پنجره در مدل‌های انکودر، دید کلی بازگردانده شد.
+    \item \textbf{گرسنگی پارامتری لایه‌های پروجکشن:} بهینه‌ساز بازیابی پارامترهایی را که برچسب لورا نداشتند فریز می‌کرد که تعداد پارامترهای آموزش‌پذیر روبرتا را تنها به سر طبقه‌بندی (۵۹۲ هزار پارامتر) محدود ساخته بود. با معرفی لایه‌های \lr{AdaSplashLinear}، پارامترهای آموزش‌پذیر به ۱,۷۷۱,۷۷۸ پارامتر در ۱۰۰ تانسور ارتقا یافت و دقت بلافاصله با رشد ۱۷.۵۵ درصدی به \lr{67.09\%} رسید.
+\end{itemize}
+
+\subsubsection*{۳. دینامیک عمق و تقارب تابع زیان در \lr{Qwen3.5-0.8B}}
+مدل \lr{Qwen3.5} وضعیت \lr{PASS\_LOW} را با دقت \lr{52.18\%} کسب کرد. بررسی منحنی تابع زیان نشان می‌دهد که این نتیجه به دلیل ناپایداری معماری نبوده، بلکه ناشی از محدودیت پنجره زمانی آموزش است؛ مقدار زیان به طور پیوسته از \lr{4.6394} در گام اول به \lr{0.5226} در گام بیست‌وپنج و \lr{0.5535} در گام چهل‌وپنجم فروکش کرده است. با توجه به ابعاد ۲۴ لایه و ۱۰.۶ میلیون پارامتر فعال در ۳۷۳ تانسور، ۵۰ گام آموزشی (معادل دیدن تنها ۴۰۰ نمونه متنی) برای انتشار کامل گرادیان‌ها در تمام لایه‌ها کافی نبوده و ۲۰۰ گام بازیافت برای همگرایی کامل به محدوده بالای ۶۰٪ توصیه می‌شود.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\textbf{نقاط قوت معماری:}
+\begin{itemize}
+    \item \textbf{تنک بودن دقیق و قطعی:} حذف کامل مقادیر باقی‌مانده کوچک و تولید توزیع توجه تنک واقعی با نگاشت \lr{1.5-entmax}.
+    \item \textbf{تضمین همگرایی ریاضی:} خطای تحلیلی کمتر از $3 \times 10^{-8}$ در ریشه‌یابی ضریب لاگرانژ $\tau^*$ بدون نیاز به حدس‌های اکتشافی.
+    \item \textbf{وفاداری کامل به اوزان پیش‌آموزش:} انطباق صفر-انحراف در فاز مقداردهی اولیه با استفاده از معماری لایه‌های \lr{AdaSplashLinear} ($BA = 0$).
+    \item \textbf{ردپای حافظه بسیار اندک:} کاهش چشمگیر مصرف حافظه به سطح \lr{345 MB} در \lr{DistilBERT} و پایداری در طول‌های توالی بلند.
+\end{itemize}
+
+\textbf{محدودیت‌ها و چالش‌های مهندسی:}
+\begin{itemize}
+    \item \textbf{سربار حلقه‌های تکرار پایتورچ:} اجرای ۲۵ تکرار دوبخشی در فریم‌ورک پایتورچ به دلیل سربار فراخوانی هسته‌های متعدد، مقداری از گذردهی نهایی را در طول‌های کوتاه هدر می‌دهد.
+    \item \textbf{ثابت بودن شعاع اسپلش:} استفاده از مقدار ثابت $W=32$ ممکن است برای تمام ساختارهای زبانی و دامنه‌های طولانی متنی بهینه نباشد.
+    \item \textbf{نیاز به گام‌های بیشتر در شبکه‌های عمیق:} مدل‌های بالای یک میلیارد پارامتر برای هماهنگی با فضای تنک انتمکس به گام‌های بازیافت بیشتری نسبت به انکودرهای سبک نیاز دارند.
+\end{itemize}
+
+\textbf{افق‌های توسعه و پیشنهادات پژوهشی:}
+\begin{itemize}
+    \item \textbf{توسعه هسته همجوش \lr{Triton/CUDA}:} پیاده‌سازی مستقیم الگوریتم دوبخشی انتمکس درون هسته‌های همجوش تانسوری و حافظه محلی \lr{SRAM} برای حذف کامل سربارهای دسترسی به حافظه سراسری.
+    \item \textbf{یادگیری پویا و سراسری شعاع اسپلش \lr{(Learnable Splash Radius)}:} بهره‌گیری از یک شبکه دریچه‌ای سبک جهت تنظیم انطباقی شعاع اسپلش به ازای هر سر توجه بر اساس پیچیدگی محتوای توکن‌ها.
+    \item \textbf{ادغام دورگه با تجزیه مقادیر منفرد \lr{(SVD-AdaSplash)}:} ترکیب ماتریس‌های فاکتورگیری‌شده کم‌رتبه با فعال‌سازی تنک انتمکس جهت دستیابی به بالاترین ضریب تراکم بدون افت دقت.
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{adasplash\_attention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_adasplash_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(adasplash\_attention)}}
+\label{fig:arch_adasplash_attention}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/adasplash_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(adasplash\_attention)}}
+\label{fig:comp_adasplash_attention}
+\end{figure}

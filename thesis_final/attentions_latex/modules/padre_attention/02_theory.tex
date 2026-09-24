@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ نمایش پنهان ورودی لایه توجه باشد که در آن $B$ اندازه دسته، $N$ طول توالی و $D$ بعد پنهان مدل است. تانسورهای پرس‌وجو، کلید و مقدار با استفاده از لایه‌های خطی مجهز به تطبیق کم‌مرتبه (\lr{LoRALinear}) محاسبه می‌شوند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_{\text{base}}$ در طول فاز تطبیق منجمد (\lr{Frozen}) بوده و تنها ماتریس‌های کم‌مرتبه $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{D \times r}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{r \times D_{\text{out}}}$ بهینه‌سازی می‌گردند. تانسورهای حاصل به ابعاد چندسره نگاشت می‌یابند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N \times d}
+\end{equation}
+که در آن $H$ تعداد سرهای پرس‌وجو، $H_{\text{kv}}$ تعداد سرهای کلید/مقدار و $d = D/H$ بعد هر سر است. در صورت نامتقارن بودن تعداد سرها ($H \ne H_{\text{kv}}$)، تانسورهای کلید و مقدار با عملگر تکرار $\operatorname{repeat\_kv}$ هم‌بعد می‌شوند.
+
+امتیازهای خام توجه از ضرب داخلی مقیاس‌شده به دست می‌آیند:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times N}
+\end{equation}
+به منظور تضمین پایداری عددی و ممانعت از رشد بی‌رویه مقادیر پیش از توان‌رسانی، مقدار بیشینه معتبر روی بعد کلیدها محاسبه شده و مرکزسازی صورت می‌گیرد:
+\begin{equation}
+M_{b,h,i} = \max_{j \in \mathcal{V}_i} S_{b,h,i,j}, \quad \tilde{\mathbf{S}} = \frac{\mathbf{S} - \mathbf{M}}{\max(\tau, 10^{-6})}
+\end{equation}
+که در آن $\mathcal{V}_i$ مجموعه اندیس‌های معتبر غیرماسک‌شده برای توکن $i$-ام و $\tau$ پارامتر دمای نرم‌سازی است. هسته چندجمله‌ای مرتبه $p$ (به طور پیش‌فرض $p=2$) با برش ایمن به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{B} = \operatorname{clamp}\left(1 + \frac{\tilde{\mathbf{S}}}{p}, 0, 10\right), \quad \mathbf{A}_{\text{poly}} = \mathbf{B}^p \odot \mathbf{M}_{\text{mask}}
+\end{equation}
+سپس وزن‌های توجه با نرمال‌سازی مجموع خطی استاندارد روی بعد کلیدها بازتوزیع می‌شوند:
+\begin{equation}
+A_{b,h,i,j} = \frac{A_{\text{poly},b,h,i,j}}{\sum_{k=1}^N A_{\text{poly},b,h,i,k} + \epsilon}
+\end{equation}
+پس از اعمال دراپ‌اوت تنظیمی و ضرب در ماتریس ارزش $\mathbf{V}$، بافتار نهایی بازسازی شده و به لایه پروجکشن خروجی ارسال می‌گردد:
+\begin{equation}
+\mathbf{C} = \mathbf{A} \mathbf{V}, \quad \mathbf{O} = \mathbf{C} \mathbf{W}_O
+\end{equation}

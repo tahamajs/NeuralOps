@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی متراکم باشد که می‌توان آن را به صورت مجموعه‌ای از بردارهای ردیفی (نورون‌های خروجی) نمایش داد:
+\begin{equation}
+\mathbf{W} = \begin{bmatrix} \mathbf{w}_1^\top \\ \mathbf{w}_2^\top \\ \vdots \\ \mathbf{w}_{d_{\text{out}}}^\top \end{bmatrix}, \quad \mathbf{w}_i \in \mathbb{R}^{d_{\text{in}}}
+\end{equation}
+
+الگوریتم \lr{ToMoE} با اجرای خوشه‌بندی \lr{K-Means} با دقت محاسباتی \lr{FP32} (یا \lr{MiniBatchKMeans} برای لایه‌های بسیار بزرگ با $d_{\text{out}} > 2048$) نورون‌ها را به $E$ خوشه متمایز $\mathcal{C}_1, \mathcal{C}_2, \dots, \mathcal{C}_E$ با ابعاد ترجیحاً برابر افراز می‌نماید:
+\begin{equation}
+\arg\min_{\{\mathcal{C}_e\}_{e=1}^E} \sum_{e=1}^E \sum_{\mathbf{w}_i \in \mathcal{C}_e} \|\mathbf{w}_i - \boldsymbol{\mu}_e\|_2^2
+\end{equation}
+که در آن $\boldsymbol{\mu}_e$ مرکز خوشه $e$-ام است. در صورت تولید خوشه‌های خالی یا نابرابری شدید، مکانیزم پشتیبان افراز مساوی و معین (\lr{Deterministic Equal Division}) فعال می‌شود.
+
+هر خوشه متناظر با یک خبره $\mathbf{W}^{(e)} \in \mathbb{R}^{d_e \times d_{\text{in}}}$ است. برای هر بردار ورودی $\mathbf{x} \in \mathbb{R}^{d_{\text{in}}}$، شبکه مسیریاب با استفاده از نگاشت خطی $\mathbf{W}_{\text{gate}} \in \mathbb{R}^{E \times d_{\text{in}}}$ امتیازهای هدایت را در فضای \lr{FP32} محاسبه می‌کند:
+\begin{equation}
+\mathbf{h} = \mathbf{x} \mathbf{W}_{\text{gate}}^\top + \mathbf{b}_{\text{gate}}
+\end{equation}
+سپس، عملگر انتخاب برترین شاخص‌ها (\lr{Top-k}) وزن‌های ترکیب را تعیین می‌نماید:
+\begin{equation}
+\mathcal{T} = \operatorname{Top-k}(\mathbf{h}, k), \quad g_e = \begin{cases} \frac{\exp(h_e)}{\sum_{j \in \mathcal{T}} \exp(h_j)} & \text{if } e \in \mathcal{T} \\ 0 & \text{otherwise} \end{cases}
+\end{equation}
+
+خروجی موثر نهایی از پراکنده‌سازی و بازنشانی خروجی خبره‌های فعال بر روی بردار کامل بعد خروجی بازسازی می‌شود:
+\begin{equation}
+\mathbf{y} = \sum_{e \in \mathcal{T}} g_e \cdot \operatorname{Scatter}\left(\mathbf{x} (\mathbf{W}^{(e)})^\top + \mathbf{b}^{(e)}, \mathcal{I}_e\right)
+\end{equation}
+که در آن $\mathcal{I}_e$ اندیس نورون‌های متعلق به خوشه $e$ در ماتریس خروجی اصلی است.

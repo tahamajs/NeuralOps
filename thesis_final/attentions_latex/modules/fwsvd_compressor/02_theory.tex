@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{x} \in \mathbb{R}^{d_{\text{in}}}$ بردار فعال‌سازی ورودی به لایه باشد. تقریب قطری اطلاعات فیشر فعال‌سازی از طریق گشتاور دوم نمونه‌های کالیبراسیون محاسبه می‌شود:
+\begin{equation}
+\mathbf{F}_i = \mathbb{E}\left[\mathbf{x}_i^2\right] = \frac{1}{B} \sum_{k=1}^B (\mathbf{X}_{k, i})^2, \quad i \in \{1, \dots, d_{\text{in}}\}
+\end{equation}
+با تعریف ماتریس قطری $\mathbf{D}_F = \text{diag}\left(\sqrt{\mathbf{F}_1}, \dots, \sqrt{\mathbf{F}_{d_{\text{in}}}}\right)$ با اعمال کران پایینی عددی $\epsilon \ge 10^{-8}$ جهت پایداری، ماتریس وزن وزن‌دهی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{W} \mathbf{D}_F \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد بر روی ماتریس وزن‌دهی‌شده اجرا می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+با انتخاب رتبه فشرده‌سازی $r \le \min(d_{\text{in}}, d_{\text{out}})$، مقادیر منفرد به فاکتورها تقسیم شده و فاکتور راست با معکوس فیشر بی‌وزن می‌گردد:
+\begin{align}
+\mathbf{U}_r &= \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r} \\
+\mathbf{V}_r &= \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \mathbf{D}_F^{-1} \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{align}
+بازسازی حاصل به فرم $\mathbf{W} \approx \mathbf{U}_r \mathbf{V}_r$ تضمین می‌کند که خطای بازسازی فروبنیوس در جهات دارای اطلاعات فیشر بالا به حداقل ممکن کاهش یابد:
+\begin{equation}
+\mathcal{E} = \frac{\|\mathbf{W} - \mathbf{U}_r \mathbf{V}_r\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+محاسبه خروجی لایه فشرده در زمان استنتاج به دو ضرب ماتریسی سبک با مرتبه پارامتری $r \cdot (d_{\text{in}} + d_{\text{out}})$ تبدیل می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}_r^\top) \mathbf{U}_r^\top + \mathbf{b}
+\end{equation}

@@ -1,0 +1,41 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس بازنمایی لایه ورودی باشد که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. در معماری \lr{GatedLinearAttention}، نگاشت‌های پروجکشن پرس‌وجو، کلید، مقدار و گیت خروجی با نگاشت‌های خطی مجهز به تطبیق‌دهنده‌های کم‌مرتبه لورا \lr{(LoRA)} محاسبه می‌شوند:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) \in \mathbb{R}^{B \times L \times (H \cdot d)}, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}) \in \mathbb{R}^{B \times L \times (H_{kv} \cdot d)}, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}) \in \mathbb{R}^{B \times L \times (H_{kv} \cdot d)}, \\
+\mathbf{Z} &= \operatorname{LoRA-Linear}_Z(\mathbf{X}) \in \mathbb{R}^{B \times L \times (H \cdot d)}
+\end{align}
+که در آن $H$ تعداد سرهای پرس‌وجو، $H_{kv}$ تعداد سرهای کلید/مقدار (جهت پشتیبانی از معماری \lr{GQA}) و $d$ بعد هر سر توجه است. در صورت نابرابری سرهای کلید با پرس‌وجو، عملیات تکرار \lr{repeat\_kv} اعمال می‌گردد.
+
+برای تضمین اکید نامنفی بودن مولفه‌های فضا و پایداری ماتریس انتقال حالت، کرنل غیرخطی $\phi(x) = \operatorname{ELU}(x) + 1.0$ بر روی پرس‌وجوها و کلیدها اعمال می‌شود:
+\begin{equation}
+\tilde{\mathbf{q}}_t = \operatorname{ELU}(\mathbf{q}_t) + 1.0, \quad \tilde{\mathbf{k}}_t = \operatorname{ELU}(\mathbf{k}_t) + 1.0
+\end{equation}
+
+گیت‌های زوال وابسته به ورودی $\boldsymbol{\lambda} \in (0, 1)^{B \times H \times L}$ از ترکیب پروجکشن خطی محتوایی و پارامتر یادگیرنده لگاریتمی زوال $\mathbf{w}_{\text{decay}}$ استخراج می‌شوند:
+\begin{equation}
+\boldsymbol{\lambda}_t = \sigma\left(\mathbf{W}_{\text{decay}} \mathbf{x}_t + \mathbf{b}_{\text{decay}} + \log \boldsymbol{\lambda}_{\text{init}}\right)
+\end{equation}
+
+در فاز پیشرو علّی (مورد استفاده در مدل‌های دیکودر مانند \lr{GPT-2})، معادله اسکن موازی تجمعی زوال از طریق ماتریس تفاضل لگاریتمی تعریف می‌گردد:
+\begin{equation}
+c_t = \sum_{\tau=1}^t \log \boldsymbol{\lambda}_\tau, \quad D_{i, j}^{\text{causal}} = \exp\left(c_i - c_j\right) \cdot \mathbb{I}_{[i \ge j]}
+\end{equation}
+سپس خروجی توجه صورت و مخرج به صورت موازی محاسبه می‌شوند:
+\begin{equation}
+\mathbf{S}_{i, j} = \frac{\tilde{\mathbf{q}}_i \tilde{\mathbf{k}}_j^T}{\sqrt{d}}, \quad
+\mathbf{Num}_i = \sum_{j=1}^i \left(\mathbf{S}_{i, j} \cdot D_{i, j}^{\text{causal}}\right) \mathbf{v}_j, \quad
+\operatorname{Denom}_i = \sum_{j=1}^i |\mathbf{S}_{i, j}| \cdot D_{i, j}^{\text{causal}}
+\end{equation}
+\begin{equation}
+\mathbf{y}_i^{\text{fwd}} = \frac{\mathbf{Num}_i}{\operatorname{Denom}_i + \epsilon}
+\end{equation}
+برای مدل‌های انکودر دوطرفه (نظیر \lr{DistilBERT} و \lr{RoBERTa})، اسکن پادعلّی معکوس $\mathbf{y}^{\text{bwd}}$ با ماتریس زوال بالامثلثی $D_{i, j}^{\text{anti}} = \exp(c_j - c_i) \cdot \mathbb{I}_{[i \le j]}$ نیز محاسبه شده و برآیند دوطرفه متوازن به دست می‌آید:
+\begin{equation}
+\mathbf{y} = \frac{1}{2} \left(\mathbf{y}^{\text{fwd}} + \mathbf{y}^{\text{bwd}}\right)
+\end{equation}
+در گام نهایی، پس از عبور از لایه نرمال‌سازی حالت \lr{LayerNorm} روی بعد سرها، مدولاسیون گیت خروجی با تابع \lr{SiLU} فعال شده و تصویر خطی خروجی بازتولید می‌شود:
+\begin{equation}
+\mathbf{o}_t = \operatorname{LoRA-Linear}_O\left( \operatorname{LayerNorm}(\mathbf{y}_t) \odot \operatorname{SiLU}(\mathbf{z}_t) \right) \cdot \gamma_{\text{scale}}
+\end{equation}

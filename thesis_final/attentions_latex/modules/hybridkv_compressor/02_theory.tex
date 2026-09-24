@@ -1,0 +1,26 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید برای سر توجه $h \in \{1, \dots, H\}$ در طول توالی $T$، تانسورهای کلید و مقدار به ترتیب $\mathbf{K}_h \in \mathbb{R}^{T \times d_k}$ و $\mathbf{V}_h \in \mathbb{R}^{T \times d_v}$ باشند. با توجه به ماتریس نقاب سرهای ایستا $M_{\text{static}}(h) \in \{0, 1\}$، ظرفیت مجاز حافظه نهان تحت نسبت بودجه $\beta \in (0, 1]$ به صورت زیر تعیین می‌شود:
+\begin{equation}
+L_{\text{max}} = \max\left(L_{\text{min}}, \lfloor T_{\text{cache}} \cdot \beta \rfloor \right)
+\end{equation}
+اگر سر توجه ایستا باشد ($M_{\text{static}}(h) = 1$):
+\begin{itemize}
+    \item تعداد $S$ توکن ابتدایی به عنوان جاذب‌های توجه (\lr{Attention Sinks}) همواره در حافظه تثبیت می‌شوند: $\mathcal{I}_{\text{sink}} = \{1, 2, \dots, S\}$.
+    \item مابقی ظرفیت به توکن‌های با بیشترین انرژی توجه یا مقادیر فعال‌سازی بزرگ سراسری (\lr{Heavy Hitters}) اختصاص می‌یابد:
+    \begin{equation}
+    \mathcal{I}_{\text{heavy}} = \operatorname{arg\,top\,k}_{t > S} \left( \|\mathbf{k}_t\|_2 \right), \quad |\mathcal{I}_{\text{heavy}}| = L_{\text{max}} - S
+    \end{equation}
+\end{itemize}
+اگر سر توجه پویا باشد ($M_{\text{static}}(h) = 0$):
+\begin{itemize}
+    \item علاوه بر توکن‌های سینک اولیه، یک پنجره لغزان محلی به طول $W$ برای حفظ آخرین توکن‌های تولیدشده در نظر گرفته می‌شود:
+    \begin{equation}
+    \mathcal{I}_{\text{recent}} = \{T - W + 1, \dots, T\}
+    \end{equation}
+    \item توکن‌های باقی‌مانده بر اساس امتیاز تشابه یا هرس توده‌ای هدایت می‌شوند.
+\end{itemize}
+بدین ترتیب، تانسور حافظه نهان فشرده‌شده به صورت زیر تجمیع و بازسازی می‌گردد:
+\begin{equation}
+\mathbf{K}_{h}^{\text{comp}} = \mathbf{K}_{h}[\mathcal{I}_{\text{retained}}, :], \quad \mathbf{V}_{h}^{\text{comp}} = \mathbf{V}_{h}[\mathcal{I}_{\text{retained}}, :]
+\end{equation}
+که در آن $\mathcal{I}_{\text{retained}} = \mathcal{I}_{\text{sink}} \cup \mathcal{I}_{\text{recent}} \cup \mathcal{I}_{\text{heavy}}$ است.

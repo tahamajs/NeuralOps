@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی و جایگزینی لایه‌ها در الگوریتم \lr{SoKA} به شرح زیر فرمول‌بندی می‌شود:
+\begin{enumerate}
+    \item \textbf{تجزیه مقادیر منفرد ماتریس وزن (\lr{SVD}):}
+    فرض کنید ماتریس وزن اولیه لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ باشد:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top = \mathbf{A} \mathbf{B}^\top
+    \end{equation}
+    که در آن ماتریس‌های فاکتور به شکل متقارن از توزیع مقادیر منفرد تشکیل می‌شوند:
+    \begin{equation}
+    \mathbf{A} = \mathbf{U}_r \boldsymbol{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{B} = \mathbf{V}_r \boldsymbol{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{in}} \times r}
+    \end{equation}
+    \item \textbf{انتخاب پویای مرتبه بر اساس آستانه انرژی تکین (\lr{Singular Energy Threshold}):}
+    چنانچه آستانه انرژی $\alpha \in (0, 1]$ تعیین شده باشد، مرتبه موثر $r$ به صورت کوچکترین مرتبه‌ای انتخاب می‌شود که کسر مشخصی از مجموع توان مقادیر منفرد را پوشش دهد:
+    \begin{equation}
+    r = \min \left\{ k \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2} \ge \alpha \right\}
+    \end{equation}
+    در غیر این صورت، مرتبه ثابت ورودی اعمال خواهد شد.
+    \item \textbf{محاسبه گذر پیشرو با لایه تجزیه‌شده \lr{LowRankLinear}:}
+    در زمان استنتاج، به جای ضرب پرهزینه $\mathbf{x} \mathbf{W}^\top$، عملیات در دو گام بطری‌گردنی انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{y} = (\mathbf{x} \mathbf{B}) \mathbf{A}^\top + \mathbf{b}
+    \end{equation}
+    این فرمول‌بندی تعداد پارامترهای وزن را از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌دهد.
+\end{enumerate}

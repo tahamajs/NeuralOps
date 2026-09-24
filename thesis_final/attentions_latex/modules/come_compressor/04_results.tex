@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{come\_compressor} بر روی مجموعه‌داده اعتبارسنجی \lr{GLUE SST-2} و پردازنده گرافیکی به ثبت نتایج معتبر جدول \ref{tab:benchmark_come_compressor} منتهی شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی و ارزیابی جامع ماژول \lr{come\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_come_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.24\%} & \lr{0.8701} & \lr{179.06 MB} & \lr{72,211.64 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{78.33\%} & \lr{0.8177} & \lr{276.45 MB} & \lr{18,269.81 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{73.17\%} & \lr{0.7776} & \lr{332.05 MB} & \lr{21,796.34 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{0.5570} & \lr{1796.78 MB} & \lr{1,289.77 tok/s} & \lr{FAIL} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول \ref{tab:benchmark_come_compressor} مشاهده می‌شود، ماژول با موفقیت موفق به کاهش ۳۳٫۳ درصدی لایه‌ها در مدل‌های انکودر و دیکودر گردیده و در \lr{DistilBERT} با حفظ ۴ لایه از ۶ لایه به دقت درخشان ۸۶٫۲۴٪ با کاهش محسوس اوج حافظه به ۱۷۹٫۰۶ مگابایت دست یافته است. در مدل \lr{RoBERTa} و \lr{GPT-2} نیز با هرس ۴ لایه از ۱۲ لایه، دقت‌های بالای ۷۸٪ و ۷۳٪ حاصل شده است.

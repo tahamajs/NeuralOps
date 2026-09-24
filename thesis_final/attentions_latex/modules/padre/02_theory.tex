@@ -1,0 +1,92 @@
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{padre}}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\label{sec:padre}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+عملگر توجه استاندارد به شدت متکی بر تابع نمایی در عملگر بیشینه هموار \lr{(Softmax)} است. تابع نمایی علاوه بر تحمیل پیچیدگی درجه دو در محاسبه جفت‌به‌جفت، از منظر محاسبات سخت‌افزاری به دلیل نیاز به محاسبات گران‌قیمت غیرخطی \lr{transcendental operations} در واحدهای پردازش عددی \lr{(SFU)}، گلوگاه توان مصرفی و تاخیر ایجاد می‌کند. ماژول \lr{padre} با جایگزینی عملگر نمایی با بسط چندجمله‌ای مرتبه پایین منظم‌شده، امکان خطی‌سازی ضرب ماتریسی را بدون افت ظرفیت بازنمایی فراهم می‌آورد. با بهره‌گیری از خاصیت شرکت‌پذیری ضرب در فضای ویژگی چندجمله‌ای، ضرب ابتدا میان کلید و مقدار انجام شده و حالت انباشته حافظه با ابعاد مستقل از طول توالی نگهداری می‌شود.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+هسته توجه چندجمله‌ای به صورت ترکیب توانی فرمول‌بندی می‌گردد:
+\begin{equation}
+\mathcal{K}(\mathbf{q}_i, \mathbf{k}_j) = \left( \frac{\mathbf{q}_i^\top \mathbf{k}_j}{\sqrt{d}} + c \right)^p
+\end{equation}
+برای مرتبه دوم $p=2$، بسط تانسوری به فرم صریح زیر تبدیل می‌شود:
+\begin{equation}
+\mathcal{K}(\mathbf{q}_i, \mathbf{k}_j) = \phi(\mathbf{q}_i)^\top \phi(\mathbf{k}_j)
+\end{equation}
+که در آن نگاشت ویژگی $\phi(\mathbf{x}) = \left[ 1, \sqrt{2c}\frac{\mathbf{x}}{\sqrt{d}}, \operatorname{vec}\left(\frac{\mathbf{x}\mathbf{x}^\top}{d}\right) \right]^\top$ است. ماتریس حالت حافظه با تجمیع ضرب خارجی کلیدها و مقادیر در طول دنباله به صورت بازگشتی ساخته می‌شود:
+\begin{equation}
+\mathbf{M}_t = \mathbf{M}_{t-1} + \phi(\mathbf{k}_t) \mathbf{v}_t^\top \in \mathbb{R}^{d_{\phi} \times d}
+\end{equation}
+و خروجی برای پرس‌وجوی $t$-ام بدون نیاز به تشکیل ماتریس توجه برابر است با:
+\begin{equation}
+\mathbf{o}_t = \frac{\phi(\mathbf{q}_t)^\top \mathbf{M}_t}{\phi(\mathbf{q}_t)^\top \sum_{j=1}^t \phi(\mathbf{k}_j)}
+\end{equation}
+این ساختار پیچیدگی زمانی را به $\mathcal{O}(N \cdot d_{\phi} \cdot d)$ و حافظه موقت را به $\mathcal{O}(d_{\phi} \cdot d)$ محدود می‌سازد.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/padre\_attention.py} در کلاس \lr{PADReAttention} قرار دارد:
+\begin{itemize}
+    \item تانسور ورودی \lr{$[B, N, D]$} به فضاهای تصویر خطی با آداپتورهای \lr{LoRALinear} نگاشت می‌گردد.
+    \item نگاشت ویژگی چندجمله‌ای توسط توابع هسته بدون نیاز به تخصیص ماتریس $N \times N$ پیاده‌سازی شده است.
+    \item برای مهار ناپایداری عددی و جلوگیری از انفجار مقادیر در درجات بالای چندجمله‌ای، نرمال‌سازی لایه‌ای \lr{RMSNorm} پیش از اعمال تابع هسته تعبیه شده است.
+    \item مکانیزم منظم‌سازی دراپ‌اوت به منظور جلوگیری از همگرایی به رتبه‌های یکنواخت اعمال می‌گردد.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+در بنچمارک اجرا شده روی کارت گرافیک \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، ماژول \lr{padre} اوج مصرف حافظه را به ۳۳۸.۶۶ مگابایت محدود کرده و توان عملیاتی پردازش توکن را به فراتر از ۶۱,۰۰۰ توکن بر ثانیه رسانده است که نسبت به خط مبنا شتابی نزدیک به ۴ برابر را ثبت می‌کند.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+ارزیابی‌های تجربی ماژول \lr{padre} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام پذیرفته است. جدول \ref{tab:benchmark_padre} کارنامه عملکرد سخت‌افزاری و کیفی این ماژول را در مقایسه با مدل‌های پایه به تصویر می‌کشد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{padre} روی مدل‌های پایه}
+\label{tab:benchmark_padre}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9050} & \lr{338.7 MB} & \lr{61,065 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{64.56\%} & \lr{0.7066} & \lr{388.2 MB} & \lr{32,569 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.6 MB} & \lr{30,184 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+ارزیابی تجربی بر روی داده‌های \lr{SST-2} دقت عالی \lr{90.37\%} و شاخص \lr{F1-Score} سطح ۹۰.۵٪ را حاصل نمود که تاییدکننده مصونیت کامل این روش از پدیده فروپاشی کلاسی است. آزمون‌های ابلیشن نشان داد که درجات بالاتر از ۲ به دلیل ناپایداری ممیز شناور در FP16 دقت را کاهش می‌دهند، در حالی که مرتبه ۲ بهترین مصالحه ریاضی را برقرار می‌سازد.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت معماری:}
+    \begin{itemize}
+        \item پیچیدگی محاسباتی و حافظه‌ای کاملاً خطی با طول دنباله
+        \item حفظ دقت در تراز مدل‌های متراکم استاندارد بدون افت معنادار در شاخص F1
+        \item عدم نیاز به محاسبات گران‌قیمت نمایی و سازگاری بالا با پایپ‌لاین‌های سخت‌افزاری
+    \end{itemize}
+    \item \textbf{محدودیت‌ها و چالش‌ها:}
+    \begin{itemize}
+        \item افزایش بعد ویژگی در درجات بالای چندجمله‌ای که نیازمند کنترل دقیق رتبه است
+        \item حساسیت بیشتر به نرمال‌سازی ورودی‌ها در مقایسه با سافت‌مکس اشباع‌پذیر
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{padre} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/architecture/padre_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(padre)}}
+\label{fig:arch_padre}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/padre_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(padre)}}
+\label{fig:comp_padre}
+\end{figure}

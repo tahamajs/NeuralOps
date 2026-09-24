@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+الگوریتم \lr{SVD-LLM} از سه مرحله بنیادین ریاضی تشکیل یافته است:
+
+\textbf{۱. جمع‌آوری کوواریانس و سفیدسازی فعال‌سازی (\lr{Cholesky Whitening}):} \\
+با عبور داده‌های کالیبراسیون از مدل، ماتریس فعال‌سازی‌های ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ برای هر لایه خطی با وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ جمع‌آوری شده و ماتریس کوواریانس تجربی محاسبه می‌گردد:
+\begin{equation}
+\mathbf{C} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I}
+\end{equation}
+با اعمال تجزیه کلسکی بر روی ماتریس تقارنی و مثبت معین کوواریانس، ماتریس مثلثی بالایی $\mathbf{S} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ حاصل می‌شود به طوری که $\mathbf{C} = \mathbf{S}^\top \mathbf{S}$. سپس ماتریس وزن اصلی با این فاکتور سفیدسازی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{white}} = \mathbf{W} \mathbf{S}^\top
+\end{equation}
+
+\textbf{۲. تجزیه مقادیر منفرد برش‌یافته و بازگشت از سفیدسازی (\lr{Truncation and Unwhitening}):} \\
+تجزیه مقادیر منفرد بر روی ماتریس وزن سفیدشده $\mathbf{W}_{\text{white}}$ انجام می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{white}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+که در آن $r$ بر اساس نسبت پارامتری هدف $R \in (0, 1]$ به صورت $r = \lfloor \frac{R \cdot d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \rfloor$ انتخاب می‌گردد. سپس فاکتور راست با ضرب در وارون ماتریس کلسکی از سفیدسازی خارج می‌شود:
+\begin{equation}
+\mathbf{V}_{\text{unw}}^\top = \mathbf{V}_r^\top (\mathbf{S}^\top)^{-1}
+\end{equation}
+ماتریس‌های فاکتور نهایی با توزیع متقارن جذر مقادیر منفرد تشکیل می‌شوند:
+\begin{equation}
+\mathbf{W}_u = \mathbf{U}_r \sqrt{\mathbf{\Sigma}_r} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{W}_v = \sqrt{\mathbf{\Sigma}_r} \mathbf{V}_{\text{unw}}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+
+\textbf{۳. ریزتنظیم ترتیبی با آداپتورهای \lr{LoRA} (\lr{Sequential LoRA Fine-Tuning}):} \\
+به منظور جبران خطای باقیمانده، دو جفت آداپتور کم‌مرتبه $(\mathbf{A}_u, \mathbf{B}_u)$ و $(\mathbf{A}_v, \mathbf{B}_v)$ متناظر با فاکتورهای $\mathbf{W}_u$ و $\mathbf{W}_v$ تعبیه می‌شوند:
+\begin{equation}
+\mathbf{z} = \mathbf{x} \mathbf{W}_v^\top + \frac{\alpha}{r_L} (\mathbf{x} \mathbf{A}_v^\top) \mathbf{B}_v^\top
+\end{equation}
+\begin{equation}
+\mathbf{y} = \mathbf{z} \mathbf{W}_u^\top + \frac{\alpha}{r_L} (\mathbf{z} \mathbf{A}_u^\top) \mathbf{B}_u^\top + \mathbf{b}
+\end{equation}
+آموزش جبرانی در دو مرحله ترتیبی مجزا اجرا می‌گردد: در مرحله نخست، $\mathbf{W}_v$ منجمد شده و آداپتورهای $\mathbf{W}_u$ آموزش می‌بینند؛ در مرحله دوم، $\mathbf{W}_u$ منجمد شده و آداپتورهای $\mathbf{W}_v$ به‌روزرسانی می‌شوند تا اثر تداخل گرادیان‌ها به حداقل برسد.

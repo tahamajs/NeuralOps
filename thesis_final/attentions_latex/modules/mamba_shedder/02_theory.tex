@@ -1,0 +1,22 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی الگوریتم \lr{Mamba-Shedder} مبتنی بر دو مکانیزم تحلیلی است:
+
+\begin{enumerate}
+    \item \textbf{تخمین حساسیت بر پایه اطلاعات فیشر تجربی (\lr{Empirical Fisher Sensitivity}):} برای هر کانال ورودی $j \in \{1, \dots, d_{\text{in}}\}$ در لایه خطی با ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ و تانسور فعال‌سازی ورودی کالیبراسیون $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$، شاخص حساسیت اطلاعات فیشر تجربی به شکل زیر تعریف می‌شود:
+    \begin{equation}
+    \mathcal{I}(X_j) = \sqrt{\frac{1}{N} \sum_{n=1}^N X_{n, j}^2 + \epsilon}
+    \end{equation}
+    در صورت عدم دسترسی به داده‌های کالیبراسیون، هنجار ستونی ماتریس وزن $\|\mathbf{W}_{:, j}\|_2$ به عنوان شاخص حساسیت جایگزین مورد استفاده قرار می‌گیرد.
+    
+    سپس بر اساس درصد پراکندگی هدف $s \in [0, 1)$، ماسک دودویی کانال‌ها با حفظ $k = \lfloor d_{\text{in}}(1 - s) \rfloor$ کانال برتر تولید شده و ماتریس وزن هرس می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{pruned}} = \mathbf{W} \odot \mathbf{M}_{\text{channel}}^\top
+    \end{equation}
+    همچنین ماژول توانایی هرس ساختاریافته ۲:۴ (\lr{NVIDIA 2:4 Structured Sparsity}) را داراست که در آن از هر ۴ عنصر مجاور در امتداد بعد ورودی، دقیقا ۲ عنصر با کمترین میزان شایستگی صفر می‌شوند.
+
+    \item \textbf{شاخص حساسیت تفاضلی لایه‌ها و حذف لایه (\lr{Layer Shedding}):} حساسیت لایه $l$-ام بر اساس تغییرات تانسور بازنمایی در گذر از لایه محاسبه می‌گردد:
+    \begin{equation}
+    \Delta_l = \frac{\|\mathbf{X}_{l+1} - \mathbf{X}_l\|_F}{\|\mathbf{X}_l\|_F + \epsilon}
+    \end{equation}
+    در فرآیند حذف لایه، تعداد $N_{\text{shed}}$ لایه از میان بلوک‌های میانی شبکه بدون دستکاری لایه ابتدایی و انتهایی انتخاب و از کانتینر \lr{nn.ModuleList} حذف می‌شوند تا اتصال مستقیم میان لایه‌های باقیمانده برقرار گردد.
+\end{enumerate}

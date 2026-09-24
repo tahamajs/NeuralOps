@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید بردارهای پرس‌وجو و کلید در یک فضای $d$-بعدی به صورت $\mathbf{q}, \mathbf{k} \in \mathbb{R}^d$ قرار داشته باشند. در روش درهم‌سازی مبتنی بر ابرصفحه‌های تصادفی زاویه‌ای، به ازای هر دور $r \in \{1, \dots, R\}$، یک ماتریس تصویر تصادفی $\mathbf{R}_r \in \mathbb{R}^{d \times \frac{b}{2}}$ با توزیع نرمال استاندارد نمونه‌برداری و بهنجار می‌شود:
+\begin{equation}
+\tilde{\mathbf{R}}_r = \frac{\mathbf{R}_r}{\|\mathbf{R}_r\|_2}
+\end{equation}
+سپس، شناسه سطل هر بردار با درهم‌سازی متقارن تصادفی تعیین می‌گردد:
+\begin{equation}
+h_r(\mathbf{x}) = \operatorname{argmax}\left( [\mathbf{x} \tilde{\mathbf{R}}_r ; -\mathbf{x} \tilde{\mathbf{R}}_r] \right) \in \{0, \dots, b - 1\}
+\end{equation}
+که در آن $b$ تعداد سطل‌های درهم‌سازی است. احتمال قرارگیری دو بردار در یک سطل رابطه‌ای مستقیم با زاویه کسینوسی $\theta$ میان آنها دارد:
+\begin{equation}
+\Pr[h(\mathbf{q}) = h(\mathbf{k})] = 1 - \frac{\theta(\mathbf{q}, \mathbf{k})}{\pi}
+\end{equation}
+
+برای افزایش ضریب اطمینان و جلوگیری از حذف تصادفی توکن‌های مرتبط، الگوریتم به تعداد $R$ دور مستقل اجرا می‌شود. ماتریس امتیازات درون هر سطل به شکل زیر تعریف می‌گردد:
+\begin{equation}
+S_{i, j}^{(r)} = \begin{cases}
+\frac{\mathbf{q}_i \mathbf{k}_j^T}{\sqrt{d}} & \text{if } h_r(\mathbf{q}_i) = h_r(\mathbf{k}_j) \text{ and } m_j = 1 \\
+-\infty & \text{otherwise}
+\end{cases}
+\end{equation}
+خروجی نهایی از میانگین‌گیری نتایج تمامی دورهای درهم‌سازی حاصل می‌شود:
+\begin{equation}
+\mathbf{O} = \frac{1}{R} \sum_{r=1}^R \operatorname{Softmax}\left(\mathbf{S}^{(r)}\right) \mathbf{V}
+\end{equation}

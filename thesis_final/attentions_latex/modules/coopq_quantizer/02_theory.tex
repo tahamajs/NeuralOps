@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی نظری کوانتایزاسیون نامتقارن کانال‌به‌کانال در ماژول \lr{coopq\_quantizer} از روابط زیر تبعیت می‌کند:
+
+\subsubsection*{۱. تحمیل کف عرض بیت (Min Bit-Width Floor Enforcement)}
+برای جلوگیری از فروپاشی شناختی در لایه‌های فوق‌حساس، عرض بیت هر لایه $l$ به حداقل ۴ بیت مقید می‌گردد:
+\begin{equation}
+b_l \ge b_{\min} = 4, \quad \forall l \in \{1, \dots, L\}
+\end{equation}
+
+\subsubsection*{۲. کالیبراسیون نامتقارن مقیاس و نقطه صفر (Per-Channel Asymmetric Calibration)}
+برای سطر یا کانال خروجی $i$ از ماتریس وزن $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$، مقیاس و نقطه صفر به شکل زیر محاسبه می‌گردند:
+\begin{equation}
+\text{scale}_i = \max\left( \frac{\max_j W_{ij} - \min_j W_{ij}}{2^b - 1}, 10^{-8} \right)
+\end{equation}
+\begin{equation}
+z_i = \operatorname{clamp}\left( \left\lfloor -\frac{\min_j W_{ij}}{\text{scale}_i} \right\rceil, 0, 2^b - 1 \right)
+\end{equation}
+سپس تبدیل نگاشت شبه‌کوانتایزاسیون (\lr{Fake Quantization}) با بازنگاشت به فضای پیوسته اعمال می‌گردد:
+\begin{equation}
+\widehat{W}_{ij} = \left( \operatorname{clamp}\left( \left\lfloor \frac{W_{ij}}{\text{scale}_i} \right\rceil + z_i, 0, 2^b - 1 \right) - z_i \right) \cdot \text{scale}_i
+\end{equation}
+
+\subsubsection*{۳. تخمین‌گر مستقیم گرادیان (Straight-Through Estimator - STE)}
+از آنجا که تابع گرد کردن ($\lfloor \cdot \rceil$) دارای مشتق جزئی صفر در تقریباً همه‌جا است، برای عبور گرادیان در فاز پس‌انتشار از عملگر \lr{STE} تحت کلاس \lr{CoopQSTEFakeQuantize} استفاده می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial W} = \frac{\partial \mathcal{L}}{\partial \widehat{W}}
+\end{equation}
+این ساختار به وزن‌های پیوسته زیرین اجازه می‌دهد تا در حین آموزش آگاه از کوانتایزاسیون (\lr{QAT})، انحرافات ناشی از تقطیع گسسته را به طور پویا جبران نمایند.

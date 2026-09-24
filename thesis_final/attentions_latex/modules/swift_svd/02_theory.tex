@@ -1,0 +1,24 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی باشد. در این الگوریتم، ابتدا یک سقف اکید بر روی رتبه برش اعمال می‌شود تا تضمین گردد مجموع پارامترهای دو ماتریس تجزیه‌شده اکیداً از پارامترهای لایه اصلی کمتر باشد:
+\begin{equation}
+r_{\text{cap}} = \max \left( 1, \left\lfloor \frac{d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1 \right)
+\end{equation}
+رتبه هدف نهایی بر مبنای ضریب فشرده‌سازی $R \in (0, 1]$ به صورت زیر تعیین می‌گردد:
+\begin{equation}
+r = \max \left( 1, \min \left( \lfloor \min(d_{\text{in}}, d_{\text{out}}) \cdot R \rfloor, r_{\text{cap}} \right) \right)
+\end{equation}
+
+با انجام تجزیه مقادیر منفرد بر روی ماتریس وزن:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+فاکتورهای کم‌مرتبه با تقسیم متقارن جذر مقادیر منفرد ($\sqrt{\mathbf{\Sigma}_r}$) استخراج می‌شوند تا نُرم ماتریس‌های چپ و راست متعادل بماند:
+\begin{equation}
+\mathbf{U}_r = \mathbf{U}_{:, :r} \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}), \quad \mathbf{V}_r = \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}) \mathbf{V}_{:, :r}^\top
+\end{equation}
+ماتریس بازسازی‌شده حاصل به صورت $\hat{\mathbf{W}} = \mathbf{U}_r \mathbf{V}_r$ محاسبه گردیده و خطای نسبی فروبنیوس ارزیابی می‌شود:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \hat{\mathbf{W}}\|_F}{\|\mathbf{W}\|_F + 10^{-8}}
+\end{equation}
+
+در صورت فعال بودن گام‌های بازآزمایی تکرارشونده (\lr{max\_retries})، الگوریتم در یک حلقه تکرار، مقادیر مختلف رتبه را برای رسیدن به خطای کمتر از آستانه $\mathcal{E}_{\text{max}}$ ارزیابی می‌کند. در صورتی که حداقل خطای بازسازی فراتر از آستانه مجاز باشد، ماژول با مکانیزم برگشت به لایه اصلی (\lr{fallback})، از جایگزینی وزن ممانعت به عمل می‌آورد.

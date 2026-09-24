@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک ماژول \lr{grecodec\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_grecodec_compressor} خلاصه شده است. داده‌ها به صورت دقیق از نتایج ثبت‌شده در فایل‌های خلاصه بنچ‌مارک استخراج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{grecodec\_compressor} بر روی مدل‌های پایه}
+\label{tab:benchmark_grecodec_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9069} & \lr{310.69 MB} & \lr{173,191.15 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.53\%} & \lr{0.8936} & \lr{321.64 MB} & \lr{42,992.33 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.57\%} & \lr{0.8380} & \lr{398.74 MB} & \lr{60,393.06 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{grecodec\_compressor} پایداری بسیار بالایی در حفظ دقت نشان داده است؛ دقت در \lr{DistilBERT} برابر با \lr{90.37\%} (افت اندک \lr{-0.11\%} نسبت به خط مبنا) و در \lr{RoBERTa} معادل \lr{88.53\%} به دست آمده است. در مدل خودبازگشتی \lr{GPT-2} دقت مدل فشرده‌شده حتی با افزایش \lr{+1.26\%} به \lr{82.57\%} ارتقا یافته و تمامی مدل‌های تست‌شده وضعیت موفقیت‌آمیز \lr{PASS} را کسب کرده‌اند. ارزیابی مدل \lr{Qwen} به علت عدم انطباق پیکربندی در بنچ‌مارک چهارمدلی در وضعیت \lr{NOT\_RUN} قرار دارد.

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{compressed\_attention} بر روی مجموعه داده بنچ‌مارک استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_compressed_attention} را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{compressed\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_compressed_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.18\%} & \lr{0.7858} & \lr{287.62 MB} & \lr{121,092.02 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{341.07 MB} & \lr{55,221.85 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.53 MB} & \lr{54,501.20 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{46.93\%} & \lr{---} & \lr{1,177.12 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج نشان می‌دهند که ماژول روی مدل \lr{DistilBERT} عملکرد بسیار نیرومندی ارائه داده و با دستیابی به دقت \lr{77.18\%} و شاخص F1 معادل \lr{0.7858}، توان عملیاتی پردازش خیره‌کننده \lr{121,092.02 tok/s} را با حافظه مصرفی ناچیز \lr{287.62 MB} ثبت کرده است.

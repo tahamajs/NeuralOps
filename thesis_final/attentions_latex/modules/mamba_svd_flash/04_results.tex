@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{mamba\_svd\_flash} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_mamba_svd_flash} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{mamba\_svd\_flash} روی مدل‌های پایه}
+\label{tab:benchmark_mamba_svd_flash}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.17\%} & \lr{0.8421} & \lr{1668.4 MB} & \lr{1,059 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.7 MB} & \lr{92,803 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{64,043 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{84.17\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

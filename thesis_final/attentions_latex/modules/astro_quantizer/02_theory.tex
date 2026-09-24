@@ -1,0 +1,21 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند کوانتیزه‌سازی در \lr{AstroQuantizer} در دو مرحله اساسی صورت می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{تخصیص بهینه بیت بر پایه مسئله کوله‌پشتی:} فرض کنید بردار اهمیت تجربی کانال‌های خروجی با $\mathbf{s} \in \mathbb{R}^N$ مشخص شده باشد (محاسبه‌شده از طریق انرژی خروجی یا فیشر تجربی). هدف، تخصیص طول بیت $b_i \in [b_{\text{min}}, b_{\text{max}}]$ برای هر کانال $i \in \{1, \dots, N\}$ به نحوی است که مجموع حساسیت وزنی بیشینه شود:
+    \begin{equation}
+    \max_{\{b_i\}} \sum_{i=1}^N \mathbf{s}_i \cdot b_i \quad \text{subject to} \quad \sum_{i=1}^N b_i \le \operatorname{round}(N \cdot \bar{b}), \quad b_{\text{min}} \le b_i \le b_{\text{max}}
+    \end{equation}
+    که در آن $\bar{b}$ بودجه میانگین بیت هدف است. این مسئله به روش حریصانه دقیق حل می‌شود: کانال‌ها بر حسب اهمیت $\mathbf{s}_i$ به صورت نزولی مرتب شده، ابتدا به تمام کانال‌ها بیت پایه $b_{\text{min}}$ اختصاص یافته و سپس بودجه باقیمانده به کانال‌های دارای بالاترین اهمیت تا سقف $b_{\text{max}}$ تخصیص می‌یابد.
+    \item \textbf{کوانتیزه‌سازی با مقیاس کانالی و ارزیاب \lr{STE}:} برای هر کانال $i$ با طول بیت تخصیص‌یافته $b_i$، محدوده گسسته $[q_{\text{min}}^{(i)}, q_{\text{max}}^{(i)}]$ و فاکتور مقیاس‌گذاری متقارن محاسبه می‌شود:
+    \begin{equation}
+    q_{\text{max}}^{(i)} = 2^{b_i - 1} - 1, \quad q_{\text{min}}^{(i)} = -2^{b_i - 1}, \quad \Delta_i = \frac{\max(|\mathbf{W}_{i, :}|)}{q_{\text{max}}^{(i)}}
+    \end{equation}
+    نگاشت کوانتیزه‌سازی و بازگشت به فضای پیوسته به صورت زیر انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{W}_{i, j}^{\text{quant}} = \operatorname{clamp}\left(\left\lfloor \frac{\mathbf{W}_{i, j}}{\Delta_i} \right\rceil, q_{\text{min}}^{(i)}, q_{\text{max}}^{(i)}\right) \cdot \Delta_i
+    \end{equation}
+    در گذر پسرو، به دلیل صفر بودن مشتق تابع پله‌ای گردکردن، مشتق معکوس توسط عملگر \lr{STE} مستقیماً عبور داده می‌شود:
+    \begin{equation}
+    \frac{\partial \mathcal{L}}{\partial \mathbf{W}} \approx \frac{\partial \mathcal{L}}{\partial \mathbf{W}^{\text{quant}}}
+    \end{equation}
+\end{enumerate}

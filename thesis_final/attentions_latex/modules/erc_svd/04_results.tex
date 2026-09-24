@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی ماژول \lr{erc\_svd} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_erc_svd} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{erc\_svd} بر روی مدل‌های پایه}
+\label{tab:benchmark_erc_svd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9103} & \lr{418.17 MB} & \lr{236,111.95 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.15\%} & \lr{0.9425} & \lr{503.28 MB} & \lr{14,452.28 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس اندازه‌گیری‌های آزمایشگاهی، کنترل خطا با تضمین نظری موجب شده مدل \lr{DistilBERT} به دقت چشمگیر \lr{90.71\%} و توان قابل توجه \lr{236,111.95 tok/s} دست یابد. در مدل \lr{RoBERTa} نیز دقت \lr{94.15\%} با شاخص F1 برابر \lr{0.9425} و مصرف حافظه بهینه \lr{503.28 MB} ثبت گردیده است. اجرای ماژول برای \lr{GPT-2} ثبت نگردیده (\lr{NOT\_RUN}) و برای \lr{Qwen} در وضعیت \lr{SKIP} قرار دارد.

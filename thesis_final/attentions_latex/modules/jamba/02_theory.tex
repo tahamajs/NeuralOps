@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+بلوک \lr{Jamba} شامل پردازش سه‌مرحله‌ای پیوسته در طول لایه‌ها به صورت زنجیره‌ای از اتصالات باقیمانده و بهنجارسازی لایه‌ای (\lr{LayerNorm}) است. فرض کنید بردار ورودی $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ باشد:
+
+\begin{enumerate}
+    \item \textbf{شاخه فضای حالت پیوسته-گسسته (\lr{SVD-Mamba Branch}):}
+    در این شاخه، ورودی پس از نگاشت خطی اولیه وارد مدل فضای حالت گزینشی با پارامترهای وابسته به ورودی می‌گردد:
+    \begin{equation}
+    \mathbf{h}'_t = \mathbf{A}_t \mathbf{h}'_{t-1} + \mathbf{B}_t \mathbf{x}_t, \quad \mathbf{y}_t^{\text{ssm}} = \mathbf{C}_t \mathbf{h}'_t + \mathbf{D} \mathbf{x}_t
+    \end{equation}
+    بردار خروجی این بخش به همراه اتصال باقیمانده نخست بهنجار می‌شود:
+    \begin{equation}
+    \mathbf{X}_1 = \operatorname{LayerNorm}_1\left(\mathbf{X} + \mathbf{y}^{\text{ssm}} \mathbf{W}_{\text{out}}^{\text{ssm}}\right)
+    \end{equation}
+
+    \item \textbf{شاخه توجه چندسر با نگاشت آداپتور رتبه-پایین (\lr{MHA with LoRA Branch}):}
+    بر روی نمایش $\mathbf{X}_1$، عملگر توجه همراه با وزن‌های پایه تثبیت‌شده و تنظیم‌پذیری کم‌مرتبه (\lr{LoRA}) اعمال می‌گردد:
+    \begin{equation}
+    \mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}}
+    \end{equation}
+    سپس تانسورهای پروجکشن با اعمال توابع موقعیت چرخشی (\lr{RoPE}) و مکانیزم \lr{GQA} محاسبه شده و خروجی با نگاشت اتصال باقیمانده دوم به دست می‌آید:
+    \begin{equation}
+    \mathbf{O}^{\text{attn}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}\right)\mathbf{V}
+    \end{equation}
+    \begin{equation}
+    \mathbf{X}_2 = \operatorname{LayerNorm}_2\left(\mathbf{X}_1 + \operatorname{Dropout}\left(\mathbf{O}^{\text{attn}} \mathbf{W}^O\right)\right)
+    \end{equation}
+
+    \item \textbf{شاخه تخصیص خبرگان با گزینش هوشمند (\lr{Expert Choice MoE Branch}):}
+    در این مرحله، بر خلاف روش سنتی که توکن‌ها خبرگان را انتخاب می‌کنند، هر خبره از میان تمامی توکن‌های دنباله بر اساس ماتریس امتیازدهی نرمال گیتینگ $\mathbf{S} = \operatorname{Softmax}(\mathbf{X}_2 \mathbf{W}_g)$، توکن‌های با بالاترین رتبه را تحت یک ضریب ظرفیت ثابت (\lr{Capacity Factor}) انتخاب و پردازش می‌کند:
+    \begin{equation}
+    \mathbf{y}^{\text{moe}} = \sum_{e \in \text{Selected}} \mathbf{S}_{t, e} \cdot \operatorname{FFN}_e(\mathbf{X}_{2, t})
+    \end{equation}
+    \begin{equation}
+    \mathbf{X}_3 = \operatorname{LayerNorm}_3\left(\mathbf{X}_2 + \operatorname{Dropout}\left(\mathbf{y}^{\text{moe}}\right)\right)
+    \end{equation}
+\end{enumerate}

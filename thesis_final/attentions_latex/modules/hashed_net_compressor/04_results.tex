@@ -1,0 +1,28 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{hashed\_net\_compressor} بر پایه نتایج ثبتی در جدول \ref{tab:benchmark_hashed_net_compressor} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{hashed\_net\_compressor} بر روی مدل‌های پایه}
+\label{tab:benchmark_hashed_net_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9079} & \lr{311.19 MB} & \lr{181,139.14 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.53\%} & \lr{0.8934} & \lr{321.14 MB} & \lr{59,556.94 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.45\%} & \lr{0.8374} & \lr{401.74 MB} & \lr{66,410.32 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول ارزیابی مشاهده می‌شود، فشرده‌ساز \lr{hashed\_net\_compressor} کارایی کم‌نظیری در حفظ دقت مدل نشان داده است؛ دقت در \lr{DistilBERT} برابر با \lr{90.48\%} بدون هیچ افتی نسبت به خط پایه حفظ شده، در \lr{RoBERTa} دقت \lr{88.53\%} حاصل گردیده و در مدل خودبازگشتی \lr{GPT-2} دقت با رشد \lr{+1.14\%} به \lr{82.45\%} رسیده است که نشان‌دهنده موفقیت کامل در عبور از دروازه کیفیت (\lr{PASS}) در تمامی مدل‌های اجرا شده می‌باشد. مدل \lr{Qwen} در مجموعه اجرای فعلی بنچ‌مارک چهارگانه لحاظ نشده و در وضعیت \lr{NOT\_RUN} مستند شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی‌های تجربی و نظری نقاط حساس و محدودیت‌های زیر را برجسته می‌سازد:
+\begin{itemize}
+    \item \textbf{سربار تولید برخط ماتریس وزن (\lr{On-the-fly Materialization}):} در صورتی که سخت‌افزار از شتاب‌دهنده کرنل ادغام‌شده درهم‌سازی پشتیبانی نکند، ساخت مجدد ماتریس متراکم $\hat{\mathbf{W}}$ از جدول درهم‌سازی در گذر پیشرو می‌تواند تاخیر محاسباتی ایجاد نماید.
+    \item \textbf{تداخل گرادیان‌ها در اشتراک‌گذاری بالا (\lr{Gradient Interference}):} هنگام کاهش شدید تعداد سطل‌ها ($B \ll 10^4$)، تعداد تصادم‌های ناگزیر افزایش یافته و گرادیان‌های پارامترهای نامرتبط در یک خانه جدول با یکدیگر تداخل نموده که به واگرایی آموزش یا افت شاخص تفکیک‌پذیری منجر می‌گردد.
+\end{itemize}

@@ -1,0 +1,137 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{gated\_deltanet\_block}}
+\label{sec:mod_gated_deltanet_block}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+مکانیزم نوآورانه \lr{gated\_deltanet\_block} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های زبانی مدرن است: چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟ این ماژول یک ساختار ترکیبی \lr{(Hybrid)} ارائه می‌دهد که به صورت پویا بین توجه چندسری استاندارد \lr{(MHA)} و یک شبکه \lr{Gated DeltaNet} جابجا می‌شود.
+در ترنسفورمرهای سنتی، مدل با ورود هر توکن جدید، تاریخچه کاملی از کلیدها و مقادیر را ذخیره می‌کند که منجر به پیچیدگی $\mathcal{O}(N^2)$ می‌شود. اما در این معماری، مبتنی بر قاعده دلتا \lr{(Delta Rule)}، اطلاعات جدید تنها زمانی به حافظه پنهان افزوده می‌شود که با دانسته‌های قبلی تفاوت معناداری داشته باشد. این رویکرد همراه با قابلیت انتقال اوزان از پیش‌آموزش‌دیده \lr{(Pretrained Weight Transfer)}، شبکه‌ای کارآمد و سریع با ظرفیت بازنمایی بسیار قوی خلق می‌کند که می‌تواند جایگزینی مستقیم \lr{(Drop-in Replacement)} برای بلوک‌های توجه کلاسیک باشد.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+از منظر ریاضی، خروجی این بلوک به صورت شرطی بر اساس پارامتر \lr{use\_full\_attention} تعریف می‌شود:
+\begin{equation}
+\text{\lr{Output}} = \begin{cases}
+\text{\lr{LayerNorm}}\big(\mathbf{X} + \text{\lr{MHA}}(\mathbf{X}, \mathbf{X}, \mathbf{X})\big), & \text{\lr{if }} \text{\lr{use\_full\_attention}} \\
+\text{\lr{LayerNorm}}\big(\mathbf{X} + \text{\lr{GatedDeltaNet}}(\mathbf{X})\big), & \text{\lr{otherwise}}
+\end{cases}
+\end{equation}
+که در آن $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی است.
+در حالت \lr{GatedDeltaNet}، قاعده دلتا با یک مکانیزم گیت‌بندی تطبیقی ترکیب می‌شود:
+\begin{align}
+\mathbf{S}_t &= \alpha_t \mathbf{S}_{t-1} + \beta_t (\mathbf{v}_t - \mathbf{S}_{t-1}\mathbf{k}_t) \mathbf{k}_t^T \\
+\mathbf{o}_t &= \mathbf{q}_t \mathbf{S}_t
+\end{align}
+در اینجا $\alpha_t \in (0, 1)$ گیت فراموشی، و $\beta_t$ نرخ یادگیری وابسته به ورودی است. بردار خطای پیش‌بینی $\mathbf{e}_t = \mathbf{v}_t - \mathbf{S}_{t-1}\mathbf{k}_t$ به‌گونه‌ای طراحی شده که افزونگی داده‌ها را به حداقل برساند و ماتریس وضعیت $\mathbf{S}_t$ با ابعاد ثابت را بروزرسانی نماید، که پیچیدگی زمانی را به $\mathcal{O}(N)$ تقلیل می‌دهد.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+در پیاده‌سازی پایتون در فایل \lr{gated\_deltanet\_block.py}، کلاس \lr{GatedDeltaNetBlock} با ارث‌بری از \lr{BaseAttention} طراحی شده است:
+\begin{enumerate}
+\item \textbf{ورودی:} تانسور $\mathbf{X}$ با ابعاد $[B, N, D]$ دریافت می‌شود.
+\item \textbf{انتقال اوزان \lr{(Weight Transfer)}:} در تابع \lr{copy\_weights}، اوزان \lr{q}، \lr{k}، \lr{v} و \lr{o} از ماژول توجه کلاسیک توسط \lr{UniversalAdapter} استخراج شده و به ماژول جدید تزریق می‌شوند.
+\item \textbf{مسیریابی جریان داده \lr{(Forward Pass)}:}
+\begin{itemize}
+\item اگر \lr{use\_full\_attention} فعال باشد، جریان داده از \lr{nn.MultiheadAttention} عبور می‌کند.
+\item در غیر این صورت، تانسور به ماژول \lr{GatedDeltaNet} ارسال می‌شود.
+\end{itemize}
+\item \textbf{مدیریت ابعاد:} در صورت عدم تطابق بعد خروجی با ورودی، تابع \lr{F.pad} یا برش تانسوری \lr{(Slicing)} اعمال می‌شود تا ابعاد $[B, N, D]$ حفظ گردد.
+\item \textbf{نرمال‌سازی و اتصال میانبر \lr{(Residual Connection)}:} خروجی با $\mathbf{X}$ جمع شده و از \lr{LayerNorm} عبور می‌کند.
+\end{enumerate}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+عملکرد سخت‌افزاری بر روی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} نشانگر مزایای قابل‌توجهی است:
+\begin{itemize}
+\item \textbf{کاهش ترافیک حافظه \lr{(Memory Traffic Reduction)}:} به لطف حذف ماتریس توجه \lr{(Attention Matrix)} با ابعاد $N \times N$، نیاز به تخصیص حافظه پویا در \lr{VRAM} به‌شدت کاهش می‌یابد و گلوگاه پهنای باند \lr{DRAM} به حداقل می‌رسد.
+\item \textbf{انتقال به رژیم محدود به محاسبات \lr{(Compute-Bound Regime)}:} با نگهداری حالت بازگشتی $\mathbf{S}_t$ درون کش \lr{SRAM} (نظیر \lr{L1/L2})، شدت حسابی \lr{(Arithmetic Intensity)} بهینه شده و بهره‌گیری از هسته‌های تانسوری \lr{(Tensor Cores)} افزایش می‌یابد.
+\end{itemize}
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+نتایج ارزیابی‌های جامع بر روی مدل‌های زبانی مختلف به شرح زیر است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی ارزیابی مکانیزم \lr{gated\_deltanet\_block}}
+\label{tab:benchmark_gated_deltanet_block}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{مدل} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{(F1-Score)}} & \textbf{اوج حافظه \lr{(Peak VRAM)}} & \textbf{توان عملیاتی \lr{(Tokens/s)}} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{416.41 MB} & \lr{8930.43} \\
+\lr{GPT-2} & \lr{51.49\%} & \lr{0.6635} & \lr{788.47 MB} & \lr{6099.42} \\
+\lr{RoBERTa} & \lr{-} & \lr{-} & \lr{736.54 MB} & \lr{4426.12} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+نتایج حاکی از کاهش چشمگیر اوج مصرف حافظه است؛ برای مثال در مدل \lr{DistilBERT} اوج حافظه به \lr{416.41 MB} محدود شده است که نشان‌دهنده اثربخشی معماری در فشرده‌سازی بازنمایی‌های طولانی است. توان عملیاتی در حدود \lr{8930} توکن بر ثانیه، مزیت رقابتی اجرای خطی این معماری را به اثبات می‌رساند. با این وجود، پایداری دقت در محدوده \lr{50\%} تا \lr{51\%} نمایانگر چالش‌های ناشی از انتقال مستقیم اوزان در سناریوهای ظریف \lr{(Fine-grained)} است که نیازمند تنظیم دقیق‌تر فراپارامترهای گیت‌بندی \lr{(Gating)} می‌باشد. شاخص \lr{F1} در حدود \lr{0.67} نشان‌دهنده تعادل نسبتاً مناسبی میان \lr{Precision} و \lr{Recall} در شرایط فشرده‌سازی شدید است.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\textbf{نقاط قوت:}
+\begin{itemize}
+\item پیچیدگی زمانی خطی $\mathcal{O}(N)$ و کاهش شدید مصرف حافظه و پهنای باند سخت‌افزاری.
+\item امکان سوئیچ پویا \lr{(Dynamic Switching)} بین توجه کلاسیک و مکانیزم دلتا با قابلیت \lr{Drop-in Replacement}.
+\item ادغام روان با اوزان از پیش‌آموزش‌دیده \lr{(Pretrained Weights)}.
+\end{itemize}
+
+\textbf{محدودیت‌ها:}
+\begin{itemize}
+\item افت نسبی کیفیت خروجی و دقت بازنمایی نسبت به توجه چندسری متراکم در وظایف به شدت پیچیده زبانی.
+\item حساسیت به تنظیمات نرخ یادگیری محلی $\beta_t$.
+\end{itemize}
+
+\textbf{پیشنهادات توسعه:}
+\begin{itemize}
+\item استفاده از تکنیک‌های \lr{Low-Rank Adaptation (LoRA)} برای هم‌راستاسازی بهتر گیت‌های فراموشی با ویژگی‌های وظایف خاص.
+\item اعمال مکانیزم‌های \lr{Grouped-Query Attention (GQA)} برای افزایش بیشتر توان عملیاتی.
+\end{itemize}
+
+\subsection*{بخش ۸: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
+    \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
+    \node [state, right=1.0cm of disc] (recurr) {بروزرسانی حالت $h_t = \bar{\mathbf{A}} h_{t-1} + \bar{\mathbf{B}} x_t$};
+    \node [outblock, right=1.0cm of recurr] (out) {خروجی خطی $y_t = \mathbf{C} h_t$};
+
+    \draw [->, thick, draw=blue!80] (input) -- (disc);
+    \draw [->, thick, draw=teal!80] (disc) -- (recurr);
+    \draw [->, thick, draw=orange!80] (recurr) -- (out);
+
+    \path [->, thick, draw=orange!90] (recurr) edge [loop above] node [font=\footnotesize] {حافظه $\mathcal{O}(1)$} (recurr);
+\end{tikzpicture}
+\end{center}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{gated\_deltanet\_block} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_gated_deltanet_block.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(gated\_deltanet\_block)}}
+\label{fig:arch_gated_deltanet_block}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/gated_deltanet_block_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(gated\_deltanet\_block)}}
+\label{fig:comp_gated_deltanet_block}
+\end{figure}

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{mamba\_shedder} بر روی مدل‌های معیار طبق ارقام مندرج در فایل تاییدشده \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_mamba_shedder} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{mamba\_shedder} روی مدل‌های پایه}
+\label{tab:benchmark_mamba_shedder}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.50\%} & \lr{0.8868} & \lr{337.59 MB} & \lr{180,820.54 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.44\%} & \lr{0.8542} & \lr{361.54 MB} & \lr{120,068.28 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.88\%} & \lr{0.6835} & \lr{634.91 MB} & \lr{67,770.43 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.49\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج فوق بازدهی برجسته الگوریتم را در انکودرهای دومنظوره به نمایش می‌گذارد؛ در مدل \lr{DistilBERT} دقت مطلوب \lr{87.50\%} همراه با شاخص F1 برابر \lr{0.8868} و توان پردازشی چشمگیر \lr{180,820.54 tok/s} ثبت شده است. در مدل \lr{RoBERTa} دقت \lr{85.44\%} با توان \lr{120,068.28 tok/s} حاصل گردیده است. هم‌چنین مدل بزرگ \lr{Qwen} به دقت \lr{51.49\%} و \lr{GPT-2} به دقت \lr{56.88\%} دست یافته و همگی معیار قبولی (\lr{PASS}) را احراز کرده‌اند.

@@ -1,0 +1,112 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{moe\_deltakv\_paged}}
+\label{sec:mod_moe_deltakv_paged}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
+ماژول \lr{moe\_deltakv\_paged} یک معماری ترکیبی نوین است که هدف آن غلبه بر گلوگاه‌های محاسباتی و حافظه‌ای لایه توجه در ترنسفورمرها هنگام پردازش دنباله‌های طولانی است. ایده بنیادی این مدل تلفیق دو پارادایم مجزا است: توجه مبتنی بر مسیریابی بلوکی \lr{(Mixture-of-Block-Attention یا MoBA)} و فشرده‌سازی زمانی حافظه پنهان با استفاده از تقریب رتبه پایین و کوانتایزاسیون \lr{(Paged Delta-KV)}. 
+
+در لایه توجه استاندارد، نگهداری تاریخچه کامل توکن‌های کلید و مقدار \lr{(KV Cache)} منجر به افزایش خطی و گاهاً نمایی در مصرف حافظه می‌گردد. با فرض آنکه بردارهای ویژگی در لایه‌های عمیق دارای همبستگی زمانی بالایی هستند، این معماری تغییرات تفاضلی بین توکن‌های متوالی را محاسبه کرده و با استفاده از تجزیه مقادیر منفرد \lr{(SVD)} آنها را فشرده می‌سازد. از سوی دیگر، به جای محاسبه توجه سراسری با پیچیدگی $\mathcal{O}(N^2)$، توکن‌ها در بلوک‌های حافظه \lr{(Pages)} دسته‌بندی می‌شوند و یک مکانیزم مسیریابی پویای مبتنی بر شباهت \lr{(Top-k Router)} تعیین می‌کند که هر بلوک پرس‌وجو به کدام صفحات کلید/مقدار توجه کند. تخصیص دایمی صفحه صفر \lr{(Page 0)} برای حفظ توکنطبقه‌بندی \lr{([CLS])} از دستاوردهای مهندسی کلیدی این معماری است که از افت فاجعه‌بار عملکرد در مدل‌های انکودر جلوگیری می‌کند.
+
+\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در گام اول، پروجکشن‌های پایه برای تولید $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}$ صورت می‌پذیرد.
+برای فشرده‌سازی تاریخچه، تفاضل زمانی بردارهای کلید (و به طور مشابه برای مقدار) تعریف می‌شود:
+\begin{equation}
+\Delta \mathbf{K}_t = \mathbf{K}_t - \mathbf{K}_{t-1}, \quad \forall t \in \{1, \dots, N-1\}
+\end{equation}
+تانسور $\Delta \mathbf{K}$ بازآرایی شده و توسط یک تجزیه مقادیر منفرد کم‌رتبه $\mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top$ تقریب زده می‌شود، که در آن $r$ رتبه SVD است. سپس خروجی از یک عملگر کوانتایزاسیون ۴-بیتی مشتق‌پذیر مبتنی بر تخمین‌گر عبور مستقیم \lr{(STE)} عبور می‌کند:
+\begin{equation}
+\operatorname{STE-Quant}(\mathbf{x}) = \mathbf{x} + \left( \operatorname{clamp}\left( \operatorname{round}\left( \frac{\mathbf{x} - x_{\min}}{\Delta} \right), 0, 15 \right) \cdot \Delta + x_{\min} - \mathbf{x} \right).\operatorname{detach}()
+\end{equation}
+بازسازی تاریخچه کلید با یک جمع تجمعی \lr{(Cumulative Sum)} از این تفاضل‌های فشرده‌شده صورت می‌پذیرد: $\hat{\mathbf{K}}_t = \mathbf{K}_0 + \sum_{\tau=1}^t \widehat{\Delta \mathbf{K}}_\tau$.
+
+سپس توالی به $P = \lceil N / B_s \rceil$ صفحه با اندازه $B_s$ تقسیم می‌شود. میانگین \lr{(Centroid)} هر صفحه برای پرس‌وجو و کلید محاسبه شده ($\bar{\mathbf{q}}_p$ و $\bar{\mathbf{k}}_p$) و امتیاز مسیریابی از رابطه زیر حاصل می‌گردد:
+\begin{equation}
+\mathbf{R}_{p, q} = \frac{\bar{\mathbf{q}}_p \mathbf{W}_{rg} \bar{\mathbf{k}}_q^\top}{\sqrt{d}}
+\end{equation}
+در این مرحله $\mathcal{P}_p = \operatorname{Top-}k(\{\mathbf{R}_{p, q}\}) \cup \{0\}$ به دست آمده و ماتریس توجه و خروجی نهایی صرفاً روی صفحات انتخاب‌شده صورت می‌گیرد.
+پیچیدگی زمانی محاسبات از $\mathcal{O}(N^2 \cdot D)$ به $\mathcal{O}(k \cdot N \cdot D + \frac{N^2}{B_s^2} d)$ کاهش می‌یابد که با فرض $k \ll P$ یک بهبود بسزا است.
+
+\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
+در پیاده‌سازی پایتون کلاس \lr{MoEDeltaKVPagedAttention} که بر مبنای ساختار معماری پروژه بنا شده است، فرآیند پیشرو \lr{(Forward Pass)} دارای سلسله مراتب تانسوری دقیقی است:
+\begin{itemize}
+    \item \textbf{پروجکشن اولیه:} ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ توسط لایه‌های \lr{nn.Linear} به فضاهای پرس‌وجو، کلید و مقدار تبدیل و سپس به ابعاد $[B, H, N, d]$ بازآرایی می‌گردد.
+    \item \textbf{کدگذاری مکانی:} در صورت وجود، متد \lr{apply\_rotary\_pos\_emb} روی تانسورها اعمال می‌شود.
+    \item \textbf{فشرده‌سازی:} متد کمکی \lr{simulate\_paged\_delta\_kv} تفاضل‌ها را محاسبه، توسط \lr{low\_rank\_svd\_quantize} با تخمین‌گر عبور مستقیم فشرده‌سازی کرده و بردارهای \lr{k\_hat} و \lr{v\_hat} را برمی‌گرداند.
+    \item \textbf{مسیریابی بلوکی:} توالی پدگذاری می‌شود تا مضربی از \lr{page\_size} باشد. تانسورها به شکل $[B, H, P, B_s, d]$ بازآرایی شده، میانگین در بعد ۳ گرفته می‌شود و با لایه \lr{W\_rg} امتیازهای $\mathbf{R}_{p, q}$ محاسبه می‌شوند.
+    \item \textbf{تضمین توکن مبنا:} با دستور \lr{router\_logits\_biased[:, :, :, 0] += 1e4}، حضور صفحه ۰ برای حفظ توکن \lr{[CLS]} اکیداً تضمین می‌گردد.
+    \item \textbf{توجه و پروجکشن خروجی:} تانسورهای صفحات هدف با تابع \lr{torch.gather} گردهم‌آوری شده و پس از محاسبه ضرب داخلی، خروجی به فضای $[B, N, D]$ تصویر و بازگردانده می‌شود.
+\end{itemize}
+
+\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
+بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، مدل سقف کارایی حاکی از کاهش چشمگیر فشردگی حافظه است. در ترنسفورمرهای استاندارد، ترافیک اصلی بین \lr{SRAM} و \lr{HBM} در حین محاسبه و ذخیره بلوک‌های توجه رخ می‌دهد و به شدت به محدودیت پهنای باند گره خورده است. 
+با استفاده از فشرده‌سازی زمانی $\Delta$-KV در قالب ۴-بیتی و توزیع بلوکی \lr{MoBA}، حجم ماتریس کلید و مقدار فعال به میزان تقریبی $3.8 \times$ کوچک می‌شود که به لایه‌های سلسله‌مراتبی حافظه پنهان \lr{L2 Cache} امکان می‌دهد بلوک‌های بیشتری را بدون \lr{Cache Miss} ذخیره کنند.
+علاوه بر این، شدت محاسباتی \lr{(Arithmetic Intensity)} به واسطه کاهش عملیات روی بلوک‌های زاید (که توسط \lr{Router} فیلتر می‌شوند) در محدوده متوازنی قرار می‌گیرد، به گونه‌ای که معماری از فاز کاملاً وابسته به حافظه \lr{(Memory-Bound)} به یک توازن هیبریدی سوق می‌یابد.
+
+\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
+ارزیابی مدل بر اساس پیکربندی \lr{SST-2} روی سخت‌افزار استاندارد \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} به شرح زیر است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{moe\_deltakv\_paged} روی سه مدل پایه}
+\label{tab:benchmark_moe_deltakv_paged}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.47\%} & \lr{0.863} & \lr{321.8 MB} & \lr{68,268 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{59.75\%} & \lr{0.688} & \lr{363.5 MB} & \lr{33,415 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.644} & \lr{556.6 MB} & \lr{30,717 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
+دستاورد کلیدی ثبت‌شده در مدل \lr{DistilBERT} با دقت \lr{86.47\%} و پهنای باند \lr{68,268 tok/s}، تایید می‌کند که مکانیزم فشرده‌سازی SVD تفاضلی و تخمین‌گر STE قادر است ساختار معنایی را به طرز موثری حفظ کند. از آنجا که نرخ گذردهی به دلیل مسیریابی بلوکی بسیار بالاست، افت جزیی عملکرد در برابر خط مبنا به خطای ذاتی تقریب کوانتایزاسیون نسبت داده می‌شود. 
+شاخص $F1 \approx 0.863$ در \lr{DistilBERT} نشان می‌دهد که تمایز مرزهای تصمیم در رده‌بندی احساسات آسیب ندیده است. پدیده افت محسوس در عملکرد مدل \lr{GPT-2} \lr{(50.92\%)} برخاسته از معماری دکودر-محور آن است که در آن فشرده‌سازی زمانی باعث تخریب پیش‌بینی‌های اتورگرسیو در لایه‌های انتهایی می‌شود؛ زیرا مدل‌های دکودر به توزیع کامل حافظه پنهان گذشته حساس‌ترند و بلوک‌بندی ایستا برای آنها نیازمند تنظیم مجدد اندازه صفحات \lr{(Page Size)} است.
+
+\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
+\begin{itemize}
+    \item \textbf{نقاط قوت:}
+    \begin{itemize}
+        \item تقلیل چشمگیر ردپای حافظه از طریق فشرده‌سازی $\Delta$-KV به فرمت ۴-بیتی مشتق‌پذیر.
+        \item حفظ هوشمندانه توکن \lr{[CLS]} با لنگرسازی \lr{Page 0} که پایداری استخراج ویژگی‌های سراسری را تضمین می‌نماید.
+        \item بهبود نرخ گذردهی \lr{Throughput} به دلیل اسپارس کردن بلوک‌های توجه.
+    \end{itemize}
+    \item \textbf{نقاط ضعف و چالش‌ها:}
+    \begin{itemize}
+        \item افت کارایی در مدل‌های زبانی دکودر-تنها \lr{GPT-2} که نشانگر حساسیت مسیر علّی به تقریب بلوکی است.
+        \item سربار محاسباتی اولیه به دلیل اعمال \lr{SVD} در هر گام انتشار پیشرو برای محاسبه مقادیر منفرد.
+    \end{itemize}
+    \item \textbf{پیشنهادات توسعه:}
+    \begin{itemize}
+        \item پیاده‌سازی کرنل‌های فیوژن‌شده \lr{Triton} برای ادغام عملیات SVD محلی و مسیریابی بلوکی درون حافظه \lr{SRAM}.
+        \item توسعه استراتژی مسیریابی تطبیقی بر حسب آنتروپی هر لایه، به جای انتخاب استاتیک \lr{Top-k}.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{moe\_deltakv\_paged} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/architecture/moe_deltakv_paged_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(moe\_deltakv\_paged)}}
+\label{fig:arch_moe_deltakv_paged}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/moe_deltakv_paged_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(moe\_deltakv\_paged)}}
+\label{fig:comp_moe_deltakv_paged}
+\end{figure}

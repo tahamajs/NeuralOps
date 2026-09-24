@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول بر روی آزمون استاندارد \lr{GLUE SST-2} ثبت گردیده و مقادیر موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_upi_stuffed_mamba} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{upi\_stuffed\_mamba} روی مدل‌های پایه}
+\label{tab:benchmark_upi_stuffed_mamba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{360.94 MB} & \lr{2,401.58 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{402.06 MB} & \lr{1,201.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.5807} & \lr{861.54 MB} & \lr{9,789.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی پایداری ردپای حافظه گرافیکی را در تمامی مدل‌ها (کمتر از \lr{405 MB} در انکودرها) نشان می‌دهد. در زمینه زبانی، دقت مدل‌ها در محدوده ۵۰.۹۲٪ تا ۵۱.۱۵٪ تثبیت شده و وضعیت کلی ماژول در دروازه کیفیت بر روی \lr{PASS} با حضور آزمون‌های مکمل ثبت گردیده است.

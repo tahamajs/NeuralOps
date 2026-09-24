@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید مدل شامل $L$ لایه هدف با ماتریس‌های وزن $\mathbf{W}^{(l)}$ به ازای $l \in \{1, \dots, L\}$ باشد. برای هر لایه $l$، تجزیه مقادیر منفرد انجام شده و مقادیر منفرد $\mathbf{\Sigma}^{(l)} = \text{diag}(\sigma_1^{(l)}, \dots, \sigma_{r_{\text{max}}^{(l)}}^{(l)})$ به دست می‌آید.
+
+توزیع احتمالاتی انرژی مقادیر منفرد لایه $l$ به صورت زیر است:
+\begin{equation}
+p_i^{(l)} = \frac{(\sigma_i^{(l)})^2}{\sum_{j} (\sigma_j^{(l)})^2 + \epsilon}, \quad i = 1, \dots, r_{\text{max}}^{(l)}
+\end{equation}
+
+آنتروپی اطلاعاتی شانون لایه $l$ به شکل زیر محاسبه می‌شود:
+\begin{equation}
+H_l = - \sum_{i=1}^{r_{\text{max}}^{(l)}} p_i^{(l)} \ln(p_i^{(l)})
+\end{equation}
+
+مجموع آنتروپی سراسری مدل با جمع زدن آنتروپی تمامی لایه‌های هدف به دست می‌آید:
+\begin{equation}
+H_{\text{total}} = \sum_{l=1}^L \max(H_l, \epsilon_h)
+\end{equation}
+
+با داشتن بودجه کل رتبه $\mathcal{B}_{\text{total}}$ که توسط کاربر معین شده است، کسر سهم اطلاعاتی لایه $l$ به صورت $\alpha_l = \frac{\max(H_l, \epsilon_h)}{H_{\text{total}}}$ تعریف شده و رتبه لایه به شکل زیر تخصیص می‌یابد:
+\begin{equation}
+r_l = \max\left(r_{\text{min}}, \min\left(r_{\text{max}}^{(l)}, \lfloor \alpha_l \cdot \mathcal{B}_{\text{total}} \rceil\right)\right)
+\end{equation}
+
+در نهایت، ماتریس وزن لایه با رتبه اختصاص‌یافته $r_l$ به دو ماتریس فاکتور فیزیکی تفکیک می‌گردد:
+\begin{equation}
+\mathbf{W}^{(l)} \approx \mathbf{U}_{r_l}^{(l)} \mathbf{V}_{r_l}^{(l)}, \quad \mathbf{U}_{r_l}^{(l)} = \mathbf{U}_{:, :r_l}^{(l)} (\mathbf{\Sigma}_{:r_l}^{(l)})^{1/2}, \quad \mathbf{V}_{r_l}^{(l)} = (\mathbf{\Sigma}_{:r_l}^{(l)})^{1/2} (\mathbf{V}_{:, :r_l}^{(l)})^\top
+\end{equation}
+و با ساختار خطی دوسطحی \lr{SVDLinear} جایگزین می‌شود.

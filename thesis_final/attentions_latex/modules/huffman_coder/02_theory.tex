@@ -1,0 +1,13 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تانسور وزن یا مقادیر کوانتایز شده یک لایه به صورت مجموعه‌ای از نمادها $\mathcal{S} = \{s_1, s_2, \dots, s_K\}$ با توزیع احتمال تجربی $p(s_k) = \frac{n_k}{N}$ باشد، که در آن $N$ تعداد کل المان‌ها و $n_k$ فراوانی نماد $s_k$ است. آنتروپی شانون مجموعه داده برابر است با:
+\begin{equation}
+H(\mathcal{S}) = -\sum_{k=1}^K p(s_k) \log_2 p(s_k) \quad \text{(bits/symbol)}
+\end{equation}
+الگوریتم کدگذاری هافمن با تخصیص طول کد متغیر $\ell(s_k) \in \mathbb{N}$ به هر نماد، مسئله کمینه‌سازی طول مورد انتظار کلمات کد را حل می‌کند:
+\begin{equation}
+\min_{\ell} \bar{L} = \sum_{k=1}^K p(s_k) \ell(s_k) \quad \text{subject to} \quad \sum_{k=1}^K 2^{-\ell(s_k)} \le 1 \quad \text{(Kraft-McMillan Inequality)}
+\end{equation}
+با حل بازگشتی از طریق صف اولویت‌دار (\lr{Min-Heap Priority Queue})، درخت دوتایی پیشوندی هافمن تشکیل شده و طول کد ارائه‌شده ارضای رابطه $H(\mathcal{S}) \le \bar{L} < H(\mathcal{S}) + 1$ را تضمین می‌کند. در فاز بازیابی و دیکودینگ برداری، جریان بیتی فشرده‌شده با پیمایش پویای درخت بازسازی می‌گردد. در فاز بازسازی لایه‌های شبکه و آموزش کم‌مرتبه، مدل از لایه‌های تثبیت‌شده به همراه به‌روزرسانی آداپتورهای گرادیانی به فرم زیر استفاده می‌کند:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{W}_{\text{quant}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}

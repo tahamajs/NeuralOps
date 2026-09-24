@@ -1,0 +1,27 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ ماتریس حالت‌های پنهان ورودی لایه توجه باشد که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. در لایه‌های نگاشت خطی \lr{FactorizedLinear}، ماتریس وزن کامل $\mathbf{W} \in \mathbb{R}^{D \times D_{\text{out}}}$ از طریق ضرب دو ماتریس رتبه تقلیل‌یافته $r \ll D$ به همراه نگاشت تطبیقی موازی مدل‌سازی می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \mathbf{W}_1 \mathbf{W}_2 + \frac{\alpha}{r_{\text{lora}}} \mathbf{X} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_1 \in \mathbb{R}^{D \times r}$ و $\mathbf{W}_2 \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های فاکتورسازی ساختاری بوده و $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{D \times r_{\text{lora}}}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{r_{\text{lora}} \times D_{\text{out}}}$ پارامترهای آموزش‌پذیر باقیمانده هستند.
+
+تانسورهای پرس‌وجو، کلید و مقدار پس از تفکیک به $H$ سر توجه و بعد هر سر $d = D/H$ به دست می‌آیند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N \times d}
+\end{equation}
+خروجی لایه از تلفیق محدب شاخه محلی و سراسری تشکیل می‌گردد:
+\begin{equation}
+\mathbf{O}_{\text{local}} = \operatorname{LocalWindowAttn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}, W)
+\end{equation}
+در شاخه سراسری، ابتدا توابع نگاشت کِرنل غیرخطی $\phi(\cdot) = \operatorname{ELU}(\cdot) + 1$ اعمال شده و ضریب هرس تطبیقی $\mathbf{g}_{\text{prune}} = \sigma(\mathbf{X} \mathbf{W}_{\text{prune}})$ برای کنترل چگالی اطلاعاتی در کلیدها ضرب می‌شود:
+\begin{equation}
+\tilde{\mathbf{K}} = \phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}}
+\end{equation}
+در حالت علّی، توجه خطی با جمع تجمعی تکه‌ای بر روی بعد زمان محاسبه می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \sum_{\tau=1}^t \tilde{\mathbf{K}}_\tau^\top \mathbf{V}_\tau, \quad \mathbf{Z}_t = \sum_{\tau=1}^t \tilde{\mathbf{K}}_\tau^\top, \quad \mathbf{O}_{\text{global}, t} = \frac{\phi(\mathbf{Q}_t) \mathbf{S}_t}{\phi(\mathbf{Q}_t) \mathbf{Z}_t + \epsilon}
+\end{equation}
+در نهایت، گیت همجوشی یادگیرنده $\boldsymbol{\alpha} = \sigma(\mathbf{X} \mathbf{W}_{\text{fuse}}) \in [0, 1]$ تعادل میان توجه محلی و سراسری را برقرار می‌سازد:
+\begin{equation}
+\mathbf{O}_{\text{fused}} = (1 - \boldsymbol{\alpha}) \odot \mathbf{O}_{\text{local}} + \boldsymbol{\alpha} \odot \mathbf{O}_{\text{global}}
+\end{equation}

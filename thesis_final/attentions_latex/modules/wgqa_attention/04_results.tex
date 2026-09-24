@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{wgqa\_attention} بر روی آزمون ارزیابی استاندارد طبقه‌بندی \lr{SST-2} در جدول \ref{tab:benchmark_wgqa_attention} بر اساس داده‌های ثبت‌شده در فایل \lr{master\_verified\_results.json} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی سخت‌افزاری مکانیزم \lr{wgqa\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_wgqa_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{329.42 MB} & \lr{83,513.30 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{379.18 MB} & \lr{48,711.92 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.61 MB} & \lr{41,921.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.66\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های عددی کارایی سخت‌افزاری نشان می‌دهد ماژول موفق به ثبت توان پردازشی بالا \lr{83,513.30 tok/s} بر روی مدل \lr{DistilBERT} با مصرف حافظه گرافیکی بسیار پایین \lr{329.42 MB} شده است که حاکی از اثربخشی هسته \lr{SDPA} و کاهش بار محاسباتی است.

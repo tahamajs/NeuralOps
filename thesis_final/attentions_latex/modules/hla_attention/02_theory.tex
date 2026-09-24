@@ -1,0 +1,39 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس بازنمایی لایه ورودی باشد. در ماژول \lr{HLAAttention}، ابتدا پروجکشن‌های پرس‌وجو، کلید و مقدار با استفاده از لایه‌های خطی سازگار با لورا تولید می‌گردند:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) \in \mathbb{R}^{B \times H \times L \times d}, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}) \in \mathbb{R}^{B \times H_{kv} \times L \times d}, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}) \in \mathbb{R}^{B \times H_{kv} \times L \times d}
+\end{align}
+که در آن $d = D / H$ بعد هر سر توجه است. در صورت نیاز، سرهای کلید و مقدار برای هماهنگی با سرهای پرس‌وجو با متد \lr{repeat\_kv} بسط می‌یابند. برای تضمین پایداری عددی و ممانعت از ایجاد مقادیر منفی در مخرج، عملگر $\phi(x) = \operatorname{ELU}(x) + 1.0$ بر روی پرس‌وجو و کلید اعمال می‌شود:
+\begin{equation}
+\tilde{\mathbf{Q}} = \operatorname{ELU}(\mathbf{Q}) + 1.0, \quad \tilde{\mathbf{K}} = \operatorname{ELU}(\mathbf{K}) + 1.0
+\end{equation}
+
+\paragraph{۱. ماتریس زوال هادامارد یادگیرنده:}
+برای هر سر توجه $h \in \{1, \dots, H\}$، یک پارامتر زوال یادگیرنده $\beta_h$ تعریف می‌شود که نرخ زوال زمانی را تعیین می‌کند:
+\begin{equation}
+\lambda_h = \sigma(\beta_h) \in (0, 1)
+\end{equation}
+برای هر جفت از شاخص‌های زمانی $i$ و $j$ در طول دنباله $L$، ماتریس فاصله جهت‌دار و تانسور زوال علّی بر پایه ضرب هادامارد تعریف می‌شود:
+\begin{equation}
+\Delta_{i, j} = (i - j) \cdot \mathbb{I}_{[i \ge j]}, \quad \mathbf{D}_{h, i, j}^{\text{causal}} = \exp\left( \Delta_{i, j} \cdot \log \lambda_h \right) \cdot \mathbb{I}_{[i \ge j]} = \lambda_h^{i - j} \cdot \mathbb{I}_{[i \ge j]}
+\end{equation}
+
+\paragraph{۲. محاسبه امتیازات توجه و نرمال‌سازی کسری:}
+ماتریس همبستگی با ضرب هادامارد زوال در ضرب داخلی تانسورهای کرنلی حاصل می‌گردد:
+\begin{equation}
+\mathbf{S}_{h, i, j} = \left(\tilde{\mathbf{Q}}_{h, i} \tilde{\mathbf{K}}_{h, j}^T\right) \odot \mathbf{D}_{h, i, j}^{\text{causal}}
+\end{equation}
+سپس صورت و مخرج برداری به تفکیک محاسبه و نرمال‌سازی انجام می‌پذیرد:
+\begin{equation}
+\mathbf{Num}_{h, i} = \sum_{j=1}^L \mathbf{S}_{h, i, j} \mathbf{V}_{h, j}, \quad
+\operatorname{Denom}_{h, i} = \sum_{j=1}^L \mathbf{S}_{h, i, j} + \epsilon
+\end{equation}
+\begin{equation}
+\mathbf{Y}_{h, i}^{\text{fwd}} = \frac{\mathbf{Num}_{h, i}}{\operatorname{Denom}_{h, i}}
+\end{equation}
+در مدل‌های انکودر دوطرفه، اسکن پادعلّی $\mathbf{Y}^{\text{bwd}}$ با ماتریس زوال معکوس $\mathbf{D}^{\text{anti}}$ نیز محاسبه شده و خروجی به صورت متقارن $\mathbf{Y} = \frac{1}{2}(\mathbf{Y}^{\text{fwd}} + \mathbf{Y}^{\text{bwd}})$ به دست می‌آید. خروجی نهایی پس از ادغام سرها با لایه پروجکشن پایانی تولید می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{LoRA-Linear}_O(\mathbf{Y}) \cdot \gamma_{\text{scale}}
+\end{equation}

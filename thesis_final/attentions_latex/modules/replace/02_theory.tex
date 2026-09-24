@@ -1,0 +1,19 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{D_{\text{in}} \times D_{\text{out}}}$ ماتریس وزن پروجکشن توجه در مدل پایه باشد. در ماژول \lr{replace}، نگاشت لایه از طریق کلاس فاکتورسازی‌شده \lr{\_FactorizedLinear} مدل‌سازی می‌گردد:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \mathbf{W}_{\text{down}} \mathbf{W}_{\text{up}} + \mathbf{b}
+\end{equation}
+که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{D_{\text{in}} \times r}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های تقلیل رتبه با  $r \ll \min(D_{\text{in}}, D_{\text{out}})$ هستند. در حالت رتبه پایه ($r=0$)، نگاشت خطی استاندارد $\mathbf{Y} = \mathbf{X} \mathbf{W} + \mathbf{b}$ جایگزین می‌شود.
+
+تانسورهای پرس‌وجو، کلید و مقدار پس از فرافکنی خطی و تفکیک به $H$ سر توجه با بعد سر $d = D/H$ شکل می‌گیرند:
+\begin{equation}
+\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}
+\end{equation}
+محاسبه امتیازهای توجه و بافتار نهایی در مسیر شتاب‌یافته از طریق هسته ادغام‌شده توجه ضرب داخلی مقیاس‌پذیر (\lr{FlashAttention / SDPA}) انجام می‌پذیرد:
+\begin{equation}
+\mathbf{O} = \operatorname{SDPA}(\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{M}) = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V}
+\end{equation}
+که در آن $\mathbf{M}$ ماسک توجه است. در انکودرهای تودرتو (\lr{Nested Encoders})، خروجی $\mathbf{O}$ به طور مستقیم به لایه ترکیب‌کننده لایه بعدی تحویل داده می‌شود و در سایر معماری‌ها، پروجکشن خروجی نهایی اعمال می‌گردد:
+\begin{equation}
+\mathbf{Y}_{\text{out}} = \mathbf{O} \mathbf{W}_O + \mathbf{b}_O
+\end{equation}

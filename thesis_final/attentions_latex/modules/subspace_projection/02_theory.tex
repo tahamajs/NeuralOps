@@ -1,0 +1,23 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی تجزیه زیرفضا و نگاشت در این ماژول به صورت زیر تبیین می‌گردد:
+\begin{enumerate}
+    \item \textbf{تجزیه زیرفضای متعامد با SVD:}
+    ماتریس وزن اصلی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تجزیه مقادیر منفرد تجزیه می‌شود:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top
+    \end{equation}
+    سپس دو ماتریس عامل به گونه‌ای استخراج می‌شوند که $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ پایه تصویرگر و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ ماتریس انبساط ضرایب باشد:
+    \begin{equation}
+    \mathbf{A} = \mathbf{V}_r^\top, \quad \mathbf{B} = \mathbf{U}_r \boldsymbol{\Sigma}_r \implies \mathbf{W} \approx \mathbf{B} \mathbf{A}
+    \end{equation}
+    \item \textbf{محاسبه گذر پیشرو لایه فاکتورگیری‌شده:}
+    ورودی $\mathbf{x} \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ در گذر پیشرو مستقیماً از طریق دو تبدیل خطی متوالی نگاشت می‌یابد:
+    \begin{equation}
+    \mathbf{x}_{\text{proj}} = \mathbf{x} \mathbf{A}^\top \in \mathbb{R}^{B \times L \times r}, \quad \mathbf{y}_{\text{base}} = \mathbf{x}_{\text{proj}} \mathbf{B}^\top + \mathbf{b}
+    \end{equation}
+    \item \textbf{الحاق تطبیق‌دهنده کم‌مرتبه (\lr{LoRA Integration}):}
+    در صورت فعال‌بودن شاخه آداپتور، خروجی کلی لایه از ترکیب تبدیل زیرفضا و سهم گرادیانی آداپتور حاصل می‌شود:
+    \begin{equation}
+    \mathbf{y} = \mathbf{y}_{\text{base}} + \frac{\alpha_{\text{lora}}}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+    \end{equation}
+\end{enumerate}
