@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_bonsai_pruner_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules bonsai_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_bonsai_pruner_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_token_compressed",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules token_compressed --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_token_compressed",
@@ -8142,13 +8135,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_fwsvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_kmeans_quantize",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_quantize --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_quantize",
@@ -8166,6 +8152,13 @@
       "id": "p3_gpt2_coopq",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_bonsai_pruner_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules bonsai_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_bonsai_pruner_factory",
       "status": "active",
       "retries": 0
     }
@@ -9140,6 +9133,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
       "started_at": "2026-09-24T05:56:19.525256",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_fwsvd",
+      "id": "p3_gpt2_fwsvd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd",
+      "started_at": "2026-09-24T06:36:27.227024",
       "retries": 0,
       "status": "done"
     }
