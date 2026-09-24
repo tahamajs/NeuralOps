@@ -3,8 +3,9 @@ import torch
 import torch.nn as nn
 import types
 
-from framework.compression_engine.cur_compressor import CURCompressor, cur_compressor_factory
-from framework.compression_engine.cur_linear import (
+from framework.compression_engine.cur_compressor import (
+    CURCompressor,
+    cur_compressor_factory,
     CURLinear,
     compute_leverage_scores,
     compute_energy_scores,
