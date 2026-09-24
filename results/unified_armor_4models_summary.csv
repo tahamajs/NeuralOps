@@ -1,0 +1,4 @@
+model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,num_compressed,num_fallback,actual_sparsity,effective_parameter_ratio,avg_reconstruction_error,latency_p95_ms,vram_peak_mb,out_dir,hf_repo
+distilbert,distilbert,0.9070999999999999,0.8991,-0.007999999999999896,0.8998,PASS,True,23,1,0.5,0.6666666666666666,0.3748648390173912,0.0,254.86,results\unified_armor\distilbert,https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-armor
+roberta,roberta,0.9438,0.9266,-0.017199999999999993,0.9284,PASS,True,40,8,0.5,0.6666666666666666,0.38514832220971584,0.0,425.41,results\unified_armor\roberta,https://huggingface.co/Hooshaai/svd-linear-attention-roberta-armor
+gpt2,gpt2,0.8933,0.8761,-0.017199999999999993,0.8759,PASS,True,14,10,0.5,0.6140350877192983,0.3919009603559971,0.0,460.63,results\unified_armor\gpt2,https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-armor
