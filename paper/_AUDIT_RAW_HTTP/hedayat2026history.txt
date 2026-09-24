@@ -1,8 +1,0 @@
-KEY: hedayat2026history
-URL: https://doi.org/10.2139/ssrn.7381107
-FETCHED_AT_UTC: 2026-09-20T14:44:37.620752+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 1b4f8de8d825038f04f3ebdc89eabc8700987100fc8a6383c5214afe1478361d
-BODY_BYTES_LEN: 24342
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,31]],"date-time":"2026-08-31T17:15:25Z","timestamp":1788196525804,"version":"build-2803163510"},"posted":{"date-parts":[[2026]]},"group-title":"SSRN","reference-count":71,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/www.uspto.gov\/ip-policy\/copyright-policy\/copyright-basics"}],"content-domain":{"domain":[]

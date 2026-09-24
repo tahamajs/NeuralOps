@@ -1,8 +1,0 @@
-KEY: kong2025opt
-URL: https://doi.org/10.1109/swc65939.2025.00187
-FETCHED_AT_UTC: 2026-09-20T14:45:07.599551+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: ab8af644c6f0002dd09d9352f5af8e672dc230113cf1f55aad24c38f30b183a2
-BODY_BYTES_LEN: 6778
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,2,21]],"date-time":"2026-02-21T08:03:52Z","timestamp":1771661032698,"version":"3.50.1"},"reference-count":17,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,8,18]],"date-time":"2025-08-18T00:00:00Z","timestamp":1755475200000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,8,18]],"date-time":"2025-08-18T00:00:00Z","timestamp":1755475200000},"content-version":"stm-asf","delay-i

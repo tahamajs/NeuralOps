@@ -1,8 +1,0 @@
-KEY: ashihara2022deep
-URL: https://doi.org/10.21437/interspeech.2022-11313
-FETCHED_AT_UTC: 2026-09-20T14:43:04.990642+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: c8e19db60efca5701faf7d68880f228ba052782d5c0515c654a6d876f6d614ef
-BODY_BYTES_LEN: 1763
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,7,4]],"date-time":"2026-07-04T16:37:38Z","timestamp":1783183058975,"version":"3.54.6"},"publisher-location":"ISCA","reference-count":0,"publisher":"ISCA","content-domain":{"domain":[],"crossmark-restriction":false},"DOI":"10.21437\/interspeech.2022-11313","type":"proceedings-article","created":{"date-parts":[[2022,9,16]],"date-time":"2022-09-16T15:42:06Z","timestamp":1663342926000},"page":"411-415","source":"Crossref","is-referenced-by-count":18,"title":"Deep vers

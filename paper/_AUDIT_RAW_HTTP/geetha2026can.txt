@@ -1,8 +1,0 @@
-KEY: geetha2026can
-URL: https://doi.org/10.1016/j.anndiagpath.2026.152641
-FETCHED_AT_UTC: 2026-09-20T14:44:18.662672+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: e5eff4bea14620b93de0f41138ed63e21f253284a9765cefb68236323cddfa60
-BODY_BYTES_LEN: 9363
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,5,15]],"date-time":"2026-05-15T08:10:51Z","timestamp":1778832651628,"version":"3.51.4"},"reference-count":20,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,8,1]],"date-time":"2026-08-01T00:00:00Z","timestamp":1785542400000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2026,8,1]],"date-time":"2026-08-01T00:00:00Z","timestamp":1785542400000},"content-version":"tdm"

@@ -1,8 +1,0 @@
-KEY: zhang2024efficientq
-URL: https://doi.org/10.1016/j.media.2024.103277
-FETCHED_AT_UTC: 2026-09-20T14:47:46.304572+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 26630aea1f39e6870affa61e656dd052fe16ec49eabb94088b62ba542f57ce49
-BODY_BYTES_LEN: 21010
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,9,4]],"date-time":"2026-09-04T11:05:32Z","timestamp":1788519932783,"version":"build-2803163510"},"reference-count":62,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2024,10,1]],"date-time":"2024-10-01T00:00:00Z","timestamp":1727740800000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2024,10,1]],"date-time":"2024-10-01T00:00:00Z","timestamp":1727740800000},"content-ver

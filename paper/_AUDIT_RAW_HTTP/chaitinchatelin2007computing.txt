@@ -1,8 +1,0 @@
-KEY: chaitinchatelin2007computing
-URL: https://doi.org/10.1142/9789812770837_0002
-FETCHED_AT_UTC: 2026-09-20T14:43:48.850083+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: d5f4391bfef37351ea8761890b12d91b18cf04be1b6a8bcc02167ae276e27614
-BODY_BYTES_LEN: 1655
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2024,4,29]],"date-time":"2024-04-29T09:56:52Z","timestamp":1714384612801},"reference-count":0,"publisher":"WORLD SCIENTIFIC","isbn-type":[{"value":"9789812770820","type":"print"},{"value":"9789812770837","type":"electronic"}],"content-domain":{"domain":[],"crossmark-restriction":false},"published-print":{"date-parts":[[2007,10]]},"DOI":"10.1142\/9789812770837_0002","type":"book-chapter","created":{"date-parts":[[2010,2,22]],"date-time":"2010-02-22T08:06:44Z","timestamp

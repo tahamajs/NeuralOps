@@ -1,8 +1,0 @@
-KEY: goswami2026dora
-URL: https://doi.org/10.1016/j.asoc.2026.115861
-FETCHED_AT_UTC: 2026-09-20T14:44:23.886094+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: f030c544269bbbbc3b41899490aae513931236deab5d10317c4d9f11875605b2
-BODY_BYTES_LEN: 11563
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,13]],"date-time":"2026-08-13T04:27:33Z","timestamp":1786595253003,"version":"build-2736575974"},"reference-count":25,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,10,1]],"date-time":"2026-10-01T00:00:00Z","timestamp":1790812800000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2026,10,1]],"date-time":"2026-10-01T00:00:00Z","timestamp":1790812800000},"content-ve

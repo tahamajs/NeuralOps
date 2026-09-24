@@ -1,8 +1,0 @@
-KEY: sekulic2020longformer
-URL: https://doi.org/10.6028/nist.sp.1266.deep-usi
-FETCHED_AT_UTC: 2026-09-20T14:46:36.734801+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 14d292c8e6ea6e8a2699ef312baf4bacaeba75622c8f7d3acd5ab8b52484d218
-BODY_BYTES_LEN: 2352
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,2,28]],"date-time":"2026-02-28T07:46:02Z","timestamp":1772264762470,"version":"3.50.1"},"description":"This technical report describes the approach of the Universit\u00e0 della Svizzera italiana and the University of Amsterdam for MS MARCO document ranking task and TREC Deep Learning track 2020. Two step document ranking, where the initial retrieval is done by a classical information retrieval method, followed by neural re-ranking model, is the new standard. The b

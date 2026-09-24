@@ -1,8 +1,0 @@
-KEY: hafez2024continual
-URL: https://doi.org/10.1038/s41598-024-80774-8
-FETCHED_AT_UTC: 2026-09-20T14:44:27.606364+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: f777e12c954343154aaf82ebb8443d285943df35825dec51a51381b995ff56e6
-BODY_BYTES_LEN: 18315
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,25]],"date-time":"2026-08-25T00:59:59Z","timestamp":1787619599189,"version":"build-2736575974"},"reference-count":48,"publisher":"Springer Science and Business Media LLC","issue":"1","license":[{"start":{"date-parts":[[2024,12,30]],"date-time":"2024-12-30T00:00:00Z","timestamp":1735516800000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0"},{"start":{"date-parts":[[2024,12,30]],"date-time":"2024-12-30T00:00:00Z"

@@ -1,8 +1,0 @@
-KEY: zelik2024chemical
-URL: https://doi.org/10.26434/chemrxiv-2023-jwmf3-v2
-FETCHED_AT_UTC: 2026-09-20T14:47:42.903760+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: dba9210f677851ae19cc2528e63d5e8e1f7ad50395fbb7b0556add2f9debcd3c
-BODY_BYTES_LEN: 4622
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,7,30]],"date-time":"2026-07-30T14:29:19Z","timestamp":1785421759591,"version":"3.56.0"},"posted":{"date-parts":[[2024,1,25]]},"reference-count":0,"publisher":"American Chemical Society (ACS)","license":[{"start":{"date-parts":[[2024,1,25]],"date-time":"2024-01-25T00:00:00Z","timestamp":1706140800000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"funder":[{"DOI":"10.13039\/501100000781","name":"Europ

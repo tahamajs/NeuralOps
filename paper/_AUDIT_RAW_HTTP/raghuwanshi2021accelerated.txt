@@ -1,8 +1,0 @@
-KEY: raghuwanshi2021accelerated
-URL: https://doi.org/10.1016/j.jksuci.2018.03.012
-FETCHED_AT_UTC: 2026-09-20T14:46:17.812151+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 9d7b7d5bbb8829a3743b22aef566023c669842b6ed6cc4f21c3802e5fb4d3a5c
-BODY_BYTES_LEN: 10046
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2025,12,31]],"date-time":"2025-12-31T02:29:44Z","timestamp":1767148184035,"version":"build-2238731810"},"reference-count":21,"publisher":"Springer Science and Business Media LLC","issue":"4","license":[{"start":{"date-parts":[[2021,5,1]],"date-time":"2021-05-01T00:00:00Z","timestamp":1619827200000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2021,5,1]],"date-time":"2021-05-01T00:00:00Z"

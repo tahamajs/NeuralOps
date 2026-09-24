@@ -1,8 +1,0 @@
-KEY: toksoz2026comparative
-URL: https://doi.org/10.69882/adba.ai.2026014
-FETCHED_AT_UTC: 2026-09-20T14:46:59.330018+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 25ea2bc6ab988c9ac24a5420ae05bd78b189db60824b0edea6108d966e0927ff
-BODY_BYTES_LEN: 7769
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,7,23]],"date-time":"2026-07-23T15:32:53Z","timestamp":1784820773340,"version":"3.55.0"},"reference-count":18,"publisher":"ADBA Information Technology and Publishing Limited Company","issue":"1","license":[{"start":{"date-parts":[[2026,1,31]],"date-time":"2026-01-31T00:00:00Z","timestamp":1769817600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by-nc\/4.0\/"}],"content-domain":{"domain":[],"crossmark-restricti

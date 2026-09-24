@@ -1,8 +1,0 @@
-KEY: irawan2026lightweight
-URL: https://doi.org/10.31979/etd.t6uv-qd3q
-FETCHED_AT_UTC: 2026-09-20T14:44:50.414344+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 4df981e4e441b10cd07054fd1b03d7a0b5fdebafff3a1657b64a41610345d88b
-BODY_BYTES_LEN: 1612
-BODY_PREVIEW_FIRST_500_CHARS:
-{"institution":[{"name":"San Jose State University","acronym":["SJSU","SJSU"],"place":["San Jose, CA, USA"],"department":["Computer Engineering"]}],"indexed":{"date-parts":[[2026,7,31]],"date-time":"2026-07-31T15:59:00Z","timestamp":1785513540945,"version":"3.56.0"},"reference-count":0,"publisher":"San Jose State University Library","content-domain":{"domain":[],"crossmark-restriction":false},"DOI":"10.31979\/etd.t6uv-qd3q","type":"dissertation","created":{"date-parts":[[2026,7,31]],"date-time":

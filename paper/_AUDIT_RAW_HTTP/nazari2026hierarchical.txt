@@ -1,8 +1,0 @@
-KEY: nazari2026hierarchical
-URL: https://doi.org/10.2139/ssrn.7356238
-FETCHED_AT_UTC: 2026-09-20T14:45:43.077066+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: afb1fe4c7b9f55d1e5d439875a66c57e281c506839ba15803aff660e9879202f
-BODY_BYTES_LEN: 2985
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,28]],"date-time":"2026-08-28T14:18:14Z","timestamp":1787926694923,"version":"build-2784847793"},"posted":{"date-parts":[[2026]]},"group-title":"SSRN","reference-count":0,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"domain":[],"crossmark-restricti

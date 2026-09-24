@@ -1,8 +1,0 @@
-KEY: ali2026why
-URL: https://doi.org/10.1109/ccic68129.2026.11486146
-FETCHED_AT_UTC: 2026-09-20T14:42:53.876883+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 0cfeec735719a09fa4effa8958078a3d8827b7dfc46644715b458f0a784eacbc
-BODY_BYTES_LEN: 4832
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,5,4]],"date-time":"2026-05-04T10:25:48Z","timestamp":1777890348483,"version":"3.51.4"},"reference-count":15,"publisher":"IEEE","license":[{"start":{"date-parts":[[2026,2,6]],"date-time":"2026-02-06T00:00:00Z","timestamp":1770336000000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2026,2,6]],"date-time":"2026-02-06T00:00:00Z","timestamp":1770336000000},"content-version":"stm-asf","delay-in-d

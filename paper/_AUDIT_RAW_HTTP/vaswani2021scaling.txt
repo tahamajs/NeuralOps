@@ -1,8 +1,0 @@
-KEY: vaswani2021scaling
-URL: https://doi.org/10.1109/cvpr46437.2021.01270
-FETCHED_AT_UTC: 2026-09-20T14:47:03.907875+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 8ac524b6370f095366b48fd60c32c1b0c1f67b4f80e1e8997d31da8f087b2056
-BODY_BYTES_LEN: 10676
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,9,12]],"date-time":"2026-09-12T17:39:52Z","timestamp":1789234792248,"version":"build-2803163510"},"reference-count":63,"publisher":"IEEE","license":[{"start":{"date-parts":[[2021,6,1]],"date-time":"2021-06-01T00:00:00Z","timestamp":1622505600000},"content-version":"vor","delay-in-days":0,"URL":"https:\/\/ieeexplore.ieee.org\/Xplorehelp\/downloads\/license-information\/IEEE.html"},{"start":{"date-parts":[[2021,6,1]],"date-time":"2021-06-01T00:00:00Z","timestamp":16

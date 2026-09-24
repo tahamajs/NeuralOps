@@ -1,8 +1,0 @@
-KEY: keith2024optimizing
-URL: https://doi.org/10.21203/rs.3.rs-5293588/v1
-FETCHED_AT_UTC: 2026-09-20T14:45:00.556650+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: f731806bfbac61ec7e755764e45e183b5106f98e4d9ae2138a7442f7210caa9f
-BODY_BYTES_LEN: 4462
-BODY_PREVIEW_FIRST_500_CHARS:
-{"institution":[{"name":"Research Square"}],"indexed":{"date-parts":[[2026,4,8]],"date-time":"2026-04-08T00:42:01Z","timestamp":1775608921450,"version":"3.50.1"},"posted":{"date-parts":[[2024,10,22]]},"group-title":"In Review","reference-count":0,"publisher":"Springer Science and Business Media LLC","license":[{"start":{"date-parts":[[2024,10,22]],"date-time":"2024-10-22T00:00:00Z","timestamp":1729555200000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/

@@ -1,8 +1,0 @@
-KEY: najia2025hybrid
-URL: https://doi.org/10.1109/ic_etc65981.2025.11141103
-FETCHED_AT_UTC: 2026-09-20T14:45:41.286846+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 281b4c1038a61466b3b5dffb371818c7ad4b756877484225570f32f88d869312
-BODY_BYTES_LEN: 4392
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2025,9,2]],"date-time":"2025-09-02T05:10:15Z","timestamp":1756789815664,"version":"3.44.0"},"reference-count":18,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,6,23]],"date-time":"2025-06-23T00:00:00Z","timestamp":1750636800000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,6,23]],"date-time":"2025-06-23T00:00:00Z","timestamp":1750636800000},"content-version":"stm-asf","delay-in

@@ -1,8 +1,0 @@
-KEY: tiwari2026energy
-URL: https://doi.org/10.66542/irjsrr.v2.i1.000022
-FETCHED_AT_UTC: 2026-09-20T14:46:57.429646+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 2ecfd4f11ea37b1805cb0ccdad66977966d9df2c38608ccddd74557fd2cf2c32
-BODY_BYTES_LEN: 3154
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,5,25]],"date-time":"2026-05-25T08:02:43Z","timestamp":1779696163336,"version":"3.53.1"},"reference-count":0,"publisher":"Kalp Squad Group","issue":"1","content-domain":{"domain":[],"crossmark-restriction":false},"abstract":"<jats:p>Abstract: Large language models (LLMs) such as GPT and BERT have revolutionized natural language processing but impose enormous computational and energy costs due to their massive parameter sizes and quadratic attention complexity. This

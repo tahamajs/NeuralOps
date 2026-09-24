@@ -1,8 +1,0 @@
-KEY: liu2025mell
-URL: https://doi.org/10.1109/infocom55648.2025.11044533
-FETCHED_AT_UTC: 2026-09-20T14:45:32.295552+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: cde1d424573060ae67b15e1a0e52f571194f03c77d2d86f3258585369fa3abae
-BODY_BYTES_LEN: 3293
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,15]],"date-time":"2026-08-15T03:19:36Z","timestamp":1786763976395,"version":"build-2736575974"},"reference-count":0,"publisher":"IEEE","license":[{"start":{"date-parts":[[2025,5,19]],"date-time":"2025-05-19T00:00:00Z","timestamp":1747612800000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2025,5,19]],"date-time":"2025-05-19T00:00:00Z","timestamp":1747612800000},"content-version":"stm-asf"

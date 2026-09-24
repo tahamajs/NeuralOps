@@ -1,42 +1,24 @@
-# Scientific Papers & Publications Directory
+# NeuralOps & SVD Linear Attention: Publication Repository
 
-This directory houses all manuscript artifacts, conference submissions, abstracts, and per-module short papers for our large-scale empirical study on linear attention, low-rank factorization, and vector quantization across 200+ transformer mechanisms.
+This repository contains all conference manuscripts, camera-ready LaTeX sources, bibliography references, and individual module papers.
 
 ## Directory Structure
 
-```text
-paper/
-├── iclr2027-submission/        # Primary ICLR 2027 Main Conference Paper (Double-blind submission)
-│   ├── iclr2027_conference.tex # Master LaTeX manuscript (strictly within 9-page limit)
-│   ├── iclr2027_conference.pdf # Full compiled PDF (14 pages: 8.5 main + refs + appendices)
-│   ├── figures/                # High-resolution benchmark figures and Pareto trade-off curves
-│   ├── tables/                 # Modular LaTeX table definitions (hyperparameters, sweeps, Pareto)
-│   └── results/                # Canonical summary CSV datasets (SST-2, MNLI, AG News)
-│
-├── iclr2027-abstract/          # Official Abstract Registration Artifacts
-│   ├── abstract.tex            # Canonical 246-word abstract source
-│   ├── abstract.pdf            # Compiled abstract artifact
-│   └── final/                  # Final immutable submission release
-│
-├── template/                   # Official ICLR 2027 LaTeX Style Templates
-│   └── iclr2027/               # Base style files (iclr2027_conference.sty, bst, math_commands)
-│
-├── references_arxiv/           # Archived Primary Literature Reference PDFs
-│   └── (Foundational arXiv papers: Vaswani et al., Sanh et al., Linformer, Performer, etc.)
-│
-├── PerModulePaper/             # Collection of 217 Per-Module ICLR 2027 Workshop Papers
-│   ├── _TEMPLATE/              # Master scaffolding blueprint
-│   ├── a3/                     # Complete ICLR 2027 workshop paper for A3
-│   ├── kmeans_quantize/        # Complete ICLR 2027 workshop paper for K-Means Quantization
-│   ├── AdaptiveSVD/            # Complete ICLR 2027 workshop paper for Adaptive SVD
-│   ├── ...                     # 217 fully compiled modules in exact ICLR double-blind style
-│   └── README.md               # Master directory and hyperlinked PDF catalog
-│
-└── README.md                   # This directory guide
+- **`iclr2027-submission/`**: Primary conference paper targeting ICLR 2027 (`iclr2027_conference.tex` and compiled `iclr2027_conference.pdf`).
+- **`iclr2027-abstract/`**: Extended abstract and visual poster materials.
+- **`PerModulePaper/`**: 217 individual standalone conference papers (each with its own `main.tex`, figures, and compiled `main.pdf`).
+- **`references_arxiv/`**: Verified BibTeX entries and arXiv reference PDFs.
+- **`template/`**: ICLR conference formatting style sheets and macros.
+- **`reports/`**: Architectural and empirical diagnostic reports for evaluated modules.
+- **`audit/`**: Citation integrity audits, numerical checks, and reproducibility logs.
+- **`experiments/`**: Parameter sweeps, compile logs, and fairness calibration traces.
+
+## Main Compilation
+To compile the primary conference paper:
+```bash
+cd iclr2027-submission
+pdflatex -interaction=nonstopmode iclr2027_conference.tex
+bibtex iclr2027_conference
+pdflatex -interaction=nonstopmode iclr2027_conference.tex
+pdflatex -interaction=nonstopmode iclr2027_conference.tex
 ```
-
-## Quick Links to Key Manuscripts
-
-- **Main ICLR 2027 Paper:** [`iclr2027-submission/iclr2027_conference.pdf`](iclr2027-submission/iclr2027_conference.pdf)
-- **Official Abstract:** [`iclr2027-abstract/abstract.pdf`](iclr2027-abstract/abstract.pdf)
-- **Per-Module Paper Catalog:** [`PerModulePaper/README.md`](PerModulePaper/README.md)

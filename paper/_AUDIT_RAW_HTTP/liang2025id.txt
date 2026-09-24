@@ -1,8 +1,0 @@
-KEY: liang2025id
-URL: https://doi.org/10.36227/techrxiv.176521385.54906010/v1
-FETCHED_AT_UTC: 2026-09-20T14:45:23.430753+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: bc3a008963eede62e452bd7b52a199eced2a962a86f5365d87254eefb5c46854
-BODY_BYTES_LEN: 3469
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,6,12]],"date-time":"2026-06-12T16:06:58Z","timestamp":1781280418974,"version":"3.54.1"},"posted":{"date-parts":[[2025,12,8]]},"reference-count":0,"publisher":"Institute of Electrical and Electronics Engineers (IEEE)","license":[{"start":{"date-parts":[[2025,12,8]],"date-time":"2025-12-08T00:00:00Z","timestamp":1765152000000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by\/4.0\/"}],"content-domain":{"domain":[],

@@ -1,8 +1,0 @@
-KEY: kumar2026cost
-URL: https://doi.org/10.1016/b978-0-443-33362-0.00010-2
-FETCHED_AT_UTC: 2026-09-20T14:45:11.152811+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 2cbf27c23484e06046555b205abb5069904409b6e32ae7473c51bb45338dfb2a
-BODY_BYTES_LEN: 8965
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2025,12,12]],"date-time":"2025-12-12T23:58:25Z","timestamp":1765583905590,"version":"3.48.0"},"reference-count":24,"publisher":"Elsevier","isbn-type":[{"value":"9780443333620","type":"print"}],"license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00

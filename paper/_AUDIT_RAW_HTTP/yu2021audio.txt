@@ -1,8 +1,0 @@
-KEY: yu2021audio
-URL: https://doi.org/10.1109/ijcnn52387.2021.9533328
-FETCHED_AT_UTC: 2026-09-20T14:47:32.742022+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: f549525173273c5f46e16bc4065104231cc07f72f04cc0bf09f33e8271cfc2f1
-BODY_BYTES_LEN: 8709
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2025,10,31]],"date-time":"2025-10-31T08:00:17Z","timestamp":1761897617328,"version":"3.37.3"},"reference-count":33,"publisher":"IEEE","license":[{"start":{"date-parts":[[2021,7,18]],"date-time":"2021-07-18T00:00:00Z","timestamp":1626566400000},"content-version":"stm-asf","delay-in-days":0,"URL":"https:\/\/doi.org\/10.15223\/policy-029"},{"start":{"date-parts":[[2021,7,18]],"date-time":"2021-07-18T00:00:00Z","timestamp":1626566400000},"content-version":"stm-asf","delay-

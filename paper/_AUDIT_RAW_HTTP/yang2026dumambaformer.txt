@@ -1,8 +1,0 @@
-KEY: yang2026dumambaformer
-URL: https://doi.org/10.1016/j.aej.2026.02.008
-FETCHED_AT_UTC: 2026-09-20T14:47:26.696574+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 0eae44ee617ceb6b7ef19499cd388a0b5dbb130d05902f733e0d04c284d79a7b
-BODY_BYTES_LEN: 14757
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,19]],"date-time":"2026-08-19T15:29:18Z","timestamp":1787153358922,"version":"build-2736575974"},"reference-count":43,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,3,1]],"date-time":"2026-03-01T00:00:00Z","timestamp":1772323200000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/"},{"start":{"date-parts":[[2026,3,1]],"date-time":"2026-03-01T00:00:00Z","timestamp":1772323200000},"content-vers

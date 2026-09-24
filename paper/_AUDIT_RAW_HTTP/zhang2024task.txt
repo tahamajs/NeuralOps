@@ -1,8 +1,0 @@
-KEY: zhang2024task
-URL: https://doi.org/10.24963/ijcai.2024/600
-FETCHED_AT_UTC: 2026-09-20T14:47:48.477915+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: eeb9e4f24fa12e25703fb742f2c68b1d101dabd203ea2b6d2f12a757d80b8488
-BODY_BYTES_LEN: 4086
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,9,17]],"date-time":"2026-09-17T00:02:59Z","timestamp":1789603379475,"version":"build-2803163510"},"publisher-location":"California","reference-count":0,"publisher":"International Joint Conferences on Artificial Intelligence Organization","content-domain":{"domain":[],"crossmark-restriction":false},"published-print":{"date-parts":[[2024,8]]},"abstract":"<jats:p>Task-oriented matching is one of the core aspects of few-shot Action Recognition. Most previous works lev

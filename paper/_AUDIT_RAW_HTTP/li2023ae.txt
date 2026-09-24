@@ -1,8 +1,0 @@
-KEY: li2023ae
-URL: https://doi.org/10.20944/preprints202312.0795.v1
-FETCHED_AT_UTC: 2026-09-20T14:45:19.994759+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 9db56a2ad26556b628007d495de0c2cc8e7c773a317bb72c22df0f0671f8a29a
-BODY_BYTES_LEN: 3998
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2025,2,21]],"date-time":"2025-02-21T01:32:42Z","timestamp":1740101562190,"version":"3.37.3"},"posted":{"date-parts":[[2023,12,12]]},"group-title":"Computer Science and Mathematics","reference-count":0,"publisher":"MDPI AG","license":[{"start":{"date-parts":[[2023,12,12]],"date-time":"2023-12-12T00:00:00Z","timestamp":1702339200000},"content-version":"unspecified","delay-in-days":0,"URL":"http:\/\/creativecommons.org\/licenses\/by\/4.0"}],"content-domain":{"domain":[],"

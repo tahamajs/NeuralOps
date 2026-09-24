@@ -1,8 +1,0 @@
-KEY: wada2022over
-URL: https://doi.org/10.2196/preprints.40992
-FETCHED_AT_UTC: 2026-09-20T14:47:08.083799+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: c4bc44f85c1b822cbfc84c79bc8eb7ff4de94cb537ef645b14b17bac79ee88c7
-BODY_BYTES_LEN: 7775
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,4,23]],"date-time":"2026-04-23T07:38:47Z","timestamp":1776929927770,"version":"3.51.2"},"posted":{"date-parts":[[2022,7,11]]},"group-title":"JMIR Medical Informatics","reference-count":27,"publisher":"JMIR Publications Inc.","content-domain":{"domain":[],"crossmark-restriction":false},"abstract":"<sec>\n                    <title>BACKGROUND<\/title>\n                        <p>Pre-training large-scale neural language models on raw texts has made a significant cont

@@ -1,8 +1,0 @@
-KEY: mishra2025nystromformer
-URL: https://doi.org/10.1038/s41598-025-01226-5
-FETCHED_AT_UTC: 2026-09-20T14:45:35.666717+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 65376e3825b400452bb2e101431ad1dfc7f249023ff93e29f3185a01c06058f6
-BODY_BYTES_LEN: 21237
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,17]],"date-time":"2026-08-17T21:53:54Z","timestamp":1787003634426,"version":"build-2736575974"},"reference-count":47,"publisher":"Springer Science and Business Media LLC","issue":"1","license":[{"start":{"date-parts":[[2025,5,9]],"date-time":"2025-05-09T00:00:00Z","timestamp":1746748800000},"content-version":"tdm","delay-in-days":0,"URL":"https:\/\/creativecommons.org\/licenses\/by-nc-nd\/4.0"},{"start":{"date-parts":[[2025,5,9]],"date-time":"2025-05-09T00:00:00

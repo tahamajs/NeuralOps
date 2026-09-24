@@ -1,8 +1,0 @@
-KEY: yang2022reformer
-URL: https://doi.org/10.1145/3503161.3548409
-FETCHED_AT_UTC: 2026-09-20T14:47:24.879366+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: a9f1822b19d6a8f282b861f19cac2f123fee3f0c01beb4d562d36387cc5176cf
-BODY_BYTES_LEN: 24884
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,7,24]],"date-time":"2026-07-24T14:55:07Z","timestamp":1784904907955,"version":"3.55.0"},"publisher-location":"New York, NY, USA","reference-count":54,"publisher":"ACM","license":[{"start":{"date-parts":[[2022,10,10]],"date-time":"2022-10-10T00:00:00Z","timestamp":1665360000000},"content-version":"vor","delay-in-days":0,"URL":"https:\/\/www.acm.org\/publications\/policies\/copyright_policy#Background"}],"funder":[{"name":"NIH","award":["R01EB032218"],"award-info":[

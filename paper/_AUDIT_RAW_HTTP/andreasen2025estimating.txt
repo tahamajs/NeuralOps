@@ -1,8 +1,0 @@
-KEY: andreasen2025estimating
-URL: https://doi.org/10.2139/ssrn.5382755
-FETCHED_AT_UTC: 2026-09-20T14:42:57.789404+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 60846d823eed26693c80e51f6482eccfc205ee43c2b8e274d853f0dd27472bda
-BODY_BYTES_LEN: 13655
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,14]],"date-time":"2026-08-14T21:38:31Z","timestamp":1786743511103,"version":"build-2736575974"},"posted":{"date-parts":[[2025]]},"group-title":"SSRN","reference-count":43,"publisher":"Elsevier BV","content-domain":{"domain":[],"crossmark-restriction":false},"abstract":"<jats:p>This paper introduces new methods to adjust for finite sample biases in estimators of potentially nonlinear and non-Gaussian state space models without repeatedly optimizing the log-likeli

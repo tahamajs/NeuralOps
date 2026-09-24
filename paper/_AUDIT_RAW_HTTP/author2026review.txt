@@ -1,8 +1,0 @@
-KEY: author2026review
-URL: https://doi.org/10.1088/2631-8695/ae98f5/v2/review2
-FETCHED_AT_UTC: 2026-09-20T14:43:33.296414+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: ad1144e96f14e42045aa6ff302241a10f8d18a6f7a8afad5302b0e4621106ecd
-BODY_BYTES_LEN: 1343
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,8,13]],"date-time":"2026-08-13T21:29:56Z","timestamp":1786656596774,"version":"build-2736575974"},"reference-count":0,"publisher":"IOP Publishing","content-domain":{"domain":[]},"published-print":{"date-parts":[[2026,8,5]]},"DOI":"10.1088\/2631-8695\/ae98f5\/v2\/review2","type":"peer-review","created":{"date-parts":[[2026,8,13]],"date-time":"2026-08-13T21:07:59Z","timestamp":1786655279000},"source":"Crossref","is-referenced-by-count":0,"title":"Review for \"Mamba-

@@ -1,8 +1,0 @@
-KEY: rangra2026from
-URL: https://doi.org/10.2139/ssrn.6830478
-FETCHED_AT_UTC: 2026-09-20T14:46:24.708301+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: b6b7d1c7ff48a6f5d6eff02c5a6f2f5ca7390512df23747df0460144bc9a4dbf
-BODY_BYTES_LEN: 3350
-BODY_PREVIEW_FIRST_500_CHARS:
-{"indexed":{"date-parts":[[2026,7,29]],"date-time":"2026-07-29T14:10:10Z","timestamp":1785334210738,"version":"3.55.0"},"posted":{"date-parts":[[2026]]},"group-title":"SSRN","reference-count":0,"publisher":"Elsevier BV","license":[{"start":{"date-parts":[[2026,1,1]],"date-time":"2026-01-01T00:00:00Z","timestamp":1767225600000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/www.uspto.gov\/ip-policy\/copyright-policy\/copyright-basics"}],"content-domain":{"domain":[],"crossmark

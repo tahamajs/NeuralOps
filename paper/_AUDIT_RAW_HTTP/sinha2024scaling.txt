@@ -1,8 +1,0 @@
-KEY: sinha2024scaling
-URL: https://doi.org/10.21203/rs.3.rs-5277468/v1
-FETCHED_AT_UTC: 2026-09-20T14:46:43.973839+00:00
-RAW_HTTP_STATUS: 200
-BODY_SHA256: 30f39017059397605bb04b8cb1c54cf8e396659fc420c2f8a0aa55f28e9498ef
-BODY_BYTES_LEN: 3199
-BODY_PREVIEW_FIRST_500_CHARS:
-{"institution":[{"name":"Research Square"}],"indexed":{"date-parts":[[2024,10,18]],"date-time":"2024-10-18T04:12:14Z","timestamp":1729224734922,"version":"3.27.0"},"posted":{"date-parts":[[2024,10,17]]},"group-title":"In Review","reference-count":0,"publisher":"Springer Science and Business Media LLC","license":[{"start":{"date-parts":[[2024,10,17]],"date-time":"2024-10-17T00:00:00Z","timestamp":1729123200000},"content-version":"unspecified","delay-in-days":0,"URL":"https:\/\/creativecommons.org
