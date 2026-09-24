@@ -8,8 +8,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
