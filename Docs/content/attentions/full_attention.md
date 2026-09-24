@@ -245,7 +245,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | **roberta-base** | ag_news | `PASS` | N/A | **76.90%** | N/A | 0.7442 | 1.00x | 0 | N/A | 2026-09-17 |
 | **gpt2** | ag_news | `PASS` | N/A | **80.50%** | N/A | 0.7968 | 1.00x | 0 | N/A | 2026-09-17 |
 | **distilbert-sst2** | sst2 | `PASS` | N/A | **90.60%** | N/A | 0.9099 | 1.00x | 0 | N/A | 2026-09-23 |
-| **roberta-sst2** | sst2 | `PASS` | N/A | **94.04%** | N/A | 0.9417 | 1.00x | 0 | N/A | 2026-09-24 |
+| **roberta-sst2** | sst2 | `PASS` | N/A | **94.50%** | N/A | 0.9458 | 1.00x | 0 | N/A | 2026-09-24 |
 | **distilbert-mnli** | mnli | `PASS` | N/A | **53.10%** | N/A | 0.4636 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-mnli-full** | mnli | `PASS` | N/A | **81.80%** | N/A | 0.8177 | 1.00x | 0 | N/A | 2026-09-19 |
 | **distilbert-agnews-full** | ag_news | `PASS` | N/A | **94.30%** | N/A | 0.9390 | 1.00x | 0 | N/A | 2026-09-19 |
