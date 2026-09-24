@@ -242,7 +242,7 @@ class TestMoEAndHybridAttentionAudits(unittest.TestCase):
         k = model.W_k(x).view(2, 64, model.num_heads, model.head_dim).permute(0, 2, 1, 3)
         v = model.W_v(x).view(2, 64, model.num_heads, model.head_dim).permute(0, 2, 1, 3)
         
-        k_p, v_p, _ = model._fasa_prune(k, v)
+        k_p, v_p, _, _ = model._fasa_prune(k, v)
         # Even with extreme keep_ratio=0.05 (2 tokens kept), token 0 must be the first kept token
         self.assertTrue(torch.allclose(k_p[:, :, 0, :], k[:, :, 0, :]))
         self.assertTrue(torch.allclose(v_p[:, :, 0, :], v[:, :, 0, :]))

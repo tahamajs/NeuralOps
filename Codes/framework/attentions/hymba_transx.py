@@ -552,7 +552,7 @@ class HymbaTransXBlock(BaseAttention):
                 if b_o is not None and self.out_proj.bias is not None:
                     m = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
-                    self.out_proj.bias.data[:m].copy_(b_o[:m].to(self.out_proj.bias.dtype, self.out_proj.bias.device))
+                    self.out_proj.bias.data[:m].copy_(b_o[:m].to(device=self.out_proj.bias.device, dtype=self.out_proj.bias.dtype))
 
             # HX-FIX-06: W_q2 and W_k2 = noisy copies of W_q1 and W_k1
             noise_q = torch.randn_like(self.W_q2.weight) * 0.01
