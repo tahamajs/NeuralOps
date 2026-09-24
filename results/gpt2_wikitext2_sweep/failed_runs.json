@@ -278,5 +278,15 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T21:05:00.907564"
+  },
+  {
+    "module": "frandi_compressor",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": 41.346157,
+    "accuracy_pct": 0.0,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-24T21:05:21.299429"
   }
 ]
