@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **HGRN2Layer** | **62.96** | -27.75 | 0.7103 | 66.4M | 0.85 | 447 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **HGRN2Layer** | **52.06** | -26.50 | 0.6645 | 124.6M | 0.85 | 788 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **HGRN2Layer** | **71.44** | -7.92 | 0.7255 | 124.4M | 0.85 | 507 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Hgrn2 Layer** | **62.04%** | -28.90% | PASS | 0.6966 | 0 | **0.95x** | 352.3 MB | 30.2s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Hgrn2 Layer** | **50.80%** | -24.66% | PASS_LOW | 0.6273 | 0 | **0.89x** | 691.4 MB | 57.6s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Hgrn2 Layer** | **53.21%** | -4.70% | PASS_LOW | 0.6720 | 0 | **0.94x** | 588.0 MB | 36.4s |
 
 ## 7.2 Parameter Analysis
 

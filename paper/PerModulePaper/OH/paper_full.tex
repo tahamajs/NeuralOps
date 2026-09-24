@@ -902,22 +902,24 @@ python run_all_4_oha.py \
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$ \%} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT \& full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
-DistilBERT & \textbf{OHA} & \textbf{89.2} & -1.51 & 0.892 & +1.40\% & 215 MB & 4.2 s \\
-RoBERTa \& full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
-RoBERTa & \textbf{OHA} & \textbf{76.5} & -2.06 & 0.765 & +1.51\% & 790 MB & 8.5 s \\
-GPT-2 \& full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
-GPT-2 & \textbf{OHA} & \textbf{77.8} & -1.56 & 0.778 & +1.51\% & 870 MB & 8.8 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Oha} & \textbf{90.60\%} & -0.34\% & PASS & 0.9087 & 24 & \textbf{0.99$\times$} & 337.1 MB & 17.6 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Oha} & \textbf{75.80\%} & +0.34\% & PASS & 0.8000 & 48 & \textbf{0.93$\times$} & 669.6 MB & 39.8 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Oha} & \textbf{51.26\%} & -36.58\% & PASS_LOW & 0.6763 & 0 & \textbf{0.99$\times$} & 572.0 MB & 12.3 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

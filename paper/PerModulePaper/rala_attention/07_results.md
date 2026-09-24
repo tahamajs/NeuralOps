@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ | Time |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s |
-| DistilBERT | **RALA** | **60.09** | -30.62 | 0.6306 | +48.5\%% | 1.42x |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s |
-| RoBERTa | **RALA** | **50.80** | -27.76 | 0.6305 | +48.5\%% | 2.3 s |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s |
-| GPT-2 | **RALA** | **50.92** | -28.44 | 0.6748 | +48.5\%% | 2.3 s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Rala Compressor** | **60.09%** | -30.85% | PASS | 0.6306 | 0 | **0.99x** | 335.1 MB | 4.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Rala Compressor** | **50.80%** | -24.66% | PASS_LOW | 0.6305 | 0 | **0.94x** | 666.2 MB | 9.7s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Rala Compressor** | **58.03%** | +0.12% | PASS | 0.6812 | 0 | **0.99x** | 570.0 MB | 174.9s |
 
 ## 7.2 Parameter Analysis
 

@@ -928,22 +928,24 @@ All experiments use seed 42.
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{$\Delta$ Params} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & -- & 183 MB \\
-DistilBERT & \textbf{REAP-MoE} & \textbf{90.02} & -0.69 & 0.9030 & 66.4M & 66.4M & 554 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & -- & 712 MB \\
-RoBERTa & \textbf{REAP-MoE} & \textbf{50.92} & -27.64 & 0.6748 & 124.6M & 66.4M & 1062 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & -- & 793 MB \\
-GPT-2 & \textbf{REAP-MoE} & \textbf{52.41} & -26.95 & 0.6790 & 124.4M & 66.4M & 960 MB MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Reap Moe} & \textbf{90.02\%} & -0.92\% & PASS & 0.9030 & 96 & \textbf{0.61$\times$} & 554.2 MB & 10.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Reap Moe} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 192 & \textbf{0.57$\times$} & 1062.1 MB & 21.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Reap Moe} & \textbf{52.41\%} & -5.50\% & PASS_LOW & 0.6790 & 192 & \textbf{0.59$\times$} & 959.5 MB & 21.5 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Observations:}
 

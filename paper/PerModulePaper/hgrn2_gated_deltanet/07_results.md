@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Trainable |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 |
-| DistilBERT | **HGRN2-GDN** | **53.56** | -37.15 | 0.6788 | 66.4M | 0.85 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 |
-| RoBERTa | **HGRN2-GDN** | **52.98** | -25.58 | 0.6103 | 124.6M | 0.85 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 |
-| GPT-2 | **HGRN2-GDN** | **51.03** | -28.33 | 0.6743 | 124.4M | 0.85 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Hgrn2 Gated Deltanet** | **54.70%** | -36.24% | PASS_LOW | 0.6483 | 0 | **0.60x** | 514.2 MB | 937.7s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Hgrn2 Gated Deltanet** | **52.98%** | -22.48% | PASS_LOW | 0.6103 | 0 | **0.57x** | 993.4 MB | 334.2s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Hgrn2 Gated Deltanet** | **51.03%** | -6.88% | PASS_LOW | 0.6743 | 0 | **0.53x** | 1044.0 MB | 196.8s |
 
 ## 7.2 Parameter Analysis
 

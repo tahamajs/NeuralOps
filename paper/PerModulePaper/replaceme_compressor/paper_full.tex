@@ -531,17 +531,20 @@ We evaluate \texttt{replaceme\_compressor} across three canonical language under
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 73.39\% & 0.7778 & 1.24$\times$ & -- & 254.1 MB & 61752 & 4.19 s \\
-MNLI & PASS & 63.50\% & 0.6311 & 1.24$\times$ & -- & 255.7 MB & 66046 & 5.25 s \\
-AG News & PASS & 90.90\% & 0.9038 & 1.24$\times$ & -- & 277.2 MB & 134064 & 6.42 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Replaceme} & \textbf{82.00\%} & -8.48\% & PASS & 0.8363 & 0 & \textbf{1.24$\times$} & 280.5 MB & 16.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Replaceme} & \textbf{80.62\%} & +5.51\% & PASS & 0.8302 & 0 & \textbf{1.12$\times$} & 325.0 MB & 23.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Replaceme} & \textbf{56.77\%} & -4.01\% & PASS & 0.6808 & 0 & \textbf{1.12$\times$} & 573.6 MB & 20.9 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{replaceme\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_replaceme_compressor}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

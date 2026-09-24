@@ -1,11 +1,11 @@
 | Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
-| DistilBERT | **Dynamic Entropy** | **90.71%** | +0.00% | PASS_NO_COMPRESSION | 0.9099 | 0 | **1.00x** | 174.8 MB | 128.2 |
+| DistilBERT | **Dynamic Entropy Svd** | **90.94%** | +0.00% | PASS | 0.9125 | 0 | **1.00x** | 183.1 MB | 35.2 |
 | RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
-| RoBERTa | **Dynamic Entropy** | **94.38%** | +0.00% | PASS_NO_COMPRESSION | 0.9445 | 0 | **1.00x** | 511.4 MB | 148.3 |
+| RoBERTa | **Dynamic Entropy Svd** | **87.50%** | -3.10% | PASS | 0.8875 | 73 | **1.00x** | 333.3 MB | 62.6 |
 | GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
-| GPT-2 | **Dynamic Entropy** | **89.33%** | +0.00% | PASS_NO_COMPRESSION | 0.8942 | 0 | **1.00x** | 382.1 MB | 140.2 |
+| GPT-2 | **Dynamic Entropy Svd** | **50.11%** | +0.57% | PASS_LOW | 0.4556 | 0 | **1.00x** | 389.6 MB | 52.1 |
 
 # 7. Empirical Results and Benchmark Evaluations
 

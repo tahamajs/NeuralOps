@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Fasa} & \textbf{90.71\%} & +0.23\% & PASS & 0.9107 & 0 & \textbf{0.99$\times$} & 321.7 MB & 3.8 & -- \\
+DistilBERT & \textbf{Mixattention Moska} & \textbf{90.94\%} & +0.00\% & PASS & 0.9131 & 24 & \textbf{0.99$\times$} & 318.7 MB & 12.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Fasa} & \textbf{90.94\%} & +2.18\% & PASS & 0.9135 & 0 & \textbf{0.95$\times$} & 400.1 MB & 8.8 & -- \\
+RoBERTa & \textbf{Mixattention Moska} & \textbf{86.24\%} & +10.78\% & PASS & 0.8739 & 48 & \textbf{0.94$\times$} & 648.2 MB & 24.1 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Fasa} & \textbf{87.50\%} & +6.19\% & PASS & 0.8832 & 0 & \textbf{1.00$\times$} & 339.8 MB & 7.4 & -- \\
+GPT-2 & \textbf{Mixattention Moska} & \textbf{87.27\%} & -0.57\% & PASS & 0.8835 & 72 & \textbf{1.00$\times$} & 333.2 MB & 26.6 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}

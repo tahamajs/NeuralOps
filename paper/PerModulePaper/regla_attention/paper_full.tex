@@ -530,20 +530,20 @@ Table~\ref{tab:results_acc_reglaattention} details empirical evaluation metrics 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_regla/distilbert/summary.csv} & distilbert & regla & PASS\_NO\_COMPRESSION & 79.82 & 0.8108 \\
-\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_regla/gpt2/summary.csv} & gpt2 & regla & PASS\_NO\_COMPRESSION & 57.45 & 0.6996 \\
-\texttt{results/unified\_regla/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_regla/roberta/summary.csv} & roberta & regla & PASS\_NO\_COMPRESSION & 64.79 & 0.7149 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Regla} & \textbf{75.80\%} & -15.14\% & PASS & 0.7605 & 30 & \textbf{0.94$\times$} & 367.4 MB & 17.5 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Regla} & \textbf{53.67\%} & -21.79\% & PASS_LOW & 0.6570 & 60 & \textbf{0.89$\times$} & 740.1 MB & 28.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Regla} & \textbf{50.92\%} & -36.92\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 1005.1 MB & 35.7 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{reglaattention}.}
-\label{tab:results_acc_reglaattention}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

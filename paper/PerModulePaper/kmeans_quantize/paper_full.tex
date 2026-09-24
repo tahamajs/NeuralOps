@@ -531,17 +531,20 @@ We evaluate \texttt{kmeans\_quantize} across three canonical language understand
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.37\% & 0.9089 & 2.73$\times$ & 0.0323 & 537.5 MB & 39455 & 14.82 s \\
-MNLI & PASS & 81.40\% & 0.8129 & 2.73$\times$ & 0.0322 & 539.9 MB & 43638 & 34.12 s \\
-AG News & PASS & 94.70\% & 0.9433 & 2.73$\times$ & 0.0323 & 557.9 MB & 91421 & 21.37 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kmeans} & \textbf{90.48\%} & +0.00\% & PASS & 0.9071 & 36 & \textbf{2.73$\times$} & 556.3 MB & 16.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kmeans} & \textbf{83.37\%} & +8.26\% & PASS & 0.8466 & 72 & \textbf{3.14$\times$} & 991.9 MB & 24.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kmeans} & \textbf{62.04\%} & +1.26\% & PASS & 0.6783 & 0 & \textbf{1.00$\times$} & 634.9 MB & 18.4 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{kmeans\_quantize} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_kmeans_quantize}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

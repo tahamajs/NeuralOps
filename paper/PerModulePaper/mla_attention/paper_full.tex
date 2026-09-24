@@ -1053,22 +1053,24 @@ All experiments use seed 42.
 
 \textbf{Table 7.1: Accuracy on SST-2 validation.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Ratio} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ \\
-DistilBERT & \textbf{MLA} & \textbf{50.92} & -39.79 & 0.6748 & 66.4MM & \textbf{50\%$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ \\
-RoBERTa & \textbf{MLA} & \textbf{50.92} & -27.64 & 0.6748 & 124.6MM & \textbf{2.1$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ \\
-GPT-2 & \textbf{MLA} & \textbf{57.22} & -22.14 & 0.5260 & 124.4MM & \textbf{2.1$\times$} \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Mla} & \textbf{50.92\%} & -40.02\% & PASS_LOW & 0.6748 & 0 & \textbf{1.10$\times$} & 298.5 MB & 3.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Mla} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.05$\times$} & 601.3 MB & 7.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Mla} & \textbf{57.22\%} & -0.69\% & PASS & 0.5260 & 0 & \textbf{1.11$\times$} & 511.9 MB & 8.4 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{KV-Cache Reduction}
 

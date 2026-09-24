@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 results with $w = 128$, $m = 64$, bias = 0.0.**
 
-| Model | Module | Acc | Δ | F1 | Mean gate | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB | 1.9 s |
-| DistilBERT | **NHA** | **90.71** | +0.00 | 0.9107 | **0.94** | 335 MB MB | 1.42x s |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 712 MB | 4.1 s |
-| RoBERTa | **NHA** | **50.92** | -27.64 | 0.6748 | **0.85** | 668 MB MB | 2.3 s s |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 793 MB | 4.2 s |
-| GPT-2 | **NHA** | **50.92** | -28.44 | 0.6748 | **0.85** | 1511 MB MB | 2.3 s s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Nha Compressor** | **0.00%** | -90.94% | FAIL | 0.9125 | 0 | **1.00x** | 389.5 MB | 0.4s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Nha Compressor** | **0.00%** | -75.46% | FAIL | 0.7277 | 0 | **1.00x** | 712.3 MB | 0.9s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Nha Compressor** | **0.00%** | -57.91% | FAIL | 0.3010 | 0 | **1.00x** | 793.2 MB | 0.9s |
 
 ## 7.2 Gate Analysis
 

@@ -530,20 +530,20 @@ Table~\ref{tab:results_acc_svdcompressed} details empirical evaluation metrics a
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_svd\_compressed/distilbert/summary.csv} & distilbert & svd\_compressed & PASS & 87.39 & 0.8825 \\
-\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
-\texttt{results/unified\_svd\_compressed/gpt2/summary.csv} & gpt2 & svd\_compressed & PASS & 76.15 & 0.7965 \\
-\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_svd\_compressed/roberta/summary.csv} & roberta & svd\_compressed & PASS & 58.14 & 0.703 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Svd Compressed} & \textbf{86.93\%} & -4.01\% & PASS & 0.8790 & 0 & \textbf{1.15$\times$} & 294.1 MB & 57.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Svd Compressed} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.09$\times$} & 587.2 MB & 56.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Svd Compressed} & \textbf{76.15\%} & -11.69\% & PASS & 0.7965 & 0 & \textbf{1.17$\times$} & 300.3 MB & 66.8 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{svdcompressed}.}
-\label{tab:results_acc_svdcompressed}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

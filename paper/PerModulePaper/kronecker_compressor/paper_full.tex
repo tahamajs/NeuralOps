@@ -531,17 +531,20 @@ We evaluate \texttt{kronecker\_compressor} across three canonical language under
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 72.13\% & 0.7197 & 1.93$\times$ & -- & 257.1 MB & 20643 & 24.89 s \\
-MNLI & PASS & 39.00\% & 0.3851 & 1.93$\times$ & -- & 259.3 MB & 22656 & 55.65 s \\
-AG News & PASS & 75.80\% & 0.7442 & 1.93$\times$ & -- & 294.1 MB & 43505 & 32.61 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kronecker} & \textbf{90.94\%} & +0.46\% & PASS & 0.9123 & 1 & \textbf{1.00$\times$} & 315.1 MB & 17.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kronecker} & \textbf{70.07\%} & -5.04\% & PASS & 0.7603 & 0 & \textbf{1.00$\times$} & 301.7 MB & 25.4 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kronecker} & \textbf{60.32\%} & -0.46\% & PASS & 0.7038 & 2 & \textbf{1.00$\times$} & 643.3 MB & 25.4 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{kronecker\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_kronecker_compressor}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

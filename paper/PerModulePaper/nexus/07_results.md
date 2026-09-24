@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Path | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | dense | 183 MB |
-| DistilBERT | **NEXUS** | **50.92** | -39.79 | 0.6748 | sparse | 346 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | dense | 712 MB |
-| RoBERTa | **NEXUS** | **50.92** | -27.64 | 0.6748 | sparse | 676 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | dense | 793 MB |
-| GPT-2 | **NEXUS** | **51.61** | -27.75 | 0.6769 | **dense fallback** | 568 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Nexus** | **90.71%** | -0.23% | PASS | 0.9101 | 30 | **0.99x** | 330.6 MB | 19.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Nexus** | **86.93%** | +11.47% | PASS | 0.8787 | 60 | **0.94x** | 661.3 MB | 36.9s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Nexus** | **86.58%** | -1.26% | PASS | 0.8751 | 84 | **1.00x** | 342.0 MB | 27.6s |
 
 **Key observations:**
 

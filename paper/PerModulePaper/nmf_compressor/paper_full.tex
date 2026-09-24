@@ -531,17 +531,20 @@ We evaluate \texttt{nmf\_compressor} across three canonical language understandi
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.48\% & 0.9091 & 1.00$\times$ & -- & 302.9 MB & 52768 & 11.59 s \\
-MNLI & PASS & 82.30\% & 0.8222 & 1.00$\times$ & -- & 304.5 MB & 50432 & 13.28 s \\
-AG News & PASS & 94.70\% & 0.9434 & 1.00$\times$ & -- & 326.5 MB & 96200 & 14.56 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Nmf} & \textbf{89.91\%} & -0.57\% & PASS & 0.8993 & 0 & \textbf{1.00$\times$} & 337.6 MB & 84.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Nmf} & \textbf{49.08\%} & -26.03\% & PASS_LOW & 0.0000 & 0 & \textbf{1.04$\times$} & 374.7 MB & 212.9 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Nmf} & \textbf{58.03\%} & -2.75\% & PASS & 0.6460 & 0 & \textbf{1.00$\times$} & 634.9 MB & 65.2 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{nmf\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_nmf_compressor}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

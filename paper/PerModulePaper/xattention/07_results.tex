@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_xattention} details empirical evaluation metrics acro
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
-\texttt{results/unified\_xattention/distilbert/summary.csv} & distilbert & xattention & PASS & 82.68 & 0.8492 \\
-\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & full & PASS & 87.84 & 0.8776 \\
-\texttt{results/unified\_xattention/gpt2/summary.csv} & gpt2 & xattention & PASS & 86.24 & 0.8729 \\
-\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
-\texttt{results/unified\_xattention/roberta/summary.csv} & roberta & xattention & PASS & 75.11 & 0.7737 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Xattention} & \textbf{83.14\%} & -7.80\% & PASS & 0.8534 & 0 & \textbf{0.99$\times$} & 328.6 MB & 19.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Xattention} & \textbf{51.03\%} & -24.43\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 659.2 MB & 26.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Xattention} & \textbf{53.21\%} & -4.70\% & PASS_LOW & 0.6837 & 0 & \textbf{0.99$\times$} & 568.7 MB & 28.7 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{xattention}.}
-\label{tab:results_acc_xattention}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

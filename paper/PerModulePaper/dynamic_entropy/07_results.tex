@@ -11,11 +11,11 @@ Table~\ref{tab:results_acc_dynamicentropy} details empirical evaluation metrics 
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Dynamic Entropy} & \textbf{90.71\%} & +0.00\% & PASS_NO_COMPRESSION & 0.9099 & 0 & \textbf{1.00$\times$} & 174.8 MB & 128.2 & -- \\
+DistilBERT & \textbf{Dynamic Entropy Svd} & \textbf{90.94\%} & +0.00\% & PASS & 0.9125 & 0 & \textbf{1.00$\times$} & 183.1 MB & 35.2 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Dynamic Entropy} & \textbf{94.38\%} & +0.00\% & PASS_NO_COMPRESSION & 0.9445 & 0 & \textbf{1.00$\times$} & 511.4 MB & 148.3 & -- \\
+RoBERTa & \textbf{Dynamic Entropy Svd} & \textbf{87.50\%} & -3.10\% & PASS & 0.8875 & 73 & \textbf{1.00$\times$} & 333.3 MB & 62.6 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Dynamic Entropy} & \textbf{89.33\%} & +0.00\% & PASS_NO_COMPRESSION & 0.8942 & 0 & \textbf{1.00$\times$} & 382.1 MB & 140.2 & -- \\
+GPT-2 & \textbf{Dynamic Entropy Svd} & \textbf{50.11\%} & +0.57\% & PASS_LOW & 0.4556 & 0 & \textbf{1.00$\times$} & 389.6 MB & 52.1 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}

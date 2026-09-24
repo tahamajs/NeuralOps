@@ -531,17 +531,20 @@ We evaluate \texttt{slim\_compressor} across three canonical language understand
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.60\% & 0.9083 & 1.00$\times$ & 0.6033 & 304.4 MB & 23894 & 12.39 s \\
-MNLI & PASS & 78.80\% & 0.7853 & 1.00$\times$ & 0.6035 & 306.0 MB & 44026 & 9.61 s \\
-AG News & PASS & 94.20\% & 0.9380 & 1.00$\times$ & 0.6004 & 326.7 MB & 83684 & 14.35 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Slim} & \textbf{87.96\%} & -2.52\% & PASS & 0.8889 & 0 & \textbf{1.00$\times$} & 339.2 MB & 20.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Slim} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.00$\times$} & 361.5 MB & 27.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Slim} & \textbf{52.41\%} & -8.37\% & PASS_LOW & 0.6765 & 0 & \textbf{1.00$\times$} & 640.7 MB & 25.2 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{slim\_compressor} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_slim_compressor}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

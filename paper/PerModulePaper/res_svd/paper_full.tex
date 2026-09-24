@@ -818,22 +818,24 @@ python run_all_4_res_svd.py \
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{Res-SVD} & \textbf{89.56} & -1.15 & 0.9016 & \textbf{50\%$\times$} & 298 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{Res-SVD} & \textbf{76.61} & -1.95 & 0.7910 & \textbf{2.1$\times$} & 594 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{Res-SVD} & \textbf{71.33} & -8.03 & 0.7760 & \textbf{2.1$\times$} & 336 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Res Svd} & \textbf{89.56\%} & -1.38\% & PASS & 0.9016 & 0 & \textbf{1.14$\times$} & 298.4 MB & 19.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Res Svd} & \textbf{76.61\%} & +16.52\% & PASS & 0.7910 & 0 & \textbf{1.08$\times$} & 594.4 MB & 48.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Res Svd} & \textbf{71.33\%} & -16.51\% & PASS & 0.7760 & 24 & \textbf{1.16$\times$} & 336.2 MB & 88.7 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

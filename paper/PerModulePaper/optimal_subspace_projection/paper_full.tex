@@ -531,17 +531,20 @@ We evaluate \texttt{optimal\_subspace\_projection} across three canonical langua
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.48\% & 0.9091 & 1.00$\times$ & -- & 303.7 MB & 55036 & 5.69 s \\
-MNLI & PASS & 80.20\% & 0.8015 & 1.00$\times$ & 0.6346 & 305.3 MB & 51058 & 8.12 s \\
-AG News & PASS & 94.40\% & 0.9404 & 1.00$\times$ & 0.6313 & 327.2 MB & 54412 & 11.91 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Optimal Subspace Projection} & \textbf{90.60\%} & +0.12\% & PASS & 0.9091 & 1 & \textbf{1.00$\times$} & 311.3 MB & 17.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Optimal Subspace Projection} & \textbf{70.87\%} & -4.24\% & PASS & 0.7708 & 4 & \textbf{1.00$\times$} & 321.1 MB & 25.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Optimal Subspace Projection} & \textbf{0.00\%} & -60.78\% & FAIL & 0.6354 & 0 & \textbf{1.00$\times$} & 793.2 MB & 19.9 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{optimal\_subspace\_projection} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_optimal_subspace_projection}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

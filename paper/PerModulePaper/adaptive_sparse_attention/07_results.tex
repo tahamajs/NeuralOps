@@ -11,11 +11,11 @@ Table~\ref{tab:results_acc_adaptivesparseattention} details empirical evaluation
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Adaptive Sparse} & \textbf{--} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
+DistilBERT & \textbf{Adaptive Sparse Attention Attention} & \textbf{89.91\%} & -1.03\% & PASS & 0.8970 & 24 & \textbf{0.82$\times$} & 383.0 MB & 14.8 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Adaptive Sparse} & \textbf{59.63\%} & -15.83\% & PASS & 0.3973 & 60 & \textbf{0.81$\times$} & 687.5 MB & 30.9 & -- \\
+RoBERTa & \textbf{Adaptive Sparse Attention Attention} & \textbf{85.32\%} & -5.28\% & PASS & 0.8388 & 121 & \textbf{0.78$\times$} & 411.9 MB & 36.8 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Adaptive Sparse} & \textbf{--} & -- & PASS & -- & 0 & \textbf{1.00$\times$} & -- & -- & -- \\
+GPT-2 & \textbf{Adaptive Sparse Attention Attention} & \textbf{87.84\%} & +0.00\% & PASS & 0.8776 & 96 & \textbf{0.71$\times$} & 451.1 MB & 36.9 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}

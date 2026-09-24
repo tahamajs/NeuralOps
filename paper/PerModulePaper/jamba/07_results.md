@@ -1,3 +1,12 @@
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Jamba** | **87.16%** | -3.78% | PASS | 0.8753 | 0 | **0.42x** | 716.6 MB | 12.4s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Jamba** | **50.92%** | -24.54% | PASS_LOW | 0.6733 | 0 | **0.39x** | 1321.0 MB | 14.8s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Jamba** | **52.29%** | -5.62% | PASS_LOW | 0.6745 | 0 | **0.37x** | 1365.6 MB | 20.1s |
+
 # 7. Empirical Results and Benchmark Evaluations
 
 ## 7.1 Downstream Accuracy and Classification Performance

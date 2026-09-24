@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Params | Eff. ratio |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× |
-| DistilBERT | **Dobi-SVD** | **90.48** | -0.23 | 0.9079 | 66.4MM | **50\%×** |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 1.00× |
-| RoBERTa | **Dobi-SVD** | **74.54** | -4.02 | 0.7707 | 124.6MM | **2.1\times×** |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 1.00× |
-| GPT-2 | **Dobi-SVD** | **58.14** | -21.22 | 0.6256 | 124.4MM | **2.1\times×** |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Dobi Svd** | **90.94%** | +0.00% | PASS | 0.9125 | 0 | **1.00x** | 183.1 MB | 33.2 |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Dobi Svd** | **89.56%** | -1.04% | PASS | 0.9043 | 73 | **1.00x** | 333.7 MB | 62.8 |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Dobi Svd** | **49.54%** | +0.00% | PASS_LOW | 0.2903 | 0 | **1.00x** | 389.6 MB | 47.6 |
 
 ## 7.2 Rank Analysis
 

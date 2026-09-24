@@ -918,22 +918,24 @@ Single seed (42).
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 \\
-DistilBERT & \textbf{HymbaTransX} & \textbf{49.08} & -41.63 & 86.2 & 66.4M & 0.85 \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 \\
-RoBERTa & \textbf{HymbaTransX} & \textbf{51.15} & -27.41 & 0.6758 & 124.6M & 0.85 \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 \\
-GPT-2 & \textbf{HymbaTransX} & \textbf{57.57} & -21.79 & 0.6859 & 124.4M & 0.85 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hymba Transx} & \textbf{87.50\%} & -3.44\% & PASS & 0.8817 & 54 & \textbf{0.75$\times$} & 498.6 MB & 53.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hymba Transx} & \textbf{49.20\%} & -26.26\% & PASS_LOW & 0.1960 & 108 & \textbf{0.70$\times$} & 926.2 MB & 112.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hymba Transx} & \textbf{77.87\%} & -9.97\% & PASS & 0.8025 & 132 & \textbf{0.74$\times$} & 632.0 MB & 100.0 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

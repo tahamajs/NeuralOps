@@ -55,7 +55,7 @@
   "VERDICT": "Verified",
   "D_STATUS": "PASS",
   "R_STATUS": "PASS",
-  "G_STATUS": "PASS",
+  "G_STATUS": "PASS_LOW",
   "D_ACC": "89.91",
   "R_ACC": "58.37",
   "G_ACC": "51.26",
@@ -69,7 +69,7 @@
   "G_RED": "46.0\\%",
   "D_SPEEDUP": "1.42x",
   "D_TIME": "1.42x",
-  "D_VRAM": "330 MB",
+  "D_VRAM": "329.6 MB",
   "D_MHA_VRAM": "620 MB",
   "D_STORAGE": "256 MB",
   "D_TOTAL": "66.4M",
@@ -251,8 +251,8 @@
   "D_DELTA": "-0.80",
   "R_DELTA": "-20.19",
   "R_F1": "0.6857",
-  "R_VRAM": "378 MB",
+  "R_VRAM": "377.7 MB",
   "G_DELTA": "-28.10",
   "G_F1": "0.6763",
-  "G_VRAM": "570 MB"
+  "G_VRAM": "569.8 MB"
 }

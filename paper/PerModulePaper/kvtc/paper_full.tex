@@ -531,17 +531,20 @@ We evaluate \texttt{kvtc} across three canonical language understanding tasks us
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 90.48\% & 0.9089 & 1.00$\times$ & 0.8932 & 344.4 MB & 44468 & 8.59 s \\
-MNLI & PASS & 79.10\% & 0.7904 & 1.00$\times$ & 0.8969 & 346.0 MB & 49106 & 16.75 s \\
-AG News & PASS & 94.20\% & 0.9382 & 1.00$\times$ & 0.8924 & 368.0 MB & 65402 & 11.29 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kvtc} & \textbf{89.68\%} & -0.80\% & PASS & 0.9004 & 20 & \textbf{1.00$\times$} & 388.1 MB & 18.2 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kvtc} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 45 & \textbf{1.00$\times$} & 457.9 MB & 24.4 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kvtc} & \textbf{52.75\%} & -8.03\% & PASS_LOW & 0.6756 & 8 & \textbf{1.00$\times$} & 666.4 MB & 24.3 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{kvtc} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_kvtc}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

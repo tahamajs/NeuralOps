@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **VSpec++** | **87.5** | -3.2 | 0.875 | 1070000 | **2.2×** |
-| RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **VSpec++** | **75.0** | -3.6 | 0.750 | 1070000 | **2.2×** |
-| GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **VSpec++** | **77.0** | -2.4 | 0.770 | 1070000 | **2.2×** |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Vspec** | **75.34%** | -15.60% | PASS | 0.7835 | 0 | **1.20x** | 283.9 MB | 25.3 |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Vspec** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 0 | **1.14x** | 566.1 MB | 37.0 |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Vspec** | **50.92%** | -6.99% | PASS_LOW | 0.6748 | 0 | **1.22x** | 479.6 MB | 39.0 |
 
 ## 7.2 Parameter Analysis
 

@@ -530,20 +530,20 @@ Table~\ref{tab:results_acc_hgrn2outer} details empirical evaluation metrics acro
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & full & PASS & 90.94 & 0.9125 \\
-\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & distilbert & hgrn2\_outer & PASS & 68.46 & 0.7114 \\
-\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & full & PASS & 57.91 & 0.301 \\
-\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & gpt2 & hgrn2\_outer & PASS\_LOW & 48.62 & 0.6203 \\
-\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & full & PASS & 75.46 & 0.7277 \\
-\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & roberta & hgrn2\_outer & PASS\_LOW & 50.34 & 0.4355 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hgrn2 Outer} & \textbf{68.46\%} & -22.48\% & PASS & 0.7114 & 0 & \textbf{0.99$\times$} & 330.0 MB & 181.6 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hgrn2 Outer} & \textbf{50.34\%} & -25.12\% & PASS_LOW & 0.4355 & 0 & \textbf{0.94$\times$} & 685.6 MB & 32.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hgrn2 Outer} & \textbf{48.62\%} & -9.29\% & PASS_LOW & 0.6203 & 0 & \textbf{0.99$\times$} & 569.8 MB & 31.2 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{hgrn2outer}.}
-\label{tab:results_acc_hgrn2outer}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

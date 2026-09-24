@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: SST-2 results with $w = 128$, $k = 2$.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Density} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 100\% & 183 MB & 1.9 s \\
-DistilBERT & \textbf{NSA} & \textbf{90.83} & +0.12 & 0.9119 & \textbf{50\%\%} & 340 MB MB & 1.42x s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 100\% & 712 MB & 4.1 s \\
-RoBERTa & \textbf{NSA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{0.85\%} & 671 MB MB & 2.3 s s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 100\% & 793 MB & 4.2 s \\
-GPT-2 & \textbf{NSA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{0.85\%} & 569 MB MB & 2.3 s s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Nsa Attention} & \textbf{90.83\%} & -0.11\% & PASS & 0.9119 & 0 & \textbf{0.99$\times$} & 339.9 MB & 4.5 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Nsa Attention} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 667.9 MB & 8.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Nsa Attention} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6753 & 0 & \textbf{0.99$\times$} & 568.7 MB & 9.8 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Density} is the average fraction of attended keys per query.
 

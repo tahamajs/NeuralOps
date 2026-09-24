@@ -961,22 +961,24 @@ Single seed (42).
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
-DistilBERT & \textbf{VSpec++} & \textbf{87.5} & -3.2 & 0.875 & 1070000 & \textbf{2.2$\times$} \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
-RoBERTa & \textbf{VSpec++} & \textbf{75.0} & -3.6 & 0.750 & 1070000 & \textbf{2.2$\times$} \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
-GPT-2 & \textbf{VSpec++} & \textbf{77.0} & -2.4 & 0.770 & 1070000 & \textbf{2.2$\times$} \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Vspec} & \textbf{75.34\%} & -15.60\% & PASS & 0.7835 & 0 & \textbf{1.20$\times$} & 283.9 MB & 25.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Vspec} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.14$\times$} & 566.1 MB & 37.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Vspec} & \textbf{50.92\%} & -6.99\% & PASS_LOW & 0.6748 & 0 & \textbf{1.22$\times$} & 479.6 MB & 39.0 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

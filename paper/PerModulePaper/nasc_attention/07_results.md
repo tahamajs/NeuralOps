@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Path | Time | Status |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | Dense | 1.9 s | PASS |
-| DistilBERT | **NASC** | **90.48** | **-0.23** | 0.9075 | models/weights.pt | 1.42x | PASS |
-| RoBERTa | full | 78.56% | — | 0.8124 | Dense | 4.1 s | PASS |
-| RoBERTa | **NASC** | **89.22** | **+10.66** | 0.9011 | models/weights.pt | 2.3 s | PASS |
-| GPT-2 | full | 79.36% | — | 0.7978 | Dense | 4.2 s | PASS |
-| GPT-2 | **NASC** | **85.32** | **+5.96** | 0.8683 | Cascade | 2.3 s | PASS |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Nasc Attention** | **89.11%** | -1.37% | PASS | 0.8917 | 0 | **0.99x** | 339.6 MB | 12.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Nasc Attention** | **85.55%** | +10.44% | PASS | 0.8587 | 0 | **0.94x** | 388.0 MB | 24.0s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Nasc Attention** | **50.92%** | -9.86% | PASS_LOW | 0.6748 | 0 | **0.99x** | 1514.1 MB | 54.5s |
 
 **Key observations:**
 

@@ -7,17 +7,20 @@ We evaluate \texttt{proxsparse} across three canonical language understanding ta
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 76.03\% & 0.7821 & 1.00$\times$ & 0.6791 & 302.9 MB & 53548 & 4.76 s \\
-MNLI & PASS & 40.80\% & 0.3418 & 1.00$\times$ & 0.6793 & 304.5 MB & 52462 & 6.71 s \\
-AG News & PASS & 85.40\% & 0.8483 & 1.00$\times$ & 0.6792 & 326.5 MB & 110546 & 7.77 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Proxsparse Pruner} & \textbf{78.33\%} & -12.15\% & PASS & 0.7845 & 0 & \textbf{1.00$\times$} & 337.6 MB & 17.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Proxsparse Pruner} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.00$\times$} & 361.5 MB & 24.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Proxsparse Pruner} & \textbf{54.01\%} & -6.77\% & PASS_LOW & 0.4866 & 0 & \textbf{1.00$\times$} & 636.0 MB & 21.6 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{proxsparse} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_proxsparse}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

@@ -531,17 +531,20 @@ We evaluate \texttt{swift\_svd\_act} across three canonical language understandi
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 91.06\% & 0.9137 & 1.00$\times$ & -- & 303.7 MB & 54920 & 10.30 s \\
-MNLI & PASS & 81.50\% & 0.8145 & 1.00$\times$ & -- & 305.3 MB & 47728 & 13.62 s \\
-AG News & PASS & 94.60\% & 0.9422 & 1.00$\times$ & -- & 326.5 MB & 4790 & 588.69 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Swift Svd Act} & \textbf{90.48\%} & +0.00\% & PASS & 0.9077 & 0 & \textbf{1.00$\times$} & 311.2 MB & 22.2 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Swift Svd Act} & \textbf{72.02\%} & -3.09\% & PASS & 0.7724 & 0 & \textbf{1.00$\times$} & 301.7 MB & 32.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Swift Svd Act} & \textbf{60.09\%} & -0.69\% & PASS & 0.6463 & 1 & \textbf{1.00$\times$} & 637.3 MB & 30.2 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{swift\_svd\_act} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_swift_svd_act}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

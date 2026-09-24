@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ | Storage |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 134 MB |
-| DistilBERT | **salt** | **80.28** | -10.43 | 0.8102 | **48.2\%×** | 256 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 249 MB |
-| RoBERTa | **salt** | **50.92** | -27.64 | 0.6748 | **32×** | 84.5 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 249 MB |
-| GPT-2 | **salt** | **50.92** | -28.44 | 0.6748 | **32×** | 84.5 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Salt Attention** | **80.28%** | -10.20% | PASS | 0.8102 | 0 | **1.24x** | 337.8 MB | 8.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Salt Attention** | **50.92%** | -24.19% | PASS_LOW | 0.6748 | 0 | **1.18x** | 338.5 MB | 15.7s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Salt Attention** | **50.92%** | -9.86% | PASS_LOW | 0.6748 | 0 | **1.26x** | 583.3 MB | 18.0s |
 
 **Key observations:**
 

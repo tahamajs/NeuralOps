@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_minimalsvdv2} details empirical evaluation metrics ac
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_minimal\_svd\_v2/distilbert/summary.csv} & distilbert & minimal\_svd\_v2 & PASS & 88.19 & 0.8891 \\
-\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_minimal\_svd\_v2/gpt2/summary.csv} & gpt2 & minimal\_svd\_v2 & PASS & 59.86 & 0.7107 \\
-\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_minimal\_svd\_v2/roberta/summary.csv} & roberta & minimal\_svd\_v2 & PASS & 64.56 & 0.7193 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Minimal Svd V2} & \textbf{85.44\%} & -5.04\% & PASS & 0.8670 & 0 & \textbf{1.15$\times$} & 293.2 MB & 8.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Minimal Svd V2} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.09$\times$} & 339.0 MB & 15.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Minimal Svd V2} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 494.7 MB & 18.1 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{minimalsvdv2}.}
-\label{tab:results_acc_minimalsvdv2}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

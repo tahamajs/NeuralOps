@@ -531,17 +531,20 @@ We evaluate \texttt{kronecker\_tt\_lora} across three canonical language underst
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & \texttt{REJECTED\_EXPANSION} & 91.06\% & 0.9135 & 0.98$\times$ & -- & 334.9 MB & 12230 & 25.98 s \\
-MNLI & \texttt{REJECTED\_EXPANSION} & 81.50\% & 0.8147 & 0.98$\times$ & -- & 336.5 MB & 13635 & 76.37 s \\
-AG News & \texttt{REJECTED\_EXPANSION} & 94.40\% & 0.9403 & 0.98$\times$ & -- & 376.2 MB & 27691 & 36.31 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kronecker Tt Lora} & \textbf{90.60\%} & +0.12\% & PASS & 0.9095 & 0 & \textbf{0.98$\times$} & 345.9 MB & 19.5 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kronecker Tt Lora} & \textbf{83.72\%} & +8.61\% & PASS & 0.8515 & 0 & \textbf{0.98$\times$} & 333.2 MB & 25.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kronecker Tt Lora} & \textbf{55.16\%} & -5.62\% & PASS_LOW & 0.6787 & 0 & \textbf{0.98$\times$} & 804.5 MB & 25.1 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{kronecker\_tt\_lora} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_kronecker_tt_lora}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

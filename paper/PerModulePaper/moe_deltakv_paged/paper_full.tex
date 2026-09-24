@@ -1111,22 +1111,24 @@ Single seed (42). Limitation stated in Section 10.
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Pages} & \textbf{Selected} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & -- & -- & 183 MB \\
-DistilBERT & \textbf{MoE-DeltaKV} & \textbf{86.47} & -4.24 & 0.8628 & 0.85 & 84.5 & 322 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & -- & -- & 712 MB \\
-RoBERTa & \textbf{MoE-DeltaKV} & \textbf{59.75} & -18.81 & 0.6880 & 0.85 & 84.5 & 364 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & -- & -- & 793 MB \\
-GPT-2 & \textbf{MoE-DeltaKV} & \textbf{50.92} & -28.44 & 0.6439 & 0.85 & 84.5 & 557 MB MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Moe Deltakv Paged} & \textbf{86.35\%} & -4.59\% & PASS & 0.8682 & 0 & \textbf{1.00$\times$} & 321.8 MB & 9.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Moe Deltakv Paged} & \textbf{61.70\%} & -13.76\% & PASS & 0.6528 & 0 & \textbf{0.95$\times$} & 649.5 MB & 19.1 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Moe Deltakv Paged} & \textbf{51.61\%} & -36.23\% & PASS_LOW & 0.6393 & 24 & \textbf{1.01$\times$} & 327.8 MB & 29.1 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

@@ -1,3 +1,12 @@
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Saes Svd Compressor** | **90.83%** | -0.11% | PASS | 0.9113 | 0 | **1.00x** | 308.3 MB | 21.7 |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Saes Svd Compressor** | **51.49%** | -23.97% | PASS_LOW | 0.6769 | 0 | **1.00x** | 528.4 MB | 26.2 |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Saes Svd Compressor** | **50.92%** | -6.99% | PASS_LOW | 0.6748 | 0 | **1.00x** | 635.8 MB | 25.8 |
+
 # 7. Empirical Results and Benchmark Evaluations
 
 ## 7.1 Downstream Accuracy and Classification Performance

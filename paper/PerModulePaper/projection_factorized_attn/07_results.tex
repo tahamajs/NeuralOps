@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_projectionfactorizedattn} details empirical evaluatio
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_projection\_factorized\_attn/distilbert/summary.csv} & distilbert & projection\_factorized\_attn & PASS & 81.19 & 0.8229 \\
-\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_projection\_factorized\_attn/gpt2/summary.csv} & gpt2 & projection\_factorized\_attn & PASS\_LOW & 54.82 & 0.6893 \\
-\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_projection\_factorized\_attn/roberta/summary.csv} & roberta & projection\_factorized\_attn & PASS & 62.73 & 0.7043 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Projection Factorized Attn} & \textbf{81.42\%} & -9.52\% & PASS & 0.8231 & 24 & \textbf{1.23$\times$} & 271.6 MB & 16.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Projection Factorized Attn} & \textbf{51.15\%} & -24.31\% & PASS_LOW & 0.6748 & 48 & \textbf{1.16$\times$} & 554.6 MB & 27.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Projection Factorized Attn} & \textbf{60.78\%} & -27.06\% & PASS & 0.7178 & 72 & \textbf{1.25$\times$} & 293.9 MB & 36.3 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{projectionfactorizedattn}.}
-\label{tab:results_acc_projectionfactorizedattn}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

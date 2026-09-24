@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Pages | Selected | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | — | 183 MB |
-| DistilBERT | **MoE-DeltaKV** | **86.47** | -4.24 | 0.8628 | 0.85 | 84.5 | 322 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | — | 712 MB |
-| RoBERTa | **MoE-DeltaKV** | **59.75** | -18.81 | 0.6880 | 0.85 | 84.5 | 364 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | — | 793 MB |
-| GPT-2 | **MoE-DeltaKV** | **50.92** | -28.44 | 0.6439 | 0.85 | 84.5 | 557 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Moe Deltakv Paged** | **86.35%** | -4.59% | PASS | 0.8682 | 0 | **1.00x** | 321.8 MB | 9.4s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Moe Deltakv Paged** | **61.70%** | -13.76% | PASS | 0.6528 | 0 | **0.95x** | 649.5 MB | 19.1s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Moe Deltakv Paged** | **51.61%** | -36.23% | PASS_LOW | 0.6393 | 24 | **1.01x** | 327.8 MB | 29.1s |
 
 ## 7.2 Parameter Analysis
 

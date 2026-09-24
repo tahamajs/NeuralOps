@@ -14,11 +14,11 @@
 | Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
-| DistilBERT | **Fasa** | **90.71%** | +0.23% | PASS | 0.9107 | 0 | **0.99x** | 321.7 MB | 3.8s |
+| DistilBERT | **Mixattention Moska** | **90.94%** | +0.00% | PASS | 0.9131 | 24 | **0.99x** | 318.7 MB | 12.4s |
 | RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
-| RoBERTa | **Fasa** | **90.94%** | +2.18% | PASS | 0.9135 | 0 | **0.95x** | 400.1 MB | 8.8s |
+| RoBERTa | **Mixattention Moska** | **86.24%** | +10.78% | PASS | 0.8739 | 48 | **0.94x** | 648.2 MB | 24.1s |
 | GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
-| GPT-2 | **Fasa** | **87.50%** | +6.19% | PASS | 0.8832 | 0 | **1.00x** | 339.8 MB | 7.4s |
+| GPT-2 | **Mixattention Moska** | **87.27%** | -0.57% | PASS | 0.8835 | 72 | **1.00x** | 333.2 MB | 26.6s |
 
 **Key observations:**
 
