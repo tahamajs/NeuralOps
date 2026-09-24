@@ -317,16 +317,9 @@ def compute_confidence_interval_95(accs: List[float]) -> Tuple[float, float]:
 # Module discovery
 # ============================================================================
 def modules() -> List[str]:
-    try:
-        try:
-            from framework.run_qwen_zero_shot_sweep import available_modules
-        except ImportError:
-            from framework.scripts.run_qwen_zero_shot_sweep import available_modules
-        result = available_modules()
-        if result:
-            return result
-    except ImportError:
-        LOG.warning("available_modules not found, using fallback discovery")
+    import framework.attentions
+    import framework.compression_engine
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
 
     for package, folder in (
         ("framework.attentions", "attentions"),
@@ -347,7 +340,7 @@ def modules() -> List[str]:
     canonical = ["full"]
     for v in by_factory.values():
         canonical.append(sorted(v, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
-    return canonical
+    return sorted(list(set(canonical)), key=lambda item: (item != "full", item))
 
 
 # ============================================================================
@@ -4040,14 +4033,27 @@ def clear_vram_between_modules():
 
 def main():
     args = parse_args()
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     
+    all_available = modules()
     if isinstance(args.modules, list):
         raw_mods = []
         for item in args.modules:
             raw_mods.extend([x.strip() for x in item.split(",") if x.strip()])
-        names = modules() if (not raw_mods or raw_mods == ["all"]) else raw_mods
+        if not raw_mods or raw_mods == ["all"]:
+            names = all_available
+        elif raw_mods == ["attentions"]:
+            names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
+        elif raw_mods == ["compressors"]:
+            names = ["full"] + [m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"]
+        else:
+            names = raw_mods
     elif args.modules == "all":
-        names = modules()
+        names = all_available
+    elif args.modules == "attentions":
+        names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
+    elif args.modules == "compressors":
+        names = ["full"] + [m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"]
     else:
         names = [x.strip() for x in args.modules.split(",") if x.strip()]
 
