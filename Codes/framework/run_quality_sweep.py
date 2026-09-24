@@ -3481,7 +3481,10 @@ def run_single_module_main(args) -> dict:
                 except (ValueError, TypeError):
                     ppl_num = float("inf")
 
-                if math.isnan(ppl_num) or math.isinf(ppl_num):
+                if acc >= 100.0 and (ppl_num <= 0.0 or math.isnan(ppl_num) or math.isinf(ppl_num)):
+                    status = "INVALID"
+                    err = "INVALID: evaluated accuracy is 100.0% on language modeling task without valid perplexity"
+                elif math.isnan(ppl_num) or math.isinf(ppl_num):
                     status = "FAIL_PPL_NAN"
                     err = f"FAIL_PPL_NAN: non-finite perplexity ({ppl_val})"
                 elif ppl_num <= 50.0:
