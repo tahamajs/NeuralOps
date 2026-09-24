@@ -7,6 +7,10 @@ import shutil
 import pandas as pd
 from pathlib import Path
 
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 # Ensure online access for automated Hugging Face uploads
 os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
@@ -354,15 +358,22 @@ print("\n" + "=" * 80, flush=True)
 print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (ADMM)", flush=True)
 print("=" * 80, flush=True)
 
-from Codes.framework.utils.hf_git_exporter import (
-    find_documentation_file,
-    upload_to_huggingface,
-    update_documentation_table,
-    commit_and_push_git,
-)
+try:
+    from Codes.framework.utils.hf_git_exporter import (
+        find_documentation_file,
+        upload_to_huggingface,
+        update_documentation_table,
+        commit_and_push_git,
+    )
+except Exception as _e_imp:
+    print(f"[NOTE] Automated HF/Git export module not loaded: {_e_imp}", flush=True)
+    find_documentation_file = None
+    upload_to_huggingface = None
+    update_documentation_table = None
+    commit_and_push_git = None
 
 hf_org = "Hooshaai"
-doc_path = find_documentation_file("admm")
+doc_path = find_documentation_file("admm") if find_documentation_file else None
 pass_count = 0
 uploaded_repos = []
 
@@ -479,6 +490,7 @@ for m in all_benchmark_models:
 target_branch = "benchmark-results-admm"
 print(f"\nCommitting results and documentation updates to dedicated branch '{target_branch}'...", flush=True)
 commit_msg = f"feat(benchmark): ADMM 4-model evaluation ({pass_count}/{len(all_benchmark_models)} passed on SST-2)"
+push_res = None
 # push_res = commit_and_push_git(commit_msg, branch=target_branch)
 
 if push_res:
