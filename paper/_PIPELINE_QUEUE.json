@@ -2,13 +2,6 @@
   "max_parallel": 3,
   "jobs": [
     {
-      "id": "p3_gpt2_modegpt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules modegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_modegpt_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_delta_kv",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv",
@@ -8267,9 +8260,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_adasvd_compressor",
+      "id": "p3_gpt2_modegpt_factory",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_compressor",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules modegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_modegpt_factory",
       "status": "active",
       "retries": 0
     }
@@ -9100,6 +9093,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_factory",
       "started_at": "2026-09-24T04:54:59.567226",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_adasvd_compressor",
+      "id": "p3_gpt2_adasvd_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_compressor",
+      "started_at": "2026-09-24T04:59:39.245143",
       "retries": 0,
       "status": "done"
     }
