@@ -2,27 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_compressed_mha_fn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_fn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_adaptive_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_saes_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hybridkv_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybridkv_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybridkv_factory",
@@ -8160,13 +8139,31 @@
       "started_at": "2026-09-24T05:50:34.757205",
       "retries": 1,
       "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_compressed_mha_fn",
+      "id": "p3_gpt2_compressed_mha_fn",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_fn",
+      "started_at": "2026-09-24T05:57:14.653512",
+      "retries": 1,
+      "status": "pending"
+    },
+    {
+      "job_id": "p3_gpt2_adaptive_svd",
+      "id": "p3_gpt2_adaptive_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd",
+      "started_at": "2026-09-24T05:57:16.878380",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
     {
-      "id": "p3_gpt2_kmeans",
+      "id": "p3_gpt2_saes_svd",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules saes_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_saes_svd",
       "status": "active",
       "retries": 0
     }
@@ -9132,6 +9129,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_factory",
       "started_at": "2026-09-24T05:54:18.358560",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_kmeans",
+      "id": "p3_gpt2_kmeans",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
+      "started_at": "2026-09-24T05:56:19.525256",
       "retries": 0,
       "status": "done"
     }
