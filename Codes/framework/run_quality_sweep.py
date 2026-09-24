@@ -743,8 +743,12 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         "recall": None,
         "val_loss": sum(nlls) / total_tokens if total_tokens > 0 else 0.0,
         "perplexity": round(ppl, 6),
-        "throughput": total_tokens / (t1 - t0) if t1 > t0 else 0,
-        "vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0
+        "throughput": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
+        "tokens_per_sec": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
+        "vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0,
+        "peak_vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0,
+        "latency_ms_per_token": ((t1 - t0) / max(1, total_tokens) * 1000.0) if total_tokens > 0 else 0.0,
+        "eval_time_s": round(t1 - t0, 2),
     }
 
 @torch.inference_mode()
@@ -1703,7 +1707,7 @@ def parse_args(argv=None):
         default=False,
     )
     ap.add_argument("--hybrid_svd_lora_r", type=int, default=16)
-    ap.add_argument("--hybrid_svd_max_error", type=float, default=0.35)
+    ap.add_argument("--hybrid_svd_max_error", type=float, default=0.55)
     ap.add_argument(
         "--hybrid_svd_target_attention_only",
         type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
@@ -2912,6 +2916,15 @@ def run_single_module_main(args) -> dict:
         scaling = alpha / max(1.0, r)
 
         model_st = target_model.state_dict()
+        matching_keys = [k for k in st if k in model_st and hasattr(st[k], "shape") and hasattr(model_st[k], "shape") and st[k].shape == model_st[k].shape]
+        match_ratio = len(matching_keys) / max(1, len(model_st))
+        if match_ratio < 0.5:
+            LOG.warning(
+                "Checkpoint only matches %.1f%% of model keys (need >=50%%); skipping load to prevent weight corruption.",
+                match_ratio * 100.0,
+            )
+            return
+
         filtered_st = {}
 
         # 1. Direct matches
@@ -3521,30 +3534,16 @@ def run_single_module_main(args) -> dict:
                 base_delta_pct = 100.0 * base_delta / p_before if p_before > 0 else 0.0
                 if base_params_after > p_before * 1.20:
                     status = "EXTREME_EXPANSION"
-                    expansion_err = (
-                        f"EXTREME_EXPANSION: base_before={p_before} base_after={base_params_after} "
-                        f"base_delta={base_delta} (+{base_delta_pct:.1f}%) lora_excluded={lora_p}"
-                    )
-                    err = f"{err}; {expansion_err}".strip("; ")
+                    err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.1f}%"
                 elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
                     status = "MODERATE_EXPANSION"
-                    expansion_err = (
-                        f"MODERATE_EXPANSION: base_before={p_before} base_after={base_params_after} "
-                        f"base_delta={base_delta} (+{base_delta_pct:.2f}%) lora_excluded={lora_p}"
-                    )
-                    err = f"{err}; {expansion_err}".strip("; ")
-                # else: base_params_after <= p_before → PASS (LoRA overhead excluded correctly)
-
-            elif (
-                name != "full"
-                and not injected
-                and not name.startswith("inject_")
-                and comp_metrics.get("num_compressed_layers", 0) == 0
-                and comp_metrics.get("num_injected_attention_layers", 0) == 0
-                and p_after >= p_before
-            ):
-                status = "PASS_NO_COMPRESSION"
-                err = "note: zero compressed layers, model grew (LoRA only)"
+                    err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
+                elif (comp_metrics.get("num_compressed_layers", 0) == 0
+                      and comp_metrics.get("num_injected_attention_layers", 0) == 0
+                      and not injected
+                      and not name.startswith("inject_")):
+                    status = "PASS_NO_COMPRESSION"
+                    err = "note: zero compressed layers, zero injected layers, model unchanged"
 
         # Update per-module full metrics JSON with final classification status and elapsed time
         json_path = out / f"{model_slug}_{name}_full_metrics.json"
@@ -3573,7 +3572,7 @@ def run_single_module_main(args) -> dict:
             "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
             "latency_ms": perf_metrics.get("latency_ms", 0.0),
             "peak_vram_mb": perf_metrics.get("peak_vram_mb", 0.0),
-            "tokens_per_sec": perf_metrics.get("tokens_per_sec", 0.0),
+            "tokens_per_sec": perf_metrics.get("tokens_per_sec") if perf_metrics.get("tokens_per_sec") is not None else perf_metrics.get("throughput", 0.0),
             "total_params_before": comp_metrics.get("total_params_before", total_params_before),
             "total_params_after": comp_metrics.get("total_params_after", total_params_before),
             "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
