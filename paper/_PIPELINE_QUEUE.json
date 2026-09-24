@@ -1,69 +1,6 @@
 {
-  "max_parallel": 6,
+  "max_parallel": 4,
   "jobs": [
-    {
-      "id": "p3_gpt2_squeezing_heads_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_armor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_adaptive_ranks_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_ranks_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_ranks_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_svd_mamba",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_mamba --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_mamba",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_expert_choice_moe_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules expert_choice_moe_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_expert_choice_moe_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lsc_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_admm_pruner",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_pruner",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_minimal_aurora",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_aurora --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_aurora",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lsc_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_factory",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_adaptive_sparse",
       "type": "gpu",
@@ -12289,41 +12226,97 @@
       "started_at": "2026-09-24T03:28:36.792847",
       "retries": 1,
       "status": "pending"
-    }
-  ],
-  "active": [
+    },
     {
       "id": "p3_gpt2_soa_attn_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules soa_attn_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_soa_attn_inject",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_huffman",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules huffman --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_huffman",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_dynamic_rank",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_svd_linear_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_attn",
-      "status": "active",
+      "status": "pending",
       "retries": 0
     },
     {
       "id": "p3_gpt2_regla",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules regla --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_regla",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_squeezing_heads_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_inject",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_armor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules armor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_armor",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_adaptive_ranks_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_ranks_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_ranks_factory",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_inject_svd_mamba",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_mamba --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_mamba",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_expert_choice_moe_attention",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules expert_choice_moe_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_expert_choice_moe_attention",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_lsc_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_compressor",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [
+    {
+      "id": "p3_gpt2_minimal_aurora",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_aurora --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_aurora",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_lsc_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_factory",
       "status": "active",
       "retries": 0
     }
@@ -13064,6 +13057,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_inject",
       "started_at": "2026-09-24T03:29:55.783639",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_admm_pruner",
+      "id": "p3_gpt2_admm_pruner",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules admm_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_admm_pruner",
+      "started_at": "2026-09-24T04:15:50.920242",
       "retries": 0,
       "status": "done"
     }
