@@ -166,6 +166,19 @@ def run_single_module(
         print(f"\n[ERROR] Exception while running {module_name}: {exc}", flush=True)
         exit_code = -1
 
+    # Prune any heavy .pt tensor files produced during the run to preserve disk space
+    try:
+        results_dir = runner_path.parent.parent.parent / "results"
+        for candidate_dir in [results_dir / f"unified_{module_name}", results_dir / module_name]:
+            if candidate_dir.exists():
+                for pt_file in candidate_dir.glob("**/*.pt"):
+                    try:
+                        pt_file.unlink()
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
     elapsed_s = round(time.time() - start_time, 2)
     status_str = "SUCCESS" if exit_code == 0 else f"FAILED (exit: {exit_code})"
     if echo_stdout:
