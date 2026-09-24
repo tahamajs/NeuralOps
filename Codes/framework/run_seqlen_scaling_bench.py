@@ -152,6 +152,7 @@ def run_benchmark_for_module(
 
     # 2. Apply module
     adapted_model = base_model
+    base_dtype = next(base_model.parameters()).dtype
     if module_name.lower() not in ("full_attention", "dense", "baseline", "full"):
         try:
             logger.info("Injecting module '%s' into base model...", module_name)
@@ -162,6 +163,8 @@ def run_benchmark_for_module(
                 rank=16,
                 device=device,
             )
+            # Ensure all newly injected parameters match device and precision
+            adapted_model = adapted_model.to(device=device, dtype=base_dtype)
             adapted_model.eval()
         except Exception as e:
             logger.error("Failed to inject module '%s': %s", module_name, e)
@@ -250,16 +253,26 @@ def save_results(
             writer.writerow([r["seq_len"], r["throughput_tok_sec"], r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
     logger.info("Saved module summary to: %s", summary_path)
 
-    # 2. Append to master CSV
+    # 2. Update master CSV (replace old rows for module if present)
     os.makedirs(os.path.dirname(os.path.abspath(master_csv)), exist_ok=True)
-    master_exists = os.path.exists(master_csv)
-    with open(master_csv, mode="a", newline="", encoding="utf-8") as f:
+    existing_rows = []
+    if os.path.exists(master_csv) and os.path.getsize(master_csv) > 0:
+        with open(master_csv, mode="r", newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if header:
+                for row in reader:
+                    if row and row[0] != module_name:
+                        existing_rows.append(row)
+
+    with open(master_csv, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        if not master_exists or os.path.getsize(master_csv) == 0:
-            writer.writerow(["module", "group", "seq_len", "throughput_tok_sec", "latency_ms_per_token", "peak_vram_mb", "status"])
+        writer.writerow(["module", "group", "seq_len", "throughput_tok_sec", "latency_ms_per_token", "peak_vram_mb", "status"])
+        for r in existing_rows:
+            writer.writerow(r)
         for r in results:
             writer.writerow([module_name, group_name, r["seq_len"], r["throughput_tok_sec"], r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
-    logger.info("Appended results to master CSV: %s", master_csv)
+    logger.info("Updated master CSV with %d rows: %s", len(results), master_csv)
 
 
 def main():
