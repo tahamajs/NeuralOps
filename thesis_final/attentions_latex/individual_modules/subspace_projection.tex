@@ -1,0 +1,67 @@
+\section{ماژول subspace\_projection (Subspace Projection Compressor)}
+\label{sec:module_subspace_projection}
+
+\subsection{معرفی و انگیزه}
+ماتریس‌های وزن در مدل‌های ترنسفورمر پیش‌آموزش‌دیده دارای درجه بالایی از افزونگی طیفی هستند؛ بدین معنا که بخش عمده‌ای از ظرفیت تبدیل خطی در زیرفضای کوچکی از ابعاد فعال‌سازی متمرکز شده است. بر این اساس، نگاشت وزن‌ها به یک زیرفضای متعامد با بعد کمتر می‌تواند کاهش چشمگیری در تعداد پارامترهای آموزش‌پذیر و فضای اشغالی حافظه بدون قربانی کردن قابلیت‌های ادراکی مدل ایجاد کند.
+
+ماژول \lr{subspace\_projection} بر مبنای ایده تصویر وزن‌ها روی زیرفضای کم‌مرتبه (\lr{Low-Rank Subspace Projection}) با استفاده از فاکتورگیری تجزیه مقادیر منفرد (\lr{SVD}) و الحاق اختیاری آداپتورهای کم‌مرتبه (\lr{LoRA}) پیاده‌سازی شده است. این الگوریتم به مدل اجازه می‌دهد تا ماتریس وزن بزرگ $\mathbf{W}$ را به صورت حاصل‌ضرب پایه تصویر متعامد و ماتریس ضرایب بازسازی تقریب زده و در صورت نیاز، مانده خطا را از طریق ریزتنظیم پارامترهای آداپتور جبران نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی تجزیه زیرفضا و نگاشت در این ماژول به صورت زیر تبیین می‌گردد:
+\begin{enumerate}
+    \item \textbf{تجزیه زیرفضای متعامد با SVD:}
+    ماتریس وزن اصلی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تجزیه مقادیر منفرد تجزیه می‌شود:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top
+    \end{equation}
+    سپس دو ماتریس عامل به گونه‌ای استخراج می‌شوند که $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ پایه تصویرگر و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ ماتریس انبساط ضرایب باشد:
+    \begin{equation}
+    \mathbf{A} = \mathbf{V}_r^\top, \quad \mathbf{B} = \mathbf{U}_r \boldsymbol{\Sigma}_r \implies \mathbf{W} \approx \mathbf{B} \mathbf{A}
+    \end{equation}
+    \item \textbf{محاسبه گذر پیشرو لایه فاکتورگیری‌شده:}
+    ورودی $\mathbf{x} \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ در گذر پیشرو مستقیماً از طریق دو تبدیل خطی متوالی نگاشت می‌یابد:
+    \begin{equation}
+    \mathbf{x}_{\text{proj}} = \mathbf{x} \mathbf{A}^\top \in \mathbb{R}^{B \times L \times r}, \quad \mathbf{y}_{\text{base}} = \mathbf{x}_{\text{proj}} \mathbf{B}^\top + \mathbf{b}
+    \end{equation}
+    \item \textbf{الحاق تطبیق‌دهنده کم‌مرتبه (\lr{LoRA Integration}):}
+    در صورت فعال‌بودن شاخه آداپتور، خروجی کلی لایه از ترکیب تبدیل زیرفضا و سهم گرادیانی آداپتور حاصل می‌شود:
+    \begin{equation}
+    \mathbf{y} = \mathbf{y}_{\text{base}} + \frac{\alpha_{\text{lora}}}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این رویکرد در فایل \lr{Codes/framework/compression\_engine/subspace\_projection.py} سازمان‌دهی شده و دربرگیرنده مؤلفه‌های زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{SubspaceLinear}:} یک ماژول جایگزین کامل برای لایه‌های متراکم و \lr{Conv1D} که پارامترهای $\mathbf{A}$ و $\mathbf{B}$ را به همراه پارامترهای اختیاری \lr{lora\_A} و \lr{lora\_B} مدیریت می‌کند. این لایه مجهز به متد کارخانه‌ای \lr{from\_linear} برای تبدیل بی‌درنگ لایه‌های موجود با روش‌های تجزیه SVD یا مقداردهی تصادفی متعامد است.
+    \item \textbf{کلاس \lr{SubspaceProjectionCompressor}:} مدیریت زنجیره فشرده‌سازی مدل، فیلتر کردن لایه‌های حساس با \lr{should\_compress\_linear}، اعمال آستانه بیشینه خطای بازسازی مجاز (\lr{max\_error})، و بازگردانی لایه‌های آسیب‌پذیر از طریق قابلیت بازگشت امنیتی (\lr{fallback}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک یکپارچه برای ماژول \lr{subspace\_projection} بر روی مدل‌های زبانی هدف در جدول \ref{tab:benchmark_subspace_projection} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول تصویر زیرفضا \lr{subspace\_projection} روی مدل‌های پایه}
+\label{tab:benchmark_subspace_projection}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.8993} & \lr{338.8 MB} & \lr{18.5 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8535} & \lr{364.3 MB} & \lr{27.8 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{59.52\%} & \lr{0.6596} & \lr{637.3 MB} & \lr{24.9 s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+یافته‌های آزمایشگاهی نشان می‌دهند که فشرده‌ساز \lr{subspace\_projection} دارای عملکردی متوازن و بسیار قوی در سراسر معماری‌های ارزیابی‌شده است؛ به طوری که در تمام مدل‌های \lr{DistilBERT}، \lr{RoBERTa} و \lr{GPT-2} به وضعیت قبولی قطعی \lr{PASS} دست یافته است. نکته حائز اهمیت، بهبود قابل‌توجه دقت در مدل \lr{RoBERTa} است که از دقت پایه \lr{75.11\%} به \lr{84.17\%} (+9.06\%) ارتقا یافته است؛ پدیده‌ای که ناشی از اثر تنظیم‌کنندگی (\lr{Regularization}) تصویر زیرفضای کم‌مرتبه و حذف نویز ابعاد فرعی وزن‌ها ارزیابی می‌شود. مدل \lr{Qwen} با وضعیت \lr{NOT\_RUN} مشخص شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+نقاط چالش‌برانگیز در به‌کارگیری این ماژول عبارتند از:
+\begin{itemize}
+    \item \textbf{حساسیت عملکرد به تناسب بعد زیرفضا ($r$):} در صورت تعیین مقدار بسیار کوچک برای مرتبه زیرفضا، مدل به مرحله بحرانی تنگنای اطلاعاتی رسیده و افت ناگهانی دقت رخ می‌دهد. برعکس، انتخاب رتبه بالا مزیت فشرده‌سازی و تسریع محاسباتی را زایل می‌کند.
+    \item \textbf{انحراف هم‌ترازی پایه‌ها حین آموزش دنباله‌دار:} در صورتی که پایه تصویرگر $\mathbf{A}$ منجمد نشود و آموزش بدون قید تعامد ادامه یابد، ارتوگونالیتی پایه‌ها تخریب شده و مدل نیازمند تجدید مکرر تجزیه مقادیر منفرد خواهد بود.
+\end{itemize}

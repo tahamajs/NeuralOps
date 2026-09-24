@@ -1,0 +1,71 @@
+\section{ماژول slicegpt\_pca (SliceGPT PCA Compressor)}
+\label{sec:module_slicegpt_pca}
+
+\subsection{معرفی و انگیزه}
+کاهش ابعاد بازنمایی‌های میانی در مدل‌های زبانی حجیم، بدون افت محسوس دقت زبانی، یکی از چالش‌های بنیادین در فشرده‌سازی شبکه‌های ترنسفورمر به شمار می‌رود. روش‌های سنتی هرس ستونی یا سطری، ناهمگونی شدیدی در توزیع واریانس ابعاد فعال‌سازی ایجاد می‌کنند که به تخریب نمایش ویژگی‌ها منجر می‌شود.
+
+ماژول \lr{slicegpt\_pca} با تلفیق ایده برش محاسباتی ساختاریافته (\lr{SliceGPT}) و تحلیل مؤلفه‌های اصلی (\lr{PCA})، یک چارچوب فشرده‌سازی مبتنی بر داده کالیبراسیون ارائه می‌دهد. این الگوریتم با انتقال ماتریس‌های فعال‌سازی به پایه متعامد مؤلفه‌های اصلی، ابعادی را که کمترین واریانس تجمعی را حمل می‌کنند حذف نموده و وزن‌های پایه را منجمد می‌سازد. همچنین به منظور جبران افت دقت ناشی از کاهش بعد، امکان الحاق آداپتورهای کم‌مرتبه آموزش‌پذیر (\lr{LoRA}) در ساختار لایه تعبیه شده است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در این ماژول طی مراحل ریاضی زیر انجام می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{گردآوری فعال‌سازی‌ها:} با عبور دسته‌های کالیبراسیون از مدل، ماتریس نمونه فعال‌سازی ورودی لایه $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ با میانگین $\boldsymbol{\mu} \in \mathbb{R}^{d_{\text{in}}}$ جمع‌آوری می‌شود.
+    \item \textbf{محاسبه کوواریانس تجربی:} ماتریس کوواریانس نمونه‌ها به صورت زیر محاسبه می‌گردد:
+    \begin{equation}
+    \boldsymbol{\Sigma} = \frac{1}{N - 1} (\mathbf{X} - \boldsymbol{\mu})^\top (\mathbf{X} - \boldsymbol{\mu}) \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه ویژه (\lr{Eigendecomposition}):} ماتریس کوواریانس به پایه‌های ارتوگونال تجزیه می‌شود:
+    \begin{equation}
+    \boldsymbol{\Sigma} = \mathbf{V} \boldsymbol{\Lambda} \mathbf{V}^\top
+    \end{equation}
+    که در آن مقادیر ویژه $\lambda_1 \ge \lambda_2 \ge \dots \ge \lambda_{d_{\text{in}}} \ge 0$ نشان‌دهنده میزان پراکندگی در امتداد بردارهای ویژه متناظر در ستون‌های $\mathbf{V}$ هستند.
+    \item \textbf{تعیین بعد برش بر مبنای واریانس تجمعی:} با تعیین نسبت تنک‌سازی (\lr{sparsity})، بعد موثر $k$ بر اساس سهم واریانس تجمعی حفظ‌شده انتخاب می‌شود:
+    \begin{equation}
+    k = \min \left\{ r \;\middle|\; \frac{\sum_{i=1}^r \lambda_i}{\sum_{i=1}^{d_{\text{in}}} \lambda_i} \ge 1 - \text{sparsity} \right\}
+    \end{equation}
+    \item \textbf{تبدیل و نگاشت وزن‌ها:} ماتریس وزن پایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تصویر روی $k$ مؤلفه نخست به صورت متعامد دگرگون و بازسازی می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{sliced}} = (\mathbf{W} \mathbf{V}) \mathbf{P}_k \mathbf{P}_k^\top \mathbf{V}^\top
+    \end{equation}
+    که در آن $\mathbf{P}_k \in \mathbb{R}^{d_{\text{in}} \times k}$ ماتریس تصویرگر روی $k$ بعد برتر است.
+    \item \textbf{ادغام لایه با آداپتور کم‌مرتبه (\lr{LoRA}):} خروجی نهایی لایه منجمدشده با تصحیح کم‌مرتبه محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{y} = (\mathbf{x} \mathbf{W}_{\text{sliced}}^\top + \mathbf{b}) + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این رویکرد در فایل \lr{Codes/framework/compression\_engine/slicegpt\_pca.py} با کلاس‌های اصلی زیر تعریف گردیده است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{SliceGPTPCALoRALinear}:} به عنوان زیرکلاسی از \lr{nn.Module}، نگه‌دارنده وزن‌های منجمدشده برش‌یافته با \lr{requires\_grad=False} و پارامترهای آموزش‌پذیر $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ است. مقداردهی اولیه آداپتور $\mathbf{B}$ با صفر انجام می‌پذیرد تا در بدو امر رفتار لایه دقیقاً منطبق بر ماتریس تصویر باشد.
+    \item \textbf{کلاس فشرده‌ساز \lr{SliceGPTPCACompressor}:} مدیریت هوک‌های کالیبراسیون، استخراج ماتریس‌های فعال‌سازی لایه‌ای، حل معادلات ویژه‌مقدار با \lr{torch.linalg.eigh}، محافظت از لایه‌های حساس مانند طبقه‌بند و توکن‌بندی، و اعمال جایگزینی ماژول‌ها از طریق \lr{replace\_module} را بر عهده دارد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک یکپارچه برای ماژول \lr{slicegpt\_pca} بر روی مدل‌های زبانی هدف در جدول \ref{tab:benchmark_slicegpt_pca} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{slicegpt\_pca} روی معماری‌های گوناگون}
+\label{tab:benchmark_slicegpt_pca}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{312.2 MB} & \lr{25.9 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{67.66\%} & \lr{0.7496} & \lr{301.0 MB} & \lr{30.9 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{637.3 MB} & \lr{37.1 s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، مدل \lr{DistilBERT} دقت پایه خود (\lr{90.48\%}) را به طور کامل و بدون کوچکترین افت حفظ کرده است (\lr{Delta Acc: +0.00\%}). در مدل خودبازگشتی \lr{GPT-2} دقت با رشد مواجه شده و به \lr{62.04\%} رسیده است (\lr{Delta Acc: +1.26\%}). در مدل \lr{RoBERTa} به دلیل ساختار پیچیده فضاهای نهفته لایه‌های میانی، افت دقت \lr{-7.45\%} مشاهده شده اما حدنصاب پذیرش با وضعیت \lr{PASS} احراز گردیده است. مدل \lr{Qwen} به دلیل الزامات محاسباتی لایه‌های چندگروهی (\lr{GQA}) در چرخه بنچ‌مارک به صورت \lr{NOT\_RUN} ثبت شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل چالش‌ها و رفتار شکست این الگوریتم به شرح ذیل است:
+\begin{itemize}
+    \item \textbf{وابستگی شدید به کیفیت توزیع کالیبراسیون:} از آنجا که جهت‌های حفظ‌شده مستقیماً از ماتریس کوواریانس فعال‌سازی‌ها استخراج می‌شوند، هرگونه ناهمگونی آماری بین نمونه‌های کالیبراسیون و داده‌های آزمون، موجب تصویر وزن‌ها روی زیرفضای نامناسب و افت شدید دقت می‌گردد.
+    \item \textbf{تداخل با مکانیزم‌های توجه نامتقارن (\lr{GQA/MQA}):} در مدل‌های زبانی نوین با مکانیزم‌های \lr{Grouped-Query Attention}، تعداد سرهای کلید و مقدار با سرهای پرسمان متفاوت است؛ نگاشت ناهمگون PCA در این لایه‌ها بدون هم‌ترازی فضایی موجب انحراف در ضرب ماتریسی توجه خواهد شد.
+\end{itemize}

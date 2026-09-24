@@ -1,0 +1,83 @@
+\section{ماژول svd\_llm\_compressor (SVD-LLM Truncation-Aware Compressor)}
+\label{sec:module_svd_llm_compressor}
+
+\subsection{معرفی و انگیزه}
+در فشرده‌سازی مدل‌های زبانی بزرگ (\lr{LLMs}) به روش تجزیه مقادیر منفرد سنتی، فرض بر این است که اهمیت مولفه‌های ماتریس وزن صرفاً توسط مقادیر منفرد آن تعیین می‌گردد. با این حال، در شبکه‌های عصبی عمیق، فعال‌سازی‌های ورودی هر لایه دارای توزیع ناهمگن و حاوی مقادیر پرت با واریانس بالا (\lr{Activation Outliers}) هستند. نادیده گرفتن این فعال‌سازی‌ها در تجزیه وزن‌ها، منجر به انحراف شدید خروجی لایه‌ها و فروپاشی دقت بازنمایی زبانی می‌گردد.
+
+ماژول \lr{svd\_llm\_compressor} بر پایه مقاله مرجع \lr{SVD-LLM: Truncation-Aware Singular Value Decomposition for Large Language Model Compression} (منتشر شده در کنفرانس \lr{ICLR 2025}) پیاده‌سازی شده است. این روش با بهره‌گیری از سفیدسازی ماتریس وزن بر مبنای تجزیه کلسکی کوواریانس داده‌های کالیبراسیون و همچنین به‌کارگیری استراتژی ریزتنظیم ترتیبی دو مرحله‌ای با آداپتورهای \lr{LoRA}، تعادلی بهینه میان نرخ فشرده‌سازی و حفظ پایداری زبانی ایجاد می‌کند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+الگوریتم \lr{SVD-LLM} از سه مرحله بنیادین ریاضی تشکیل یافته است:
+
+\textbf{۱. جمع‌آوری کوواریانس و سفیدسازی فعال‌سازی (\lr{Cholesky Whitening}):} \\
+با عبور داده‌های کالیبراسیون از مدل، ماتریس فعال‌سازی‌های ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ برای هر لایه خطی با وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ جمع‌آوری شده و ماتریس کوواریانس تجربی محاسبه می‌گردد:
+\begin{equation}
+\mathbf{C} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I}
+\end{equation}
+با اعمال تجزیه کلسکی بر روی ماتریس تقارنی و مثبت معین کوواریانس، ماتریس مثلثی بالایی $\mathbf{S} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ حاصل می‌شود به طوری که $\mathbf{C} = \mathbf{S}^\top \mathbf{S}$. سپس ماتریس وزن اصلی با این فاکتور سفیدسازی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{white}} = \mathbf{W} \mathbf{S}^\top
+\end{equation}
+
+\textbf{۲. تجزیه مقادیر منفرد برش‌یافته و بازگشت از سفیدسازی (\lr{Truncation and Unwhitening}):} \\
+تجزیه مقادیر منفرد بر روی ماتریس وزن سفیدشده $\mathbf{W}_{\text{white}}$ انجام می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{white}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+که در آن $r$ بر اساس نسبت پارامتری هدف $R \in (0, 1]$ به صورت $r = \lfloor \frac{R \cdot d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \rfloor$ انتخاب می‌گردد. سپس فاکتور راست با ضرب در وارون ماتریس کلسکی از سفیدسازی خارج می‌شود:
+\begin{equation}
+\mathbf{V}_{\text{unw}}^\top = \mathbf{V}_r^\top (\mathbf{S}^\top)^{-1}
+\end{equation}
+ماتریس‌های فاکتور نهایی با توزیع متقارن جذر مقادیر منفرد تشکیل می‌شوند:
+\begin{equation}
+\mathbf{W}_u = \mathbf{U}_r \sqrt{\mathbf{\Sigma}_r} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{W}_v = \sqrt{\mathbf{\Sigma}_r} \mathbf{V}_{\text{unw}}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+
+\textbf{۳. ریزتنظیم ترتیبی با آداپتورهای \lr{LoRA} (\lr{Sequential LoRA Fine-Tuning}):} \\
+به منظور جبران خطای باقیمانده، دو جفت آداپتور کم‌مرتبه $(\mathbf{A}_u, \mathbf{B}_u)$ و $(\mathbf{A}_v, \mathbf{B}_v)$ متناظر با فاکتورهای $\mathbf{W}_u$ و $\mathbf{W}_v$ تعبیه می‌شوند:
+\begin{equation}
+\mathbf{z} = \mathbf{x} \mathbf{W}_v^\top + \frac{\alpha}{r_L} (\mathbf{x} \mathbf{A}_v^\top) \mathbf{B}_v^\top
+\end{equation}
+\begin{equation}
+\mathbf{y} = \mathbf{z} \mathbf{W}_u^\top + \frac{\alpha}{r_L} (\mathbf{z} \mathbf{A}_u^\top) \mathbf{B}_u^\top + \mathbf{b}
+\end{equation}
+آموزش جبرانی در دو مرحله ترتیبی مجزا اجرا می‌گردد: در مرحله نخست، $\mathbf{W}_v$ منجمد شده و آداپتورهای $\mathbf{W}_u$ آموزش می‌بینند؛ در مرحله دوم، $\mathbf{W}_u$ منجمد شده و آداپتورهای $\mathbf{W}_v$ به‌روزرسانی می‌شوند تا اثر تداخل گرادیان‌ها به حداقل برسد.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این الگوریتم در مسیر \lr{Codes/framework/compression\_engine/svd\_llm\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{svd\_llm} و \lr{svd\_llm\_compressor} در رجیستری فشرده‌سازی ثبت گردیده است. قابلیت‌های کلیدی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول فاکتورشده \lr{SVDLLMLinear}:} ساختار لایه فاکتورشده با مدیریت هم‌زمان دو فاکتور صریح $\mathbf{W}_u$ و $\mathbf{W}_v$ و جفت آداپتورهای ریزتنظیم ترتیبی.
+    \item \textbf{مدیریت مراحل آموزش ترتیبی (\lr{set\_active\_lora\_stage}):} متد تعبیه‌شده برای تغییر پویای وضعیت آموزش‌پذیری پارامترها بین \lr{stage1}، \lr{stage2} و حالت استنتاج منجمد.
+    \item \textbf{خط‌لوله خودکار داده‌های کالیبراسیون:} پشتیبانی از بارگذاری خودکار نمونه‌های استاندارد از مجموعه داده \lr{WikiText-2} و جایگزینی با متون چنددامنه‌ای در حالت آفلاین.
+    \item \textbf{پشتیبانی از انواع لایه‌های متراکم و کانولوشن:} سازگاری کامل با نگاشت‌های دوگان در \lr{DistilBERT}، \lr{RoBERTa/BERT} و لایه‌های \lr{Conv1D} در \lr{GPT-2}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{svd\_llm\_compressor} بر مبنای لاگ‌ها و فایل‌های نتایج تفصیلی تاییدشده سیستم در جدول \ref{tab:benchmark_svd_llm_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز آگاه از برش \lr{svd\_llm\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_svd_llm_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.79\%} & \lr{0.9012} & \lr{405.58 MB} & \lr{73,222.18 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8516} & \lr{551.55 MB} & \lr{4,092.91 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.0000} & \lr{439.12 MB} & -- & \lr{FAIL (PPL Diverged)} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی نتایج نشان می‌دهد که در مدل‌های انکودر متقارن، سفیدسازی کلسکی عملکرد فوق‌العاده‌ای به همراه داشته است؛ در مدل \lr{DistilBERT} دقت به \lr{89.79\%} با F1 معادل \lr{0.9012} و توان پردازشی \lr{73,222.18 tok/s} رسیده و در \lr{RoBERTa} دقت \lr{84.17\%} با قبولی قطعی \lr{PASS} حاصل شده است. در مدل خودبازگشت \lr{GPT-2}، شاخص پریپلکسیتی بر روی پیکره \lr{WikiText-2} با مقدار $204.81$ واگرا شده (\lr{val\_loss = 5.32}) و به دلیل حساسیت مدل‌های زبانی خودبازگشت به خطای تجمیعی در توکن‌های متوالی، وضعیت \lr{FAIL (FAIL\_PPL\_DIVERGED)} ثبت گردیده است. ارزیابی روی مدل \lr{Qwen} به علت نیاز به حافظه بالا برای محاسبه و وارون‌سازی ماتریس‌های بزرگ کلسکی و هزینه بالای کالیبراسیون در فاز اولیه به صورت \lr{NOT\_RUN} مستند شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل نقاط آسیب‌پذیری و چالش‌های محاسباتی \lr{svd\_llm\_compressor} به شرح زیر است:
+\begin{itemize}
+    \item \textbf{بدحالی ماتریس کوواریانس در ابعاد بزرگ:} در لایه‌های با ابعاد پنهان بالا ($d_{\text{in}} > 4096$)، ماتریس تجربی $\mathbf{X}^\top \mathbf{X}$ ممکن است مقادیر ویژه نزدیک به صفر داشته باشد که وارون‌سازی ماتریس کلسکی $\mathbf{S}^\top$ را ناپایدار ساخته و خطای برش را در لایه‌های عمیق تشدید می‌کند.
+    \item \textbf{حساسیت شدید مدل‌های دیکودر خودبازگشت به خطای تقریب:} واگرایی پریپلکسیتی در \lr{GPT-2} نشان داد که سفیدسازی بدون در نظر گرفتن نقاب علیتی (\lr{Causal Masking}) در توزیع فعال‌سازی‌ها، منجر به انباشت خطای چندلایه‌ای در تولید متن‌های متوالی می‌گردد.
+    \item \textbf{هزینه محاسباتی و زمانی کالیبراسیون برخط:} فرآیند دو مرحله‌ای جمع‌آوری فعال‌سازی و ریزتنظیم متناوب آداپتورها زمان‌بر بوده و نیازمند دسترسی به داده‌های متنی همگن با حوزه استنتاج است.
+\end{itemize}

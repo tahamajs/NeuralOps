@@ -1,0 +1,76 @@
+\section{ماژول svd\_linear (SVD Low-Rank Linear Factorization)}
+\label{sec:module_svd_linear}
+
+\subsection{معرفی و انگیزه}
+لایه‌های تمام‌متصل (\lr{Dense/Linear}) و لایه‌های کانولوشن یک‌بعدی (\lr{Conv1D}) بخش عمده‌ای از پارامترهای مدل‌های مبتنی بر ترنسفورمر را تشکیل می‌دهند و سهم قابل‌توجهی از مصرف حافظه و پهنای باند را به خود اختصاص می‌دهند. تجزیه مقادیر منفرد (\lr{Singular Value Decomposition - SVD}) از استوارترین رویکردهای ریاضی برای تقریب ماتریس‌های وزن پرمرتبه با حاصل‌ضرب دو ماتریس کم‌مرتبه به شمار می‌رود که بدون نیاز به تغییر ساختار سراسری شبکه، حجم محاسبات و حافظه را به صورت تحلیلی و قطعی کاهش می‌دهد.
+
+ماژول \lr{svd\_linear} با نام فارسی «تجزیه کم‌مرتبه لایه‌های خطی بر پایه SVD» به عنوان یکی از اجزای هسته موتور فشرده‌سازی، جایگزینی لایه‌های متراکم شبکه با دو لایه خطی متوالی با رتبه تقلیل‌یافته $r$ را امکان‌پذیر می‌سازد. علاوه بر این، این ماژول قابلیت ادغام کرنل شتاب‌یافته \lr{Fused SVD} در حافظه \lr{SRAM}، پشتیبانی از نرمال‌سازی لایه‌ای \lr{RMSNorm} در فضای نهان و الحاق شاخه کم‌مرتبه جبرانی \lr{LoRA} برای جبران خطای برش را فراهم آورده است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی استاندارد با بردار بایاس $\mathbf{b} \in \mathbb{R}^{d_{\text{out}}}$ باشد. تجزیه کامل مقادیر منفرد ماتریس وزن به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{out}}}$ و $\mathbf{V} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ ماتریس‌های متعامد بوده و $\mathbf{\Sigma} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس قطری مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$) است.
+
+به منظور فشرده‌سازی، رتبه برش $r$ با در نظر گرفتن سقف بودجه پارامتری تعیین می‌شود تا تضمین گردد تعداد پارامترهای لایه جدید کمتر از لایه اصلی باشد:
+\begin{equation}
+r \le \min \left( r_{\text{target}}, d_{\text{in}}, d_{\text{out}}, \left\lfloor \frac{d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1 \right)
+\end{equation}
+
+توزیع مقادیر منفرد به صورت متقارن با جذر مقادیر منفرد انجام می‌پذیرد تا توازن عددی بین دو ماتریس فاکتور برقرار باشد:
+\begin{align}
+\mathbf{U}_r &= \mathbf{U}_{:, :r} \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}) \in \mathbb{R}^{d_{\text{out}} \times r} \\
+\mathbf{V}_r &= \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}) \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{align}
+بدین ترتیب، نگاشت ورودی $\mathbf{x} \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ در گذر پیشرو به صورت دو پروجکشن خطی متوالی محاسبه می‌شود:
+\begin{equation}
+\mathbf{z} = \mathbf{x} \mathbf{V}_r^\top, \quad \mathbf{y} = \mathbf{z} \mathbf{U}_r^\top + \mathbf{b}
+\end{equation}
+
+خطای بازسازی نسبی فروبنیوس به عنوان شاخص سلامت برش پایش می‌شود:
+\begin{equation}
+\epsilon_{\text{rec}} = \frac{\|\mathbf{W} - \mathbf{U}_r \mathbf{V}_r\|_F}{\|\mathbf{W}\|_F + 10^{-8}}
+\end{equation}
+اگر $\epsilon_{\text{rec}} > \epsilon_{\text{max}}$ باشد، ماژول به صورت خودکار لایه اصلی را بدون تغییر حفظ می‌کند (\lr{Fallback to Original}). در حالت تجهیز به آداپتور ریزتنظیم \lr{LoRA} با رتبه $r_L$، گذر پیشرو با رابطه زیر تکمیل می‌گردد:
+\begin{equation}
+\mathbf{y}_{\text{final}} = \mathbf{y} + \frac{\alpha}{r_L} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این الگوریتم در مسیر \lr{Codes/framework/compression\_engine/svd\_linear.py} مستقر بوده و تحت شناسه‌های \lr{svd\_linear} و \lr{svd\_linear\_compressor} در \lr{COMPRESSOR\_REGISTRY} ثبت شده است. اجزای اصلی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{کلاس \lr{SVDLinearLayer}:} جایگزین ساختاری لایه‌های \lr{nn.Linear} و \lr{Conv1D} (سازگار با معماری‌های خاص نظیر \lr{GPT-2}) که پارامترهای $\mathbf{U}_r$ و $\mathbf{V}_r$ را مدیریت می‌کند.
+    \item \textbf{شتاب‌دهی کرنل ادغام‌شده (\lr{Fused SVD Kernel}):} امکان ارسال محاسبات به کرنل سفارشی \lr{fused\_svd\_linear} که ضرب ماتریسی دو مرحله‌ای را درون حافظه اشتراکی \lr{SRAM} ادغام کرده و از جابه‌جایی اضافی تانسور میانی $\mathbf{z}$ در حافظه سراسری ممانعت می‌ورزد.
+    \item \textbf{نرمال‌سازی میانی \lr{RMSNorm}:} تعبیه بردار آموزش‌پذیر \lr{norm\_weight} در لایه فاکتورشده به منظور پایدارسازی پویای دامنه مقادیر در فضای نهان در مدل‌های عمیق.
+    \item \textbf{محافظت از لایه‌های حساس (\lr{Protect Critical}):} کلاس \lr{SVDLinearCompressor} با فیلتر هوشمند، لایه‌های طبقه‌بندی‌کننده (\lr{classifier})، سرایند زبانی (\lr{lm\_head})، ماتریس‌های تعبیه (\lr{embedding}) و لایه‌های پروجکشن خروجی توجه را از فشرده‌سازی معاف می‌دارد تا از افت شدید عملکرد جلوگیری شود.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{svd\_linear} بر اساس اطلاعات پایگاه داده اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_svd_linear} آورده شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز خطی کم‌مرتبه \lr{svd\_linear} روی مدل‌های پایه}
+\label{tab:benchmark_svd_linear}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.58\%} & \lr{0.8765} & \lr{294.38 MB} & \lr{64,874.54 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{54.01\%} & \lr{0.6889} & \lr{339.31 MB} & \lr{39,113.72 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{57.22\%} & \lr{0.6804} & \lr{496.14 MB} & \lr{31,287.91 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{0.00\%} & -- & -- & -- & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد که ماژول \lr{svd\_linear} در مدل انکودر \lr{DistilBERT} به دقت برجسته \lr{86.58\%} با شاخص F1 معادل \lr{0.8765} و توان پردازشی \lr{64,874.54 tok/s} در حافظه کمینه \lr{294.38 MB} دست یافته است. در مدل خودبازگشت \lr{GPT-2}، با دقت \lr{57.22\%} معیار قبولی کامل \lr{PASS} احراز شده است. در مدل \lr{RoBERTa} دقت \lr{54.01\%} و وضعیت \lr{PASS\_LOW} به ثبت رسیده و برای مدل \lr{Qwen} به دلیل ساختار نامتقارن توجه در سربرگ‌های کوئری و کلید-مقدار (\lr{GQA}) و عدم پشتیبانی اولیه نگاشت ابعادی، وضعیت به صورت \lr{SKIP\_NO\_SUPPORT} علامت‌گذاری شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل شرایط عملیاتی و نقاط شکست فشرده‌ساز \lr{svd\_linear} نشان‌دهنده ابعاد زیر است:
+\begin{itemize}
+    \item \textbf{تکیه صِرف بر طیف وزن بدون توجه به توزیع داده:} الگوریتم \lr{SVD} استاندارد وزن‌ها را در خلاء آماری و بدون در نظر گرفتن فعال‌سازی‌های ورودی فشرده می‌کند؛ در نتیجه، مولفه‌های کم‌انرژی وزن که روی فعال‌سازی‌های بزرگ یا پرت اثرگذارند دچار برش ناخواسته می‌شوند که عامل اصلی افت عملکرد در \lr{RoBERTa} است.
+    \item \textbf{عدم تطابق با توجه کوئری گروه‌بندی‌شده (\lr{GQA}):} در مدل‌های زبانی مدرن مانند \lr{Qwen} که ابعاد ماتریس‌های کلید و مقدار با ابعاد کوئری یکسان نیست، تجزیه بدون کنترل تناظر سربرگ‌ها موجب بر هم خوردن هندسه ضرب اسکالر ضربی می‌شود.
+\end{itemize}

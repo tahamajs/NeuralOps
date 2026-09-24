@@ -1,0 +1,70 @@
+\section{ماژول soka\_compressor (SoKA Second-Order Knowledge-Aware Compressor)}
+\label{sec:module_soka_compressor}
+
+\subsection{معرفی و انگیزه}
+تجزیه ماتریس‌های وزن به حاصل‌ضرب ماتریس‌های کم‌مرتبه (\lr{Low-Rank Factorization}) یکی از روش‌های اثبات‌شده در کاهش تعداد پارامترها و تسریع زمان استنتاج است. با این حال، انتخاب مرتبه یکسان و ایستا برای کلیه لایه‌های مدل بدون در نظر گرفتن ظرفیت اطلاعاتی و میزان تمرکز انرژی تکین هر لایه، یا به کاهش ناچیز پارامترها یا به افت شدید عملکرد مدل منتهی می‌شود.
+
+ماژول \lr{soka\_compressor} بر پایه الگوریتم \lr{SoKA} (فشرده‌ساز آگاه از دانش و کم‌مرتبه با تجزیه تکین) طراحی شده است. این ماژول ماتریس‌های متراکم لایه‌های خطی را به دو ماتریس بطری‌گردنی (\lr{Bottleneck}) تجزیه نموده و امکان انتخاب هوشمندانه مرتبه تقریب را بر مبنای نسبت انرژی مقادیر منفرد فراهم می‌آورد تا توزیع بهینه‌ای از مرتبه در طول لایه‌های شبکه برقرار گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی و جایگزینی لایه‌ها در الگوریتم \lr{SoKA} به شرح زیر فرمول‌بندی می‌شود:
+\begin{enumerate}
+    \item \textbf{تجزیه مقادیر منفرد ماتریس وزن (\lr{SVD}):}
+    فرض کنید ماتریس وزن اولیه لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ باشد:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top = \mathbf{A} \mathbf{B}^\top
+    \end{equation}
+    که در آن ماتریس‌های فاکتور به شکل متقارن از توزیع مقادیر منفرد تشکیل می‌شوند:
+    \begin{equation}
+    \mathbf{A} = \mathbf{U}_r \boldsymbol{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{B} = \mathbf{V}_r \boldsymbol{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{in}} \times r}
+    \end{equation}
+    \item \textbf{انتخاب پویای مرتبه بر اساس آستانه انرژی تکین (\lr{Singular Energy Threshold}):}
+    چنانچه آستانه انرژی $\alpha \in (0, 1]$ تعیین شده باشد، مرتبه موثر $r$ به صورت کوچکترین مرتبه‌ای انتخاب می‌شود که کسر مشخصی از مجموع توان مقادیر منفرد را پوشش دهد:
+    \begin{equation}
+    r = \min \left\{ k \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2} \ge \alpha \right\}
+    \end{equation}
+    در غیر این صورت، مرتبه ثابت ورودی اعمال خواهد شد.
+    \item \textbf{محاسبه گذر پیشرو با لایه تجزیه‌شده \lr{LowRankLinear}:}
+    در زمان استنتاج، به جای ضرب پرهزینه $\mathbf{x} \mathbf{W}^\top$، عملیات در دو گام بطری‌گردنی انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{y} = (\mathbf{x} \mathbf{B}) \mathbf{A}^\top + \mathbf{b}
+    \end{equation}
+    این فرمول‌بندی تعداد پارامترهای وزن را از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌دهد.
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/soka\_compressor.py} مستقر است و مؤلفه‌های کلیدی آن عبارتند از:
+\begin{itemize}
+    \item \textbf{کلاس \lr{LowRankLinear}:} جایگزین ساختاری \lr{nn.Linear} که پارامترهای $\mathbf{V}$ (با ابعاد $[d_{\text{in}}, r]$) و $\mathbf{U}$ (با ابعاد $[d_{\text{out}}, r]$) را به عنوان تانسورهای مجزا نگهداری می‌کند و ضرب توالی‌وار پیشرو را پیاده‌سازی می‌نماید. ویژگی \lr{weight} نیز برای بازسازی برخط وزن در صورت نیاز به سازگاری با سایر بخش‌های سیستم تعبیه شده است.
+    \item \textbf{کلاس فشرده‌ساز \lr{LowRankCompressor}:} مدیریت شناسایی لایه‌های هدف، بررسی آستانه خطای بازسازی نسبی (\lr{max\_error})، مدیریت سیستم بازگشت امنیتی (\lr{fallback})، و مانیتورینگ پارامترهای مدل قبل و بعد از فشرده‌سازی.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی‌های بنچ‌مارک تجربی برای ماژول \lr{soka\_compressor} در جدول \ref{tab:benchmark_soka_compressor} گردآوری شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز کم‌مرتبه \lr{soka\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_soka_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{91.17\%} & \lr{0.9155} & \lr{427.89 MB} & \lr{154,197.33 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{81.60\%} & \lr{0.8156} & \lr{519.76 MB} & \lr{65,166.90 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{92.66\%} & \lr{0.9284} & \lr{626.33 MB} & \lr{10,903.45 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول \ref{tab:benchmark_soka_compressor} مشهود است، ماژول \lr{soka\_compressor} بالاترین دقت را در میان روش‌های فشرده‌سازی روی مدل \lr{RoBERTa} با ثبت دقت چشمگیر \lr{92.66\%} و F1 معادل \lr{0.9284} به ارمغان آورده است. در مدل \lr{DistilBERT} نیز دقت \lr{91.17\%} روی SST-2 و \lr{81.60\%} روی MNLI ثبت گردیده است که نشان‌دهنده پایداری استثنایی تجزیه مقادیر منفرد با انتخاب آگاهانه مرتبه است. مدل‌های تولید متن \lr{GPT-2} و \lr{Qwen} در فاز اولیه ارزیابی در وضعیت \lr{NOT\_RUN} قرار دارند.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+محدودیت‌ها و علل نارسایی‌های بالقوه این رویکرد به شرح زیر تحلیل می‌شوند:
+\begin{itemize}
+    \item \textbf{سربار تاخیر در ابعاد کوچک مرتبه ($r$):} در سناریوهایی که طول توالی پردازشی کوتاه باشد یا اندازه دسته ورودی بسیار کوچک باشد، شکستن یک ضرب ماتریسی به دو ضرب پی‌درپی ممکن است به دلیل محدودیت‌های پهنای باند حافظه پردازنده گرافیکی، منجر به افزایش زمان تاخیر نسبت به یک لایه متراکم بهینه‌سازی‌شده شود.
+    \item \textbf{انحراف در لایه‌های حساس با طیف تخت:} لایه‌هایی که طیف مقادیر منفرد آن‌ها توزیع تقریباً یکنواختی دارد، با انتخاب مرتبه کوچک دچار افت شدید دقت بازسازی می‌شوند که در این شرایط، ماژول ناچار به استفاده از مکانیزم بازگشت خواهد شد.
+\end{itemize}
