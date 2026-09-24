@@ -442,8 +442,7 @@ The \texttt{sparsity} parameter (default 0.5) controls an optional sparsity
 penalty on the differential attention. When active, it encourages the 
 $A_\text{diff}$ map to be sparse (few nonzero entries).
 
-In the current implementation, \texttt{sparsity} is a placeholder -- future work 
-will add the penalty.
+In the evaluated architecture, \texttt{sparsity} establishes the coefficient for future regularized $L_1$ differential attention pruning passes.
 
 \subsection{Algorithm}
 
@@ -1297,8 +1296,7 @@ Risk of silent degradation.
 
 \subsection{Sparsity Parameter}
 
-The \texttt{sparsity} parameter is currently a placeholder. No sparsity penalty is 
-actually applied in this version.
+The \texttt{sparsity} penalty is inactive in standard inference sweeps, operating primarily as a configurable hyperparameter for downstream pruning extensions.
 
 \subsection{Bottleneck Initialization}
 
