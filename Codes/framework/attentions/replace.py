@@ -217,9 +217,15 @@ def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> Op
     return container
 
 
-def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module,
+def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[nn.Module],
                           model_type: str) -> None:
     """RE-06: attach with proper guard for nested encoders."""
+    if new_attn is None:
+        logger.error(
+            "Cannot attach None attention to layer %s (attr=%s)",
+            type(layer).__name__, attn_attr
+        )
+        return
     container = getattr(layer, attn_attr, None)
     if container is not None and hasattr(container, "self"):
         container.self = new_attn
@@ -256,12 +262,25 @@ def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module,
             new_attn.is_nested_encoder = True
 
 
+INJECT_TO_CLASS_MAP: Dict[str, str] = {
+    "inject_replace": "replace_class",
+    "inject_replace_attention": "replace_class",
+    "inject_gqa": "gqa_attention_class",
+    "inject_moba": "moba_class",
+}
+
+
 def _resolve_class_name(inject_fn: Any, model_type: str) -> str:
-    """Infer registered attention name from the injector (heuristic)."""
+    """Infer registered attention class name from the injector."""
     name = getattr(inject_fn, "__name__", "")
+    if name in INJECT_TO_CLASS_MAP:
+        return INJECT_TO_CLASS_MAP[name]
+    # Fallback: strip 'inject_' and append '_class'
     if name.startswith("inject_"):
-        name = name[len("inject_"):]
-    return name or "replace"
+        candidate = name[len("inject_"):] + "_class"
+        if ATTENTION_REGISTRY.get(candidate) is not None:
+            return candidate
+    return "replace_class"
 
 
 def _infer_hidden_size(old_attn: nn.Module, attn_attr: str, model_type: str) -> int:
@@ -278,7 +297,13 @@ def _infer_hidden_size(old_attn: nn.Module, attn_attr: str, model_type: str) -> 
             if model_type == "gpt2" or obj.__class__.__name__ == "Conv1D":
                 return int(w.shape[0])
             return int(w.shape[1])
-    return 768
+    # Also try nested attention.self.query
+    if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
+        return int(old_attn.self.query.in_features)
+    raise ValueError(
+        f"Cannot infer hidden_size from {type(old_attn).__name__} "
+        f"(model_type={model_type}, attn_attr={attn_attr})"
+    )
 
 
 def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> int:
@@ -286,7 +311,9 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> in
         val = getattr(old_attn, attr, None)
         if isinstance(val, int) and val > 0:
             return val
-    return 12
+    raise ValueError(
+        f"Cannot infer num_heads from {type(old_attn).__name__}"
+    )
 
 
 # ===========================================================================
@@ -386,9 +413,15 @@ def _get_valid_mask(
 
     if attention_mask.dim() == 4:
         v = attention_mask if attention_mask.dtype == torch.bool else (
-            attention_mask > -1e4 if attention_mask.dtype.is_floating_point else attention_mask > 0
+            attention_mask > -1e4 if attention_mask.dtype.is_floating_point 
+            else attention_mask > 0
         )
-        return v.any(dim=-2).squeeze(1)
+        v = v.any(dim=-2)  # (B, H, N)
+        if v.size(1) == 1:
+            v = v.squeeze(1)
+        else:
+            v = v.any(dim=1)  # (B, N)
+        return v
 
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
@@ -473,6 +506,14 @@ class ReplaceAttention(BaseAttention):
         self.head_dim = max(1, self.hidden_size // self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
 
+        # GQA support (Fix 1)
+        self.num_kv_heads = int(
+            _cfg_get(config, "num_key_value_heads", 
+                     _cfg_get(config, "num_kv_heads", self.num_heads))
+        )
+        if self.num_kv_heads <= 0 or self.num_kv_heads > self.num_heads:
+            self.num_kv_heads = self.num_heads
+
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -484,14 +525,14 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
-            self.k_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
-            self.v_proj = _FactorizedLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True)
+            self.k_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
+            self.v_proj = _FactorizedLinear(self.hidden_size, self.num_kv_heads * self.head_dim, self.rank, bias=True)
             self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
         else:
-            self.q_proj = nn.Linear(self.hidden_size, self.all_head_size)
-            self.k_proj = nn.Linear(self.hidden_size, self.all_head_size)
-            self.v_proj = nn.Linear(self.hidden_size, self.all_head_size)
+            self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
+            self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
+            self.v_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
             self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
 
         self.dropout = nn.Dropout(dropout)
@@ -669,9 +710,9 @@ class ReplaceAttention(BaseAttention):
                 if norm < 1e-4:
                     logger.warning("Copied weight %s has near-zero Frobenius norm (%.2e)", name, norm)
 
-        self._copy_into(self.q_proj, w_q, b_q, self.all_head_size, self.hidden_size)
-        self._copy_into(self.k_proj, w_k, b_k, self.all_head_size, self.hidden_size)
-        self._copy_into(self.v_proj, w_v, b_v, self.all_head_size, self.hidden_size)
+        self._copy_into(self.q_proj, w_q, b_q, self.num_heads * self.head_dim, self.hidden_size)
+        self._copy_into(self.k_proj, w_k, b_k, self.num_kv_heads * self.head_dim, self.hidden_size)
+        self._copy_into(self.v_proj, w_v, b_v, self.num_kv_heads * self.head_dim, self.hidden_size)
 
         if not self.is_nested_encoder:
             self._copy_into(self.out_proj, w_o, b_o, self.hidden_size, self.all_head_size)
@@ -700,8 +741,14 @@ class ReplaceAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        # Add repeat_kv for GQA:
+        if self.num_kv_heads < self.num_heads:
+            repeat = self.num_heads // self.num_kv_heads
+            K = K.repeat_interleave(repeat, dim=1)
+            V = V.repeat_interleave(repeat, dim=1)
 
         is_causal = self.is_decoder and N > 1
 
