@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_tt_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_adaptive_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_compressor",
@@ -8093,13 +8086,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_dobi_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_nmf_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nmf_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nmf_compressor",
@@ -8117,6 +8103,13 @@
       "id": "p3_gpt2_kronecker_tt_lora_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_class",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_tt_compressor_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_compressor_factory",
       "status": "active",
       "retries": 0
     }
@@ -9154,6 +9147,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_compressor",
       "started_at": "2026-09-24T06:47:19.695799",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_dobi_svd_compressor",
+      "id": "p3_gpt2_dobi_svd_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_compressor",
+      "started_at": "2026-09-24T20:11:45.574594",
       "retries": 0,
       "status": "done"
     }

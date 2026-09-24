@@ -2,4 +2,4 @@ module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elap
 full,PASS,,,,,,,7.88,916.17,,124439808,124439808,,1.0,,,0.0,,,,,,,,0.079,12691.0,25.88,,,,,2026-09-23T09:04:28
 swift_svd,PASS_DEGRADED,,,,,,,3.23,838.79,,124439808,83128320,,1.497,,,33.2,,,,,,,,0.032,30975.8,5388.66,,,,,2026-09-23T09:04:40
 gated_delta_net,SKIP_DEPRECATED,0.0,,,,,,0.0,,,,,,,,,,,,,,,,,,,,,,DEPRECATED: bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM,deprecated,2026-09-24T01:40:47.413354
-dobi_svd_compressor,PASS_NO_COMPRESSION,0.0,0.0,,,,3.721979489231453,189.7,816.22509765625,1379.7834114011162,124439808,124439808,0,1.0,1.0,1.0,0.0,0.0,0,0,,,0,0,,,41.346157,OK,,"note: zero compressed layers, zero injected layers, model unchanged",adapted_gpt,2026-09-24T20:18:37.292344
+flat_llm_compressor,FAIL_PPL_DIVERGED,0.0,0.0,,,,5.650097645253776,181.14,816.22509765625,1396.5482090699502,124439808,124439808,0,1.0,1.0,1.0,0.0,0.0,6,30,0.4614,,0,0,,,284.319227,DIVERGED,,FAIL_PPL_DIVERGED: perplexity (284.32) exceeded threshold 100.0,adapted_gpt,2026-09-24T20:19:29.833056
