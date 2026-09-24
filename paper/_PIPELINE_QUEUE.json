@@ -51,13 +51,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd_compressed_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_compressed_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_compressed_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hybrid_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybrid_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybrid_svd",
@@ -121,13 +114,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_compressed_attention_layer_fn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_layer_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_layer_fn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_svd_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_factory",
@@ -156,23 +142,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_lora_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attention_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_kmeans",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention",
       "status": "pending",
       "retries": 0
     },
@@ -208,20 +180,6 @@
       "id": "p3_gpt2_ast_pruner_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ast_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ast_pruner_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_naive_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_naive_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_naive_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_res_svd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_res_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_res_svd_attention",
       "status": "pending",
       "retries": 0
     },
@@ -324,13 +282,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_compressed_mha_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_nmf_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nmf_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nmf_compressor",
@@ -341,20 +292,6 @@
       "id": "p3_gpt2_flat_llm_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_asvd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_fused_svd_kernel_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fused_svd_kernel_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fused_svd_kernel_inject",
       "status": "pending",
       "retries": 0
     },
@@ -464,23 +401,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_fused_svd_kernel",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_fused_svd_kernel --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_fused_svd_kernel",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cur_moe",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_proj_attn_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_proj_attn_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_proj_attn_inject",
       "status": "pending",
       "retries": 0
     },
@@ -502,13 +425,6 @@
       "id": "p3_gpt2_direct_svd_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_sequence_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_sequence_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_sequence_attention_inject",
       "status": "pending",
       "retries": 0
     },
@@ -576,20 +492,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_dynamic_rank_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_res_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_res_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_res_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_ressvd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ressvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ressvd",
@@ -611,20 +513,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_compressed_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm_v2_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm_v2_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_lora_attn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attn",
@@ -632,23 +520,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_projection_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_projection_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_projection_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hashed_net_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashed_net_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashed_net_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_svd_llm_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_llm_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_llm_v2",
       "status": "pending",
       "retries": 0
     },
@@ -670,13 +544,6 @@
       "id": "p3_gpt2_compressed_mha",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_low_rank_modulated_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules low_rank_modulated_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_low_rank_modulated_attention",
       "status": "pending",
       "retries": 0
     },
@@ -716,13 +583,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_compressed_attention_layer_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_layer_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_layer_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_delta_kv_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_class",
@@ -737,27 +597,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_compressed_attention_layer",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_layer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_layer",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_compressed_attention_layer_energy",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_layer_energy --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_layer_energy",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_adaptive_sparse_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_tt_linear_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_compressor",
@@ -765,23 +604,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_adaptive_sparse_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse_attention_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_flap_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flap_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flap_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_sequence_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_sequence_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_sequence_attention",
       "status": "pending",
       "retries": 0
     },
@@ -835,23 +660,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_sequence_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_sequence_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_sequence_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_direct_svd_encoder",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_encoder --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_encoder",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_compression_unified_rope_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compression_unified_rope_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compression_unified_rope_inject",
       "status": "pending",
       "retries": 0
     },
@@ -905,13 +716,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_adaptive_sparse_attn_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse_attn_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse_attn_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_adasvd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd",
@@ -922,13 +726,6 @@
       "id": "p3_gpt2_cr_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cr_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cr_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_res_svd_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules res_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_res_svd_attention",
       "status": "pending",
       "retries": 0
     },
@@ -950,13 +747,6 @@
       "id": "p3_gpt2_kronecker_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_linear_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_linear_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_linear_inject",
       "status": "pending",
       "retries": 0
     },
@@ -1038,13 +828,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_res_svd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules res_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_res_svd_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_gfws_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules gfws_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_gfws_factory",
@@ -1094,13 +877,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_compressed",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_compressed --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_compressed",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_rala_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rala_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rala_compressor",
@@ -1125,13 +901,6 @@
       "id": "p3_gpt2_cur_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm_v2_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm_v2_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2_inject",
       "status": "pending",
       "retries": 0
     },
@@ -1164,23 +933,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_token_compressed_attention_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules token_compressed_attention_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_token_compressed_attention_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_roast_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules roast_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_roast_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_compressed_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_inject",
       "status": "pending",
       "retries": 0
     },
@@ -1325,13 +1080,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_minimal_svd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_cur_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_factory",
@@ -1388,23 +1136,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_proj_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_proj_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_proj_attn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_kmeans_quantize_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans_quantize_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans_quantize_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_adaptive_sparse_attention_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse_attention_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse_attention_attention",
       "status": "pending",
       "retries": 0
     },
@@ -1444,13 +1178,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd_sequence_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_sequence_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_sequence_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_compot_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compot_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compot_factory",
@@ -1468,13 +1195,6 @@
       "id": "p3_gpt2_aasvd_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aasvd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aasvd_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_minimal_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_svd",
       "status": "pending",
       "retries": 0
     },
@@ -1524,13 +1244,6 @@
       "id": "p3_gpt2_swift_svd_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_svd_projection",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_projection --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_projection",
       "status": "pending",
       "retries": 0
     },
@@ -1626,13 +1339,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_svd_sequence",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_sequence --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_sequence",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_pca_quant_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_factory",
@@ -1643,27 +1349,6 @@
       "id": "p3_gpt2_mgie_budget_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mgie_budget_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mgie_budget_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_minimal_svd_v2_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_compressed_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_compressed_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_compressed_attention_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_lora_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lora_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lora_attention",
       "status": "pending",
       "retries": 0
     },
@@ -1717,23 +1402,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_token_compressed_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules token_compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_token_compressed_attention",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_sdrm_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules sdrm_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_sdrm_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_projection_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_projection_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_projection_attention",
       "status": "pending",
       "retries": 0
     },
@@ -1794,30 +1465,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_adaptive_sparse",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_adaptive_sparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_adaptive_sparse",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_low_rank_modulated_attention_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules low_rank_modulated_attention_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_low_rank_modulated_attention_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_direct_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_fused_svd_kernel_attention",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fused_svd_kernel_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fused_svd_kernel_attention",
       "status": "pending",
       "retries": 0
     },
@@ -1878,13 +1528,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_token_compressed_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_token_compressed_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_token_compressed_attn",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_hybrid_svd_layer",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hybrid_svd_layer --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hybrid_svd_layer",
@@ -1895,13 +1538,6 @@
       "id": "p3_gpt2_sdrm_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules sdrm_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_sdrm_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_inject_dynamic_rank",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_dynamic_rank --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_dynamic_rank",
       "status": "pending",
       "retries": 0
     },
@@ -1944,13 +1580,6 @@
       "id": "p3_gpt2_oats_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules oats_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_oats_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_swift_svd_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd_inject",
       "status": "pending",
       "retries": 0
     },
@@ -2011,30 +1640,9 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_inject_minimal_svd_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_minimal_svd_v2",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_projection_attention_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_projection_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_projection_attention_inject",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_come_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules come_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_come_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_factorised_matrix_state_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules factorised_matrix_state_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_factorised_matrix_state_inject",
       "status": "pending",
       "retries": 0
     },
@@ -8577,15 +8185,6 @@
       "retries": 0
     },
     {
-      "job_id": "p3_gpt2_adaptive_svd_attention",
-      "id": "p3_gpt2_adaptive_svd_attention",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_attention",
-      "started_at": "2026-09-24T02:28:19.437888",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "id": "p3_gpt2_tomoe_compressor_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tomoe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tomoe_compressor_class",
@@ -8598,24 +8197,6 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules hashed_linear_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_hashed_linear_factory",
       "status": "pending",
       "retries": 0
-    },
-    {
-      "job_id": "p3_gpt2_asvd_inject",
-      "id": "p3_gpt2_asvd_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules asvd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_asvd_inject",
-      "started_at": "2026-09-24T02:32:17.183422",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_inject_svd_compressed_attention",
-      "id": "p3_gpt2_inject_svd_compressed_attention",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_svd_compressed_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_svd_compressed_attention",
-      "started_at": "2026-09-24T02:33:35.298244",
-      "retries": 1,
-      "status": "pending"
     },
     {
       "job_id": "p3_gpt2_progressive_token_pruning",
@@ -8632,42 +8213,6 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_ranks --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_ranks",
       "started_at": "2026-09-24T02:38:22.406087",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_adaptive_svd_attention_inject",
-      "id": "p3_gpt2_adaptive_svd_attention_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_attention_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_attention_inject",
-      "started_at": "2026-09-24T02:38:53.224879",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_adaptive_sparse_inject",
-      "id": "p3_gpt2_adaptive_sparse_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse_inject",
-      "started_at": "2026-09-24T02:39:15.916654",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_compressed_attention_fn",
-      "id": "p3_gpt2_compressed_attention_fn",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_attention_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_attention_fn",
-      "started_at": "2026-09-24T02:41:12.476597",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_compressed_mha_inject",
-      "id": "p3_gpt2_compressed_mha_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_inject",
-      "started_at": "2026-09-24T02:54:27.721469",
       "retries": 1,
       "status": "pending"
     },
@@ -8690,29 +8235,11 @@
       "status": "pending"
     },
     {
-      "job_id": "p3_gpt2_naive_svd_inject",
-      "id": "p3_gpt2_naive_svd_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules naive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_naive_svd_inject",
-      "started_at": "2026-09-24T03:00:56.951052",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
       "job_id": "p3_gpt2_nha_compressor",
       "id": "p3_gpt2_nha_compressor",
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules nha_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_nha_compressor",
       "started_at": "2026-09-24T03:02:00.159966",
-      "retries": 1,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_adaptive_svd_inject",
-      "id": "p3_gpt2_adaptive_svd_inject",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_svd_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_svd_inject",
-      "started_at": "2026-09-24T03:14:22.684593",
       "retries": 1,
       "status": "pending"
     },
