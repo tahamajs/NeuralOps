@@ -1,6 +1,20 @@
 {
-  "max_parallel": 3,
+  "max_parallel": 4,
   "jobs": [
+    {
+      "id": "p3_gpt2_svd_llm_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_a3_v2",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3_v2",
+      "status": "pending",
+      "retries": 0
+    },
     {
       "id": "p3_gpt2_roast_factory",
       "type": "gpu",
@@ -726,13 +740,6 @@
       "id": "p3_gpt2_direct_svd_compressor_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules direct_svd_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_direct_svd_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm_v2",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm_v2",
       "status": "pending",
       "retries": 0
     },
