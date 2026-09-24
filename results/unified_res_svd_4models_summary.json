@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "87.84%",
+    "Spectral Residual LoRA (res_svd) Acc": "71.33%",
+    "Delta Acc": "-16.51%",
+    "F1": "0.7760",
+    "Status": "PASS",
+    "Compressed Layers": "24",
+    "Comp Rate": "1.16x",
+    "Peak VRAM": "336.2 MB",
+    "Time (s)": "88.7"
+  }
+]

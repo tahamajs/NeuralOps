@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.48%",
+    "Entropy Budget SVD Acc": "90.48%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.9077",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "310.7 MB",
+    "Time (s)": "17.9"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "Entropy Budget SVD Acc": "88.65%",
+    "Delta Acc": "-0.11%",
+    "F1": "0.8941",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "321.1 MB",
+    "Time (s)": "27.0"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "81.31%",
+    "Entropy Budget SVD Acc": "82.57%",
+    "Delta Acc": "+1.26%",
+    "F1": "0.8400",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "400.1 MB",
+    "Time (s)": "25.0"
+  }
+]

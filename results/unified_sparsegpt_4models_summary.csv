@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,SparseGPT Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,86.93%,-3.55%,0.8747,PASS,0,1.00x,340.1 MB,28.1
+roberta,0,75.11%,50.92%,-24.19%,0.6748,PASS_LOW,0,1.00x,363.5 MB,44.0
+gpt2,0,60.78%,53.33%,-7.45%,0.6661,PASS_LOW,0,1.00x,634.4 MB,39.0

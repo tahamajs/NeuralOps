@@ -1,0 +1,54 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.94%",
+    "SpectraV2 Acc": "90.94%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.9125",
+    "Status": "PASS",
+    "Compressed Layers": "24",
+    "Comp Rate": "0.99x",
+    "Peak VRAM": "324.9 MB",
+    "Time (s)": "35.9"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "75.46%",
+    "SpectraV2 Acc": "72.71%",
+    "Delta Acc": "-2.75%",
+    "F1": "0.7733",
+    "Status": "PASS",
+    "Compressed Layers": "48",
+    "Comp Rate": "0.94x",
+    "Peak VRAM": "655.5 MB",
+    "Time (s)": "62.6"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "87.84%",
+    "SpectraV2 Acc": "87.73%",
+    "Delta Acc": "-0.11%",
+    "F1": "0.8825",
+    "Status": "PASS",
+    "Compressed Layers": "72",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "401.6 MB",
+    "Time (s)": "79.5"
+  },
+  {
+    "Model": "qwen3_5",
+    "Exit Code": 1,
+    "Baseline Acc": "N/A",
+    "SpectraV2 Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_1",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "27.0"
+  }
+]

@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,AASVD Acc,Delta Acc,F1,Precision,Recall,Val Loss,Status,Compressed Layers,Fallback Layers,Avg Error,Comp Rate,FLOPs Red,Peak VRAM,Inference Time,Latency / sample,Throughput (tok/s)
+distilbert,0,90.94%,89.56%,-1.38%,0.9008,0.8977,0.8950,0.8632,PASS,11,13,0.4694582420104481,1.02x,25.0%,358.8 MB,11.3s,N/A,37401.8
+roberta,0,75.46%,86.70%,+11.24%,0.8811,0.8835,0.8651,0.3361,PASS,10,38,0.4803975505523264,1.01x,25.0%,573.6 MB,17.2s,N/A,25150.8
+gpt2,0,87.84%,76.83%,-11.01%,0.8054,0.8051,0.7651,0.5403,PASS,24,0,0.5757352042462076,1.11x,43.8%,466.9 MB,24.9s,N/A,13576.1

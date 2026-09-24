@@ -1,0 +1,7 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+full,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3028,2.57,182.94,59279.83,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T01:21:08.339499
+gated_delta_net,FAIL,0.0,0.9125,0.9093,0.9101,0.9091,0.3103,4.92,389.51,41248.81,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,"RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+",legacy_bert,2026-09-14T06:25:02.887293

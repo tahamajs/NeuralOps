@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,Entropy Budget SVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,90.48%,+0.00%,0.9077,PASS,0,1.00x,310.7 MB,17.9
+roberta,0,88.76%,88.65%,-0.11%,0.8941,PASS,0,1.00x,321.1 MB,27.0
+gpt2,0,81.31%,82.57%,+1.26%,0.8400,PASS,0,1.00x,400.1 MB,25.0

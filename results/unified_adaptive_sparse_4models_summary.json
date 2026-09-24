@@ -1,0 +1,15 @@
+[
+  {
+    "model": "roberta",
+    "slug": "roberta",
+    "baseline_acc": 0.7545999999999999,
+    "acc": 0.5963,
+    "delta_acc": -0.1582999999999999,
+    "f1": 0.3973,
+    "status": "PASS",
+    "passed_gate": true,
+    "vram_peak_mb": 687.46,
+    "out_dir": "results\\unified_adaptive_sparse\\roberta",
+    "hf_repo": "Hooshaai/svd-linear-attention-roberta-adaptive-sparse"
+  }
+]
