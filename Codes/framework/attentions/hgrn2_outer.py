@@ -99,9 +99,13 @@ class LoRALinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
+            self.freeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base weight and bias; keep LoRA adapters trainable."""
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)

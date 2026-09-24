@@ -259,19 +259,24 @@ class HGRN2Layer(BaseAttention):
             with torch.no_grad():
                 tw = target_linear.weight
                 if w.shape == tw.shape:
-                    tw.copy_(w)
-                elif w.shape[0] < tw.shape[0]:
-                    tw[:w.shape[0], :w.shape[1]].copy_(w)
-                elif w.shape[0] > tw.shape[0]:
-                    tw.copy_(w[:tw.shape[0], :tw.shape[1]])
+                    tw.copy_(w.to(tw.dtype))
+                else:
+                    min_r = min(tw.shape[0], w.shape[0])
+                    min_c = min(tw.shape[1], w.shape[1])
+                    tw.data.zero_()
+                    tw.data[:min_r, :min_c].copy_(w[:min_r, :min_c].to(tw.dtype))
+                    logger.warning(
+                        "Partial weight copy: source %s → target %s",
+                        tuple(w.shape), tuple(tw.shape)
+                    )
                 if b is not None and target_linear.bias is not None:
                     tb = target_linear.bias
                     if b.shape == tb.shape:
-                        tb.copy_(b)
-                    elif b.shape[0] < tb.shape[0]:
-                        tb[:b.shape[0]].copy_(b)
-                    elif b.shape[0] > tb.shape[0]:
-                        tb.copy_(b[:tb.shape[0]])
+                        tb.copy_(b.to(tb.dtype))
+                    else:
+                        min_b = min(tb.numel(), b.numel())
+                        tb.data.zero_()
+                        tb.data[:min_b].copy_(b[:min_b].to(tb.dtype))
 
         # Copy V -> v_proj and O -> out_proj across all architectures
         _copy_param(self.v_proj, w_v, b_v)
