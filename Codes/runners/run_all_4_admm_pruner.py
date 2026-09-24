@@ -7,6 +7,10 @@ import shutil
 import pandas as pd
 from pathlib import Path
 
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 # Ensure online access for automated Hugging Face uploads
 os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
@@ -131,21 +135,21 @@ if not export_only:
         print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] >>> RUNNING ADMM PRUNER BENCHMARK FOR {name.upper()}...")
         start_time = time.time()
     
-    proc = subprocess.Popen(
-        m["cmd"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-    
-    for line in iter(proc.stdout.readline, ""):
-        if line:
-            print(f"[{name}] {line.strip()}", flush=True)
-            
-    proc.wait()
-    elapsed = time.time() - start_time
-    print(f"[{name}] Completed in {elapsed:.1f}s with exit code {proc.returncode}")
+        proc = subprocess.Popen(
+            m["cmd"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        
+        for line in iter(proc.stdout.readline, ""):
+            if line:
+                print(f"[{name}] {line.strip()}", flush=True)
+                
+        proc.wait()
+        elapsed = time.time() - start_time
+        print(f"[{name}] Completed in {elapsed:.1f}s with exit code {proc.returncode}")
 
 print("\n" + "="*80)
 print("PHASE 1 COMPLETE: ALL MODEL RUNS FINISHED. PROCEEDING TO QUALITY GATING & EXPORTS.")
@@ -166,11 +170,14 @@ for m in models:
         print(f"[-] Missing summary.csv for {name} at {csv_path}. Marking FAILED.")
         collected_results.append({
             "model": name,
+            "slug": slug,
             "status": "FAIL",
             "reason": "summary_csv_missing",
             "acc": 0.0,
             "f1": 0.0,
             "delta_acc": 0.0,
+            "out_dir": m.get("out_dir", ""),
+            "passed_gate": False,
         })
         continue
 

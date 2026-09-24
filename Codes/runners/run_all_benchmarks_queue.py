@@ -124,10 +124,20 @@ def run_single_module(
     exit_code = -1
     error_msg = None
 
+    repo_dir = runner_path.parent.parent.parent.resolve()
+    env = os.environ.copy()
+    current_pp = env.get("PYTHONPATH", "")
+    pp_entries = [str(repo_dir), str(repo_dir / "Codes")]
+    if current_pp:
+        pp_entries.append(current_pp)
+    env["PYTHONPATH"] = os.pathsep.join(pp_entries)
+
     try:
         if log_file_path:
             process = subprocess.Popen(
                 cmd,
+                cwd=str(repo_dir),
+                env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -147,6 +157,8 @@ def run_single_module(
         else:
             proc = subprocess.run(
                 cmd,
+                cwd=str(repo_dir),
+                env=env,
                 capture_output=False,
                 text=True,
                 encoding="utf-8",

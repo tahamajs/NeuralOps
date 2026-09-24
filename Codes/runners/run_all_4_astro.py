@@ -7,6 +7,10 @@ import shutil
 import pandas as pd
 from pathlib import Path
 
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 # Ensure online access for automated Hugging Face uploads
 os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
@@ -243,8 +247,8 @@ for m in models:
         "passed_gate": is_passing,
         "num_compressed": num_compressed,
         "num_fallback": num_fallback,
-        "actual_average_bits": actual_avg_bits,
-        "effective_compression_rate": effective_compression_rate,
+        "actual_average_bits": mean_bits,
+        "effective_compression_rate": effective_compression_ratio,
         "avg_reconstruction_error": avg_reconstruction_error,
         "theoretical_vram_saving": theoretical_vram_saving,
         "latency_p95_ms": lat_p95,
