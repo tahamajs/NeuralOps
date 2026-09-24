@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_kmeans",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_compressed_mha_fn",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha_fn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha_fn",
@@ -8158,27 +8151,22 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules fwsvd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_fwsvd_compressor",
       "status": "pending",
       "retries": 0
+    },
+    {
+      "job_id": "p3_gpt2_compression_unified_rope",
+      "id": "p3_gpt2_compression_unified_rope",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compression_unified_rope --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compression_unified_rope",
+      "started_at": "2026-09-24T05:50:34.757205",
+      "retries": 1,
+      "status": "pending"
     }
   ],
   "active": [
     {
-      "id": "p3_gpt2_compression_unified_rope",
+      "id": "p3_gpt2_kmeans",
       "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compression_unified_rope --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compression_unified_rope",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_cur_moe_compressor_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor_class",
-      "status": "active",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_erc_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_factory",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kmeans --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kmeans",
       "status": "active",
       "retries": 0
     }
@@ -9126,6 +9114,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd_factory",
       "started_at": "2026-09-24T05:50:03.958038",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_cur_moe_compressor_class",
+      "id": "p3_gpt2_cur_moe_compressor_class",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules cur_moe_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_cur_moe_compressor_class",
+      "started_at": "2026-09-24T05:53:17.581027",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_erc_factory",
+      "id": "p3_gpt2_erc_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_factory",
+      "started_at": "2026-09-24T05:54:18.358560",
       "retries": 0,
       "status": "done"
     }
