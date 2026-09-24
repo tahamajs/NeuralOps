@@ -24,7 +24,7 @@ models = [
         "out_dir": r"results\unified_adaptive_sparse\roberta",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\roberta-base",
+            "--model", r"models\roberta_sst2",
             "--model_family", "roberta",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",

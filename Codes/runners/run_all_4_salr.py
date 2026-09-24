@@ -52,7 +52,7 @@ models = [
         "out_dir": r"results\unified_salr\roberta",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\roberta-base",
+            "--model", r"models\roberta_sst2",
             "--model_family", "roberta",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
@@ -80,7 +80,7 @@ models = [
         "out_dir": r"results\unified_salr\gpt2",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\gpt2",
+            "--model", r"models\gpt2_sst2",
             "--model_family", "gpt",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
