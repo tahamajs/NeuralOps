@@ -151,6 +151,13 @@ class HGRN2Layer(BaseAttention):
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
             self.copy_weights(old_attn)
+            target_dtype = kwargs.get("dtype", None)
+            if target_dtype is None:
+                p = next(old_attn.parameters(), None)
+                if p is not None and isinstance(p.dtype, torch.dtype):
+                    target_dtype = p.dtype
+            if target_dtype is not None:
+                self.to(target_dtype)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights across all 4 architectures."""
@@ -527,6 +534,8 @@ def inject_hgrn2_layer(
             is_nested_target = True
         elif hasattr(target, "attn"):
             curr_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            curr_attn = target.self_attn
 
     if curr_attn is None:
         return None
@@ -556,5 +565,7 @@ def inject_hgrn2_layer(
                 target.output.dense = nn.Identity()
         elif hasattr(target, "attn"):
             target.attn = new_layer
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_layer
 
     return new_layer
