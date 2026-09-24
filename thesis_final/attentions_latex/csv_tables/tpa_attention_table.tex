@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{tpa\_attention}}
+\label{tab:benchmark_tpa_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{4261.14 MB} & \lr{4114.43 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.8\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & \lr{51.49\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{adaptive\_ranks}}
+\label{tab:benchmark_adaptive_ranks_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9051} & \lr{312.19 MB} & \lr{162477.24 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{59.06\%} & \lr{0.649} & \lr{395.86 MB} & \lr{82839.6 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{81.88\%} & \lr{0.798} & \lr{1877.96 MB} & \lr{4497.54 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{66.97\%} & \lr{0.7338} & \lr{531.69 MB} & \lr{93259.66 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

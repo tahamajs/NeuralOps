@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{cur\_moe\_compressor}}
+\label{tab:benchmark_cur_moe_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{3611.1 MB} & \lr{117166.7 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{74.66\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{52.71\%} & \lr{} & \lr{3205.92 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.34\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

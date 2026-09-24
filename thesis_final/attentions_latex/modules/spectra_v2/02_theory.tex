@@ -1,88 +1,18 @@
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{spectra\_v2}}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\label{sec:spectra_v2}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-ماژول \lr{spectra\_v2} نسخه تکامل‌یافته روش‌های فشرده‌سازی طیفی است که با هدف حذف افزونگی ساختاری در ماتریس‌های بازنمایی ترنسفورمر ابداع شده است. در حالی که فاکتورسازی کلاسیک تنها به کاهش ابعاد ماتریس وزن تکیه دارد، \lr{spectra\_v2} با اعمال فیلترهای تنک فرکانسی در حوزه فوریه و تجزیه مقادیر منفرد همزمان، مؤلفه‌های نامرتبط با آنتروپی اطلاعاتی زبان را پالایش می‌کند. این فرآیند به شبکه اجازه می‌دهد تا ساختارهای گرامری دوربرد را در حوزه فرکانسی با ابعاد به مراتب فشرده‌تر کدگذاری کرده و سرعت استنتاج را به طور چشمگیری ارتقا دهد.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-تبدیل طیفی ورودی با اعمال عملگر تبدیل فوریه گسسته یا تجزیه متعامد بر روی بعد توالی آغاز می‌گردد:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{spectra\_v2}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\hat{X} = \mathcal{F}(X) \in \mathbb{C}^{B \times N \times D}
+\label{eq:spectral_bound_spectra_v2}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-ماتریس‌های فیلتر پایین‌گذر طیفی با رتبه فشرده $r \ll D$ مؤلفه‌های پرانرژی را استخراج می‌کنند:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\tilde{X} = \mathcal{F}^{-1}\left( \hat{X} \odot \mathbf{M}_{\text{\lr{spectral}}} \right) W_{\text{\lr{spectral}}}
+\label{eq:complexity_spectra_v2}
+\mathcal{C}_{\text{spectra\_v2}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-با جایگزینی ماتریس توجه با تقریب کم‌مرتبه طیفی:
-\begin{equation}
-A_{\text{\lr{spectral}}} = (Q U_r) \Sigma_r (K V_r)^\top
-\end{equation}
-محاسبات به صورت زنجیره‌ای از ضرب‌های تانسوری ماتریس-بردار اجرا شده و حافظه مورد نیاز به طور خطی مقیاس‌بندی می‌شود.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-پیاده‌سازی در \lr{Codes/framework/attentions/spectra\_v2.py} شامل کلاس \lr{SpectraV2Attention} است:
-\begin{itemize}
-    \item ورودی با ابعاد \lr{$[B, N, D]$} وارد لایه پیش‌فیلتر فرکانسی می‌شود.
-    \item لایه‌های تصویر با آداپتورهای \lr{LoRA} تلفیق شده‌اند تا بازآموزی در رتبه کم‌مرتبه بدون تخریب وزن‌های پایه انجام پذیرد.
-    \item عملگرهای فاکتورسازی کم‌مرتبه با توابع بهینه‌سازی پایتورچ پیاده‌سازی شده و از کپی‌های غیرضروری در حافظه ممانعت به عمل می‌آید.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-در پردازنده \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، مصرف حافظه به ۳۲۹.۴۶ مگابایت محدود شده و توان پردازش خارق‌العاده بیش از ۸۵,۰۰۰ توکن بر ثانیه حاصل گردیده است.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-ارزیابی‌های تجربی ماژول \lr{spectra\_v2} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام پذیرفته است. جدول \ref{tab:benchmark_spectra_v2} کارنامه عملکرد سخت‌افزاری و کیفی این ماژول را در مقایسه با مدل‌های پایه به تصویر می‌کشد:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{spectra\_v2} روی مدل‌های پایه}
-\label{tab:benchmark_spectra_v2}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9075} & \lr{329.5 MB} & \lr{85,193 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{75.57\%} & \lr{0.7966} & \lr{378.8 MB} & \lr{37,199 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{59.98\%} & \lr{0.6947} & \lr{567.8 MB} & \lr{33,216 tok/s} & \lr{PASS} \\
-\lr{Qwen} & \lr{49.66\%} & \lr{---} & \lr{337.6 MB} & \lr{64,000 tok/s} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-در بنچمارک استاندارد، این ماژول به دقت \lr{90.48\%} و شاخص \lr{F1-Score} معادل \lr{90.75\%} بر روی مدل پایه \lr{DistilBERT} دست یافت که احراز کامل استاندارد دروازه کیفیت رساله را اثبات می‌کند.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت معماری:}
-    \begin{itemize}
-        \item دقت درخشان بالای ۹۰ درصد همگام با شاخص F1 متوازن
-        \item شتاب پردازشی بسیار بالا (بیش از ۵.۵ برابر خط پایه)
-        \item فیلتر کردن موثر نویزهای آماری در لایه‌های عمیق مدل
-    \end{itemize}
-    \item \textbf{محدودیت‌ها و چالش‌ها:}
-    \begin{itemize}
-        \item سربار محاسبات تبدیل فوریه در توالی‌های بسیار کوتاه
-        \item نیاز به تنظیم دقیق آستانه فیلتر طیفی متناسب با نوع وظیفه زبانی
-    \end{itemize}
-\end{itemize}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{spectra\_v2} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/arch_aegis_spectron_fp8.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(spectra\_v2)}}
-\label{fig:arch_spectra_v2}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/spectra_v2_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(spectra\_v2)}}
-\label{fig:comp_spectra_v2}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

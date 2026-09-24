@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{dobi\_attention}}
+\label{tab:benchmark_dobi_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{83.6\%} & \lr{0.8358} & \lr{826.6 MB} & \lr{51690.7 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.34\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.97\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{Unknown} & \lr{74.31\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

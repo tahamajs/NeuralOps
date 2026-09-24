@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{phantom}}
+\label{tab:benchmark_phantom_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{72.59\%} & \lr{0.7668} & \lr{327.88 MB} & \lr{22267.04 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{500.9 MB} & \lr{11222.28 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{374.75 MB} & \lr{11696.7 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

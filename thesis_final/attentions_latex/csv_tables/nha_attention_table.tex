@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{nha\_attention}}
+\label{tab:benchmark_nha_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9107} & \lr{335.47 MB} & \lr{18549.11 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1510.75 MB} & \lr{6485.86 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{667.73 MB} & \lr{9243.13 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

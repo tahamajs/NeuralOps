@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{lsh\_attention}}
+\label{tab:benchmark_lsh_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{80.28\%} & \lr{0.8097} & \lr{341.15 MB} & \lr{39634.5 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6774} & \lr{568.8 MB} & \lr{39935.93 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{49.54\%} & \lr{0.6064} & \lr{390.89 MB} & \lr{20285.62 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}

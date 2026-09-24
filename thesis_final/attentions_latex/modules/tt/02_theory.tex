@@ -1,156 +1,18 @@
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{tt}}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\label{sec:tt}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-ماژول \lr{tt} (یا \lr{Token Compressed Attention}) بر مبنای پارادایم \textbf{هرس توکن‌های کلید-مقدار بر اساس برجستگی \lr{(Saliency-Based Key-Value Pruning)}} طراحی شده است. این معماری به جای محاسبه توجه بین تمامی توکن‌ها، با ارزیابی هوشمندانه انرژی و اهمیت معنایی هر توکن در دنباله، تنها حیاتی‌ترین آن‌ها را برای تشکیل ماتریس‌های کلید و مقدار نگه می‌دارد. ویژگی استراتژیک این مدل، حفظ قطعی و بی‌قیدوشرط توکن‌های لنگرگاه ساختاری (مانند توکن \lr{[CLS]} در نمایه صفر) است تا یکپارچگی اطلاعات طبقه‌بندی در شبکه‌هایی نظیر \lr{DistilBERT} از هم نپاشد.
 
-\textbf{تمثیل ملموس:}
-یک مدیرعامل (توکن پرس‌وجو یا \lr{Query}) را در یک سازمان بزرگ در نظر بگیرید. او برای تصمیم‌گیری نیازی ندارد با تمام صدها کارمند (توکن‌های کلید/مقدار) جلسه بگذارد. دستیار هوشمند او (شبکه امتیازدهی برجستگی) کارمندان را بر اساس میزان تخصص و فوریت گزارش‌هایشان غربال کرده و تنها نخبگان سازمان را به جلسه دعوت می‌کند. با این حال، بنیان‌گذار شرکت (توکن \lr{[CLS]}) دارای حق وتو و دسترسی دائمی است و همیشه در هر جلسه‌ای فارغ از امتیاز روزانه‌اش حضور دارد.
-
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-مکانیسم انتخاب توکن‌های برجسته، ترکیبی از نرم اقلیدسی (انرژی ذاتی) و یک شبکه امتیازدهی آموزش‌پذیر است. برای توکن $x_i \in \mathbb{R}^D$:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{tt}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\text{\lr{energy}}_i = \|x_i\|_2, \quad \text{\lr{score}}_i = \text{\lr{ScoreNet}}(x_i)
+\label{eq:spectral_bound_tt}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-s_i = \text{\lr{energy}}_i + \text{\lr{score}}_i, \quad s_0 = 10^4 \; (\text{\lr{Forced }} [\text{\lr{CLS}}])
+\label{eq:complexity_tt}
+\mathcal{C}_{\text{tt}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-بر اساس نرخ فشرده‌سازی $r_{\text{\lr{comp}}}$، تعداد توکن‌های باقیمانده برابر $k_{\text{\lr{keep}}} = \max(1, \lceil L \cdot r_{\text{\lr{comp}}} \rceil)$ است. نمایه‌های بهینه انتخاب و سپس به صورت یکنواخت مرتب می‌شوند تا ترتیب زمانی و موقعیتی حفظ گردد:
-\begin{equation}
-\mathcal{I}_{\text{\lr{top-}}k} = \text{\lr{Top-}}k(\{s_i\}_{i=0}^{L-1}), \quad \mathcal{I} = \text{\lr{sort}}(\mathcal{I}_{\text{\lr{top-}}k})
-\end{equation}
-پروجکشن‌های کلید و مقدار صرفاً برای این نمایه‌ها استخراج می‌شوند:
-\begin{equation}
-K_{\text{\lr{comp}}} = K_{:, :, \mathcal{I}, :}, \quad V_{\text{\lr{comp}}} = V_{:, :, \mathcal{I}, :}
-\end{equation}
-در نهایت، امتیاز توجه با در نظر گرفتن ماسک عِلی (برای دیکدرها) محاسبه می‌گردد که در آن توکن $i$ تنها می‌تواند به کلیدهایی توجه کند که در دنباله اصلی $\mathcal{I}_j \le i$ باشند:
-\begin{equation}
-S = \frac{Q K_{\text{\lr{comp}}}^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times L \times k_{\text{\lr{keep}}}}, \quad O = \text{\lr{Softmax}}(S + M_{\text{\lr{causal}}} + M_{\text{\lr{comp}}}) V_{\text{\lr{comp}}}
-\end{equation}
-
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-اجرای ماژول \lr{tt} بر پایه جریان تانسوری زیر سازمان‌دهی شده است:
-\begin{enumerate}
-    \item \textbf{پروجکشن و تزریق رتبه‌پایین \lr{(LoRA)}:} تانسور ورودی $\mathbf{X}$ با ابعاد $[B, L, D]$ وارد پروجکشن‌های خطی $Q, K, V$ می‌شود. به منظور کاهش هزینه تنظیم دقیق، وزن‌های پایه منجمد شده و آداپتورهای \lr{LoRA} تغییرات را مدیریت می‌کنند.
-    \item \textbf{کدگذاری موقعیت چرخشی \lr{(RoPE)}:} در صورت پشتیبانی مدل پایه (مانند \lr{Qwen} یا \lr{LLaMA})، کدگذاری موقعیتی چرخشی به صورت جزئی بر روی توکن‌های استخراج‌شده اعمال می‌شود.
-    \item \textbf{ارزیابی و هرس توکن‌ها:} شبکه \lr{ScoreNet} (شامل یک لایه پنهان ۶۴ بعدی و فعال‌ساز \lr{GELU}) امتیازات هر توکن را محاسبه می‌کند. با اختصاص مقدار $10^4$ به نمایه صفر و منفی‌نهایت به پدینگ‌ها، عملگر \lr{torch.topk} نمایه‌های حیاتی را استخراج کرده و سپس این نمایه‌ها مرتب می‌شوند.
-    \item \textbf{عملیات تجميع داده \lr{(Gather)}:} با استفاده از \lr{torch.gather}، تانسورهای $K$ و $V$ در امتداد طول دنباله به ابعاد $[B, H_{kv}, k_{\text{\lr{keep}}}, d_h]$ تقلیل می‌یابند.
-    \item \textbf{توجه و سنتز زمینه:} ضرب ماتریسی پرس‌وجوی کامل در کلیدهای فشرده انجام شده و پس از اعمال ماسک‌ها، ماتریس زمینه‌ای شکل می‌گیرد که با عبور از پروجکشن خروجی نهایتاً به ابعاد اصلی $[B, L, D]$ بازمی‌گردد.
-\end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-با پیاده‌سازی مکانیزم هرس پیش از ضرب ماتریسی \lr{(Q-K MatMul)}، ترافیک حافظه \lr{HBM} در پردازنده‌های گرافیکی نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} به شدت کاهش می‌یابد. 
-\begin{itemize}
-    \item \textbf{کاهش پیچیدگی حافظه:} ابعاد ماتریس توجه از $\mathcal{O}(L^2)$ به $\mathcal{O}(L \cdot k_{\text{\lr{keep}}})$ تقلیل می‌یابد. این امر از سرریز حافظه \lr{(OOM)} در طول دنباله‌های بسیار بلند جلوگیری می‌کند.
-    \item \textbf{بهینه‌سازی \lr{KV-Cache}:} از آنجا که تنها کسری از توکن‌ها در فاز استنتاج خودبازگشتی حفظ می‌شوند، اندازه بافر کلید/مقدار مستقیماً ضریب $r_{\text{\lr{comp}}}$ را به خود می‌گیرد، که اجازه می‌دهد دسته‌های پردازشی بزرگ‌تری \lr{(Larger Batch Sizes)} روی حافظه ۸ گیگابایتی بارگذاری شوند.
-\end{itemize}
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{tt} روی مدل‌های پایه}
-\label{tab:benchmark_tt}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{81.08\%} & \lr{0.7919} & \lr{508.1 MB} & \lr{121,022 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{684.0 MB} & \lr{70,850 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{784.1 MB} & \lr{63,883 tok/s} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-ماژول \lr{tt} بر روی معماری‌های متفاوت زبانی در بستر ارزیابی استاندارد اجرا گردید و دستاوردهای ذیل روی سخت‌افزار تخصیص‌یافته به ثبت رسید:
-
-\begin{itemize}
-    \item \textbf{مدل \lr{DistilBERT}:} با حفظ کیفیت مدل، دقت خیره‌کننده \lr{81.08\%} و شاخص \lr{F1} برابر \lr{0.7919} محقق شد. مصرف حافظه گرافیکی در نقطه اوج به تنها \lr{508.09 MB} محدود گردید، در حالی که نرخ توان عملیاتی به رکورد قابل توجه \lr{121,021.58} توکن بر ثانیه رسید.
-    \item \textbf{مدل‌های \lr{GPT-2} و \lr{RoBERTa}:} در این مدل‌ها علی‌رغم کاهش دقت به سطوح پایه \lr{(50.92\%)}، مزایای سخت‌افزاری پایدار ماند؛ به طوری که در \lr{GPT-2} حافظه مصرفی \lr{784.09 MB} با نرخ \lr{63,883.21} توکن بر ثانیه و در \lr{RoBERTa} مقدار \lr{684.03 MB} با \lr{70,849.78} توکن بر ثانیه ثبت گردید.
-\end{itemize}
-\textbf{توجیه علمی:} موفقیت بالای \lr{DistilBERT} نشان‌دهنده آن است که مدل‌های متمرکز بر طبقه‌بندی متون، به شدت بر اطلاعات تجمیع‌شده در تعداد معدودی توکن کلیدی و توکن \lr{[CLS]} متکی هستند. افت عملکرد در معماری‌های خودبازگشتی صرف \lr{(GPT-2)} نشان می‌دهد که هرس بی‌رحمانه توکن‌های میانی می‌تواند انسجام زنجیره مارکوفِ پیش‌بینی کلمه بعدی را دچار اختلال کند.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-\begin{center}
-\begin{tikzpicture}[x=1.5cm, y=-1.2cm, thick,
-    node distance=1.5cm,
-    block/.style={rectangle, draw=blue!70, fill=blue!5, rounded corners=3pt, align=center, text centered, inner sep=6pt, font=\footnotesize\sffamily, minimum width=2.8cm},
-    tensor/.style={rectangle, draw=purple!70, fill=purple!5, align=center, text centered, inner sep=5pt, font=\scriptsize\ttfamily},
-    operation/.style={circle, draw=orange!80, fill=orange!10, align=center, text centered, inner sep=2pt, font=\footnotesize\bfseries, minimum size=0.8cm},
-    arrow/.style={->, >=stealth, draw=black!70, thick}
-]
-
-% Nodes
-\node[tensor] (input) at (0,0) {Input X\\$[B, L, D]$};
-
-\node[block] (q_proj) at (-2.5, 1.5) {Query Proj (LoRA)};
-\node[block] (k_proj) at (0, 1.5) {Key Proj (LoRA)};
-\node[block] (v_proj) at (2.5, 1.5) {Value Proj (LoRA)};
-
-\node[block] (score) at (5.0, 0.5) {ScoreNet + L2 Norm\\$s_i = \|x_i\|_2 + f(x_i)$};
-\node[block] (topk) at (5.0, 2) {Top-K \& Sort\\$[CLS] \rightarrow s_0=10^4$};
-
-\node[tensor] (q_tensor) at (-2.5, 3) {Q\\$[B, H, L, d]$};
-\node[operation] (gather_k) at (0, 3) {Gather};
-\node[operation] (gather_v) at (2.5, 3) {Gather};
-
-\node[tensor] (k_comp) at (0, 4) {$K_{comp}$\\$[B, H_{kv}, k_{keep}, d]$};
-\node[tensor] (v_comp) at (2.5, 4) {$V_{comp}$\\$[B, H_{kv}, k_{keep}, d]$};
-
-\node[operation] (matmul1) at (-1.25, 5) {$\times$};
-\node[block] (softmax) at (-1.25, 6) {Causal Mask + Softmax};
-\node[operation] (matmul2) at (1.25, 7) {$\times$};
-
-\node[block] (out_proj) at (1.25, 8.5) {Output Proj (LoRA)};
-\node[tensor] (output) at (1.25, 9.7) {Output\\$[B, L, D]$};
-
-% Edges
-\draw[arrow] (input) -| (q_proj);
-\draw[arrow] (input) -- (k_proj);
-\draw[arrow] (input) -| (v_proj);
-\draw[arrow] (input) -| (score);
-
-\draw[arrow] (score) -- (topk);
-\draw[arrow] (topk) |- (gather_k);
-\draw[arrow] (topk) |- (gather_v);
-
-\draw[arrow] (q_proj) -- (q_tensor);
-\draw[arrow] (k_proj) -- (gather_k);
-\draw[arrow] (v_proj) -- (gather_v);
-
-\draw[arrow] (gather_k) -- (k_comp);
-\draw[arrow] (gather_v) -- (v_comp);
-
-\draw[arrow] (q_tensor) |- (matmul1);
-\draw[arrow] (k_comp) |- (matmul1);
-
-\draw[arrow] (matmul1) -- (softmax);
-\draw[arrow] (softmax) |- (matmul2);
-\draw[arrow] (v_comp) |- (matmul2);
-
-\draw[arrow] (matmul2) -- (out_proj);
-\draw[arrow] (out_proj) -- (output);
-
-\end{tikzpicture}
-\end{center}
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{tt} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/tt_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(tt)}}
-\label{fig:arch_tt}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/tt_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(tt)}}
-\label{fig:comp_tt}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

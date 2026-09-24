@@ -7,25 +7,3 @@
     \end{equation}
     \item \textbf{کلاس \lr{MLoRQCompressor}:} مدیریت تخصیص بودجه، جستجوی کاهشی حریصانه برای تعیین $(r_l, b_l)$، اعتبارسنجی خطای فروبنیوس با آستانه \lr{max\_error} (پیش‌فرض $0.50$)، مکانیسم محافظت از لایه‌های حساس و نگاشت امن لایه‌های بازگشتی به وزن پایه (\lr{fallback\_to\_original}).
 \end{itemize}
-
-\subsection{نتایج تجربی}
-نتایج ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{mlorq\_compressor} بر روی مدل‌های زبانی مطابق با اطلاعات ثبت‌شده در \lr{results/unified\_mlorq\_4models\_summary.json} در جدول \ref{tab:benchmark_mlorq_compressor} درج شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{mlorq\_compressor} روی مدل‌های پایه}
-\label{tab:benchmark_mlorq_compressor}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.2 MB} & \lr{17.4 s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.7 MB} & \lr{23.0 s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{635.5 MB} & \lr{21.5 s} & \lr{PASS} \\
-\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-بر پایه ارزیابی‌های تجربی، فشرده‌ساز \lr{mlorq\_compressor} در مدل \lr{DistilBERT} دقت قابل توجه \lr{90.48\%} و شاخص F1 معادل \lr{0.9077} را ثبت کرده که با دقت پایه مدل کاملاً منطبق است ($\Delta \text{Acc} = +0.00\%$). در مدل \lr{RoBERTa} دقت \lr{72.02\%} با افت اندک \lr{3.09\%} گزارش گردیده و در مدل \lr{GPT-2} دقت مدل فشرده‌شده به \lr{62.04\%} رسیده که به دلیل خاصیت تنظیم‌کنندگی فاکتورگیری با افزایش \lr{+1.26\%} نسبت به خط پایه همراه بوده است. ارزیابی مدل \lr{Qwen} در پایگاه آزمون‌های چهارگانه به علت نیاز به تنظیم مقیاس رتبه در معماری توجه گروهی \lr{GQA} به صورت \lr{SKIP} ثبت شده است.

@@ -1,15 +1,15 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_padre_4models_summary.csv} برای ماژول \lr{padre}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{padre}}
 \label{tab:benchmark_padre_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.905} & \lr{338.66 MB} & \lr{61064.72 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.59 MB} & \lr{30183.95 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{64.56\%} & \lr{0.7066} & \lr{388.22 MB} & \lr{32568.51 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

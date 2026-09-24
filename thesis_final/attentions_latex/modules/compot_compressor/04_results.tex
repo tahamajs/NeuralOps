@@ -1,1 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی آزمایشگاهی ماژول \lr{compot\_compressor} بر روی مجموعه‌داده \lr{GLUE SST-2} و بنچمارک استاندارد رساله در جدول \ref{tab:benchmark_compot_compressor} خلاصه شده است:
 
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{compot\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_compot_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{75.92\%} & \lr{0.8155} & \lr{368.29 MB} & \lr{64,689.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{514.29 MB} & \lr{12,361.10 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{52.18\%} & \lr{0.6854} & \lr{576.21 MB} & \lr{1,643.37 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+ماژول بر روی مدل \lr{DistilBERT} با موفقیت به دقت ۷۵٫۹۲٪ در غربالگری سریع و ۹۰٫۸۳٪ در جاروب رتبه‌ای (با رتبه ۶۴ و شاخص F1 معادل ۰٫۹۱۰۵) دست یافته است. با این حال، در مدل‌های \lr{RoBERTa} و \lr{GPT-2} در تنظیمات کالیبراسیون بدون آداپتور ریکاوری عمیق، دقت در فلات کلاسی ۵۰٫۹۲٪ متوقف گردیده و برچسب رد معماری دریافت کرده است.

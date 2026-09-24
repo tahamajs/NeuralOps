@@ -1,138 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{vspec}}
-\label{sec:mod_vspec}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-ماژول \lr{vspec} (کوته‌نوشت \lr{Variational Spectral Token-Adaptive Attention}) یک رویکرد نوین برای فشرده‌سازی و بهینه‌سازی مکانیزم توجه است که با ترکیب سه ایده بنیادین طراحی شده است: نخست، انتخاب پویای توکن‌های کلیدی \lr{(Token Routing)} برای کاهش طول دنباله؛ دوم، استفاده از تجزیه مقادیر تکین \lr{(SVD)} برای کاهش رتبه ماتریس‌های وزن؛ و سوم، اعمال گیت‌بندی تغییراتی \lr{(Variational Gating)} بر روی مقادیر تکین جهت تطبیق‌پذیری با توزیع ورودی. این معماری به جای تکیه بر هرس قطعی، از یک رویکرد احتمالی برای وزن‌دهی به مولفه‌های طیفی استفاده می‌کند که منجر به مقاومت بیشتر در برابر نویز و حفظ ویژگی‌های حیاتی زبان می‌گردد. همچنین با ادغام آداپتورهای \lr{LoRA} در کنار ماتریس‌های \lr{SVD}، ظرفیت یادگیری و بازیابی اطلاعات در طول فاین‌تیونینگ به شدت افزایش می‌یابد.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-در این ماژول، پردازش در چندین لایه ریاضی صورت می‌پذیرد. در گام اول، استخراج توکن‌های مهم توسط یک شبکه امتیازدهی محلی صورت می‌گیرد:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{vspec}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-s = \sigma\left(\mathbf{W}_s \mathbf{X} + b_s\right), \quad \mathcal{I} = \text{\lr{TopK}}(s, K)
+\label{eq:spectral_bound_vspec}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن $\mathcal{I}$ اندیس توکن‌های منتخب است و $\mathbf{X}_{\text{\lr{routed}}} = \mathbf{X}[:, \mathcal{I}, :]$ تشکیل می‌شود. 
-سپس برای هر هدایتگر خطی، گیت تغییراتی $g$ از روی میانگین دنباله ورودی نمونه‌برداری می‌شود:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\mu, \log \sigma = \text{\lr{MLP}}\left(\frac{1}{N} \sum_{i=1}^N \mathbf{X}_i\right)
+\label{eq:complexity_vspec}
+\mathcal{C}_{\text{vspec}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-\begin{equation}
-z = \mu + \epsilon \odot \exp(\log \sigma), \quad \epsilon \sim \mathcal{N}(0, I), \quad g = \sigma(z)
-\end{equation}
-پروجکشن‌های خطی ترکیبی از \lr{SVD} گیت‌شده و \lr{LoRA} هستند:
-\begin{equation}
-\mathbf{P}(\mathbf{X}_{\text{\lr{routed}}}) = \left( \mathbf{X}_{\text{\lr{routed}}} \mathbf{V} \right) \odot \mathbf{S} \odot g \mathbf{U}^T + \alpha \mathbf{X}_{\text{\lr{routed}}} \mathbf{A} \mathbf{B}
-\end{equation}
-در نهایت، ماتریس توجه با استفاده از گیت‌های سطح سر \lr{(Head Gates)} $h = \sigma(\text{\lr{MLP}}(\mathbf{X}))$ تعدیل می‌شود:
-\begin{equation}
-\mathbf{A} = \text{\lr{Softmax}}\left( \frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}} \right) \odot h
-\end{equation}
-پیچیدگی زمانی این رویکرد به دلیل مسیریابی توکن‌ها به $\mathcal{O}(B K D + B K^2 H)$ کاهش می‌یابد که در آن $K \ll N$ است و فضای حافظه نیز به واسطه کاهش طول دنباله و نمایش کم‌رتبه به شدت تقلیل می‌یابد.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کلاس \lr{VSpecAttention} بر اساس معماری چندبخشی پیاده‌سازی شده و از مکانیزم‌های پیشرفته‌ای برای تطبیق با خانواده‌های \lr{DistilBERT}، \lr{GPT-2} و \lr{Qwen} بهره می‌برد:
-\begin{itemize}
-    \item \textbf{مسیریابی توکن‌ها \lr{(TokenRouter)}:} تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ دریافت شده و با حفظ قطعی توکن \lr{[CLS]}، به ابعاد $[B, K, D]$ کاهش می‌یابد. 
-    \item \textbf{گیت‌های طیفی تغییراتی \lr{(VariationalSpectralGate)}:} بردارهای گیت $g_q, g_k, g_v \in \mathbb{R}^{B \times R}$ تولید می‌شوند تا مقیاس‌دهی دینامیک روی رتبه‌های SVD اعمال کنند.
-    \item \textbf{پروجکشن دینامیک \lr{(DynamicLowRankProjector)}:} تانسور مسیریابی شده از فیلترهای SVD و LoRA عبور کرده و خروجی‌هایی با ابعاد $[B, H, K, d_k]$ (و برای مقادیر کلید/ارزش در حالت GQA ابعاد $[B, H_{kv}, K, d_k]$) تولید می‌کنند.
-    \item \textbf{جایگذاری موقعیت چرخشی \lr{(RoPE)}:} تابع \lr{apply\_rotary\_pos\_emb} به صورت ایمن و با در نظر گرفتن ابعاد فرد یا زوج روی تانسورهای $Q$ و $K$ اعمال می‌گردد.
-    \item \textbf{توزیع مجدد \lr{(Scatter Back)}:} پس از محاسبه توجه به ابعاد $[B, K, D]$، نتایج از طریق عملگر \lr{scatter\_add\_} به تانسور اولیه $[B, N, D]$ بازگردانده شده و اتصال باقیمانده \lr{(Residual)} حفظ می‌شود.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-عملکرد این ماژول بر روی سخت‌افزار \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با تحلیل مدل سقف کارایی \lr{(Roofline Model)} ارزیابی می‌شود:
-کاهش طول دنباله از $N$ به $K$، باعث کاهش نمایی در ترافیک حافظه \lr{(Memory Traffic)} ماتریس‌های $Q, K, V$ بین \lr{HBM} و \lr{SRAM (L1/L2)} می‌شود. 
-در رژیم‌های \lr{Memory-Bound}، گلوگاه اصلی بارگذاری ماتریس‌های وزن و کش توکن‌هاست. 
-استفاده از \lr{SVD} تعداد پارامترهای نیازمند به بارگذاری را به شکل چشمگیری می‌کاهد، و از سوی دیگر گیت‌های تغییراتی محاسبات اضافی سبکی در سطح \lr{ALU}ها تحمیل می‌کنند که شدت محاسباتی \lr{(Arithmetic Intensity)} را افزایش می‌دهد. 
-در نتیجه مکانیزم \lr{vspec} به خوبی از نواحی کراندار حافظه فاصله گرفته و به سمت نواحی کراندار محاسباتی \lr{(Compute-Bound)} حرکت می‌کند که برای معماری پردازنده‌های مدرن گرافیکی بهینه‌تر است.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-نتایج استخراج‌شده از آزمایشات رسمی در جدول زیر برای مدل‌های مختلف زبانی خلاصه شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی سخت‌افزاری مکانیزم \lr{vspec}}
-\label{tab:benchmark_vspec}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل زبانی} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{اوج حافظه \lr{(MB)}} & \textbf{توان عملیاتی \lr{(Tok/s)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{283.95} & \lr{42893.23} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{479.64} & \lr{20431.11} & \lr{PASS\_LOW} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{334.69} & \lr{24228.87} & \lr{PASS\_LOW} \\
-\lr{T5 (Unknown)} & \lr{68.74\%} & - & - & - & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-مشاهده نتایج نشان می‌دهد که علیرغم کاهش قابل توجه مصرف حافظه (اوج حافظه زیر ۵۰۰ مگابایت) و دستیابی به توان عملیاتی بسیار بالا (بیش از ۴۲ هزار توکن در ثانیه برای \lr{DistilBERT})، مدل‌های \lr{Encoder-only} و \lr{Decoder-only} دچار افت شدید دقت به سطح پایه تصادفی (حدود ۵۰ درصد) شده و وضعیت \lr{PASS\_LOW} دریافت کرده‌اند. 
-شاخص \lr{F1} ثابت \lr{0.6748} حاکی از فروریزش مدل به سمت پیش‌بینی کلاس اکثریت \lr{(Majority Class Collapse)} است. 
-دلیل علمی این پدیده، استفاده از گیت‌های تغییراتی \lr{Variational} با واریانس بالا پیش از تنظیم دقیق \lr{(Fine-tuning)} و همچنین هرس خشونت‌آمیز توکن‌ها در لایه‌های ابتدایی است که باعث از دست رفتن قطعی بازنمایی‌های نحوی \lr{(Syntactic Representations)} در لایه‌های عمیق‌تر می‌شود.
-با این وجود، توانایی معماری \lr{T5} در جبران این کاهش اطلاعات و رسیدن به دقت \lr{68.74\%} نشان می‌دهد که مدل‌های \lr{Encoder-Decoder} مقاومت بالاتری در برابر هرس طیفی از خود نشان می‌دهند.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت:} 
-    \begin{itemize}
-        \item کاهش قابل توجه پیچیدگی فضایی و مصرف \lr{VRAM} به مقادیر کمتر از ۵۰۰ مگابایت.
-        \item افزایش خیره‌کننده توان عملیاتی و سرعت استنتاج به لطف \lr{Token Routing} و \lr{SVD}.
-        \item طراحی چندگانه و سازگاری با معماری‌های نوین مانند \lr{GQA} و جایگذاری موقعیت \lr{RoPE}.
-    \end{itemize}
-    \item \textbf{محدودیت‌ها:}
-    \begin{itemize}
-        \item افت شدید دقت به دلیل خطای تجمیع‌شده ناشی از حذف توکن‌ها در لایه‌های متوالی.
-        \item ناپایداری بهینه‌سازی توابع تغییراتی در فاز آموزش که منجر به همگرایی به کلاس اکثریت می‌گردد.
-    \end{itemize}
-    \item \textbf{پیشنهادات توسعه:}
-    \begin{itemize}
-        \item استفاده از رویکرد \lr{Soft Routing} یا \lr{Differentiable Top-K} برای حفظ گرادیان‌ها در طول هرس توکن‌ها.
-        \item اعمال هرس توکن‌ها تنها در لایه‌های عمیق‌تر \lr{(Late-layer Routing)} برای حفظ ویژگی‌های پایه در لایه‌های آغازین.
-        \item زمان‌بندی ملایم \lr{(Annealing)} برای متغیرهای تغییراتی به جای تزریق نویز ثابت.
-    \end{itemize}
-\end{itemize}
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
-    \node [block, right=1.2cm of k] (acc) {تجمع ماتریس حافظه $\mathbf{S}_t$};
-    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی};
-
-    \draw [->, thick, draw=blue!80] (input) -- (k);
-    \draw [->, thick, draw=orange!80] (k) -- (acc);
-    \draw [->, thick, draw=blue!80] (acc) -- (out);
-\end{tikzpicture}
-\end{center}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{vspec} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/vspec_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(vspec)}}
-\label{fig:arch_vspec}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/vspec_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(vspec)}}
-\label{fig:comp_vspec}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

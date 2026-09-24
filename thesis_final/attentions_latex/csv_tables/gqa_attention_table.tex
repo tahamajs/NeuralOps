@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{gqa\_attention}}
+\label{tab:benchmark_gqa_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.9033} & \lr{324.69 MB} & \lr{96233.27 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.0\%} & \lr{0.8265} & \lr{339.81 MB} & \lr{49007.46 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.46\%} & \lr{} & \lr{3339.21 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.4\%} & \lr{0.8623} & \lr{400.59 MB} & \lr{46819.95 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

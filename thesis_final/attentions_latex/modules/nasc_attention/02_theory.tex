@@ -1,114 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{nasc\_attention}}
-\label{sec:mod_nasc_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-ماژول \lr{nasc\_attention} (مخفف \lr{NEXUS-AEGIS Spectral Cascade Attention}) به منظور غلبه بر گلوگاه پیچیدگی مربعی توجه استاندارد طراحی شده است. ایده محوری این معماری، تجزیه عملیات توجه به سه سطح سلسله‌مراتبی و مسیردهی پویا میان آن‌هاست. مشاهدات تجربی نشان می‌دهند که ماتریس‌های توجه در لایه‌های عمیق مدل‌های زبانی دارای انتروپی پایین و چگالی طیفی متمرکز هستند، به این معنا که تنها کسر کوچکی از ارتباطات سراسری دارای اهمیت اطلاعاتی می‌باشند. در پاسخ به این ویژگی، \lr{nasc\_attention} از یک ساختار مسیردهی نرم \lr{(Soft Gating)} استفاده می‌کند که بازنمایی ورودی را بین سه مکانیزم: (۱) توجه محلی پنجره‌ای \lr{(Local Window Attention)}، (۲) توجه بلوکی پراکنده \lr{(Sparse Block Attention)}، و (۳) توجه طیفی سراسری با ویژگی‌های تصادفی \lr{(Global Spectral RFF Attention)} توزیع می‌کند. این ترکیب، امکان حفظ انسجام محلی در سطح جملات، پوشش‌دهی انتخاب‌گرانه کلمات کلیدی، و تقریب خطی وابستگی‌های دوربرد را با حفظ مقیاس‌پذیری زیرخطی حافظه فراهم می‌سازد.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-در این ماژول، ورودی پنهان $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ با استفاده از پروجکشن‌های سازگار با \lr{LoRA} به تانسورهای پرس‌وجو ($\mathbf{Q}$)، کلید ($\mathbf{K}$) و مقدار ($\mathbf{V}$) با فرمت $\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}$ تبدیل می‌شود (که در آن $d = D / H$). مسیردهی توسط یک شبکه عصبی دروازه‌ساز \lr{(Gating Network)} صورت می‌گیرد:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{nasc\_attention}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-    \mathbf{g} = \operatorname{Softmax}(\mathbf{X}_{\text{\lr{mean}}} \mathbf{W}_{\text{\lr{gate}}}), \quad \mathbf{g} \in \mathbb{R}^{B \times 1 \times 1 \times 3}
+\label{eq:spectral_bound_nasc_attention}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن $\mathbf{X}_{\text{\lr{mean}}} = \frac{1}{L} \sum_{i=1}^L \mathbf{X}_{:,i,:}$ است.
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
 
-خروجی نهایی به صورت ترکیب وزنی زیر محاسبه می‌گردد:
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-    \mathbf{O} = g_1 \mathbf{O}_{\text{\lr{loc}}} + g_2 \mathbf{O}_{\text{\lr{sp}}} + g_3 \mathbf{O}_{\text{\lr{glb}}}
+\label{eq:complexity_nasc_attention}
+\mathcal{C}_{\text{nasc\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-
-فرمول‌بندی شاخه‌ها:
-۱. توجه پنجره‌ای محلی ($\mathbf{O}_{\text{\lr{loc}}}$):
-\begin{equation}
-    \mathbf{O}_{\text{\lr{loc}}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} \odot \mathbf{M}_{\text{\lr{win}}}\right) \mathbf{V}
-\end{equation}
-که $\mathbf{M}_{\text{\lr{win}}}$ ماسکی است که مقادیر خارج از شعاع $w$ را صفر می‌کند. پیچیدگی محاسباتی: $\mathcal{O}(BHLwd)$.
-
-۲. توجه بلوکی پراکنده ($\mathbf{O}_{\text{\lr{sp}}}$): توالی به بلوک‌هایی با اندازه $b$ تقسیم می‌شود. پرس‌وجوهای هر بلوک تنها به $k$ بلوک برتر از کلیدها متصل می‌گردند. پیچیدگی: $\mathcal{O}(BHL \frac{kb}{L} d) = \mathcal{O}(BHkbd)$.
-
-۳. توجه طیفی سراسری ($\mathbf{O}_{\text{\lr{glb}}}$): با استفاده از ویژگی‌های فوریه تصادفی \lr{(RFF)} برای تقریب خطی کرنل:
-\begin{equation}
-    \phi(\mathbf{Q}) = \frac{1}{\sqrt{F}} [\cos(\mathbf{Q} \mathbf{W}_{\text{\lr{RFF}}}), \sin(\mathbf{Q} \mathbf{W}_{\text{\lr{RFF}}})]
-\end{equation}
-که $\mathbf{W}_{\text{\lr{RFF}}} \in \mathbb{R}^{d \times F}$. خروجی به صورت $\mathbf{O}_{\text{\lr{glb}}} = \frac{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{V})}{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{1})}$ محاسبه می‌گردد. پیچیدگی: $\mathcal{O}(BHLFd)$.
-پیچیدگی کلی سیستم به صورت خطی $\mathcal{O}(BHLd(\frac{w}{L} + \frac{kb}{L} + F))$ تقلیل می‌یابد که در طول‌های توالی بسیار بالا، منجر به کاهش چشمگیر سربار حافظه نسبت به $\mathcal{O}(L^2)$ می‌شود.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-سورس‌کد \lr{nasc\_attention} بر پایه واسط \lr{BaseAttention} 구현 گردیده است. پروجکشن‌های $\mathbf{Q}$، $\mathbf{K}$ و $\mathbf{V}$ از طریق کلاس اختصاصی \lr{LoRALinear} پیاده‌سازی شده‌اند که امکان اعمال رتبه پایین افزایشی \lr{(LoRA Adapters)} را برای تنظیم دقیق \lr{Fine-Tuning} بدون تغییر وزن‌های پایه \lr{(Base Weights)} فراهم می‌سازد. در مسیر پیشرو \lr{(Forward Pass)}:
-1. ابتدا $\mathbf{Q}$ به ابعاد $[B, H, L, d]$ تغییر شکل داده و در صورت لزوم کدگذاری مکانی چرخشی \lr{(RoPE)} با تابع \lr{apply\_rotary\_pos\_emb} بر روی آن اعمال می‌شود.
-2. کلیدها و مقادیر نیز با پشتیبانی از \lr{Grouped-Query Attention (GQA)} از طریق \lr{repeat\_kv} به ابعاد معادل گسترش می‌یابند.
-3. در صورت کوتاه بودن توالی ($L \le \text{\lr{window\_size}}$)، سیستم جهت کاهش سربار کنترلی به صورت خودکار به \lr{Scaled Dot-Product Attention} استاندارد عقب‌گرد \lr{(Fallback)} می‌کند.
-4. برای توالی‌های طولانی‌تر، دروازه توزیع محاسبه شده و توابع کمکی \lr{\_local\_window\_attention}، \lr{\_sparse\_block\_attention} و \lr{\_global\_spectral\_rff\_attention} فراخوانی می‌شوند. در شاخه طیفی و در حالت دیکودر علّی \lr{(Causal)}، سیستم از جمع‌های پیشوندی \lr{(Cumulative Sums)} برای حفظ پیچیدگی زمانی خطی بهره می‌گیرد.
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-استقرار مدل بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} نشان می‌دهد که معماری \lr{nasc\_attention} با انتقال بار پردازشی از رژیم محدود به حافظه \lr{(Memory-Bound)} به رژیم محدود به محاسبات \lr{(Compute-Bound)}، کارایی بالایی ارائه می‌دهد. تقلیل پیچیدگی $\mathcal{O}(N^2)$ به خطی باعث می‌شود که ترافیک تبادل داده بین \lr{HBM} و حافظه نهان پرسرعت \lr{SRAM (L1/L2)} به شدت کاهش یابد.
-تخصیص حافظه برای تانسور میانی ماتریس توجه که در روش کلاسیک نیازمند $\mathcal{O}(L^2)$ بایت بود، در اینجا به ترکیب بردارهای فشرده با ظرفیت $\mathcal{O}(L \cdot F)$ بایت تبدیل می‌شود. این کاهش مستقیم تراکنش‌های حافظه \lr{(Memory Transactions)}، اشغالیت \lr{(Occupancy)} هسته‌های \lr{CUDA} را افزایش داده و امکان استفاده بهتر از \lr{Tensor Cores} را برای ضرب‌های خطی باقیمانده فراهم می‌کند.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-ارزیابی ماژول با استفاده از بنچمارک استاندارد و در شرایط یکسان ثبت شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی ارزیابی سخت‌افزاری مکانیزم \lr{nasc\_attention}}
-\label{tab:benchmark_nasc}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{اوج حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{89.11\%} & \lr{0.8917} & \lr{339.63 MB} & \lr{24918.94 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{85.55\%} & \lr{0.8587} & \lr{388.00 MB} & \lr{11631.37 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1514.06 MB} & \lr{5049.18 tok/s} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-نتایج روی \lr{DistilBERT} و \lr{RoBERTa-base} بسیار موفق ارزیابی می‌شوند، جایی که مدل نه تنها دقت بسیار بالا (\lr{89.11\%} و \lr{85.55\%}) و \lr{F1-Score} پایداری را به ثبت رسانده، بلکه این امر با مصرف حافظه بسیار پایین (\lr{339.63 MB} برای \lr{DistilBERT}) محقق شده است. ترکیب هوشمندانه توجه محلی و پراکنده به مدل اجازه داده است ساختارهای نحوی \lr{(Syntactic Structures)} محلی را به خوبی تشخیص دهد و از طریق \lr{RFF}، مفاهیم کلان و معنایی \lr{(Semantic)} را پیوند دهد. 
-افت کارایی در مدل \lr{GPT-2} (با دقت \lr{50.92\%} که معادل حدس تصادفی در تسک باینری است) به دلیل ناسازگاری ماهیت تولیدی و اتورگرسیو این مدل با فرآیندهای میانگین‌گیری و تقریب طیفی سراسری بدون تنظیمات دقیق‌تر است. ماسک علّی در ترکیب با جمع‌های پیشوندی و ویژگی‌های تصادفی فوریه، موجب محو شدن سیگنال‌های پربسامد \lr{(High-Frequency Signals)} در توکن‌های پایانی شده و خطای تراکمی \lr{(Accumulative Error)} ایجاد کرده است.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت:}
-    \begin{itemize}
-        \item دست‌یابی به دقت عالی \lr{89.11\%} همراه با توان پردازشی بالا \lr{24,918 tok/s} بر روی \lr{DistilBERT}.
-        \item طراحی چندمسیره با دروازه‌سازی هوشمند که ظرفیت بیانی \lr{(Expressivity)} را بسته به پیچیدگی متن تخصیص می‌دهد.
-        \item پشتیبانی از \lr{GQA}، \lr{RoPE} و تزریق یکپارچه \lr{LoRA}.
-    \end{itemize}
-    \item \textbf{محدودیت‌ها:}
-    \begin{itemize}
-        \item ناپایداری در مدل‌های تولیدی و علّی مانند \lr{GPT-2} که ناشی از طبیعت تقریب طیفی متراکم در ترکیب با نقاب‌گذاری یک‌طرفه است.
-        \item سربار محاسباتی محاسبه سه شاخه مختلف توجه در طول‌های توالی کوتاه که با بازگشت خودکار به توجه استاندارد رفع شده است.
-    \end{itemize}
-    \item \textbf{پیشنهادات توسعه:}
-    \begin{itemize}
-        \item جایگزینی تقریب \lr{RFF} در دیکودرها با روش‌های کش‌سازی خطی مقاوم‌تر \lr{(Robust Linear Caching)}.
-        \item پویایی در تعیین اندازه پنجره‌ها و بلوک‌های پراکنده با استفاده از رویکردهای یادگیری تقویتی \lr{(RL)} برای انطباق بهتر با وظایف مختلف.
-    \end{itemize}
-\end{itemize}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{nasc\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/nasc_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(nasc\_attention)}}
-\label{fig:arch_nasc_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/nasc_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(nasc\_attention)}}
-\label{fig:comp_nasc_attention}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

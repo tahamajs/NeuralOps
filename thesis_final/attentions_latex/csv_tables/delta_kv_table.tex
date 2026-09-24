@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_delta_kv_4models_summary.csv} برای ماژول \lr{delta_kv}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{delta\_kv}}
 \label{tab:benchmark_delta_kv_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{91.06\%} & \lr{0.9139} & \lr{310.69 MB} & \lr{53139.65 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{85.32\%} & \lr{0.868} & \lr{414.3 MB} & \lr{15811.65 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.74\%} & \lr{} & \lr{5538.93 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{92.09\%} & \lr{0.9234} & \lr{335.0 MB} & \lr{9808.15 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{86.24\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

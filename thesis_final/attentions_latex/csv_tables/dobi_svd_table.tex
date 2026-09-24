@@ -1,15 +1,16 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_dobi_svd_4models_summary.csv} برای ماژول \lr{dobi_svd}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{dobi\_svd}}
 \label{tab:benchmark_dobi_svd_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9079} & \lr{310.69 MB} & \lr{52426.55 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{58.14\%} & \lr{0.6256} & \lr{635.79 MB} & \lr{27358.79 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{89.45\%} & \lr{0.895} & \lr{1850.64 MB} & \lr{4747.76 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{74.54\%} & \lr{0.7707} & \lr{530.19 MB} & \lr{27881.66 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

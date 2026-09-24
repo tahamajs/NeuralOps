@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{cluster\_attention}}
+\label{tab:benchmark_cluster_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.02\%} & \lr{0.9039} & \lr{331.87 MB} & \lr{3165.73 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{87.96\%} & \lr{0.885} & \lr{397.23 MB} & \lr{10707.08 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{89.91\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{659.63 MB} & \lr{1531.33 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

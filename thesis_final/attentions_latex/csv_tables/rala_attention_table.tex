@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{rala\_attention}}
+\label{tab:benchmark_rala_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{60.09\%} & \lr{0.6306} & \lr{335.14 MB} & \lr{21401.49 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.94 MB} & \lr{8077.48 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.8\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.8\%} & \lr{0.6305} & \lr{666.21 MB} & \lr{10456.65 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

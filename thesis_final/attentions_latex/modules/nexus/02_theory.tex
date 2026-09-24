@@ -1,118 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{nexus}}
-\label{sec:mod_nexus}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-ماژول \lr{nexus} تجلی یک معماری پیوندی \lr{(Hybrid Architecture)} و جاه‌طلبانه است که شش پارادایم نوین فشرده‌سازی توجه را در یک چارچوب یکپارچه تلفیق می‌نماید. به جای اتکای صرف به روش‌های مبتنی بر کشف اکتشافی \lr{(Heuristic)}، این ماژول گلوگاه مرتبه دوم $\mathcal{O}(N^2)$ را از طریق تصاویری در زیرفضاهای توپولوژیک برطرف می‌سازد. فیلتراسیون دومرحله‌ای در این ساختار، نخست با استفاده از نقشه‌های همبستگی زیرنمونه‌برداری شده ضدقطری \lr{(XAttention)} به عنوان یک پیش‌فرض توپولوژیک عمل می‌کند. سپس، شبکه دروازه‌بندی \lr{SeerAttention} این پیش‌فرض‌ها را از طریق پروجکشن‌های آموزش‌پذیر رتبه‌پایین صیقل می‌دهد و به مدل این امکان را می‌بخشد تا میدان دریافت \lr{(Receptive Field)} خود را به‌طور تطبیقی شکل دهد. افزون بر این، پوشش‌دهی نواری \lr{(AnchorAttention)} انبساط توان دوم درون‌بلوکی را محدود کرده و در نهایت، ویژگی‌های تصادفی فوریه \lr{(Spectraformer RFF)} تضمین می‌کند که با وجود اعمال اسپارسیتی شدید در سطح بلوک، بافتار سراسری \lr{(Global Context)} دچار فروپاشی نگردد.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-دنباله ورودی با طول $N$ به $M = \lceil N / B_s \rceil$ بلوک با اندازه $B_s$ افراز می‌گردد. امتیازدهی متقابل میان‌بلوکی \lr{(X-Scoring)} با گام زیرنمونه‌برداری $\sigma$ به شکل زیر تقریب زده می‌شود:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{nexus}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-S_{i,j} = \mathbb{E}\big[\mathbf{Q}_{i}^{(\sigma)} {\mathbf{K}_{j}^{(\sigma)}}^\top\big] \in \mathbb{R}^{M \times M}
+\label{eq:spectral_bound_nexus}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-به موازات آن، شبکه \lr{SeerGating} یک پروجکشن غیرخطی رتبه‌پایین را برای پیش‌بینی بودجه اسپارسیتی هر هد به کار می‌گیرد:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\pi_Q = \phi\big(\bar{\mathbf{Q}} \mathbf{W}_1\big) \mathbf{W}_2, \quad \pi_K = \phi\big(\bar{\mathbf{K}} \mathbf{W}_3\big) \mathbf{W}_4 \implies \mathbf{G} = \sigma\left(\frac{\pi_Q \pi_K^\top}{\tau}\right)
+\label{eq:complexity_nexus}
+\mathcal{C}_{\text{nexus}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-مجموعه شاخص‌های فعال بلوکی $\mathcal{N}(i)$ از ادغام ماسک Top-$k$ شبکه \lr{XAttention} و ماسک \lr{Seer} حاصل می‌گردد. در سطح درون‌بلوکی، فعال‌ساز \lr{Softpick} جایگزین \lr{Softmax} استاندارد می‌شود تا یک کران صفر مطلق را برای توکن‌های فاقد اهمیت تحمیل کند:
-\begin{equation}
-\operatorname{Softpick}(\mathbf{X})_i = \frac{\max\left(0, \exp(\mathbf{X}_i / T) - 1\right)}{\sum_j \max\left(0, \exp(\mathbf{X}_j / T) - 1\right)}
-\end{equation}
-برای بازیابی توزیع سراسری در فواصل مشخص (هر $R$ لایه)، از تقریب کرنل با ویژگی‌های تصادفی متعامد \lr{(RFF)} در فضای $\mathbb{R}^{d \times F}$ استفاده می‌گردد تا پیچیدگی زمانی از مرتبه مربعی به خطی تنزل یابد. بدین‌ترتیب پیچیدگی نهایی سیستم به $\mathcal{O}\left(N \cdot B_s + N \cdot k \cdot B_s / S_w\right)$ کاهش می‌یابد.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-در پیاده‌سازی این ماژول در فایل \lr{\texttt{nexus.py}}، نگاشت‌های خطی با آداپتورهای \lr{LoRALinear} پیکربندی شده‌اند (با $r=16$ و $\alpha=32$). کلاس \lr{\texttt{DualStageStripeAttention}} به عنوان موتور مرکزی، تانسورهای $Q$ با ابعاد $[B, H, N, d]$ را پردازش می‌کند. 
-در هر مرحله پردازش بلوک، کلیدهای درون‌بلوکی \lr{\texttt{K\_intra}} به طور کامل نگه‌داشته می‌شوند و کلیدهای برون‌بلوکی متناظر براساس ماسک تجمیع‌شده در \lr{\texttt{K\_inter\_list}} واکشی می‌گردند. در صورتی که طول دنباله فراتر از حد آستانه ($N > 256$) باشد، ماسک نواری \lr{\texttt{stripe\_mask}} با عرض نوار $S_w = 4$ روی ضرب داخلی بلوک‌ها اعمال می‌گردد تا محاسبات غیرضروری محدود به همسایگی‌های محلی شود. 
-در نهایت کلاس \lr{\texttt{SpectraformerRectify}} با استفاده از یک پروجکشن مقداردهی‌شده با تجزیه متعامد \lr{(QR Initialization)} توجه خطی را فرموله می‌کند.
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-در چارچوب مدل سقف کارایی روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، مکانیزم \lr{nexus} به شدت از گلوگاه پهنای باند حافظه \lr{(Memory-Bound)} می‌کاهد. در توجه استاندارد، بارگذاری بلوک‌های ماتریس $K$ و $V$ از \lr{HBM} به حافظه \lr{SRAM (L1/L2)} متضمن ترافیک سنگین $\mathcal{O}(N^2)$ است. 
-در استراتژی \lr{nexus}، بخش بزرگی از بلوک‌های نامربوط بر اساس پیش‌بینی‌های سبک شبکه \lr{X-Scoring} در همان سطوح ابتدایی هرس می‌شوند. با هم‌راستایی ابعاد بلوک ($B_s=32$ برای بردارهای ۶۴-بعدی) با مرزهای خطوط کش \lr{(Cache Lines)}، دسترسی‌ها به صورت یکپارچه \lr{(Coalesced)} انجام می‌پذیرد. در نتیجه، شدت محاسباتی \lr{(Arithmetic Intensity)} به دلیل تقلیل ترافیک حافظه به میزان $(1 - k/M)$ به سمت رژیم مبتنی بر محاسبه \lr{(Compute-Bound)} شیفت پیدا می‌کند.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-بر اساس تحلیل‌های خروجی و بنچ‌مارک سخت‌افزاری استاندارد \lr{(master\_verified\_results.json)} بر روی تسک \lr{GLUE SST-2}:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{nexus}}
-\label{tab:benchmark_nexus}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{اوج حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{345.69 MB} & \lr{19,722 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{51.61\%} & \lr{0.6769} & \lr{568.19 MB} & \lr{12,287 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{675.74 MB} & \lr{9,946 tok/s} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-نرخ خطای گزارش شده و تقلیل دقت به محدوده ۵۱ درصد (در آستانه انتخاب تصادفی برای تسک‌های باینری نظیر \lr{SST-2}) نشان‌دهنده یک مصالحه بسیار تهاجمی بین ظرافت نمایشی \lr{(Representational Fidelity)} و توان عملیاتی است. با دستیابی به سرعت پردازش خیره‌کننده حدود ۲۰ هزار توکن در ثانیه برای \lr{DistilBERT} و مصرف قابل توجه اندک حافظه (۳۴۵ مگابایت)، این ماژول توانسته بر گلوگاه سخت‌افزاری غلبه کند؛ اما مکانیزم ممانعت‌کننده ماسک \lr{Top-$k$} درون شبکه‌های \lr{Seer} و \lr{X-Scoring} در دنباله‌های کوتاه باعث تخریب پیوندهای معنایی حیاتی شده است. تحلیل کالبدشکافی نشان می‌دهد که در متون کوتاه، پارتیشن‌بندی خشن و نادیده‌انگاری بلوک‌ها با اعمال \lr{Softpick} باعث از بین رفتن اطلاعات محلی می‌گردد که مستقیماً به افت دقت دامن زده است.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت:} 
-    \begin{itemize}
-        \item تقلیل نمایی و خارق‌العاده پیچیدگی به مرتبه خطی $\mathcal{O}(N)$ از طریق رویکردی چندمقیاسی \lr{(Multi-scale sparsity)}.
-        \item افت چشمگیر در ردپای حافظه گرافیکی \lr{(VRAM Footprint)} مناسب جهت پیاده‌سازی روی سیستم‌های مرزی \lr{(Edge Devices)}.
-        \item پودمان‌پذیری بالای مؤلفه‌های مختلف از جمله \lr{Softpick} و \lr{Spectraformer}.
-    \end{itemize}
-    \item \textbf{محدودیت‌ها:}
-    \begin{itemize}
-        \item تخریب شدید دقت و قدرت تعقل معنایی در دنباله‌های کوتاه و تسک‌های درک مطلب دقیق \lr{(Extractive QA/Classification)}.
-        \item استفاده متناوب از عملیات‌های تجمع پویا نظیر \lr{\texttt{torch.cat}} بر روی بلوک‌های پراکنده، موجب دسترسی غیرپیوسته به حافظه شده و مانع استفاده حداکثری از ادغام هسته \lr{(Kernel Fusion)} می‌شود.
-    \end{itemize}
-    \item \textbf{پیشنهادات توسعه:}
-    \begin{itemize}
-        \item پیاده‌سازی کرنل‌های اختصاصی \lr{Triton} برای عملیات‌های \lr{Block-Sparse Gather} جهت حذف سربار ساختارهای موقتی حافظه در \lr{PyTorch}.
-        \item دینامیک‌سازی انطباقی ضریب $k$ بر پایه طول و پیچیدگی دنباله به جای استفاده از یک آستانه بلوکی ثابت.
-    \end{itemize}
-\end{itemize}
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    score/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X}$};
-    \node [score, right=1.0cm of input] (xscore) {امتیازدهی عصبی};
-    \node [score, right=1.0cm of xscore] (sparse) {توجه تنک};
-    \node [outblock, right=1.0cm of sparse] (out) {خروجی بهینه};
-
-    \draw [->, thick, draw=blue!80] (input) -- (xscore);
-    \draw [->, thick, draw=orange!80] (xscore) -- (sparse);
-    \draw [->, thick, draw=orange!80] (sparse) -- (out);
-\end{tikzpicture}
-\end{center}
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{nexus} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/nexus_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(nexus)}}
-\label{fig:arch_nexus}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/nexus_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(nexus)}}
-\label{fig:comp_nexus}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

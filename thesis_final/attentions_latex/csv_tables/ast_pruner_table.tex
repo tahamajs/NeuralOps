@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{ast\_pruner}}
+\label{tab:benchmark_ast_pruner_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.45\%} & \lr{0.898} & \lr{1336.7 MB} & \lr{61104.6 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{53.56\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & \lr{48.01\%} & \lr{} & \lr{6482.93 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{Unknown} & \lr{85.67\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

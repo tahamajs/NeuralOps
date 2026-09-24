@@ -1,89 +1,18 @@
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{moba}}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\label{sec:moba}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-مدل‌سازی توالی‌های بلند در پردازش زبان طبیعی همواره با دیوار محاسباتی درجه دو $\mathcal{O}(N^2)$ مواجه است. ماژول \lr{moba} با تلفیق ایده مسیریابی پویای خبره‌ها \lr{(Mixture of Experts)} و تقطیع بلوکی دنباله نشانه‌ها ابداع شده است. به جای مقایسه کورکورانه هر توکن با تمامی توکن‌های پیشین، دنباله ورودی به بلوک‌های متوالی با اندازه معین (مانند ۶۴ توکن) افراز می‌شود. برای هر بلوک پرس‌وجو، یک بردار سنتروید میانگین محاسبه شده و شبکه مسیریاب هوشمند، تنها $k$ بلوک از مرتبط‌ترین بلوک‌های کلید/مقدار را انتخاب می‌کند. این رویکرد ضمن حفظ توجه کامل و پیوسته در محدوده بلوک محلی، پیوندهای دوربرد معنایی را با پیچیدگی کاملاً خطی پوشش می‌دهد.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-دنباله ورودی به $M = \lceil N / B_{\text{\lr{block}}} \rceil$ بلوک با طول $B_{\text{\lr{block}}} = 64$ تقسیم می‌شود. بردار سنتروید بلوک $i$-ام پرس‌وجو به صورت میانگین‌گیری هندسی استخراج می‌گردد:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{moba}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\mathbf{c}_i^Q = \frac{1}{B_{\text{\lr{block}}}} \sum_{t=(i-1)B_{\text{\lr{block}}}+1}^{i B_{\text{\lr{block}}}} \mathbf{Q}_t \in \mathbb{R}^{d}
+\label{eq:spectral_bound_moba}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-به همین ترتیب سنتروید بلوک‌های کلید $\mathbf{c}_j^K$ تشکیل شده و امتیاز تقارب میان بلوک‌ها محاسبه می‌شود:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-S_{i, j} = \frac{\mathbf{c}_i^Q \cdot (\mathbf{c}_j^K)^\top}{\sqrt{d}}, \quad \mathcal{K}_i = \operatorname{TopK}\left(\{S_{i, j}\}_{j=1}^M, k=4\right)
+\label{eq:complexity_moba}
+\mathcal{C}_{\text{moba}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-محاسبه توجه تنها بر روی اجتماع بلوک محلی و مجموعه منتخب $\mathcal{K}_i$ صورت می‌پذیرد:
-\begin{equation}
-\mathbf{O}_i = \operatorname{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_{\mathcal{K}_i}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{causal}}}\right) \mathbf{V}_{\mathcal{K}_i}
-\end{equation}
-بدین ترتیب پیچیدگی زمانی از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot (B_{\text{\lr{block}}} + k B_{\text{\lr{block}}}) \cdot d) = \mathcal{O}(N \cdot d)$ تنزل می‌یابد.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کلاس اصلی \lr{MoBAAttention} در فایل \lr{Codes/framework/attentions/moba\_attention.py} پیاده‌سازی گردیده است:
-\begin{itemize}
-    \item \textbf{ابعاد تانسورها:} ورودی با ابعاد \lr{$[B, N, D]$} به وسیله لایه‌های \lr{LoRALinear} نگاشت شده و به \lr{$[B, H, N, d]$} تبدیل می‌شود.
-    \item \textbf{قطعه‌بندی بلوکی:} در امتداد بعد توالی، تانسورها با تغییر دید پیوسته به ابعاد \lr{$[B, H, M, B\_{\text{\lr{block}}}, d]$} نگاشت می‌شوند.
-    \item \textbf{مسیریاب Top-K:} شبکه گیتینگ با ضرب سنترویدها، شاخص‌های بهینه را استخراج کرده و عملگر تانسوری با توابع جمع‌آوری ناهمگام \lr{torch.gather} بلوک‌های کلید و مقدار منتخب را بدون سربار کپی غیرضروری گردآوری می‌کند.
-    \item \textbf{پایداری گرادیان:} برای جلوگیری از قطع جریان گرادیان در گیتینگ سخت، ضرایب سافت‌مکس نرم به عنوان وزن‌های انحراف مسیر اعمال می‌شوند.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-در معماری \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، قطعه‌بندی بلوکی ۶۴ توکن به نحوی تنظیم شده است که تانسورهای یک بلوک به طور کامل در حافظه اشتراکی محلی \lr{SRAM} هسته‌های پردازشی \lr{(Shared Memory)} جا می‌گیرند. این امر مانع از رفت‌و‌برگشت مکرر ماتریس‌های توجه به حافظه سراسری \lr{HBM} شده و شتاب پردازشی را در طول توالی‌های بالا به طور چشمگیری ارتقا می‌دهد.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-ارزیابی‌های تجربی ماژول \lr{moba} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام پذیرفته است. جدول \ref{tab:benchmark_moba} کارنامه عملکرد سخت‌افزاری و کیفی این ماژول را در مقایسه با مدل‌های پایه به تصویر می‌کشد:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{moba} روی مدل‌های پایه}
-\label{tab:benchmark_moba}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{73.62\%} & \lr{0.7516} & \lr{329.0 MB} & \lr{51,081 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8583} & \lr{379.1 MB} & \lr{27,860 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{569.5 MB} & \lr{19,829 tok/s} & \lr{PASS\_LOW} \\
-\lr{Qwen} & \lr{51.95\%} & \lr{---} & \lr{337.6 MB} & \lr{64,000 tok/s} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-بررسی نتایج تجربی روی مدل‌های زبانی نشان می‌دهد که دقت به سطح \lr{84.17\%} و بالاتر رسیده است. مطالعات حذف مؤلفه‌ها اثبات کرد که حذف بلوک محلی منجر به افت شدید F1 در درک پیوندهای نحوی مجاور می‌گردد، در حالی که کاهش تعداد خبره‌های بلوکی ($k < 2$) درک ارجاعات دوردست متنی را مختل می‌سازد. انتخاب $k=4$ نقطه بهینه در نمودار پارتو میان سرعت و درک معنایی است.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت معماری:}
-    \begin{itemize}
-        \item مقیاس‌پذیری کاملاً خطی با طول دنباله و امکان پردازش متون با هزاران توکن
-        \item بهره‌وری حداکثری از کش محلی SRAM به دلیل ابعاد استاندارد بلوک‌های محاسباتی
-        \item سازگاری کامل با ماسک علّی در مدل‌های خودبازگشت نظیر GPT-2 و Qwen
-    \end{itemize}
-    \item \textbf{محدودیت‌ها و چالش‌ها:}
-    \begin{itemize}
-        \item سربار ناچیز شبکه مسیریابی در توالی‌های کوتاه کمتر از ۱۲۸ توکن
-        \item نیاز به بازآرایی غیرپیوسته حافظه در صورت عدم استفاده از کرنل‌های سفارشی Triton
-    \end{itemize}
-\end{itemize}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{moba} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/moba_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(moba)}}
-\label{fig:arch_moba}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/moba_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(moba)}}
-\label{fig:comp_moba}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

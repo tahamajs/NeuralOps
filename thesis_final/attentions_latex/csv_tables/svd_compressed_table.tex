@@ -1,13 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_svd_compressed_4models_summary.csv} برای ماژول \lr{svd_compressed}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{svd\_compressed}}
 \label{tab:benchmark_svd_compressed_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{84.75\%} & \lr{0.861} & \lr{322.62 MB} & \lr{62814.57 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{549.89 MB} & \lr{29080.17 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{399.33 MB} & \lr{41567.56 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

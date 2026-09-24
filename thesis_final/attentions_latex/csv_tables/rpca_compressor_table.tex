@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{rpca\_compressor}}
+\label{tab:benchmark_rpca_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9067} & \lr{311.19 MB} & \lr{138163.61 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.21\%} & \lr{0.6825} & \lr{637.67 MB} & \lr{65063.68 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.2\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.72 MB} & \lr{92321.44 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{31.54\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

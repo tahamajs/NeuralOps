@@ -1,0 +1,18 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{adaptive\_span\_attention}}
+\label{tab:benchmark_adaptive_span_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.9033} & \lr{378.26 MB} & \lr{26524.2 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.39\%} & \lr{0.8217} & \lr{445.69 MB} & \lr{10705.54 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.62\%} & \lr{} & \lr{1317.24 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{82.34\%} & \lr{0.8493} & \lr{414.86 MB} & \lr{10456.72 tok/s} & \lr{PASS} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{430.0 MB} & \lr{361789.5 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{89.91\%} & \lr{0.9056} & \lr{415.8 MB} & \lr{10655.92 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

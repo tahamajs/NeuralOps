@@ -1,15 +1,15 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_tlinformer_attention_4models_summary.csv} برای ماژول \lr{tlinformer_attention}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{tlinformer\_attention}}
 \label{tab:benchmark_tlinformer_attention_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{331.47 MB} & \lr{69131.42 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{574.72 MB} & \lr{32163.65 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{382.74 MB} & \lr{36104.16 tok/s} & \lr{PASS\_LOW} \\
 \bottomrule
 \end{tabular}
 \end{table}

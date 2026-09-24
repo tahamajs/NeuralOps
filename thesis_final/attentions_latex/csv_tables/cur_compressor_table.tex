@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{cur\_compressor}}
+\label{tab:benchmark_cur_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.42\%} & \lr{0.891} & \lr{338.34 MB} & \lr{52426.3 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{83.03\%} & \lr{0.8442} & \lr{411.93 MB} & \lr{13474.58 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{52.71\%} & \lr{} & \lr{1056.57 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{90.37\%} & \lr{0.903} & \lr{336.26 MB} & \lr{11877.02 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

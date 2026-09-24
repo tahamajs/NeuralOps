@@ -1,0 +1,18 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{aegis\_v6}}
+\label{tab:benchmark_aegis_v6_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{52.87\%} & \lr{0.5827} & \lr{305.04 MB} & \lr{13376.24 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.46\%} & \lr{0.662} & \lr{494.74 MB} & \lr{6969.8 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{47.71\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{599.3 MB} & \lr{6637.4 tok/s} & \lr{PASS\_LOW} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{809.8 MB} & \lr{226295.2 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

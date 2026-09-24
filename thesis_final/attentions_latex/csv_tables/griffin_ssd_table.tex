@@ -1,0 +1,18 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{griffin\_ssd}}
+\label{tab:benchmark_griffin_ssd_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.19\%} & \lr{0.8874} & \lr{369.27 MB} & \lr{16635.84 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{54.47\%} & \lr{0.6852} & \lr{603.27 MB} & \lr{8625.02 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.89\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{54.7\%} & \lr{0.6868} & \lr{713.18 MB} & \lr{8110.05 tok/s} & \lr{PASS\_LOW} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{528.0 MB} & \lr{298577.6 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

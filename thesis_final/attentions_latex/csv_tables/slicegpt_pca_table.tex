@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_slicegpt_pca_4models_summary.csv} برای ماژول \lr{slicegpt_pca}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{slicegpt\_pca}}
 \label{tab:benchmark_slicegpt_pca_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{312.19 MB} & \lr{136922.23 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{637.29 MB} & \lr{67199.32 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{67.66\%} & \lr{0.7496} & \lr{300.97 MB} & \lr{87752.88 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{squeezing\_heads\_distill}}
+\label{tab:benchmark_squeezing_heads_distill_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9075} & \lr{332.46 MB} & \lr{71868.72 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6774} & \lr{568.71 MB} & \lr{35939.75 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{51.49\%} & \lr{0.6754} & \lr{379.87 MB} & \lr{46530.27 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}

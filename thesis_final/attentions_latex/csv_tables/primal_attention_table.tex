@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{primal\_attention}}
+\label{tab:benchmark_primal_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9034} & \lr{668.26 MB} & \lr{34906.84 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{63.07\%} & \lr{0.6349} & \lr{1684.64 MB} & \lr{16545.1 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{50.57\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{68.0\%} & \lr{0.6767} & \lr{1441.77 MB} & \lr{17737.13 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

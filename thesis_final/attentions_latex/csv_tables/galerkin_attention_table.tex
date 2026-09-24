@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{galerkin\_attention}}
+\label{tab:benchmark_galerkin_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{283.2 MB} & \lr{313293.6 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{671.9 MB} & \lr{9612.29 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{340.61 MB} & \lr{19602.4 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.26\%} & \lr{0.6763} & \lr{568.72 MB} & \lr{12410.02 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{expert\_choice\_moe}}
+\label{tab:benchmark_expert_choice_moe_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9053} & \lr{764.29 MB} & \lr{46334.82 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.5\%} & \lr{0.8041} & \lr{777.43 MB} & \lr{21269.75 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.29\%} & \lr{0.862} & \lr{842.17 MB} & \lr{22254.65 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

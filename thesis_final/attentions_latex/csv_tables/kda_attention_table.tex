@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{kda\_attention}}
+\label{tab:benchmark_kda_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{76.83\%} & \lr{0.7584} & \lr{349.3 MB} & \lr{18111.8 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{567.69 MB} & \lr{10504.81 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.8\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{52.87\%} & \lr{0.6807} & \lr{680.32 MB} & \lr{9031.79 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{69.13\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

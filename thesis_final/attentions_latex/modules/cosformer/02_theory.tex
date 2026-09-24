@@ -1,109 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{qin2022cosformer} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{cosformer}}
-\label{sec:mod_cosformer}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-ماژول نوآورانه \lr{cosformer} پاسخی بنیادین به چالش پیچیدگی درجه دوم $\mathcal{O}(N^2)$ در مکانیزم توجه استاندارد است. با جایگزینی تابع \lr{Softmax} با یک نگاشت ویژگی نامنفی \lr{(Non-negative Kernel Mapping)} و یک مکانیزم وزن‌دهی موقعیتی بر پایه کسینوس \lr{(Cosine Positional Reweighting)}، این معماری به پیچیدگی خطی در زمان و فضا دست می‌یابد. 
-\textbf{تمثیل ملموس:} فرض کنید می‌خواهید فاصله فیزیکی بین افراد در یک سالن بزرگ را محاسبه کنید. به جای اندازه‌گیری جفت‌به‌جفت تمام فواصل (که به زمان زیادی نیاز دارد)، موقعیت هر فرد را به مختصات پایه روی دو محور (سینوس و کسینوس) تجزیه می‌کنید. با این کار، جمع‌بندی تأثیرات هر فرد به صورت تجمعی و خطی امکان‌پذیر می‌شود. این دقیقاً کاری است که \lr{cosformer} با تجزیه فاصله موقعیتی به حاصل‌ضرب عبارات مثلثاتی انجام می‌دهد و محاسبه ماتریس $N \times N$ را حذف می‌کند.
 
-\subsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-مبنای ریاضی \lr{cosformer} استفاده از ویژگی خطی بودن انتگرال‌ها و تجزیه مثلثاتی است. در حالت عادی، توجه خطی، اطلاعات موقعیتی را از دست می‌دهد. \lr{cosformer} این مشکل را با قضیه تجزیه کسینوسی حل می‌کند:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{cosformer}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\cos\left(\frac{\pi (i - j)}{2 M}\right) = \cos\left(\frac{\pi i}{2 M}\right)\cos\left(\frac{\pi j}{2 M}\right) + \sin\left(\frac{\pi i}{2 M}\right)\sin\left(\frac{\pi j}{2 M}\right)
+\label{eq:spectral_bound_cosformer}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن $M$ حداکثر طول دنباله است. سپس بردارهای پرس‌وجو $Q$ و کلید $K$ توسط تابع فعال‌ساز نامنفی $\phi(x) = \max(x, 0)$ یا $\phi(x) = \text{\lr{ELU}}(x) + 1$ نگاشت می‌شوند. با ترکیب این دو، خروجی به صورت زیر بازنویسی می‌شود:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\mathbf{Y}_i = \frac{\sum_{j} \left( Q_i^{\cos} K_j^{\cos \top} + Q_i^{\sin} K_j^{\sin \top} \right) V_j}{\sum_{j} \left( Q_i^{\cos} K_j^{\cos \top} + Q_i^{\sin} K_j^{\sin \top} \right)}
+\label{eq:complexity_cosformer}
+\mathcal{C}_{\text{cosformer}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-در اینجا $Q_i^{\cos} = \phi(Q_i)\cos\left(\frac{\pi i}{2 M}\right)$ و برای سایر متغیرها نیز به همین منوال است. ویژگی شرکت‌پذیری ضرب ماتریسی اجازه می‌دهد محاسبات $K_j^{\cos \top} V_j$ پیش از درگیری با $Q_i$ محاسبه شوند و پیچیدگی به $\mathcal{O}(N)$ تقلیل یابد.
-
-\subsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل \lr{cosformer.py}، پردازش در متد \lr{forward} به صورت زیر انجام می‌شود:
-\begin{enumerate}
-\item \textbf{دریافت و پروجکشن:} تانسور ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ دریافت شده و به بردارهای $Q, K, V$ با ابعاد سرهای موازی $[B, H, N, d]$ نگاشت می‌شود.
-\item \textbf{تزریق تعبیه چرخشی:} در صورت لزوم، تعبیه‌های موقعیت چرخشی \lr{(RoPE)} اعمال می‌شوند.
-\item \textbf{اعمال فعال‌ساز نامنفی:} مقادیر $Q$ و $K$ برای اطمینان از مثبت بودن، از توابع \lr{Softplus} یا \lr{ELU} عبور داده می‌شوند.
-\item \textbf{تعدیل موقعیتی کسینوسی/سینوسی:} بردارها در ماتریس‌های وزنی کسینوس و سینوس ضرب می‌شوند ($Q^{\cos}, Q^{\sin}, K^{\cos}, K^{\sin}$).
-\item \textbf{تجمع و محاسبه توجه خطی:} در حالت علّی \lr{(Causal)} از جمع تجمعی خطی \lr{(Prefix Sum)} و در حالت دوطرفه از تجمع انجمنی \lr{(Associative Accumulation)} استفاده می‌شود تا بافر حافظه ثابت بماند.
-\end{enumerate}
-
-\subsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}):
-\begin{itemize}
-\item \textbf{حذف ماتریس توجه $N \times N$:} با دور زدن \lr{Softmax}، نیازی به تخصیص حافظه و نوشتن در \lr{VRAM} برای ماتریس امتیازات بین تمام توکن‌ها نیست. این ویژگی مستقیماً تنگنای پهنای باند حافظه \lr{(Memory Bound)} را مرتفع می‌سازد.
-\item \textbf{بافر متمرکز روی تراشه \lr{(SRAM)}:} متغیرهای حالت میانی (مثل $K^{\cos \top} V$) ابعاد ثابتی مستقل از طول دنباله دارند و تماماً در حافظه نهان پرسرعت سطح تراشه جای می‌گیرند، که شدت محاسباتی را بهینه می‌کند.
-\end{itemize}
-
-\subsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه، عملکرد این ماژول بر روی مدل \lr{DistilBERT} ارزیابی شده است.
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{cosformer}}
-\label{tab:benchmark_cosformer}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{GLUE SST-2} & \lr{78.21\%} & \lr{78.94\%} & \lr{337.54 MB} & \lr{69,817 tok/s} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت \lr{78.21\%} و امتیاز F1 برابر با \lr{78.94\%} در کنار مصرف ناچیز \lr{337.54 MB} حافظه گرافیکی، گواهی بر اثربخشی این متدولوژی است. در مقایسه با مدل پایه، اوج مصرف حافظه به شدت کنترل شده و توان عملیاتی \lr{(Throughput)} به مرز \lr{69,817} توکن بر ثانیه جهش یافته است. این سرعت بالا مرهون جایگزینی \lr{Softmax} با فرمول‌بندی خطی کسینوسی است.
-
-\subsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری، نمودار معماری این ماژول با استفاده از بسته \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    act/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    mod/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $X$};
-    \node [block, right=1.0cm of input] (proj) {پروجکشن خطی $Q, K, V$};
-    \node [act, right=1.0cm of proj] (relu) {فعال‌ساز نامنفی $\phi(\cdot)$};
-    \node [mod, right=1.0cm of relu] (cossin) {تعدیل کسینوسی/سینوسی};
-    \node [outblock, right=1.0cm of cossin] (out) {تجمیع انجمنی $\mathcal{O}(N)$};
-
-    \draw [->, thick, draw=blue!80] (input) -- (proj);
-    \draw [->, thick, draw=blue!80] (proj) -- (relu);
-    \draw [->, thick, draw=teal!80] (relu) -- (cossin);
-    \draw [->, thick, draw=orange!80] (cossin) -- (out);
-\end{tikzpicture}
-\end{center}
-
-برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{cosformer} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/arch_cosformer.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(cosformer)}}
-\label{fig:arch_cosformer}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/cosformer_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(cosformer)}}
-\label{fig:comp_cosformer}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

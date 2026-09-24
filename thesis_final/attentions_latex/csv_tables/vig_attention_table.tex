@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{vig\_attention}}
+\label{tab:benchmark_vig_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{374.99 MB} & \lr{52731.95 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{0.0\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{68665.61 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_QWEN\_INCOMPATIBLE} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{425.18 MB} & \lr{33616.49 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{fused\_svd\_kernel}}
+\label{tab:benchmark_fused_svd_kernel_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.0\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{52151.35 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.0\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{24434.83 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.89\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{70.07\%} & \lr{0.7439} & \lr{560.48 MB} & \lr{11835.03 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

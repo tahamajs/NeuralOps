@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_mamba_shedder_4models_summary.csv} برای ماژول \lr{mamba_shedder}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{mamba\_shedder}}
 \label{tab:benchmark_mamba_shedder_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{87.5\%} & \lr{0.8868} & \lr{337.59 MB} & \lr{180820.54 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.88\%} & \lr{0.6835} & \lr{634.91 MB} & \lr{67770.43 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.49\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.44\%} & \lr{0.8542} & \lr{361.54 MB} & \lr{120068.28 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,1 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{squeezing\_heads\_distill} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} تحت شرایط نظارت‌شده آزمایشگاهی انجام شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_squeezing_heads_distill} درج گردیده‌اند:
 
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{squeezing\_heads\_distill} روی مدل‌های پایه}
+\label{tab:benchmark_squeezing_heads_distill}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9075} & \lr{332.46 MB} & \lr{71,868.72 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.49\%} & \lr{0.6754} & \lr{379.87 MB} & \lr{46,530.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6774} & \lr{568.71 MB} & \lr{35,939.75 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان‌دهنده موفقیت کامل معماری در مدل انکودر مسطح \lr{DistilBERT} با ثبت دقت چشمگیر \lr{90.37\%} و شاخص F1 برابر \lr{0.9075} با اشغال تنها \lr{332.46 MB} حافظه گرافیکی و توان عملیاتی بسیار بالای \lr{71,868.72 tok/s} است. وضعیت دروازه کیفیت برای این ماژول به عنوان \lr{PASS} ارزیابی شده است.

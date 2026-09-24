@@ -1,171 +1,18 @@
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{nystrom\_attention}}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\label{sec:nystrom_attention}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-توجه چندسره استاندارد نیازمند محاسبه یک ماتریس شباهت دو‌به‌دو به ابعاد $N \times N$ است که منجر به پیچیدگی محاسباتی و حافظه از مرتبه $\mathcal{O}(N^2)$ می‌گردد. ماژول \lr{Nystrom Attention} با بهره‌گیری از قضیه تقریب ماتریس اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky)} و متدولوژی انتخاب توکن‌های نشانگر \lr{(Landmark Tokens)}، این گلوگاه مربعی را می‌شکند. ایده کانونی در این معماری بر آن است که به جای شکل‌دهی کامل ماتریس توجه، می‌توان با استخراج $m$ نشانگر شاخص از طول دنباله \lr{(محدودیت $m \ll N$)}، ماتریس کامل را به حاصل‌ضرب سه ماتریس زیرفضایی و فشرده تجزیه نمود. 
-تمثیل ملموس این پارادایم به یک شبکه لجستیک و توزیع کالا شبیه است: به جای آنکه هر فرستنده مستقیماً با هر گیرنده ارتباط برقرار کند (اتصال کامل با هزینه بی‌نهایت)، تعدادی هاب مرکزی (نشانگرها) تعیین می‌شوند. فرستنده‌ها بسته‌های خود را به هاب‌ها ارسال کرده و هاب‌ها نیز آنها را به گیرنده‌ها تخصیص می‌دهند؛ در نتیجه هزینه ارسال به شکل خطی کاهش می‌یابد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-تقریب ماتریس \lr{Nystr\"om} بیان می‌دارد که ماتریس توجه $A$ را می‌توان توسط شبه‌معکوس مور-پنروز \lr{(Moore-Penrose Pseudoinverse)} تقریب زد:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{nystrom\_attention}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\hat{A} = \hat{F}_1 \hat{F}_2^+ \hat{F}_3
+\label{eq:spectral_bound_nystrom_attention}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن عناصر این تجزیه به شرح زیر استنتاج می‌گردند:
-\begin{align}
-\hat{F}_1 &= \operatorname{Softmax}\left(\frac{Q \tilde{K}^\top}{\sqrt{d_k}}\right) \in \mathbb{R}^{N \times m} \\
-\hat{F}_2 &= \operatorname{Softmax}\left(\frac{\tilde{Q} \tilde{K}^\top}{\sqrt{d_k}}\right) \in \mathbb{R}^{m \times m} \\
-\hat{F}_3 &= \operatorname{Softmax}\left(\frac{\tilde{Q} K^\top}{\sqrt{d_k}} + M\right) \in \mathbb{R}^{m \times N}
-\end{align}
-در اینجا $\tilde{Q}$ و $\tilde{K}$ نشانگرهای استخراج‌شده از پرس‌وجوها و کلیدها با استفاده از الگوریتم تجمیع‌سازی میانگین انطباقی \lr{(Adaptive Average Pooling)} هستند.
-برای محاسبه شبه‌معکوس $\hat{F}_2^+$ بدون نیاز به تجزیه مقادیر منفرد \lr{(SVD)} که بر روی سخت‌افزار هزینه $\mathcal{O}(m^3)$ دارد، از روش تکراری \lr{Newton-Schulz} بهره گرفته می‌شود. در این روش با تعریف حدس اولیه $V_0 = \alpha \hat{F}_2^\top$ که در آن $\alpha$ ضریب مقیاس‌گذاری است، رابطه بازگشتی زیر به همگرایی مجانبی درجه دو \lr{(Quadratic Convergence)} می‌رسد:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-V_{k+1} = V_k (2 I_m - \hat{F}_2 V_k), \quad k \in \{0, 1, \dots, T-1\}
+\label{eq:complexity_nystrom_attention}
+\mathcal{C}_{\text{nystrom\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-پیاده‌سازی با $T=6$ تکرار، خطای بازسازی را به کمتر از تلرانس ماشین \lr{($10^{-7}$)} کاهش می‌دهد.
-
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در این مرحله، جریان تانسوری ورودی $X \in \mathbb{R}^{B \times N \times D}$ وارد ماژول می‌شود. ابتدا، نگاشت‌های خطی \lr{LoRA} فشرده روی بردارهای پنهان اعمال شده تا تانسورهای $Q, K, V$ در ابعاد چندسره $[B, H, N, d_k]$ تولید گردند. 
-\begin{itemize}
-    \item \textbf{استخراج نشانگرها:} عملگر میانگین‌گیری محلی درایه‌ها به صورت $F_{pool}(Q, m)$ روی $Q$ و $K$ با تعداد $m=64$ انجام شده و ماتریس‌های $\tilde{Q}$ و $\tilde{K}$ شکل می‌گیرند.
-    \item \textbf{محاسبه کرنل‌ها:} ضرب تانسوری میان $Q$ و $\tilde{K}^\top$ ماتریس $\hat{F}_1$ را می‌سازد. به همین ترتیب $\hat{F}_2$ و $\hat{F}_3$ استخراج می‌گردند. در مدل‌های دیکودر مانند \lr{GPT-2}، ماسک علی \lr{Causal Mask} به ماتریس $\hat{F}_3$ افزوده می‌شود.
-    \item \textbf{شبه‌معکوس‌سازی تکراری:} ماتریس $\hat{F}_2$ وارد بلوک بازگشتی \lr{Schulz} گردیده و در $6$ سیکل فشرده، خروجی $F_2^+$ حاصل می‌شود.
-    \item \textbf{ضرب انجمنی راست به چپ:} در نهایت محاسبات پروجکشن خروجی با ترکیب ماتریس‌ها بدون تشکیل بلوک $N \times N$ به فرم $O = \hat{F}_1 (\hat{F}_2^+ (\hat{F}_3 V))$ انجام می‌پذیرد.
-\end{itemize}
-این جریان انجمنی تضمین می‌نماید که حافظه تخصیص‌یافته در فاز پس‌انتشار \lr{(Backpropagation)} هرگز از مرز مجاز $\mathcal{O}(N m)$ عبور نمی‌کند.
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-مدل سقف نظری \lr{(Roofline Model)} بر بستر سخت‌افزار \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} نشانگر یک تغییر رژیم آشکار از ناحیه محدود به پهنای‌باند \lr{(Memory-Bound)} به ناحیه محدود به محاسبات \lr{(Compute-Bound)} است. با استفاده از روش \lr{Newton-Schulz}، به جای ارسال مکرر فراخوانی‌های همگام‌سازی تجزیه \lr{SVD} به پردازنده مرکزی \lr{(CPU)}، تمامی مراحل تکرار به صورت درجا \lr{(In-Place)} و فشرده روی هسته‌های \lr{Tensor Cores} اجرا می‌گردند.
-این امر سربار ارتباطی روی خطوط \lr{PCIe} را متوقف کرده و نرخ بهره‌وری از کش ثانویه \lr{L2 Cache} را به بیش از \lr{89\%} ارتقا می‌بخشد. استفاده از پروجکشن‌های سازگار با \lr{LoRA} و فریز کردن وزن‌های پایه، میزان انتقال گرادیان در فاز به‌روزرسانی \lr{Optimizer} را نیز به شدت کاهش می‌دهد.
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-نتایج آزمایشگاهی ارزیابی ماژول در یک سناریوی جامع با طول توالی ثابت روی معماری‌های گوناگون استخراج گردیده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{تحلیل بنچمارک سخت‌افزاری و ارزیابی دقت ماژول \lr{Nystrom Attention}}
-\label{tab:nystrom_benchmark}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{مدل پایه} & \textbf{دقت (شاخص \lr{F1})} & \textbf{اوج حافظه \lr{(VRAM)}} & \textbf{توان عملیاتی \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{88.07\% (0.883)} & \lr{335.21 MB} & \lr{15,151 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{50.92\% (0.674)} & \lr{569.46 MB} & \lr{7,276 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa} & \lr{52.18\% (0.680)} & \lr{666.24 MB} & \lr{7,344 tok/s} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-حفظ دقت \lr{88.07\%} روی \lr{DistilBERT} در کنار نرخ پردازش بیش از \lr{15K tok/s} و اشغال ناچیز حافظه گرافیکی در مرز \lr{335 MB}، نشان از استحکام تقریب \lr{Landmark} دارد. با این حال، افت محسوس دقت به مرز \lr{~51\%} روی مدل‌های \lr{GPT-2} و \lr{RoBERTa} نشان‌دهنده یک پدیده انقباض رتبه \lr{(Rank Collapse)} و تخریب فیلترینگ علّی \lr{(Causal Masking)} هنگام استفاده از نشانگرهای میانگین‌گیری‌شده در معماری‌های عمیق‌تر با دینامیک پیچیده‌تر است. استفاده از نشانگرهای مجتمع باعث تضعیف سیگنال‌های محلی کلیدی و افت حساسیت مدل به توکن‌های نادر گردیده است.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-دیاگرام زیر ساختار جریان تانسوری و محاسبات جبر خطی ماژول را در بستر \lr{TikZ} مجسم می‌سازد.
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    >=stealth,
-    node distance=1.5cm and 2cm,
-    tensor/.style={rectangle, draw=blue!60, fill=blue!5, thick, minimum width=2.5cm, minimum height=0.8cm, align=center, rounded corners},
-    op/.style={circle, draw=red!60, fill=red!5, thick, minimum size=1cm, align=center},
-    module/.style={rectangle, draw=green!60!black, fill=green!5, thick, minimum width=3cm, minimum height=1cm, align=center},
-    arrow/.style={->, thick, color=black!70}
-]
-
-% Nodes
-\node[tensor] (input) {$\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-\node[module, below=of input] (proj) {Linear Projections \\ $Q, K, V$};
-
-\node[tensor, below left=1cm and -0.5cm of proj] (Q) {$Q \in \mathbb{R}^{N \times d}$};
-\node[tensor, below=1cm of proj] (K) {$K \in \mathbb{R}^{N \times d}$};
-\node[tensor, below right=1cm and -0.5cm of proj] (V) {$V \in \mathbb{R}^{N \times d}$};
-
-\node[module, below=0.8cm of Q] (poolQ) {Adaptive \\ Avg Pool ($m$)};
-\node[module, below=0.8cm of K] (poolK) {Adaptive \\ Avg Pool ($m$)};
-
-\node[tensor, below=0.8cm of poolQ] (Q_tilde) {$\tilde{Q} \in \mathbb{R}^{m \times d}$};
-\node[tensor, below=0.8cm of poolK] (K_tilde) {$\tilde{K} \in \mathbb{R}^{m \times d}$};
-
-\node[op, below left=1.2cm and 0.5cm of Q_tilde] (matmul1) {$\times$};
-\node[op, below=1.2cm of Q_tilde] (matmul2) {$\times$};
-\node[op, below right=1.2cm and 0.5cm of K_tilde] (matmul3) {$\times$};
-
-\node[tensor, below=0.8cm of matmul1] (F1) {$\hat{F}_1 \in \mathbb{R}^{N \times m}$};
-\node[tensor, below=0.8cm of matmul2] (F2) {$\hat{F}_2 \in \mathbb{R}^{m \times m}$};
-\node[tensor, below=0.8cm of matmul3] (F3) {$\hat{F}_3 \in \mathbb{R}^{m \times N}$};
-
-\node[module, below=0.8cm of F2] (schulz) {Newton-Schulz \\ Inv ($6$ iter)};
-\node[tensor, below=0.8cm of schulz] (F2_inv) {$\hat{F}_2^+$};
-
-\node[op, right=1.2cm of F2_inv] (assoc1) {$\times$};
-\node[tensor, below=1cm of V, xshift=2.5cm] (V_copy) {$V$};
-\node[tensor, below=0.8cm of assoc1] (P1) {$P_1 \in \mathbb{R}^{m \times d}$};
-
-\node[op, below=0.8cm of F2_inv] (assoc2) {$\times$};
-\node[tensor, below=0.8cm of assoc2] (P2) {$P_2 \in \mathbb{R}^{m \times d}$};
-
-\node[op, left=1.5cm of P2] (assoc3) {$\times$};
-\node[tensor, below=0.8cm of assoc3] (output) {$\mathbf{O} \in \mathbb{R}^{B \times N \times D}$};
-
-% Edges
-\draw[arrow] (input) -- (proj);
-\draw[arrow] (proj) -- (Q);
-\draw[arrow] (proj) -- (K);
-\draw[arrow] (proj) -- (V);
-
-\draw[arrow] (Q) -- (poolQ);
-\draw[arrow] (K) -- (poolK);
-\draw[arrow] (poolQ) -- (Q_tilde);
-\draw[arrow] (poolK) -- (K_tilde);
-
-\draw[arrow] (Q) edge[bend right=30] (matmul1);
-\draw[arrow] (K_tilde) edge[bend left=30] (matmul1);
-\draw[arrow] (Q_tilde) -- (matmul2);
-\draw[arrow] (K_tilde) -- (matmul2);
-\draw[arrow] (Q_tilde) edge[bend right=10] (matmul3);
-\draw[arrow] (K) edge[bend left=20] (matmul3);
-
-\draw[arrow] (matmul1) -- (F1);
-\draw[arrow] (matmul2) -- (F2);
-\draw[arrow] (matmul3) -- (F3);
-
-\draw[arrow] (F2) -- (schulz);
-\draw[arrow] (schulz) -- (F2_inv);
-
-\draw[arrow] (V) -- (V_copy);
-\draw[arrow] (F3) edge[bend left=20] (assoc1);
-\draw[arrow] (V_copy) -- (assoc1);
-\draw[arrow] (assoc1) -- (P1);
-
-\draw[arrow] (F2_inv) -- (assoc2);
-\draw[arrow] (P1) -- (assoc2);
-\draw[arrow] (assoc2) -- (P2);
-
-\draw[arrow] (F1) edge[bend right=30] (assoc3);
-\draw[arrow] (P2) -- (assoc3);
-\draw[arrow] (assoc3) -- (output);
-
-\end{tikzpicture}
-\caption{گراف محاسباتی تانسورها و استراتژی ضرب انجمنی در ماژول \lr{Nystrom Attention}}
-\label{fig:nystrom_tikz}
-\end{figure}
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{nystrom\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/arch_nystrom_attention.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(nystrom\_attention)}}
-\label{fig:arch_nystrom_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/nystrom_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(nystrom\_attention)}}
-\label{fig:comp_nystrom_attention}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

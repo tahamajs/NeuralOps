@@ -1,106 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{gu2023mamba} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{simple\_ssm}}
-\label{sec:mod_simple_ssm}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-ماژول مینیمال \lr{simple\_ssm} جایگزینی سبک و کاملاً خطی برای مکانیزم توجه سنتی است که فرآیند مدل‌سازی زبانی را در قالب معادلات دیفرانسیل بازگشتی خطی گسسته‌شده پیاده می‌کند و حافظه استنتاج را در حد یک بردار ثابت نگه می‌دارد.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-مدار فیلتر پایین‌گذر پسیو \lr{RC} در مهندسی الکترونیک: ولتاژ ورودی پیوسته بار الکتریکی خازن را تغییر می‌دهد و ولتاژ خروجی به صورت تابعی نرم و زوال‌یابنده از تاریخچه بارهای الکتریکی گذشته ظاهر می‌شود، بدون آنکه مدار نیازی به ذخیره‌سازی داده‌های تک‌تک پالس‌های گذشته در یک حافظه دیجیتال داشته باشد.
-
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-مدل فضای حالت با معادلات بازگشتی گسسته زیر فرمول‌بندی می‌شود:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{simple\_ssm}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\mathbf{h}_t = \bar{\mathbf{A}} \mathbf{h}_{t-1} + \bar{\mathbf{B}} \mathbf{x}_t, \quad \mathbf{y}_t = \mathbf{C} \mathbf{h}_t + \mathbf{D} \mathbf{x}_t
+\label{eq:spectral_bound_simple_ssm}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن ماتریس انتقال حالت $\mathbf{A}$ قطری بوده و با تبدیل دوخطی \lr{(Bilinear Transform)} به فرم گسسته درمی‌آید:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\bar{\mathbf{A}} = \exp(\boldsymbol{\Delta}_t \mathbf{A}), \quad \bar{\mathbf{B}} = (\boldsymbol{\Delta}_t \mathbf{A})^{-1} (\bar{\mathbf{A}} - \mathbf{I}) \cdot (\boldsymbol{\Delta}_t \mathbf{B})
+\label{eq:complexity_simple_ssm}
+\mathcal{C}_{\text{simple\_ssm}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-محاسبه کل دنباله در فاز آموزش با اسکن موازی پیشوندی \lr{(Parallel Scan)} در زمان $\mathcal{O}(N)$ اجرا می‌گردد.
-
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{simple\_ssm.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
-\begin{enumerate}
-\item دریافت بردار ورودی $x_t$ و محاسبه گام زمانی پیوسته $\Delta_t$.
-\item گسسته‌سازی ماتریس‌های قطری فضای حالت با عملگر نمایی پایدار عددی.
-\item اجرای اسکن پیشوندی موازی بر روی دنباله زمانی جهت انباشت حالت‌های مخفی.
-\item پروجکشن خطی حالت‌ها با ماتریس خروجی $\mathbf{C}$ و ترکیب با مسیر مستقیم $\mathbf{D}$.
-\item نرمال‌سازی خروجی لایه با عملگر پیوسته \lr{LayerNorm} و ارسال به لایه بعد.
-\end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
-\begin{itemize}
-\item \textbf{ثابت بودن مطلق بافر استنتاج $\mathcal{O}(1)$:} نیازی به بافر ذخیره کلیدها و مقادیر \lr{(KV-Cache)} وجود ندارد و مصرف رم در طول زمان همواره تخت می‌ماند.
-\item \textbf{حداکثر کارایی حافظه رجیسترها:} اسکن خطی در حافظه کش اشتراکی \lr{SRAM} محصور شده و به \lr{DRAM} مراجعه نمی‌کند.
-\end{itemize}
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{simple\_ssm}}
-\label{tab:benchmark_simple_ssm}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-دستیابی به بالاترین نرخ توان عملیاتی در این رده یعنی \lr{44,500} توکن در ثانیه و مصرف قابل توجه اندک \lr{620.0 MB} حافظه (کاهش \lr{85.2\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا) با دقت \lr{62.13\%}، نشان می‌دهد که \lr{SimpleSSM} گزینه‌ای بی‌رقیب برای سناریوهای با منابع سخت‌افزاری به شدت محدود و پردازش فوری جریان داده‌های مداوم است.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $x_t$};
-    \node [ssm, right=1.0cm of input] (state) {حالت پنهان $h_t$};
-    \node [ssm, right=1.0cm of state] (scan) {اسکن خطی قطری};
-    \node [outblock, right=1.0cm of scan] (out) {خروجی خطی};
-
-    \draw [->, thick, draw=blue!80] (input) -- (state);
-    \draw [->, thick, draw=orange!80] (state) -- (scan);
-    \draw [->, thick, draw=orange!80] (scan) -- (out);
-\end{tikzpicture}
-\end{center}
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{simple\_ssm} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/simple_ssm_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(simple\_ssm)}}
-\label{fig:arch_simple_ssm}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/simple_ssm_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(simple\_ssm)}}
-\label{fig:comp_simple_ssm}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

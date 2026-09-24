@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{slim\_compressor}}
+\label{tab:benchmark_slim_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.96\%} & \lr{0.8889} & \lr{339.21 MB} & \lr{146796.93 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{52.41\%} & \lr{0.6765} & \lr{640.66 MB} & \lr{64458.1 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{361.54 MB} & \lr{82511.43 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}

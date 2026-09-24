@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{tt\_compressor}}
+\label{tab:benchmark_tt_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{81.08\%} & \lr{0.7919} & \lr{508.09 MB} & \lr{121021.58 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{784.09 MB} & \lr{63883.21 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{45.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{684.03 MB} & \lr{70849.78 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}

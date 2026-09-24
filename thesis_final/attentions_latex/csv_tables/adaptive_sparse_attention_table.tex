@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{adaptive\_sparse\_attention}}
+\label{tab:benchmark_adaptive_sparse_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.9033} & \lr{396.52 MB} & \lr{16770.04 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{87.84\%} & \lr{0.8776} & \lr{451.88 MB} & \lr{7802.29 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{56.65\%} & \lr{0.6927} & \lr{1918.44 MB} & \lr{4519.62 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.32\%} & \lr{0.8388} & \lr{412.67 MB} & \lr{7752.92 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{47.25\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

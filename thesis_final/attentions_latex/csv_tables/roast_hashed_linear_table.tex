@@ -1,15 +1,15 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_roast_hashed_linear_4models_summary.csv} برای ماژول \lr{roast_hashed_linear}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{roast\_hashed\_linear}}
 \label{tab:benchmark_roast_hashed_linear_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.904} & \lr{337.59 MB} & \lr{54047.6 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{634.91 MB} & \lr{27781.01 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{86.81\%} & \lr{0.8791} & \lr{583.49 MB} & \lr{28100.97 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

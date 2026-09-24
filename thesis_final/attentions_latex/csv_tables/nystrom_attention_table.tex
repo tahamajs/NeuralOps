@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{nystrom\_attention}}
+\label{tab:benchmark_nystrom_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.07\%} & \lr{0.8834} & \lr{335.21 MB} & \lr{15151.06 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{569.46 MB} & \lr{7276.3 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.0\%} & \lr{0.557} & \lr{1796.78 MB} & \lr{2597.75 tok/s} & \lr{SKIP\_QWEN3\_5\_TIMEOUT} \\
+\lr{RoBERTa} & \lr{52.18\%} & \lr{0.68} & \lr{666.24 MB} & \lr{7344.75 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{hgrn2\_gated\_deltanet}}
+\label{tab:benchmark_hgrn2_gated_deltanet_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{53.56\%} & \lr{0.6788} & \lr{545.43 MB} & \lr{2228.12 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.03\%} & \lr{0.6743} & \lr{1043.99 MB} & \lr{1912.31 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.0\%} & \lr{0.557} & \lr{1796.78 MB} & \lr{1301.19 tok/s} & \lr{SKIP\_QWEN3\_5\_TIMEOUT} \\
+\lr{RoBERTa} & \lr{52.98\%} & \lr{0.6103} & \lr{993.39 MB} & \lr{1138.67 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{69.13\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{moe\_deltakv\_paged}}
+\label{tab:benchmark_moe_deltakv_paged_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.47\%} & \lr{0.8628} & \lr{321.79 MB} & \lr{68267.54 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6439} & \lr{556.61 MB} & \lr{30717.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{48.85\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{59.75\%} & \lr{0.688} & \lr{363.51 MB} & \lr{33415.39 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{69.13\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

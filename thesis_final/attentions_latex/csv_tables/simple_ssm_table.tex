@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{simple\_ssm}}
+\label{tab:benchmark_simple_ssm_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{336.83 MB} & \lr{9560.7 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{47.82\%} & \lr{0.5473} & \lr{567.98 MB} & \lr{8059.89 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_NO\_SUPPORT} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{382.96 MB} & \lr{5352.6 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{62.13\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

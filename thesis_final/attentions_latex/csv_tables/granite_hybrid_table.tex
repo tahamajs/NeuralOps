@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{granite\_hybrid}}
+\label{tab:benchmark_granite_hybrid_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.65\%} & \lr{0.7325} & \lr{1604.75 MB} & \lr{8212.62 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{2393.89 MB} & \lr{4214.39 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.82\%} & \lr{} & \lr{6591.89 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{53.33\%} & \lr{0.6772} & \lr{2501.8 MB} & \lr{4243.84 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

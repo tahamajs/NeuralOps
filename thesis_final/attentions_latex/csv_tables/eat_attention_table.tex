@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{eat\_attention}}
+\label{tab:benchmark_eat_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.9033} & \lr{327.69 MB} & \lr{110050.03 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.11\%} & \lr{0.8278} & \lr{340.52 MB} & \lr{37880.54 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.17\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{82.68\%} & \lr{0.8506} & \lr{399.12 MB} & \lr{44013.42 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{48.97\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

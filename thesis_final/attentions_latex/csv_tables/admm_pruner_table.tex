@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_admm_pruner_4models_summary.csv} برای ماژول \lr{admm_pruner}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{admm\_pruner}}
 \label{tab:benchmark_admm_pruner_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{distilbert} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{roberta} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{gpt2} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS_LOW} \\
+\lr{DistilBERT} & \lr{84.29\%} & \lr{0.8603} & \lr{551.24 MB} & \lr{43663.37 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.73\%} & \lr{0.8146} & \lr{414.93 MB} & \lr{15380.14 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{78.21\%} & \lr{0.8201} & \lr{1879.76 MB} & \lr{1102.95 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.62\%} & \lr{0.7966} & \lr{336.39 MB} & \lr{13333.06 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{83.49\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

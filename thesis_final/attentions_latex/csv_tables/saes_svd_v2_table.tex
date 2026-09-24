@@ -1,15 +1,15 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_saes_svd_v2_4models_summary.csv} برای ماژول \lr{saes_svd_v2}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{saes\_svd\_v2}}
 \label{tab:benchmark_saes_svd_v2_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{87.5\%} & \lr{0.8868} & \lr{338.84 MB} & \lr{131480.74 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.88\%} & \lr{0.6835} & \lr{635.79 MB} & \lr{67372.75 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.44\%} & \lr{0.8542} & \lr{364.29 MB} & \lr{83020.03 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

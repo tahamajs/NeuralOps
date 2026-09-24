@@ -6,28 +6,3 @@
     \item اعمال ماسک معتبر توکن‌ها از طریق تابع \lr{get\_token\_valid\_mask} و پشتیبانی کامل از RoPE با تفکیک ابعاد زاویه‌ای.
     \item آرگومان‌های سازنده شامل \lr{config}، \lr{rank} (اختیاری جهت هماهنگی با چارچوب)، \lr{lora\_rank}، و \lr{pretrained\_attn}.
 \end{itemize}
-
-\subsection{نتایج تجربی}
-ارزیابی تجربی ماژول \lr{full\_attention} در بنچمارک یکنواخت GLUE SST-2 بر روی کارت گرافیک NVIDIA RTX 4070 نتایج ارائه‌شده در جدول \ref{tab:benchmark_full_attention} را حاصل نموده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{نتایج بنچ‌مارک تجربی ماژول خط پایه \lr{full\_attention} روی مدل‌های مورد ارزیابی}
-\label{tab:benchmark_full_attention}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{389.03 MB} & \lr{101,969.09 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{630.79 MB} & \lr{6,347.08 tok/s} & \lr{MODERATE\_EXPANSION} \\
-\lr{GPT-2} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
-\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-داده‌های ارزیابی تجربی نشان می‌دهند که خط لوله پیاده‌سازی استاندارد در DistilBERT به توان عملیاتی بسیار بالای ۱۰۱,۹۶۹ توکن بر ثانیه با اوج حافظه ۳۸۹.۰۳ مگابایت دست یافته است. در مدل RoBERTa به علت دو برابر بودن تعداد لایه‌ها و وزن‌ها، اوج حافظه به ۶۳۰.۷۹ مگابایت افزایش یافته است.
-
-\subsection{محدودیت‌ها و تحلیل شکست}
-توقف دقت در مقدار ۵۰.۹۲٪ و وضعیت \lr{PASS\_LOW} / \lr{MODERATE\_EXPANSION} پدیده‌ای حائز اهمیت است که ریشه در سازوکار جایگزینی بدون آموزش مجدد عمیق (\lr{Zero-shot Injection with Parameter-Frozen LoRA}) دارد. در این سناریو، گرچه معماری توجه استاندارد و بدون تقریب کم‌مرتبه است، اما منجمد بودن وزن‌های اصلی مدل و اتکا به تنظیم صرفاً آداپتورهای لورا در گام‌های محدود ارزیابی سریع (بدون طی کامل فازهای آموزش انطباقی)، اجازه بازتنظیم توزیع سافت‌مکس لایه‌ها پس از تزریق ماژول جدید را نداده است. در مدل RoBERTa، ساختار انکودر تودرتو و تفکیک لایه‌ای در غیاب بهینه‌سازی سراسری، موجب تفاوت جزئی در پارامترهای فعال و بروز خطای گسترش ابعاد (\lr{MODERATE\_EXPANSION}) نسبت به خط مبنای تقطیرشده گردیده است.

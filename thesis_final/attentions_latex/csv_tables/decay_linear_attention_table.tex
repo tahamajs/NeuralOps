@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{decay\_linear\_attention}}
+\label{tab:benchmark_decay_linear_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{346.64 MB} & \lr{60896.01 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{63.19\%} & \lr{0.7106} & \lr{570.16 MB} & \lr{36650.11 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{395.9 MB} & \lr{30168.17 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}

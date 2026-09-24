@@ -1,131 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
-
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{leka\_v1}}
-\label{sec:mod_leka_v1}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-مکانیزم نوآورانه \lr{leka\_v1} \lr{(Linear-time Efficient Kernel Attention)} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: مهار هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار ضمن حفظ ظرفیت بازنمایی زبانی در بالاترین سطح.
-در مکانیزم‌های توجه استاندارد، محاسبه تابع غیرخطی نمایی برای تمام جفت‌توکن‌ها مانع از تجزیه ماتریس‌ها و شکستن ترتیب محاسبات می‌شود. معماری \lr{leka\_v1} با استفاده از نگاشت ویژگی‌های تصادفی فوریه \lr{(Random Fourier Features)} این چالش را مرتفع می‌سازد. به جای محاسبه دقیق هسته نمایی، این ماژول بردارها را با توابع سینوسی و کسینوسی به یک فضای ویژگی تصادفی نگاشت می‌دهد. این امر به لطف خاصیت شرکت‌پذیری در ضرب ماتریسی، امکان تقلیل پیچیدگی مکانی و زمانی را از مرتبه دوم $\mathcal{O}(N^2)$ به مرتبه خطی $\mathcal{O}(N)$ فراهم می‌آورد.
-
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-تقریب هسته گوسی با استفاده از نگاشت ویژگی‌های تصادفی فوریه صورت می‌پذیرد. فرمول‌بندی ریاضی نگاشت $\phi(\mathbf{x})$ به شکل زیر تعریف می‌شود:
-\begin{align}
-\phi(\mathbf{x}) &= \frac{1}{\sqrt{F}} \left[ \cos(\mathbf{x} \mathbf{W}_r), \; \sin(\mathbf{x} \mathbf{W}_r) \right], \quad \mathbf{W}_r \sim \mathcal{N}(0, \sigma^2 \mathbf{I})
-\end{align}
-در اینجا $\mathbf{W}_r \in \mathbb{R}^{d \times F}$ ماتریس تصویر تصادفی و $F$ بعد فضای ویژگی \lr{(Feature Dimension)} است.
-در مرحله بعد، توجه خطی با ادغام ماتریس‌های کلید و مقدار محاسبه می‌گردد. در حالت دوطرفه \lr{(Bidirectional)}:
-\begin{align}
-\operatorname{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) &= \frac{\phi(\mathbf{Q}) \left(\phi(\mathbf{K})^T \mathbf{V}\right)}{\phi(\mathbf{Q}) \sum_{j=1}^N \phi(\mathbf{K})_j^T + \epsilon}
-\end{align}
-و در حالت خودبازگشتی \lr{(Causal)} با استفاده از جمع تجمعی \lr{(Cumulative Sum)}:
-\begin{align}
-\mathbf{S}_t &= \mathbf{S}_{t-1} + \phi(\mathbf{k}_t)^T \mathbf{v}_t \\
-\mathbf{Z}_t &= \mathbf{Z}_{t-1} + \phi(\mathbf{k}_t)^T \\
-\mathbf{o}_t &= \frac{\phi(\mathbf{q}_t) \mathbf{S}_t}{\phi(\mathbf{q}_t) \mathbf{Z}_t + \epsilon}
-\end{align}
-این فرمول‌بندی وابستگی به طول توالی $N$ را در فاز استنتاج حذف کرده و محاسبات را به صورت بازگشتی با پیچیدگی $\mathcal{O}(F \cdot d)$ انجام می‌دهد.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-در پیاده‌سازی کلاس \lr{LEKAV1Attention} (فایل \lr{leka\_v1.py})، گردش داده و تانسورها به شکل زیر طراحی شده است:
-\begin{itemize}
-\item \textbf{نگاشت و تغییر ابعاد:} تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ با پروجکشن‌های خطی که به آداپتورهای \lr{LoRA} مجهز هستند، به تانسورهای $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ تبدیل و سپس به ابعاد $[B, H, N, d]$ بازآرایی می‌شوند. در اینجا پشتیبانی از \lr{GQA} \lr{(Grouped-Query Attention)} با استفاده از تابع \lr{repeat\_kv} اعمال می‌گردد.
-\item \textbf{رمزگذاری موقعیتی \lr{(RoPE)}:} در صورت وجود، جاسازی موقعیتی چرخشی \lr{(Rotary Position Embedding)} بر روی $\mathbf{Q}$ و $\mathbf{K}$ اعمال می‌شود.
-\item \textbf{استخراج ویژگی‌های هسته:} متد \lr{kernel\_feature\_map} ویژگی‌های $\mathbf{Q}$ و $\mathbf{K}$ را نرمال‌سازی کرده و پس از ضرب در ماتریس تصویر تصادفی \lr{proj} ثابت (اورتوگونال شده با \lr{QR})، نگاشت سینوسی/کسینوسی را انجام می‌دهد تا تانسورهایی با ابعاد $[B, H, N, 2F]$ به دست آید.
-\item \textbf{محاسبه توجه خطی:} بسته به نوع رمزگشا \lr{(Decoder)} یا رمزگذار \lr{(Encoder)}، ضرب داخلی و جمع تجمعی اعمال شده و تانسور خروجی \lr{Context} با تثبیت‌گر عددی \lr{NaN to Zero} محاسبه می‌گردد. در نهایت، با استفاده از دروازه تنظیمی \lr{(pres\_gate)} خروجی به لایه بعدی با ابعاد $[B, N, D]$ تحویل داده می‌شود.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-بررسی روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} نشان می‌دهد:
-\begin{itemize}
-\item \textbf{بهینه‌سازی حافظه \lr{(Memory Bound Relief)}:} با تغییر ترتیب محاسبات از ضرب $N \times N$ به ضرب $N \times 2F$ و $2F \times d$، حجم داده‌های موقت در حافظه به شدت کاهش یافته و از گلوگاه ترافیک حافظه \lr{HBM/DRAM} جلوگیری می‌شود. این امر شدت محاسباتی \lr{(Arithmetic Intensity)} را در کش محلی \lr{SRAM} \lr{(L1/L2)} بالا می‌برد.
-\item \textbf{فشرده‌سازی \lr{KV-Cache}:} در زمان استنتاج، به جای نگهداری تاریخچه طولانی توکن‌ها $\mathcal{O}(N)$، صرفاً حالت پنهان تجمعی با حجم ثابت $\mathcal{O}(2F \times d)$ در حافظه \lr{SRAM} نگهداری می‌گردد که معضل بحران حافظه گرافیکی را در متون طولانی خنثی می‌کند.
-\end{itemize}
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-ارزیابی‌های روی معماری‌های مبنا در مجموعه داده \lr{GLUE} \lr{(SST-2, RTE, CoLA)} با پارامترهای استخراج شده از آزمایش‌ها به شرح زیر است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{leka\_v1}}
-\label{tab:benchmark_leka_v1}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{اوج حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Tokens/s)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{51.03\%} & \lr{0.6753} & \lr{395.49 MB} & \lr{18174.36} & \lr{PASS\_LOW} \\
-\lr{RoBERTa}    & \lr{50.92\%} & \lr{0.6748} & \lr{730.79 MB} & \lr{9180.01} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-با توجه به نتایج مندرج در جدول، وضعیت \lr{PASS\_LOW} با دقت حدود \lr{51\%} نمایانگر پدیده‌ای متداول در نگاشت‌های تصادفی خطی است. 
-گرچه \lr{leka\_v1} از لحاظ سرعت (بیش از \lr{18000} توکن بر ثانیه) و اشغال حافظه گرافیکی \lr{(395 MB)} به شدت کارآمد است، اما ویژگی‌های تصادفی باعث محو شدن \lr{(Blurring)} الگوهای دقیق توجه محلی می‌گردند. در وظایف تحلیل معنایی ظریف مانند طبقه‌بندی متن \lr{(GLUE)}، این از دست رفتن وضوح توجه موجب افت شاخص \lr{F1} و تنزل عملکرد نسبت به مدل‌های توجه گوسی کلاسیک می‌شود.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-\item \textbf{نقاط قوت:} 
-  \begin{itemize}
-    \item کاهش پیچیدگی زمانی از نمایی به خطی با تضمین تخصیص ثابت حافظه $\mathcal{O}(1)$ در استنتاج خودبازگشتی.
-    \item سازگاری بالا با معماری‌های مدرن نظیر \lr{Qwen}، پشتیبانی از \lr{GQA}، \lr{LoRA} و \lr{RoPE}.
-  \end{itemize}
-\item \textbf{محدودیت‌ها:}
-  \begin{itemize}
-    \item کاهش وضوح بازنمایی موضعی که در دقت مدل‌های زبانی مانند \lr{DistilBERT} افت محسوسی \lr{(PASS\_LOW)} ایجاد کرده است.
-    \item اتکای مستقیم به ماتریس تصادفی ایستا، که می‌تواند منجر به کاهش انعطاف‌پذیری بازنمایی شود.
-  \end{itemize}
-\item \textbf{پیشنهادات توسعه:}
-  \begin{itemize}
-    \item تعبیه مکانیزم‌های توجه دورگه \lr{(Hybrid Attention)} ترکیب‌کننده ویژگی‌های تصادفی با پنجره محلی کشویی \lr{(Sliding Window)}.
-    \item استفاده از ماتریس‌های پروجکشن یادگیرنده و تطبیقی به جای پایه‌های صرفاً تصادفی.
-  \end{itemize}
-\end{itemize}
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
-    \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
-    \node [state, right=1.0cm of disc] (recurr) {بروزرسانی حالت $h_t = \bar{\mathbf{A}} h_{t-1} + \bar{\mathbf{B}} x_t$};
-    \node [outblock, right=1.0cm of recurr] (out) {خروجی خطی $y_t = \mathbf{C} h_t$};
-
-    \draw [->, thick, draw=blue!80] (input) -- (disc);
-    \draw [->, thick, draw=teal!80] (disc) -- (recurr);
-    \draw [->, thick, draw=orange!80] (recurr) -- (out);
-
-    \path [->, thick, draw=orange!90] (recurr) edge [loop above] node [font=\footnotesize] {حافظه $\mathcal{O}(1)$} (recurr);
-\end{tikzpicture}
-\end{center}
 
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{leka\_v1} ارائه شده است.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/arch_leka_v1.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(leka\_v1)}}
-\label{fig:arch_leka_v1}
-\end{figure}
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{leka\_v1}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
+\begin{equation}
+\label{eq:spectral_bound_leka_v1}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
+\end{equation}
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/leka_v1_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(leka\_v1)}}
-\label{fig:comp_leka_v1}
-\end{figure}
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_leka_v1}
+\mathcal{C}_{\text{leka\_v1}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

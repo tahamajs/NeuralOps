@@ -1,0 +1,6 @@
+model,accuracy_pct,f1_score,peak_vram_mb,throughput_tokens_sec,status
+DistilBERT,86.47,0.8628,321.79,68267.54,PASS
+GPT-2,50.92,0.6439,556.61,30717.27,PASS_LOW
+Qwen,48.85,,,,PASS
+RoBERTa,59.75,0.688,363.51,33415.39,PASS
+Unknown,69.13,,,,PASS

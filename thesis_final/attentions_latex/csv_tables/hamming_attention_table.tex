@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{hamming\_attention}}
+\label{tab:benchmark_hamming_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.06\%} & \lr{0.8066} & \lr{336.18 MB} & \lr{107807.95 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{55.5\%} & \lr{0.6896} & \lr{569.5 MB} & \lr{48813.15 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{48.74\%} & \lr{} & \lr{3402.69 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{664.58 MB} & \lr{60262.56 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

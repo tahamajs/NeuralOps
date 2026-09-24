@@ -1,0 +1,18 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{block\_transformer\_hiba}}
+\label{tab:benchmark_block_transformer_hiba_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9075} & \lr{329.46 MB} & \lr{104704.47 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{59.98\%} & \lr{0.6947} & \lr{568.71 MB} & \lr{47157.13 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{47.65\%} & \lr{} & \lr{1324.25 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{75.57\%} & \lr{0.7966} & \lr{378.78 MB} & \lr{47702.26 tok/s} & \lr{PASS} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{397.7 MB} & \lr{672868.0 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

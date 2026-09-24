@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_nli_softmax_4models_summary.csv} برای ماژول \lr{nli_softmax}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{nli\_softmax}}
 \label{tab:benchmark_nli_softmax_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.94\%} & \lr{0.9123} & \lr{337.59 MB} & \lr{147456.09 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{634.91 MB} & \lr{65725.2 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{88.76\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.0\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{86398.59 tok/s} & \lr{FAIL} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{rpc\_attention}}
+\label{tab:benchmark_rpc_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.84\%} & \lr{0.8798} & \lr{333.83 MB} & \lr{61913.25 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{57.34\%} & \lr{0.6549} & \lr{570.96 MB} & \lr{31136.04 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{50.34\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{66.97\%} & \lr{0.7338} & \lr{383.97 MB} & \lr{32881.79 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

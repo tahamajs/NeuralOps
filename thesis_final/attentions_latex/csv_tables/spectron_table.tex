@@ -1,15 +1,18 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_spectron_4models_summary.csv} برای ماژول \lr{spectron}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{spectron}}
 \label{tab:benchmark_spectron_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{0.0\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{149856.62 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.0\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{63917.35 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{51.49\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.0\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{98292.03 tok/s} & \lr{FAIL} \\
+\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{417.7 MB} & \lr{610648.3 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

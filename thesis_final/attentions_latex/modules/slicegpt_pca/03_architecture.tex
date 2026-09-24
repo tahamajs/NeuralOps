@@ -4,25 +4,3 @@
     \item \textbf{کلاس \lr{SliceGPTPCALoRALinear}:} به عنوان زیرکلاسی از \lr{nn.Module}، نگه‌دارنده وزن‌های منجمدشده برش‌یافته با \lr{requires\_grad=False} و پارامترهای آموزش‌پذیر $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ است. مقداردهی اولیه آداپتور $\mathbf{B}$ با صفر انجام می‌پذیرد تا در بدو امر رفتار لایه دقیقاً منطبق بر ماتریس تصویر باشد.
     \item \textbf{کلاس فشرده‌ساز \lr{SliceGPTPCACompressor}:} مدیریت هوک‌های کالیبراسیون، استخراج ماتریس‌های فعال‌سازی لایه‌ای، حل معادلات ویژه‌مقدار با \lr{torch.linalg.eigh}، محافظت از لایه‌های حساس مانند طبقه‌بند و توکن‌بندی، و اعمال جایگزینی ماژول‌ها از طریق \lr{replace\_module} را بر عهده دارد.
 \end{itemize}
-
-\subsection{نتایج تجربی}
-نتایج حاصل از ارزیابی تجربی بنچ‌مارک یکپارچه برای ماژول \lr{slicegpt\_pca} بر روی مدل‌های زبانی هدف در جدول \ref{tab:benchmark_slicegpt_pca} گزارش شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{slicegpt\_pca} روی معماری‌های گوناگون}
-\label{tab:benchmark_slicegpt_pca}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{312.2 MB} & \lr{25.9 s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{67.66\%} & \lr{0.7496} & \lr{301.0 MB} & \lr{30.9 s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{637.3 MB} & \lr{37.1 s} & \lr{PASS} \\
-\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-بر اساس نتایج تجربی، مدل \lr{DistilBERT} دقت پایه خود (\lr{90.48\%}) را به طور کامل و بدون کوچکترین افت حفظ کرده است (\lr{Delta Acc: +0.00\%}). در مدل خودبازگشتی \lr{GPT-2} دقت با رشد مواجه شده و به \lr{62.04\%} رسیده است (\lr{Delta Acc: +1.26\%}). در مدل \lr{RoBERTa} به دلیل ساختار پیچیده فضاهای نهفته لایه‌های میانی، افت دقت \lr{-7.45\%} مشاهده شده اما حدنصاب پذیرش با وضعیت \lr{PASS} احراز گردیده است. مدل \lr{Qwen} به دلیل الزامات محاسباتی لایه‌های چندگروهی (\lr{GQA}) در چرخه بنچ‌مارک به صورت \lr{NOT\_RUN} ثبت شده است.

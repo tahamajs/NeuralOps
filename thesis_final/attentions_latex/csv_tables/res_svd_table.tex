@@ -1,15 +1,17 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_res_svd_4models_summary.csv} برای ماژول \lr{res_svd}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{res\_svd}}
 \label{tab:benchmark_res_svd_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{89.56\%} & \lr{0.9016} & \lr{298.36 MB} & \lr{24670.27 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{71.33\%} & \lr{0.776} & \lr{336.25 MB} & \lr{10784.31 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.39\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{76.61\%} & \lr{0.791} & \lr{594.37 MB} & \lr{12547.05 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

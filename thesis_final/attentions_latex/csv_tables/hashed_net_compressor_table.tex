@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{hashed\_net\_compressor}}
+\label{tab:benchmark_hashed_net_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{79.59\%} & \lr{0.7991} & \lr{1118.0 MB} & \lr{42265.0 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.11\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & \lr{53.07\%} & \lr{} & \lr{7378.6 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{Unknown} & \lr{51.49\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

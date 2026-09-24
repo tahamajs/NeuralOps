@@ -6,25 +6,3 @@
     \item \textbf{سیستم کش‌گذاری برخط وزن بازسازی‌شده:} برای پرهیز از تکرار انقباض تانسوری سنگین در گذر پیشرو در طول یک تکرار ارزیابی، ماتریس $\Delta \mathbf{W}$ را به ازای ابعاد داده کش می‌کند.
     \item \textbf{کلاس \lr{KroneckerTTLoRACompressor}:} مدیریت کشف لایه‌های هدف، پیکربندی خودکار ابعاد تانسوری و اجرای بنچ‌مارک.
 \end{itemize}
-
-\subsection{نتایج تجربی}
-ارزیابی ماژول \lr{kronecker\_tt\_lora} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_kronecker_tt_lora} گزارش شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{kronecker\_tt\_lora} روی مدل‌های پایه}
-\label{tab:benchmark_kronecker_tt_lora}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
-\midrule
-\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9095} & \lr{345.95 MB} & \lr{54,737.60 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{83.72\%} & \lr{0.8515} & \lr{333.23 MB} & \lr{32,763.08 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{55.16\%} & \lr{0.6787} & \lr{804.54 MB} & \lr{33,263.89 tok/s} & \lr{PASS\_LOW} \\
-\lr{Qwen} & \lr{88.76\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-یافته‌های بنچ‌مارک کارآمدی ترکیبی این معماری را به خوبی نشان می‌دهد. در مدل انکودر \lr{DistilBERT} دقت بسیار بالای \lr{90.60\%} و شاخص \lr{F1} معادل \lr{0.9095} حاصل شده است. به همین ترتیب، در مدل عمیق‌تر \lr{RoBERTa} دقت عالی \lr{83.72\%} و در مدل بزرگ زبانی \lr{Qwen} دقت چشمگیر \lr{88.76\%} به دست آمده است. در مدل زبانی خودبازگشتی \lr{GPT-2} با ثبت دقت \lr{55.16\%}، وضعیت \lr{PASS\_LOW} به دلیل الزامات انطباق ساختار وزن‌های علّی گزارش شده است.

@@ -1,110 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{wang2020linformer} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{linformer\_attention}}
-\label{sec:mod_linformer_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-مکانیزم \lr{linformer\_attention} پاسخی بنیادین به پیچیدگی پردازشی درجه دوم $\mathcal{O}(N^2)$ در مدل‌های توجه سنتی است. در این معماری، ایده اصلی مبتنی بر قضیه جانسون-لیندن‌اشتراوس \lr{(Johnson-Lindenstrauss)} است که بیان می‌کند نقاط در یک فضای با ابعاد بالا را می‌توان با حفظ فواصل هندسی، به یک فضای با ابعاد پایین‌تر نگاشت داد. در این راستا، توالی طولانی کلیدها و مقادیر از طریق ماتریس‌های پروجکشن خطی به طول ثابتی $k \ll N$ فشرده می‌شوند تا مدل قادر باشد روابط سراسری و بافت‌های دوربرد را با حفظ بخش عمده‌ای از ظرفیت بازنمایی زبانی، در یک فضای محاسباتی به شدت کوچک‌تر مدل کند.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-در این ماژول، نگاشت‌های خطی و یادگیری‌پذیر $\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N}$ وظیفه فشرده‌سازی در بعد توالی را بر عهده دارند:
-\begin{align}
-\bar{\mathbf{K}} &= \mathbf{E} \mathbf{K} \in \mathbb{R}^{B \times H \times k \times d} \\
-\bar{\mathbf{V}} &= \mathbf{F} \mathbf{V} \in \mathbb{R}^{B \times H \times k \times d} \\
-\operatorname{Attn}(\mathbf{Q}, \bar{\mathbf{K}}, \bar{\mathbf{V}}) &= \operatorname{Softmax}\left(\frac{\mathbf{Q} \bar{\mathbf{K}}^T}{\sqrt{d}}\right) \bar{\mathbf{V}}
-\end{align}
-در اینجا ماتریس‌های $\bar{\mathbf{K}}$ و $\bar{\mathbf{V}}$ به ترتیب نسخه‌های فشرده‌شده کلید و مقدار هستند. ابعاد ماتریس نمرات توجه به جای $N \times N$ برابر با $N \times k$ می‌شود که به طرز مؤثری پیچیدگی زمانی و مکانی را به صورت خطی $\mathcal{O}(N k)$ در می‌آورد. همچنین برای توالی‌های بزرگتر از مقدار حداکثر تعریف شده، از تکنیک‌های درونیابی خطی $\mathbf{E}$ و $\mathbf{F}$ استفاده می‌شود.
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{linformer\_attention}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
+\begin{equation}
+\label{eq:spectral_bound_linformer_attention}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
+\end{equation}
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
 
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کالبدشکافی کد در \lr{linformer\_attention.py} نشان‌دهنده یک پیاده‌سازی همه‌جانبه است:
-\begin{itemize}
-\item \textbf{استخراج تانسورها:} ورودی با ابعاد \lr{$[B, N, D]$} وارد می‌شود.
-\item \textbf{پروجکشن خطی و تطبیق \lr{GQA}:} متغیرهای $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ تولید می‌شوند و در صورت استفاده از سرهای کلید/مقدار کمتر از سرهای پرس‌وجو، تابع \lr{repeat\_kv} ماتریس‌ها را به تناسب بسط می‌دهد تا ابعاد \lr{$[B, H, N, d]$} حاصل شود.
-\item \textbf{کدگذاری موقعیت \lr{RoPE}:} اعمال تزریق چرخشی روی کلیدها و پرس‌وجوها با در نظر گرفتن نیمی از ابعاد برای چرخش زاویه‌ای اعمال می‌گردد.
-\item \textbf{فشرده‌سازی خطی:} ضرب تانسوری $\mathbf{E}_{act} \times \mathbf{K}$ و $\mathbf{F}_{act} \times \mathbf{V}$ بر روی بعد توالی، طول $N$ را به $k_{eff}$ نگاشت می‌دهد.
-\item \textbf{تزریق \lr{LoRA}:} هر یک از لایه‌های خطی پروجکشن با آداپتورهای \lr{LoRA} تجهیز شده‌اند که وزن‌های پایه آن‌ها منجمد می‌گردند.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}):
-\begin{itemize}
-\item \textbf{کاهش ترافیک حافظه \lr{HBM}:} تقلیل ابعاد ماتریس توجه از $N \times N$ به $N \times k$، حجم داده‌هایی که باید از \lr{DRAM} به لایه‌های \lr{SRAM (L1/L2)} بارگیری شوند را شدیداً می‌کاهد.
-\item \textbf{افزایش شدت محاسباتی:} کاهش وابستگی به پهنای باند حافظه \lr{(Memory-Bound)} سبب شیفت ملایم مکانیزم به سمت محدوده وابسته به محاسبات \lr{(Compute-Bound)} در مدل سقف کارایی می‌شود.
-\end{itemize}
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-عملکرد تجربی مدل بر اساس نتایج استخراج شده در پایگاه \lr{master\_verified\_results.json} به شرح زیر است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{ارزیابی آزمایشگاهی و بنچ‌مارک مکانیزم \lr{linformer\_attention}}
-\label{tab:benchmark_linformer_attention}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{اوج حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
-\midrule
-\lr{BERT} & \lr{47.48\%} & \lr{0.4675} & \lr{349.3 MB} & \lr{329,138.1 tok/s} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{48.17\%} & \lr{0.4989} & \lr{421.4 MB} & \lr{582,397.3 tok/s} & \lr{PASS} \\
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{1321.7 MB} & \lr{32,099.9 tok/s} & \lr{PASS} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-بررسی ارقام آزمایشگاهی نشان می‌دهد که معماری \lr{linformer\_attention} با تقلیل طول توالی در حافظه و توجه، توان عملیاتی بالایی ایجاد می‌کند. به ویژه در مدل \lr{RoBERTa} توان استنتاج به رقم قابل توجه \lr{582,397.3 tok/s} رسیده و اوج حافظه تنها \lr{421.4 MB} ثبت شده است که نمادی از موفقیت در کاهش عطش حافظه است. با این حال، فشردگی مفرط اطلاعات منجر به افت نسبی دقت مدل و \lr{F1-Score} در حدود ۵۰٪ شده است، زیرا از دست رفتن جزئیات ظریف ارتباطات محلی در پی فشرده‌سازی خطی رخ می‌دهد.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\begin{itemize}
-\item \textbf{نقاط قوت:} 
-کاهش خطی پیچیدگی زمانی و مکانی $\mathcal{O}(N \cdot k)$، توان عملیاتی قابل توجه برای متون با توالی‌های بسیار طویل، و مصرف حافظه گرافیکی به شدت کنترل شده.
-\item \textbf{محدودیت‌ها:}
-افت معنایی در متونی که وابستگی قوی به جزئیات ظریف محلی دارند؛ ناتوانی ذاتی در حفظ دقیق توزیع‌های توجه پراکنده و احتمال از دست دادن کلمات کلیدی حاشیه‌ای به دلیل پروجکشن پایین-رتبه.
-\item \textbf{پیشنهادات توسعه:}
-تلفیق مکانیزم‌های توجه محلی متمرکز \lr{(Local Window Attention)} در کنار پروجکشن سراسری جهت حفظ جزئیات توکنی در همسایگی مستقیم، و یا یادگیری پویای طول فشرده‌سازی $k$ بر اساس توزیع آنتروپی هر ورودی خاص.
-\end{itemize}
-
-\vspace{0.5cm}
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [kernel, right=1.2cm of input] (k) {پروجکشن $\mathbf{E}, \mathbf{F}$ (بعد $k$)};
-    \node [block, right=1.2cm of k] (acc) {ضرب توجه $N \times k$};
-    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی و \lr{LoRA}};
-
-    \draw [->, thick, draw=blue!80] (input) -- (k);
-    \draw [->, thick, draw=orange!80] (k) -- (acc);
-    \draw [->, thick, draw=blue!80] (acc) -- (out);
-\end{tikzpicture}
-\end{center}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{linformer\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/architecture/linformer_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(linformer\_attention)}}
-\label{fig:arch_linformer_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/linformer_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(linformer\_attention)}}
-\label{fig:comp_linformer_attention}
-\end{figure}
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_linformer_attention}
+\mathcal{C}_{\text{linformer\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

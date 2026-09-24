@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{zerokv\_neo\_compressor}}
+\label{tab:benchmark_zerokv_neo_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{70.64\%} & \lr{0.7594} & \lr{337.59 MB} & \lr{165161.41 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.77\%} & \lr{0.6813} & \lr{634.91 MB} & \lr{73922.96 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{47.71\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{361.54 MB} & \lr{110799.68 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{0.0\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}

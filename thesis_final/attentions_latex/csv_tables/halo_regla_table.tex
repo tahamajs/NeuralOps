@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{halo\_regla}}
+\label{tab:benchmark_halo_regla_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.6\%} & \lr{0.9081} & \lr{336.22 MB} & \lr{87116.79 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{81.42\%} & \lr{0.8204} & \lr{996.93 MB} & \lr{9245.92 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.62\%} & \lr{} & \lr{3427.25 MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.84\%} & \lr{0.8896} & \lr{400.47 MB} & \lr{39305.88 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{SKIP\_T5\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}

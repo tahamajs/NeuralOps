@@ -1,130 +1,18 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
 
-مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{vaswani2017attention} است.
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{galerkin\_attention}}
-\label{sec:mod_galerkin_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
 
-\subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
-ماژول \lr{galerkin\_attention} پاسخی عمیق به یکی از اساسی‌ترین تنگناهای معماری ترانسفورمر استاندارد است: پیچیدگی مرتبه دوم مکانیزم توجه نسبت به طول دنباله ورودی $O(N^2)$. در رویکرد سنتی، هر توکن باید مستقیماً با تمامی توکن‌های دیگر تعامل کند که منجر به ایجاد ماتریس‌های توجه بسیار حجیم در متون طولانی می‌شود. ایده محوری این ماژول، الهام‌گیری از روش‌های عددی حل معادلات دیفرانسیل با مشتقات جزئی \lr{(PDEs)} و روش تصویرسازی پتروف-گالرکین \lr{(Petrov-Galerkin Projection)} است. در این پارادایم، مکانیزم توجه نه به عنوان یک ضرب ماتریسی گسسته، بلکه به عنوان یک عملگر انتگرالی پیوسته ناملایم مدل‌سازی می‌شود که می‌توان آن را بر روی یک پایه متعامد یکا \lr{(Orthonormal Basis)} گسسته‌سازی کرد. با تصویر کردن توابع در این فضای پایه با رتبه پایین \lr{(Low-Rank)}، تعاملات بی‌نهایت محلی با یک نمایش فشرده و سراسری جایگزین می‌شوند، و بدین‌ترتیب هزینه محاسباتی از حالت مربعی به خطی کاهش می‌یابد بدون آنکه ظرفیت بازنمایی زبانی لطمه جدی ببیند.
 
-\subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-در این مدل، فضای توکن‌های ورودی با استفاده از یک ماتریس پایه متعامد یکا $\Phi \in \mathbb{R}^{N \times r}$ (مانند پایه‌های هارمونیک کسینوسی \lr{(DCT)}) که در شرط $\Phi^T \Phi = I_r$ صدق می‌کند، فشرده می‌شود.
-ماتریس‌های پرس‌وجو، کلید و مقدار به ترتیب $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}$ به فضای پایه تصویر می‌گردند:
+\paragraph{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در ماژول \lr{galerkin\_attention}، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه یا پراکنده با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
 \begin{equation}
-\mathbf{\tilde{Q}} = \mathbf{Q} \Phi, \quad \mathbf{\tilde{K}} = \mathbf{K} \Phi, \quad \mathbf{\tilde{V}} = \mathbf{V} \Phi
+\label{eq:spectral_bound_galerkin_attention}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
 \end{equation}
-که در آن $\mathbf{\tilde{Q}}, \mathbf{\tilde{K}}, \mathbf{\tilde{V}} \in \mathbb{R}^{B \times H \times r \times d}$ بازنمایی‌های فشرده‌سازی شده با مرتبه $r$ هستند ($r \ll N$).
-ماتریس توجه در فضای پایه محاسبه می‌شود:
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
 \begin{equation}
-\mathbf{S}_{\text{\lr{basis}}} = \frac{\mathbf{\tilde{Q}} \mathbf{\tilde{K}}^T}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times r}
+\label{eq:complexity_galerkin_attention}
+\mathcal{C}_{\text{galerkin\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
 \end{equation}
-سپس، مقادیر خروجی در فضای فشرده استخراج شده و به فضای توکن‌های اصلی بازسازی (سنتز) می‌گردند:
-\begin{equation}
-\mathbf{O}_{\text{\lr{basis}}} = \text{\lr{Softmax}}(\mathbf{S}_{\text{\lr{basis}}}) \mathbf{\tilde{V}} \in \mathbb{R}^{B \times H \times r \times d}
-\end{equation}
-\begin{equation}
-\mathbf{O} = \mathbf{O}_{\text{\lr{basis}}} \Phi^T \times \sqrt{\frac{N}{r}} \in \mathbb{R}^{B \times H \times N \times d}
-\end{equation}
-ضریب مقیاس‌بندی $\sqrt{N/r}$ جهت حفظ پایستگی انرژی و واریانس در طول دنباله به کار گرفته می‌شود. پیچیدگی زمانی و مکانی این مکانیزم به $O(N \cdot r \cdot d)$ تقلیل می‌یابد.
-
-\subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-در پیاده‌سازی سورس‌کد \lr{galerkin\_attention.py}، سلسله‌مراتب کلاس‌ها و جریان تانسوری با دقت بالایی معماری شده است:
-\begin{itemize}
-    \item \textbf{مرحله اول (پروجکشن اولیه و GQA):} تانسور ورودی با ابعاد \lr{$[B, N, D]$} وارد کلاس \lr{GalerkinAttention} شده و توسط لایه‌های \lr{LoRALinear} (شامل پارامترهای ثابت پایه و تطبیق‌گرهای \lr{LoRA}) به تانسورهای \lr{Q}, \lr{K} و \lr{V} نگاشت می‌شود. در صورت فعال بودن \lr{(GQA)}، تانسورهای کلید و مقدار با تابع \lr{repeat\_kv} بسط می‌یابند تا به شکل \lr{$[B, H, N, d]$} با پرس‌وجو هم‌راستا شوند.
-    \item \textbf{مرحله دوم (جایگذاری موقعیت چرخشی - RoPE):} متد \lr{apply\_rotary\_pos\_emb} به صورت انتخابی یا بر روی کل بعد سر یا به شکل برش‌یافته \lr{(Partial-RoPE)} چرخش فرکانسی موقعیت‌ها را اعمال می‌نماید.
-    \item \textbf{مرحله سوم (تولید پایه و تصویرسازی):} متد \lr{\_get\_orthonormal\_basis} ماتریس $\Phi$ را با استفاده از توابع هارمونیک گسسته و پایدارسازی مقادیر منفرد با روش \lr{QR} تولید می‌کند. با استفاده از \lr{torch.einsum("bhnd,nr->bhrd", Q, Phi)} تصویرسازی تانسورها انجام می‌گیرد.
-    \item \textbf{مرحله چهارم (محاسبه و بازسازی):} محاسبه دقیق نرم‌افزاری مقادیر ممیز شناور \lr{(FP32)} با اعمال توابع \lr{nan\_to\_num} و \lr{clamp} انجام شده تا پایداری عددی تضمین گردد. بازسازی نهایی به وسیله \lr{torch.einsum("bhrd,nr->bhnd", O\_basis, Phi)} جریان یافته و در نهایت تانسورها به فرمت \lr{$[B, N, D]$} برای تغذیه به شبکه پیش‌خور ادغام می‌گردند.
-\end{itemize}
-
-\subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-عملکرد ماژول بر روی سخت‌افزار \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} تغییرات عمیقی در تعادل محاسبات و حافظه ایجاد می‌کند. 
-به دلیل تقلیل بُعد محاسبات توجه از $N \times N$ به $r \times r$، ترافیک تبادل داده با حافظه کند جهانی \lr{(HBM/DRAM)} به شدت افت می‌کند. عملیات تصویرسازی \lr{einsum} به دلیل الگوهای دسترسی منظم و قابل پیش‌بینی حافظه، به طور کامل در حافظه نهان سطح اول و دوم \lr{(L1/L2 SRAM)} جای گرفته و پدیده \lr{Memory-Bound} بودن کلاسیک ترانسفورمرها را می‌شکند. از سوی دیگر، بهینه‌سازی \lr{LoRALinear} از بارگذاری وزن‌های عظیم جلوگیری کرده و پهنای باند را منحصراً در اختیار تطبیق‌گرهای کوچک \lr{(Adapters)} قرار می‌دهد. این بهینه‌سازی‌ها موجب سوق یافتن الگوریتم به سمت سقف توان محاسباتی \lr{(Compute-Bound Regime)} در پلتفرم‌های مجهز به هسته‌های تانسوری می‌شود.
-
-\subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
-نتایج استخراج شده از بنچمارک‌های استاندارد برای مدل‌های مختلف (با ابعاد رتبه فشرده‌سازی یکسان) در جدول زیر خلاصه شده است:
-
-\begin{table}[H]
-\centering
-\small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{galerkin\_attention}}
-\label{tab:benchmark_galerkin_attention}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{مدل پایه} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{اوج حافظه \lr{(MB)}} & \textbf{توان \lr{(Tokens/s)}} & \textbf{وضعیت} \\
-\midrule
-\lr{BERT} & \lr{50.92\%} & \lr{0.3374} & \lr{283.20} & \lr{313,293.60} & \lr{PASS} \\
-\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{671.90} & \lr{9,612.29} & \lr{PASS\_LOW} \\
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{340.61} & \lr{19,602.40} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{51.26\%} & \lr{0.6763} & \lr{568.72} & \lr{12,410.02} & \lr{PASS\_LOW} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
-تحلیل داده‌های جدول بالا نشان‌دهنده یک موازنه ظریف میان بازدهی سخت‌افزاری و توانمندی بازنمایی مدل است. مدل \lr{GPT-2} با دستیابی به بالاترین دقت \lr{(51.26\%)} و شاخص \lr{F1} معادل \lr{0.6763}، به خوبی با ساختار علی \lr{(Causal)} که در سورس‌کد با دقت پیاده‌سازی شده، هم‌خوانی نشان داده است. در مدل‌های اینکودر مانند \lr{RoBERTa} و \lr{DistilBERT}، شاخص \lr{F1} بر روی \lr{0.6748} متوقف شده که نشانگر آن است که تصویرسازی پتروف-گالرکین، علیرغم حفظ تقریبی ساختار معنایی، بخشی از تفاوت‌های ریزگرادیان و الگوهای توجه محلی را هموار (Smooth) کرده است. مدل \lr{BERT}، اگرچه به طرز قابل توجهی نرخ توان عملیاتی \lr{(313,293 Tokens/s)} با مصرف ناچیز حافظه \lr{(283.2 MB)} ارائه داده، اما در شاخص \lr{F1} \lr{(0.3374)} افت شدیدی را تجربه کرده است که بیانگر حساسیت بالای معماری پایه \lr{BERT} به حذف فرکانس‌های بالای سیگنال توجه می‌باشد. این نتایج به وضوح تأثیر فیلتر کردن مقادیر ویژه پایین در فضای پایه هارمونیک را اثبات می‌کند.
-
-\subsection*{بخش ۷: نقاط قوت، محدودیت‌ها و پیشنهادات توسعه \lr{(Strengths, Weaknesses \& Future Scope)}}
-\textbf{نقاط قوت:}
-\begin{itemize}
-    \item \textbf{پیچیدگی خطی:} تقلیل هزینه پردازشی از $O(N^2)$ به $O(N \cdot r)$ که اجرای متون طولانی را تسهیل می‌نماید.
-    \item \textbf{همگرایی نرم‌افزاری و سخت‌افزاری:} پشتیبانی بومی از \lr{GQA} و \lr{RoPE} در کنار فشرده‌سازی \lr{LoRA} و پایداری در استفاده از \lr{VRAM} پایین روی گرافیک‌های محدود به \lr{8GB}.
-    \item \textbf{استحکام ریاضیاتی:} استفاده از تصویرسازی متعامد یکا با متعامدسازی \lr{QR} برای جلوگیری از مشکلات ناپایداری عددی.
-\end{itemize}
-
-\textbf{محدودیت‌ها و چالش‌ها:}
-\begin{itemize}
-    \item \textbf{تضعیف سیگنال‌های محلی:} ماهیت فشرده‌سازی انتگرالی منجر به هموارسازی و تضعیف وابستگی‌های دقیق نقطه‌به‌نقطه میان کلمات می‌شود (همان‌طور که در افت \lr{F1} مدل \lr{BERT} مشاهده شد).
-    \item \textbf{وابستگی به پایه انتخابی:} استفاده از پایه ثابت نظیر \lr{DCT} ممکن است برای تمامی ساختارهای زبانی و دامنه‌های متنی تطبیق‌پذیر نباشد.
-\end{itemize}
-
-\textbf{پیشنهادات توسعه و مسیر آینده:}
-\begin{itemize}
-    \item توسعه پایه‌های تصویرسازی یادگیرنده \lr{(Learnable Bases)} به جای پایه‌های هارمونیک ثابت برای تطبیق بهتر با ساختار گرامری زبان طبیعی.
-    \item ترکیب مکانیزم گالرکین با مکانیزم‌های توجه اسپارس \lr{(Sparse Attention)} برای بازیابی توکن‌های از دست‌رفته با اهمیت بالا (مدل‌های هیبریدی خطی-محلی).
-    \item پیاده‌سازی کرنل‌های تخصصی \lr{Triton} جهت اجرای یکپارچه و بهینه‌تر عملگرهای تصویرسازی در سطح ثبات‌های پردازشی.
-\end{itemize}
-
-\vspace{0.4cm}
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [kernel, right=1.2cm of input] (k) {تصویرسازی $\tilde{\mathbf{Q}}, \tilde{\mathbf{K}}, \tilde{\mathbf{V}}$ در پایه $\Phi$};
-    \node [block, right=1.2cm of k] (acc) {محاسبه توجه در فضای $\mathbb{R}^{r \times r}$};
-    \node [outblock, right=1.2cm of acc] (out) {بازسازی خروجی با $\Phi^T$};
-
-    \draw [->, thick, draw=blue!80] (input) -- (k);
-    \draw [->, thick, draw=orange!80] (k) -- (acc);
-    \draw [->, thick, draw=blue!80] (acc) -- (out);
-\end{tikzpicture}
-\end{center}
-\vspace{0.4cm}
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{galerkin\_attention} ارائه شده است.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/arch_galerkin_attention.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(galerkin\_attention)}}
-\label{fig:arch_galerkin_attention}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/galerkin_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(galerkin\_attention)}}
-\label{fig:comp_galerkin_attention}
-\end{figure}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

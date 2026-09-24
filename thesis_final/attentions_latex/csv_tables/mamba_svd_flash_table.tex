@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{mamba\_svd\_flash}}
+\label{tab:benchmark_mamba_svd_flash_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.17\%} & \lr{0.8421} & \lr{1668.38 MB} & \lr{1059.01 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.0\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{64043.03 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.0\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{92803.91 tok/s} & \lr{FAIL} \\
+\lr{Unknown} & \lr{30.87\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

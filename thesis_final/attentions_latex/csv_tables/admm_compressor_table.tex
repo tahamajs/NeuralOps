@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{admm\_compressor}}
+\label{tab:benchmark_admm_compressor_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.53\%} & \lr{0.8922} & \lr{339.42 MB} & \lr{54607.47 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{84.63\%} & \lr{0.8537} & \lr{409.87 MB} & \lr{15433.04 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{88.42\%} & \lr{0.8947} & \lr{1851.31 MB} & \lr{1099.69 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{89.11\%} & \lr{0.8966} & \lr{333.44 MB} & \lr{13290.18 tok/s} & \lr{PASS} \\
+\lr{Unknown} & \lr{62.96\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

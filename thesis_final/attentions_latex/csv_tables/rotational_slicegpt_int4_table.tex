@@ -1,15 +1,15 @@
 \begin{table}[H]
 \centering
 \small
-\caption{نتایج تجربی استخراج‌شده از فایل داده \lr{unified_rotational_slicegpt_int4_4models_summary.csv} برای ماژول \lr{rotational_slicegpt_int4}}
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{rotational\_slicegpt\_int4}}
 \label{tab:benchmark_rotational_slicegpt_int4_csv}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
 \midrule
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
-\lr{--} & \lr{--\%} & \lr{--} & \lr{-- MB} & \lr{-- tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{88.99\%} & \lr{0.8987} & \lr{339.84 MB} & \lr{143879.83 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{61.7\%} & \lr{0.6706} & \lr{636.04 MB} & \lr{65800.77 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.5\%} & \lr{0.8771} & \lr{360.79 MB} & \lr{97994.8 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{linformer\_attention}}
+\label{tab:benchmark_linformer_attention_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{BERT} & \lr{47.48\%} & \lr{0.4675} & \lr{349.3 MB} & \lr{329138.1 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{48.17\%} & \lr{0.4989} & \lr{421.4 MB} & \lr{582397.3 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{1321.7 MB} & \lr{32099.9 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

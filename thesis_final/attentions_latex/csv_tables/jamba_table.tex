@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک استخراج‌شده از داده‌های تجربی برای ماژول \lr{jamba}}
+\label{tab:benchmark_jamba_csv}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} & \textbf{دقت} & \textbf{شاخص F1} & \textbf{حافظه (VRAM)} & \textbf{توان} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.16\%} & \lr{0.8756} & \lr{695.65 MB} & \lr{2396.61 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.26\%} & \lr{0.6703} & \lr{1363.82 MB} & \lr{1909.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.03\%} & \lr{0.6748} & \lr{1303.95 MB} & \lr{1209.74 tok/s} & \lr{PASS\_LOW} \\
+\lr{Unknown} & \lr{69.13\%} & \lr{} & \lr{ MB} & \lr{ tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
