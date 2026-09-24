@@ -347,7 +347,11 @@ class HGRN2Layer(BaseAttention):
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
             iv = iv * mask_float.unsqueeze(-1)
 
-        h_fwd = self._scan_direction(f, iv)
+        if self.training:
+            import torch.utils.checkpoint as cp
+            h_fwd = cp.checkpoint(self._scan_direction, f, iv, use_reentrant=False)
+        else:
+            h_fwd = self._scan_direction(f, iv)
 
         if self.is_decoder:
             return h_fwd, None
@@ -355,7 +359,11 @@ class HGRN2Layer(BaseAttention):
         # Anticausal backward scan for bidirectional encoders
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
-        h_rev = self._scan_direction(f_rev, iv_rev)
+        if self.training:
+            import torch.utils.checkpoint as cp
+            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
+        else:
+            h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
 
