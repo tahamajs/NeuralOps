@@ -55,7 +55,7 @@ def wait_for_vram(max_used_gb: float, timeout_s: int = 120) -> bool:
         time.sleep(2)
     return False
 
-def wait_for_vram_jump(start_used_gb: float, timeout_s: int = 30) -> None:
+def wait_for_vram_jump(start_used_gb: float, timeout_s: int = 8) -> None:
     """Poll VRAM after spawning to wait for it to register the new allocation."""
     start = time.monotonic()
     while time.monotonic() - start < timeout_s:
@@ -106,6 +106,18 @@ LAUNCH_COOLDOWN_S = 2        # wait between launches (faster ramp-up)
 
 # Job execution
 JOB_TIMEOUT_S = 1800         # 30 min max per job
+JOB_TIMEOUT_OVERRIDES = {
+    "aa_svd_compressor": 3600,
+    "mamba_block": 3600,
+    "granite_hybrid": 3600,
+    "spectral_mamba": 3600,
+}
+def get_timeout(job_id: str) -> int:
+    for k, v in JOB_TIMEOUT_OVERRIDES.items():
+        if k in job_id:
+            return v
+    return JOB_TIMEOUT_S
+
 JOB_KILL_GRACE_S = 10        # SIGTERM → SIGKILL grace period
 MAX_RETRIES = 2              # per-job
 
@@ -407,12 +419,17 @@ def terminate_job(handle: JobHandle, reason: str) -> None:
         return
     log_job(handle.job_id, "TIMEOUT", f"terminating ({reason})")
     try:
-        handle.proc.terminate()
-        try:
-            handle.proc.wait(timeout=JOB_KILL_GRACE_S)
-        except subprocess.TimeoutExpired:
-            handle.proc.kill()
-            handle.proc.wait(timeout=5)
+        import os, signal
+        if os.name == "nt":
+            import subprocess
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(handle.proc.pid)], capture_output=True)
+        else:
+            os.killpg(os.getpgid(handle.proc.pid), signal.SIGTERM)
+            try:
+                handle.proc.wait(timeout=JOB_KILL_GRACE_S)
+            except subprocess.TimeoutExpired:
+                os.killpg(os.getpgid(handle.proc.pid), signal.SIGKILL)
+                handle.proc.wait(timeout=5)
     except Exception as e:
         logger.error(f"Failed to terminate {handle.job_id}: {e}")
     finally:
@@ -456,7 +473,7 @@ class CircuitBreaker:
         return len(recent) >= CIRCUIT_FAIL_THRESHOLD
 
     def blocklist(self) -> set:
-        return {jid for jid in self.fail_times if self.is_blocked(jid)}
+        return {jid for jid in list(self.fail_times.keys()) if self.is_blocked(jid)}
 
 
 # =============================================================================
@@ -604,13 +621,18 @@ def trigger_git_sync(job_id: str) -> None:
     """Commit new benchmark results to git and push in background process."""
     try:
         commit_msg = f"chore(benchmark): record results for {job_id} on GPU"
-        cmd = f"git add results/ paper/ && git commit -m \"{commit_msg}\" && git push origin main"
+        import subprocess
         subprocess.Popen(
-            cmd,
-            shell=True,
-            cwd=str(ROOT_DIR),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            ["git", "add", "results/", "paper/"], cwd=str(ROOT_DIR),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ).wait()
+        subprocess.Popen(
+            ["git", "commit", "-m", commit_msg], cwd=str(ROOT_DIR),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ).wait()
+        subprocess.Popen(
+            ["git", "push", "origin", "main"], cwd=str(ROOT_DIR),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         logger.info(f"Triggered background git commit & push for {job_id}")
     except Exception as e:
@@ -667,6 +689,8 @@ def auto_refill_queue(state: Dict[str, Any]) -> int:
         if not full_m_path.exists():
             continue
         for mod in eval_modules:
+            if family in ("bert", "roberta") and mod in attn_modules:
+                continue
             for r in ranks:
                 jid = f"{mod}_{family}_{dataset}_r{r}"
                 out_suffix = f"{mod}_{family}_{dataset}_r{r}"
@@ -749,12 +773,13 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
         recovered = []
         for j in orphans:
             j["status"] = "pending"
-            j["retries"] = 0  # reset retries (bug fix)
+            # j["retries"] = 0  # reset retries (bug fix)
             recovered.append(j)
         state["active"] = []
         state.setdefault("jobs", []).extend(recovered)
         qm.write(state)
 
+    check_anomaly_status()
     while not _shutdown:
         try:
             # --- 1. GPU telemetry ---
@@ -803,12 +828,12 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
 
                 # Timeout check
                 elapsed = time.time() - handle.started_at
-                if elapsed > JOB_TIMEOUT_S:
-                    terminate_job(handle, f"timeout {elapsed:.0f}s")
+                if elapsed > get_timeout(jid):
+                    terminate_job(handle, f"timeout {elapsed:.0f}s (> {get_timeout(jid)}s)")
                     to_fail.append({
                         **handle.to_dict(),
                         "status": "failed",
-                        "reason": f"timeout_{JOB_TIMEOUT_S}s",
+                        "reason": f"timeout_{get_timeout(jid)}s",
                     })
                     to_remove.append(jid)
                     continue
@@ -983,7 +1008,6 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                             qm.mutate(mark_fail)
 
             # --- 8. Periodic tasks ---
-            check_anomaly_status()
             upload_models_to_hf()
 
             # --- 9. Dashboard ---
