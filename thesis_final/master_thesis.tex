@@ -629,6 +629,26 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B} x(t), \quad y(t) = \mathbf{C} h(t)
     \item \textbf{گام چهارم (پروفایلینگ سخت‌افزاری):} سنکرون‌سازی پردازنده و کارت گرافیک با رویدادهای \lr{torch.cuda.Event} جهت محاسبه دقیق زمان تاخیر گام رو به جلو \lr{(Forward Latency)} و پسرو \lr{(Backward Latency)}، پایش اوج مصرف حافظه با \lr{torch.cuda.max\_memory\_allocated()}، و محاسبه دقیق ماتریس درهم‌ریختگی، دقت و \lr{F1-Score}.
 \end{enumerate}
 
+\section{چارچوب مشترک نظری: تحلیل پایداری طیفی و پیچیدگی سخت‌افزاری}
+\label{sec:common_spectral_theory}
+به منظور پرهیز از تکرار معادلات مشترک در تحلیل تک‌نگاری‌های ماژولار، در این بخش اصول نظری حاکم بر تحلیل پایداری خطا در فشرده‌سازی کم‌مرتبه و مدل‌سازی بار حافظه در لایه‌های سخت‌افزاری به صورت مدون تبیین می‌گردد.
+
+\subsection{تحلیل طیفی و نامساوی‌های پایداری خطا}
+برای بررسی میزان دقت تقریب ماتریس وزن یا نگاشت توجه در مکانیزم‌های تقلیل رتبه، تفاضل ماتریس فاکتورگیری‌شده از نگاشت متراکم اصلی بر اساس نامساوی هافدینگ-فون‌نیومان ارزیابی می‌گردد. فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$ ماتریس وزن هدف باشد که توسط تقریب کم‌مرتبه با رتبه موثر $r$ جایگزین شده است. کران بالای خطای بازسازی بر مبنای نرم فروبنیوس به صورت زیر تصریح می‌شود:
+\begin{equation}
+\label{eq:spectral_bound_general}
+\| \mathbf{W} - \mathbf{W}_{r} \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2(\mathbf{W})} \le \epsilon \| \mathbf{W} \|_F
+\end{equation}
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\subsection{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسله‌مراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی و ترافیک گذرگاه داده در مکانیزم‌های خطی یا فاکتورگیری‌شده به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_general}
+\mathcal{C} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی پردازنده گرافیکی، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.
+
 \section{معیار دروازه کیفیت \lr{(Quality Gate)}}
 جهت تایید علمی و اعتبارسنجی فنی ماژول‌ها، شرط دروازه کیفیت به صورت ریاضی به شکل زیر فرمول‌بندی گردیده است:
 \begin{equation}
@@ -923,575 +943,195 @@ SliceGPT: Compress large language models by deleting rows and columns.
 Wang, H., Shen, Y., Dong, P., \& Liu, C. (2024).
 SVD-LLM: Truncation-aware singular value decomposition for large language model compression.
 \textit{ICLR}.
-\bibitem{ref_soafusedattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Soafusedattention. University of Tehran Technical Reports.
 
-\bibitem{ref_a3compressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for A3 Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_aasvdcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aa Svd Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_aatcxkvcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aatc Xkv Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_adaptiveranks_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adaptive Ranks. University of Tehran Technical Reports.
 
-\bibitem{ref_adaptivespanattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adaptive Span Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_adaptivesparseattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adaptive Sparse Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_adaptivesvdattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adaptive Svd Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_adasplashattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adasplash Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_adasvdcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Adasvd Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_admmcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Admm Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_admmpruner_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Admm Pruner. University of Tehran Technical Reports.
 
-\bibitem{ref_aegishybrid_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aegis Hybrid. University of Tehran Technical Reports.
 
-\bibitem{ref_aegisspectronfp8_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aegis Spectron Fp8. University of Tehran Technical Reports.
 
-\bibitem{ref_aegisv2_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aegis V2. University of Tehran Technical Reports.
 
-\bibitem{ref_aegisv5_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aegis V5. University of Tehran Technical Reports.
 
-\bibitem{ref_aegisv6_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Aegis V6. University of Tehran Technical Reports.
 
-\bibitem{ref_armorpruner_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Armor Pruner. University of Tehran Technical Reports.
 
-\bibitem{ref_astpruner_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Ast Pruner. University of Tehran Technical Reports.
 
-\bibitem{ref_astroquantizer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Astro Quantizer. University of Tehran Technical Reports.
 
-\bibitem{ref_asvdattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Asvd Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_bamumoe_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Bam Umoe. University of Tehran Technical Reports.
 
-\bibitem{ref_blocktransformerhiba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Block Transformer Hiba. University of Tehran Technical Reports.
 
-\bibitem{ref_bonsaipruner_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Bonsai Pruner. University of Tehran Technical Reports.
 
-\bibitem{ref_cachenotescompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Cachenotes Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_chelaslay_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Chela Slay. University of Tehran Technical Reports.
 
-\bibitem{ref_clusterattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Cluster Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_comecompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Come Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_compotcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Compot Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_compressedattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Compressed Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_compressedmha_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Compressed Mha. University of Tehran Technical Reports.
 
-\bibitem{ref_compressedmhaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Compressed Mha Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_coopqquantizer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Coopq Quantizer. University of Tehran Technical Reports.
 
-\bibitem{ref_crcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Cr Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_curcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Cur Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_curmoecompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Cur Moe Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_decaylinearattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Decay Linear Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_deltakv_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Delta Kv. University of Tehran Technical Reports.
 
-\bibitem{ref_directsvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Direct Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_dobiattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Dobi Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_dobisvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Dobi Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_dronecompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Drone Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_dynamicrank_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Dynamic Rank. University of Tehran Technical Reports.
 
-\bibitem{ref_eatattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Eat Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_enlightencompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Enlighten Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_entropybudgetallocation_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Entropy Budget Allocation. University of Tehran Technical Reports.
 
-\bibitem{ref_ercsvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Erc Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_expertchoicemoe_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Expert Choice Moe. University of Tehran Technical Reports.
 
-\bibitem{ref_factorisedmatrixstate_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Factorised Matrix State. University of Tehran Technical Reports.
 
-\bibitem{ref_faqquantizer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Faq Quantizer. University of Tehran Technical Reports.
 
-\bibitem{ref_flap_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Flap. University of Tehran Technical Reports.
 
-\bibitem{ref_flashattention3fp8_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Flash Attention3 Fp8. University of Tehran Technical Reports.
 
-\bibitem{ref_flatllm_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Flat Llm. University of Tehran Technical Reports.
 
-\bibitem{ref_frandicompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Frandi Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_fullattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Full Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_fusedsvdkernel_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Fused Svd Kernel. University of Tehran Technical Reports.
 
-\bibitem{ref_fusionattn_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Fusion Attn. University of Tehran Technical Reports.
 
-\bibitem{ref_fwsvdcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Fwsvd Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_galerkinattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Galerkin Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_gateddeltanet_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Gated Delta Net. University of Tehran Technical Reports.
 
-\bibitem{ref_gateddeltanetblock_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Gated Deltanet Block. University of Tehran Technical Reports.
 
-\bibitem{ref_gatedlinearattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Gated Linear Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_gfwsdcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Gfws D Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_goldfinchahn_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Goldfinch Ahn. University of Tehran Technical Reports.
 
-\bibitem{ref_granitehybrid_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Granite Hybrid. University of Tehran Technical Reports.
 
-\bibitem{ref_grecodeccompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Grecodec Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_griffinssd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Griffin Ssd. University of Tehran Technical Reports.
 
-\bibitem{ref_haloregla_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Halo Regla. University of Tehran Technical Reports.
 
-\bibitem{ref_hammingattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hamming Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_hashednetcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hashed Net Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_hgrn2gateddeltanet_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hgrn2 Gated Deltanet. University of Tehran Technical Reports.
 
-\bibitem{ref_hgrn2layer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hgrn2 Layer. University of Tehran Technical Reports.
 
-\bibitem{ref_hgrn2outer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hgrn2 Outer. University of Tehran Technical Reports.
 
-\bibitem{ref_hlaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hla Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_huffmancoder_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Huffman Coder. University of Tehran Technical Reports.
 
-\bibitem{ref_hybridattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hybrid Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_hybridsvdlayer_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hybrid Svd Layer. University of Tehran Technical Reports.
 
-\bibitem{ref_hybridkvcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hybridkv Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_hymbatransx_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Hymba Transx. University of Tehran Technical Reports.
 
-\bibitem{ref_infiniattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Infini Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_jamba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Jamba. University of Tehran Technical Reports.
 
-\bibitem{ref_jambainfo_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Jamba Info. University of Tehran Technical Reports.
 
-\bibitem{ref_kdaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Kda Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_kmeansquantize_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Kmeans Quantize. University of Tehran Technical Reports.
 
-\bibitem{ref_kroneckercompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Kronecker Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_kroneckerttlora_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Kronecker Tt Lora. University of Tehran Technical Reports.
 
-\bibitem{ref_kvtccompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Kvtc Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_lekav1_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Leka V1. University of Tehran Technical Reports.
 
-\bibitem{ref_lekav2_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Leka V2. University of Tehran Technical Reports.
 
-\bibitem{ref_lekav3_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Leka V3. University of Tehran Technical Reports.
 
-\bibitem{ref_liftr_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Liftr. University of Tehran Technical Reports.
 
-\bibitem{ref_lillamacompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Lillama Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_lolaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Lola Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_lsccompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Lsc Compressor. University of Tehran Technical Reports.
 
-\bibitem{kitaev2020reformer}
-Kitaev, N., Kaiser, L., \& Levskaya, A. (2020). Reformer: The efficient Transformer. ICLR.
 
-\bibitem{ref_mamba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mamba. University of Tehran Technical Reports.
 
-\bibitem{ref_mambashedder_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mamba Shedder. University of Tehran Technical Reports.
 
-\bibitem{ref_mambasvdflash_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mamba Svd Flash. University of Tehran Technical Reports.
 
-\bibitem{ref_mgiesvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mgie Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_mgiesvdcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mgie Svd Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_minimalaurora_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Minimal Aurora. University of Tehran Technical Reports.
 
-\bibitem{ref_minimalnova_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Minimal Nova. University of Tehran Technical Reports.
 
-\bibitem{ref_minimalprism_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Minimal Prism. University of Tehran Technical Reports.
 
-\bibitem{ref_minimalsvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Minimal Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_minimalsvdv2_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Minimal Svd V2. University of Tehran Technical Reports.
 
-\bibitem{ref_mixattentionmoska_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mixattention Moska. University of Tehran Technical Reports.
 
-\bibitem{ref_mlaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mla Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_mlorqcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Mlorq Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_moba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Moba. University of Tehran Technical Reports.
 
-\bibitem{ref_mobaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Moba Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_modegptcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Modegpt Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_moedeltakvpaged_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Moe Deltakv Paged. University of Tehran Technical Reports.
 
-\bibitem{ref_naivesvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Naive Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_nascattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nasc Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_nexus_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nexus. University of Tehran Technical Reports.
 
-\bibitem{ref_nhaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nha Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_nlisoftmax_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nli Softmax. University of Tehran Technical Reports.
 
-\bibitem{ref_nmfcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nmf Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_nsaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Nsa Attention. University of Tehran Technical Reports.
 
-\bibitem{xiong2021nystromformer}
-Xiong, Y. et al. (2021). Nyströmformer: A Nyström-based Algorithm for Approximating Self-Attention. AAAI.
 
-\bibitem{ref_oatscompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Oats Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_optimalsubspaceprojection_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Optimal Subspace Projection. University of Tehran Technical Reports.
 
-\bibitem{ref_optimizedhybridattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Optimized Hybrid Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_orion_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Orion. University of Tehran Technical Reports.
 
-\bibitem{ref_padre_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Padre. University of Tehran Technical Reports.
 
-\bibitem{ref_padreattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Padre Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_phantom_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Phantom. University of Tehran Technical Reports.
 
-\bibitem{ref_primalattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Primal Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_progressivetokenpruning_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Progressive Token Pruning. University of Tehran Technical Reports.
 
-\bibitem{ref_projectionfactorizedattn_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Projection Factorized Attn. University of Tehran Technical Reports.
 
-\bibitem{ref_proxsparse_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Proxsparse. University of Tehran Technical Reports.
 
-\bibitem{ref_qcqaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Qcqa Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_ralaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Rala Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_reapmoe_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Reap Moe. University of Tehran Technical Reports.
 
-\bibitem{ref_reglaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Regla Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_replace_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Replace. University of Tehran Technical Reports.
 
-\bibitem{ref_replacemecompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Replaceme Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_ressvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Res Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_roasthashedlinear_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Roast Hashed Linear. University of Tehran Technical Reports.
 
-\bibitem{ref_rotationalslicegptint4_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Rotational Slicegpt Int4. University of Tehran Technical Reports.
 
-\bibitem{ref_routingattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Routing Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_rpcattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Rpc Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_rpcacompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Rpca Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_saessvdv2_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Saes Svd V2. University of Tehran Technical Reports.
 
-\bibitem{ref_salr_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Salr. University of Tehran Technical Reports.
 
-\bibitem{ref_salt_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Salt. University of Tehran Technical Reports.
 
-\bibitem{ref_saltattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Salt Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_sambamoe_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Samba Moe. University of Tehran Technical Reports.
 
-\bibitem{ref_sdrmcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Sdrm Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_selectivessm_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Selective Ssm. University of Tehran Technical Reports.
 
-\bibitem{ref_simplessm_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Simple Ssm. University of Tehran Technical Reports.
 
-\bibitem{ref_slicegptpca_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Slicegpt Pca. University of Tehran Technical Reports.
 
-\bibitem{ref_slimcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Slim Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_soaattn_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Soa Attn. University of Tehran Technical Reports.
 
-\bibitem{ref_soamodule_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Soa Module. University of Tehran Technical Reports.
 
-\bibitem{ref_sokacompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Soka Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_spanexpandedattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Span Expanded Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_spectrav2_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Spectra V2. University of Tehran Technical Reports.
 
-\bibitem{ref_spectraformerattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Spectraformer Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_spectralmamba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Spectral Mamba. University of Tehran Technical Reports.
 
-\bibitem{ref_spectron_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Spectron. University of Tehran Technical Reports.
 
-\bibitem{ref_squeezingheadsdistill_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Squeezing Heads Distill. University of Tehran Technical Reports.
 
-\bibitem{ref_squeezingheadsdistiller_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Squeezing Heads Distiller. University of Tehran Technical Reports.
 
-\bibitem{ref_subspaceprojection_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Subspace Projection. University of Tehran Technical Reports.
 
-\bibitem{dong2022svdattention}
-Dong, Z. et al. (2022). SVD-Attention for Low-Rank Linear Modeling. NeurIPS.
 
-\bibitem{ref_svdcompressed_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Compressed. University of Tehran Technical Reports.
 
-\bibitem{ref_svdlinear_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Linear. University of Tehran Technical Reports.
 
-\bibitem{ref_svdlinearattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Linear Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_svdlineardecay_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Linear Decay. University of Tehran Technical Reports.
 
-\bibitem{ref_svdllmv2attention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Llm V2 Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_svdmamba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Mamba. University of Tehran Technical Reports.
 
-\bibitem{ref_svdprojectionattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Svd Projection Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_swiftsvd_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Swift Svd. University of Tehran Technical Reports.
 
-\bibitem{ref_swiftsvdact_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Swift Svd Act. University of Tehran Technical Reports.
 
-\bibitem{ref_templateattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Template Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_tlinformerattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Tlinformer Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_tokencompressedattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Token Compressed Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_tomoecompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Tomoe Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_tpaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Tpa Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_tt_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Tt. University of Tehran Technical Reports.
 
-\bibitem{ref_ttcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Tt Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_unifiedrope_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Unified Rope. University of Tehran Technical Reports.
 
-\bibitem{ref_uniqlcompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Uniql Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_upistuffedmamba_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Upi Stuffed Mamba. University of Tehran Technical Reports.
 
-\bibitem{ref_vigattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Vig Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_vspec_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Vspec. University of Tehran Technical Reports.
 
-\bibitem{ref_wgqaattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Wgqa Attention. University of Tehran Technical Reports.
 
-\bibitem{ref_xattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Xattention. University of Tehran Technical Reports.
 
-\bibitem{ref_zerokvneocompressor_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Zerokv Neo Compressor. University of Tehran Technical Reports.
 
-\bibitem{ref_zerosattention_2024}
-Research Group on Attention \& Compression (2024). Algorithmic Design and Architectural Optimization for Zeros Attention. University of Tehran Technical Reports.
 
 \end{thebibliography}
 \end{latin}
