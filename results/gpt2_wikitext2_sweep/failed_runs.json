@@ -438,5 +438,25 @@
     "accuracy_pct": 0.0,
     "error": "note: zero compressed layers, zero injected layers, model unchanged",
     "timestamp": "2026-09-24T21:47:46.126553"
+  },
+  {
+    "module": "delta_kv_class",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 1066.725343,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (1066.73) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:56:04.648355"
+  },
+  {
+    "module": "adasvd_factory",
+    "model": "models/gpt2",
+    "dataset": "wikitext2",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 471.291564,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (471.29) exceeded threshold 100.0",
+    "timestamp": "2026-09-24T21:56:11.137176"
   }
 ]

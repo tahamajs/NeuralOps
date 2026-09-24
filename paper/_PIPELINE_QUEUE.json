@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_dynamic_entropy_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_tt_linear_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules tt_linear_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_tt_linear_compressor",
@@ -7804,13 +7797,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_erc_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_svd",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_adasvd_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_factory",
@@ -7821,6 +7807,13 @@
       "id": "p3_gpt2_delta_kv_class",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules delta_kv_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_delta_kv_class",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_dynamic_entropy_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_factory",
       "status": "active",
       "retries": 0
     }
@@ -9236,6 +9229,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_compressor",
       "started_at": "2026-09-24T21:40:01.082797",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_erc_svd",
+      "id": "p3_gpt2_erc_svd",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_svd",
+      "started_at": "2026-09-24T21:47:08.985963",
       "retries": 0,
       "status": "done"
     }
