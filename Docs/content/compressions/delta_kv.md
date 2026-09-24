@@ -539,7 +539,19 @@ The `DeltaKVCompressor` architecture incorporates telemetry hooks for tracking s
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate delta_kv compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("delta_kv")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with delta_kv")
 ```
 
 ## Benchmark Results

@@ -386,7 +386,27 @@ The `GalerkinAttention` architecture incorporates telemetry hooks for tracking s
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.attentions.galerkin_attention import (
+    GalerkinAttention,
+    inject_galerkin_attention,
+)
+
+# 1. Module Instantiation
+attn = GalerkinAttention(
+    d_model=768,
+    num_heads=12,
+    basis_rank=32,
+    basis_type="dct"
+)
+
+x = torch.randn(2, 128, 768)
+out, weights = attn(x)
+
+# 2. Inject into HuggingFace Model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+injected_model = inject_galerkin_attention(model=model, basis_rank=32)
 ```
 
 ## Benchmark Results
@@ -401,10 +421,11 @@ The `GalerkinAttention` architecture incorporates telemetry hooks for tracking s
 
 ## Limitations & Future Work
 
-TODO: Identify specific limitations and edge cases for this module.
+1. **Fixed Basis Truncation**: Standard DCT bases assume smooth token spectral distributions. Abrupt semantic transitions or irregular code syntax can require higher basis ranks.
+2. **Context Window Boundary Effects**: Truncating orthogonal projections near sequence boundaries may introduce subtle boundary oscillations (Gibbs phenomenon).
 
 ## Empirical Benchmark Results
 
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **76.83%** | -13.77% | 0.7740 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **76.83%** | -13.77% | 0.7740 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-23 || **distilbert-sst2 (initial)** | sst2 | `PASS` | 90.60% | **75.11%** | -15.49% | 0.7554 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-galerkin-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-galerkin-attention) | 2026-09-18 |

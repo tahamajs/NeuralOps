@@ -604,7 +604,20 @@ The `AegisAttentionV1` architecture incorporates telemetry hooks for tracking si
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base transformer model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Inject aegis_v1 module dynamically
+injected_model = inject_attention(model, attn_type="aegis_v1")
+
+# 3. Verify forward pass
+input_ids = torch.randint(0, 1000, (2, 64))
+outputs = injected_model(input_ids)
+print(f"[PASS] aegis_v1 forward logits shape:", outputs.logits.shape)
 ```
 
 ## Benchmark Results
