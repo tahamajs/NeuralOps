@@ -20,7 +20,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.attentions.ssm_scan import selective_scan
+from framework.core.selective_scan import selective_scan
 
 logger = logging.getLogger(__name__)
 
