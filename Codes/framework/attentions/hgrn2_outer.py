@@ -428,9 +428,9 @@ class HGRN2OuterBlock(BaseAttention):
                 vt = vt * m_t
             kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
             S = ft * S + (1.0 - ft) * kv
-            z = ft_z * z + (1.0 - ft_z) * kt
+            z = z + kt
             num = (qt.contiguous().unsqueeze(-2) @ S).squeeze(-2)
-            denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1.0)
+            denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1e-6)
             y_t = num / denom
             y_fwd_list.append(y_t)
         return torch.stack(y_fwd_list, dim=2)
@@ -453,9 +453,9 @@ class HGRN2OuterBlock(BaseAttention):
                 vt = vt * m_t
             kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
             S_bwd = ft * S_bwd + (1.0 - ft) * kv
-            z_bwd = ft_z * z_bwd + (1.0 - ft_z) * kt
+            z_bwd = z_bwd + kt
             num_b = (qt.unsqueeze(-2) @ S_bwd).squeeze(-2)
-            denom_b = (qt * z_bwd).sum(dim=-1, keepdim=True).clamp(min=1.0)
+            denom_b = (qt * z_bwd).sum(dim=-1, keepdim=True).clamp(min=1e-6)
             y_t_b = num_b / denom_b
             y_bwd_list.append(y_t_b)
         return torch.stack(list(reversed(y_bwd_list)), dim=2)
@@ -476,7 +476,17 @@ class HGRN2OuterBlock(BaseAttention):
 
         mask_float = None
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            if mask.dim() == 2:
+                mask_float = mask.float()
+            elif mask.dim() == 4:
+                v = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
+                v = v.any(dim=1)
+                if v.dim() == 3:
+                    mask_float = v.any(dim=1).float()
+                else:
+                    mask_float = v.float()
+            else:
+                mask_float = mask.float()
 
         if self.training:
             import torch.utils.checkpoint as cp
@@ -675,8 +685,6 @@ def inject_hgrn2_outer(
             num_heads = getattr(layer.config, "num_attention_heads", 12)
 
         new_block = HGRN2OuterBlock(dim=dim, num_heads=num_heads, config=model_config, **kwargs)
-        if is_nested_target:
-            new_block.is_nested_encoder = True
         new_block.copy_weights(src)
 
         if is_nested_target and hasattr(layer, "attention") and hasattr(layer.attention, "self"):

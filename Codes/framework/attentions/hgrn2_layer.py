@@ -349,7 +349,17 @@ class HGRN2Layer(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Memory-efficient parallel element-wise recurrence scan in FP32."""
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            if mask.dim() == 2:
+                mask_float = mask.float()
+            elif mask.dim() == 4:
+                v = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
+                v = v.any(dim=1)
+                if v.dim() == 3:
+                    mask_float = v.any(dim=1).float()
+                else:
+                    mask_float = v.float()
+            else:
+                mask_float = mask.float()
             iv = iv * mask_float.unsqueeze(-1)
 
         if self.training:
@@ -529,8 +539,6 @@ def inject_hgrn2_layer(
             lora_alpha=lora_alpha,
             **kwargs,
         )
-        if is_nested_target:
-            new_layer.is_nested_encoder = True
     except Exception as ex:
         logger.error("Failed to instantiate HGRN2Layer: %s", ex)
         return None
