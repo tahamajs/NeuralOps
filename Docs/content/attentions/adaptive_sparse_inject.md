@@ -546,7 +546,20 @@ The `AdaptiveSparseAttention` architecture incorporates telemetry hooks for trac
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base transformer model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Inject adaptive_sparse_inject module dynamically
+injected_model = inject_attention(model, attn_type="adaptive_sparse_inject")
+
+# 3. Verify forward pass
+input_ids = torch.randint(0, 1000, (2, 64))
+outputs = injected_model(input_ids)
+print(f"[PASS] adaptive_sparse_inject forward logits shape:", outputs.logits.shape)
 ```
 ## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
 Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):

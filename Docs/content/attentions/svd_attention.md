@@ -490,3 +490,12 @@ print('Output logits shape:', outputs.logits.shape)
 - **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+
+
+### Low-Rank SVD Sequence Attention Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Injected Acc | F1 Score | Peak VRAM |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **DistilBERT** | sst2 | `PASS_LOW` | 90.94% | **51.26%** | 0.5737 | 329.4 MB |
+| **RoBERTa** | sst2 | `PASS_LOW` | 75.46% | **50.00%** | 0.6572 | 655.8 MB |
+| **GPT-2** | sst2 | `PASS_LOW` | 57.91% | **53.10%** | 0.6832 | 569.8 MB |

@@ -16,8 +16,8 @@ os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
 
 # Switch to project directory if on Windows GPU server
-if os.path.exists(r"D:\svd_project"):
-    os.chdir(r"D:\svd_project")
+if os.path.exists(r"PROJECT_ROOT"):
+    os.chdir(r"PROJECT_ROOT")
 
 models = [
     {

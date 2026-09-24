@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -151,6 +151,13 @@ class HGRN2Layer(BaseAttention):
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
             self.copy_weights(old_attn)
+            target_dtype = kwargs.get("dtype", None)
+            if target_dtype is None:
+                p = next(old_attn.parameters(), None)
+                if p is not None and isinstance(p.dtype, torch.dtype):
+                    target_dtype = p.dtype
+            if target_dtype is not None:
+                self.to(target_dtype)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights across all 4 architectures."""
@@ -259,19 +266,24 @@ class HGRN2Layer(BaseAttention):
             with torch.no_grad():
                 tw = target_linear.weight
                 if w.shape == tw.shape:
-                    tw.copy_(w)
-                elif w.shape[0] < tw.shape[0]:
-                    tw[:w.shape[0], :w.shape[1]].copy_(w)
-                elif w.shape[0] > tw.shape[0]:
-                    tw.copy_(w[:tw.shape[0], :tw.shape[1]])
+                    tw.copy_(w.to(tw.dtype))
+                else:
+                    min_r = min(tw.shape[0], w.shape[0])
+                    min_c = min(tw.shape[1], w.shape[1])
+                    tw.data.zero_()
+                    tw.data[:min_r, :min_c].copy_(w[:min_r, :min_c].to(tw.dtype))
+                    logger.warning(
+                        "Partial weight copy: source %s → target %s",
+                        tuple(w.shape), tuple(tw.shape)
+                    )
                 if b is not None and target_linear.bias is not None:
                     tb = target_linear.bias
                     if b.shape == tb.shape:
-                        tb.copy_(b)
-                    elif b.shape[0] < tb.shape[0]:
-                        tb[:b.shape[0]].copy_(b)
-                    elif b.shape[0] > tb.shape[0]:
-                        tb.copy_(b[:tb.shape[0]])
+                        tb.copy_(b.to(tb.dtype))
+                    else:
+                        min_b = min(tb.numel(), b.numel())
+                        tb.data.zero_()
+                        tb.data[:min_b].copy_(b[:min_b].to(tb.dtype))
 
         # Copy V -> v_proj and O -> out_proj across all architectures
         _copy_param(self.v_proj, w_v, b_v)
@@ -344,10 +356,24 @@ class HGRN2Layer(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Memory-efficient parallel element-wise recurrence scan in FP32."""
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            if mask.dim() == 2:
+                mask_float = mask.float()
+            elif mask.dim() == 4:
+                v = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
+                v = v.any(dim=1)
+                if v.dim() == 3:
+                    mask_float = v.any(dim=1).float()
+                else:
+                    mask_float = v.float()
+            else:
+                mask_float = mask.float()
             iv = iv * mask_float.unsqueeze(-1)
 
-        h_fwd = self._scan_direction(f, iv)
+        if self.training:
+            import torch.utils.checkpoint as cp
+            h_fwd = cp.checkpoint(self._scan_direction, f, iv, use_reentrant=False)
+        else:
+            h_fwd = self._scan_direction(f, iv)
 
         if self.is_decoder:
             return h_fwd, None
@@ -355,7 +381,11 @@ class HGRN2Layer(BaseAttention):
         # Anticausal backward scan for bidirectional encoders
         f_rev = torch.flip(f, dims=[1])
         iv_rev = torch.flip(iv, dims=[1])
-        h_rev = self._scan_direction(f_rev, iv_rev)
+        if self.training:
+            import torch.utils.checkpoint as cp
+            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
+        else:
+            h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
 
@@ -504,6 +534,8 @@ def inject_hgrn2_layer(
             is_nested_target = True
         elif hasattr(target, "attn"):
             curr_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            curr_attn = target.self_attn
 
     if curr_attn is None:
         return None
@@ -516,8 +548,6 @@ def inject_hgrn2_layer(
             lora_alpha=lora_alpha,
             **kwargs,
         )
-        if is_nested_target:
-            new_layer.is_nested_encoder = True
     except Exception as ex:
         logger.error("Failed to instantiate HGRN2Layer: %s", ex)
         return None
@@ -535,5 +565,7 @@ def inject_hgrn2_layer(
                 target.output.dense = nn.Identity()
         elif hasattr(target, "attn"):
             target.attn = new_layer
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_layer
 
     return new_layer

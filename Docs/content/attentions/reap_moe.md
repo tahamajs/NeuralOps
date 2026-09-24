@@ -461,7 +461,24 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.attentions.reap_moe import REAPMoEAttention, inject_reap_moe
+
+# 1. Module instantiation
+attn = REAPMoEAttention(
+    d_model=768,
+    num_heads=12,
+    num_experts=8,
+    top_k=2,
+)
+
+x = torch.randn(2, 128, 768)
+out, aux_loss = attn(x)
+
+# 2. Inject into HuggingFace model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+injected_model = inject_reap_moe(model=model, num_experts=8, top_k=2)
 ```
 
 ## Benchmark Results
@@ -476,7 +493,8 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 
 ## Limitations & Future Work
 
-TODO: Identify specific limitations and edge cases for this module.
+1. **Routing Load Imbalance**: Without auxiliary balancing loss terms, token routing can collapse toward dominant expert sub-networks.
+2. **Distributed All-to-All Overhead**: In multi-GPU tensor-parallel regimes, expert dispatch incurs all-to-all communication overhead across node interconnects.
 
 ## Empirical Benchmark Results
 
