@@ -693,9 +693,25 @@ print('Compressed output logits:', outputs.logits.shape)
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from framework.compression_engine.adaptive_ranks import AdaptiveRankCompressor
+
+# 1. Initialize model and tokenizer
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+
+# 2. Configure adaptive rank compression based on singular energy thresholds
+compressor = AdaptiveRankCompressor(
+    energy_threshold=0.90,
+    min_rank=16,
+    max_rank=128,
+)
+
+compressed_model = compressor.compress(model=model, tokenizer=tokenizer)
 ```
 
 ## Limitations & Future Work
 
-TODO: Identify specific limitations and edge cases for this module.
+1. **Non-Uniform Hardware Allocation**: Assigning disparate rank dimensions per layer can induce non-uniform kernel shapes and launch latency on Tensor Core engines.
+2. **Dynamic Calibration Sensitivity**: Energy thresholds derived from limited domain calibration texts may over-prune dimensions critical for long-tail reasoning.

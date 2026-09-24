@@ -394,11 +394,6 @@
       "path": "content/attentions/galerkin_attention.md"
     },
     {
-      "id": "galerkin_inject.md",
-      "title": "Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization",
-      "path": "content/attentions/galerkin_inject.md"
-    },
-    {
       "id": "gated_delta_net.md",
       "title": "Gated DeltaNet: Multi-Head Bidirectional Delta Rule Linear Recurrent Attention",
       "path": "content/attentions/gated_delta_net.md"

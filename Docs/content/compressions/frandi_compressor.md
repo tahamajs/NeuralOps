@@ -568,7 +568,19 @@ The `FRanDICompressor` architecture incorporates telemetry hooks for tracking si
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate frandi_compressor compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("frandi_compressor")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with frandi_compressor")
 ```
 
 ## Benchmark Results

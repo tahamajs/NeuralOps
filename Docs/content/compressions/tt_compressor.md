@@ -411,7 +411,20 @@ The `TTCompressor` architecture incorporates telemetry hooks for tracking singul
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.compression_engine.tt_compressor import TTCompressor
+
+# 1. Initialize model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Decompose projection weights into Tensor Train cores
+compressor = TTCompressor(
+    tt_ranks=[1, 8, 8, 1],
+    tensor_shape=[8, 8, 12, 8],
+)
+
+compressed_model = compressor.compress(model=model)
 ```
 
 ## Benchmark Results
@@ -426,7 +439,8 @@ The `TTCompressor` architecture incorporates telemetry hooks for tracking singul
 
 ## Limitations & Future Work
 
-TODO: Identify specific limitations and edge cases for this module.
+1. **Tensor Reshaping Factorization Constraints**: Dimension decomposition requires the hidden size to factor neatly into product integers (e.g., $768 = 8 \times 8 \times 12$).
+2. **Intermediate Contraction Latency**: Sequential core tensor contraction steps can lead to lower throughput without specialized fused tensor contractions.
 
 ## Unified 4-Architecture Benchmark Results (Tensor Train (TT))
 Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
