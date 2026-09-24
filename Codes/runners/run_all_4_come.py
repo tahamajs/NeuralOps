@@ -7,6 +7,10 @@ import shutil
 import pandas as pd
 from pathlib import Path
 
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 # Ensure online access for automated Hugging Face uploads
 os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
@@ -166,11 +170,14 @@ for m in models:
         print(f"[-] Missing summary.csv for {name} at {csv_path}. Marking FAILED.")
         collected_results.append({
             "model": name,
+            "slug": slug,
             "status": "FAIL",
             "reason": "summary_csv_missing",
             "acc": 0.0,
             "f1": 0.0,
             "delta_acc": 0.0,
+            "out_dir": m.get("out_dir", ""),
+            "passed_gate": False,
         })
         continue
 
