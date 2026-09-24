@@ -12,8 +12,8 @@ import subprocess
 import pandas as pd
 from pathlib import Path
 
-PYTHON_EXE = r"C:\Users\Hadi Schumacher\anaconda3\python.exe"
-BASE_DIR = r"D:\svd_project"
+PYTHON_EXE = r"sys.executable"
+BASE_DIR = r"PROJECT_ROOT"
 
 tasks = [
     # --- MNLI Benchmark (3 classes) ---
