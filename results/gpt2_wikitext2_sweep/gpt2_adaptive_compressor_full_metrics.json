@@ -1,0 +1,75 @@
+{
+    "model": "gpt2_adaptive_compressor",
+    "performance": {
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "f1_macro": null,
+        "precision": null,
+        "recall": null,
+        "val_loss": 5.160898758563009,
+        "perplexity": 174.321058,
+        "status": "FAIL_PPL_DIVERGED",
+        "elapsed_s": 221.14
+    },
+    "efficiency": {
+        "total_params_before": 124439808,
+        "total_params_after": 117458688,
+        "trainable_recovery_params": 35328,
+        "compression_rate": 1.0594,
+        "compression_ratio_pct": 5.61,
+        "flops_reduction_pct": 25.73,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 0,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "transformer.h.0.attn.c_attn": 432,
+            "transformer.h.0.attn.c_proj": 178,
+            "transformer.h.1.attn.c_attn": 430,
+            "transformer.h.1.attn.c_proj": 273,
+            "transformer.h.2.attn.c_attn": 432,
+            "transformer.h.2.attn.c_proj": 288,
+            "transformer.h.3.attn.c_attn": 432,
+            "transformer.h.3.attn.c_proj": 288,
+            "transformer.h.4.attn.c_attn": 432,
+            "transformer.h.4.attn.c_proj": 288,
+            "transformer.h.5.attn.c_attn": 432,
+            "transformer.h.5.attn.c_proj": 288,
+            "transformer.h.6.attn.c_attn": 432,
+            "transformer.h.6.attn.c_proj": 288,
+            "transformer.h.7.attn.c_attn": 432,
+            "transformer.h.7.attn.c_proj": 288,
+            "transformer.h.8.attn.c_attn": 432,
+            "transformer.h.8.attn.c_proj": 288,
+            "transformer.h.9.attn.c_attn": 432,
+            "transformer.h.10.attn.c_attn": 432,
+            "transformer.h.11.attn.c_attn": 432,
+            "transformer.h.11.attn.c_proj": 288
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 1093.3076171875,
+        "tokens_per_sec": 1266.279973382198
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 594.15,
+        "L_256_vram_mb": 637.26,
+        "L_512_vram_mb": 708.77,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "seed": 42,
+    "git_sha": "f6649815e",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-24T16:57:22.788850+00:00"
+}
