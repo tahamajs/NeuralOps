@@ -32,6 +32,7 @@ import glob
 import json
 import logging
 import os
+import re
 import shlex
 import shutil
 import signal
@@ -127,6 +128,139 @@ CIRCUIT_FAIL_THRESHOLD = 5   # if 5 fails in window → block job id
 
 # Auto-refill
 AUTO_REFILL_INTERVAL_S = 120 # only refill every 2 min
+
+# =============================================================================
+# MEMORY-AWARE SCHEDULER CONSTANTS & HELPERS
+# =============================================================================
+MODULE_VRAM_DISTILBERT: Dict[str, float] = {
+    "samba_m3": 4.5,
+    "hla": 4.0,
+    "admm_pruner": 3.5,
+    "nexus": 3.0,
+    "hgrn2_gated_deltanet": 2.8,
+    "phantom": 2.8,
+    "hgrn2_layer": 2.2,
+    "hgrn2_outer": 2.2,
+    "jamba": 2.5,
+    "jamba_info": 2.4,
+    "armor": 2.4,
+    "ast": 2.3,
+    "aegis_v3": 2.6,
+    "aegis_v4": 2.6,
+    "aegis_v5": 2.4,
+    "gated_deltanet_block": 2.4,
+    "granite_hybrid": 2.3,
+    "gated_delta_net": 2.3,
+    "gated_linear_attention": 2.2,
+    "hymba_transx": 2.2,
+    "aegis_v1": 2.1,
+    "aegis_v2": 2.1,
+    "swift_svd_act": 0.9,
+    "swift_svd": 0.8,
+    "asvd": 0.9,
+    "replace": 0.7,
+}
+
+MODULE_VRAM_ROBERTA: Dict[str, float] = {
+    "samba_m3": 6.0,
+    "hla": 5.5,
+    "admm_pruner": 4.8,
+    "nexus": 4.2,
+    "hgrn2_gated_deltanet": 3.8,
+    "phantom": 3.8,
+    "hgrn2_layer": 3.5,
+    "hgrn2_outer": 3.5,
+    "jamba": 3.6,
+    "jamba_info": 3.5,
+    "armor": 3.4,
+    "ast": 3.3,
+    "aegis_v3": 3.8,
+    "aegis_v4": 3.8,
+    "aegis_v5": 3.4,
+    "gated_deltanet_block": 3.4,
+    "granite_hybrid": 3.3,
+    "gated_delta_net": 3.3,
+    "gated_linear_attention": 3.2,
+    "hymba_transx": 3.2,
+    "aegis_v1": 3.0,
+    "aegis_v2": 3.0,
+    "swift_svd_act": 1.5,
+    "swift_svd": 1.4,
+    "asvd": 1.45,
+    "replace": 1.2,
+}
+
+MODULE_VRAM_HIST: Dict[str, float] = MODULE_VRAM_ROBERTA
+
+HEAVY_THRESHOLD_GB: float = 4.0
+VRAM_SAFETY_FRACTION: float = 0.85   # 6.8 GB on 8.0 GB card (~1.2 GB headroom)
+VRAM_CRITICAL_FREE_GB: float = 0.50  # 500 MB critical free threshold
+
+
+def extract_module_and_family(cmd: str, job_id: str) -> Tuple[str, str]:
+    """Extract (module_name, model_family) from job command line or job_id."""
+    mod = ""
+    family = "bert"
+    parts = shlex.split(cmd, posix=(os.name != "nt")) if isinstance(cmd, str) else list(cmd)
+    for i, p in enumerate(parts):
+        if p == "--modules" and i + 1 < len(parts):
+            mod = parts[i + 1].split(",")[0].strip()
+        elif p == "--model_family" and i + 1 < len(parts):
+            family = parts[i + 1].strip().lower()
+        elif p == "--model" and i + 1 < len(parts):
+            m_str = parts[i + 1].lower()
+            if "roberta" in m_str:
+                family = "roberta"
+            elif "gpt" in m_str:
+                family = "gpt"
+            elif "distilbert" in m_str or "bert" in m_str:
+                family = "bert"
+            elif "qwen" in m_str:
+                family = "qwen"
+
+    if not mod:
+        jid_lower = job_id.lower()
+        for k in sorted(MODULE_VRAM_HIST.keys(), key=len, reverse=True):
+            if k in jid_lower:
+                mod = k
+                break
+        if not mod:
+            mod = job_id.split("_")[0]
+
+    if "roberta" in job_id.lower():
+        family = "roberta"
+
+    return mod, family
+
+
+def estimate_module_vram(module_name: str, family: str = "") -> float:
+    """Estimate required VRAM in GB for module and model family (no double-counting)."""
+    mod = module_name.lower().strip()
+    if family.lower() == "roberta":
+        return MODULE_VRAM_ROBERTA.get(mod, 2.5)
+    elif family.lower() in ("distilbert", "bert"):
+        return MODULE_VRAM_DISTILBERT.get(mod, 1.8)
+    return MODULE_VRAM_HIST.get(mod, 2.0)
+
+
+def get_max_concurrency(family: str, module_name: str = "", gpu_total_gb: float = 8.0) -> int:
+    """RoBERTa uses fewer workers for heavy modules, while light modules can run 3."""
+    required = estimate_module_vram(module_name, family)
+    if family.lower() == "roberta":
+        if required >= HEAVY_THRESHOLD_GB:
+            return 2   # heavy modules: 2 workers
+        return 3       # light modules on RoBERTa: 3 workers
+    return 4           # DistilBERT/GPT-2: 4 workers
+
+
+def can_launch(module_name: str, family: str, current_vram_gb: float, gpu_total_gb: float = 8.0) -> Tuple[bool, float, str]:
+    """Check if adding this module would violate the VRAM safety envelope."""
+    required = estimate_module_vram(module_name, family)
+    max_allowed = gpu_total_gb * VRAM_SAFETY_FRACTION
+    projected = current_vram_gb + required
+    if projected > max_allowed:
+        return False, required, f"projected VRAM {projected:.2f} GB > safety limit {max_allowed:.2f} GB (current: {current_vram_gb:.2f} GB, required: {required:.2f} GB)"
+    return True, required, "ok"
 
 # =============================================================================
 # LOGGING
@@ -413,11 +547,83 @@ def launch_job(handle: JobHandle) -> bool:
         return False
 
 
-def terminate_job(handle: JobHandle, reason: str) -> None:
-    """Gracefully terminate: SIGTERM → wait → SIGKILL."""
+def check_job_progress(handle: JobHandle) -> Tuple[Optional[float], Optional[int], Optional[int]]:
+    """
+    Parse job log or console log to extract recovery fine-tuning step progress.
+    Returns (progress_fraction, current_step, total_steps) or (None, None, None).
+    """
+    candidates = [
+        JOB_LOG_DIR / f"{handle.job_id}.log",
+    ]
+    parts = shlex.split(handle.cmd, posix=(os.name != "nt")) if isinstance(handle.cmd, str) else list(handle.cmd)
+    for i, p in enumerate(parts):
+        if p in ("--output_dir", "--output_suffix") and i + 1 < len(parts):
+            cand_dir = RESULTS_DIR / parts[i + 1]
+            if cand_dir.is_dir():
+                candidates.extend(cand_dir.glob("**/console.log"))
+
+    for log_p in candidates:
+        if not log_p.exists():
+            continue
+        try:
+            with open(log_p, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()[-100:]
+            for line in reversed(lines):
+                # Pattern: Step X/Y, recovery step X/Y, Step X of Y
+                m = re.search(r"(?:Step|step|recovery\s+step|recovery)\s+(\d+)\s*(?:/|of)\s*(\d+)", line, re.IGNORECASE)
+                if m:
+                    cur_s = int(m.group(1))
+                    tot_s = int(m.group(2))
+                    frac = cur_s / max(1, tot_s)
+                    return frac, cur_s, tot_s
+        except Exception:
+            pass
+
+    return None, None, None
+
+
+def terminate_job(handle: JobHandle, reason: str, force: bool = False) -> bool:
+    """
+    Safe termination with progress protection.
+    RULE: NEVER kill a process that is >= 70% complete.
+    Only kill if:
+      - force=True (explicit override / severe timeout), OR
+      - progress is unknown AND VRAM free < 500 MB (critically low), OR
+      - progress is known AND step < 50% AND VRAM free < 500 MB.
+    Returns True if terminated, False if protected/spared.
+    """
     if handle.proc is None or handle.proc.poll() is not None:
-        return
-    log_job(handle.job_id, "TIMEOUT", f"terminating ({reason})")
+        return True
+
+    frac, cur_s, tot_s = check_job_progress(handle)
+    stats = query_gpu_stats()
+    vram_free = stats.vram_free_gb if stats.ok else 8.0
+
+    if not force:
+        if frac is None:
+            if vram_free >= VRAM_CRITICAL_FREE_GB:
+                logger.info(
+                    f"[PROTECT] Refusing to kill {handle.job_id}: progress unknown and "
+                    f"VRAM free {vram_free:.2f} GB >= {VRAM_CRITICAL_FREE_GB} GB. Reason was '{reason}'. Sparing."
+                )
+                return False
+        else:
+            if frac >= 0.70:
+                logger.info(
+                    f"[PROTECT] Refusing to kill {handle.job_id}: step {cur_s}/{tot_s} ({frac*100:.1f}%) "
+                    f"is >= 70% complete. Reason was '{reason}'. Waiting for completion."
+                )
+                return False
+
+            if frac >= 0.50 and vram_free >= VRAM_CRITICAL_FREE_GB:
+                logger.info(
+                    f"[PROTECT] Refusing to kill {handle.job_id}: step {cur_s}/{tot_s} ({frac*100:.1f}%) "
+                    f"and VRAM free {vram_free:.2f} GB >= {VRAM_CRITICAL_FREE_GB} GB. Waiting."
+                )
+                return False
+
+    prog_str = f"{cur_s}/{tot_s} ({frac*100:.1f}%)" if frac is not None else "unknown"
+    log_job(handle.job_id, "TIMEOUT", f"terminating ({reason}) [progress: {prog_str}, force={force}]")
     try:
         import os, signal
         if os.name == "nt":
@@ -439,6 +645,7 @@ def terminate_job(handle: JobHandle, reason: str) -> None:
             except Exception:
                 pass
             handle.log_file = None
+    return True
 
 
 def close_handle(handle: JobHandle) -> None:
@@ -828,14 +1035,21 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
 
                 # Timeout check
                 elapsed = time.time() - handle.started_at
-                if elapsed > get_timeout(jid):
-                    terminate_job(handle, f"timeout {elapsed:.0f}s (> {get_timeout(jid)}s)")
-                    to_fail.append({
-                        **handle.to_dict(),
-                        "status": "failed",
-                        "reason": f"timeout_{get_timeout(jid)}s",
-                    })
-                    to_remove.append(jid)
+                job_to = get_timeout(jid)
+                if elapsed > job_to:
+                    is_severe = elapsed > (3.0 * job_to)
+                    did_term = terminate_job(
+                        handle,
+                        f"timeout {elapsed:.0f}s (> {job_to}s, severe={is_severe})",
+                        force=is_severe,
+                    )
+                    if did_term:
+                        to_fail.append({
+                            **handle.to_dict(),
+                            "status": "failed",
+                            "reason": f"timeout_{job_to}s",
+                        })
+                        to_remove.append(jid)
                     continue
 
                 ret = handle.proc.poll()
@@ -927,12 +1141,35 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                     jtype = job.get("type", "gpu")
 
                     if jtype == "gpu":
-                        if active_gpu >= GPU_SAFE_MAX_PARALLEL:
+                        mod_name, family = extract_module_and_family(job["cmd"], job["id"])
+                        max_concurrency = get_max_concurrency(family, mod_name)
+                        if active_gpu >= max_concurrency:
                             continue
+
+                        # Check memory-aware admission
+                        can_run, req_vram, reason_vram = can_launch(
+                            mod_name, family, stats.vram_used_gb, stats.vram_total_gb or 8.0
+                        )
+                        if not can_run:
+                            log_job(job["id"], "GPU", f"hold launch: {reason_vram}")
+                            continue
+
+                        # RoBERTa-specific batch size reduction for heavy modules
+                        cmd_to_run = job["cmd"]
+                        if family == "roberta" and req_vram >= HEAVY_THRESHOLD_GB:
+                            cmd_to_run = re.sub(
+                                r"(--batch_size[=\s]+)(\d+)",
+                                lambda m: f"{m.group(1)}{min(int(m.group(2)), 4)}",
+                                cmd_to_run,
+                            )
 
                         spawn_lock.acquire()
                         try:
-                            target_vram = VRAM_CEILING_GB - VRAM_PER_JOB_GB
+                            budget_for_new = (stats.vram_total_gb or 8.0) * VRAM_SAFETY_FRACTION
+                            target_vram = budget_for_new - req_vram
+                            if target_vram < 0:
+                                log_job(job["id"], "GPU", f"hold launch: required VRAM {req_vram:.2f} GB exceeds budget {budget_for_new:.2f} GB")
+                                continue
                             if not wait_for_vram(max_used_gb=target_vram, timeout_s=120):
                                 log_job(job["id"], "GPU", "VRAM wait timed out, skipping job")
                                 break
@@ -946,7 +1183,7 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                             handle = JobHandle(
                                 job_id=job["id"],
                                 job_type=jtype,
-                                cmd=job["cmd"],
+                                cmd=cmd_to_run,
                                 retries=job.get("retries", 0),
                             )
 
@@ -961,7 +1198,7 @@ def main_daemon(cli_max_parallel: Optional[int] = None) -> None:
                                     s["jobs"] = [j for j in s.get("jobs", []) if j.get("id") != jid]
                                     s.setdefault("active", []).append({
                                         "id": jid, "type": jtype,
-                                        "cmd": job["cmd"],
+                                        "cmd": cmd_to_run,
                                         "status": "active",
                                         "retries": handle.retries,
                                     })
