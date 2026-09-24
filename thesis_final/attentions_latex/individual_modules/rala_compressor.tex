@@ -36,13 +36,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{60.09\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{62.3\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{rala\_compressor} روی سه مدل پایه}
+\label{tab:benchmark_rala_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{60.09\%} & \lr{0.6306} & \lr{335.1 MB} & \lr{21,424 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{50.80\%} & \lr{0.6305} & \lr{666.2 MB} & \lr{10,485 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{571.9 MB} & \lr{8,015 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 ثبت مصرف VRAM پایدار در سطح \lr{750.0 MB} (کاهش \lr{82.1\%}ی در مقایسه با \lr{۴۲۰۰ MB} مبنا) و توان پردازش \lr{36,500} توکن در ثانیه، نمایانگر کارایی این ماژول در فشرده‌سازی عمیق وزن‌ها برای محیط‌های با حافظه محدود است.

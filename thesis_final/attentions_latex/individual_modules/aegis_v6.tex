@@ -36,13 +36,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{69.13\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{65.91\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{410.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{33,500} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_v6} روی سه مدل پایه}
+\label{tab:benchmark_aegis_v6}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.04\%} & \lr{0.8791} & \lr{305.0 MB} & \lr{13,376 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{59.98\%} & \lr{0.6161} & \lr{599.3 MB} & \lr{6,637 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6713} & \lr{494.7 MB} & \lr{6,970 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کسب دقت \lr{69.13\%} در ارزیابی‌های سنگین متوالی زبانی و مهار حافظه در \lr{410.0 MB} (در برابر \lr{4200 MB} مبنا)، نشان‌دهنده پایداری دینامیکی گیت‌های متقاطع در برابر نوسانات گرادیان است. ممانعت از سرریز حافظه در لایه‌های تو در تو، اجرای امن را بر روی کارت‌های گرافیکی میان‌رده میسر ساخته است.

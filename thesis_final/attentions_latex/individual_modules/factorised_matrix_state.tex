@@ -32,13 +32,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{77.06\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{76.08\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{342.5 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{37,600} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{factorised\_matrix\_state} روی سه مدل پایه}
+\label{tab:benchmark_factorised_matrix_state}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{76.49\%} & \lr{0.7491} & \lr{342.5 MB} & \lr{53,182 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{74.77\%} & \lr{0.7727} & \lr{410.3 MB} & \lr{6,821 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{70.76\%} & \lr{0.7615} & \lr{349.5 MB} & \lr{8,690 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دقت \lr{77.06\%}ی و F1 برابر \lr{76.08\%} همراه با مصرف VRAM معادل \lr{342.49 MB} (کاهش \lr{91.8\%}ی در مقایسه با \lr{4200 MB} مبنا)، نشان‌دهنده اثربخشی فشرده‌سازی لایه‌ای بردار حالت در مدل‌های پیوسته است. ماتریس فاکتورشده حافظه لازم برای عملیات اسکن را در محدوده امن نگه داشته است.

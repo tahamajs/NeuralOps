@@ -42,13 +42,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS\_LOW}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{52.29\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{62.59\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{619.4 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{upi\_stuffed\_mamba} روی سه مدل پایه}
+\label{tab:benchmark_upi_stuffed_mamba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{360.9 MB} & \lr{2,402 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.6748} & \lr{402.1 MB} & \lr{1,202 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.5807} & \lr{861.5 MB} & \lr{9,790 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 تقلیل اوج حافظه به \lr{۶۱۹.۴ MB} (کاهش \lr{۸۵.۲\%}ی نسبت به \lr{۴۲۰۰ MB} مدل کامل) با حفظ F1 در سطح ۶۲.۵۹٪ نشان می‌دهد که مهار عدم‌قطعیت می‌تواند پایداری سخت‌افزاری بالایی ایجاد کند، هرچند تطبیق کامل با وظایف انکودری نیازمند کوک دقیق‌تر ضریب $\lambda$ است.

@@ -36,13 +36,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.5\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{granite\_hybrid} روی سه مدل پایه}
+\label{tab:benchmark_granite_hybrid}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.65\%} & \lr{0.7325} & \lr{1604.8 MB} & \lr{8,213 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{53.33\%} & \lr{0.6772} & \lr{2501.8 MB} & \lr{4,244 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{2393.9 MB} & \lr{4,214 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کسب دقت استثنایی \lr{88.5\%} در کنار شاخص F1 معادل \lr{85.2\%} در ماژول ترکیبی \lr{granite\_hybrid}، نشان‌دهنده هم‌افزایی قدرتمند میان زیرشاخه‌هاست. مکانیزم گیتینگ موفق شده به عنوان یک فیلتر هوشمند عمل کند: توکن‌های دستوری ساده از شاخه خطی فوق‌سریع عبور داده شده و تنها توکن‌های دارای بار معنایی مبهم به شاخه عمیق هدایت گردیده‌اند. این معماری هم پایداری دقت را تضمین کرده و هم مصرف منابع گرافیکی را در حد مطلوب \lr{750.0 MB} نگه داشته است.

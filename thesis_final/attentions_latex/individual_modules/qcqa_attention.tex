@@ -36,13 +36,21 @@ K_{\text{\lr{capacity}}}(g) \propto \sum_{h \in \mathcal{G}_g} \exp(\mathcal{H}_
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.75\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{86.0\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{690.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{38,200} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{qcqa\_attention} روی سه مدل پایه}
+\label{tab:benchmark_qcqa_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.76\%} & \lr{0.7299} & \lr{334.3 MB} & \lr{67,005 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{51.03\%} & \lr{0.6748} & \lr{382.6 MB} & \lr{34,912 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6738} & \lr{568.8 MB} & \lr{31,268 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کسب دقت درخشان \lr{88.75\%} با سرعت \lr{38,200} توکن/ثانیه و مصرف اندک \lr{690.0 MB} حافظه (کاهش \lr{83.6\%}ی نسبت به \lr{۴۲۰۰ MB} پایه)، نشان‌دهنده هوشمندی تخصیص نامتقارن ظرفیت در \lr{QCQA} است؛ جایی که منابع سخت‌افزاری دقیقاً به جایی هدایت می‌شوند که پیچیدگی زبان ایجاب می‌کند.

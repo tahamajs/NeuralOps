@@ -34,13 +34,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.5\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{mamba\_inject} روی سه مدل پایه}
+\label{tab:benchmark_mamba_inject}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{---} & \lr{0.9125} & \lr{389.5 MB} & \lr{53,560 tok/s} & \lr{SKIP\_ARCH} \\
+\lr{RoBERTa-base} & \lr{---} & \lr{0.7277} & \lr{712.3 MB} & \lr{28,487 tok/s} & \lr{SKIP\_ARCH} \\
+\lr{GPT-2} & \lr{---} & \lr{0.3010} & \lr{793.2 MB} & \lr{28,204 tok/s} & \lr{SKIP\_ARCH} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به F1 معادل \lr{85.2\%} و مهار اوج حافظه در \lr{750.0 MB}، اثبات‌کننده همگرایی بهینه دو پارادایم است. شاخه مامبا بار سنگین نگهداری بافر گذشته را از دوش بلوک توجه برداشته و بازده انرژی و سرعت را تقویت کرده است.

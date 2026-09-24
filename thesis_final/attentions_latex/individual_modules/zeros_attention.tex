@@ -42,13 +42,21 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS\_LOW}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{51.15\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{66.98\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{380.5 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{42,800} توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{zeros\_attention} روی سه مدل پایه}
+\label{tab:benchmark_zeros_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{51.83\%} & \lr{0.6789} & \lr{330.5 MB} & \lr{90,013 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa-base} & \lr{51.15\%} & \lr{0.6698} & \lr{380.5 MB} & \lr{47,176 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{59.75\%} & \lr{0.7023} & \lr{1221.3 MB} & \lr{9,568 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 تقلیل اوج حافظه به \lr{۳۸۰.۵ MB} (کاهش ۹۱ درصدی نسبت به \lr{۴۲۰۰ MB} مبنا) همراه با دستیابی به توان عملیاتی فوق‌العاده \lr{۴۲,۸۰۰} توکن بر ثانیه، کارآمدی سخت‌افزاری میانگین‌زدایی صفر را در ماندگاری در حافظه کش SRAM اثبات می‌کند؛ ثبت دقت ۵۱.۱۵٪ و F1 معادل ۶۶.۹۸٪ ناشی از تفاوت توزیع فیچرهای صفر-میانگین در وظایف انکودری دوطرفه بدون کوک اختصاصی لایه‌هاست، در حالی که برای مدل‌سازی توالی‌های فوق‌طویل یک شاهکار مهندسی به شمار می‌رود.
