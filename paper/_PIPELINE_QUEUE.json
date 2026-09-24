@@ -1,41 +1,6 @@
 {
-  "max_parallel": 4,
+  "max_parallel": 5,
   "jobs": [
-    {
-      "job_id": "p3_gpt2_svd_llm",
-      "id": "p3_gpt2_svd_llm",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
-      "started_at": "2026-09-23T23:24:03.535282",
-      "retries": 0,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_a3",
-      "id": "p3_gpt2_a3",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
-      "started_at": "2026-09-23T23:29:18.584038",
-      "retries": 0,
-      "status": "pending"
-    },
-    {
-      "job_id": "p3_gpt2_aa_svd_compressor",
-      "id": "p3_gpt2_aa_svd_compressor",
-      "job_type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_compressor",
-      "started_at": "2026-09-24T00:12:06.438852",
-      "retries": 0,
-      "status": "pending",
-      "reason": "timeout_1800s"
-    },
-    {
-      "id": "p3_gpt2_squeezing_heads_distill_inject",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distill_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distill_inject",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_inject_adaptive_sparse_attention",
       "type": "gpu",
@@ -8710,20 +8675,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_aa_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_svd_llm",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_ast_pruner",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ast_pruner --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ast_pruner",
@@ -8762,13 +8713,6 @@
       "id": "p3_gpt2_minimal_svd_v2",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules minimal_svd_v2 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_minimal_svd_v2",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_a3",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
       "status": "pending",
       "retries": 0
     },
@@ -8962,13 +8906,27 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_compressor",
       "status": "pending",
       "retries": 0
-    }
-  ],
-  "active": [
+    },
     {
       "id": "p3_gpt2_adaptive_sparse",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "active": [
+    {
+      "id": "p3_gpt2_aa_svd_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_squeezing_heads_distill_inject",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distill_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distill_inject",
       "status": "active",
       "retries": 0
     }
@@ -9718,6 +9676,24 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules lsc_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_lsc_factory",
       "started_at": "2026-09-24T04:16:34.120323",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_svd_llm",
+      "id": "p3_gpt2_svd_llm",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_llm --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_llm",
+      "started_at": "2026-09-24T04:28:28.671676",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_a3",
+      "id": "p3_gpt2_a3",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules a3 --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_a3",
+      "started_at": "2026-09-24T04:28:59.495679",
       "retries": 0,
       "status": "done"
     }
