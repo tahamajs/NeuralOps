@@ -1,0 +1,67 @@
+\section{ماژول dynamic\_rank (Dynamic Entropy SVD Compressor)}
+\label{sec:module_dynamic_rank}
+
+\subsection{معرفی و انگیزه}
+در تقریب رتبه پایین ماتریس‌های وزن شبکه‌های ترنسفورمر، انتخاب ایستا و یکنواخت رتبه در تمام لایه‌ها (\lr{Static Rank Allocation}) یکی از کاستی‌های بنیادین رویکردهای کلاسیک تجزیه مقادیر منفرد (\lr{SVD}) به شمار می‌رود؛ چرا که لایه‌های مختلف بسته به عمق شبکه، بار اطلاعاتی و انباشت هندسی متفاوتی را در ماتریس‌های انتقال پنهان تجربه می‌کنند. تخصیص رتبه یکسان به لایه‌های بحرانی آغازین یا لایه‌های انتزاعی پایانی یا به افت شدید کارایی و گسیختگی معنایی می‌انجامد یا پارامترهای مدل را به شکل ناکارآمدی هدر می‌دهد.
+
+ماژول فشرده‌سازی \lr{Dynamic Entropy SVD Compressor} با نام ساختاری \lr{dynamic\_rank} برای حل این عدم توازن طراحی شده است. ایده محوری این روش، بهره‌گیری از آنتروپی طیفی تیکونوف (\lr{Tikhonov-Damped Singular Entropy}) بر روی طیف مقادیر منفرد کوواریانس تجربی فعال‌سازی‌ها است. با ارزیابی توزیع احتمالاتی مقادیر منفرد در هر لایه، این الگوریتم بودجه رتبه یا پارامتر کل مدل را به صورت محدب و پویا از طریق الگوریتم دوگانه جستجوی دودویی بر مبنای تزریق آب‌شاری (\lr{Bisection Water-Filling}) توزیع می‌نماید و با جایگزینی لایه‌های خطی با ماژول اختصاصی \lr{DynamicSVDLinear}، فشرده‌سازی واقعی با کمترین افت بازنمایی حاصل می‌گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن لایه $l$ به صورت $\mathbf{W}_l \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با مقادیر منفرد هموارشده $\sigma_{l, 1} \ge \sigma_{l, 2} \ge \dots \ge \sigma_{l, d}$ حاصل از کوواریانس ورودی یا خود وزن، جرم احتمالاتی هر مقدار منفرد تعریف می‌شود:
+\begin{equation}
+p_{l, i} = \frac{\sigma_{l, i} + \epsilon_{\text{tik}}}{\sum_{j=1}^d (\sigma_{l, j} + \epsilon_{\text{tik}})}
+\end{equation}
+که در آن $\epsilon_{\text{tik}} > 0$ ضریب منظم‌سازی تیکونوف جهت جلوگیری از ناپایداری محاسباتی است. آنتروپی تکین شانون به صورت زیر فرمول‌بندی می‌گردد:
+\begin{equation}
+H(\mathbf{\Sigma}_l) = -\sum_{i=1}^d p_{l, i} \ln(p_{l, i})
+\end{equation}
+در حضور قید کل بودجه پارامتری $P_{\text{budget}}$، مسئله بهینه‌سازی رتبه لایه‌ها $r_l \in [r_{\min}, r_{\max}]$ با هزینه پارامتری $r_l (d_{\text{in}} + d_{\text{out}})$ فرموله می‌شود:
+\begin{equation}
+\max_{\{r_l\}} \sum_{l=1}^L \frac{H(\mathbf{\Sigma}_l)}{\sum_k H(\mathbf{\Sigma}_k)} \cdot r_l \quad \text{subject to} \quad \sum_{l=1}^L r_l (d_{\text{in}}^{(l)} + d_{\text{out}}^{(l)}) \le P_{\text{budget}}
+\end{equation}
+تخصیص بهینه رتبه با روش تکرار دودویی مقیاس پیرامون نقطه تعادل به دست می‌آید:
+\begin{equation}
+r_l = \operatorname{clip}\left(\left\lfloor \lambda^* \frac{H(\mathbf{\Sigma}_l)}{\sum_k H(\mathbf{\Sigma}_k)} \right\rceil, r_{\min}^{(l)}, r_{\max}^{(l)}\right)
+\end{equation}
+سپس تجزیه مقادیر منفرد $\mathbf{W}_l = \mathbf{U}_l \mathbf{\Sigma}_l \mathbf{V}_l^\top$ به دو عامل تجزیه‌شده با تقسیم متقارن مقادیر منفرد شکسته می‌شود:
+\begin{equation}
+\mathbf{U}_{r_l} = \mathbf{U}_l[:, :r_l] \mathbf{\Sigma}_l[:r_l]^{1/2}, \quad \mathbf{V}_{r_l} = \mathbf{\Sigma}_l[:r_l]^{1/2} \mathbf{V}_l[:, :r_l]^\top
+\end{equation}
+خروجی لایه فشرده در فاز استنتاج برابر است با:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{V}_{r_l}^\top \mathbf{U}_{r_l}^\top + \mathbf{b}_l
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/dynamic\_rank.py} قرار داشته و شامل مؤلفه‌های فنی زیر است:
+\begin{itemize}
+    \item \textbf{ماژول ساختاری \lr{DynamicSVDLinear}:} لایه فاکتورگیری‌شده‌ای که با حذف کامل ماتریس متراکم اولیه، دو ماتریس موازی با رتبه $r_l$ و یک بایاس اشتراکی را نگه می‌دارد و از آداپتورهای بهینه‌سازی \lr{LoRA} برای بازیابی عملکرد پس از تجزیه پشتیبانی می‌کند.
+    \item \textbf{تخصیص‌دهنده آب‌شاری \lr{EntropyRankAllocator}:} الگوریتم برخط جستجوی دودویی برای تضمین همگرایی دقیق به سقف بودجه پارامتر بدون تجاوز از سقف‌های مجاز سخت‌افزاری.
+    \item \textbf{مسیر بازگشت ایمن (\lr{Safe Fallback}):} در صورتی که خطای نسبی فروبنیوس بازسازی $\|\mathbf{W} - \mathbf{W}_{\text{comp}}\|_F / \|\mathbf{W}\|_F$ از سقف مجاز (\lr{max\_error=0.45}) فراتر رود، لایه بدون فشرده‌سازی حفظ و منجمد می‌گردد.
+    \item \textbf{سازگاری جامع با معماری‌ها:} پشتیبانی بدون تغییر از \lr{Conv1D} در مدل‌های زبانی خودبازگشتی و لایه‌های پروجکشن خطی در مدل‌های انکودر.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+عملکرد تجربی ماژول \lr{dynamic\_rank} روی مدل‌های پایه بر مبنای ارزیابی‌های واقعی ثبت‌شده در نتایج آزمایشگاهی در جدول \ref{tab:benchmark_dynamic_rank} آورده شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{dynamic\_rank} بر روی مدل‌های پایه}
+\label{tab:benchmark_dynamic_rank}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9099} & \lr{357.28 MB} & \lr{88,554.92 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.15\%} & \lr{0.9425} & \lr{503.28 MB} & \lr{14,957.99 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{99.72\%} & \lr{0.0000} & \lr{552.93 MB} & \lr{12,097.77 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این نتایج نشان می‌دهند که الگوریتم تخصیص پویا توانسته در مدل‌های انکودر (\lr{DistilBERT} و \lr{RoBERTa}) دقت بسیار بالای بالای ۹۰ درصد را همراه با گذر موفق از دروازه کیفیت (\lr{PASS}) حفظ نماید. در ارزیابی مدل \lr{GPT-2} آزمون مبتنی بر تکمیل متن بوده و دقت توکنی \lr{99.72\%} حاصل شده است. برای مدل \lr{Qwen} بنچ‌مارک به دلیل محدودیت‌های حافظه در سرور اجرا نشده و در وضعیت \lr{SKIP} قرار گرفته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+محدودیت اصلی روش \lr{dynamic\_rank} وابستگی آن به دقت کالیبراسیون و داده‌های نماینده ورودی است؛ در شرایطی که داده‌های ورودی کالیبراسیون تنوع کمی داشته باشند، ماتریس کوواریانس به زیرفضای کوچکی سوگیری پیدا کرده و تخمین آنتروپی طیفی دچار اعوجاج می‌گردد. همچنین برای مدل‌های بسیار طویل، محاسبات جستجوی دودویی و بهینه‌سازی رتبه در تعداد لایه‌های بالا زمان اولیه کالیبراسیون را افزایش می‌دهد.

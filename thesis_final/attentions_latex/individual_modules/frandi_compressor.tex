@@ -1,0 +1,77 @@
+\section{ماژول frandi\_compressor (Feature-Regression Aligned SVD Compressor)}
+\label{sec:module_frandi_compressor}
+
+\subsection{معرفی و انگیزه}
+تقریب رتبه پایین (\lr{Low-Rank Factorization}) مبتنی بر تجزیه مقادیر منفرد کلاسیک (\lr{Vanilla SVD})، وزن‌های لایه‌ها را صرفاً در فضای هندسی ایستا فاکتورگیری می‌کند و هیچ توجهی به ویژگی‌های آماری و رگرسیونی بازنمایی‌های میانی ورودی ندارد. این رویکرد به ویژه در لایه‌های ابتدایی و میانی شبکه‌های عصبی عمیق، زیرفضاهایی را نادیده می‌گیرد که بیشترین همبستگی را با خروجی‌های معنادار لایه دارند.
+
+ماژول فشرده‌سازی \lr{FRanDI (Feature-Regression Aligned SVD Compressor)} جهت حل این معضل و همسو کردن تجزیه برداری با تحلیل رگرسیون مشخصه‌ها طراحی شده است. ایده محوری این الگوریتم، ترکیب تجزیه چولسکی (\lr{Cholesky Decomposition}) ماتریس کوواریانس ورودی تجربی برای سفیدسازی (\lr{Whitening}) ویژگی‌ها، اجرای تجزیه مقادیر منفرد بر روی ماتریس وزن سفیدشده و سپس حل معکوس معادله مثلثی جهت بازیابی پایه همتراز با رگرسیون مشخصه‌ها است. این ماژول همچنین لایه‌های کم‌رتبه حاصله را با نام ماژولار \lr{FRanDILinear} مجهز به آداپتورهای \lr{LoRA} نموده تا بازسازی گرادیان در فاز بازیابی بدون سربار امکان‌پذیر گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گام نخست، ماتریس کوواریانس فعال‌سازی‌های ورودی $\mathbf{C}_X \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ با میانگین‌گیری تانسورهای ورودی محاسبه و منظم‌سازی می‌شود:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{C}_X + \lambda_{\text{reg}} \mathbf{I}, \quad \lambda_{\text{reg}} = 10^{-4} \frac{\text{Tr}(\mathbf{C}_X)}{d_{\text{in}}}
+\end{equation}
+سپس فاکتورگیری چولسکی برای به دست آوردن ماتریس مثلثی پایین $\mathbf{L}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{L} \mathbf{L}^\top
+\end{equation}
+ماتریس وزن اصلی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در فاکتور چولسکی سفیدسازی می‌شود:
+\begin{equation}
+\widetilde{\mathbf{W}} = \mathbf{W} \mathbf{L}
+\end{equation}
+بر روی ماتریس سفیدشده $\widetilde{\mathbf{W}}$، تجزیه مقادیر منفرد تقلیل‌یافته با رتبه $r$ اجرا می‌شود:
+\begin{equation}
+\widetilde{\mathbf{W}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با تخصیص جذر مقادیر منفرد $\mathbf{\Sigma}_r^{1/2}$ به ماتریس‌های بازنمایی، فاکتور خروجی $\mathbf{B}$ و فاکتور سفیدشده ورودی $\widetilde{\mathbf{A}}$ حاصل می‌شوند:
+\begin{equation}
+\mathbf{B} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \widetilde{\mathbf{A}} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+جهت رفع اثر تبدیل چولسکی بر روی پایه ویژگی‌های ورودی، معادله مثلثی زیر برای ماتریس $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ با پایداری کامل در دقت \lr{FP32} حل می‌گردد:
+\begin{equation}
+\mathbf{L} \mathbf{A}^\top = \widetilde{\mathbf{A}}^\top \implies \mathbf{A} = (\mathbf{L}^{-1} \widetilde{\mathbf{A}}^\top)^\top
+\end{equation}
+در نتیجه تجزیه نهایی به فرم فاکتورگیری‌شده کم‌مرتبه درمی‌آید:
+\begin{equation}
+\mathbf{W} \approx \mathbf{B} \mathbf{A}, \quad \mathbf{y} = (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}
+که در آن تعداد پارامترهای هر لایه از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌یابد.
+
+\subsection{معماری و پیاده‌سازی}
+کلاس‌های \lr{FRanDICompressor} و لایه اختصاصی \lr{FRanDILinear} در فایل \lr{Codes/framework/compression\_engine/frandi\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{frandi}، \lr{frandi\_compressor} و کارخانه‌های مربوطه ثبت شده‌اند. برجسته‌ترین نقاط پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول خطی اختصاصی \lr{FRanDILinear}:} این ماژول جایگزین لایه‌های متراکم و \lr{Conv1D} شده و علاوه بر نگهداری پارامترهای منجمد فاکتورهای $\mathbf{A}$ و $\mathbf{B}$، آداپتورهای باقیمانده \lr{LoRA} را با همان نوع داده (\lr{dtype}) در خود جای می‌دهد.
+    \item \textbf{مقداردهی اولیه پایدار در دقت \lr{FP32}:} مقداردهی اولیه ماتریس پایه $\mathbf{A}$ به صورت متعامد (\lr{Orthogonal}) در فضای اعشاری ۳۲بیتی صورت گرفته و سپس به نوع داده هدف مدل قالب‌بندی می‌شود تا از بروز مقادیر تعریف‌نشده در \lr{BF16} جلوگیری گردد.
+    \item \textbf{انطباق با توجه نامتقارن (\lr{GQA Asymmetry Protection}):} با استفاده از تابع پیش‌بینی \lr{\_is\_gqa\_asymmetric}، ماتریس‌های توجه در مدل‌های دارای سر غیرهمگون جهت پیشگیری از خطای ابعادی دست‌نخورده باقی می‌مانند.
+    \item \textbf{ارزیابی خطای فروبنیوس و مسیر برگشت خودکار:} چنانچه خطای نسبی تقریب فاکتورگیری بیش از \lr{max\_error=0.40} گردد، ماژول لایه را بدون تغییر حفظ می‌نماید.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{frandi\_compressor} بر روی مدل‌های بنچ‌مارک در \lr{thesis\_final/master\_verified\_results.json} ثبت شده و در جدول \ref{tab:benchmark_frandi_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{frandi\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_frandi_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.99\%} & \lr{0.6340} & \lr{1,352.40 MB} & \lr{90,755.90 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{67.43\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.85\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{توضیح مقایسه‌ای با نگارش پایه \lr{frandi}:} نگارش خط پایه \lr{frandi} (بدون تفکیک فیزیکی عمیق) به دقت‌های بالاتری نظیر \lr{90.37\%} در \lr{DistilBERT} و \lr{88.76\%} در \lr{RoBERTa} دست می‌یابد؛ اما پیاده‌سازی کامل ساختاری \lr{frandi\_compressor} با جایگزینی فیزیکی \lr{FRanDILinear} بر روی \lr{DistilBERT} دقت \lr{63.99\%} و بر روی \lr{GPT-2} دقت \lr{67.43\%} با توان عملیاتی پایدار \lr{90,755.90 tok/s} تولید نموده است. وضعیت مدل \lr{RoBERTa} به دلیل ساختار ترتیبی متغیر در مدل به صورت \lr{SKIP\_ROBERTA\_ARCHITECTURAL} طبقه‌بندی شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل عملکرد الگوریتم فشرده‌ساز \lr{FRanDI} نقاط حساس و محدودیت‌های زیر را برجسته می‌سازد:
+\begin{itemize}
+    \item \textbf{افت دقت قبل از بازیابی لورا:} اعمال فاکتورگیری خطی در غیاب کالیبراسیون و آموزش جبرانی کافی لایه‌های \lr{LoRA}، افت دقتی در حدود ۲۰ الی ۳۰ درصد روی انکودرها به جا می‌گذارد که نیاز به دوره‌های فاین‌تیونینگ کوتاه‌مدت پس از فشرده‌سازی را الزامی می‌کند.
+    \item \textbf{ناسازگاری ساختاری با انکودر \lr{RoBERTa}:} در مدل \lr{RoBERTa} به دلیل لایه‌بندی متفاوت و حساسیت شدید استخراج بازنمایی‌ها، ساختار فشرده‌ساز در تست غربالگری اولیه به وضعیت \lr{SKIP\_ROBERTA\_ARCHITECTURAL} منتج شده است.
+    \item \textbf{هزینه محاسباتی فاکتورگیری چولسکی و حل مثلثی:} در لایه‌های با ابعاد بزرگ ($d_{\text{in}} > 4096$)، تشکیل ماتریس کوواریانس و اعمال $\mathcal{O}(d_{\text{in}}^3)$ تجزیه چولسکی می‌تواند زمان آماده‌سازی اولیه فشرده‌سازی را در مقایسه با روش‌های تنکی ایستا به طور چشمگیری افزایش دهد.
+\end{itemize}

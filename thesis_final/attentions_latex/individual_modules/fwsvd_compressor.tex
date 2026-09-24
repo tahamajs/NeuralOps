@@ -1,0 +1,73 @@
+\section{ماژول fwsvd\_compressor (Fisher-Weighted SVD Compressor)}
+\label{sec:module_fwsvd_compressor}
+
+\subsection{معرفی و انگیزه}
+تجزیه مقادیر منفرد بر روی ماتریس‌های وزن ترنسفورمر بدون در نظر گرفتن تفاوت در حساسیت ابعاد ورودی، فرض یکنواختی را بر فضای پارامترها تحمیل می‌کند. ماتریس اطلاعات فیشر تجربی (\lr{Empirical Fisher Information Matrix}) معیاری استاندارد در نظریه یادگیری آماری برای سنجش انحنای تابع زیان نسبت به پارامترها یا ویژگی‌های ورودی است؛ ویژگی‌هایی که اطلاعات فیشر بالاتری دارند باید با دقت و اهمیت بالاتری بازسازی شوند.
+
+ماژول فشرده‌سازی \lr{Fisher-Weighted SVD (FWSVD) Compressor} با هدف هدایت تجزیه مقادیر منفرد به سوی ابعاد واجد اهمیت اطلاعاتی توسعه یافته است. در این شیوه، به جای محاسبه ماتریس فیشر کامل که هزینه‌ای بسیار سنگین دارد، از تقریب قطری اطلاعات فیشر ناشی از فعال‌سازی‌های کالیبراسیون بهره گرفته می‌شود. با پیش‌مقیاس‌بندی ماتریس وزن به وسیله جذر مقادیر قطری فیشر، فاکتورگیری کم‌رتبه انجام شده و سپس با معکوس مقادیر اثر مقیاس‌بندی خنثی می‌گردد تا جایگزینی فیزیکی با لایه ساختاریافته \lr{SVDLinear} محقق شود.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{x} \in \mathbb{R}^{d_{\text{in}}}$ بردار فعال‌سازی ورودی به لایه باشد. تقریب قطری اطلاعات فیشر فعال‌سازی از طریق گشتاور دوم نمونه‌های کالیبراسیون محاسبه می‌شود:
+\begin{equation}
+\mathbf{F}_i = \mathbb{E}\left[\mathbf{x}_i^2\right] = \frac{1}{B} \sum_{k=1}^B (\mathbf{X}_{k, i})^2, \quad i \in \{1, \dots, d_{\text{in}}\}
+\end{equation}
+با تعریف ماتریس قطری $\mathbf{D}_F = \text{diag}\left(\sqrt{\mathbf{F}_1}, \dots, \sqrt{\mathbf{F}_{d_{\text{in}}}}\right)$ با اعمال کران پایینی عددی $\epsilon \ge 10^{-8}$ جهت پایداری، ماتریس وزن وزن‌دهی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{W} \mathbf{D}_F \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد بر روی ماتریس وزن‌دهی‌شده اجرا می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{weighted}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+با انتخاب رتبه فشرده‌سازی $r \le \min(d_{\text{in}}, d_{\text{out}})$، مقادیر منفرد به فاکتورها تقسیم شده و فاکتور راست با معکوس فیشر بی‌وزن می‌گردد:
+\begin{align}
+\mathbf{U}_r &= \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r} \\
+\mathbf{V}_r &= \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \mathbf{D}_F^{-1} \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{align}
+بازسازی حاصل به فرم $\mathbf{W} \approx \mathbf{U}_r \mathbf{V}_r$ تضمین می‌کند که خطای بازسازی فروبنیوس در جهات دارای اطلاعات فیشر بالا به حداقل ممکن کاهش یابد:
+\begin{equation}
+\mathcal{E} = \frac{\|\mathbf{W} - \mathbf{U}_r \mathbf{V}_r\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+محاسبه خروجی لایه فشرده در زمان استنتاج به دو ضرب ماتریسی سبک با مرتبه پارامتری $r \cdot (d_{\text{in}} + d_{\text{out}})$ تبدیل می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}_r^\top) \mathbf{U}_r^\top + \mathbf{b}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس \lr{FWSVDCompressor} در فایل \lr{Codes/framework/compression\_engine/fwsvd\_compressor.py} تعریف شده و با شناسه‌های \lr{fwsvd} و \lr{fwsvd\_compressor} در \lr{COMPRESSOR\_REGISTRY} به ثبت رسیده است. ویژگی‌های فنی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{جایگزینی فیزیکی با لایه \lr{SVDLinear}:} لایه‌های خطی استاندارد به طور کامل از مدل جدا شده و با کلاس بهینه‌شده \lr{SVDLinear} که دارای پارامترهای کم‌رتبه $\mathbf{U}_r$ و $\mathbf{V}_r$ است جایگزین می‌گردند.
+    \item \textbf{تخصیص پویای رتبه (\lr{Dynamic Rank Allocation}):} ماژول با استفاده از تابع \lr{get\_dynamic\_compression\_rank}، رتبه بهینه را با توجه به ابعاد لایه و رعایت شرط صرفه‌جویی پارامتری $r < \frac{3}{4} \frac{d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}$ تنظیم می‌کند.
+    \item \textbf{هدف‌گذاری انتخابی توجه (\lr{Target Attention Only}):} به صورت پیش‌فرض، تمرکز فشرده‌سازی بر روی ماتریس‌های توجه (\lr{QKV Projections}) قرار داشته و لایه‌های \lr{MLP} و سر مدل زبان دست‌نخورده نگه داشته می‌شوند تا ساختار معنایی حفظ گردد.
+    \item \textbf{مسیر بازگشت امن در خطای بازسازی بالا:} در صورت افزایش خطای نسبی فروبنیوس از مقدار آستانه (\lr{max\_error=0.50})، لایه اصلی دست‌نخورده حفظ می‌گردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{fwsvd\_compressor} بر اساس فایل‌های خروجی بنچ‌مارک در مسیرهای \lr{results/roberta\_sst2\_sst2\_sweep/summary\_fwsvd\_compressor\_rob64.csv}، \lr{results/distilbert\_sst2\_sst2\_sweep/summary\_fwsvd\_compressor\_sst2.csv} و ارزیابی‌های وابسته در جدول \ref{tab:benchmark_fwsvd_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{fwsvd\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_fwsvd_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9095} & \lr{368.29 MB} & \lr{118,094.71 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.04\%} & \lr{0.9421} & \lr{514.29 MB} & \lr{12,699.89 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{816.23 MB} & \lr{1,393.30 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج به‌دست‌آمده نشان‌دهنده دقت استثنایی این فشرده‌ساز بر روی انکودرها است؛ دقت \lr{90.71\%} در \lr{DistilBERT} با توان بالای \lr{118,094.71 tok/s} و به ویژه دقت فوق‌العاده \lr{94.04\%} در \lr{RoBERTa} که از برجسته‌ترین رکوردهای ثبت‌شده در پروژه است. در مدل \lr{GPT-2} (تست‌شده روی مجموعه \lr{WikiText-2})، ماژول به وضعیت \lr{PASS\_NO\_COMPRESSION} منتج شده و مدل \lr{Qwen} در فاز اولیه به صورت \lr{NOT\_RUN} نشانه‌گذاری گردیده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+نقاط ضعف و چالش‌های محاسباتی ماژول \lr{fwsvd\_compressor} به شرح زیر است:
+\begin{itemize}
+    \item \textbf{چالش فشرده‌سازی در لایه‌های مدل دیکودر (\lr{GPT-2}):} در لایه‌های ادغام‌شده \lr{c\_attn} در \lr{GPT-2}، پیش‌مقیاس‌بندی قطری فیشر به دلیل پیوستگی ماتریس سه‌گانه پرسش، کلید و ارزش گاه خطای بازسازی را از آستانه مجاز فراتر برده و منجر به وقوع وضعیت \lr{PASS\_NO\_COMPRESSION} بدون اعمال فاکتورگیری فیزیکی می‌شود.
+    \item \textbf{تقریب قطری ماتریس فیشر:} نادیده گرفتن درایه‌های غیرقطری ماتریس فیشر، تعاملات متقابل بین جفت‌ویژگی‌های مختلف ورودی را حذف می‌کند که در وظایف پیچیده زبانی ممکن است تقریب ناقصی از میزان حساسیت پارامترها به دست دهد.
+    \item \textbf{افت توان عملیاتی در لایه‌های \lr{RoBERTa} (\lr{12,699.89 tok/s}):} گرچه دقت مدل \lr{RoBERTa} در سطح بالایی حفظ شده است، اما تفکیک هر لایه به دو لایه ضرب خطی متوالی در معماری متراکم رابرت‌ها بدون هسته تلفیقی، کاهش ملموسی در توان پردازشی به همراه دارد.
+\end{itemize}

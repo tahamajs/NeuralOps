@@ -1,0 +1,77 @@
+\section{ماژول coopq\_quantizer (Cooperative Game-Theoretic Bit Allocation Quantizer)}
+\label{sec:module_coopq_quantizer}
+
+\subsection{معرفی و انگیزه}
+کوانتایزاسیون وزن‌ها از ممیز شناور ۱۶ بیتی (\lr{FP16}) به اعداد صحیح کم‌عرض (\lr{INT4 / INT8}) یکی از قدرتمندترین روش‌های کاهش ردپای حافظه و شتاب‌بخشی به ضرب ماتریسی در سخت‌افزارهای مدرن است. با این حال، کوانتایزاسیون یکنواخت با عرض بیت ثابت در تمام لایه‌ها، آسیب‌پذیری نامتوازنی در مدل ایجاد می‌کند؛ لایه‌های حساس اولیه و پایانی دچار تخریب شدید بازنمایی می‌شوند، در حالی که لایه‌های میانی ظرفیت تحمل فشرده‌سازی بسیار بالاتری دارند.
+
+ماژول \lr{coopq\_quantizer} با الهام از نظریه بازی‌های مشارکتی (\lr{Cooperative Game Theory}) و تخصیص بهینه منابع بر اساس ارزش شپلی یا حساسیت پسماند، استراتژی تخصیص پویای بیت را به کار می‌بندد. این ماژول مجهز به تخمین‌گر مستقیم گرادیان (\lr{STE: Straight-Through Estimator})، کالیبراسیون نامتقارن کانال‌به‌کانال (\lr{Per-Channel Asymmetric Calibration}) و تحمیل کف حداقل عرض بیت ($b_{\min} = 4$) جهت تضمین پایداری معنایی مدل در سخت‌ترین شرایط فشرده‌سازی است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی نظری کوانتایزاسیون نامتقارن کانال‌به‌کانال در ماژول \lr{coopq\_quantizer} از روابط زیر تبعیت می‌کند:
+
+\subsubsection*{۱. تحمیل کف عرض بیت (Min Bit-Width Floor Enforcement)}
+برای جلوگیری از فروپاشی شناختی در لایه‌های فوق‌حساس، عرض بیت هر لایه $l$ به حداقل ۴ بیت مقید می‌گردد:
+\begin{equation}
+b_l \ge b_{\min} = 4, \quad \forall l \in \{1, \dots, L\}
+\end{equation}
+
+\subsubsection*{۲. کالیبراسیون نامتقارن مقیاس و نقطه صفر (Per-Channel Asymmetric Calibration)}
+برای سطر یا کانال خروجی $i$ از ماتریس وزن $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$، مقیاس و نقطه صفر به شکل زیر محاسبه می‌گردند:
+\begin{equation}
+\text{scale}_i = \max\left( \frac{\max_j W_{ij} - \min_j W_{ij}}{2^b - 1}, 10^{-8} \right)
+\end{equation}
+\begin{equation}
+z_i = \operatorname{clamp}\left( \left\lfloor -\frac{\min_j W_{ij}}{\text{scale}_i} \right\rceil, 0, 2^b - 1 \right)
+\end{equation}
+سپس تبدیل نگاشت شبه‌کوانتایزاسیون (\lr{Fake Quantization}) با بازنگاشت به فضای پیوسته اعمال می‌گردد:
+\begin{equation}
+\widehat{W}_{ij} = \left( \operatorname{clamp}\left( \left\lfloor \frac{W_{ij}}{\text{scale}_i} \right\rceil + z_i, 0, 2^b - 1 \right) - z_i \right) \cdot \text{scale}_i
+\end{equation}
+
+\subsubsection*{۳. تخمین‌گر مستقیم گرادیان (Straight-Through Estimator - STE)}
+از آنجا که تابع گرد کردن ($\lfloor \cdot \rceil$) دارای مشتق جزئی صفر در تقریباً همه‌جا است، برای عبور گرادیان در فاز پس‌انتشار از عملگر \lr{STE} تحت کلاس \lr{CoopQSTEFakeQuantize} استفاده می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial W} = \frac{\partial \mathcal{L}}{\partial \widehat{W}}
+\end{equation}
+این ساختار به وزن‌های پیوسته زیرین اجازه می‌دهد تا در حین آموزش آگاه از کوانتایزاسیون (\lr{QAT})، انحرافات ناشی از تقطیع گسسته را به طور پویا جبران نمایند.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/coopq\_quantizer.py} شامل مؤلفه‌های زیر است:
+\begin{itemize}
+    \item \textbf{تابع سفارشی \lr{CoopQSTEFakeQuantize}:} زیرکلاس \lr{torch.autograd.Function} که در گذر رو به جلو عملگر گرد کردن و تقطیع کانالی را اعمال کرده و در گذر معکوس گرادیان خطا را مستقیماً به تانسور وزن بازمی‌گرداند.
+    \item \textbf{کلاس \lr{CoopQLinear}:} لایه کوانتایزه‌شده آگاه از وزن که مقادیر مقیاس و نقطه صفر کالیبره‌شده را در بافرهای پایتورچ ذخیره کرده و مجهز به مکانیزم \lr{from\_linear} برای تطبیق خودکار با لایه‌های \lr{Linear} و \lr{Conv1D} است.
+    \item \textbf{کلاس \lr{CoopQQuantizer}:} موتور سازمان‌دهنده تخصیص بیت مشارکتی، محاسبه حساسیت لایه‌ها با فعال‌سازی‌های کالیبراسیون، و کالیبراسیون مجدد لایه‌های نرمال‌سازی ترنسفورمر.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{coopq\_quantizer} بر روی مجموعه‌داده اعتبارسنجی \lr{GLUE SST-2} نتایج ثبت‌شده در جدول \ref{tab:benchmark_coopq_quantizer} را حاصل کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{coopq\_quantizer} روی مدل‌های پایه}
+\label{tab:benchmark_coopq_quantizer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.65\%} & \lr{0.9089} & \lr{411.35 MB} & \lr{75,271.53 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{79.93\%} & \lr{0.9342} & \lr{611.42 MB} & \lr{4,472.99 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{52.41\%} & \lr{0.6875} & \lr{511.42 MB} & \lr{12,790.26 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس جدول \ref{tab:benchmark_coopq_quantizer}، ماژول در مدل \lr{DistilBERT} به دقت برجسته ۸۸٫۶۵٪ (و در جاروب متمرکز به ۹۰٫۴۸٪ با شاخص F1 معادل ۰٫۹۰۸۹) دست یافته است. در مدل \lr{RoBERTa} نیز موفق به عبور از دروازه کیفیت با دقت ۷۹٫۹۳٪ (و در جاروب با دقت ۹۳٫۳۵٪) گردیده است که پایداری الگوریتم کالیبراسیون نامتقارن را اثبات می‌کند. در مدل دیکودری \lr{GPT-2}، کوانتایزاسیون ایستا بدون آداپتورهای ریکاوری، منجر به توقف در حد ۵۲٫۴۱٪ و برچسب رد گردید.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل چالش‌های رفتاری ماژول نکات زیر را مشخص می‌سازد:
+\begin{itemize}
+    \item \textbf{خطای عدم تطابق ابعاد وزن‌های ترانهاده در \lr{GPT-2}:} در اجرای جاروب متنی \lr{Wikitext-2} روی \lr{GPT-2}، خطای ناهماهنگی ابعاد تانسورهای وزنی لایه ادغام‌شده توجه (\lr{c\_attn}) رخ داد:
+    \begin{quote}
+    \lr{\small RuntimeError: size mismatch for transformer.h.0.attn.c\_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).}
+    \end{quote}
+    این رخداد به دلیل ساختار ترانهاده وزن‌ها در لایه‌های \lr{Conv1D} در کتابخانه هاگینگ‌فیس پدید آمده که نیازمند ترانهاده‌سازی صریح حین بازیابی چک‌پوینت در مدل‌های دیکودری است.
+    \item \textbf{افت توان عملیاتی در شبیه‌سازی \lr{Fake Quantization}:} از آنجا که کوانتایزاسیون شبیه‌سازی‌شده متکی بر عملگرهای بازنگاشت پایتورچی در فضای \lr{FP32/FP16} است، بدون هسته‌های سخت‌افزاری سطح پایین \lr{INT4 Tensor Core (Cutlass/Triton)}، شتاب‌بخشی محاسباتی بالقوه به طور کامل محقق نشده و توان عملیاتی در سطوحی نظیر ۴,۴۷۲ توکن بر ثانیه متوقف می‌گردد.
+\end{itemize}

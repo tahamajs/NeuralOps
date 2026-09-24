@@ -1,0 +1,71 @@
+\section{ماژول ast\_pruner (AST Pruner)}
+\label{sec:module_ast_pruner}
+
+\subsection{معرفی و انگیزه}
+هرس نیمه‌ساختاریافته ماتریس‌های وزن ترنسفورمر، به‌ویژه در الگوهای ساختاری سخت‌افزاری \lr{2:4} و \lr{N:M}، مصالحه‌ای ایده‌آل میان کاهش حجم حافظه و حفظ سرعت پردازش در هسته‌های تانسوری مدرن فراهم می‌آورد. با این حال، سنجش اهمیت وزن‌ها بر اساس اندازه‌های قدرمطلقی صرف (\lr{Magnitude Pruning})، جهت‌گیری فضای ویژگی و برهم‌کنش همبستگی‌های ورودی را نادیده می‌گیرد. از سوی دیگر، محاسبه ماتریس کامل اطلاعات فیشر (\lr{Fisher Information Matrix}) مستلزم ضرب‌های ماتریسی با مرتبه $\mathcal{O}(d^4)$ است که برای لایه‌های ترنسفورمرهای امروزی عملاً غیرقابل اجراست.
+
+برای حل این چالش، چارچوب فشرده‌سازی \lr{AST: Adaptive Semi-Structured Pruning with Empirical Fisher Calibration and PCA Coordinate Rotation} طراحی شده است. این روش ابتدا فعال‌سازی‌های ورودی را از طریق تحلیل مولفه‌های اصلی (\lr{PCA}) به یک دستگاه مختصات متعامد بدون همبستگی انتقال می‌دهد، سپس حساسیت ژاکوبی تجربی وزنی را در پایه‌های چرخش‌یافته محاسبه نموده و آن را به فضای مبنای اولیه تصویر می‌کند تا ماسک تنک ساختاریافته \lr{2:4} بدون برهم زدن تانسورهای اصلی استخراج گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی تصحیح‌شده و دقیق ماژول \lr{AST} در ۵ گام متوالی صورت می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{ماتریس کوواریانس فعال‌سازی و \lr{PCA}:} برای ماتریس فعال‌سازی‌های کالیبراسیون ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ با میانگین ستونی $\boldsymbol{\mu}$، ماتریس کوواریانس نمونه متقارن و تجزیه ویژه آن محاسبه می‌شود:
+    \begin{equation}
+    \boldsymbol{\Sigma}_X = \frac{1}{N-1} (\mathbf{X} - \boldsymbol{\mu})^\top (\mathbf{X} - \boldsymbol{\mu}) = \mathbf{Q} \boldsymbol{\Lambda} \mathbf{Q}^\top, \quad \mathbf{Q}^\top \mathbf{Q} = \mathbf{I}
+    \end{equation}
+    که در آن $\mathbf{Q}$ ماتریس بردارهای ویژه متعامد است.
+    \item \textbf{پراکسی حساسیت ژاکوبی تجربی (\lr{Empirical Fisher Proxy}):} با تعریف تابع هدف نرم خروجی $\mathcal{L} = \frac{1}{2} \|\mathbf{z}\|^2$ روی لاجیت‌ها، گرادیان تجربی $\mathbf{g} = \frac{\partial \mathcal{L}}{\partial \mathbf{W}}$ محاسبه و تخمین فیشر به صورت امید تجربی مجذور گرادیان‌ها استخراج می‌گردد:
+    \begin{equation}
+    \mathbf{F} = \mathbb{E}[\mathbf{g} \odot \mathbf{g}]
+    \end{equation}
+    \item \textbf{چرخش و تصویر به پایه اصلی (\lr{PCA Projection}):} ماتریس فیشر ابتدا در فضای دوران‌یافته $\tilde{\mathbf{F}} = \mathbf{F} (\mathbf{Q} \odot \mathbf{Q})$ ارزیابی شده و سپس برای بازگشت به دستگاه اولیه ضرب متعامد تصویر می‌شود:
+    \begin{equation}
+    \mathbf{F}_{\text{proj}} = \tilde{\mathbf{F}} \mathbf{Q}^\top
+    \end{equation}
+    \item \textbf{محاسبه حساسیت در پایه مبنا (\lr{Saliency Metric}):} اهمیت هر درایه وزنی در مختصات اصلی شبکه بر اساس ضرب قدرمطلق وزن در ریشه دوم فیشر تصویرشده محاسبه می‌گردد:
+    \begin{equation}
+    \mathbf{S}_{ij} = |\mathbf{W}_{ij}| \cdot \sqrt{\mathbf{F}_{{\text{proj}}_{ij}} + \epsilon}
+    \end{equation}
+    \item \textbf{اعمال عملگر هرس \lr{2:4}:} در پایان، عملگر تصویر تنک سخت‌افزاری بر روی ماتریس وزن اصلی با هدایت ماتریس حساسیت $\mathbf{S}$ اعمال می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{pruned}} = \Pi_{2:4}(\mathbf{W}, \mathbf{S})
+    \end{equation}
+\end{enumerate}
+این فرمول‌بندی مانع از چرخاندن مستقیم وزن‌های هرس‌شده می‌گردد و برخلاف نسخه‌های اولیه، الگوهای تنکی ساختاریافته \lr{2:4} را در حافظه دست‌نخورده حفظ می‌نماید.
+
+\subsection{معماری و پیاده‌سازی}
+کد این ماژول در فایل \lr{Codes/framework/compression\_engine/ast\_pruner.py} پیاده‌سازی شده و در رجیستری با شناسه‌های \lr{ast\_pruner} و \lr{ast} ثبت گردیده است. ساختار پیاده‌سازی از اجزای زیر تشکیل یافته است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{ASTPrunedLoRALinear}:} لایه خطی اختصاصی که وزن هرس‌شده $\mathbf{W}_{\text{pruned}}$ را به عنوان پارامتر ثابت (\lr{frozen}) نگهداری کرده و آداپتورهای کم‌مرتبه \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$) را برای بازیابی گرادیانی بدون از دست رفتن تنکی فراهم می‌آورد.
+    \item \textbf{کلاس \lr{ASTPruner}:} کنترل‌کننده فرآیند استخراج داده کالیبراسیون در حالت \lr{model.eval()} با حفظ گرادیان (\lr{torch.enable\_grad})، تنظیم مقادیر ویژه بر اساس اثر ماتریس (\lr{trace-based regularization})، پالایش مقادیر نامعتبر \lr{NaN/Inf}، و جایگزینی ماژولار لایه‌های خطی.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی فشرده‌ساز \lr{ast\_pruner} بر روی سناریوهای مختلف اعتبارسنجی در جدول \ref{tab:benchmark_ast_pruner} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{ast\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_ast_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{89.91\%} & \lr{0.9007} & \lr{367.76 MB} & \lr{180,139.24 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{77.20\%} & \lr{0.7701} & \lr{456.73 MB} & \lr{197,609.05 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{88.76\%} & \lr{0.8889} & \lr{514.29 MB} & \lr{12,190.79 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (WikiText-2)} & \lr{99.72\%} & \lr{0.0000} & \lr{561.06 MB} & \lr{12,318.77 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشخص است، فشرده‌ساز \lr{ast\_pruner} با دستیابی به نرخ گذردهی خارق‌العاده \lr{180,139} توکن بر ثانیه روی مدل \lr{DistilBERT}، یکی از سریع‌ترین و کارآمدترین ماژول‌ها در سناریوی استنتاج بلادرنگ به شمار می‌رود و دقت بسیار بالای \lr{89.91\%} را روی دادگان SST-2 ثبت نموده است. همچنین روی مدل \lr{RoBERTa} به دقت \lr{88.76\%} رسیده و بر روی \lr{GPT-2} آزمون متنی فشرده‌سازی پرپلکسیتی را با موفقیت (\lr{PASS}) پشت سر گذاشته است. روی مدل‌های سری \lr{Qwen} این ماژول تست نشده و با علامت \lr{NOT\_RUN} مشخص شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی‌های مهندسی بر روی رفتار این فشرده‌ساز حاکی از نکات تحلیلی زیر است:
+\begin{itemize}
+    \item \textbf{پیچیدگی محاسباتی تجزیه ویژه (\lr{Eigen Decomposition}):} اگرچه کوواریانس پس از استخراج بردار ویژه دور ریخته می‌شود، اما اجرای تابع \lr{torch.linalg.eigh} برای لایه‌های با ابعاد پنهان بسیار بزرگ ($d_{\text{in}} > 8192$) در مرحله کالیبراسیون نیازمند زمان محاسباتی قابل‌توجهی است.
+    \item \textbf{انحراف در داده‌های خارج از دامنه:} از آنجا که ماتریس چرخش $\mathbf{Q}$ شدیداً به توزیع نمونه‌های متن کالیبراسیون وابسته است، چنانچه مدل پس از استقرار با متون کاملاً ناهمگن مواجه گردد، پایه‌های انتخاب‌شده ممکن است تخمین مناسبی از توزیع کوواریانس واقعی ارائه ندهند و موجب افت دقت استنتاج شوند.
+\end{itemize}

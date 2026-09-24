@@ -1,0 +1,74 @@
+\section{ماژول armor\_pruner (ARMOR Pruner)}
+\label{sec:module_armor_pruner}
+
+\subsection{معرفی و انگیزه}
+کاهش ابعاد و حجم محاسباتی شبکه‌های عصبی عمیق بدون افت بازنمایی معنایی، یکی از چالش‌های بنیادین در استقرار مدل‌های ترنسفورمر روی سخت‌افزارهای با حافظه محدود است. روش‌های کلاسیک هرس ساختارنیافته هرچند می‌توانند افزونگی پارامتری را تا حد زیادی حذف کنند، اما به دلیل عدم انطباق با واحدهای پردازش تانسوری مدرن (\lr{Tensor Cores})، عملاً به شتاب‌بخشی محاسباتی و کاهش زمان تاخیر منجر نمی‌شوند. از سوی دیگر، هرس متراکم کم‌مرتبه (\lr{Low-Rank Decomposition}) اطلاعات فضایی کانال‌ها را دگرگون ساخته و در نسبت‌های فشرده‌سازی بالا با افت دقت مواجه می‌شود.
+
+برای حل این چالش، چارچوب فشرده‌سازی \lr{ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning} معرفی شده است. این موتور فشرده‌سازی، ساختار ماتریس وزن‌ها را به صورت ترکیبی نامتقارن از یک هسته تنک با ساختار سخت‌افزاری \lr{2:4} (\lr{2:4 Structured Sparsity}) و یک تصحیح‌کننده باقیمانده کم‌مرتبه (\lr{Low-Rank Residual Correction}) مدل‌سازی می‌کند. همچنین این ماژول با استفاده از معیار حساسیت تیلور انعطاف‌پذیر (\lr{Resilient Taylor Saliency}) با ساختار پشتیبان سه‌سطحی، تضمین می‌کند که مهم‌ترین عناصر وزن تحت هر شرایط داده‌ای شناسایی شده و اختلال کمینه‌ای به سیگنال‌های بازنمایی مدل وارد گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+ایده کلیدی \lr{ARMOR} تجزیه ماتریس وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ به دو مولفه مکمل است:
+\begin{equation}
+\hat{\mathbf{W}} = (\mathbf{W} \odot \mathbf{M}_{2:4}) + \frac{\alpha}{r} (\mathbf{B} \mathbf{A})
+\end{equation}
+که در آن $\mathbf{M}_{2:4} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس ماسک تنک ساختاریافته \lr{2:4} است (در هر بلوک پیوسته ۴ عنصری دقیقا ۲ عنصر صفر هستند)، $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ ماتریس‌های تجزیه کم‌مرتبه جبران‌کننده خطا با رتبه $r \ll \min(d_{\text{in}}, d_{\text{out}})$ بوده و $\alpha$ ضریب مقیاس‌گذاری آداپتور \lr{LoRA} است.
+
+برای تعیین عناصر بااهمیت، از تخمین حساسیت مرتبه اول بسط تیلور با مکانیزم مقاوم سه‌سطحی (\lr{Three-Tier Fallback}) استفاده می‌شود:
+\begin{equation}
+\mathbf{S}_{ij} =
+\begin{cases}
+|\mathbf{W}_{ij} \cdot \mathbf{G}_{ij}| & \text{اگر گرادیان معتبر } \mathbf{G} = \frac{\partial \mathcal{L}}{\partial \mathbf{W}} \text{ موجود باشد} \\
+|\mathbf{W}_{ij}| \cdot \mathbb{E}[|\mathbf{X}_j|] & \text{در صورت دسترسی به فعال‌سازی‌های کالیبراسیون } \mathbf{X} \\
+|\mathbf{W}_{ij}| \cdot (1 + \sigma(\mathbf{W})) & \text{مسیر پشتیبان مبتنی بر آمار توزیع وزن}
+\end{cases}
+\end{equation}
+پس از محاسبه ماتریس حساسیت $\mathbf{S}$، عملگر تصویر تنک $\Pi_{2:4}(\mathbf{S})$ در هر گروه ۴‌تایی، دو عنصر با کمترین مقدار حساسیت را صفر می‌کند تا ماسک $\mathbf{M}_{2:4}$ ساخته شود. سپس باقی‌مانده خطای ناشی از هرس محاسبه می‌گردد:
+\begin{equation}
+\mathbf{R} = \mathbf{W} - (\mathbf{W} \odot \mathbf{M}_{2:4})
+\end{equation}
+بر روی این ماتریس باقیمانده، تجزیه مقادیر منفرد برشی (\lr{Truncated SVD}) اعمال شده و فاکتورهای کم‌مرتبه مقداردهی اولیه می‌شوند:
+\begin{equation}
+\mathbf{R} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \mathbf{B} = \mathbf{U}_r \sqrt{\mathbf{\Sigma}_r}, \quad \mathbf{A} = \sqrt{\mathbf{\Sigma}_r} \mathbf{V}_r^\top
+\end{equation}
+در مرحله نهایی، به منظور هماهنگ‌سازی انحراف معیار خروجی لایه‌ها پس از هرس، لایه‌های نرمال‌سازی با ضریب نسبت واریانس کالیبره می‌گردند (\lr{LayerNorm Recalibration}).
+
+\subsection{معماری و پیاده‌سازی}
+این ماژول در فایل \lr{Codes/framework/compression\_engine/armor\_pruner.py} تحت دو کلاس اصلی طراحی و در رجیستری فشرده‌سازی با نام‌های \lr{armor\_pruner}، \lr{armor} و \lr{armor\_compressor} ثبت شده است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{ARMORLinear}:} جایگزین لایه‌های خطی استاندارد (\lr{nn.Linear} و \lr{Conv1D}) می‌شود. در فرآیند گذر پیشرو (\lr{Forward Pass})، محاسبات به صورت دو شاخه موازی انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} (\mathbf{W}_{\text{sparse}} \odot \mathbf{M}_{2:4})^\top + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+    \end{equation}
+    هسته تنک ماتریس پایه ثابت شده و شاخه کم‌مرتبه قابلیت تنظیم دقیق گرادیانی را در صورت نیاز حفظ می‌کند. ماسک تنک به عنوان یک بافر غیردائمی (\lr{non-persistent buffer}) ذخیره شده تا در اندازه فایل مدل سربار ایجاد نکند.
+    \item \textbf{کلاس \lr{ARMORPruner}:} کنترل‌کننده فرآیند هرس که با اعمال فیلترهای معماری (\lr{should\_compress\_linear}) لایه‌های هدف را شناسایی کرده، داده‌های کالیبراسیون را استخراج می‌نماید، برآورد حساسیت را انجام داده و با ارزیابی آستانه خطای فروبنیوس (\lr{max\_error})، در صورت فراتر رفتن خطا، مسیر بازگشت ایمن به وزن‌های اولیه (\lr{fallback}) را اجرا می‌کند.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول فشرده‌سازی \lr{armor\_pruner} بر روی بنچ‌مارک‌های معتبر گزارش‌شده در پوشه \lr{results/} و جداول اعتبارسنجی در جدول \ref{tab:benchmark_armor_pruner} جمع‌آوری گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{armor\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_armor_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{88.99\%} & \lr{0.8929} & \lr{537.22 MB} & \lr{96,356.36 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{80.20\%} & \lr{0.8016} & \lr{446.85 MB} & \lr{139,629.95 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{91.06\%} & \lr{0.9150} & \lr{723.58 MB} & \lr{9,066.03 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (AGNews)} & \lr{62.70\%} & \lr{0.6296} & \lr{743.20 MB} & \lr{15,957.51 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج تجربی، ماژول \lr{armor\_pruner} روی مدل‌های انکودری عملکرد فوق‌العاده‌ای به نمایش گذاشته است؛ به طوری که در مدل \lr{RoBERTa} به دقت بالای \lr{91.06\%} با شاخص F1 معادل \lr{0.9150} و در مدل \lr{DistilBERT} روی دادگان SST-2 به دقت \lr{88.99\%} با توان گذردهی چشمگیر \lr{96,356} توکن بر ثانیه دست یافته است. در وظیفه چندکلاسه پیچیده‌تر MNLI نیز دقت پایدار \lr{80.20\%} ثبت شده است. در مدل \lr{GPT-2} وضعیت \lr{PASS\_NO\_COMPRESSION} ثبت شده است، چرا که به دلیل حساسیت ابعاد لایه‌ها و آستانه خطا، لایه‌های مدل به طور مستقیم هرس نشده و تنها مسیر آداپتور فعال گردیده است. ارزیابی این ماژول بر روی مدل \lr{Qwen} به علت محدودیت‌های حافظه در آزمایشگاه بنچ‌مارک انجام نپذیرفته و در وضعیت \lr{NOT\_RUN} قرار دارد.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل رفتار و سازوکار فشرده‌سازی این ماژول محدودیت‌های زیر را برجسته می‌سازد:
+\begin{itemize}
+    \item \textbf{سربار حافظه در مرحله مقداردهی کم‌مرتبه:} اگرچه ماتریس تنک ساختاریافته حجم محاسبات لایه را نصف می‌کند، اما افزودن شاخه جبرانی \lr{LoRA} برای رتبه‌های بالا ($r \ge 32$) ممکن است در مدل‌های دیکودری بزرگ به افزایش تعداد کل پارامترها منتهی شود (مانند رخداد ثبت‌شده در بنچ‌مارک \lr{GPT-2} تحت نام \lr{model grew}).
+    \item \textbf{نیاز به پشتیبانی سخت‌افزاری \lr{Sparse Core}:} شتاب‌بخشی خطی ساختار \lr{2:4} تنها در پردازنده‌های گرافیکی دارای معماری \lr{NVIDIA Ampere} و جدیدتر (از طریق دستورات \lr{mma.sp}) محقق می‌شود؛ در پردازنده‌های قدیمی‌تر، هزینه نگهداری ماسک و شاخه‌های موازی می‌تواند باعث افت جزئی توان پردازش گردد.
+\end{itemize}

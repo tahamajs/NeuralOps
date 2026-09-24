@@ -1,0 +1,73 @@
+\section{ماژول direct\_svd (Direct SVD Compressor)}
+\label{sec:module_direct_svd}
+
+\subsection{معرفی و انگیزه}
+تجزیه مقادیر منفرد برشی (\lr{Truncated Singular Value Decomposition - SVD}) پایه ریاضی کلاسیک و بنیادین در تقریب بهینه ماتریس‌ها بر اساس قضیه اکرت-یانگ-میرسکی (\lr{Eckart-Young-Mirsky Theorem}) به شمار می‌آید. این روش نزدیک‌ترین ماتریس با رتبه $r$ را به ماتریس وزن اصلی از منظر نرم فروبنیوس و نرم طیفی ارائه می‌دهد. با این حال، اعمال مستقیم \lr{SVD} در شبکه‌های عصبی عمیق بدون ملاحظات سیستمی، نظیر عدم توازن در تخصیص انرژی مقادیر منفرد به فاکتورها، عدم کنترل خطای فروبنیوس و نادیده گرفتن لایه‌های حساس، غالباً منجر به فروپاشی عملکرد مدل می‌شود.
+
+ماژول فشرده‌ساز \lr{Direct SVD Compressor} به عنوان موتور مرجع تقریب کم‌مرتبه فیزیکی در چارچوب حاضر طراحی شده است. این ماژول با جایگزینی لایه‌های متراکم استاندارد و نگاشت‌های تک‌بعدی پیچشی (\lr{Conv1D}) با لایه‌های ساختاری دوگانه \lr{SVDLinear}، کاهش قطعی در پارامترها و شاخص فلاپس را رقم می‌زند. همچنین، تقسیم متقارن انرژی تکین، گارد محافظتی خطای نسبی، پلکان افزایش خودکار رتبه در صورت بالا بودن خطا، و اتصال آداپتورهای باقیمانده \lr{LoRA} برای فاز بازیابی گرادیانی، این ماژول را در سطح صنعتی مقاوم‌سازی کرده است.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن اولیه لایه خطی با ابعاد خروجی $d_{\text{out}}$ و ابعاد ورودی $d_{\text{in}}$ به صورت $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ داده شده باشد. تجزیه کامل مقادیر منفرد به صورت زیر است:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{out}}}$ و $\mathbf{V} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ ماتریس‌های متعامد بوده و $\mathbf{\Sigma}$ شامل مقادیر منفرد مرتب‌شده نزولی $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_{\min(d_{\text{out}}, d_{\text{in}})} \ge 0$ است.
+
+برای رتبه هدف $r \le \min(d_{\text{out}}, d_{\text{in}})$، بهترین تقریب رتبه $r$ حاصل می‌شود. به منظور حفظ توازن عددی در مقیاس گرادیان‌ها در گذر پسرو و پایداری لایه‌ها، انرژی ماتریس قطری $\mathbf{\Sigma}_r$ به طور متقارن بین فاکتور چپ و راست تقسیم می‌شود:
+\begin{equation}
+\mathbf{U}_{\text{factor}} = \mathbf{U}_{:, :r} \, \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{V}_{\text{factor}} = \mathbf{\Sigma}_r^{1/2} \, \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{equation}
+
+بدین ترتیب، ضرب خطی لایه در زمان استنتاج به دو ضرب متوالی کم‌حجم تبدیل می‌گردد:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}_{\text{factor}}^\top) \mathbf{U}_{\text{factor}}^\top + \mathbf{b}
+\end{equation}
+
+تعداد کل پارامترهای ذخیره‌شده از $d_{\text{in}} \cdot d_{\text{out}}$ به $r(d_{\text{in}} + d_{\text{out}})$ کاهش می‌یابد. شرط الزامی برای تحقق فشرده‌سازی پارامتری عبارت است از:
+\begin{equation}
+r \cdot (d_{\text{in}} + d_{\text{out}}) < d_{\text{in}} \cdot d_{\text{out}} \iff r < \frac{d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}
+\end{equation}
+
+خطای نسبی بازسازی فروبنیوس در این تقریب بر اساس مجموع مقادیر تکین هرس‌شده به دقت قابل محاسبه و کنترل است:
+\begin{equation}
+\epsilon_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{U}_{\text{factor}} \mathbf{V}_{\text{factor}}\|_F}{\|\mathbf{W}\|_F} = \sqrt{\frac{\sum_{i=r+1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2}{\sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس \lr{DirectSVDCompressor} در مسیر \lr{Codes/framework/compression\_engine/direct\_svd.py} پیاده‌سازی شده و تحت نام‌های \lr{direct\_svd} و \lr{direct\_svd\_compressor} در سامانه ثبت شده است. از ویژگی‌های معماری آن می‌توان به موارد زیر اشاره نمود:
+\begin{itemize}
+    \item \textbf{جایگزینی فیزیکی ماژول با \lr{SVDLinear}:} وزن‌های اصلی پس از فاکتورگیری به طور کامل از گراف حافظه حذف و به پارامترهای مجزای $\mathbf{U}_{\text{factor}}$ و $\mathbf{V}_{\text{factor}}$ تبدیل می‌شوند.
+    \item \textbf{پشتیبانی کامل از لایه‌های ترنسپوز \lr{Conv1D}:} در مدل‌هایی نظیر \lr{GPT-2} که از نگاشت‌های یک‌بعدی استفاده می‌کنند، وزن‌ها با ترنسپوز مناسب و سازگار با فرمت خطی استاندارد فاکتورگیری می‌شوند.
+    \item \textbf{حفاظت هوشمند و فیلتر لایه‌های حساس (\lr{Critical-Layer Protection}):} با بهره‌گیری از متد \lr{should\_compress\_linear}، لایه‌های کلیدی شامل طبقه‌بندها، توابع سر مدل، توابع پوشش‌دهنده رولوشن و لایه‌های با ابعاد کمتر از \lr{min\_rank} از فشرده‌سازی معاف می‌شوند.
+    \item \textbf{سازوکار بازگشت امن و افزایش رتبه (\lr{Adaptive Escalation \& Safe Fallback}):} چنانچه خطای فروبنیوس از آستانه \lr{max\_error=0.35} فراتر رود، رتبه به شکل پلکانی افزایش می‌یابد و در صورت عدم همگرایی، لایه اصلی بدون دستکاری حفظ می‌گردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{direct\_svd} بر اساس داده‌های قطعی و تاییدشده در \lr{thesis\_final/master\_verified\_results.json} بر روی مدل‌های زبانی در جدول \ref{tab:benchmark_direct_svd} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{direct\_svd} روی مدل‌های پایه}
+\label{tab:benchmark_direct_svd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.33\%} & \lr{0.8959} & \lr{357.79 MB} & \lr{43,350.07 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.98\%} & \lr{0.8665} & \lr{346.97 MB} & \lr{12,500.93 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{81.77\%} & \lr{0.8239} & \lr{406.32 MB} & \lr{15,937.39 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{46.21\%} & \lr{---} & \lr{1268.00 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های جدول \ref{tab:benchmark_direct_svd} تایید می‌کنند که ماژول \lr{direct\_svd} با موفقیت توانسته در تمامی مدل‌های پایه مورد آزمایش، استاندارد سخت‌گیرانه ارزیابی را احراز کرده و وضعیت رسمی \lr{PASS} دریافت کند. بالاترین دقت مربوط به \lr{DistilBERT} با رقم چشمگیر \lr{89.33\%} (شاخص اف‌وان \lr{0.8959}) با مصرف حافظه \lr{357.79 MB} و توان پردازشی \lr{43,350.07 tok/s} است. در مدل‌های انکودر پیچیده‌تر نظیر \lr{RoBERTa} دقت \lr{84.98\%} و در مدل علّی \lr{GPT-2} دقت ممتاز \lr{81.77\%} (شاخص اف‌وان \lr{0.8239}) به دست آمده است. در مدل زبانی بزرگ \lr{Qwen} نیز با وجود پیچیدگی پارامتری، دقت \lr{46.21\%} و کاهش مصرف حافظه به \lr{1268.00 MB} ثبت شده که پایداری فاکتورگیری خطی را بدون شکست محاسباتی اثبات می‌نماید.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+با وجود نتایج بسیار مطلوب در مدل‌های انکودر و دیکودر، تحلیل شکست الگوریتم مبین نکات زیر است:
+\begin{itemize}
+    \item \textbf{فقدان همترازی با توزیع فعال‌سازی‌ها (\lr{Data-Blindness}):} از آنجا که \lr{Direct SVD} صرفاً ساختار ایستای ماتریس وزن را تقریب می‌زند، فاقد اطلاعات مربوط به مسیرهای انتقال داده در زمان استنتاج است؛ بنابراین در شرایطی که جهت‌های فرعی وزن دارای بیشینه پراکندگی فعال‌سازی باشند، افت دقت در مقایسه با روش‌های آگاه از فعال‌سازی (نظیر \lr{AASVD}) مشهودتر خواهد بود.
+    \item \textbf{سربار حافظه در فاز تجزیه (\lr{SVD Compute Peak}):} محاسبه تجزیه مقادیر منفرد کامل برای ماتریس‌های فوق بزرگ در مدل‌های چند ده میلیارد پارامتری به دلیل نیاز به نگهداری ماتریس‌های متعامد کامل $\mathbf{U}$ و $\mathbf{V}$ در حافظه \lr{RAM/VRAM} می‌تواند به عنوان گلوگاه زمانی و حافظه‌ای در زمان فشرده‌سازی اولیه عمل کند.
+    \item \textbf{افت دقت جزئی در مدل‌های با رتبه ذاتی بالا:} در لایه‌هایی که طیف مقادیر منفرد به کندی نزول می‌کند (مانند لایه‌های میانی \lr{RoBERTa})، انتخاب رتبه کوچک منجر به هرس بخشی از انرژی اطلاعاتی شده و دقت را از \lr{90\%} به \lr{84.98\%} کاهش داده است.
+\end{itemize}

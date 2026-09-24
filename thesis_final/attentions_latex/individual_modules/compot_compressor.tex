@@ -1,0 +1,78 @@
+\section{ماژول compot\_compressor (Compressed Orthogonal Dictionary Learning Compressor)}
+\label{sec:module_compot_compressor}
+
+\subsection{معرفی و انگیزه}
+در مدل‌های زبانی متراکم، پروجکشن‌های خطی نگاشت پرس‌وجو، کلید و مقدار و نیز لایه‌های پرسپترون چندلایه (\lr{MLP})، بخش اعظم بار پارامتری شبکه را تشکیل می‌دهند. تکنیک‌های رایج فاکتورسازی ماتریسی نظیر تجزیه مقادیر منفرد ایستا (\lr{SVD})، صرفاً بر هندسه ایستا وزن‌ها تکیه داشته و توزیع فعال‌سازی‌های ورودی را نادیده می‌گیرند که این امر در فشرده‌سازی‌های با رتبه پایین به انحراف بازنمایی مدل می‌انجامد.
+
+ماژول \lr{compot\_compressor} (مبتنی بر \lr{COMPOT: Compressed Orthogonal Dictionary Learning}) روشی پیشرفته جهت فاکتورسازی لایه‌های خطی و لایه‌های شبه‌کانولوشنی (\lr{Conv1D}) از طریق یادگیری واژه‌نامه‌های متعامد بر روی توزیع فعال‌سازی‌ها است. این موتور با تلفیق تجزیه \lr{QR} تانسورهای فعال‌سازی کالیبراسیون و تجزیه طیفی ماتریس بازنمایی ادغام‌شده، فضای پروجکشن را به پایه‌های متعامد متصل به داده تجزیه می‌کند. این رویکرد انطباق داده‌محور تضمین می‌کند که جهت‌های پرانرژی فعال‌سازی‌ها بدون از دست رفتن اطلاعات کلیدی حفظ شوند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی الگوریتمی \lr{compot\_compressor} به صورت فاکتورسازی ضربی دوگانه بیان می‌شود:
+\begin{equation}
+W \approx B \cdot A
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $A \in \mathbb{R}^{r \times D_{\text{in}}}$: ماتریس تصویر متعامد ورودی (\lr{Input-Orthogonal Projection Matrix}) با شرط تعامد نسبی $A A^\top \approx I$.
+    \item $B \in \mathbb{R}^{D_{\text{out}} \times r}$: ماتریس واژه‌نامه خروجی (\lr{Output Dictionary Matrix}) متناظر با ضرایب بازسازی.
+\end{itemize}
+
+\subsubsection*{یادگیری واژه‌نامه متعامد از تانسورهای فعال‌سازی کالیبراسیون}
+در صورت در دسترس بودن ماتریس فعال‌سازی‌های ورودی کالیبراسیون $X \in \mathbb{R}^{N_{\text{calib}} \times D_{\text{in}}}$، فاکتورسازی \lr{QR} به کار گرفته می‌شود:
+\begin{equation}
+X = Q_X R_X
+\end{equation}
+که در آن $Q_X$ متعامد و $R_X$ بالا‌مثلثی است. به منظور حفظ انرژی پاسخ خروجی $Y = X W^\top$، ماتریس میانجی $D$ به شکل زیر محاسبه می‌شود:
+\begin{equation}
+D = W R_X^\top \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد بر روی $D$ اجرا می‌گردد:
+\begin{equation}
+D = U_D \Sigma_D V_D^\top
+\end{equation}
+با گزینش $r$ مؤلفه برتر، مؤلفه‌های فاکتورسازی‌شده به دست می‌آیند:
+\begin{equation}
+B = U_D[:, :r] \cdot \Sigma_D[:r], \quad A = V_D[:r, :] \cdot (R_X^\top)^\dagger
+\end{equation}
+که در آن $(R_X^\top)^\dagger$ شبه‌وارون ماتریس بالامثلثی است. در حالت فاقد فعال‌سازی، ماتریس $A$ به صورت متعامد یکانی (\lr{nn.init.orthogonal\_}) و $B$ با استفاده از روش زاویر یکنواخت (\lr{nn.init.xavier\_uniform\_}) مقداردهی می‌گردد.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/compot\_compressor.py} مستقر بوده و شامل ارکان زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{COMPOTLinear}:} لایه فاکتورسازی‌شده جایگزین \lr{nn.Linear} و \lr{Conv1D} که عملگر گذر رو به جلو را در دو مرحله زیر-مربعی اجرا می‌کند:
+    \begin{equation}
+    y = ((x \cdot A^\top) \cdot B^\top) + b
+    \end{equation}
+    این کلاس ویژگی \lr{is\_custom\_attention = True} را تنظیم کرده و از بازسازی کامل وزن برحسب نیاز با متد \lr{get\_weight()} پشتیبانی می‌نماید.
+    \item \textbf{متد کلاسی \lr{from\_linear\_and\_activations}:} کالبدشکافی وزن لایه اصلی، بررسی جهت ترانهاده برای لایه‌های خاص \lr{Conv1D} با ابعاد معکوس، استخراج فعال‌سازی‌ها، محاسبه خطای بازسازی نسبی (\lr{reconstruction\_error}) و برگرداندن لایه فشرده با رتبه مهارشده.
+    \item \textbf{کلاس \lr{COMPOTCompressor}:} مدیریت کشف لایه‌های هدف ترنسفورمر، فیلتر کردن لایه‌های نامناسب طبق سازوکار \lr{should\_compress\_linear}، جمع‌آوری تانسورهای فعال‌سازی کالیبراسیون و جایگزینی ماژولار در گراف مدل.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی آزمایشگاهی ماژول \lr{compot\_compressor} بر روی مجموعه‌داده \lr{GLUE SST-2} و بنچمارک استاندارد رساله در جدول \ref{tab:benchmark_compot_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{compot\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_compot_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{75.92\%} & \lr{0.8155} & \lr{368.29 MB} & \lr{64,689.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{514.29 MB} & \lr{12,361.10 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{52.18\%} & \lr{0.6854} & \lr{576.21 MB} & \lr{1,643.37 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+ماژول بر روی مدل \lr{DistilBERT} با موفقیت به دقت ۷۵٫۹۲٪ در غربالگری سریع و ۹۰٫۸۳٪ در جاروب رتبه‌ای (با رتبه ۶۴ و شاخص F1 معادل ۰٫۹۱۰۵) دست یافته است. با این حال، در مدل‌های \lr{RoBERTa} و \lr{GPT-2} در تنظیمات کالیبراسیون بدون آداپتور ریکاوری عمیق، دقت در فلات کلاسی ۵۰٫۹۲٪ متوقف گردیده و برچسب رد معماری دریافت کرده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی لاگ‌های خطا و رفتار کلاسی ماژول نشان‌دهنده چالش‌های فنی زیر است:
+\begin{itemize}
+    \item \textbf{افتادن در فلات شانس کلاسی در مدل‌های بدون بازآموزی:} در ارزیابی مدل‌های \lr{RoBERTa} و \lr{GPT-2}، دقت اولیه در حد اکثریت کلاس داده ($50.92\% \le 56.00\%$) ثبت گردید که موجب صدور وضعیت‌های \lr{SKIP\_ROBERTA\_ARCHITECTURAL} و \lr{SKIP\_GPT\_ARCHITECTURAL} گردید. عدم بازآموزی پس از فاکتورسازی تجزیه \lr{QR} بدون لایه \lr{LoRA} فعال، به ناپایداری فضای پنهان لایه‌های عمیق می‌انجامد.
+    \item \textbf{خطای ناپایداری شبه‌وارون \lr{pinv} در ماتریس‌های کم‌انرژی:} در ماتریس‌های فعال‌سازی با رتبه ناکامل، ماتریس $R_X$ دارای مقادیر قطری نزدیک به صفر می‌گردد که محاسبه $(R_X^\top)^\dagger$ را با خطای عددی شدید یا تولید مقادیر \lr{NaN/Inf} مواجه می‌سازد؛ اگرچه پیاده‌سازی سورس با بلوک \lr{try-except} این خطا را پوشش داده و به مقداردهی تصادفی بازمی‌گردد، اما این عقب‌نشینی به بهای از دست رفتن انطباق داده‌محور تمام می‌شود.
+\end{itemize}

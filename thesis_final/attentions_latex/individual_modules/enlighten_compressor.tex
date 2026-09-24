@@ -1,0 +1,72 @@
+\section{ماژول enlighten\_compressor (ENLighten Photonic-Aligned SVD and Sparsity Compressor)}
+\label{sec:module_enlighten_compressor}
+
+\subsection{معرفی و انگیزه}
+ترکیب فشرده‌سازی رتبه پایین با تکنیک‌های هرس پراکنده ساختاریافته یکی از موثرترین رهیافت‌ها در تسریع استنتاج مدل‌های ترنسفورمر بدون نیاز به سخت‌افزارهای نامتعارف به شمار می‌رود. ساختار پراکندگی ۲:۴ (\lr{2:4 Structured Sparsity}) که مورد پشتیبانی سخت‌افزاری هسته‌های تانسوری نوین و همچنین شتاب‌دهنده‌های فوتونیکی (\lr{Photonic Accelerators}) است، امکان حذف نصف وزن‌ها را در هر بلوک چهار عنصری فراهم می‌آورد. با این حال، اعمال مستقیم هرس ۲:۴ به تنهایی افت دقت قابل ملاحظه‌ای ایجاد می‌کند.
+
+ماژول فشرده‌ساز \lr{ENLightenCompressor} با نام ثبتی \lr{enlighten\_compressor} و \lr{enlighten}، یک معماری دورگه فشرده‌سازی است که ماتریس وزن را به یک مؤلفه چگال کم‌رتبه حاصل از تجزیه مقادیر منفرد (\lr{Low-Rank SVD}) و یک ماتریس باقیمانده دارای پراکندگی ساختاریافته ۲:۴ تفکیک می‌کند. بدین ترتیب انرژی عمده طیفی در ماتریس کم‌رتبه حفظ شده و جزئیات فرکانس بالا از طریق باقیمانده ۲:۴ با کمترین هزینه سخت‌افزاری بازسازی می‌شوند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، تجزیه مقادیر منفرد فاز نخست اجرا می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+با گزینش رتبه پایه $r \le \min(d_{\text{out}}, d_{\text{in}})$، تقریب کم‌رتبه $\mathbf{L}$ از ضرب فاکتورهای برش‌یافته شکل می‌گیرد:
+\begin{equation}
+\mathbf{L} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top, \quad \mathbf{U}_r \in \mathbb{R}^{d_{\text{out}} \times r}, \; \mathbf{\Sigma}_r \in \mathbb{R}^{r \times r}, \; \mathbf{V}_r \in \mathbb{R}^{d_{\text{in}} \times r}
+\end{equation}
+سپس تانسور باقیمانده $\mathbf{R}$ از اختلاف وزن متراکم و تقریب رتبه پایین محاسبه می‌گردد:
+\begin{equation}
+\mathbf{R} = \mathbf{W} - \mathbf{L}
+\end{equation}
+بر روی باقیمانده $\mathbf{R}$، عملگر هرس برداری ۲:۴ اعمال می‌گردد. در هر بلوک متوالی از ۴ درایه سطری $\mathbf{b} = [r_1, r_2, r_3, r_4]$، دو درایه با کمترین قدرمطلق به صفر تبدیل می‌شوند:
+\begin{equation}
+\mathbf{R}_{\text{sparse}} = \mathcal{M}_{2:4}(\mathbf{R}), \quad \|\mathbf{b} \odot (1 - \mathbf{m})\|_0 = 2, \quad \mathbf{m} = \arg\max_{\mathbf{m}' \in \{0, 1\}^4, \|\mathbf{m}'\|_1=2} \sum_{k=1}^4 m'_k |r_k|
+\end{equation}
+ماتریس نهایی بازسازی‌شده از جمع مؤلفه رتبه پایین و باقیمانده پراکنده به دست می‌آید:
+\begin{equation}
+\mathbf{W}_{\text{recon}} = \mathbf{L} + \mathbf{R}_{\text{sparse}}
+\end{equation}
+خطای نسبی بازسازی فروبنیوس به عنوان سنجه اعتبارسنجی لایه ارزیابی می‌شود:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_{\text{recon}}\|_F}{\|\mathbf{W}\|_F + \epsilon}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در \lr{Codes/framework/compression\_engine/enlighten\_compressor.py} مستقر شده و شامل خصوصیات فنی زیر است:
+\begin{itemize}
+    \item \textbf{هرس برداری ۲:۴ بدون حلقه پایتونی (\lr{Vectorized 2:4 Pruner}):} تابع \lr{vectorized\_24\_prune} با پدینگ خودکار به مضرب ۴ و بهره‌گیری از عملیات موازی \lr{torch.topk} و \lr{scatter\_}، محاسبات ماسک را با سرعت بالا روی کارت گرافیک انجام می‌دهد.
+    \item \textbf{تشدید پویای رتبه (\lr{Dynamic Rank Escalation}):} در صورت فراتر رفتن خطای بازسازی از آستانه مجاز (\lr{max\_error=0.45})، ماژول در چند گام متوالی (\lr{max\_retries=2}) اقدام به ارتقای رتبه می‌نماید.
+    \item \textbf{سازوکار بازگشت ایمن (\lr{Safe Fallback}):} در صورت عدم دستیابی به خطای هدف پس از تکرارها، لایه اصلی متراکم بازگردانده شده و پارامترهای آن منجمد می‌شوند.
+    \item \textbf{پشتیبانی از لایه‌های \lr{Conv1D} و آداپتورهای \lr{LoRA}:} استخراج و تبدیل ترانهاده وزن‌ها برای ترنسفورمرهای مولد مانند \lr{GPT-2}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی ماژول \lr{enlighten\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_enlighten_compressor} ثبت شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{enlighten\_compressor} بر روی مدل‌های پایه}
+\label{tab:benchmark_enlighten_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس مستندات خطا در نتایج بنچ‌مارک، در راندهای اولیه ارزیابی به دلیل عدم تطابق نام ثبتی در رجیستری فشرده‌ساز با خطای زیر متوقف شده است:
+\begin{center}
+\small
+\lr{RuntimeError: Compressor 'enlighten\_compressor' not found in COMPRESSOR\_REGISTRY}
+\end{center}
+این امر وضعیت اجرا را برای مدل‌های \lr{DistilBERT} و \lr{RoBERTa} در حالت \lr{FAIL} ثبت کرده است. ارزیابی مدل \lr{GPT-2} اجرا نگردیده (\lr{NOT\_RUN}) و برای \lr{Qwen} به دلیل محدودیت منابع در وضعیت \lr{SKIP} قرار گرفته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل شکست این ماژول نشان‌دهنده دو آسیب‌پذیری مجزا است: نخست، شکنندگی ناشی از همگام نبودن نام‌های مستعار رجیستری (\lr{Alias Registration}) در چارچوب بنچ‌مارک جامع که منجر به شکست در مرحله فراخوانی شد (و در بازبینی‌های بعدی با ثبت همزمان \lr{enlighten} و \lr{enlighten\_compressor} برطرف گردید). دوم، تداخل شدید میان تقریب رتبه پایین و هرس پراکنده در رتبه‌های کوچک که خطای ترکیبی را به بیش از ۴۰ درصد رسانده و نیازمند کالیبراسیون دقیق لایه به لایه می‌باشد.
