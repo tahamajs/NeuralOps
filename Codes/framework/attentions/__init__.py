@@ -68,13 +68,20 @@ _LEGACY_MAP = {
     "token_compressed": "token_compressed_attention",
     "tt": "token_compressed_attention",
     "upi_mamba": "upi_stuffed_mamba",
+    "selective_scan": "framework.core.selective_scan",
+    "ssm_scan": "framework.core.selective_scan",
+    "legacy_ensemble": "framework.core.legacy_ensemble",
+    "rala_compressor": "rala_attention",
 }
 
 
 def __getattr__(name: str):
     if name in _LEGACY_MAP:
         target = _LEGACY_MAP[name]
-        mod = importlib.import_module(f".{target}", __name__)
+        if target.startswith("framework."):
+            mod = importlib.import_module(target)
+        else:
+            mod = importlib.import_module(f".{target}", __name__)
         sys.modules[f"{__name__}.{name}"] = mod
         return mod
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
