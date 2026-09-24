@@ -2,7 +2,7 @@
 
 **Date:** September 18, 2026  
 **Repository:** SVD Linear Attention & Unified Compression Framework  
-**Scope:** 253 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2  
+**Scope:** 252 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2  
 **Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
 
 ---
@@ -28,9 +28,9 @@ The project evaluates models across three distinct transformer topologies:
 | **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
 | **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
 | **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 20 | PASS ✅ (Safe) |
-| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 50 | PASS ✅ (Standalone) |
-| **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 36 | PASS ✅ (Standalone) |
-| **TOTAL EVALUATED** | Complete repository module catalog | **253** | **100% OPERATIONAL** |
+| **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 51 | PASS ✅ (Standalone) |
+| **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
+| **TOTAL EVALUATED** | Complete repository module catalog | **252** | **100% OPERATIONAL** |
 
 ---
 
@@ -143,6 +143,9 @@ These modules introduce low-rank or structural approximations while maintaining 
 
 
 ### Category 3: Category B (Linear Attention / SSM / MoE) (87 Modules)
+
+> [!NOTE]
+> **Category 3 Evaluation Criteria**: "PASS" in Category 3 indicates that the module runs without crashing and produces a bounded logit difference ($< 20.0$). It reflects operational stability and mathematical consistency, NOT accuracy above chance. For downstream classification recovery and accuracy deltas, see Section 4.5 (*Category B High-Diff Recovery Verification*).
 
 These modules replace standard softmax with linear kernels, state-space models, or mixture-of-experts. Their high zero-shot diff is expected due to differing mathematical formulations before recovery fine-tuning:
 
@@ -279,43 +282,43 @@ These modules are designed specifically for bidirectional architectures and grac
 | `zeros_attention` | `0.0000` | `0.0000` | `SAFE NO_OP` | **PASS** |
 
 
-### Category 5: Offline Weight Compression Engines (86 Modules Total)
+### Category 5: Offline Weight Compression Engines (85 Modules Total)
 
 Offline compression algorithms in the repository are divided into two distinct functional categories based on mathematical mechanics and parameter reduction profiles:
 
-#### Category 5A: Low-Rank & Structured SVD Factorization Engines (50 Modules)
+#### Category 5A: Low-Rank & Structured SVD Factorization Engines (51 Modules)
 These modules decompose dense parameter matrices into low-rank factorized projections ($W \approx U \Sigma V^T$, Tucker, Tensor-Train, Kronecker, or SliceGPT subspace truncation), achieving measurable parameter count reduction and FLOP savings ($>1.05\times$ compression rate):
 
 | Module 1 | Module 2 | Module 3 | Module 4 |
 | :--- | :--- | :--- | :--- |
-| `a3_compressor` | `erc_svd` | `mgie_svd_compressor` | `saes_svd_v2` |
-| `aa_svd_compressor` | `frandi` | `mlorq_compressor` | `salr` |
-| `aasvd` | `frandi_compressor` | `modegpt` | `slicegpt` |
-| `adaptive_compressor` | `gfws_d_compressor` | `modegpt_compressor` | `slicegpt_compressor` |
-| `adaptive_ranks` | `grecodec` | `nmf_compressor` | `slicegpt_pca` |
-| `adasvd_compressor` | `grecodec_compressor` | `oats` | `subspace_projection` |
-| `admm_compressor` | `hybrid_svd_layer` | `oats_compressor` | `svd_linear` |
-| `come` | `kronecker_compressor` | `rotational_slicegpt_int4` | `swift_svd_act` |
-| `compot_compressor` | `kronecker_linear` | `rpca` | `swift_svd_compressor` |
-| `cr_compressor` | `kronecker_tt_lora` | `rpca_compressor` | `tt_compressor` |
-| `cur_compressor` | `lsc_compressor` | `saes_svd` | `tt_linear` |
-| `cur_linear` | `mgie_svd` | `saes_svd_compressor` | `uniql_compressor` |
-| `cure` | `direct_svd` |  |  |
+| `a3_compressor` | `direct_svd` | `mgie_svd` | `saes_svd_v2` |
+| `aa_svd_compressor` | `dobi_svd` | `mgie_svd_compressor` | `salr` |
+| `aasvd` | `erc_svd` | `mlorq_compressor` | `slicegpt` |
+| `adaptive_compressor` | `frandi` | `modegpt` | `slicegpt_compressor` |
+| `adaptive_ranks` | `frandi_compressor` | `modegpt_compressor` | `slicegpt_pca` |
+| `adasvd_compressor` | `gfws_d_compressor` | `nmf_compressor` | `subspace_projection` |
+| `admm_compressor` | `grecodec` | `oats` | `svd_linear` |
+| `come` | `grecodec_compressor` | `oats_compressor` | `swift_svd_act` |
+| `compot_compressor` | `hybrid_svd_layer` | `rotational_slicegpt_int4` | `swift_svd_compressor` |
+| `cr_compressor` | `kronecker_compressor` | `rpca` | `tt_compressor` |
+| `cur_compressor` | `kronecker_linear` | `rpca_compressor` | `tt_linear` |
+| `cur_linear` | `kronecker_tt_lora` | `saes_svd` | `uniql_compressor` |
+| `cure` | `lsc_compressor` | `saes_svd_compressor` |  |
 
-#### Category 5B: Unstructured Sparsity, Pruning, Quantization & KV Cache Engines (36 Modules)
+#### Category 5B: Unstructured Sparsity, Pruning, Quantization & KV Cache Engines (34 Modules)
 These engines implement fine-grained magnitude/Hessian pruning, codebook clustering/quantization, weight hashing, or dynamic KV cache token pruning. Because they preserve full dense parameter tensor footprints or operate dynamically at runtime, nominal stored parameter count remains unreduced ($1.00\times$ compression rate):
 
 | Module 1 | Module 2 | Module 3 | Module 4 |
 | :--- | :--- | :--- | :--- |
-| `admm_pruner` | `faq_quantizer` | `kmeans_quantize` | `roast_hashed_linear` |
-| `armor_pruner` | `flap` | `kvtc` | `slim_compressor` |
-| `ast_pruner` | `flat_llm` | `kvtc_compressor` | `soka` |
-| `astro_quantizer` | `hashed_linear` | `liftr` | `soka_compressor` |
-| `bonsai_pruner` | `hashed_net_compressor` | `lillama_compressor` | `sparsegpt` |
-| `cachenotes_compressor` | `huffman_coder` | `mamba_shedder` | `zerokv_neo` |
-| `coopq_quantizer` | `hybridkv` | `proxsparse` | `zerokv_neo_compressor` |
-| `delta_kv` | `hybridkv_compressor` | `proxsparse_pruner` | `dobi_svd` |
-| `enlighten_compressor` | `entropy_budget_allocation` | `pruning_utils` | `replaceme_compressor` |
+| `admm_pruner` | `entropy_budget_allocation` | `kmeans_quantize` | `replaceme_compressor` |
+| `armor_pruner` | `faq_quantizer` | `kvtc` | `roast_hashed_linear` |
+| `ast_pruner` | `flap` | `kvtc_compressor` | `slim_compressor` |
+| `astro_quantizer` | `flat_llm` | `liftr` | `soka` |
+| `bonsai_pruner` | `hashed_linear` | `lillama_compressor` | `soka_compressor` |
+| `cachenotes_compressor` | `hashed_net_compressor` | `mamba_shedder` | `sparsegpt` |
+| `coopq_quantizer` | `huffman_coder` | `proxsparse` | `zerokv_neo` |
+| `delta_kv` | `hybridkv` | `proxsparse_pruner` | `zerokv_neo_compressor` |
+| `enlighten_compressor` | `hybridkv_compressor` |  |  |
 
 ---
 
@@ -323,4 +326,4 @@ These engines implement fine-grained magnitude/Hessian pruning, codebook cluster
 
 - **Harness File:** `run_one_module.py`
 - **Verification Results Source:** `fixed_25_results.json` & `audit/module_test_log.jsonl`
-- **All 265 modules compile, run forward passes, compute gradients, and pass execution checks with zero errors.**
+- **All 252 modules compile, run forward passes, compute gradients, and pass execution checks with zero errors.**
