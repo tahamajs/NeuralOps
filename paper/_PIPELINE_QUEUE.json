@@ -1,34 +1,6 @@
 {
-  "max_parallel": 2,
+  "max_parallel": 3,
   "jobs": [
-    {
-      "id": "p3_gpt2_aasvd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aasvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aasvd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_slicegpt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_aa_svd_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
-      "id": "p3_gpt2_rotational_slicegpt_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_factory",
-      "status": "pending",
-      "retries": 0
-    },
     {
       "id": "p3_gpt2_adasvd_compressor",
       "type": "gpu",
@@ -8284,9 +8256,31 @@
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_sparse --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_sparse",
       "status": "pending",
       "retries": 0
+    },
+    {
+      "id": "p3_gpt2_aasvd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aasvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aasvd",
+      "status": "pending",
+      "retries": 0
     }
   ],
-  "active": [],
+  "active": [
+    {
+      "id": "p3_gpt2_aa_svd_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_rotational_slicegpt_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rotational_slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rotational_slicegpt_factory",
+      "status": "active",
+      "retries": 0
+    }
+  ],
   "completed": [
     {
       "job_id": "p1_galerkin_attention",
@@ -9095,6 +9089,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules inject_adaptive_sparse_attention --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_inject_adaptive_sparse_attention",
       "started_at": "2026-09-24T04:30:32.279253",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_slicegpt_factory",
+      "id": "p3_gpt2_slicegpt_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules slicegpt_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_slicegpt_factory",
+      "started_at": "2026-09-24T04:54:28.834177",
       "retries": 0,
       "status": "done"
     }
