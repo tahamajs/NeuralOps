@@ -357,13 +357,18 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (total_error / len(self.compressed_layers)) if self.compressed_layers else 0.0
+        num_comp = len(self.compressed_layers)
+        num_fb = len(self.fallback_layers)
+        avg_err = (total_error / num_comp) if num_comp else 0.0
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
-                "num_compressed_layers": len(self.compressed_layers),
+                "num_compressed": num_comp,
+                "num_compressed_layers": num_comp,
                 "fallback_layers": self.fallback_layers,
-                "fallback_layer_count": len(self.fallback_layers),
+                "num_fallback": num_fb,
+                "num_fallback_layers": num_fb,
+                "fallback_layer_count": num_fb,
                 "layer_errors": self.layer_errors,
                 "keep_ratio": self.keep_ratio,
                 "num_attention_sinks": self.num_attention_sinks,
