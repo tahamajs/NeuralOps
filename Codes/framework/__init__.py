@@ -116,7 +116,7 @@ class _ModuleAliasFinder(MetaPathFinder):
             try:
                 mod = importlib.import_module(canonical)
                 sys.modules[fullname] = mod
-                return importlib.machinery.ModuleSpec(fullname, _AliasLoader(mod), origin=canonical)
+                return getattr(mod, "__spec__", None)
             except Exception:
                 pass
         return None
