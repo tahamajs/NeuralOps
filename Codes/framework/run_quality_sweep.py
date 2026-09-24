@@ -3032,7 +3032,7 @@ def run_single_module_main(args) -> dict:
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
     else:
-        if args.finetune_steps > 0:
+        if args.finetune_steps > 0 and "wikitext" not in args.dataset.lower():
             if args.finetune_mode == "lora":
                 LOG.info("Fine-tuning LoRA adapters for %d steps before module injection (lr=%.1e)", args.finetune_steps, args.learning_rate)
                 finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=args.learning_rate)
