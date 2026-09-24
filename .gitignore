@@ -340,3 +340,5 @@ debug_*.py
 *.code-workspace
 
 paper/_PROGRESS.md
+
+/thesis_final
