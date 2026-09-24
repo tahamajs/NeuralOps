@@ -7,8 +7,8 @@
         "precision": null,
         "recall": null,
         "val_loss": null,
-        "status": "PENDING",
-        "elapsed_s": 503.79
+        "status": "EVAL_FAILED",
+        "elapsed_s": 504.28
     },
     "efficiency": {
         "total_params_before": 124439808,

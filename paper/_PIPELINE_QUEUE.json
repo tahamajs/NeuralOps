@@ -8896,13 +8896,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_aa_svd_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_compressor",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_squeezing_heads_distill_inject",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules squeezing_heads_distill_inject --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_squeezing_heads_distill_inject",
@@ -9698,6 +9691,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flat_llm_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flat_llm_compressor_factory",
       "started_at": "2026-09-24T04:31:03.313262",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_aa_svd_compressor",
+      "id": "p3_gpt2_aa_svd_compressor",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules aa_svd_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_aa_svd_compressor",
+      "started_at": "2026-09-24T04:29:30.290319",
       "retries": 0,
       "status": "done"
     }
