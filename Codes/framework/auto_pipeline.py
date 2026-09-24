@@ -96,7 +96,7 @@ TEMP_RESUME_C = 72.0         # resume below this
 UTIL_TARGET_PCT = 90.0
 
 # Parallelism
-GPU_SAFE_MAX_PARALLEL = 8    # safe ceiling for GPU jobs to maximize utilization
+GPU_SAFE_MAX_PARALLEL = 6    # safe ceiling for GPU jobs to maximize utilization
 CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
 
 # Timing
