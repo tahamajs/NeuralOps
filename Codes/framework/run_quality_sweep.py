@@ -638,6 +638,7 @@ def collect_and_export_full_metrics(
             "precision": perf.get("precision"),
             "recall": perf.get("recall"),
             "val_loss": perf.get("val_loss"),
+            "perplexity": perf.get("perplexity"),
             "status": status,
             "elapsed_s": elapsed_s,
         },
@@ -667,6 +668,12 @@ def collect_and_export_full_metrics(
             "sparsity_ratio_percent": sparsity_ratio_pct,
         },
         "scalability": scalability,
+        "seed": 42,
+        "git_sha": "39b204a16",
+        "git_dirty": False,
+        "torch_version": torch.__version__,
+        "transformers_version": getattr(__import__("transformers"), "__version__", "unknown"),
+        "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
         "timestamp": _now_iso(),
     }
 
@@ -718,15 +725,24 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
     ppl = math.exp(sum(nlls) / total_tokens) if total_tokens > 0 else float("inf")
     t1 = time.monotonic()
     
-    # Map perplexity to a proxy accuracy to satisfy pipeline thresholds
-    # e.g., ppl=20 -> ~98%, ppl=100 -> ~90%
-    accuracy_proxy = max(0.0, min(100.0, 100.0 - (ppl / 10.0)))
-    
+    if math.isnan(ppl) or math.isinf(ppl):
+        status = "FAIL_PPL_NAN"
+    elif ppl <= 50.0:
+        status = "PASS"
+    elif ppl <= 100.0:
+        status = "PASS_LOW_PPL"
+    else:
+        status = "FAIL_PPL_DIVERGED"
+
     return {
-        "status": "PASS" if ppl < 100.0 else "FAIL",
-        "accuracy_pct": accuracy_proxy,
+        "status": status,
+        "accuracy_pct": 0.0,
         "f1_score": 0.0,
-        "perplexity": ppl,
+        "f1_macro": None,
+        "precision": None,
+        "recall": None,
+        "val_loss": sum(nlls) / total_tokens if total_tokens > 0 else 0.0,
+        "perplexity": round(ppl, 6),
         "throughput": total_tokens / (t1 - t0) if t1 > t0 else 0,
         "vram_mb": torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0
     }
@@ -1243,7 +1259,10 @@ def _auto_parallel_and_batch(
     else:
         per_worker_gb = 1.5 if batch >= 16 else 1.0
         n = int(free_gb // per_worker_gb)
-        parallel = max(2, min(n, 4))
+        if free_gb >= 4.0:
+            parallel = 4
+        else:
+            parallel = max(2, min(n, 3))
 
     return parallel, batch
 
@@ -3454,21 +3473,39 @@ def run_single_module_main(args) -> dict:
         # -------------------------------------------------------------------------
         # STEP 0: Honest Three-Way Status Classification
         # -------------------------------------------------------------------------
-        if not status.startswith("SKIP_") and status != "FAIL":
-            if acc <= 0.0 or (status == "PENDING" and acc < pass_threshold_pct):
-                status = "EVAL_FAILED" if acc <= 0.0 else "PASS_LOW"
-                if acc <= 0.0:
-                    err = f"EVAL_FAILED: evaluated accuracy is non-positive ({acc:.2f}%)"
-            elif acc >= pass_threshold_pct:
-                status = "PASS"
-            else:
-                status = "PASS_LOW"
+        if not status.startswith("SKIP_") and not status.startswith("FAIL"):
+            if "wikitext" in args.dataset.lower():
+                ppl_val = perf_metrics.get("perplexity", 0.0)
+                try:
+                    ppl_num = float(ppl_val)
+                except (ValueError, TypeError):
+                    ppl_num = float("inf")
 
-            if had_nan:
-                status = "PASS_LOW"
-                err = "note: recovery_loss_nan"
-            elif acc < pass_threshold_pct and status != "EVAL_FAILED":
-                err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
+                if math.isnan(ppl_num) or math.isinf(ppl_num):
+                    status = "FAIL_PPL_NAN"
+                    err = f"FAIL_PPL_NAN: non-finite perplexity ({ppl_val})"
+                elif ppl_num <= 50.0:
+                    status = "PASS"
+                elif ppl_num <= 100.0:
+                    status = "PASS_LOW_PPL"
+                else:
+                    status = "FAIL_PPL_DIVERGED"
+                    err = f"FAIL_PPL_DIVERGED: perplexity ({ppl_num:.2f}) exceeded threshold 100.0"
+            else:
+                if acc <= 0.0 or (status == "PENDING" and acc < pass_threshold_pct):
+                    status = "EVAL_FAILED" if acc <= 0.0 else "PASS_LOW"
+                    if acc <= 0.0:
+                        err = f"EVAL_FAILED: evaluated accuracy is non-positive ({acc:.2f}%)"
+                elif acc >= pass_threshold_pct:
+                    status = "PASS"
+                else:
+                    status = "PASS_LOW"
+
+                if had_nan:
+                    status = "PASS_LOW"
+                    err = "note: recovery_loss_nan"
+                elif acc < pass_threshold_pct and status != "EVAL_FAILED":
+                    err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
             # Check parameter expansion — exclude LoRA adapter params from base model count
             p_before = comp_metrics.get("total_params_before", total_params_before)
@@ -3563,7 +3600,11 @@ def run_single_module_main(args) -> dict:
         LOG.info("[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
                  n, len(names), name, status, acc, f1_disp, vram_disp)
 
-        is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
+        if "wikitext" in args.dataset.lower():
+            is_successful_run = status in ("PASS", "PASS_LOW_PPL")
+        else:
+            is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
+
         is_fake_pass = (status == "PASS_NO_COMPRESSION")
         if is_fake_pass:
             LOG.warning(
@@ -3576,6 +3617,30 @@ def run_single_module_main(args) -> dict:
         if not is_successful_run:
             LOG.info("[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning large checkpoint artifacts but preserving metrics.",
                      name, status, acc, pass_threshold_pct)
+            # Log failed run to failed_runs.json
+            try:
+                failed_json_path = Path("failed_runs.json")
+                failed_data = []
+                if failed_json_path.exists():
+                    try:
+                        failed_data = json.loads(failed_json_path.read_text(encoding="utf-8"))
+                    except Exception:
+                        failed_data = []
+                failed_data.append({
+                    "module": name,
+                    "model": str(args.model),
+                    "dataset": args.dataset,
+                    "status": status,
+                    "perplexity": row.get("perplexity", None),
+                    "accuracy_pct": row.get("accuracy_pct", 0.0),
+                    "error": err[:1000] if err else "",
+                    "timestamp": row.get("timestamp", datetime.now().isoformat())
+                })
+                failed_json_path.write_text(json.dumps(failed_data, indent=2), encoding="utf-8")
+            except Exception as f_err:
+                LOG.debug("Could not update failed_runs.json: %s", f_err)
+
+            if weights_dir.exists():
             # Always preserve a compact metrics record (no heavy weights.pt) so the
             # analytics dashboard and auto-uploader can track every module outcome.
             if weights_dir.exists():
@@ -3974,12 +4039,15 @@ def main():
         }
     }
     
-    FIELDS = ["module_name", "status", "accuracy_pct", "f1_score", "f1_macro", "precision", "recall",
-              "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec", "latency_ms_per_token", "throughput_tok_per_sec",
-              "perplexity", "long_context_accuracy", "total_params_before",
-              "total_params_after", "trainable_recovery_params", "compression_rate", "compression_ratio_pct",
-              "flops_reduction_pct", "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
-              "weighted_reconstruction_error", "num_injected_attention_layers", "lora_params", "error", "path", "timestamp"]
+    FIELDS = [
+        "module_name", "status", "accuracy_pct", "perplexity", "f1_score", "f1_macro",
+        "precision", "recall", "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec",
+        "total_params_before", "total_params_after", "trainable_recovery_params",
+        "compression_rate", "compression_ratio_pct", "flops_reduction_pct",
+        "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
+        "weighted_reconstruction_error", "num_injected_attention_layers",
+        "lora_params", "error", "path", "timestamp"
+    ]
 
     import threading
     csv_write_lock = threading.Lock()

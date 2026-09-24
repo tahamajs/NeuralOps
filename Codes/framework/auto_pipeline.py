@@ -84,9 +84,9 @@ QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 # TUNABLE SAFETY / PERFORMANCE CONSTANTS
 # =============================================================================
 # VRAM safety (RTX 4070 Laptop = 8 GB)
-VRAM_CEILING_GB = 6.5        # pause new launches above this (safe max utilization)
-VRAM_RESUME_GB = 5.5         # resume launches below this
-VRAM_PER_JOB_GB = 0.7        # typical per-job footprint for batch_size=16/8
+VRAM_CEILING_GB = 6.5        # do NOT exceed 6.5 GB total across all workers
+VRAM_RESUME_GB = 5.5         # resume new jobs only when VRAM drops below this
+VRAM_PER_JOB_GB = 1.5        # budget per worker
 
 # Thermal safety
 TEMP_CEILING_C = 80.0        # pause when temp > this
@@ -96,8 +96,8 @@ TEMP_RESUME_C = 70.0         # resume below this
 UTIL_TARGET_PCT = 85.0
 
 # Parallelism
-GPU_SAFE_MAX_PARALLEL = 5    # balanced 5 concurrent workers
-CPU_SAFE_MAX_PARALLEL = 5    # CPU-only jobs can run more
+GPU_SAFE_MAX_PARALLEL = 4    # fixed exactly 4 concurrent workers, never 5
+CPU_SAFE_MAX_PARALLEL = 4    # CPU-only jobs can run more
 
 # Timing
 POLL_INTERVAL_S = 8          # main loop sleep (faster polling)
