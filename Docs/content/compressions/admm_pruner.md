@@ -650,6 +650,6 @@ Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity, $\la
 
 | Model Architecture | Baseline Acc | Pruned + Distill Acc | Δ Acc | F1 Score | Actual Sparsity | Distill MSE | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------------:|:-----------:|:---------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.48% | 84.29% | -6.19% | 0.8603 | 50.0% | 0.000242 | 0.3571 | 551.2 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm-distill) |
-| ROBERTA | 88.76% | 80.62% | -8.14% | 0.7966 | 50.0% | 0.000374 | 0.3513 | 336.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm-distill) |
-| GPT2 | 79.36% | 51.49% | -27.87% | 0.1278 | 50.0% | 0.002051 | 0.3565 | 628.4 MB | `PASS_LOW` | N/A |
+| DISTILBERT | 90.71% | 89.79% | -0.92% | 0.8983 | 50.0% | 0.000268 | 0.3590 | 233.5 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm-distill) |
+| ROBERTA | 94.38% | 90.25% | -4.13% | 0.9024 | 50.0% | 0.000436 | 0.3531 | 410.7 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm-distill) |
+| GPT2 | 89.33% | 0.00% | -89.33% | 0.0000 | 50.0% | 0.002235 | 0.3609 | 0.0 MB | `TIMEOUT` | N/A |
