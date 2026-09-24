@@ -115,15 +115,21 @@ def measure_single_length(
         forward_times.append(forward_time_ms)
 
     med_throughput = float(np.median(throughputs))
+    std_throughput = float(np.std(throughputs))
     med_latency = float(np.median(latencies))
     med_vram = float(np.median(peak_vrams))
     med_forward_time = float(np.median(forward_times))
+    mean_forward_time = float(np.mean(forward_times))
+    std_forward_time = float(np.std(forward_times))
 
     return {
         "status": "PASS",
         "throughput_tok_sec": round(med_throughput, 1),
+        "throughput_std": round(std_throughput, 1),
         "latency_ms_per_token": round(med_latency, 4),
         "forward_time_ms": round(med_forward_time, 2),
+        "forward_time_mean_ms": round(mean_forward_time, 2),
+        "forward_time_std_ms": round(std_forward_time, 2),
         "peak_vram_mb": round(med_vram, 2),
     }
 
@@ -201,13 +207,17 @@ def run_benchmark_for_module(
             row = {
                 "seq_len": sl,
                 "throughput_tok_sec": metrics["throughput_tok_sec"],
+                "throughput_std": metrics["throughput_std"],
                 "latency_ms_per_token": metrics["latency_ms_per_token"],
                 "forward_time_ms": metrics["forward_time_ms"],
+                "forward_time_mean_ms": metrics["forward_time_mean_ms"],
+                "forward_time_std_ms": metrics["forward_time_std_ms"],
                 "peak_vram_mb": metrics["peak_vram_mb"],
                 "status": metrics["status"],
             }
-            logger.info("Result: seq_len=%d -> Forward: %.2f ms, Throughput: %.1f tok/s, Latency: %.4f ms/tok, Peak VRAM: %.2f MB [%s]",
-                        sl, row["forward_time_ms"], row["throughput_tok_sec"], row["latency_ms_per_token"], row["peak_vram_mb"], row["status"])
+            logger.info("Result: seq_len=%d -> Forward: %.2f ± %.2f ms (med: %.2f ms), Throughput: %.1f ± %.1f tok/s, Latency: %.4f ms/tok, Peak VRAM: %.2f MB [%s]",
+                        sl, row["forward_time_mean_ms"], row["forward_time_std_ms"], row["forward_time_ms"],
+                        row["throughput_tok_sec"], row["throughput_std"], row["latency_ms_per_token"], row["peak_vram_mb"], row["status"])
             results.append(row)
         except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
             err_msg = str(e).lower()
@@ -256,9 +266,9 @@ def save_results(
     # 1. Write module summary
     with open(summary_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["seq_len", "forward_time_ms", "throughput_tok_sec", "latency_ms_per_token", "peak_vram_mb", "status"])
+        writer.writerow(["seq_len", "forward_time_ms", "forward_time_mean_ms", "forward_time_std_ms", "throughput_tok_sec", "throughput_std", "latency_ms_per_token", "peak_vram_mb", "status"])
         for r in results:
-            writer.writerow([r["seq_len"], r.get("forward_time_ms", 0.0), r["throughput_tok_sec"], r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
+            writer.writerow([r["seq_len"], r.get("forward_time_ms", 0.0), r.get("forward_time_mean_ms", 0.0), r.get("forward_time_std_ms", 0.0), r["throughput_tok_sec"], r.get("throughput_std", 0.0), r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
     logger.info("Saved module summary to: %s", summary_path)
 
     # 2. Update master CSV (replace old rows for module if present)
@@ -275,11 +285,11 @@ def save_results(
 
     with open(master_csv, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["module", "group", "seq_len", "forward_time_ms", "throughput_tok_sec", "latency_ms_per_token", "peak_vram_mb", "status"])
+        writer.writerow(["module", "group", "seq_len", "forward_time_ms", "forward_time_mean_ms", "forward_time_std_ms", "throughput_tok_sec", "throughput_std", "latency_ms_per_token", "peak_vram_mb", "status"])
         for r in existing_rows:
             writer.writerow(r)
         for r in results:
-            writer.writerow([module_name, group_name, r["seq_len"], r.get("forward_time_ms", 0.0), r["throughput_tok_sec"], r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
+            writer.writerow([module_name, group_name, r["seq_len"], r.get("forward_time_ms", 0.0), r.get("forward_time_mean_ms", 0.0), r.get("forward_time_std_ms", 0.0), r["throughput_tok_sec"], r.get("throughput_std", 0.0), r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
     logger.info("Updated master CSV with %d rows: %s", len(results), master_csv)
 
 
