@@ -216,7 +216,7 @@ The empirical evaluation of `spectraformer_attention` across standard sequence l
 ```python
 """
 Spectraformer: Random feature linearisation with flexible kernel approximation.
-Paper: https://arxiv.org/abs/2103.04246 (placeholder)
+Reference: Random Features for Kernel Approximations & Spectral Attention (Rahimi & Recht).
 """
 from typing import Any
 

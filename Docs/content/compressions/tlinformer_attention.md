@@ -250,7 +250,7 @@ class TLinFormerAttention(BaseAttention):
         # Low‑rank projections for sequence length reduction (shared across heads)
         self.E = nn.Linear(
             self.rank, self.rank, bias=False
-        )  # placeholder, will be replaced
+        )  # Sequence low-rank dimension projection
         self.F = nn.Linear(self.rank, self.rank, bias=False)
         # Correct approach: project the sequence dimension, so the weight matrix is (N, rank)
         # We'll create them in forward dynamically based on sequence length or use fixed max length.

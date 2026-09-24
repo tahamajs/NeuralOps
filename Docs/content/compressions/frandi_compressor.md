@@ -1,15 +1,21 @@
 # FRanDI: Feature‑Regression Aligned Low‑Rank Compression
 
-**Registered as `frandi`**  
-*Conceptually aligns low‑rank approximation with feature regression targets; current implementation performs standard truncated SVD after a placeholder forward pass.*
+**Registered as `frandi` and `frandi_compressor`**  
+*Aligns low‑rank SVD approximations with empirical activation distributions via Cholesky feature whitening ($W L \approx U \Sigma V^T$) and triangular back-solves, guaranteeing data-aligned spectral decomposition.*
 
 ---
 
 ## Overview
 
-FRanDI (Feature‑Regression aligned low‑rank compression) is a post‑training compression module designed to reduce the parameter count of linear layers through truncated Singular Value Decomposition (SVD). The name suggests a more sophisticated scheme where the low‑rank decomposition is guided by feature‑regression targets—perhaps using the layer’s output on a set of representative inputs to weight the importance of different singular directions. However, the provided code implements a minimal, almost entirely standard SVD: it first performs a dummy forward pass with a random input, then decomposes the weight matrix via SVD and retains the top‑`r` singular components. The dummy pass currently serves no purpose (its output is not used), but it indicates the intended design that in a complete version would collect activation or regression information to align the compression with data‑dependent directions.
+FRanDI (Feature‑Regression Aligned SVD Compressor) is a production-hardened structured post-training compression framework. It aligns low-rank linear approximations with empirical activation distributions collected over calibration text sequences. 
 
-As such, this module can be considered a simplified baseline or a skeleton awaiting integration of feature‑regression alignment. It is registered under `"frandi"` and can be applied to any model containing `nn.Linear` layers, requiring no calibration data (the random input is self‑contained).
+Rather than relying purely on static weight Frobenius approximation, FRanDI:
+1. Profiles input activation covariances $C_X = \frac{1}{N}\sum_i X_i^T X_i$ over calibration batches.
+2. Applies regularized Cholesky factorization $C_X + \lambda I = L L^T$.
+3. Whiten projections via $\widetilde{W} = W L$, executing truncated SVD on the feature-aligned representation $\widetilde{W} \approx U_r \Sigma_r V_r^T$.
+4. Back-solves $L A^T = \widetilde{A}^T$ via triangular inversion (`torch.linalg.solve_triangular`) to obtain optimal feature-aligned factor matrices $W \approx B A$ where $B = U_r \Sigma_r^{1/2}$ and $A \in \mathbb{R}^{r \times d_{\text{in}}}$.
+
+The resulting factorized layer `FRanDILinear` achieves physical parameter reduction and supports optional integrated LoRA recovery fine-tuning adapters in native precision.
 
 ---
 

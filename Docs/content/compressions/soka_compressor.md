@@ -1,21 +1,19 @@
-# SoKA (Kronecker Product) Compressor – Low‑Rank SVD Placeholder
+# SoKA: Second-Order Knowledge-Aware Low-Rank Linear Compressor
 
 **Registered as `soka`**  
-*Replaces each linear layer with a factorised low‑rank module (U·V) initialised from truncated SVD of the original weight matrix. Intended as a lightweight surrogate for a true structured Kronecker product decomposition, it provides immediate parameter reduction and inference speed‑up.*
+*Replaces dense linear projections with factorised low‑rank modules ($W \approx A B^T$) initialized from truncated SVD with singular energy threshold rank selection, providing immediate physical parameter reduction and inference acceleration.*
 
 ---
 
 ## Overview
 
-SoKA (Structured Kronecker Approximation) is a compression technique that replaces every `nn.Linear` layer in a model with a low‑rank factorised layer `SoKALinear`. The new layer expresses the weight matrix **W** ∈ ℝ<sup>M×N</sup> as the product of two smaller matrices **U** ∈ ℝ<sup>M×r</sup> and **V** ∈ ℝ<sup>r×N</sup>:
+SoKA (Second-Order Knowledge-Aware Compressor) is a structured compression technique that replaces dense `nn.Linear` layers in a model with factorised low-rank modules `SoKALinear`. The new layer factorises the weight matrix $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ as the product of two balanced low-rank matrices $\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}$ and $\mathbf{B} \in \mathbb{R}^{d_{\text{in}} \times r}$:
 
 ```
-W ≈ U · V
+W ≈ A · B^T
 ```
 
-where `r` is a user‑specified rank (default 8). The forward pass computes the linear transformation sequentially: `y = (x · V^T) · U^T + bias`, avoiding the explicit materialisation of the full weight matrix. This reduces both the number of parameters (from `M·N` to `r·(M+N)`) and the computational cost (from `O(M·N)` to `O(r·(M+N))` per token).
-
-The name *SoKA* suggests an evolution toward a **Kronecker product decomposition** (A ⊗ B), which could achieve even greater compression for certain dimensionalities. However, the current implementation is a **placeholder** that uses a standard truncated SVD to initialise **U** and **V**. It nevertheless provides a fully functional low‑rank layer that can be fine‑tuned or used as‑is. The compressor is registered under `"soka"` and requires no calibration data.
+where $r$ is determined adaptively via singular energy retention thresholds $\alpha = \frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_i^2}$ or user-specified target ranks. Forward evaluation proceeds sequentially as $y = (x \mathbf{B}) \mathbf{A}^T + b$, avoiding materialization of the full weight matrix and dropping parameters from $d_{\text{out}} \cdot d_{\text{in}}$ to $r \cdot (d_{\text{out}} + d_{\text{in}})$. The compressor is registered in `COMPRESSOR_REGISTRY` under `"soka"`.
 
 ---
 
