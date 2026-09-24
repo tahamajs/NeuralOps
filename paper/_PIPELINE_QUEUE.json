@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_adaptive_compressor_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_compressor_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dobi_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dobi_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dobi_svd",
@@ -7776,13 +7769,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_kronecker_tt_lora_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_factory",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dynamic_entropy_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_factory",
@@ -7800,6 +7786,13 @@
       "id": "p3_gpt2_flap_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules flap_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_flap_factory",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_adaptive_compressor_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adaptive_compressor_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adaptive_compressor_factory",
       "status": "active",
       "retries": 0
     }
@@ -9242,6 +9235,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules adasvd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_adasvd_factory",
       "started_at": "2026-09-24T21:47:48.969644",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_kronecker_tt_lora_factory",
+      "id": "p3_gpt2_kronecker_tt_lora_factory",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_factory",
+      "started_at": "2026-09-24T21:44:37.186046",
       "retries": 0,
       "status": "done"
     }
