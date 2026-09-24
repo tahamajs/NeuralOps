@@ -752,3 +752,7 @@ def inject_rala(
 inject_rala_attention = inject_rala
 inject_rala_linear_attention = inject_rala
 inject_rala_model = inject_rala
+inject_rala_compressor = inject_rala
+inject_rala_compressor_attention = inject_rala
+RALACompressorAttention = RALALinearAttention
+ATTENTION_REGISTRY.register("rala_compressor")(RALALinearAttention)
