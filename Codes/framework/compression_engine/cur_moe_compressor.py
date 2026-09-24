@@ -15,7 +15,7 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import get_dynamic_compression_rank, should_compress_linear
 
-from .cur_linear import (
+from .cur_compressor import (
     CURLinear,
     compute_energy_scores,
     compute_leverage_scores,

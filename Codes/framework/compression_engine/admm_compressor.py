@@ -26,7 +26,7 @@ import torch.nn as nn
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.compression_engine.pruning_utils import (
+from framework.core.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
 )
