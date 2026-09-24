@@ -1,0 +1,35 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، تجزیه مقادیر منفرد فاز نخست اجرا می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+با گزینش رتبه پایه $r \le \min(d_{\text{out}}, d_{\text{in}})$، تقریب کم‌رتبه $\mathbf{L}$ از ضرب فاکتورهای برش‌یافته شکل می‌گیرد:
+\begin{equation}
+\mathbf{L} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top, \quad \mathbf{U}_r \in \mathbb{R}^{d_{\text{out}} \times r}, \; \mathbf{\Sigma}_r \in \mathbb{R}^{r \times r}, \; \mathbf{V}_r \in \mathbb{R}^{d_{\text{in}} \times r}
+\end{equation}
+سپس تانسور باقیمانده $\mathbf{R}$ از اختلاف وزن متراکم و تقریب رتبه پایین محاسبه می‌گردد:
+\begin{equation}
+\mathbf{R} = \mathbf{W} - \mathbf{L}
+\end{equation}
+بر روی باقیمانده $\mathbf{R}$، عملگر هرس برداری ۲:۴ اعمال می‌گردد. در هر بلوک متوالی از ۴ درایه سطری $\mathbf{b} = [r_1, r_2, r_3, r_4]$، دو درایه با کمترین قدرمطلق به صفر تبدیل می‌شوند:
+\begin{equation}
+\mathbf{R}_{\text{sparse}} = \mathcal{M}_{2:4}(\mathbf{R}), \quad \|\mathbf{b} \odot (1 - \mathbf{m})\|_0 = 2, \quad \mathbf{m} = \arg\max_{\mathbf{m}' \in \{0, 1\}^4, \|\mathbf{m}'\|_1=2} \sum_{k=1}^4 m'_k |r_k|
+\end{equation}
+ماتریس نهایی بازسازی‌شده از جمع مؤلفه رتبه پایین و باقیمانده پراکنده به دست می‌آید:
+\begin{equation}
+\mathbf{W}_{\text{recon}} = \mathbf{L} + \mathbf{R}_{\text{sparse}}
+\end{equation}
+خطای نسبی بازسازی فروبنیوس به عنوان سنجه اعتبارسنجی لایه ارزیابی می‌شود:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_{\text{recon}}\|_F}{\|\mathbf{W}\|_F + \epsilon}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_enlighten_compressor}
+\mathcal{C}_{\text{enlighten\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

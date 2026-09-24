@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{fwsvd\_compressor} بر اساس فایل‌های خروجی بنچ‌مارک در مسیرهای \lr{results/roberta\_sst2\_sst2\_sweep/summary\_fwsvd\_compressor\_rob64.csv}، \lr{results/distilbert\_sst2\_sst2\_sweep/summary\_fwsvd\_compressor\_sst2.csv} و ارزیابی‌های وابسته در جدول \ref{tab:benchmark_fwsvd_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{fwsvd\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_fwsvd_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9095} & \lr{368.29 MB} & \lr{118,094.71 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.04\%} & \lr{0.9421} & \lr{514.29 MB} & \lr{12,699.89 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{816.23 MB} & \lr{1,393.30 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج به‌دست‌آمده نشان‌دهنده دقت بالا این فشرده‌ساز بر روی انکودرها است؛ دقت \lr{90.71\%} در \lr{DistilBERT} با توان بالای \lr{118,094.71 tok/s} و به ویژه دقت قابل توجه \lr{94.04\%} در \lr{RoBERTa} که از برجسته‌ترین رکوردهای ثبت‌شده در پروژه است. در مدل \lr{GPT-2} (تست‌شده روی مجموعه \lr{WikiText-2})، ماژول به وضعیت \lr{PASS\_NO\_COMPRESSION} منتج شده و مدل \lr{Qwen} در فاز اولیه به صورت \lr{NOT\_RUN} نشانه‌گذاری گردیده است.

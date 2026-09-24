@@ -1,0 +1,74 @@
+\section{ماژول aegis\_hybrid (Aegis Hybrid Attention)}
+\label{sec:module_aegis_hybrid}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+مکانیزم توجه \lr{Aegis Hybrid Attention} با هدف ایجاد توازن میان تقریب کم‌مرتبه ماتریس‌های نگاشت و حفظ ارتباطات دوربرد معنایی در مدل‌های ترنسفورمر طراحی شده است. در مکانیزم توجه استاندارد مقیاس‌پذیر، محاسبه ضرب داخلی کامل میان تمام جفت‌های توکن مستلزم هزینه حافظه و پیچیدگی زمانی $\mathcal{O}(N^2)$ است که در پردازش دنباله‌های بلند به عنوان گلوگاه اصلی سامانه شناخته می‌شود.
+
+ایده بنیادین در \lr{Aegis Hybrid}، پیوند زدن نگاشت‌های خطی فاکتورگیری‌شده (\lr{FactorizedLinear}) همراه با جبران‌سازی تطبیقی کم‌مرتبه (\lr{LoRA Residual Adapters}) با یک معماری توجه ترکیبی دو شاخه‌ای است. این ساختار از یک سو شامل توجه پنجره‌ای متحرک تکه‌ای (\lr{Chunked Local Window Attention}) با پیچیدگی حافظه $\mathcal{O}(N \cdot W)$ برای ثبت الگوهای نحوی محلی، و از سوی دیگر مجهز به شاخه توجه خطی سراسری کِرنلی با نگاشت فعال‌سازی $\operatorname{ELU}(x) + 1$ و گیت هرس نرم تطبیقی (\lr{Adaptive Soft-Pruning Gate}) است. بدین ترتیب ماژول بدون تخریب بازنمایی گرادیانی، مصرف حافظه گرافیکی را به شدت مهار کرده و سرعت پردازش استنتاج را افزایش می‌دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ ماتریس حالت‌های پنهان ورودی لایه توجه باشد که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. در لایه‌های نگاشت خطی \lr{FactorizedLinear}، ماتریس وزن کامل $\mathbf{W} \in \mathbb{R}^{D \times D_{\text{out}}}$ از طریق ضرب دو ماتریس رتبه تقلیل‌یافته $r \ll D$ به همراه نگاشت تطبیقی موازی مدل‌سازی می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \mathbf{W}_1 \mathbf{W}_2 + \frac{\alpha}{r_{\text{lora}}} \mathbf{X} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_1 \in \mathbb{R}^{D \times r}$ و $\mathbf{W}_2 \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های فاکتورسازی ساختاری بوده و $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{D \times r_{\text{lora}}}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{r_{\text{lora}} \times D_{\text{out}}}$ پارامترهای آموزش‌پذیر باقیمانده هستند.
+
+تانسورهای پرس‌وجو، کلید و مقدار پس از تفکیک به $H$ سر توجه و بعد هر سر $d = D/H$ به دست می‌آیند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N \times d}
+\end{equation}
+خروجی لایه از تلفیق محدب شاخه محلی و سراسری تشکیل می‌گردد:
+\begin{equation}
+\mathbf{O}_{\text{local}} = \operatorname{LocalWindowAttn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}, W)
+\end{equation}
+در شاخه سراسری، ابتدا توابع نگاشت کِرنل غیرخطی $\phi(\cdot) = \operatorname{ELU}(\cdot) + 1$ اعمال شده و ضریب هرس تطبیقی $\mathbf{g}_{\text{prune}} = \sigma(\mathbf{X} \mathbf{W}_{\text{prune}})$ برای کنترل چگالی اطلاعاتی در کلیدها ضرب می‌شود:
+\begin{equation}
+\tilde{\mathbf{K}} = \phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}}
+\end{equation}
+در حالت علّی، توجه خطی با جمع تجمعی تکه‌ای بر روی بعد زمان محاسبه می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \sum_{\tau=1}^t \tilde{\mathbf{K}}_\tau^\top \mathbf{V}_\tau, \quad \mathbf{Z}_t = \sum_{\tau=1}^t \tilde{\mathbf{K}}_\tau^\top, \quad \mathbf{O}_{\text{global}, t} = \frac{\phi(\mathbf{Q}_t) \mathbf{S}_t}{\phi(\mathbf{Q}_t) \mathbf{Z}_t + \epsilon}
+\end{equation}
+در نهایت، گیت همجوشی یادگیرنده $\boldsymbol{\alpha} = \sigma(\mathbf{X} \mathbf{W}_{\text{fuse}}) \in [0, 1]$ تعادل میان توجه محلی و سراسری را برقرار می‌سازد:
+\begin{equation}
+\mathbf{O}_{\text{fused}} = (1 - \boldsymbol{\alpha}) \odot \mathbf{O}_{\text{local}} + \boldsymbol{\alpha} \odot \mathbf{O}_{\text{global}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول تحت عنوان \lr{AegisHybridAttention} در فایل \lr{Codes/framework/attentions/aegis\_hybrid.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. پیکربندی فراپارامترها توسط کلاس \lr{AegisHybridConfig} هدایت می‌شود. مهم‌ترین ویژگی‌های پیاده‌سازی به شرح زیر است:
+\begin{itemize}
+    \item \textbf{توجه محلی تکه‌ای (\lr{Chunked Local Window}):} برای ممانعت از ایجاد تانسورهای حافظه‌بر $N \times N$، محاسبات پنجره متحرک با اندازه $W=128$ به صورت تکه‌ای (\lr{Chunk}) با پیچیدگی فضایی $\mathcal{O}(N \cdot W)$ انجام می‌شود.
+    \item \textbf{سازگاری کامل با \lr{GQA} و \lr{RoPE}:} پشتیبانی بومی از سرهای نامتقارن کلید/مقدار با تابع \lr{repeat\_kv} و اعمال انحراف مکانی چرخشی با لحاظ آفست \lr{past\_len} جهت پشتیبانی پایدار از دیکودینگ خودبازگشتی تعبیه شده است.
+    \item \textbf{انطباق با معماری‌های انکودر و دیکودر:} تابع \lr{\_detect\_decoder} وضعیت علّی مدل را شناسایی کرده و در انکودرهای تودرتو نظیر \lr{RoBERTa} لایه‌های خطی را به شکل مستقیم هدایت می‌نماید.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_hybrid} بر روی بنچ‌مارک استاندارد طبقه بندی متن \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی انجام پذیرفته است. نتایج حاصل از پایگاه داده اعتبارسنجی‌شده در جدول \ref{tab:benchmark_aegis_hybrid} گزارش گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_hybrid} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_hybrid}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{78.44\%} & \lr{0.8029} & \lr{208.43 MB} & \lr{65,663.58 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{366.08 MB} & \lr{34,150.60 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.03\%} & \lr{0.6753} & \lr{476.01 MB} & \lr{45,836.71 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{44.77\%} & \lr{---} & \lr{1,195.99 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج جدول، ماژول بر روی مدل \lr{DistilBERT} به دقت \lr{78.44\%} و شاخص F1 معادل \lr{0.8029} با مصرف حافظه بسیار اندک \lr{208.43 MB} و توان عملیاتی بالای \lr{65,663.58 tok/s} دست یافته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی عملکرد ماژول در مدل‌های گوناگون شواهد تحلیلی زیر را آشکار می‌سازد:
+\begin{itemize}
+    \item \textbf{افت دقت روی \lr{RoBERTa} و \lr{GPT-2}:} دقت ثبت‌شده برای مدل‌های \lr{RoBERTa} (\lr{50.92\%}) و \lr{GPT-2} (\lr{51.03\%}) در رده \lr{PASS\_LOW} قرار دارد که نزدیک به مرز حدس تصادفی است. این پدیده ناشی از ناسازگاری ساختاری میان پروجکشن فاکتورگیری‌شده کم‌مرتبه با وزن‌های از پیش‌آموزش‌دیده چگال در لایه‌های ابتدایی است؛ تقریب رتبه $r=128$ بدون دوره گرم‌سازی گرادیانی طولانی، توانایی مدل در استخراج ریزویژگی‌های نحوی متقابل را دچار میرایی می‌کند.
+    \item \textbf{چالش مدل‌های علّی عمیق (\lr{Qwen}):} در مدل زبانی \lr{Qwen} با دقت \lr{44.77\%}، تداخل نرمال‌سازی کِرنل خطی سراسری با ماسک علّی شدید باعث افت تمایزپذیری توکن‌ها گردیده است. علاوه بر این، در مدل‌های انکودر-دیکودر نظیر \lr{T5}، عدم هماهنگی فرمت ماسک‌های چندبعدی موجب برچسب \lr{SKIP\_T5\_INCOMPATIBLE} در بنچمارک‌های سراسری شده است.
+\end{itemize}

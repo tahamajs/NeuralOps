@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در \lr{Bonsai Pruner} بر پایه اصول ریاضی زیر فرمول‌بندی شده است:
+\begin{enumerate}
+    \item \textbf{زمان‌بندی مکعبی تنکی (\lr{Cubic Schedule}):} برای دستیابی به نسبت تنکی نهایی $S_{\text{target}}$ در طول $T$ گام متوالی، تنکی هدف در گام $t \in \{1, \dots, T\}$ طبق رابطه زیر تعیین می‌شود:
+    \begin{equation}
+    S_t = S_{\text{target}} \left( 1 - \left( 1 - \frac{t}{T} \right)^3 \right)
+    \end{equation}
+    این رابطه تضمین می‌کند که در گام‌های آغازین نرخ حذف وزن‌ها بسیار آرام و کنترل‌شده بوده و در گام‌های پایانی به آرامی به سطح هدف همگرا گردد.
+    \item \textbf{معیار حساسیت تیلور مرتبه اول با حفاظت \lr{[CLS]}:} در هر گام، اهمیت هر پارامتر وزن بر اساس ضرب اندازه وزن در گرادیان تجربی سنجیده می‌شود:
+    \begin{equation}
+    \mathbf{S}_{ij} = |\mathbf{W}_{ij}| \cdot \left| \frac{\partial \mathcal{L}}{\partial \mathbf{W}_{ij}} \right|
+    \end{equation}
+    در لایه‌های توجه، سطرها و ستون‌های مرتبط با هدایت توکن \lr{[CLS]} با ضریب حفاظتی $\kappa > 1$ تقویت می‌گردند تا در اولویت حذفیات قرار نگیرند: $\mathbf{S}_{\text{CLS}} \leftarrow \kappa \cdot \mathbf{S}_{\text{CLS}}$.
+    \item \textbf{گام‌های بازیابی گرادیانی بین‌مرحله‌ای (\lr{Gradient Recovery}):} پس از به‌روزرسانی ماسک تنک $\mathbf{M}_t$، وزن‌های باقیمانده به تعداد $K$ تکرار ریزگرادیانی با نرخ یادگیری کوچک $\eta_{\text{rec}}$ طبق رابطه زیر بهینه‌سازی می‌شوند تا انحراف لاجیت‌ها جبران گردد:
+    \begin{equation}
+    \mathbf{W} \leftarrow \mathbf{W} - \eta_{\text{rec}} \cdot \left( \nabla_{\mathbf{W}} \mathcal{L}_{\text{task}} \odot \mathbf{M}_t \right)
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_bonsai_pruner}
+\mathcal{C}_{\text{bonsai\_pruner}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

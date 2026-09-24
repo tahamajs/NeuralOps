@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{ASVD} & \textbf{90.37} & -0.34 & 0.9079 & \textbf{5.5$\times$} & 344 MB MB & 2.4 s \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{ASVD} & \textbf{77.75} & -0.81 & 0.8142 & \textbf{5.0$\times$} & 714 MB MB & 5.2 s \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{ASVD} & \textbf{85.78} & +6.42 & 0.8686 & \textbf{5.0$\times$} & 346 MB MB & 5.5 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Asvd} & \textbf{90.37\%} & -0.57\% & PASS & 0.9079 & 0 & \textbf{0.97$\times$} & 344.3 MB & 16.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Asvd} & \textbf{77.75\%} & +2.29\% & PASS & 0.8142 & 0 & \textbf{0.88$\times$} & 713.6 MB & 32.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Asvd} & \textbf{85.78\%} & -2.06\% & PASS & 0.8686 & 24 & \textbf{0.98$\times$} & 346.3 MB & 53.9 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

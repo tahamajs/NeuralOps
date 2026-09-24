@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/cur\_compressor.py} مستقر بوده و شامل توابع و کلاس‌های زیر است:
+\begin{itemize}
+    \item \textbf{توابع گزینش هسته:} توابع \lr{compute\_leverage\_scores}، \lr{compute\_energy\_scores} و \lr{select\_indices} برای گزینش قطعی یا تصادفی سطوح اهرمی.
+    \item \textbf{تابع \lr{tikhonov\_pinv}:} محاسبه شبه‌وارون مقاوم در برابر خطای اعشاری با استفاده از تجزیه طیفی و مهار مقادیر ویژه زیر آستانه $10^{-6}$.
+    \item \textbf{کلاس \lr{CURLinear}:} لایه فاکتورسازی‌شده \lr{CUR} مجهز به پارامترهای آموزش‌پذیر $C$، $U$ و $R$ با قابلیت انطباق آداپتورهای جانبی \lr{LoRA} و گزینه‌های انجماد اسکلت‌ها (\lr{freeze\_skeletons}).
+    \item \textbf{کلاس \lr{CURCompressor}:} موتور کشف لایه‌های هدف، پشتیبانی از لایه‌های \lr{Conv1D} و جایگزینی ترتیبی در ترنسفورمر.
+\end{itemize}

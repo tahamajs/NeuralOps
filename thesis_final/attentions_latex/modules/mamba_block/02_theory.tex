@@ -1,0 +1,20 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته $r \ll D$ فرمول‌بندی می‌گردد:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+ \begin{equation}
+\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}
+\right) \mathbf{V}
+\end{equation}
+در معماری‌های حالت‌فضا یا تقریب مقادیر منفرد، محاسبات به فرم بازگشتی خطی یا زیرفضای تجزیه‌شده با پیچیدگی $\mathcal{O}(N \cdot d \cdot r)$ تبدیل می‌شوند.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_mamba_block}
+\mathcal{C}_{\text{mamba\_block}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

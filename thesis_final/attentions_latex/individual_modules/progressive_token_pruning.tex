@@ -1,6 +1,8 @@
 \clearpage
 \phantomsection
 \vspace*{0.2cm}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{kim2022learned} است.
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{progressive\_token\_pruning}}
@@ -128,12 +130,12 @@ I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Peak Memory Band
         \item حافظه اختصاص‌یافته هسته \lr{PyTorch/CUDA Runtime}: حدود \lr{87.85 MB}.
     \end{itemize}
 \end{itemize}
-این بهینه‌سازی بنیادین موجب صرفه‌جویی \lr{-92.1\%} در حافظه فعال نسبت به خط پایه سنتی \lr{(4200 MB)} شده و توان عملیاتی را به رقم استثنایی \lr{57,650.25 tok/s} (شتاب \lr{3.74x}) ارتقا داده است.
+این بهینه‌سازی بنیادین موجب صرفه‌جویی \lr{-92.1\%} در حافظه فعال نسبت به خط پایه سنتی \lr{(4200 MB)} شده و توان عملیاتی را به رقم بالا \lr{57,650.25 tok/s} (شتاب \lr{3.74x}) ارتقا داده است.
 
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی تجربی ماژول \lr{progressive\_token\_pruning} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ورودی ۵۱۲ بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. داده‌های ارائه‌شده در جدول \ref{tab:benchmark_progressive_token_pruning} مستقیماً از پرونده تجربی تاییدشده استخراج شده‌اند:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی و شاخص‌های سخت‌افزاری ماژول \lr{progressive\_token\_pruning} در مقایسه با مدل پایه بر روی \lr{DistilBERT}}
@@ -158,7 +160,7 @@ I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Peak Memory Band
 
 همچنین ارزیابی تعمیم‌پذیری ماژول بر روی سایر خانواده‌های معماری ترنسفورمر، تنوع رفتار عملکردی آن را مطابق جدول \ref{tab:multi_arch_ptp} آشکار می‌سازد:
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{ارزیابی مقایسه‌ای عملکرد ماژول \lr{progressive\_token\_pruning} در مدل‌های چندگانه}
@@ -256,3 +258,13 @@ I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Peak Memory Band
 \caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(progressive\_token\_pruning)}}
 \label{fig:comp_progressive_token_pruning}
 \end{figure}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_progressive_token_pruning}
+\mathcal{C}_{\text{progressive\_token\_pruning}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

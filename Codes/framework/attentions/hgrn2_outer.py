@@ -99,9 +99,13 @@ class LoRALinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
+            self.freeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base weight and bias; keep LoRA adapters trainable."""
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
@@ -406,6 +410,56 @@ class HGRN2OuterBlock(BaseAttention):
                 if f_norm_o < 1e-4:
                     logger.warning("HGRN2OuterBlock: Out projection norm is near zero: %g", f_norm_o)
 
+    @staticmethod
+    def _scan_fwd_fn(q_f: torch.Tensor, k_f: torch.Tensor, v_f: torch.Tensor, f_f: torch.Tensor, mask_float: Optional[torch.Tensor]) -> torch.Tensor:
+        B, H, L, d = q_f.shape
+        S = torch.zeros(B, H, d, d, device=q_f.device, dtype=torch.float32)
+        z = torch.zeros(B, H, d, device=q_f.device, dtype=torch.float32)
+        y_fwd_list = []
+        for t in range(L):
+            ft = f_f[:, :, t, None, None]
+            ft_z = f_f[:, :, t, None]
+            kt = k_f[:, :, t, :]
+            vt = v_f[:, :, t, :]
+            qt = q_f[:, :, t, :]
+            if mask_float is not None:
+                m_t = mask_float[:, None, t, None]
+                kt = kt * m_t
+                vt = vt * m_t
+            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
+            S = ft * S + (1.0 - ft) * kv
+            z = z + kt
+            num = (qt.contiguous().unsqueeze(-2) @ S).squeeze(-2)
+            denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1e-6)
+            y_t = num / denom
+            y_fwd_list.append(y_t)
+        return torch.stack(y_fwd_list, dim=2)
+
+    @staticmethod
+    def _scan_bwd_fn(q_f: torch.Tensor, k_f: torch.Tensor, v_f: torch.Tensor, f_f: torch.Tensor, mask_float: Optional[torch.Tensor]) -> torch.Tensor:
+        B, H, L, d = q_f.shape
+        S_bwd = torch.zeros(B, H, d, d, device=q_f.device, dtype=torch.float32)
+        z_bwd = torch.zeros(B, H, d, device=q_f.device, dtype=torch.float32)
+        y_bwd_list = []
+        for t in reversed(range(L)):
+            ft = f_f[:, :, t, None, None]
+            ft_z = f_f[:, :, t, None]
+            kt = k_f[:, :, t, :]
+            vt = v_f[:, :, t, :]
+            qt = q_f[:, :, t, :]
+            if mask_float is not None:
+                m_t = mask_float[:, None, t, None]
+                kt = kt * m_t
+                vt = vt * m_t
+            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
+            S_bwd = ft * S_bwd + (1.0 - ft) * kv
+            z_bwd = z_bwd + kt
+            num_b = (qt.unsqueeze(-2) @ S_bwd).squeeze(-2)
+            denom_b = (qt * z_bwd).sum(dim=-1, keepdim=True).clamp(min=1e-6)
+            y_t_b = num_b / denom_b
+            y_bwd_list.append(y_t_b)
+        return torch.stack(list(reversed(y_bwd_list)), dim=2)
+
     def _outer_scan_parallel(
         self,
         q: torch.Tensor,
@@ -415,8 +469,6 @@ class HGRN2OuterBlock(BaseAttention):
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Outer-product associative matrix recurrence with running states in FP32."""
-        B, H, L, d = q.shape
-
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
@@ -424,68 +476,32 @@ class HGRN2OuterBlock(BaseAttention):
 
         mask_float = None
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            if mask.dim() == 2:
+                mask_float = mask.float()
+            elif mask.dim() == 4:
+                v = (mask > -1e4) if mask.dtype.is_floating_point else mask.bool()
+                v = v.any(dim=1)
+                if v.dim() == 3:
+                    mask_float = v.any(dim=1).float()
+                else:
+                    mask_float = v.float()
+            else:
+                mask_float = mask.float()
 
-        # Sequential running-state recurrence avoiding O(L^2) memory explosions
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
-        z = torch.zeros(B, H, d, device=q.device, dtype=torch.float32)
-        y_fwd_list = []
-
-        for t in range(L):
-            ft = f_f[:, :, t, None, None]  # [B, H, 1, 1]
-            ft_z = f_f[:, :, t, None]       # [B, H, 1]
-            kt = k_f[:, :, t, :]            # [B, H, d]
-            vt = v_f[:, :, t, :]            # [B, H, d]
-            qt = q_f[:, :, t, :]            # [B, H, d]
-
-            if mask_float is not None:
-                m_t = mask_float[:, None, t, None]  # [B, 1, 1]
-                kt = kt * m_t
-                vt = vt * m_t
-
-            # Outer-product update: S_t = f_t * S_{t-1} + (1 - f_t) * (k_t \otimes v_t)
-            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)  # [B, H, d, d]
-            S = ft * S + (1.0 - ft) * kv
-            # Denominator running state: z_t = f_t * z_{t-1} + (1 - f_t) * k_t
-            z = ft_z * z + (1.0 - ft_z) * kt
-
-            num = (qt.contiguous().unsqueeze(-2) @ S).squeeze(-2)                              # [B, H, d]
-            denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1.0)             # [B, H, 1]
-            y_t = num / denom
-            y_fwd_list.append(y_t)
-
-        y_fwd = torch.stack(y_fwd_list, dim=2).to(q.dtype)  # [B, H, L, d]
+        if self.training:
+            import torch.utils.checkpoint as cp
+            y_fwd = cp.checkpoint(self._scan_fwd_fn, q_f, k_f, v_f, f_f, mask_float, use_reentrant=False).to(q.dtype)
+        else:
+            y_fwd = self._scan_fwd_fn(q_f, k_f, v_f, f_f, mask_float).to(q.dtype)
 
         if self.is_decoder:
             return y_fwd, None
 
-        # Anticausal backward outer-product recurrence for bidirectional encoders
-        S_bwd = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
-        z_bwd = torch.zeros(B, H, d, device=q.device, dtype=torch.float32)
-        y_bwd_list = []
-
-        for t in reversed(range(L)):
-            ft = f_f[:, :, t, None, None]
-            ft_z = f_f[:, :, t, None]
-            kt = k_f[:, :, t, :]
-            vt = v_f[:, :, t, :]
-            qt = q_f[:, :, t, :]
-
-            if mask_float is not None:
-                m_t = mask_float[:, None, t, None]
-                kt = kt * m_t
-                vt = vt * m_t
-
-            kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
-            S_bwd = ft * S_bwd + (1.0 - ft) * kv
-            z_bwd = ft_z * z_bwd + (1.0 - ft_z) * kt
-
-            num_b = (qt.unsqueeze(-2) @ S_bwd).squeeze(-2)
-            denom_b = (qt * z_bwd).sum(dim=-1, keepdim=True).clamp(min=1.0)
-            y_t_b = num_b / denom_b
-            y_bwd_list.append(y_t_b)
-
-        y_bwd = torch.stack(list(reversed(y_bwd_list)), dim=2).to(q.dtype)  # [B, H, L, d]
+        if self.training:
+            import torch.utils.checkpoint as cp
+            y_bwd = cp.checkpoint(self._scan_bwd_fn, q_f, k_f, v_f, f_f, mask_float, use_reentrant=False).to(q.dtype)
+        else:
+            y_bwd = self._scan_bwd_fn(q_f, k_f, v_f, f_f, mask_float).to(q.dtype)
         return y_fwd, y_bwd
 
     @property
@@ -669,8 +685,6 @@ def inject_hgrn2_outer(
             num_heads = getattr(layer.config, "num_attention_heads", 12)
 
         new_block = HGRN2OuterBlock(dim=dim, num_heads=num_heads, config=model_config, **kwargs)
-        if is_nested_target:
-            new_block.is_nested_encoder = True
         new_block.copy_weights(src)
 
         if is_nested_target and hasattr(layer, "attention") and hasattr(layer.attention, "self"):

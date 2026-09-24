@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_spectron\_fp8} بر روی مجموعه داده اعتبارسنجی \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_aegis_spectron_fp8} را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_spectron\_fp8} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_spectron_fp8}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{295.51 MB} & \lr{11,469.82 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{578.07 MB} & \lr{6,171.83 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{644.64 MB} & \lr{6,011.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{55.50\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_QWEN\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های آزمایشگاهی، ماژول ردپای حافظه مطلوبی را در حدود \lr{295.51 MB} برای \lr{DistilBERT} و \lr{578.07 MB} برای \lr{RoBERTa} ثبت کرده است، اما دقت مدل‌ها در سطح پایه تثبیت شده است.

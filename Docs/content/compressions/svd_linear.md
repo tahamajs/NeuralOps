@@ -570,7 +570,19 @@ print('Compressed output logits:', outputs.logits.shape)
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate svd_linear compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("svd_linear")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with svd_linear")
 ```
 
 ## Benchmark Results

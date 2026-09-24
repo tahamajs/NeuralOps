@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.48%",
+    "NLI Softmax Acc": "90.94%",
+    "Delta Acc": "+0.46%",
+    "F1": "0.9123",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "337.6 MB",
+    "Time (s)": "16.6"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 1,
+    "Baseline Acc": "75.11%",
+    "NLI Softmax Acc": "0.00%",
+    "Delta Acc": "-75.11%",
+    "F1": "0.7586",
+    "Status": "FAIL",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "298.7 MB",
+    "Time (s)": "20.4"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "60.78%",
+    "NLI Softmax Acc": "62.04%",
+    "Delta Acc": "+1.26%",
+    "F1": "0.6783",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "634.9 MB",
+    "Time (s)": "21.9"
+  }
+]

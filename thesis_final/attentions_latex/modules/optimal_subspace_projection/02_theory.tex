@@ -1,0 +1,50 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی ماژول \lr{optimal\_subspace\_projection} بر پایه چهار گام ریاضی منسجم بنا شده است:
+\begin{enumerate}
+    \item \textbf{محاسبه ماتریس کوواریانس فعال‌سازی و منظم‌سازی:}
+    فرض کنید تانسور فعال‌سازی ورودی به یک لایه خطی با $N$ نمونه توکن به صورت $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ باشد. ماتریس کوواریانس به همراه مقدار منظم‌سازی تیخونوف $\epsilon$ جهت تضمین مثبت معین بودن محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{C} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I}
+    \end{equation}
+    که در آن مقدار منظم‌سازی متناسب با میانگین مقادیر قطری $\epsilon = \max(10^{-4} \cdot \operatorname{mean}(\operatorname{diag}(\mathbf{C})), 10^{-5})$ تنظیم می‌گردد.
+
+    \item \textbf{پیش‌شرط‌سازی چولسکی (\lr{Cholesky Preconditioning}):}
+    ماتریس کوواریانس به مولفه مثلثی پایینی تجزیه می‌شود:
+    \begin{equation}
+    \mathbf{C} = \mathbf{L} \mathbf{L}^\top
+    \end{equation}
+    سپس ماتریس وزن متراکم اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با اعمال فاکتور چولسکی تغییر مقیاس می‌یابد تا تاثیر ویژگی‌های پرانرژی در فضای بازنمایی نمایان گردد:
+    \begin{equation}
+    \mathbf{M} = \mathbf{W} \mathbf{L}
+    \end{equation}
+
+    \item \textbf{تکرارهای توانی و پروجکشن زیرفضای تصادفی (\lr{Randomized Subspace Iteration}):}
+    برای ماتریس $\mathbf{M}$، یک ماتریس گاوسی تصادفی $\mathbf{\Omega} \in \mathbb{R}^{d_{\text{in}} \times r}$ با رتبه هدف $r = \lfloor \min(d_{\text{in}}, d_{\text{out}}) \cdot \rho \rfloor$ نمونه‌برداری می‌شود. سپس برای تقویت طیف تکین، تکرارهای توانی صورت می‌پذیرد:
+    \begin{equation}
+    \mathbf{Y} = \mathbf{M} \mathbf{\Omega}, \quad \mathbf{Y} \leftarrow \mathbf{M} (\mathbf{M}^\top \mathbf{Y}) \quad (\text{تکرار به تعداد } p \text{ بار})
+    \end{equation}
+    سپس پایه یکامتعامد $\mathbf{Q}$ از طریق تجزیه \lr{QR} استخراج می‌شود:
+    \begin{equation}
+    \mathbf{Q}, \mathbf{R} = \operatorname{qr}(\mathbf{Y})
+    \end{equation}
+
+    \item \textbf{تجزیه کم‌مرتبه و معکوس‌سازی پیش‌شرط:}
+    پروجکشن کوچک‌شده $\mathbf{B} = \mathbf{Q}^\top \mathbf{M} \in \mathbb{R}^{r \times d_{\text{in}}}$ تحت \lr{SVD} فشرده قرار می‌گیرد:
+    \begin{equation}
+    \mathbf{B} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+    \end{equation}
+    در نهایت با گزینش $r$ مولفه اول و خنثی‌سازی پیش‌شرط چولسکی با $\mathbf{L}^{-1}$، بازسازی ماتریس فشرده به دست می‌آید:
+    \begin{equation}
+    \mathbf{W}_{\text{osp}} = (\mathbf{Q} \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top) \mathbf{L}^{-1}
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_optimal_subspace_projection}
+\mathcal{C}_{\text{optimal\_subspace\_projection}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

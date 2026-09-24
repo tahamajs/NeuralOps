@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{zeros\_attention} بر روی آزمون استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_zeros_attention} را حاصل کرده است (استخراج‌شده از \lr{thesis\_final/master\_verified\_results.json}):
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی سخت‌افزاری مکانیزم \lr{zeros\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_zeros_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{330.51 MB} & \lr{90,013.36 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{51.15\%} & \lr{0.6698} & \lr{380.50 MB} & \lr{47,175.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{1,221.30 MB} & \lr{9,567.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.95\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+از منظر کارایی پردازشی، مکانیزم \lr{ZeroS} بر روی مدل \lr{DistilBERT} به توان پردازشی خیره‌کننده \lr{90,013.36 tok/s} با مصرف حافظه ناچیز \lr{330.51 MB} دست یافته است که تاییدی عملی بر کم‌هزینه بودن محاسبات خطی تجمیعی است.

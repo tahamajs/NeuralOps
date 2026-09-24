@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{svd\_llm\_compressor} بر مبنای لاگ‌ها و فایل‌های نتایج تفصیلی تاییدشده سیستم در جدول \ref{tab:benchmark_svd_llm_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز آگاه از برش \lr{svd\_llm\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_svd_llm_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.79\%} & \lr{0.9012} & \lr{405.58 MB} & \lr{73,222.18 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{84.17\%} & \lr{0.8516} & \lr{551.55 MB} & \lr{4,092.91 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.0000} & \lr{439.12 MB} & -- & \lr{FAIL (PPL Diverged)} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی نتایج نشان می‌دهد که در مدل‌های انکودر متقارن، سفیدسازی کلسکی عملکرد قابل توجه‌ای به همراه داشته است؛ در مدل \lr{DistilBERT} دقت به \lr{89.79\%} با F1 معادل \lr{0.9012} و توان پردازشی \lr{73,222.18 tok/s} رسیده و در \lr{RoBERTa} دقت \lr{84.17\%} با قبولی قطعی \lr{PASS} حاصل شده است. در مدل خودبازگشت \lr{GPT-2}، شاخص پریپلکسیتی بر روی پیکره \lr{WikiText-2} با مقدار $204.81$ واگرا شده (\lr{val\_loss = 5.32}) و به دلیل حساسیت مدل‌های زبانی خودبازگشت به خطای تجمیعی در توکن‌های متوالی، وضعیت \lr{FAIL (FAIL\_PPL\_DIVERGED)} ثبت گردیده است. ارزیابی روی مدل \lr{Qwen} به علت نیاز به حافظه بالا برای محاسبه و وارون‌سازی ماتریس‌های بزرگ کلسکی و هزینه بالای کالیبراسیون در فاز اولیه به صورت \lr{NOT\_RUN} مستند شده است.

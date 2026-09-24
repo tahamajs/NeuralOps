@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید دو ماتریس وزن خطی متعلق به یک بلوک ترانسفورمر که دارای بعد ورودی مشترک $d_{\text{in}}$ هستند با $\mathbf{W}_1 \in \mathbb{R}^{d_1 \times d_{\text{in}}}$ و $\mathbf{W}_2 \in \mathbb{R}^{d_2 \times d_{\text{in}}}$ مشخص شوند. در الگوریتم \lr{MoDeGPT}، این دو ماتریس در امتداد بعد خروجی ادغام می‌شوند:
+\begin{equation}
+\mathbf{W}_{\text{joint}} = \begin{bmatrix} \mathbf{W}_1 \\ \mathbf{W}_2 \end{bmatrix} \in \mathbb{R}^{(d_1 + d_2) \times d_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد فشرده با رتبه بهینه $r \le \min(d_1 + d_2, d_{\text{in}})$ بر روی ماتریس مشترک اعمال می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{joint}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top = \tilde{\mathbf{U}}_r \mathbf{V}_r^\top
+\end{equation}
+که در آن $\tilde{\mathbf{U}}_r = \mathbf{U}_r \mathbf{\Sigma}_r \in \mathbb{R}^{(d_1 + d_2) \times r}$ و $\mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}$ است. زیرفضای راست $\mathbf{V}_r^\top$ به عنوان یک پایه مشترک عمل می‌کند که ورودی را به یک فضای نهفته کم‌بعد تصویر می‌نماید. ماتریس چپ به دو بلوک متناظر با ابعاد اولیه تفکیک می‌شود:
+\begin{equation}
+\tilde{\mathbf{U}}_r = \begin{bmatrix} \tilde{\mathbf{U}}_1 \\ \tilde{\mathbf{U}}_2 \end{bmatrix}, \quad \tilde{\mathbf{U}}_1 \in \mathbb{R}^{d_1 \times r}, \quad \tilde{\mathbf{U}}_2 \in \mathbb{R}^{d_2 \times r}
+\end{equation}
+در نتیجه تقریب بازسازی‌شده هر یک از لایه‌ها به فرم زیر به دست می‌آید:
+\begin{equation}
+\hat{\mathbf{W}}_1 = \tilde{\mathbf{U}}_1 \mathbf{V}_r^\top, \quad \hat{\mathbf{W}}_2 = \tilde{\mathbf{U}}_2 \mathbf{V}_r^\top
+\end{equation}
+برای هر لایه، خطای نسبی فروبنیوس ارزیابی شده و با آستانه بحرانی $\tau_{\text{error}}$ مقایسه می‌گردد:
+\begin{equation}
+\mathcal{E}_i = \frac{\|\mathbf{W}_i - \hat{\mathbf{W}}_i\|_F}{\|\mathbf{W}_i\|_F + \epsilon}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_modegpt_compressor}
+\mathcal{C}_{\text{modegpt\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

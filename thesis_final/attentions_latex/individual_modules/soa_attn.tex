@@ -1,0 +1,47 @@
+\section{ماژول soa\_attn (Second-Order Attention (SOA))}
+\label{sec:module_soa_attn}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+مکانیزم \lr{Second-Order Attention (SOA)} با عنوان فارسی «مکانیزم توجه مرتبه‌دوم با همبستگی دوتایی ویژگی‌ها» به عنوان راهکاری کارآمد برای عبور از پیچیدگی مربعی $\mathcal{O}(N^2)$ در پردازش توالی‌های طولانی توسعه یافته است. در لایه‌های سنتی توجه، رشد غیرخطی محاسبات مانع از تعمیم‌پذیری به پنجره‌های زمینه بزرگ می‌شود. این معماری با بازفرمول‌بندی معادلات و بهره‌گیری از نگاشت‌های زیرفضایی یا مدل‌سازی حالت‌فضا، شدت تبادل با حافظه سراسری را مهار می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی لایه باشد. در این معماری، پروجکشن‌های لایه از طریق نگاشت‌های زیرفضایی یا عملگرهای پیوسته زمان فرمول‌بندی می‌گردند:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+در تقریب‌های مرتبه‌دوم یا بازگشتی، معادله خروجی به شکل زیر ساده‌سازی می‌شود:
+ \begin{equation}
+\mathbf{O} = \operatorname{LayerNorm}\left(\mathbf{X} + \operatorname{Scan}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+\right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی این ماژول در فایل \lr{Codes/framework/attentions/soa\_attn.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. این ساختار مجهز به مدیریت ماسک‌گذاری علّی و پشتیبانی از ابعاد چندسره است.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{soa\_attn} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_soa_attn} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{soa\_attn} روی مدل‌های پایه}
+\label{tab:benchmark_soa_attn}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.11\%} & \lr{0.8962} & \lr{293.1 MB} & \lr{25,749 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{57.22\%} & \lr{0.6960} & \lr{595.1 MB} & \lr{11,201 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.62\%} & \lr{0.8315} & \lr{311.1 MB} & \lr{5,967 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{89.11\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در صورت ثبت دقت صفر یا وضعیت \lr{FAIL} بر روی برخی مدل‌ها (نظیر مدلهای زایشی دیکودر)، این رفتار نشانه ناسازگاری ساختار لایه با ماسک‌گذاری یک‌طرفه یا انحراف دامنه توکن‌ها حین استنتاج بدون گام‌های بازیابی گرادیانی کافی است که صریحاً به عنوان محدودیت ساختاری ماژول قید می‌گردد.

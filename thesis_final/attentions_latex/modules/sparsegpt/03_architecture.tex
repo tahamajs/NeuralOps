@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این چارچوب در فایل \lr{Codes/framework/compression\_engine/sparsegpt.py} تحت کلاس \lr{SparseGPTCompressor} انجام یافته است. قابلیت‌های کلیدی آن عبارتند از:
+\begin{itemize}
+    \item \textbf{پردازش بلوکی پایدار (\lr{Block-Wise Processing}):} جهت کاهش مصرف حافظه و تسریع محاسبات ماتریسی روی پردازنده گرافیکی، به‌روزرسانی معکوس هسیان و ستون‌های وزن در بلوک‌های با طول قابل تنظیم (پیش‌فرض 128) دسته‌بندی شده است.
+    \item \textbf{تنظیم پویای ماتریس با میرایی (\lr{Damping}):} برای جلوگیری از تکینگی معکوس هسیان در حضور فعال‌سازی‌های هم‌خط، فاکتور میرایی $\lambda = \gamma \cdot \operatorname{mean}(\operatorname{diag}(\mathbf{H}))$ به قطر اصلی ماتریس اضافه می‌شود.
+    \item \textbf{پشتیبانی از ساختار سخت‌افزاری 2:4:} امکان انتخاب تنک‌سازی یکپارچه بدون ساختار یا الگوی اکید 2:4 منطبق بر معماری شتاب‌دهنده‌های مدرن انویدیا (\lr{NVIDIA Ampere/Hopper Sparse Tensor Cores}).
+\end{itemize}

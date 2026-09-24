@@ -1,0 +1,43 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن هدف در لایه‌های تصویرسازی توجه یا پروجکشن‌های خطی به صورت $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ داده شده باشد. الگوریتم \lr{Delta-KV} ماتریس وزن بازسازی‌شده را به فرم مجموع رتبه پایین و مانده تنک مدل‌سازی می‌کند:
+\begin{equation}
+\mathbf{W}_{\text{comp}} = \mathbf{L} + \mathbf{R}
+\end{equation}
+به طوری که:
+\begin{enumerate}
+    \item مؤلفه با رتبه پایین ساختاری $\mathbf{L}$ با استفاده از تجزیه مقادیر منفرد بر روی ماتریس وزن به دست می‌آید:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top, \quad \mathbf{L} = \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r} \mathbf{V}_{:, :r}^\top
+    \end{equation}
+    که در آن $r = \max(1, \min(r_{\text{target}}, d_{\text{in}}, d_{\text{out}}))$ رتبه فشرده‌سازی انتخاب‌شده است.
+    \item ماتریس مانده خام برابراست با تفاضل ماتریس اصلی و تقریب کم‌مرتبه:
+    \begin{equation}
+    \mathbf{E} = \mathbf{W} - \mathbf{L}
+    \end{equation}
+    سپس بر مبنای نرخ تنک‌پذیری تعیین‌شده $s \in [0, 1]$، عملگر گزینش بزرگ‌ترین قدرمطلق‌ها (\lr{Top-k Magnitude Operator}) بر روی المان‌های برداری‌شده $|\mathbf{E}|$ اعمال می‌شود. با تعیین آستانه برش $\tau = \text{Quantile}(|\mathbf{E}|, 1 - s)$، ماتریس مانده تنک $\mathbf{R}$ محاسبه می‌گردد:
+    \begin{equation}
+    \mathbf{R}_{i, j} = \begin{cases} 
+    \mathbf{E}_{i, j} & \text{if } |\mathbf{E}_{i, j}| \ge \tau \\
+    0 & \text{otherwise}
+    \end{cases}
+    \end{equation}
+\end{enumerate}
+
+خطای بازسازی فروبنیوس به صورت زیر اعتبارسنجی می‌شود:
+\begin{equation}
+\epsilon_{\text{rel}} = \frac{\|\mathbf{W} - (\mathbf{L} + \mathbf{R})\|_F}{\max(\|\mathbf{W}\|_F, 10^{-12})}
+\end{equation}
+در صورتی که $\epsilon_{\text{rel}} > \epsilon_{\text{max}}$ باشد، الگوریتم لایه را به ساختار متراکم اولیه بازمی‌گرداند. علاوه بر این، در حالت اجرای برخط کش، ماژول شامل کلاس ذخیره‌ساز پویا \lr{DeltaKVStore} است که با سنجش شباهت کسینوسی بردار پنهان جاری با حافظه تاریخی $K/V$ مراجع، تفاضل بردار را در قالب دلتای فشرده بازنمایی می‌نماید:
+\begin{equation}
+\mathbf{k}_{\text{residual}} = \mathbf{k} - \mathbf{r}_k, \quad \hat{\mathbf{k}} = \mathbf{r}_k + \mathbf{k}_{\text{residual}} \odot \mathbb{I}(\|\mathbf{k}_{\text{residual}}\|_2 > \theta_{\text{res}})
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_delta_kv}
+\mathcal{C}_{\text{delta\_kv}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

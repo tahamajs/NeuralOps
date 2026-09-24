@@ -1,0 +1,40 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ نمایش پنهان توکن‌های ورودی باشد. نگاشت‌های پروجکشن پرس‌وجو، کلید و مقدار با تطبیق‌دهنده‌های کم‌مرتبه لورا تولید شده و جهت تضمین پایداری عددی و نامنفی بودن هسته، تبدیل کرنلی بر روی آن‌ها اعمال می‌شود:
+\begin{align}
+\mathbf{q}_t &= \operatorname{ELU}(\operatorname{LoRA-Linear}_Q(\mathbf{x}_t)) + 1.0, \\
+\mathbf{k}_t &= \frac{\operatorname{ELU}(\operatorname{LoRA-Linear}_K(\mathbf{x}_t)) + 1.0}{\sqrt{d}}, \\
+\mathbf{v}_t &= \operatorname{LoRA-Linear}_V(\mathbf{x}_t)
+\end{align}
+که در آن ابعاد بردارها به صورت چندسره با بعد سر $d = D/H$ در نظر گرفته می‌شوند.
+
+\paragraph{۱. گیت فراموشی کران‌دار لگاریتمی:}
+برای جلوگیری از اشباع گیت و افت شدید گرادیان در گام‌های متوالی، گیت زوال $\mathbf{f}_t \in (0, 1)$ از طریق نگاشت غیرخطی تابع پلاس هموار \lr{Softplus} با کران‌های سخت محاسبه می‌شود:
+\begin{equation}
+\mathbf{f}_t = \exp\left( \operatorname{clamp}\left( -\operatorname{Softplus}(\mathbf{W}_f \mathbf{x}_t + \mathbf{b}_f), -3.0, -10^{-4} \right) \right)
+\end{equation}
+
+\paragraph{۲. رابطه بازگشتی ماتریس ضرب بیرونی و مخرج:}
+در هر سر توجه و در گام زمانی $t$، وضعیت پنهان ماتریسی $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ و بردار تجمع مخرج $\mathbf{z}_t \in \mathbb{R}^d$ با رابطه بازگشتی زیر به‌روزرسانی می‌شوند:
+\begin{align}
+\mathbf{S}_t &= \mathbf{f}_t \odot \mathbf{S}_{t-1} + (1 - \mathbf{f}_t) \odot \left(\mathbf{k}_t \mathbf{v}_t^T\right), \\
+\mathbf{z}_t &= \mathbf{f}_t \odot \mathbf{z}_{t-1} + (1 - \mathbf{f}_t) \odot \mathbf{k}_t
+\end{align}
+سپس خروجی توجه با ضرب پرس‌وجو در ماتریس حافظه و نرمال‌سازی توسط ضرب داخلی پرس‌وجو با بردار مخرج استخراج می‌گردد:
+\begin{equation}
+\mathbf{num}_t = \mathbf{q}_t \mathbf{S}_t \in \mathbb{R}^d, \quad \operatorname{denom}_t = \max\left(\langle \mathbf{q}_t, \mathbf{z}_t \rangle, 1.0\right), \quad \mathbf{y}_t^{\text{fwd}} = \frac{\mathbf{num}_t}{\operatorname{denom}_t}
+\end{equation}
+
+برای مدل‌های انکودر دوطرفه (مانند \lr{DistilBERT} و \lr{RoBERTa})، یک اسکن بازگشتی معکوس پادعلّی $\mathbf{y}_t^{\text{bwd}}$ از انتهای توالی به ابتدا نیز محاسبه شده و خروجی نهایی از میانگین‌گیری متقارن $\mathbf{y}_t = \frac{1}{2}(\mathbf{y}_t^{\text{fwd}} + \mathbf{y}_t^{\text{bwd}})$ به دست می‌آید. در نهایت، با عبور از \lr{LayerNorm} روی بعد سرها و لایه پروجکشن خروجی، تانسور نهایی تولید می‌شود:
+\begin{equation}
+\mathbf{o}_t = \operatorname{LoRA-Linear}_O\left( \operatorname{LayerNorm}(\mathbf{y}_t) \right)
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hgrn2_outer}
+\mathcal{C}_{\text{hgrn2\_outer}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

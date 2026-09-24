@@ -6,22 +6,20 @@ Table~\ref{tab:results_acc_tomoe} details empirical evaluation metrics across ta
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
-\texttt{results/unified\_tomoe/distilbert/summary.csv} & distilbert & tomoe & PASS & 69.5 & 0.7569 \\
-\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
-\texttt{results/unified\_tomoe/gpt2/summary.csv} & gpt2 & tomoe & PASS\_LOW & 54.24 & 0.678 \\
-\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & full & PASS & 67.89 & 0.557 \\
-\texttt{results/unified\_tomoe/qwen3\_5/summary.csv} & qwen3\_5 & tomoe & SKIP\_QWEN3\_5\_TIMEOUT & 0.0 & 0.557 \\
-\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
-\texttt{results/unified\_tomoe/roberta/summary.csv} & roberta & tomoe & PASS\_LOW & 50.92 & 0.6748 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Tomoe Compressor} & \textbf{69.50\%} & -20.98\% & PASS & 0.7569 & 0 & \textbf{1.00$\times$} & 427.0 MB & 53.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Tomoe Compressor} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.00$\times$} & 571.8 MB & 87.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Tomoe Compressor} & \textbf{54.24\%} & -6.54\% & PASS_LOW & 0.6780 & 0 & \textbf{1.00$\times$} & 874.6 MB & 67.0 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{tomoe}.}
-\label{tab:results_acc_tomoe}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

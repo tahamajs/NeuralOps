@@ -1,0 +1,6 @@
+model,accuracy_pct,f1_score,peak_vram_mb,throughput_tokens_sec,status
+DistilBERT,0.0,0.9077,389.51,142216.12,FAIL
+GPT-2,0.0,0.6354,793.19,64304.63,FAIL
+Qwen,48.28,,,,PASS
+RoBERTa,0.0,0.7586,298.71,83314.26,FAIL
+Unknown,0.0,,,,SKIP_SLOW

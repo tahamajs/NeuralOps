@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **EC-MoE** | **90.14** | -0.57 | 0.9053 | 66.4M | 0.85 | 764 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **EC-MoE** | **84.29** | +5.73 | 0.8620 | 124.6M | 0.85 | 842 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **EC-MoE** | **80.50** | +1.14 | 0.8041 | 124.4M | 0.85 | 777 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Expert Choice Moe** | **90.14%** | -0.34% | PASS | 0.9053 | 0 | **0.37x** | 764.3 MB | 7.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Expert Choice Moe** | **84.29%** | -4.47% | PASS | 0.8620 | 0 | **0.35x** | 842.2 MB | 15.1s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Expert Choice Moe** | **80.50%** | -0.81% | PASS | 0.8041 | 0 | **0.36x** | 777.4 MB | 15.3s |
 
 ## 7.2 Parameter Analysis
 

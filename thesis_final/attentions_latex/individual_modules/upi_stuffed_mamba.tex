@@ -1,102 +1,79 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 104: \lr{upi\_stuffed\_mamba}}
-\label{sec:mod_upi_stuffed_mamba}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
+\section{ماژول مدل فضای حالت گزینشی مامبا (Selective Mamba / UPI-Stuffed Mamba)}
+\label{sec:module_upi_stuffed_mamba}
 
-\subsection{کالبدشکافی ماژول \lr{upi\_stuffed\_mamba}}
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-معماری نوآورانه \lr{upi\_stuffed\_mamba} با افزودن \textbf{جریمه عدم‌قطعیت و درونیابی پویا} به مدل‌های فضا-حالت مامبا، توازن میان سرعت و قطعیت پیش‌بینی را برقرار می‌کند.
+مکانیزم بلوک فضای حالت گزینشی مامبا \lr{(Selective Mamba SSM Block)} که پیش‌تر با عنوان اولیه \lr{upi\_stuffed\_mamba} نام‌گذاری شده بود، با هدف جایگزینی لایه توجه استاندارد درجه دو $\mathcal{O}(N^2)$ با یک مدل فضای حالت ساختاریافته خطی $\mathcal{O}(N)$ طراحی گردیده است. در معماری مامبا، به جای تشکیل ماتریس توجه تمام‌به‌تمام، تعاملات میان توکن‌ها از طریق یک سیستم دینامیکی پیوسته با پارامترهای وابسته به ورودی (\lr{Selective SSM}) مدل‌سازی می‌شود.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل \textbf{سیستم هدایت خودکار خودروی تسلا در شرایط مه غلیظ}: در اتوبان باز، کنترل فرمان با سرعت بالا توسط مدل فضای حالت روان اداره می‌شود؛ اما هرگاه حسگرها اشیاء مبهم ببینند و واریانس عدم‌قطعیت بالا رود، سیستم ترمزهای تطبیقی و پردازشگر دقیق لیدار را برای شفاف‌سازی به کار می‌اندازد.
+این ماژول در کد مبدا چارچوب تحت نام اصیل \lr{SelectiveMamba} در فایل \lr{Codes/framework/attentions/upi\_stuffed\_mamba.py} بازطراحی و سخت‌سازی شده و با شناسه‌های \lr{selective\_mamba} و شناسه‌های پیشین \lr{upi\_stuffed\_mamba} و \lr{upi\_mamba} ثبت گردیده است. ساختار این ماژول امکان اجرای اسکن بازگشتی علّی برای مدل‌های دیکودر (\lr{GPT-2}) و اسکن متقارن دوطرفه (\lr{Bidirectional Scan}) برای مدل‌های انکودر (\lr{DistilBERT} و \lr{RoBERTa}) را به همراه قابلیت استنتاج بهینه گام‌به‌گام با حافظه $\mathcal{O}(1)$ فراهم می‌سازد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+معماری پایه بر مبنای مدل فضای حالت خطی با پارامترهای متغیر با زمان فرمول‌بندی می‌شود:
+\begin{align}
+\mathbf{h}_t &= \bar{\mathbf{A}}_t \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t \mathbf{x}_t \in \mathbb{R}^{D_{\text{in}} \times d_{\text{state}}}, \\
+\mathbf{y}_t &= \mathbf{C}_t \mathbf{h}_t + \mathbf{D} \mathbf{x}_t \in \mathbb{R}^{D_{\text{in}}}
+\end{align}
+که در آن $d_{\text{state}} = 16$ بعد فضای حالت پنهان است.
+
+\paragraph{۱. گزینش‌پذیری وابسته به ورودی و گسسته‌سازی زمانی:}
+ابتدا ورودی لایه $\mathbf{X}$ به دو شاخه تعاملی و دروازه‌بانی تقسیم شده و شاخه تعاملی از یک کانوولوشن یک‌بعدی زمانی با بعد ۴ عبور می‌کند:
 \begin{equation}
-\mathbf{h}_t = \mathbf{A}_t \mathbf{h}_{t-1} + \mathbf{B}_t \mathbf{x}_t, \quad \hat{\mathbf{y}}_t = \mathbf{C}_t \mathbf{h}_t - \lambda \operatorname{Var}(\mathbf{x}_t \mid \mathcal{H}_{t-1})
+[\mathbf{X}_{\text{in}}, \mathbf{Z}] = \operatorname{LoRA-Linear}_{\text{in}}(\mathbf{X}), \quad \mathbf{X}_{\text{ssm}} = \operatorname{SiLU}(\operatorname{Conv1D}(\mathbf{X}_{\text{in}}))
 \end{equation}
-که در آن ترم واریانس $\operatorname{Var}$ مانع از فرضیات شتاب‌زده مدل در هنگام دریافت داده‌های پرنویز می‌شود.
+سپس پارامترهای گسسته‌سازی $\Delta_t$ و ماتریس‌های کنترل $\mathbf{B}_t$ و $\mathbf{C}_t$ مستقیماً از روی ورودی استخراج می‌شوند:
+\begin{equation}
+[\Delta_{\text{raw}}, \mathbf{B}_t, \mathbf{C}_t] = \operatorname{Linear}_x(\mathbf{X}_{\text{ssm}}), \quad \Delta_t = \operatorname{Softplus}(\operatorname{Linear}_{\Delta}(\Delta_{\text{raw}}))
+\end{equation}
+ماتریس‌های پیوسته فضا-حالت با تقریب نگاشت نمایی مرتبه اول گسسته می‌شوند:
+\begin{equation}
+\bar{\mathbf{A}}_t = \exp(\Delta_t \cdot \mathbf{A}), \quad \bar{\mathbf{B}}_t = \Delta_t \cdot \mathbf{B}_t
+\end{equation}
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{upi\_stuffed\_mamba.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\paragraph{۲. اسکن دوطرفه و دروازه‌بانی ضربی:}
+برای مدل‌های دیکودر علّی، اسکن رو به جلو $\mathbf{y}^{\text{fwd}}$ محاسبه می‌شود. در انکودرهای دوطرفه، اسکن معکوس $\mathbf{y}^{\text{bwd}}$ نیز اجرا شده و خروجی به صورت میانگین متقارن حاصل می‌گردد:
+\begin{equation}
+\mathbf{y} = \frac{1}{2}\left(\mathbf{y}^{\text{fwd}} + \mathbf{y}^{\text{bwd}}\right)
+\end{equation}
+در نهایت، خروجی با شاخه گیت $\mathbf{Z}$ ادغام شده و به بعد اصلی تصویر می‌گردد:
+\begin{equation}
+\mathbf{O} = \operatorname{LoRA-Linear}_{\text{out}}(\mathbf{y} \odot \operatorname{SiLU}(\mathbf{Z})) \in \mathbb{R}^{B \times L \times D}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/attentions/upi\_stuffed\_mamba.py} دارای خصوصیات زیر است:
+\begin{itemize}
+    \item \textbf{اسکن پایتونی با مهار ماسک:} تابع \lr{\_selective\_scan} به روزرسانی حالت‌های $\mathbf{h}_t$ را با اعمال ماسک معتبر توکن‌ها جهت ممانعت از آلودگی حافظه با توکن‌های پدینگ اجرا می‌کند.
+    \item \textbf{استنتاج گام‌به‌گام (\lr{step\_recurrent}):} تعبیه بافر با اندازه ثابت جهت پردازش تک‌توکنی در زمان تولید متن با پیچیدگی زمانی و حافظه‌ای $\mathcal{O}(1)$.
+    \item \textbf{آداپتورهای کم‌مرتبه لورا:} استفاده از \lr{LoRALinear} در پروجکشن‌های ورودی و خروجی با رتبه $r=16$.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول بر روی آزمون استاندارد \lr{GLUE SST-2} ثبت گردیده و مقادیر موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_upi_stuffed_mamba} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{upi\_stuffed\_mamba} روی مدل‌های پایه}
+\label{tab:benchmark_upi_stuffed_mamba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{360.94 MB} & \lr{2,401.58 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{402.06 MB} & \lr{1,201.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.5807} & \lr{861.54 MB} & \lr{9,789.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی پایداری ردپای حافظه گرافیکی را در تمامی مدل‌ها (کمتر از \lr{405 MB} در انکودرها) نشان می‌دهد. در زمینه زبانی، دقت مدل‌ها در محدوده ۵۰.۹۲٪ تا ۵۱.۱۵٪ تثبیت شده و وضعیت کلی ماژول در دروازه کیفیت بر روی \lr{PASS} با حضور آزمون‌های مکمل ثبت گردیده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل فنی پیرامون وضعیت \lr{PASS\_LOW} در مدل‌های زبانی و علل کندی توان پردازشی به شرح زیر است:
 \begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} محاسبه بردار عدم‌قطعیت توکن‌ها، درونیابی وزن‌های بازگشتی و اعمال جریمه به تانسور حالت خروجی.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
+    \item \textbf{تحلیل سرعت پایین و توان پردازشی محدود (\lr{1,200 - 2,400 tok/s}):} در مقایسه با سایر ماژول‌ها که از ضرب‌های ماتریسی موازی و شتاب سخت‌افزاری \lr{SDPA} سود می‌برند، حلقه اسکن حالت $\mathbf{h}_t$ در این پیاده‌سازی به صورت یک حلقه ترتیبی در سطح پایتون اجرا می‌شود. این گلوگاه تفسیری پایتون مانع از درگیری کامل هسته‌های \lr{Tensor Core} پردازنده گرافیکی شده و توان عملیاتی را کاهش می‌دهد.
+    \item \textbf{تحلیل همگرایی دقت روی ۵۰.۹۲٪ (\lr{Majority Class Collapse}):} پارامترهای فضای حالت $\mathbf{A}, \mathbf{B}, \mathbf{C}$ نیازمند آموزش پیش‌زمینه یا انطباق دوره‌ای طولانی‌مدت برای یادگیری انتقال حالات متوالی هستند. در بازنشانی سریع تک‌دوره‌ای با لایه‌های منجمد، بازنمایی‌های حالت قادر به ثبت روابط ظریف احساسی در جمله نبوده و مدل به سمت پیش‌بینی رده پرتکرار سوق یافته است.
+    \item \textbf{عدم پشتیبانی از ساختارهای نوین در \lr{Qwen} (\lr{SKIP\_NO\_SUPPORT}):} بلوک مامبا به صورت پایه‌ای جایگزین کامل توجه استاندارد بوده و هندسه تعبیه مکانی دورانی چندبعدی و ساختار گروه‌بندی سرهای \lr{Qwen} در نسخه فعلی ماژول پیاده‌سازی نشده است.
 \end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
-\begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
-\end{itemize}
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS\_LOW}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{52.29\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{62.59\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{619.4 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-تقلیل اوج حافظه به \lr{۶۱۹.۴ MB} (کاهش \lr{۸۵.۲\%}ی نسبت به \lr{۴۲۰۰ MB} مدل کامل) با حفظ F1 در سطح ۶۲.۵۹٪ نشان می‌دهد که مهار عدم‌قطعیت می‌تواند پایداری سخت‌افزاری بالایی ایجاد کند، هرچند تطبیق کامل با وظایف انکودری نیازمند کوک دقیق‌تر ضریب $\lambda$ است.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
-    \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
-    \node [state, right=1.0cm of disc] (recurr) {بروزرسانی حالت $h_t = \bar{\mathbf{A}} h_{t-1} + \bar{\mathbf{B}} x_t$};
-    \node [outblock, right=1.0cm of recurr] (out) {خروجی خطی $y_t = \mathbf{C} h_t$};
-
-    \draw [->, thick, draw=blue!80] (input) -- (disc);
-    \draw [->, thick, draw=teal!80] (disc) -- (recurr);
-    \draw [->, thick, draw=orange!80] (recurr) -- (out);
-
-    \path [->, thick, draw=orange!90] (recurr) edge [loop above] node [font=\footnotesize] {حافظه $\mathcal{O}(1)$} (recurr);
-\end{tikzpicture}
-\end{center}
-
-
-
-
-
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{upi\_stuffed\_mamba} ارائه شده است.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/architecture/upi_stuffed_mamba_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(upi\_stuffed\_mamba)}}
-\label{fig:arch_upi_stuffed_mamba}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/comparison/upi_stuffed_mamba_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(upi\_stuffed\_mamba)}}
-\label{fig:comp_upi_stuffed_mamba}
-\end{figure}
-

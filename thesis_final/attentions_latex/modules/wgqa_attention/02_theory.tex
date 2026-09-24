@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تعداد سرهای پرس‌وجو $H$ و تعداد سرهای کلید/مقدار $H_{\text{kv}}$ باشد به‌طوری‌که $H_{\text{kv}} \le H$ و نسبت تکرار $R = H / H_{\text{kv}}$ یک عدد صحیح مثبت باشد. تانسورهای پرس‌وجو، کلید و مقدار با ابعاد زیر استخراج می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N_q \times d}, \quad \mathbf{K} \in \mathbb{R}^{B \times H_{\text{kv}} \times N_k \times d}, \quad \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N_k \times d}
+\end{equation}
+نوآوری اصلی \lr{WGQA} در معرفی بردارهای وزنی یادگیرنده $\mathbf{w}_k \in \mathbb{R}^{H_{\text{kv}}}$ و $\mathbf{w}_v \in \mathbb{R}^{H_{\text{kv}}}$ نهفته است. پیش از عملیات تکرار سرها، مقیاس‌دهی با این ضرایب انجام می‌پذیرد:
+\begin{equation}
+\tilde{\mathbf{K}}_g = \mathbf{w}_{k, g} \cdot \mathbf{K}_g, \quad \tilde{\mathbf{V}}_g = \mathbf{w}_{v, g} \cdot \mathbf{V}_g \quad \forall g \in \{1, \dots, H_{\text{kv}}\}
+\end{equation}
+سپس تانسورهای وزن‌دار شده با استفاده از تابع تکرار کپی‌شده (\lr{repeat\_kv}) به تعداد سرهای پرس‌وجو بسط داده می‌شوند:
+\begin{equation}
+\hat{\mathbf{K}} = \operatorname{repeat\_kv}(\tilde{\mathbf{K}}, R), \quad \hat{\mathbf{V}} = \operatorname{repeat\_kv}(\tilde{\mathbf{V}}, R)
+\end{equation}
+در صورت تجهیز مدل به تعبیه‌های مکانی چرخشی (\lr{RoPE})، نگاشت زاویه‌ای بر روی جفت‌های متعامد پرس‌وجو و کلید اعمال می‌گردد:
+\begin{equation}
+\mathbf{Q}_{\text{rot}}, \hat{\mathbf{K}}_{\text{rot}} = \operatorname{apply\_rotary\_pos\_emb}(\mathbf{Q}, \hat{\mathbf{K}}, \cos, \sin)
+\end{equation}
+در نهایت، ماتریس امتیازات توجه مقیاس‌پذیر و توزیع وزن با تابع بیشینه هموار محاسبه شده و خروجی استخراج می‌گردد:
+\begin{equation}
+\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \hat{\mathbf{K}}^\top}{\sqrt{d}} + \mathbf{M}\right), \quad \mathbf{O} = \mathbf{A} \hat{\mathbf{V}}
+\end{equation}
+که در آن $\mathbf{M}$ ماتریس ماسک توجه (شامل ماسک علّی در دیکودر یا ماسک طول معتبر در انکودر) است.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_wgqa_attention}
+\mathcal{C}_{\text{wgqa\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

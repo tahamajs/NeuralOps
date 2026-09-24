@@ -1,0 +1,19 @@
+\subsection{نتایج تجربی}
+ارزیابی آزمایشگاهی ماژول \lr{admm\_compressor} بر روی چهار مدل مبنا نتایج قابل توجه مندرج در جدول~\ref{tab:benchmark_admm_compressor} را نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری ماژول \lr{admm\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_admm_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.53\%} & \lr{0.8922} & \lr{339.42 MB} & \lr{54,607.47 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{89.11\%} & \lr{0.8966} & \lr{333.44 MB} & \lr{13,290.18 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{84.63\%} & \lr{0.8537} & \lr{409.87 MB} & \lr{15,433.04 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{88.42\%} & \lr{0.8947} & \lr{1,851.31 MB} & \lr{1,099.69 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

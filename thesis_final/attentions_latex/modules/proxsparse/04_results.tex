@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی ماژول \lr{proxsparse} بر روی مدل‌های محک استاندارد از پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} استخراج و در جدول \ref{tab:benchmark_proxsparse} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی هرس‌کننده مجاورتی \lr{proxsparse} روی مدل‌های پایه}
+\label{tab:benchmark_proxsparse}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{78.33\%} & \lr{0.7845} & \lr{337.59 MB} & \lr{162,708.29 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{361.54 MB} & \lr{90,541.96 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{54.01\%} & \lr{0.4866} & \lr{636.04 MB} & \lr{64,596.44 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشخص است، این ماژول توان عملیاتی قابل توجه‌ای در مدل \lr{DistilBERT} ارائه داده و توان پردازشی به بیش از $162$ هزار توکن بر ثانیه با حفظ دقت \lr{78.33\%} رسیده است. در مدل‌های دیگر نظیر \lr{RoBERTa} و \lr{GPT-2}، با توجه به افت دقت ناشی از عدم تنظیم مجدد وزن‌های باقیمانده، وضعیت \lr{PASS\_LOW} با دقت‌های بالای ۵۰ درصد به دست آمده و در مدل \lr{Qwen} وضعیت \lr{PASS} احراز شده است.

@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس \lr{CURMoECompressor} در ماژول \lr{Codes/framework/compression\_engine/cur\_moe\_compressor.py} پیاده‌سازی شده و تحت شناسه‌های \lr{cur\_moe}، \lr{cur\_moe\_class} و \lr{cur\_moe\_compressor} در رجیستری فشرده‌سازی ثبت گردیده است. مؤلفه‌های کلیدی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{هدف‌گیری اختصاصی خبره‌ها (\lr{MoE \& FFN Targeting}):} این ماژول دارای پارامتر \lr{target\_attention\_only} است که در صورت غیرفعال بودن، به‌طور خاص روی لایه‌های فیدفوروارد و خبره‌های پرحجم متمرکز می‌شود تا حافظه لایه‌های \lr{Intermediate / MLP} را آزاد کند.
+    \item \textbf{لایه‌های خطی فاکتورگیری‌شده \lr{CURLinear}:} لایه‌های چگال استاندارد و لایه‌های \lr{Conv1D} (در مدل‌های دیکودر) با ماژول دو مرحله‌ای جایگزین می‌شوند که ضرب پیشرو را به صورت $\mathbf{y} = ((\mathbf{x} \mathbf{R}^\top) \mathbf{U}_{\text{core}}^\top) \mathbf{C}^\top + \mathbf{b}$ اجرا می‌کند.
+    \item \textbf{پلکان تطبیقی رتبه و خطای فروبنیوس (\lr{Adaptive Rank Escalation}):} پس از تقریب لایه، خطای نسبی بازسازی فروبنیوس محاسبه می‌شود. در صورتی که خطا از آستانه مجاز (\lr{max\_error=0.90}) فراتر رود، الگوریتم به صورت خودکار تا دو بار (\lr{max\_retries=2}) اقدام به ارتقای رتبه نموده و در صورت تداوم خطا، با سازوکار بازگشت ایمن (\lr{Safe Fallback})، وزن متراکم دست‌نخورده حفظ می‌گردد.
+\end{itemize}

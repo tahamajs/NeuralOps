@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول فشرده‌سازی \lr{armor\_pruner} بر روی بنچ‌مارک‌های معتبر گزارش‌شده در پوشه \lr{results/} و جداول اعتبارسنجی در جدول \ref{tab:benchmark_armor_pruner} جمع‌آوری گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{armor\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_armor_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{88.99\%} & \lr{0.8929} & \lr{537.22 MB} & \lr{96,356.36 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{80.20\%} & \lr{0.8016} & \lr{446.85 MB} & \lr{139,629.95 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{91.06\%} & \lr{0.9150} & \lr{723.58 MB} & \lr{9,066.03 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (AGNews)} & \lr{62.70\%} & \lr{0.6296} & \lr{743.20 MB} & \lr{15,957.51 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج تجربی، ماژول \lr{armor\_pruner} روی مدل‌های انکودری عملکرد قابل توجه‌ای به نمایش گذاشته است؛ به طوری که در مدل \lr{RoBERTa} به دقت بالای \lr{91.06\%} با شاخص F1 معادل \lr{0.9150} و در مدل \lr{DistilBERT} روی دادگان SST-2 به دقت \lr{88.99\%} با توان گذردهی چشمگیر \lr{96,356} توکن بر ثانیه دست یافته است. در وظیفه چندکلاسه پیچیده‌تر MNLI نیز دقت پایدار \lr{80.20\%} ثبت شده است. در مدل \lr{GPT-2} وضعیت \lr{PASS\_NO\_COMPRESSION} ثبت شده است، چرا که به دلیل حساسیت ابعاد لایه‌ها و آستانه خطا، لایه‌های مدل به طور مستقیم هرس نشده و تنها مسیر آداپتور فعال گردیده است. ارزیابی این ماژول بر روی مدل \lr{Qwen} به علت محدودیت‌های حافظه در آزمایشگاه بنچ‌مارک انجام نپذیرفته و در وضعیت \lr{NOT\_RUN} قرار دارد.

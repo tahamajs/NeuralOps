@@ -1,0 +1,14 @@
+\subsection{معماری و پیاده‌سازی}
+ماژول در فایل \lr{Codes/framework/compression\_engine/liftr.py} پیاده‌سازی شده و ساختار نرم‌افزاری آن به قرار زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{\_LinearizedGELU}:} جایگزین سبک لایه‌های فعال‌سازی \lr{nn.GELU} و \lr{nn.SiLU} که عملگر غیرخطی را با ضرب اسکالر ساده $\alpha \cdot x$ تعویض می‌کند.
+    \item \textbf{کلاس \lr{\_LinearizedAttentionWrapper}:} لایه پوشاننده ساختاری توجه که با پشتیبانی هوشمند از انواع معماری‌ها، خروجی ارزش‌ها را استخراج و میانگین‌گیری می‌کند:
+    \begin{itemize}
+        \item پشتیبانی از خانواده مدل‌های مدرن (\lr{LLaMA/Mistral/Qwen}) از طریق لایه‌های \lr{v\_proj} و \lr{o\_proj}.
+        \item پشتیبانی از انکودرهای \lr{DistilBERT} از طریق \lr{v\_lin} و \lr{out\_lin}.
+        \item پشتیبانی از انکودرهای استاندارد \lr{RoBERTa/BERT} از طریق ماژول‌های \lr{value} و \lr{query}.
+        \item پشتیبانی از دیکودرهای علّی \lr{GPT-2} از طریق تفکیک مؤلفه ارزش از لایه ادغامی \lr{c\_attn} و ارسال به \lr{c\_proj}.
+    \end{itemize}
+    \item \textbf{مکانیزم تفویض و بازگشت ایمن (\lr{Safe Fallback Delegation}):} در صورتی که معماری لایه توجه ناشناخته باشد یا شکل ورودی با شرایط ماژول منطبق نباشد، محاسبات بدون بروز خطا به لایه توجه اصلی هدایت می‌شود.
+    \item \textbf{کلاس \lr{LIFTRCompressor}:} پیاده‌سازی موتور فشرده‌سازی جهت پیمایش گراف مدل و جایگزینی لایه‌ها.
+\end{itemize}

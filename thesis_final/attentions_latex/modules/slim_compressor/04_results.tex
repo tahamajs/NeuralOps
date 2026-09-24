@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی‌های مستقل روی بنچ‌مارک‌های استاندارد برای ماژول \lr{slim\_compressor} در جدول \ref{tab:benchmark_slim_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز چندگانه \lr{slim\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_slim_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{90.60\%} & \lr{0.9093} & \lr{367.66 MB} & \lr{216,886.93 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{81.10\%} & \lr{0.8104} & \lr{456.73 MB} & \lr{119,037.02 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{91.51\%} & \lr{0.9181} & \lr{513.66 MB} & \lr{14,275.54 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه داده‌های تجربی، فشرده‌ساز \lr{slim\_compressor} در مدل‌های انکودر متقارن بازدهی و حفظ دقت قابل توجه‌ای نشان داده است؛ به طوری که در وظیفه SST-2 روی مدل \lr{RoBERTa} به دقت \lr{91.51\%} و در مدل \lr{DistilBERT} به دقت \lr{90.60\%} رسیده است. همچنین در وظیفه پیچیده‌تر استنتاج زبانی MNLI روی \lr{DistilBERT} دقت پایدار \lr{81.10\%} ثبت شده است. ارزیابی مدل‌های خودبازگشتی \lr{GPT-2} و \lr{Qwen} در پایگاه داده اعتبارسنجی با وضعیت \lr{NOT\_RUN} به دلیل اولویت‌بندی مدل‌های طبقه‌بندی متن علامت‌گذاری شده است.

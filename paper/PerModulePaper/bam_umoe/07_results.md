@@ -4,14 +4,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **BAM-UMoE** | **90.02** | -0.69 | 0.9043 | 293M | 770 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **BAM-UMoE** | **84.63** | +6.07 | 0.8630 | 570M | 850 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **BAM-UMoE** | **81.42** | +2.06 | 0.8076 | 570M | 777 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Bam Umoe** | **90.02%** | -0.46% | PASS | 0.9043 | 0 | **0.37x** | 769.8 MB | 20.1s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Bam Umoe** | **84.63%** | -4.13% | PASS | 0.8630 | 0 | **0.35x** | 849.7 MB | 45.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Bam Umoe** | **81.42%** | +0.11% | PASS | 0.8076 | 0 | **0.36x** | 777.4 MB | 44.3s |
 
 ## 7.2 Parameter Analysis
 

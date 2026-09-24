@@ -1,0 +1,40 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+مسئله هرس لایه‌ای به عنوان بهینه‌سازی مقید زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\min_{\mathbf{W}, \mathbf{Z}} \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda_{\text{distill}} \mathcal{L}_{\text{distill}}(\mathbf{W}; \mathbf{X}_{\text{calib}}) + g(\mathbf{Z}) \quad \text{s.t.} \quad \mathbf{W} - \mathbf{Z} = \mathbf{0}
+\end{equation}
+که در آن $\mathcal{L}_{\text{distill}} = \|\mathbf{X}_{\text{calib}} \mathbf{W}^\top - \mathbf{X}_{\text{calib}} \mathbf{W}_0^\top\|_F^2$ خطای تقطیر خروجی لایه بر روی فعال‌سازی‌های کالیبراسیون و $g(\mathbf{Z})$ تابع مشخصه قید تنک‌سازی (الگوی ساختاریافته ۲:۴ یا تنک‌سازی بلوکی) است. تابع لاگرانژی افزوده متناظر عبارت است از:
+\begin{equation}
+\mathcal{L}_{\rho}(\mathbf{W}, \mathbf{Z}, \mathbf{U}) = \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda_{\text{distill}} \mathcal{L}_{\text{distill}}(\mathbf{W}) + \frac{\rho}{2} \|\mathbf{W} - \mathbf{Z} + \mathbf{U}\|_F^2 + g(\mathbf{Z})
+\end{equation}
+گام‌های الگوریتم در هر تکرار $k$ به شرح زیر اجرا می‌شوند:
+
+\paragraph{۱. به‌روزرسانی لایه‌ای وزن‌ها ($\mathbf{W}$):}
+بهینه‌سازی بر روی $\mathbf{W}$ ترکیبی از تقریب وزن‌های مبنا، تقطیر گرادیانی فعال‌سازی و انطباق با متغیر دوگان است:
+\begin{equation}
+\mathbf{W}^{(k+1)} = \left( (1 + \rho)\mathbf{I} + 2\lambda_{\text{distill}} \mathbf{X}^\top \mathbf{X} \right)^{-1} \left( \mathbf{W}_0 + 2\lambda_{\text{distill}} \mathbf{Y}_{\text{orig}}^\top \mathbf{X} + \rho (\mathbf{Z}^{(k)} - \mathbf{U}^{(k)}) \right)
+\end{equation}
+
+\paragraph{۲. تصویر بر فضای تنک با برجستگی افزوده ($\mathbf{Z}$):}
+برخلاف هرس ساده اندازه، متغیر تنک $\mathbf{Z}$ با تصویر بر اساس برجستگی ترکیبی وزن و متغیر دوگان $|\mathbf{W}^{(k+1)} + \mathbf{U}^{(k)}|$ گزینش می‌شود:
+\begin{equation}
+\mathbf{Z}^{(k+1)} = \Pi_{\mathcal{S}_{2:4}}\left( \mathbf{W}^{(k+1)} + \mathbf{U}^{(k)} \right)
+\end{equation}
+در این مرحله، یک ماسک باینری $\mathbf{M}^{(k+1)} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ تشکیل شده و مقادیر متناظر نگهداری می‌شوند.
+
+\paragraph{۳. به‌روزرسانی متغیر دوگان و ضریب جریمه پویا ($\rho$):}
+متغیر دوگان خطای برازش را انباشته کرده و ضریب $\rho$ به منظور شتاب‌بخشی به همگرایی با نرخ افزایشی $\gamma > 1$ مقیاس می‌شود:
+\begin{align}
+\mathbf{U}^{(k+1)} &= \mathbf{U}^{(k)} + \mathbf{W}^{(k+1)} - \mathbf{Z}^{(k+1)} \\
+\rho^{(k+1)} &= \min\left(\rho_{\max}, \rho^{(k)} \cdot \gamma\right)
+\end{align}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_admm_pruner}
+\mathcal{C}_{\text{admm\_pruner}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

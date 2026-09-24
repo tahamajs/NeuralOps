@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,RPCA Compressor Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,90.37%,-0.11%,0.9067,PASS,0,1.00x,311.2 MB,30.0
+roberta,0,75.11%,72.02%,-3.09%,0.7724,PASS,0,1.00x,301.7 MB,46.1
+gpt2,0,60.78%,60.21%,-0.57%,0.6825,PASS,1,1.00x,637.7 MB,39.7

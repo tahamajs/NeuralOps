@@ -1,0 +1,35 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید مدل زبانی دارای $L$ لایه خطی با ابعاد ماتریس وزن $\mathbf{W}_l \in \mathbb{R}^{d_{\text{out}}^{(l)} \times d_{\text{in}}^{(l)}}$ باشد. بودجه کل حافظه بر حسب بیت با $B_{\text{total}}$ تعریف می‌شود:
+\begin{equation}
+B_{\text{total}} = M_{\text{budget}} \times 8 \times 1024^2 \quad (\text{bits})
+\end{equation}
+که در آن $M_{\text{budget}}$ بودجه حافظه بر حسب مگابایت است. برای هر لایه $l$ با رتبه انتخابی $r_l$ و عمق بیت کوانتیزاسیون $b_l \in \{4, 8, 16\}$، هزینه حافظه فاکتورهای کم‌مرتبه حاصل از تجزیه مقادیر منفرد (\lr{SVD}) به صورت زیر بیان می‌گردد:
+\begin{equation}
+\operatorname{Cost}(l, r_l, b_l) = \left( d_{\text{out}}^{(l)} \cdot r_l + r_l \cdot d_{\text{in}}^{(l)} \right) \times b_l
+\end{equation}
+مسئله تخصیص منابع تحت قید بودجه به فرم زیر تدوین می‌شود:
+\begin{equation}
+\min_{\{r_l, b_l\}_{l=1}^L} \sum_{l=1}^L \|\mathbf{W}_l - \hat{\mathbf{W}}_l(r_l, b_l)\|_F^2 \quad \text{s.t.} \quad \sum_{l=1}^L \operatorname{Cost}(l, r_l, b_l) \le B_{\text{total}}
+\end{equation}
+در این فرآیند، ابتدا تجزیه مقادیر منفرد $\mathbf{W}_l = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top$ انجام شده و فاکتورهای کم‌مرتبه بریده می‌شوند:
+\begin{equation}
+\mathbf{U}_{r} = \mathbf{U}_{:, :r_l}, \quad \mathbf{S}_{r} = \mathbf{\Sigma}_{:r_l}, \quad \mathbf{V}_{r}^\top = \mathbf{V}_{:, :r_l}^\top
+\end{equation}
+سپس هر یک از فاکتورها توسط کوانتیزاسور یکنواخت بیتی به مقادیر گسسته نگاشت می‌گردند:
+\begin{equation}
+\mathcal{Q}(\mathbf{T}, b) = \operatorname{round}\left(\frac{\mathbf{T} - \min(\mathbf{T})}{\Delta}\right) \cdot \Delta + \min(\mathbf{T}), \quad \Delta = \frac{\max(\mathbf{T}) - \min(\mathbf{T})}{2^b - 1}
+\end{equation}
+ماتریس وزن بازسازی‌شده $\hat{\mathbf{W}}_l = \mathcal{Q}(\mathbf{U}_r, b_l) \operatorname{diag}(\mathcal{Q}(\mathbf{S}_r, b_l)) \mathcal{Q}(\mathbf{V}_r^\top, b_l)$ به دست می‌آید و خطای فروبنیوس نسبی ارزیابی می‌گردد:
+\begin{equation}
+\mathcal{E}_l = \frac{\|\mathbf{W}_l - \hat{\mathbf{W}}_l\|_F}{\|\mathbf{W}_l\|_F + \epsilon}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_mlorq_compressor}
+\mathcal{C}_{\text{mlorq\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

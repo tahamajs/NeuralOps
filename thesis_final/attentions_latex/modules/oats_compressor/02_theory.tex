@@ -1,0 +1,38 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی \lr{OATS} در پنج مرحله ریاضی منسجم تدوین می‌گردد:
+\begin{enumerate}
+    \item \textbf{محاسبه ماتریس گشتاور دوم فعال‌سازی‌ها:} با استفاده از داده‌های کالیبراسیون ورودی $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$:
+    \begin{equation}
+    \mathbf{M} = \frac{1}{N} \mathbf{X}^\top \mathbf{X} + \epsilon \mathbf{I} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه چولسکی ماتریس گشتاور:}
+    \begin{equation}
+    \mathbf{M} = \mathbf{L}_M \mathbf{L}_M^\top
+    \end{equation}
+    \item \textbf{پیش‌شرط‌سازی ماتریس وزن:} ماتریس وزن لایه خطی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ در فاکتور چولسکی ضرب می‌شود:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \mathbf{L}_M
+    \end{equation}
+    \item \textbf{تجزیه تناوبی کم‌مرتبه و تنک (\lr{Alternating Decomposition}):} مؤلفه کم‌مرتبه $\mathbf{L}$ و مؤلفه تنک $\mathbf{S}$ به صورت متناوب بهینه‌سازی می‌شوند:
+    \begin{equation}
+    \mathbf{L} = \operatorname{SVD}_r(\tilde{\mathbf{W}} - \mathbf{S})
+    \end{equation}
+    \begin{equation}
+    \mathbf{S} = \Pi_{2:4}(\tilde{\mathbf{W}} - \mathbf{L}) \quad \text{یا} \quad \operatorname{Top-}(1-s)(\tilde{\mathbf{W}} - \mathbf{L})
+    \end{equation}
+    که در آن $\Pi_{2:4}$ عملگر تصویر بر ساختار تنک $2:4$ (پشتیبانی‌شده در شتاب‌دهنده‌های سخت‌افزاری) است.
+    \item \textbf{بازگشت از پیش‌شرط‌سازی (\lr{De-conditioning}):} وزن‌های بازسازی‌شده با اعمال معکوس تبدیل چولسکی به دست می‌آیند:
+    \begin{equation}
+    \mathbf{W}_{\text{oats}} = (\mathbf{L} + \mathbf{S}) \mathbf{L}_M^{-1}
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_oats_compressor}
+\mathcal{C}_{\text{oats\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

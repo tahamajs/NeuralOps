@@ -1,72 +1,75 @@
-\subsection{کالبدشکافی ماژول \lr{qcqa\_attention}}
+\section{ماژول qcqa\_attention (Quality and Capacity-Aware Grouped Query Attention)}
+\label{sec:module_qcqa_attention}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-معماری \lr{qcqa\_attention} نسخه تکامل‌یافته و هوشمند مکانیزم توجه پرس‌وجوی گروه‌بندی‌شده \lr{(GQA)} است. بر خلاف رویکردهای سنتی با نسبت‌های ثابت، این ماژول ظرفیت سرهای کلید-مقدار را بر مبنای کیفیت بازنمایی و انتروپی اطلاعاتی هر سر به صورت دینامیک تنظیم می‌نماید.
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تخصیص دینامیک پهنای باند در دکل‌های مخابراتی نسل پنجم \lr{(5G)}: دکل مرکزی به کاربرانی که در حال پخش زنده ویدئوی جراحی پزشکی هستند کانال‌های اختصاصی با پهنای باند حداکثری می‌دهد (سرهای پرس‌وجوی با انتروپی بالا)، اما صدها حسگر محیطی کم‌مصرف را روی یک کانال اشتراکی تجمیع می‌کند (سرهای اشتراکی با انتروپی پایین).
+مکانیزم توجه با سرهای پرس‌وجوی گروه‌بندی‌شده (\lr{Grouped-Query Attention - GQA}) به عنوان استانداردی موثر برای کاهش بار حافظه بافر کلید/مقدار (\lr{KV-Cache}) در مدل‌های ترنسفورمر به کار می‌رود. با این وجود، در روش‌های مرسوم \lr{GQA}، نسبت انتساب سرهای پرس‌وجو به سرهای کلید/مقدار به صورت یکنواخت و صلب در تمامی لایه‌ها و موقعیت‌های متنی یکسان در نظر گرفته می‌شود. این رویکرد ایستا بدون توجه به اهمیت محتوایی و انتروپی اطلاعاتی توکن‌ها عمل کرده و ممکن است به افت کیفیت بازنمایی در سرهای بحرانی منجر گردد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-انتروپی اطلاعاتی سرهای توجه بر پایه توزیع فعال‌سازی محاسبه می‌شود:
+مکانیزم توجه آگاه از کیفیت و ظرفیت (\lr{Quality and Capacity-Aware GQA - QCQA}) با هدف پویاسازی و یادگیری توزیع تخصیص سرها معرفی شده است. ایده محوری ماژول \lr{QCQA}، ترکیب پیوسته و هوشمند سرهای کلید/مقدار فشرده‌شده از طریق یک شبکه مسیریاب هموار (\lr{Continuous Learned Routing Distribution}) با دمای کنترل‌شده است. بدین ترتیب، برای هر سر پرس‌وجو، یک بازنمایی مجازی سنتز‌شده از کلید و مقدار بر مبنای ترکیبی خطی و وزن‌دار از سرهای فشرده موجود ساخته می‌شود که بدون نیاز به تکثیر صلب داده‌ها، انعطاف بیان‌پذیری مدل را به حداکثر می‌رساند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس حالت‌های پنهان ورودی باشد که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. پروجکشن‌های اولیه پرس‌وجو، کلید و مقدار با ابعاد سرهای نامتقارن تولید می‌شوند:
 \begin{equation}
-\mathcal{H}_h = -\sum_{i} p_{hi} \log p_{hi}, \quad p_{hi} = \frac{\|\mathbf{q}_{h,i}\|_2}{\sum_j \|\mathbf{q}_{h,j}\|_2}
+\mathbf{Q} \in \mathbb{R}^{B \times L \times H_q \times d}, \quad \mathbf{K}_{\text{raw}}, \mathbf{V}_{\text{raw}} \in \mathbb{R}^{B \times N_{\text{kv}} \times H_{\text{kv}} \times d}
 \end{equation}
-سرهای پرس‌وجو به $G$ گروه با ظرفیت‌های ناهمگن تقسیم می‌شوند، به گونه‌ای که سرهای با $\mathcal{H}_h$ بالا سهم بیشتری از سرهای مستقل کلید-مقدار دریافت می‌دارند:
+که در آن $H_q$ تعداد سرهای پرس‌وجو، $H_{\text{kv}} \le H_q$ تعداد سرهای فشرده کلید/مقدار و $d = D / H_q$ بعد هر سر توجه است.
+
+به منظور سنتز بازنمایی ویژه هر سر پرس‌وجو، شبکه مسیریاب خطی $\mathbf{W}_{\text{route}} \in \mathbb{R}^{d \times H_{\text{kv}}}$ ماتریس لوجیت‌های مسیر را به ازای هر سر پرس‌وجو تولید می‌کند:
 \begin{equation}
-K_{\text{\lr{capacity}}}(g) \propto \sum_{h \in \mathcal{G}_g} \exp(\mathcal{H}_h / \tau)
+\mathbf{R}_{\text{logits}} = \frac{\mathbf{Q} \mathbf{W}_{\text{route}}}{\max(\tau_{\text{router}}, 10^{-4})} \in \mathbb{R}^{B \times L \times H_q \times H_{\text{kv}}}
 \end{equation}
-بدین ترتیب، تخصیص حافظه دقیقاً متناسب با ارزش اطلاعاتی هر گروه سر تنظیم می‌شود.
+سپس توزیع وزن‌های پیوسته مسیریابی با تابع بیشینه هموار نرمال‌سازی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{route}} = \operatorname{softmax}(\mathbf{R}_{\text{logits}}, \text{dim}=-1)
+\end{equation}
+برای هر توکن پرس‌وجو در موقعیت زمانی $t$ و سر پرس‌وجوی $h \in \{1, \dots, H_q\}$، بازنمایی کلید و مقدار سنتز‌شده از ترکیب محدب سرهای فشرده کلید/مقدار به دست می‌آید:
+\begin{equation}
+\tilde{\mathbf{K}}_{b, t, h} = \sum_{k=1}^{H_{\text{kv}}} W_{\text{route}, b, t, h, k} \cdot \mathbf{K}_{\text{raw}, b, :, k}, \quad \tilde{\mathbf{V}}_{b, t, h} = \sum_{k=1}^{H_{\text{kv}}} W_{\text{route}, b, t, h, k} \cdot \mathbf{V}_{\text{raw}, b, :, k}
+\end{equation}
+سپس امتیازهای توجه و بافتار نهایی با اعمال ضرب داخلی، ماسک‌های علّی/پدینگ و نرم‌سازی بیشینه هموار استاندارد محاسبه می‌گردد:
+\begin{equation}
+\mathbf{S}_h = \frac{\mathbf{Q}_h \tilde{\mathbf{K}}_h^\top}{\sqrt{d}}, \quad \mathbf{A}_h = \operatorname{softmax}(\mathbf{S}_h + \mathbf{M}), \quad \mathbf{O}_h = \mathbf{A}_h \tilde{\mathbf{V}}_h
+\end{equation}
+در نهایت، تانسورهای خروجی کلیه سرها ادغام شده و از پروجکشن خروجی عبور داده می‌شوند:
+\begin{equation}
+\mathbf{O} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_{H_q}) \mathbf{W}_O
+\end{equation}
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{qcqa\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
-\begin{enumerate}
-\item پایش آماری انتروپی سرهای پرس‌وجو در گام‌های آغازین پردازش.
-\item گروه‌بندی پویای سرهای توجه به دسته‌های دارای اشتراک حافظه کلید-مقدار.
-\item تکثیر برداری \lr{(Repeat/Broadcast)} سرهای کم‌ظرفیت با عملگر هم‌راستاسازی تانسوری.
-\item محاسبه ضرب توجه در خوشه‌های بهینه‌شده به صورت موازی.
-\item ادغام سرهای ناهمگن در تانسور نهایی و پروجکشن خروجی لایه.
-\end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی اصلی این ماژول تحت عنوان \lr{QCQAAttention} در فایل \lr{Codes/framework/attentions/qcqa\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌نماید. اهم ویژگی‌های ساختاری و مهندسی این کد عبارتند از:
 \begin{itemize}
-\item \textbf{کاهش بهینه ترافیک بافر حافظه:} اندازه \lr{KV-Cache} به حداقل ممکن بدون قربانی کردن کیفیت سرهای بحرانی کاهش می‌یابد.
-\item \textbf{تعادل بی‌نقص بار محاسباتی هسته‌ها:} زمان اجرای سرهای اشتراکی با سرهای متراکم همگام‌سازی می‌شود.
+    \item \textbf{شبکه مسیریاب پویا (\lr{Continuous Soft Router}):} شبکه سبک‌وزن \lr{self.router} وظیفه نگاشت بردار بعد سر به تعداد سرهای کلید/مقدار فشرده را بر عهده دارد و دمای \lr{router\_temp} امکان تنظیم غلظت یا نرمی توزیع وزن‌ها را فراهم می‌سازد.
+    \item \textbf{پشتیبانی کامل از کش بافر کلید/مقدار (\lr{KV-Cache}):} سازگار با هر دو ساختار چندتایی و \lr{DynamicCache} پلتفرم \lr{Hugging Face} به همراه اعمال صحیح انحراف زمانی \lr{past\_len} در محاسبات مکانی \lr{RoPE}.
+    \item \textbf{انعطاف در انواع ماسک‌های ورودی:} پردازش ماسک‌های دوبعدی پدینگ، ماسک‌های چهاربعدی تلفیقی و ماسک مثلثی علّی برای دیکودرها.
+    \item \textbf{مسیر شتاب‌یافته \lr{SDPA}:} در صورت عدم نیاز به بازگرداندن ماتریس‌های توجه و هم‌ترازی سرها، از هسته ادغام‌شده \lr{scaled\_dot\_product\_attention} برای بیشینه‌سازی توان عملیاتی استفاده می‌شود.
 \end{itemize}
 
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{qcqa\_attention} بر روی بنچ‌مارک استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی در شرایط کاملاً کنترل‌شده انجام گرفته است. داده‌های رسمی استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_qcqa_attention} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{qcqa\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_qcqa_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.76\%} & \lr{0.7299} & \lr{334.32 MB} & \lr{67,004.99 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.03\%} & \lr{0.6748} & \lr{382.56 MB} & \lr{34,912.42 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6738} & \lr{568.75 MB} & \lr{31,268.37 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.72\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{QCQA} بر روی مدل \lr{DistilBERT} دقت \lr{63.76\%} و شاخص F1 معادل \lr{0.7299} را به ثبت رسانده و اوج مصرف حافظه گرافیکی را در حد بسیار پایین \lr{334.32 MB} با توان عملیاتی خیره‌کننده \lr{67,004.99 tok/s} تثبیت کرده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل تفصیلی کارنامه ماژول نمایانگر رفتارهای ساختاری زیر است:
 \begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.75\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{86.0\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{690.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{38,200} توکن بر ثانیه
+    \item \textbf{افت کارایی در مدل‌های \lr{RoBERTa} (\lr{51.03\%}) و \lr{GPT-2} (\lr{50.92\%}):} نتایج این دو مدل در آستانه \lr{PASS\_LOW} قرار دارد. علت بنیادین این پدیده، تداخل دینامیک وزن‌های مسیریاب با وزن‌های تثبیت‌شده پیش‌آموزش است. از آنجا که مقادیر اولیه مسیریاب به صورت تصادفی با وزن‌های نرمال کوچک مقداردهی می‌شوند، در فازهای نخستین آموزش بدون دوره گرم‌سازی طولانی، بازنمایی کلیدها دچار درهم‌آمیختگی و اغتشاش شده و مدل به جای بازیابی اطلاعات ظریف، به پیش‌بینی میانگین رده‌ها بسنده می‌نماید.
+    \item \textbf{چالش مدل علّی \lr{Qwen} (\lr{51.72\%}):} در مدل‌های خودبازگشتی عمیق که از پیش بر پایه فشرده‌سازی صلب \lr{GQA} آموزش دیده‌اند، تغییر دینامیک فضاهای کلید/مقدار در طول دنباله مانع از همگرایی سریع گرادیان‌ها در لایه‌های فوقانی شبکه می‌گردد.
 \end{itemize}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت درخشان \lr{88.75\%} با سرعت \lr{38,200} توکن/ثانیه و مصرف اندک \lr{690.0 MB} حافظه (کاهش \lr{83.6\%}ی نسبت به \lr{۴۲۰۰ MB} پایه)، نشان‌دهنده هوشمندی تخصیص نامتقارن ظرفیت در \lr{QCQA} است؛ جایی که منابع سخت‌افزاری دقیقاً به جایی هدایت می‌شوند که پیچیدگی زبان ایجاب می‌کند.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    gqa/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {سرهای پرس‌وجو $\mathbf{Q}$};
-    \node [gqa, right=1.0cm of input] (ent) {سنجش انتروپی و کیفیت};
-    \node [gqa, right=1.0cm of ent] (group) {گروه‌بندی تطبیقی \lr{KV}};
-    \node [outblock, right=1.0cm of group] (out) {خروجی بهینه};
-
-    \draw [->, thick, draw=blue!80] (input) -- (ent);
-    \draw [->, thick, draw=purple!80] (ent) -- (group);
-    \draw [->, thick, draw=purple!80] (group) -- (out);
-\end{tikzpicture}
-\end{center}
-
-

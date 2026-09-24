@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Path | Time | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 1.90 s | 183 MB |
-| DistilBERT | **Nyström** | **88.07** | -2.64 | 0.8834 | Dense | 1.42x s | 335 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 4.10 s | 712 MB |
-| RoBERTa | **Nyström** | **52.18** | -26.38 | 0.6800 | Dense | 2.3 s s | 666 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 4.20 s | 793 MB |
-| GPT-2 | **Nyström** | **50.92** | -28.44 | 0.6748 | Dense causal | 2.3 s s | 569 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Nystrom** | **88.07%** | -2.87% | PASS | 0.8834 | 0 | **0.99x** | 335.2 MB | 6.6s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Nystrom** | **52.18%** | -23.28% | PASS_LOW | 0.6800 | 0 | **0.94x** | 661.5 MB | 12.4s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Nystrom** | **51.03%** | -6.88% | PASS_LOW | 0.6753 | 0 | **0.99x** | 569.5 MB | 8.6s |
 
 **Key observation.** At $N = 128$, all models use the dense fallback. Accuracy 
 and efficiency match the baseline. **The Nyström branch is not activated.**

@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی این مکانیزم تحت نام \lr{FactorisedMatrixState} در مسیر \lr{Codes/framework/attentions/factorised\_matrix\_state.py} تعریف شده و از \lr{BaseAttention} ارث‌بری می‌کند. از ویژگی‌های فنی برجسته این پیاده‌سازی می‌توان به موارد زیر اشاره نمود:
+\begin{itemize}
+    \item متد سازنده با پارامترهای تنظیمی \lr{rank} (رتبه فاکتورسازی برشی، پیش‌فرض ۳۲)، \lr{d\_model} (بعد نمایش، پیش‌فرض ۷۶۸)، \lr{num\_heads} (تعداد سرها، پیش‌فرض ۱۲) و پارامترهای آداپتور \lr{lora\_rank} و \lr{lora\_alpha}.
+    \item تجمع پایدار عددی در فضای ممیز شناور ۳۲ بیتی (\lr{FP32 State Accumulation}) و استفاده از دستور \lr{torch.nan\_to\_num} برای جلوگیری از خطای سرریز یا زیرریز در محاسبات بازگشتی.
+    \item پشتیبانی دوجانبه از پردازش دوطرفه موازی (\lr{Bidirectional Parallel Prefix}) برای انکودرها (DistilBERT و RoBERTa) و پردازش علّی زمان‌محور (\lr{Strict Causal Recurrence}) برای دیکودرها (GPT-2 و Qwen).
+    \item سازگاری ذاتی با سرهای پرس‌وجوی گروه‌بندی‌شده (\lr{GQA}) و نگاشت چرخشی موقعیت (\lr{RoPE}).
+\end{itemize}

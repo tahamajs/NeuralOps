@@ -1,0 +1,25 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی باشد. در ساختار \lr{HashedNet}، جدول پارامتری مشترکی به صورت بردار $\mathbf{w}_{\text{table}} \in \mathbb{R}^{B}$ با $B \ll d_{\text{in}} \cdot d_{\text{out}}$ سطل تعریف می‌شود. برای هر درایه $(i, j)$ با ایندکس مسطح‌سازی‌شده $k = i \cdot d_{\text{in}} + j$، نگاشت سطل $h(i, j) \in \{0, \dots, B-1\}$ و تابع علامت $\xi(i, j) \in \{-1, +1\}$ با استفاده از مخلوط‌سازی بیتی ۶۴ بیتی بدون همپوشانی محاسبه می‌گردد:
+\begin{align}
+k' &= k \oplus (k \gg 33), \quad k'' = (k' \cdot c_1) \oplus ((k' \cdot c_1) \gg 16), \quad k''' = (k'' \cdot c_2) \oplus ((k'' \cdot c_2) \gg 16) \\
+h(i, j) &= |k'''| \pmod B \\
+\xi(i, j) &= 2 \cdot ((k''' \oplus (k''' \gg 1)) \mathbin{\&} 1) - 1
+\end{align}
+که در آن $c_1 = \text{0x51afd7ed}$ و $c_2 = \text{0x45d9f3b}$ ضرایب آشوب بیتی هستند. ماتریس وزن بازسازی‌شده $\hat{\mathbf{W}}$ به صورت زیر بیان می‌شود:
+\begin{equation}
+\hat{\mathbf{W}}_{i, j} = \xi(i, j) \cdot \mathbf{w}_{\text{table}}[h(i, j)]
+\end{equation}
+با توجه به ویژگی امید ریاضی علامت‌ها $\mathbb{E}[\xi(i, j)] = 0$ و $\mathbb{E}[\xi(i, j) \xi(i', j')] = \delta_{i, i'} \delta_{j, j'}$، امید ریاضی بازسازی نااریب باقی می‌ماند. عمل پیشرو برای ورودی $\mathbf{x} \in \mathbb{R}^{N \times d_{\text{in}}}$ به شکل زیر اجرا می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hashed_net_compressor}
+\mathcal{C}_{\text{hashed\_net\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,66 @@
+\section{ماژول hybrid\_svd\_layer (Hybrid SVD Layer)}
+\label{sec:module_hybrid_svd_layer}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+تجزیه مقادیر منفرد (\lr{SVD}) در معماری‌های توجه دو رویکرد بنیادین دارد: فشرده‌سازی بر روی فعال‌سازی‌های برخط لایه توجه (\lr{Activation-based SVD Attention}) و فشرده‌سازی ایستای ماتریس‌های وزن لایه‌های خطی (\lr{Weight-based SVD Compression}). رویکرد نخست که در نسخه‌های اولیه تحت عنوان \lr{SVDSingleHead} پیاده‌سازی شده بود، \lr{SVD} را به صورت بلادرنگ بر روی تانسور فعال‌سازی ورودی اعمال می‌کرد. با این حال، محاسبه برخط تجزیه مقادیر منفرد بر روی فعال‌سازی‌ها دارای مرتبه پیچیدگی زمانی سنگین $\mathcal{O}(N^2 d)$ بوده و از نظر پایداری گرادیان در طول فاز پسرو به شدت ناپایدار و از نظر تئوری نامناسب است.
+
+موتور نوین فشرده‌سازی \lr{Hybrid SVD Layer} با بازطراحی کامل ساختار قبلی، فشرده‌سازی ایستای مبتنی بر وزن را با معماری انکودر ترکیب نموده است. این ماژول ماتریس‌های پروجکشن توجه و شبکه‌های پیش‌خوران را با لایه‌های کم‌مرتبه \lr{SVDLinear} جایگزین می‌نماید و با پشتیبانی هم‌زمان از ساختار ماژول خطی فاکتورگیری‌شده، سیستم پایش خطای فروبنیوس و مسیر بازگشت به حالت متراکم اولیه، کاهش پایدار حجم پارامترها و تسریع زمان استنتاج را محقق می‌سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه فاکتورگیری‌شده مبتنی بر وزن، ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه انتخابی $r \le \min(d_{\text{in}}, d_{\text{out}})$ از طریق تجزیه مقادیر منفرد اقتصادی (\lr{Thin SVD}) تجزیه می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با توزیع متقارن مقادیر منفرد بر روی مولفه‌های چپ و راست، دو ماتریس تجزیه‌شده به دست می‌آیند:
+\begin{equation}
+\mathbf{W}_1 = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}, \quad \mathbf{W}_2 = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}
+\end{equation}
+گذر پیشرو برای تانسور ورودی $\mathbf{x} \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ به دو ضرب متوالی ماتریسی شکسته می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{W}_1^\top) \mathbf{W}_2^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+خطای نسبی بازسازی فروبنیوس در هر لایه محاسبه شده و با آستانه مجاز $\tau_{\text{max}}$ مقایسه می‌گردد:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_2 \mathbf{W}_1\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+اگر $\mathcal{E}_{\text{rel}} > \tau_{\text{max}}$، فرآیند فشرده‌سازی لایه لغو شده و ساختار اصلی لایه دست‌نخورده حفظ می‌گردد.
+
+\subsection{معماری و پیاده‌سازی}
+این ماژول در فایل \lr{Codes/framework/compression\_engine/hybrid\_svd\_layer.py} پیاده‌سازی شده و تحت شناسه‌های \lr{hybrid\_svd}، \lr{hybrid\_svd\_layer} و \lr{direct\_svd\_encoder} در رجیستری فشرده‌سازی به ثبت رسیده است. اجزای اصلی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{کلاس \lr{HybridSVDCompressor}:} مدیریت هوشمند شناسایی لایه‌های خطی و تبدیل آن‌ها به \lr{SVDLinear} با رعایت سازگاری با معماری‌های مختلف (\lr{GPT-2, RoBERTa, DistilBERT}).
+    \item \textbf{پشتیبانی از تفکیک لایه‌های توجه (\lr{Target Attention Only}):} امکان فیلتر کردن لایه‌ها برای فشرده‌سازی انحصاری پروجکشن‌های \lr{q\_proj, k\_proj, v\_proj, o\_proj, c\_attn}.
+    \item \textbf{ماژول موروثی \lr{SVDSingleHead}:} حفظ پیاده‌سازی تاریخی برخط جهت سازگاری با کدهای پیشین به همراه ثبت هشدار منسوخ‌شدن (\lr{Deprecation Warning}).
+    \item \textbf{محاسبه نسبت فشرده‌سازی واقعی:} ارزیابی کاهش پارامترها و محاسبه ضریب فشرده‌سازی (\lr{Compression Rate}) به صورت پویا در طول فرآیند جایگزینی.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{hybrid\_svd\_layer} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_hybrid_svd_layer} مستند گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{hybrid\_svd\_layer} بر روی مدل‌های پایه}
+\label{tab:benchmark_hybrid_svd_layer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.18\%} & \lr{0.7715} & \lr{258.70 MB} & \lr{155,604.92 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{630.13 MB} & \lr{81,996.21 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.6748} & \lr{619.22 MB} & \lr{67,161.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج بنچ‌مارک نشان می‌دهد که ماژول \lr{hybrid\_svd\_layer} با اعمال ضریب فشرده‌سازی موثر \lr{1.91x} در مدل \lr{DistilBERT}، مصرف حافظه را به شکل چشمگیری به \lr{258.70 MB} کاهش داده و توان عملیاتی بالای \lr{155,604.92 tok/s} را به همراه دقت قابل قبول \lr{77.18\%} ارائه کرده و با موفقیت وضعیت \lr{PASS} را احراز نموده است. در مدل‌های \lr{RoBERTa} و \lr{GPT-2}، با توجه به فشرده‌سازی تهاجمی بیش از ۷۰ لایه خطی با نرخ بیش از دو برابر، افت دقت در غیاب کالیبراسیون داده‌محور مشاهده شده و وضعیت \lr{PASS\_LOW} ثبت گردیده است. در مدل \lr{Qwen}، به علت عدم تطابق نام‌گذاری لایه‌ها در اسکریپت قدیمی، اجرا با خطا متوقف و به صورت \lr{SKIP} مستند شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل فنی شکست و نقاط آسیب‌پذیر این ماژول به شرح زیر است:
+\begin{itemize}
+    \item \textbf{فروپاشی دقت در فشرده‌سازی فراگیر بدون کالیبراسیون فعال‌سازی:} در مدل‌های \lr{RoBERTa} و \lr{GPT-2}، تجزیه مستقیم \lr{SVD} بر روی تمام ماتریس‌های خطی بدون در نظر گرفتن کانال‌های پرت (\lr{Outliers}) در فعال‌سازی‌ها، منجر به خطای بازسازی انباشته در لایه‌های متوالی و افت شدید دقت به سطح شانس تصادفی (\lr{PASS\_LOW}) شده است؛ امری که ضرورت استفاده از الگوریتم‌های آگاه از فعال‌سازی مانند \lr{ASVD} را اثبات می‌کند.
+    \item \textbf{ناسازگاری مدل منسوخ \lr{SVDSingleHead}:} پیاده‌سازی قدیمی محاسبه برخط \lr{SVD} بر روی توالی فعال‌سازی‌ها علاوه بر پیچیدگی زمانی شدید در طول توالی‌های طولانی، به دلیل مقادیر منفرد نزدیک به صفر موجب ایجاد گرادیان‌های بی‌نهایت (\lr{NaN/Inf}) در گذر پسرو می‌گردد.
+\end{itemize}

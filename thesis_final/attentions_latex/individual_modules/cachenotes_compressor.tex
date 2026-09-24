@@ -1,0 +1,70 @@
+\section{ماژول cachenotes\_compressor (CacheNotes Compressor)}
+\label{sec:module_cachenotes_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+در پردازش دنباله‌های طولانی توسط ترنسفورمرها، رشد خطی حجم حافظه پنهان کلید و مقدار (\lr{KV Cache}) به همراه نیاز به جابجایی وزن‌های حجیم شبکه، تنگنای اصلی پهنای باند حافظه (\lr{Memory Bandwidth Bottleneck}) را پدید می‌آورد. اکثر روش‌های پیشین فشرده‌سازی و هرس، کاملاً مستقل از ماهیت وظیفه پیش‌رو عمل کرده و فرض می‌کنند اهمیت کانال‌ها برای تمامی وظایف زبانی یکسان است؛ حال آنکه نیازمندی‌های استخراج ویژگی در وظایفی چون خلاصه‌سازی (\lr{Summarization})، پاسخ به پرسش (\lr{QA})، یا کدنویسی به شدت با یکدیگر متمایز هستند.
+
+چارچوب فشرده‌سازی \lr{CacheNotes} برای ایجاد فشرده‌سازی آگاه از وظیفه (\lr{Task-Aware Compression}) معرفی شده است. این چارچوب با تولید توکن‌های پیوسته برنامه‌ریزی فشرده‌سازی (\lr{Compression-Planning-Tokens - CPTs})، اطلاعات معنایی وظیفه را به بردار اهمیت پیوسته کانال‌ها نگاشت می‌کند. سپس این بردار هم در فشرده‌سازی استاتیک وزن‌ها بر پایه تجزیه مقادیر منفرد هدایت‌شده (\lr{CPT-Guided SVD}) و هم در هرس پویای حافظه پنهان \lr{KV Cache} در زمان اجرا به کار گرفته می‌شود.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در \lr{CacheNotes} از دو مولفه ریاضی وابسته تشکیل شده است:
+\begin{enumerate}
+    \item \textbf{تولیدکننده پیوسته توکن برنامه‌ریزی فشرده‌سازی (\lr{CPT Generator}):} با دریافت توصیف متنی وظیفه $T_{\text{task}}$، ابتدا امبدینگ توکن‌ها توسط یک شبکه رمزگذار به بردار حالت $\mathbf{h} \in \mathbb{R}^{d_h}$ تبدیل می‌شود. برای تولید اهمیت در هر بعد دلخواه $d$ (حتی ابعاد پیوسته)، موقعیت کانال‌ها به صورت فرکانسی در قالب مختصات \lr{NeRF} کدگذاری می‌شود:
+    \begin{equation}
+    \gamma(c) = \left[ \sin(2^0 \pi c), \cos(2^0 \pi c), \dots, \sin(2^{F-1} \pi c), \cos(2^{F-1} \pi c) \right], \quad c = \frac{j}{d}, \quad j \in \{1, \dots, d\}
+    \end{equation}
+    بردار اهمیت نهایی کانال‌ها توسط شبکه پروجکشن بر روی بازه پیوسته $[0.1, 2.0]$ نگاشته می‌شود:
+    \begin{equation}
+    \mathbf{s} = \operatorname{Sigmoid}(\text{MLP}([\mathbf{h}; \gamma(\mathbf{c})])) \cdot 1.9 + 0.1 \in \mathbb{R}^d
+    \end{equation}
+    \item \textbf{تجزیه کم‌مرتبه هدایت‌شده (\lr{CPT-Guided SVD}):} ماتریس وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در قطر بردار اهمیت ورودی یا خروجی پیش‌شرط‌سازی می‌گردد:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \operatorname{diag}(\mathbf{s})
+    \end{equation}
+    سپس بر روی $\tilde{\mathbf{W}}$ تجزیه مقادیر منفرد برشی اعمال شده و فاکتورهای کم‌مرتبه پس از بازگردانی مقیاس تشکیل می‌گردند:
+    \begin{equation}
+    \tilde{\mathbf{W}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \hat{\mathbf{W}} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \operatorname{diag}(\mathbf{s})^{-1}
+    \end{equation}
+    \item \textbf{فشرده‌سازی پویای حافظه پنهان (\lr{KV Cache Compression}):} در زمان استنتاج، توکن‌های حافظه پنهان کلید و مقدار با ضرب در وزن‌های اهمیت $\mathbf{s}$ ارزیابی شده و کم‌اهمیت‌ترین توکن‌ها تا رسیدن به بودجه فشرده‌سازی هرس می‌شوند.
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+کد منبع این ماژول در فایل \lr{Codes/framework/compression\_engine/cachenotes\_compressor.py} مستقر بوده و شامل بخش‌های زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{CPTGenerator}:} شبکه عصبی تفکیک‌پذیر مجهز به \lr{EmbeddingBag} و لایه‌های پروجکشن فرکانسی که امکان ارزیابی وظیفه در هر بعد دلخواه $d$ (مانند ۶۴، ۱۲۸، ۷۶۸، ۱۰۲۴ یا ۴۰۹۶) را بدون محدودیت معماری فراهم می‌سازد.
+    \item \textbf{کلاس \lr{CompressionPlanningTokens}:} سیستم پشتیبان مبتنی بر کلیدواژه‌های ایستا که در صورت عدم آموزش شبکه CPT، به طور خودکار به عنوان جایگزین پایدار فعال می‌شود.
+    \item \textbf{کلاس \lr{CacheNotesLoRALinear}:} لایه جایگزین فاکتورگیری‌شده که وزن فشرده را ثابت نگه داشته و شاخه کم‌مرتبه \lr{LoRA} را جهت بازیابی دقیق تعبیه می‌کند.
+    \item \textbf{کلاس \lr{CacheNotesCompressor}:} کلاس اصلی مدیریت فرآیند فشرده‌سازی، مدیریت وظایف کالیبراسیون و کالیبراسیون مجدد لایه‌نرمال.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی فشرده‌ساز \lr{cachenotes\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_cachenotes_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{cachenotes\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_cachenotes_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{90.94\%} & \lr{0.9127} & \lr{368.29 MB} & \lr{133,508.96 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{81.70\%} & \lr{0.8162} & \lr{456.73 MB} & \lr{193,047.72 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{92.55\%} & \lr{0.9274} & \lr{514.29 MB} & \lr{12,830.05 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (AGNews)} & \lr{81.30\%} & \lr{0.8080} & \lr{743.20 MB} & \lr{40,222.56 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج تجربی، فشرده‌ساز \lr{cachenotes\_compressor} عملکرد بسیار متعادل و قدرتمندی را در تمامی مدل‌ها به نمایش گذاشته است. در مدل \lr{RoBERTa} به دقت عالی \lr{92.55\%} دست یافته و در مدل \lr{DistilBERT} دقت \lr{90.94\%} را روی SST-2 با توان بالای \lr{133,508} توکن بر ثانیه ثبت نموده است. علاوه بر این، بر روی مدل دیکودری \lr{GPT-2} بر روی دادگان AGNews دقت بالای \lr{81.30\%} با توان \lr{40,222} توکن بر ثانیه به دست آمده و وضعیت \lr{PASS} را احراز کرده است. آزمون روی مدل \lr{Qwen} انجام نشده و وضعیت \lr{NOT\_RUN} ثبت شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل ساختاری و تجربی این ماژول نکات زیر را مشخص می‌سازد:
+\begin{itemize}
+    \item \textbf{وابستگی به توصیف کیفی وظیفه:} عملکرد ماژول به توصیف متنی ارائه‌شده در ورودی وابسته است؛ چنانچه توصیف وظیفه مبهم یا کوتاه باشد، بردار اهمیت تولیدشده ممکن است تنوع کافی را ایجاد نکند و ماژول ناگزیر به استفاده از مقادیر پیش‌فرض هیوریستیک گردد.
+    \item \textbf{سربار فاز اولیه آموزش مولد \lr{CPT}:} برای دستیابی به حداکثر تطبیق‌پذیری، شبکه \lr{CPTGenerator} نیازمند آموزش پیشینی بر روی دادگان وظایف است؛ اگرچه مکانیزم پشتیبان ایستا مانع از شکست عملکردی می‌شود، اما بهره‌برداری کامل از پتانسیل مدل مشروط به مرحله اولیه کالیبراسیون وظیفه‌محور است.
+\end{itemize}

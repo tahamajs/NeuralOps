@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/rotational\_slicegpt\_int4.py} انجام شده و تحت نام‌های \lr{rotational\_slicegpt\_int4} و \lr{rotational\_slicegpt} در رجیستری فشرده‌سازی ثبت گردیده است. ساختار پیاده‌سازی شامل موارد زیر است:
+\begin{itemize}
+    \item \textbf{کوانتیزه‌ساز \lr{AstroQuantizer}:} تعبیه جدول توزیع گاوسی غیریکنواخت با پشتیبانی از دقت‌های ۲، ۴ و ۸ بیتی که با استفاده از مقیاس‌بندی بلوکی و نقطه صفر بهینه کمترین خطای کوانتیزاسیون را ایجاد می‌نماید.
+    \item \textbf{لایه خطی فشرده \lr{RotationalSliceGPTINT4Linear}:} لایه پیاده‌سازی‌شده با پیش‌محاسبه بافر پروجکشن ترکیبی $\mathbf{Q} \mathbf{P}_r \in \mathbb{R}^{d_{\text{in}} \times r}$، خروجی را با رابطه سریع $\mathbf{y} = (\mathbf{x} (\mathbf{Q} \mathbf{P}_r)) \mathbf{W}_{\text{quant}}^\top + \mathbf{b}$ بدون نیاز به بازسازی ماتریس متراکم اولیه در زمان اجرا محاسبه می‌کند.
+    \item \textbf{پایداری عددی در محاسبات اعشاری (\lr{FP32 Precision}):} تمامی محاسبات ماتریس هسیان، معکوس‌سازی با میرایی و جبران \lr{OBS} در فرمت \lr{float32} انجام گرفته و خطای بازسازی نسبی فروبنیوس اعتبارسنجی می‌شود.
+    \item \textbf{مسیر خروج اضطراری خودکار (\lr{Safety Fallback}):} در صورت تخطی خطای بازسازی از آستانه مجاز (\lr{max\_error} پیش‌فرض $0.20$)، لایه به ساختار اولیه بازمی‌گردد.
+\end{itemize}

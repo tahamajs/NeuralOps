@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/nli\_softmax.py} تعبیه شده و در هر دو رجیستری مکانیزم توجه و موتور فشرده‌سازی سیستم به ثبت رسیده است. اجزای کلیدی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{تابع سفارشی \lr{NLISoftmaxFunction}:} پیاده‌سازی \lr{torch.autograd.Function} با گذر پیشرو استاندارد و گذر پسرو بهینه‌شده به همراه مهار عددی گرادیان‌ها.
+    \item \textbf{ماژول \lr{NLISoftmaxAttention}:} جایگزین ساختاری بلوک‌های توجه خودکار برای استقرار مستقیم بر روی لایه‌های انکودری و دیکودری.
+    \item \textbf{موتور فشرده‌سازی \lr{NLISoftmaxCompressor}:} جایگزینی خودکار نمونه‌های \lr{nn.Softmax} در معماری ترانسفورمر، اعتبارسنجی هم‌ارزی پیشرو (\lr{Equivalence Validation}) با آستانه خطای \lr{max\_error} (پیش‌فرض $0.20$)، و مدیریت هوشمند لایه‌های استثنا نظیر سر طبقه‌بند و توابع هزینه.
+\end{itemize}

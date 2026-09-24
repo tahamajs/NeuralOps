@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی این مکانیزم تحت عنوان \lr{FullAttention} در فایل \lr{Codes/framework/attentions/full\_attention.py} پیاده‌سازی شده و از کلاس مرجع \lr{BaseAttention} ارث‌بری می‌کند. مشخصات معماری و پیاده‌سازی این ماژول عبارتند از:
+\begin{itemize}
+    \item استفاده از لایه‌های اختصاصی \lr{LoRALinear} برای تمام پروجکشن‌های چهارگانه (\lr{query}, \lr{key}, \lr{value}, \lr{out\_proj}) با پارامترهای منجمد پایه و آداپتورهای با رتبه قابل تنظیم (پیش‌فرض ۱۶).
+    \item بهره‌گیری از شیء \lr{ModelAdapter} جهت پشتیبانی چندمعماری برای استخراج بدون افت وزن‌ها از ترنسفورمرهای انکودر و دیکودر.
+    \item اعمال ماسک معتبر توکن‌ها از طریق تابع \lr{get\_token\_valid\_mask} و پشتیبانی کامل از RoPE با تفکیک ابعاد زاویه‌ای.
+    \item آرگومان‌های سازنده شامل \lr{config}، \lr{rank} (اختیاری جهت هماهنگی با چارچوب)، \lr{lora\_rank}، و \lr{pretrained\_attn}.
+\end{itemize}

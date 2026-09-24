@@ -1,0 +1,37 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید تانسور حالت‌های پنهان ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ باشد. پروجکشن‌های پرس‌وجو، کلید و مقدار با استفاده از لایه‌های خطی سازگار با آداپتورهای کم‌مرتبه (\lr{LoRALinear}) به صورت زیر استخراج می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times N \times d}
+\end{equation}
+در صورت عدم تقارن تعداد سرهای پرس‌وجو و کلید/مقدار (\lr{GQA})، تانسورهای $\mathbf{K}$ و $\mathbf{V}$ با فاکتور تکرار $R = H / H_{\text{kv}}$ به ابعاد متناظر با $\mathbf{Q}$ گسترش می‌یابند.
+
+ماتریس مجاورت گرافی $\mathbf{A} \in \{0, 1\}^{N \times N}$ بر اساس فاصله مکانی توکن‌ها و گره‌های لنگر به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{A}_{i, j} = \begin{cases} 
+1 & \text{if } |i - j| \le 16 \lor i \in \{0, N-1\} \lor j \in \{0, N-1\} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+در مدل‌های دیکودر خودبازگشتی، ماسک علّی بر روی گراف اعمال می‌شود ($\mathbf{A}_{i,j}^{\text{causal}} = \mathbf{A}_{i,j} \land (i \ge j)$). امتیازات توجه گرافی با مقیاس‌بندی $\frac{1}{\sqrt{d}}$ و ماسک‌گذاری مواضع نامعتبر به دست می‌آیند:
+\begin{equation}
+\mathbf{S}_{\text{graph}} = \operatorname{masked\_fill}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}, \neg \mathbf{A}, -\infty\right), \quad \mathbf{O}_{\text{graph}} = \operatorname{softmax}(\mathbf{S}_{\text{graph}}) \mathbf{V}
+\end{equation}
+
+در شاخه سراسری، با اعمال نگاشت غیرخطی نامنفی $\phi(x) = \operatorname{ELU}(x) + 1$، توجه خطی در حالت انکودر دوطرفه با تغییر ترتیب ضرب ماتریسی محاسبه می‌شود:
+\begin{equation}
+\mathbf{M}_{\text{kv}} = \phi(\mathbf{K})^\top \mathbf{V} \in \mathbb{R}^{B \times H \times d \times d}, \quad \mathbf{O}_{\text{global}} = \frac{\phi(\mathbf{Q}) \mathbf{M}_{\text{kv}}}{\phi(\mathbf{Q}) \sum_{j=1}^N \phi(\mathbf{K}_j)^\top + \epsilon}
+\end{equation}
+و در حالت علّی ديكودر از جمع تجمعی ضرب خارجی توکن‌ها در راستای زمان استفاده می‌گردد. در پایان، شبکه دروازه بردار وزن‌های تلفیق را تولید کرده و خروجی نهایی شکل می‌گیرد:
+\begin{equation}
+[\mathbf{g}_{\text{graph}}, \mathbf{g}_{\text{global}}] = \sigma(\mathbf{X} \mathbf{W}_{\text{gate}} + \mathbf{b}_{\text{gate}}), \quad \mathbf{O} = \mathbf{g}_{\text{graph}} \odot \mathbf{O}_{\text{graph}} + \mathbf{g}_{\text{global}} \odot \mathbf{O}_{\text{global}}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_vig_attention}
+\mathcal{C}_{\text{vig\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

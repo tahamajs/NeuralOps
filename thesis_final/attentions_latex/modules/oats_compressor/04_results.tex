@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی سخت‌افزاری و کیفی فشرده‌ساز \lr{oats\_compressor} بر پایه داده‌های ثبت‌شده در پایگاه \lr{results/unified\_oats\_4models\_summary.json} در جدول \ref{tab:benchmark_oats_compressor} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{oats\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_oats_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9058} & \lr{401.5 MB} & \lr{27.2 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{59.06\%} & \lr{0.7128} & \lr{539.7 MB} & \lr{44.2 s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{32.1 s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های تجربی، فشرده‌ساز \lr{oats\_compressor} در مدل \lr{DistilBERT} عملکردی قابل توجه برجسته نشان داده و توانسته است تمامی ۳۶ لایه خطی را به شکل ساختاریافته فشرده ساخته و دقت عالی \lr{90.37\%} را با شاخص F1 معادل \lr{0.9058} ثبت نماید (افت تنها \lr{-0.11\%}). در مدل \lr{RoBERTa} نیز ۷۲ لایه خطی فشرده شده و دقت \lr{59.06\%} با شاخص F1 معادل \lr{0.7128} حاصل شده و وضعیت \lr{PASS} به دست آمده است. با این وجود، در مدل \lr{GPT-2} دقت مدل فشرده‌شده به \lr{0.00\%} افت کرده و وضعیت \lr{FAIL} گزارش شده است. ارزیابی مدل \lr{Qwen} نیز با وضعیت \lr{SKIP} تعیین گردیده است.

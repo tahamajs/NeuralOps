@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک جامع برای ماژول \lr{sparsegpt} در جدول \ref{tab:benchmark_sparsegpt} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز تنک‌سازی مرتبه دوم \lr{sparsegpt} روی مدل‌های پایه}
+\label{tab:benchmark_sparsegpt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.93\%} & \lr{0.8747} & \lr{340.1 MB} & \lr{28.1 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{363.5 MB} & \lr{44.0 s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{53.33\%} & \lr{0.6661} & \lr{634.4 MB} & \lr{39.0 s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که نتایج جدول \ref{tab:benchmark_sparsegpt} نشان می‌دهد، ماژول \lr{sparsegpt} بر روی مدل \lr{DistilBERT} عملکرد با ثباتی ارائه داده و دقت مطلوب \lr{86.93\%} را با F1 معادل \lr{0.8747} به دست آورده است. در مدل‌های عمیق‌تر نظیر \lr{RoBERTa} و مدل خودبازگشتی \lr{GPT-2}، تنک‌سازی ۵۰ درصدی تک‌مرحله‌ای منجر به افت محسوس‌تر عملکرد شده و به ترتیب به دقت‌های \lr{50.92\%} و \lr{53.33\%} دست یافته‌اند که در رده وضعیتی \lr{PASS\_LOW} قرار می‌گیرند. مدل \lr{Qwen} در نسخه فعلی بنچ‌مارک یکپارچه به صورت \lr{NOT\_RUN} ثبت شده است.

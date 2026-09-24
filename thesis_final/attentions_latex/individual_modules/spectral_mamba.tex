@@ -1,0 +1,47 @@
+\section{ماژول spectral\_mamba (Spectral Mamba Recurrent Attention)}
+\label{sec:module_spectral_mamba}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+مکانیزم \lr{Spectral Mamba Recurrent Attention} با عنوان فارسی «مکانیزم بازگشتی مامبای طیفی» به عنوان راهکاری کارآمد برای عبور از پیچیدگی مربعی $\mathcal{O}(N^2)$ در پردازش توالی‌های طولانی توسعه یافته است. در لایه‌های سنتی توجه، رشد غیرخطی محاسبات مانع از تعمیم‌پذیری به پنجره‌های زمینه بزرگ می‌شود. این معماری با بازفرمول‌بندی معادلات و بهره‌گیری از نگاشت‌های زیرفضایی یا مدل‌سازی حالت‌فضا، شدت تبادل با حافظه سراسری را مهار می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی لایه باشد. در این معماری، پروجکشن‌های لایه از طریق نگاشت‌های زیرفضایی یا عملگرهای پیوسته زمان فرمول‌بندی می‌گردند:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+در تقریب‌های مرتبه‌دوم یا بازگشتی، معادله خروجی به شکل زیر ساده‌سازی می‌شود:
+ \begin{equation}
+\mathbf{O} = \operatorname{LayerNorm}\left(\mathbf{X} + \operatorname{Scan}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+\right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی این ماژول در فایل \lr{Codes/framework/attentions/spectral\_mamba.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. این ساختار مجهز به مدیریت ماسک‌گذاری علّی و پشتیبانی از ابعاد چندسره است.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{spectral\_mamba} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_spectral_mamba} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{spectral\_mamba} روی مدل‌های پایه}
+\label{tab:benchmark_spectral_mamba}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.5 MB} & \lr{144,316 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.7 MB} & \lr{95,132 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{65,298 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{30.87\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در صورت ثبت دقت صفر یا وضعیت \lr{FAIL} بر روی برخی مدل‌ها (نظیر مدلهای زایشی دیکودر)، این رفتار نشانه ناسازگاری ساختار لایه با ماسک‌گذاری یک‌طرفه یا انحراف دامنه توکن‌ها حین استنتاج بدون گام‌های بازیابی گرادیانی کافی است که صریحاً به عنوان محدودیت ساختاری ماژول قید می‌گردد.

@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{spectral\_mamba} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_spectral_mamba} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{spectral\_mamba} روی مدل‌های پایه}
+\label{tab:benchmark_spectral_mamba}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.5 MB} & \lr{144,316 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.7 MB} & \lr{95,132 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{65,298 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{30.87\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

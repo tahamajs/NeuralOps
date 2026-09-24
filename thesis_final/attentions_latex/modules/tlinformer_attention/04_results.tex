@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{tlinformer\_attention} بر روی آزمون \lr{GLUE SST-2} ثبت شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_tlinformer_attention} درج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{tlinformer\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_tlinformer_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{331.47 MB} & \lr{69,131.42 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{382.74 MB} & \lr{36,104.16 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{574.72 MB} & \lr{32,163.65 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان‌دهنده راندمان مصرف حافظه قابل قبول است؛ اوج مصرف حافظه در تمام مدل‌ها زیر \lr{575 MB} باقی مانده و توان پردازشی به مرز \lr{69,131.42 tok/s} در \lr{DistilBERT} رسیده است. وضعیت کلی ماژول در دروازه کیفیت بر روی \lr{PASS\_LOW} با دقت \lr{50.92\%} تثبیت گردیده است.

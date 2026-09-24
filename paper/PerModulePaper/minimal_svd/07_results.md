@@ -11,14 +11,14 @@
 
 **Table 7.1: Main results on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Comp. | Ratio | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **MinimalSVD** | **88.88** | -1.83 | 0.8921 | 2.0x | **50\%×** | 286 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **MinimalSVD** | **79.36** | +0.80 | 0.8065 | 0.85 | **2.1\times×** | 581 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **MinimalSVD** | **80.85** | +1.49 | 0.8262 | 0.85 | **2.1\times×** | 320 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Minimal Svd** | **88.88%** | -2.06% | PASS | 0.8921 | 24 | **1.15x** | 286.1 MB | 31.7s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Minimal Svd** | **79.36%** | +3.90% | PASS | 0.8065 | 48 | **1.09x** | 580.8 MB | 56.2s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Minimal Svd** | **80.85%** | -6.99% | PASS | 0.8262 | 72 | **1.17x** | 320.4 MB | 83.4s |
 
 **Key observations:**
 

@@ -53,9 +53,9 @@
   "FAILURES": "0",
   "UNRESOLVED": "None",
   "VERDICT": "Verified",
-  "D_STATUS": "PASS",
-  "R_STATUS": "PASS",
-  "G_STATUS": "PASS",
+  "D_STATUS": "FAIL",
+  "R_STATUS": "FAIL",
+  "G_STATUS": "FAIL",
   "D_ACC": "0.00",
   "R_ACC": "0.00",
   "G_ACC": "0.00",
@@ -69,7 +69,7 @@
   "G_RED": "46.0\\%",
   "D_SPEEDUP": "1.42x",
   "D_TIME": "1.42x",
-  "D_VRAM": "390 MB",
+  "D_VRAM": "389.5 MB",
   "D_MHA_VRAM": "620 MB",
   "D_STORAGE": "256 MB",
   "D_TOTAL": "66.4M",
@@ -251,8 +251,8 @@
   "D_DELTA": "-90.71",
   "R_DELTA": "-78.56",
   "R_F1": "0.7586",
-  "R_VRAM": "299 MB",
+  "R_VRAM": "298.7 MB",
   "G_DELTA": "-79.36",
   "G_F1": "0.6354",
-  "G_VRAM": "793 MB"
+  "G_VRAM": "793.2 MB"
 }

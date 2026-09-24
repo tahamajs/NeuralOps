@@ -1,4 +1,6 @@
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{adaptive\_sparse\_attention}}
+
+این ماژول در این پروژه پیاده‌سازی شده و مقاله مستقل ندارد.
 \label{sec:adaptive_sparse_attention}
 
 \subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
@@ -78,7 +80,7 @@
 \paragraph{۲. جدول ردگیری گام‌به‌گام تانسورها \lr{(Tensor Shape Trace)}:}
 جدول \ref{tab:tensor_trace_adaptive_sparse} دگرگونی ابعاد تانسورها را تشریح می‌کند.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{ردگیری گام‌به‌گام دگرگونی ابعاد تانسورها در ماژول \lr{adaptive\_sparse\_attention}}
@@ -121,7 +123,7 @@
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 جدول \ref{tab:benchmark_adaptive_sparse} نتایج ارزیابی این ماژول بر روی مدل‌های زبانی در وظیفه \lr{GLUE SST-2} را نمایان می‌سازد.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{adaptive\_sparse\_attention} در آزمون \lr{GLUE SST-2}}
@@ -143,7 +145,7 @@
 
 \begin{itemize}
     \item \textbf{هزینه سنگین \lr{torch.sort} در دنباله‌های طولانی:} با اینکه ترکیب \lr{sort} و \lr{gather} محدودیت فیلترینگ پویای پایتورچ را دور می‌زند، الگوریتم مرتب‌سازی کامل دارای پیچیدگی $\mathcal{O}(N_k \log N_k)$ است. برای طول‌های بیش از ۴۰۹۶، این بخش به گلوگاه اصلی پردازنده گرافیکی تبدیل می‌شود. توسعه یک کرنل سفارشی \lr{Triton} که مستقیماً $K$-امین عنصر را بدون مرتب‌سازی کامل بیابد، راه‌حل نهایی خواهد بود.
-    \item \textbf{یکپارچه‌سازی پویای اندازه قطعه \lr{(Dynamic Chunk Size)}:} مقدار $C_q = 64$ در کد سخت‌افزاری \lr{(Hardcoded)} است. یک بهینه‌سازی ساختاری، افزودن یک گزاره شرطی نظیر \lr{if $N_q \le 512$} است تا برای طول‌های کوتاه از حلقه \lr{for} صرف‌نظر شده و ماتریس به صورت یکپارچه \lr{(Unchunked)} پردازش گردد تا از سربار راه‌اندازی متوالی کرنل‌های پایتون \lr{(Kernel Launch Overhead)} پرهیز شود.
+    \item \textbf{یکپارچه‌سازی پویای اندازه قطعه \lr{(Dynamic Chunk Size)}:} مقدار $C_q = 64$ در کد سخت‌افزاری \lr{(Hardcoded)} است. یک بهینه‌سازی ساختاری، افزودن یک گزاره شرطی نظیر \lr{if $N\_q \le 512$} است تا برای طول‌های کوتاه از حلقه \lr{for} صرف‌نظر شده و ماتریس به صورت یکپارچه \lr{(Unchunked)} پردازش گردد تا از سربار راه‌اندازی متوالی کرنل‌های پایتون \lr{(Kernel Launch Overhead)} پرهیز شود.
     \item \textbf{همتاسازی زائد در \lr{GQA}:} در مدل‌هایی با \lr{GQA} بالا نظیر \lr{LLaMA-3}، دستور \lr{repeat\_kv} باعث کپی شدن فیزیکی تانسورها \lr{(Materialization)} در حافظه می‌شود. با بهره‌گیری از خاصیت \lr{Broadcasting} و تابع \lr{.expand()} می‌توان از اتلاف حافظه در این مرحله ممانعت به عمل آورد.
     \item \textbf{پایداری عددی \lr{(Dtype Casting)}:} بازگرداندن داده‌ها به \lr{dtype} اصلی \lr{(FP16)} پیش از اعمال سافت‌مکس ممکن است دقت‌های بسیار کوچک در توزیع تنک را به صفر میل دهد. اجرای ضرب نهایی \lr{attn\_chunk} در $V$ در فضای محاسباتی \lr{FP32} پایداری عددی را به شدت ارتقا خواهد داد.
 \end{itemize}
@@ -172,3 +174,13 @@
     \item \textbf{Beltagy, I., Peters, M. E., \& Cohan, A. (2020).} Longformer: The long-document transformer. \textit{arXiv preprint arXiv:2004.05150}.
 \end{enumerate}
 \end{latin}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_adaptive_sparse_attention}
+\mathcal{C}_{\text{adaptive\_sparse\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,6 @@
+\subsection{معماری و پیاده‌سازی}
+کد این ماژول در فایل \lr{Codes/framework/compression\_engine/ast\_pruner.py} پیاده‌سازی شده و در رجیستری با شناسه‌های \lr{ast\_pruner} و \lr{ast} ثبت گردیده است. ساختار پیاده‌سازی از اجزای زیر تشکیل یافته است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{ASTPrunedLoRALinear}:} لایه خطی اختصاصی که وزن هرس‌شده $\mathbf{W}_{\text{pruned}}$ را به عنوان پارامتر ثابت (\lr{frozen}) نگهداری کرده و آداپتورهای کم‌مرتبه \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$) را برای بازیابی گرادیانی بدون از دست رفتن تنکی فراهم می‌آورد.
+    \item \textbf{کلاس \lr{ASTPruner}:} کنترل‌کننده فرآیند استخراج داده کالیبراسیون در حالت \lr{model.eval()} با حفظ گرادیان (\lr{torch.enable\_grad})، تنظیم مقادیر ویژه بر اساس اثر ماتریس (\lr{trace-based regularization})، پالایش مقادیر نامعتبر \lr{NaN/Inf}، و جایگزینی ماژولار لایه‌های خطی.
+\end{itemize}

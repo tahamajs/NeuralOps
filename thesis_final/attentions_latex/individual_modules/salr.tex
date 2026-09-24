@@ -1,0 +1,78 @@
+\section{ماژول فشرده‌سازی کم‌رتبه ساختارآگاه با تنک‌سازی (\lr{SALR Compressor})}
+\label{sec:salr}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+در بسیاری از سناریوهای فشرده‌سازی مدل‌های زبانی، رویکردهای تک‌بعدی مانند هرس خالص (\lr{Pure Pruning}) یا تجزیه ماتریسی کم‌رتبه خالص (\lr{Pure Low-Rank Factorization}) به سقف کارایی مشخصی برخورد می‌کنند. هرس خالص موجب بی‌نظمی در دسترسی به حافظه و کاهش توان گذردهی سخت‌افزاری می‌گردد، در حالی که تقریب کم‌رتبه به تنهایی قادر به پوشش اطلاعات محلی و الگوهای تنک در مؤلفه‌های فرعی ماتریس وزن نیست.
+
+ماژول \lr{SALR} (\lr{Structure-Aware Low-Rank + Sparse Layer}) یک راهکار تلفیقی پیشرفته ارائه می‌دهد که در آن تجزیه مقادیر منفرد مقطوع با تنک‌سازی ساختاریافته مؤلفه‌های منفرد (\lr{Singular Component Bottleneck Pruning}) و مسیرهای انطباق تطبیقی (\lr{LoRA Adapters}) ترکیب شده است. ایده محوری این روش، حفظ ساختار منظم ضرب ماتریسی در حالی است که بخش‌های زاید در کانال‌های میانی فاکتورهای تجزیه‌شده از طریق یک ماسک ساختاری حذف می‌گردند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی لایه \lr{SALR} مبتنی بر تجزیه ماتریس وزن اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ به دو مؤلفه خطی مقطوع به همراه یک بردار پوشش ماسک تنک است:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با بازآرایی مؤلفه‌ها در ماتریس‌های فاکتور $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}$:
+\begin{equation}
+\mathbf{U} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2}, \quad \mathbf{V} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top
+\end{equation}
+
+جهت اعمال تنک‌سازی در فضای میانی، یک ماسک ستونی $\mathbf{m} \in \{0, 1\}^{r \times 1}$ بر روی کانال‌های میانی فاکتور $\mathbf{V}$ اعمال می‌شود. این ماسک بر اساس نرم فروبنیوس یا واریانس اثرگذاری هر یک از رتبه‌ها با نرخ تنک‌سازی هدف $s \in [0, 0.90]$ تشکیل می‌گردد:
+\begin{equation}
+m_k = \begin{cases}
+1, & \text{if } \|\mathbf{V}_{k, :}\|_2 \ge \tau_s \\
+0, & \text{otherwise}
+\end{cases}
+\end{equation}
+که در آن $\tau_s$ صدک متناظر با نرخ تنک‌سازی $s$ است.
+
+در مرحله انتشار رو به جلو (\lr{Forward Pass})، نگاشت ورودی $\mathbf{x} \in \mathbb{R}^{B \times d_{\text{in}}}$ با رابطه ترکیبی زیر محاسبه می‌گردد:
+\begin{equation}
+\mathbf{y} = \left(\mathbf{x} (\mathbf{V} \odot (\mathbf{m} \mathbf{1}_{d_{\text{in}}}^\top))^\top \right) \mathbf{U}^\top + \mathbf{b} + \gamma \left( \mathbf{x} \mathbf{A}_{\text{LoRA}}^\top \mathbf{B}_{\text{LoRA}}^\top \right)
+\end{equation}
+که در آن $\mathbf{A}_{\text{LoRA}} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B}_{\text{LoRA}} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ ماتریس‌های انطباق کمکی بوده و $\gamma = \frac{\alpha_{\text{lora}}}{r_{\text{lora}}}$ ضریب مقیاس‌گذاری تنظیم‌پذیر است.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول \lr{SALR} در فایل \lr{Codes/framework/compression\_engine/salr.py} واقع شده و با نام‌های \lr{salr}، \lr{salr\_factory} و \lr{salr\_compressor\_factory} ثبت گردیده است. ساختار معماری شامل اجزای زیر است:
+\begin{itemize}
+    \item \textbf{لایه سفارشی \lr{SALRLayer}:} تعریف لایه ماژولار که نگاشت دوگانه کم‌رتبه، ماسک بافر تنک، بایاس خطی و شاخه موازی \lr{LoRA} را در قالب یک واحد محاسباتی مستقل مدیریت می‌نماید.
+    \item \textbf{پشتیبانی از لایه‌های کانوولوشن ۱ بعدی (\lr{Conv1D}):} تشخیص مطمئن لایه‌های خطی و نگاشت ماتریس‌های وزن انتقالی بدون فرضیات هندسی نادرست.
+    \item \textbf{انتخاب هوشمند رتبه و سقف پارامتری:} رتبه $r$ بر اساس مقدار هدف محدود به رابطه $r \le \left\lfloor \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1$ اعمال می‌شود تا کاهش حجم پارامترها حتی پیش از احتساب تنک‌سازی میانی به صورت قطعی محقق گردد.
+    \item \textbf{آستانه‌گذاری خطای بازسازی نسبی فروبنیوس:} در صورتی که خطای تقریب فروبنیوس ماتریس وزن از آستانه مجاز فراتر رود، عملیات تنزیل اضطراری فعال شده و لایه بدون تغییر حفظ می‌گردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{SALR} در آزمون‌های بنچ‌مارک روی مدل‌های مختلف در جدول \ref{tab:benchmark_salr} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{SALR} بر روی مدل‌های استاندارد}
+\label{tab:benchmark_salr}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9067} & \lr{310.69 MB} & \lr{136,607.38 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.96\%} & \lr{0.8363} & \lr{364.29 MB} & \lr{84,414.74 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{58.94\%} & \lr{0.6679} & \lr{635.79 MB} & \lr{63,444.33 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، دقت عالی \lr{90.37\%} با شاخص \lr{F1} معادل \lr{0.9067} به دست آمده است که تقریباً انطباق کامل با مدل پایه داشته و توان محاسباتی به رقم چشمگیر \lr{136,607.38 tok/s} بالغ گردیده است.
+    \item در مدل \lr{RoBERTa}، دقت مدل به \lr{80.96\%} رسیده که رشدی معادل \lr{+5.85\%} نسبت به خط مبنای ۷۵.۱۱ درصدی نشان داده و با وضعیت موفق \lr{PASS} ارزیابی شده است.
+    \item در مدل زبانی \lr{GPT-2}، دقت \lr{58.94\%} و شاخص \lr{F1} برابر با \lr{0.6679} با مصرف حافظه بهینه \lr{635.79 MB} و سرعت پردازش \lr{63,444.33 tok/s} ثبت گردیده است.
+    \item اجرای مدل \lr{Qwen} به علت محدودیت‌های منابع محاسباتی در راند جاری در وضعیت \lr{SKIP} گزارش شده است.
+\end{itemize}
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل فنی ماژول \lr{SALR} ویژگی‌ها و محدودیت‌های زیر را برجسته می‌سازد:
+\begin{itemize}
+    \item \textbf{سربار حافظه در صورت فعال بودن هم‌زمان شاخه \lr{LoRA}:} وجود پارامترهای اضافی ماتریس‌های تصحیح \lr{LoRA} در کنار ماسک تنک ساختاری می‌تواند در صورت بالا بودن رتبه آداپتور، مزیت فشرده‌سازی خام حافظه را تعدیل کند.
+    \item \textbf{انحراف واریانس در تنک‌سازی تهاجمی:} افزایش نرخ تنک‌سازی فراتر از ۶۰ درصد بر روی مؤلفه‌های فاکتور $\mathbf{V}$ می‌تواند اثرگذاری بردارهای ویژه اصلی را به شدت کاهش داده و موجب ریزش ناگهانی دقت در لایه‌های حساس اولیه گردد.
+\end{itemize}

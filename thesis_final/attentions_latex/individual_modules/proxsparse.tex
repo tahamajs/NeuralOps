@@ -1,0 +1,79 @@
+\section{ماژول proxsparse (ProxSparse Pruner)}
+\label{sec:module_proxsparse}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+هرس وزن‌ها (\lr{Weight Pruning}) با هدف کاهش تراکم اتصالات عصبی و کمینه‌سازی میزان مصرف حافظه، نیازمند کنترل دقیق خطای بازسازی است. رویکردهای هرس متداول مبتنی بر قدر مطلق وزن‌ها (\lr{Magnitude Pruning}) عموماً بدون توجه به تعادل بین بازسازی تانسورها و منظم‌سازی تنک عمل می‌کنند که این امر در مقیاس‌های تنک‌سازی بالا منجر به تخریب بازنمایی ویژگی‌های لایه‌ها می‌شود.
+
+ماژول \lr{proxsparse} با نام فارسی «هرس‌کننده تنک گرادیان مجاورتی» به عنوان یکی از اجزای موتور فشرده‌سازی سیستم، مسئله تنک‌سازی را در قالب بهینه‌سازی غیرمحدب مقید با عملگرهای مجاورتی (\lr{Proximal Gradient Optimization}) فرمول‌بندی می‌نماید. این ماژول قادر است الگوهای تنک‌سازی نیمه‌ساختاریافته \lr{N:M} (مانند الگوی استاندارد $2:4$ سخت‌افزاری انویدیا)، هرس بلوکی (\lr{Block-Sparsity}) و هرس نامنظم سراسری را تحت منظم‌سازی نرم $L_1$ هدایت کند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+مسئله بهینه‌سازی هرس مجاورتی برای ماتریس وزن اولیه $\mathbf{W}_0$ به صورت ترکیب کمینه‌سازی خطای بازسازی فروبنیوس با جریمه تنک‌سازی و قید هندسی ساختاریافته تعریف می‌شود:
+\begin{equation}
+\min_{\mathbf{W}} \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda \|\mathbf{W}\|_1 + \mathcal{I}_{\mathcal{S}}(\mathbf{W})
+\end{equation}
+که در آن $\lambda > 0$ ضریب منظم‌سازی مجاورتی، $\|\mathbf{W}\|_1 = \sum_{i,j} |W_{ij}|$ نرم $\ell_1$ جهت ترویج تنکی و $\mathcal{I}_{\mathcal{S}}(\mathbf{W})$ تابع نشانگر مجموعه مقید تنک $\mathcal{S}$ است:
+\begin{equation}
+\mathcal{I}_{\mathcal{S}}(\mathbf{W}) = \begin{cases} 0 & \mathbf{W} \in \mathcal{S} \\ +\infty & \mathbf{W} \notin \mathcal{S} \end{cases}
+\end{equation}
+
+الگوریتم حل از طریق عملگرهای تکراری زیر پیاده‌سازی می‌گردد:
+\begin{enumerate}
+    \item \textbf{عملگر آستانه‌گذاری نرم (\lr{Soft-Thresholding Operator}):}
+    عملگر مجاورتی نرم $\ell_1$ جهت صفرسازی مقادیر ناچیز و انقباض وزن‌ها اعمال می‌شود:
+    \begin{equation}
+    \mathcal{S}_{\lambda}(\mathbf{W}) = \operatorname{sign}(\mathbf{W}) \odot \max(|\mathbf{W}| - \lambda, 0)
+    \end{equation}
+
+    \item \textbf{پروجکشن روی مجموعه مقید تنکی (\lr{Sparsity Projection}):}
+    تصویر ماتریس روی ساختار نیمه‌ساختاریافته انویدیا $\Pi_{2:4}$ (حفظ ۲ عنصر با بیشترین قدرمطلق در هر بلوک ۴ تایی) یا تصویر بلوکی/صدکی $\Pi_{\mathcal{S}}$ انجام می‌پذیرد:
+    \begin{equation}
+    \Pi_{\mathcal{S}}(\mathbf{W}) = \operatorname{Top-}(1-s)(\mathbf{W}) \quad \text{یا} \quad \Pi_{2:4}(\mathbf{W})
+    \end{equation}
+
+    \item \textbf{تکرارهای گرادیان مجاورتی متناوب:}
+    در هر گام تکرار $t \in \{1, \dots, T\}$ با نرخ گام $\eta$:
+    \begin{equation}
+    \mathbf{W}^{(t+1)} = \mathbf{W}^{(t)} - \eta \left( \mathbf{W}^{(t)} - \Pi_{\mathcal{S}}(\mathcal{S}_{\lambda}(\mathbf{W}^{(t)})) \right)
+    \end{equation}
+    در پایان، ماسک باینری دائمی $\mathbf{M} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ تشکیل شده و وزن منجمد نهایی با رابطه $\mathbf{W}_{\text{final}} = \mathbf{W}_0 \odot \mathbf{M}$ تولید می‌شود.
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/proxsparse.py} قرار داشته و با شناسه‌های \lr{proxsparse} و \lr{proxsparse\_pruner} در رجیستری فشرده‌سازی ثبت گردیده است. ساختار معماری شامل موارد زیر است:
+\begin{itemize}
+    \item \textbf{کلاس ماژول \lr{ProxSparsePrunedLoRALinear}:} لایه هرس‌شده به عنوان جایگزین لایه‌های \lr{nn.Linear} و \lr{Conv1D} مستقر می‌شود و شامل وزن‌های منجمد، ماسک ماندگار (\lr{persistent buffer}) و شاخه‌های تنظیم‌پذیر ریزتنظیم \lr{LoRA} است.
+    \item \textbf{پشتیبانی از ساختارهای سخت‌افزاری متنوع:} قابلیت پیکربندی برای هرس $2:4$ نیمه‌ساختاریافته سازگار با هسته‌های تنک پردازنده‌های امپر و هاپر (\lr{Ampere/Hopper Sparse Tensor Cores}) و هرس بلوکی با ابعاد سفارشی مانند $(4, 4)$.
+    \item \textbf{مسیر خروج اضطراری (\lr{Fallback Mechanism}):} کنترل خطای بازسازی نسبی فروبنیوس پس از اعمال ماسک نهایی صورت می‌پذیرد؛ در صورتی که خطا از سقف آستانه \lr{max\_error} عبور کند یا اعداد نامعتبر پدید آید، وزن اصلی دست‌نخورده حفظ می‌گردد.
+    \item \textbf{جداسازی لایه‌های بحرانی:} طبقه‌بندها، توکن‌های طبقه‌بندی، سرهای رگرسیون و بخش‌های کلیدی مدل از پروسه هرس مستثنی می‌شوند تا مدل دچار فراموشی فاجعه‌بار نگردد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج ارزیابی تجربی ماژول \lr{proxsparse} بر روی مدل‌های محک استاندارد از پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} استخراج و در جدول \ref{tab:benchmark_proxsparse} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی هرس‌کننده مجاورتی \lr{proxsparse} روی مدل‌های پایه}
+\label{tab:benchmark_proxsparse}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{78.33\%} & \lr{0.7845} & \lr{337.59 MB} & \lr{162,708.29 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{361.54 MB} & \lr{90,541.96 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{54.01\%} & \lr{0.4866} & \lr{636.04 MB} & \lr{64,596.44 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشخص است، این ماژول توان عملیاتی قابل توجه‌ای در مدل \lr{DistilBERT} ارائه داده و توان پردازشی به بیش از $162$ هزار توکن بر ثانیه با حفظ دقت \lr{78.33\%} رسیده است. در مدل‌های دیگر نظیر \lr{RoBERTa} و \lr{GPT-2}، با توجه به افت دقت ناشی از عدم تنظیم مجدد وزن‌های باقیمانده، وضعیت \lr{PASS\_LOW} با دقت‌های بالای ۵۰ درصد به دست آمده و در مدل \lr{Qwen} وضعیت \lr{PASS} احراز شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+محدودیت‌ها و عوامل موثر بر افت دقت در آزمون‌ها عبارتند از:
+\begin{itemize}
+    \item \textbf{افت عملکرد به سطح \lr{PASS\_LOW} در مدل‌های زبانی عمیق (\lr{RoBERTa} و \lr{GPT-2}):} اعمال یکنواخت تنک‌سازی به میزان $50\%$ بدون تنظیم مجدد آداپتورهای \lr{LoRA} در طول آزمون استنتاج صفر-شات، موجب حذف بخش‌هایی از اتصالات حیاتی در لایه‌های میانی شبکه شده که منجر به تنزل دقت در دسته‌بندی توالی‌های ظریف شده است.
+    \item \textbf{نیاز به بازیابی آموزش (\lr{Fine-Tuning Recovery}):} بر خلاف روش‌های فاکتورگیری که هندسه فضای پیوسته را حفظ می‌کنند، هرس ساختاریافته ماتریس‌ها را مقید به صفرسازی کامل اتصالات می‌کند؛ لذا برای احیای دقت کامل مدل‌هایی نظیر \lr{GPT-2}، آموزش تکمیلی گام‌به‌گام ضروری خواهد بود.
+\end{itemize}

@@ -1,0 +1,40 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی استاندارد با بردار بایاس $\mathbf{b} \in \mathbb{R}^{d_{\text{out}}}$ باشد. تجزیه کامل مقادیر منفرد ماتریس وزن به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{out}}}$ و $\mathbf{V} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ ماتریس‌های متعامد بوده و $\mathbf{\Sigma} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس قطری مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$) است.
+
+به منظور فشرده‌سازی، رتبه برش $r$ با در نظر گرفتن سقف بودجه پارامتری تعیین می‌شود تا تضمین گردد تعداد پارامترهای لایه جدید کمتر از لایه اصلی باشد:
+\begin{equation}
+r \le \min \left( r_{\text{target}}, d_{\text{in}}, d_{\text{out}}, \left\lfloor \frac{d_{\text{in}} \cdot d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1 \right)
+\end{equation}
+
+توزیع مقادیر منفرد به صورت متقارن با جذر مقادیر منفرد انجام می‌پذیرد تا توازن عددی بین دو ماتریس فاکتور برقرار باشد:
+\begin{align}
+\mathbf{U}_r &= \mathbf{U}_{:, :r} \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}) \in \mathbb{R}^{d_{\text{out}} \times r} \\
+\mathbf{V}_r &= \operatorname{diag}(\sqrt{\mathbf{\sigma}_{1:r}}) \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\end{align}
+بدین ترتیب، نگاشت ورودی $\mathbf{x} \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ در گذر پیشرو به صورت دو پروجکشن خطی متوالی محاسبه می‌شود:
+\begin{equation}
+\mathbf{z} = \mathbf{x} \mathbf{V}_r^\top, \quad \mathbf{y} = \mathbf{z} \mathbf{U}_r^\top + \mathbf{b}
+\end{equation}
+
+خطای بازسازی نسبی فروبنیوس به عنوان شاخص سلامت برش پایش می‌شود:
+\begin{equation}
+\epsilon_{\text{rec}} = \frac{\|\mathbf{W} - \mathbf{U}_r \mathbf{V}_r\|_F}{\|\mathbf{W}\|_F + 10^{-8}}
+\end{equation}
+اگر $\epsilon_{\text{rec}} > \epsilon_{\text{max}}$ باشد، ماژول به صورت خودکار لایه اصلی را بدون تغییر حفظ می‌کند (\lr{Fallback to Original}). در حالت تجهیز به آداپتور ریزتنظیم \lr{LoRA} با رتبه $r_L$، گذر پیشرو با رابطه زیر تکمیل می‌گردد:
+\begin{equation}
+\mathbf{y}_{\text{final}} = \mathbf{y} + \frac{\alpha}{r_L} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_svd_linear}
+\mathcal{C}_{\text{svd\_linear}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ | Time | Status |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s | PASS |
-| DistilBERT | **GoldFinch** | **50.92** | **-39.79** | 0.6748 | +48.5\%% | 1.42x | PASS |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s | PASS |
-| RoBERTa | **GoldFinch** | **50.92** | **-27.64** | 0.6748 | +48.5\%% | 2.3 s | PASS |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s | PASS |
-| GPT-2 | **GoldFinch** | **50.92** | **-28.44** | 0.6748 | +48.5\%% | 2.3 s | PASS |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Goldfinch Ahn** | **90.83%** | -0.11% | PASS | 0.9101 | 24 | **0.94x** | 348.7 MB | 13.6s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Goldfinch Ahn** | **71.90%** | -3.56% | PASS | 0.7717 | 48 | **0.89x** | 684.8 MB | 27.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Goldfinch Ahn** | **50.92%** | -9.86% | PASS_LOW | 0.6748 | 0 | **0.94x** | 595.8 MB | 31.9s |
 
 **Key observations:**
 

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{kronecker\_compressor} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_kronecker_compressor} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{kronecker\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_kronecker_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.94\%} & \lr{0.9123} & \lr{315.07 MB} & \lr{157,132.82 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{70.07\%} & \lr{0.7603} & \lr{301.72 MB} & \lr{109,075.39 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.32\%} & \lr{0.7038} & \lr{643.30 MB} & \lr{69,983.27 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{50.92\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس شواهد تجربی ثبت‌شده، این فشرده‌ساز در مدل انکودر سبک \lr{DistilBERT} عملکرد بالا با دقت \lr{90.94\%}، امتیاز \lr{F1} معادل \lr{0.9123} و توان محاسباتی خیره‌کننده \lr{157,132.82 tok/s} به همراه مصرف ناچیز حافظه \lr{315.07 MB} نشان داده است. در مدل‌های بزرگ‌تر، پایداری در سطح قبولی آزمون حفظ شده و در مدل‌های \lr{RoBERTa}، \lr{GPT-2} و \lr{Qwen} به ترتیب دقت‌های \lr{70.07\%}، \lr{60.32\%} و \lr{50.92\%} ثبت شده است.

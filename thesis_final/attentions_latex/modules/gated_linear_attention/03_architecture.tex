@@ -1,0 +1,11 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی اصلی این ماژول تحت عنوان \lr{GatedLinearAttention} در فایل \lr{Codes/framework/attentions/gated\_linear\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. این ماژول در رجیستری چارچوب با شناسه‌های \lr{gated\_linear\_attention} و \lr{gated\_linear\_attn} با پشتیبانی رسمی از ماسک‌گذاری علّی و \lr{GQA} ثبت گردیده است.
+
+مهم‌ترین مشخصات فنی و آرگومان‌های کلاس عبارتند از:
+\begin{itemize}
+    \item \textbf{آرگومان‌های مقداردهی:} متد \lr{\_\_init\_\_} ورودی‌های \lr{config}، \lr{rank}، \lr{d\_model}، \lr{num\_heads}، \lr{lora\_rank=16}، \lr{lora\_alpha=32.0} و \lr{is\_decoder} را دریافت می‌کند. ابعاد سرهای توجه $d = D/H$ و تعداد سرهای کلید/مقدار به شکل خودکار استخراج می‌شوند.
+    \item \textbf{لایه‌های خطی لورا:} تمامی پروجکشن‌های اصلی $\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{Z}$ و خروجی با ماژول اختصاصی \lr{LoRALinear} پیاده‌سازی شده‌اند که وزن‌های پایه پیش‌آموزش‌دیده در آن‌ها منجمد \lr{(freeze)} شده و تنها ماتریس‌های کم‌مرتبه $\mathbf{A}$ و $\mathbf{B}$ با مقیاس‌گذاری $\alpha / r$ آموزش‌پذیر باقی می‌مانند.
+    \item \textbf{انتقال وزن‌های پیش‌آموزش‌دیده:} متد \lr{copy\_weights} وزن‌های لایه‌های اصلی مدل‌های پایه گوناگون شامل ساختارهای مسطح (\lr{q\_lin, k\_lin, v\_lin, out\_lin} در \lr{DistilBERT})، ساختارهای تودرتو انکودر (\lr{query, key, value, dense} در \lr{RoBERTa})، ماتریس‌های ادغام‌شده \lr{c\_attn} در \lr{GPT-2} و پروجکشن‌های تجزیه‌شده \lr{q\_proj, k\_proj, v\_proj, o\_proj} در \lr{Qwen} را به دقت استخراج و نگاشت می‌نماید.
+    \item \textbf{سازگاری با موقعیت‌یابی چرخشی:} تابع \lr{apply\_rotary\_pos\_emb} تطابق کامل تعبیه‌های مکانی \lr{RoPE} را در مدل‌های مدرن تضمین می‌کند.
+    \item \textbf{بهینه‌سازی حافظه گرادیان:} در صورت فعال بودن فاز آموزش، اسکن موازی \lr{\_gla\_scan\_parallel} از طریق مکانیزم بازرسی حافظه \lr{torch.utils.checkpoint} اجرا می‌شود تا مصرف حافظه فعال‌سازها کاهش یابد.
+\end{itemize}

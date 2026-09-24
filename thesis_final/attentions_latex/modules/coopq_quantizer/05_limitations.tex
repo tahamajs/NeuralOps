@@ -1,0 +1,10 @@
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل چالش‌های رفتاری ماژول نکات زیر را مشخص می‌سازد:
+\begin{itemize}
+    \item \textbf{خطای عدم تطابق ابعاد وزن‌های ترانهاده در \lr{GPT-2}:} در اجرای جاروب متنی \lr{Wikitext-2} روی \lr{GPT-2}، خطای ناهماهنگی ابعاد تانسورهای وزنی لایه ادغام‌شده توجه (\lr{c\_attn}) رخ داد:
+    \begin{quote}
+    \lr{\small RuntimeError: size mismatch for transformer.h.0.attn.c\_attn.weight: copying a param with shape torch.Size([768, 2304]) from checkpoint, the shape in current model is torch.Size([2304, 768]).}
+    \end{quote}
+    این رخداد به دلیل ساختار ترانهاده وزن‌ها در لایه‌های \lr{Conv1D} در کتابخانه هاگینگ‌فیس پدید آمده که نیازمند ترانهاده‌سازی صریح حین بازیابی چک‌پوینت در مدل‌های دیکودری است.
+    \item \textbf{افت توان عملیاتی در شبیه‌سازی \lr{Fake Quantization}:} از آنجا که کوانتایزاسیون شبیه‌سازی‌شده متکی بر عملگرهای بازنگاشت پایتورچی در فضای \lr{FP32/FP16} است، بدون هسته‌های سخت‌افزاری سطح پایین \lr{INT4 Tensor Core (Cutlass/Triton)}، شتاب‌بخشی محاسباتی بالقوه به طور کامل محقق نشده و توان عملیاتی در سطوحی نظیر ۴,۴۷۲ توکن بر ثانیه متوقف می‌گردد.
+\end{itemize}

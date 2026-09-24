@@ -1,0 +1,26 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{dobi\_svd} بر اساس داده‌های تاییدشده در \lr{thesis\_final/master\_verified\_results.json} روی مدل‌های پایه به شرح مندرج در جدول \ref{tab:benchmark_dobi_svd} به ثبت رسیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{dobi\_svd} روی مدل‌های پایه}
+\label{tab:benchmark_dobi_svd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9079} & \lr{310.69 MB} & \lr{52,426.55 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{74.54\%} & \lr{0.7707} & \lr{530.19 MB} & \lr{27,881.66 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{58.14\%} & \lr{0.6256} & \lr{635.79 MB} & \lr{27,358.79 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{89.45\%} & \lr{0.8950} & \lr{1850.64 MB} & \lr{4,747.76 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های تجربی جدول \ref{tab:benchmark_dobi_svd} حاکی از عملکرد قابل توجه و همه‌جانبه ماژول \lr{dobi\_svd} است که در هر چهار مدل پایه موفق به کسب نشان رسمی \lr{PASS} گردیده است. به طور خاص:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، دقت رکوردشکن \lr{90.48\%} و شاخص اف‌وان \lr{0.9079} همراه با توان پردازشی بالای \lr{52,426.55 tok/s} و مصرف حافظه ناچیز \lr{310.69 MB} ثبت شده است.
+    \item در مدل زبانی نسل جدید \lr{Qwen}، این الگوریتم به دقت خیره‌کننده \lr{89.45\%} و شاخص اف‌وان \lr{0.8950} با توان \lr{4,747.76 tok/s} دست یافته که نشان‌دهنده اثربخشی بالا دروازه‌بندی طیفی در مدل‌های بسیار بزرگ با ساختار علّی است.
+    \item در مدل \lr{RoBERTa} و \lr{GPT-2} نیز با وجود پیچیدگی‌های معماری، وضعیت \lr{PASS} با دقت‌های به ترتیب \lr{74.54\%} و \lr{58.14\%} به دست آمده است.
+\end{itemize}

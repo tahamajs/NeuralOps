@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Trainable |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 |
-| DistilBERT | **JambaInfo** | **89.68** | -1.03 | 0.8984 | 66.4M | 0.85 |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 |
-| RoBERTa | **JambaInfo** | **52.98** | -25.58 | 0.6792 | 124.6M | 0.85 |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 |
-| GPT-2 | **JambaInfo** | **50.80** | -28.56 | 0.6733 | 124.4M | 0.85 |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Jamba Info** | **88.53%** | -2.41% | PASS | 0.8899 | 54 | **0.74x** | 497.5 MB | 32.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Jamba Info** | **54.13%** | -21.33% | PASS_LOW | 0.6448 | 108 | **0.70x** | 913.3 MB | 65.4s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Jamba Info** | **85.44%** | -2.40% | PASS | 0.8587 | 132 | **0.73x** | 479.5 MB | 61.1s |
 
 ## 7.2 Parameter Analysis
 

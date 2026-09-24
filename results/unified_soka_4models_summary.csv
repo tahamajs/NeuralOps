@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,SOKA Compressor Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,89.91%,-0.57%,0.8993,PASS,0,1.00x,339.2 MB,20.1
+roberta,0,75.11%,84.06%,+8.95%,0.8494,PASS,0,1.00x,359.0 MB,27.3
+gpt2,0,60.78%,60.78%,+0.00%,0.6559,PASS,0,1.00x,637.1 MB,26.0

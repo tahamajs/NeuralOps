@@ -6,21 +6,20 @@ Table~\ref{tab:results_acc_ercsvd} details empirical evaluation metrics across t
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/all\_121\_compressors\_gpu\_matrix.csv} & NVIDIA-GPU-Matrix & erc\_svd & PASS & Comp 30.96x & Mem -0.0\% \\
-\texttt{results/benchmark\_summary\_v2.csv} & bert-sst2 & erc\_svd & PASS & 32.97 ms/step & Passed \\
-\texttt{results/benchmark\_summary\_v2.csv} & bert-mrpc & erc\_svd & PASS & 34.31 ms/step & Passed \\
-\texttt{results/benchmark\_summary\_v2.csv} & roberta-sst2 & erc\_svd & PASS & 34.23 ms/step & Passed \\
-\texttt{results/benchmark\_summary\_v2.csv} & roberta-mrpc & erc\_svd & PASS & 34.61 ms/step & Passed \\
-\texttt{results/benchmark\_summary\_v2.csv} & t5-sst2 & erc\_svd & PASS & 52.1 ms/step & Passed \\
-\texttt{results/benchmark\_summary\_v2.csv} & t5-mrpc & erc\_svd & PASS & 51.0 ms/step & Passed \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Erc} & \textbf{90.48\%} & +0.00\% & PASS & 0.9077 & 0 & \textbf{1.00$\times$} & 310.7 MB & 17.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Erc} & \textbf{88.53\%} & -0.23\% & PASS & 0.8932 & 0 & \textbf{1.00$\times$} & 321.6 MB & 27.4 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Erc} & \textbf{82.45\%} & +1.14\% & PASS & 0.8374 & 0 & \textbf{1.00$\times$} & 400.1 MB & 24.7 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{ercsvd}.}
-\label{tab:results_acc_ercsvd}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

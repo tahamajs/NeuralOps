@@ -1,0 +1,30 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ ماتریس وزن یک پروجکشن خطی باشد. در تجزیه ستونی درون‌یاب با رتبه هدف $r \ll \min(D_{\text{out}}, D_{\text{in}})$، تقریب ماتریس به صورت زیر تعریف می‌شود:
+\begin{equation}
+W \approx C \cdot P
+\end{equation}
+که در آن:
+\begin{itemize}
+    \item $C \in \mathbb{R}^{D_{\text{out}} \times r}$: ماتریس اسکلت ستونی متشکل از $r$ ستون گزینش‌شده یا ترکیب متناظر از ستون‌های حقیقی $W$.
+    \item $P \in \mathbb{R}^{r \times D_{\text{in}}}$: ماتریس ضرایب درون‌یابی (\lr{Interpolative Projection Matrix}).
+\end{itemize}
+
+\subsubsection*{اجرای گذر رو به جلو در فرم فاکتورسازی‌شده}
+حین گذر رو به جلو، عملگر ضرب ماتریسی به جای محاسبه گران‌قیمت $\mathcal{O}(N \cdot D_{\text{in}} \cdot D_{\text{out}})$، در دو مرحله با پیچیدگی $\mathcal{O}(N \cdot r \cdot (D_{\text{in}} + D_{\text{out}}))$ اجرا می‌گردد:
+\begin{equation}
+x_{\text{proj}} = x \cdot P^\top \in \mathbb{R}^{B \times N \times r}
+\end{equation}
+\begin{equation}
+y = (x_{\text{proj}} \cdot C^\top) + b \in \mathbb{R}^{B \times N \times D_{\text{out}}}
+\end{equation}
+این ساختار دو مرحله‌ای زنجیره‌ای، تبادل داده با حافظه اصلی سراسری پردازنده گرافیکی را مهار کرده و سربار محاسبات را به میزان چشمگیری کاهش می‌دهد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_cr_compressor}
+\mathcal{C}_{\text{cr\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

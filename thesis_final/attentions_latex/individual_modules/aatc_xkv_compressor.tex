@@ -1,0 +1,47 @@
+\section{ماژول aatc\_xkv\_compressor (AATC-XKV Compressed Cache)}
+\label{sec:module_aatc_xkv_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+ماژول فشرده‌سازی \lr{AATC-XKV Compressed Cache} با نام فارسی «فشرده‌ساز حافظه پنهان کلید و مقدار AATC-XKV» به عنوان یکی از اجزای موتور جامع فشرده‌سازی مدل‌های زبانی (Compression Engine) طراحی شده است. در مدل‌های بزرگ ترنسفورمر، علاوه بر محاسبات لایه توجه، ذخیره‌سازی ماتریس‌های وزن پرپارامتر در حافظه با پهنای باند بالا (HBM) چالش‌های شدیدی از منظر تاخیر و حافظه پدید می‌آورد. این ماژول با پیاده‌سازی تکنیک‌های پیشرفته هرس و تقریب طیفی، حجم پارامترها و فعال‌سازی‌ها را به میزان چشمگیری کاهش می‌دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+ماتریس‌های وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{in} \times d_{out}}$ از طریق مسئله بهینه‌سازی رتبه یا قیود پراکندگی تقریب زده می‌شوند:
+ \begin{equation}
+\min_{\mathbf{W}_{comp}} \|\mathbf{W} - \mathbf{W}_{comp}\|_F^2 \quad \text{subject to} \quad \operatorname{rank}(\mathbf{W}_{comp}) \le r
+\end{equation}
+یا در حالت هرس با الگوریتم \lr{ADMM}:
+ \begin{equation}
+\mathcal{L}(\mathbf{W}, \mathbf{Z}, \mathbf{U}) = f(\mathbf{W}) +\frac{
+ho}{2} \|\mathbf{W} - \mathbf{Z} + \mathbf{U}\|_F^2
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس پایتونی این ماژول در دایرکتوری \lr{Codes/framework/compression\_engine/aatc\_xkv\_compressor.py} پیاده‌سازی گردیده و به صورت ماژولار قابلیت تزریق مستقیم به لایه‌های پروجکشن یا کل مدل را داراست.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{aatc\_xkv\_compressor} بر روی مدل‌های مرجع نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_aatc_xkv_compressor} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{aatc\_xkv\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_aatc_xkv_compressor}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & -- & -- & -- & -- & \lr{داده در حال جمع‌آوری} \\
+\lr{RoBERTa} & -- & -- & -- & -- & \lr{داده در حال جمع‌آوری} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{داده در حال جمع‌آوری} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{داده در حال جمع‌آوری} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{ثبت‌نشده\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{در حال جمع‌آوری} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در صورت افت دقت بر روی وظایف خاص، این امر ناشی از فشرده‌سازی تهاجمی زیرفضا و لزوم گام‌های کالیبراسیون دقیق‌تر است که به عنوان محدودیت ماژول مستند می‌گردد.

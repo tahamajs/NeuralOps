@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{full\_attention} در بنچمارک یکنواخت GLUE SST-2 بر روی کارت گرافیک NVIDIA RTX 4070 نتایج ارائه‌شده در جدول \ref{tab:benchmark_full_attention} را حاصل نموده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول خط پایه \lr{full\_attention} روی مدل‌های مورد ارزیابی}
+\label{tab:benchmark_full_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{389.03 MB} & \lr{101,969.09 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{630.79 MB} & \lr{6,347.08 tok/s} & \lr{MODERATE\_EXPANSION} \\
+\lr{GPT-2} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های ارزیابی تجربی نشان می‌دهند که خط لوله پیاده‌سازی استاندارد در DistilBERT به توان عملیاتی بسیار بالای ۱۰۱,۹۶۹ توکن بر ثانیه با اوج حافظه ۳۸۹.۰۳ مگابایت دست یافته است. در مدل RoBERTa به علت دو برابر بودن تعداد لایه‌ها و وزن‌ها، اوج حافظه به ۶۳۰.۷۹ مگابایت افزایش یافته است.

@@ -1,0 +1,37 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس حالت‌های پنهان ورودی باشد که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. پروجکشن‌های اولیه پرس‌وجو، کلید و مقدار با ابعاد سرهای نامتقارن تولید می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times L \times H_q \times d}, \quad \mathbf{K}_{\text{raw}}, \mathbf{V}_{\text{raw}} \in \mathbb{R}^{B \times N_{\text{kv}} \times H_{\text{kv}} \times d}
+\end{equation}
+که در آن $H_q$ تعداد سرهای پرس‌وجو، $H_{\text{kv}} \le H_q$ تعداد سرهای فشرده کلید/مقدار و $d = D / H_q$ بعد هر سر توجه است.
+
+به منظور سنتز بازنمایی ویژه هر سر پرس‌وجو، شبکه مسیریاب خطی $\mathbf{W}_{\text{route}} \in \mathbb{R}^{d \times H_{\text{kv}}}$ ماتریس لوجیت‌های مسیر را به ازای هر سر پرس‌وجو تولید می‌کند:
+\begin{equation}
+\mathbf{R}_{\text{logits}} = \frac{\mathbf{Q} \mathbf{W}_{\text{route}}}{\max(\tau_{\text{router}}, 10^{-4})} \in \mathbb{R}^{B \times L \times H_q \times H_{\text{kv}}}
+\end{equation}
+سپس توزیع وزن‌های پیوسته مسیریابی با تابع بیشینه هموار نرمال‌سازی می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{route}} = \operatorname{softmax}(\mathbf{R}_{\text{logits}}, \text{dim}=-1)
+\end{equation}
+برای هر توکن پرس‌وجو در موقعیت زمانی $t$ و سر پرس‌وجوی $h \in \{1, \dots, H_q\}$، بازنمایی کلید و مقدار سنتز‌شده از ترکیب محدب سرهای فشرده کلید/مقدار به دست می‌آید:
+\begin{equation}
+\tilde{\mathbf{K}}_{b, t, h} = \sum_{k=1}^{H_{\text{kv}}} W_{\text{route}, b, t, h, k} \cdot \mathbf{K}_{\text{raw}, b, :, k}, \quad \tilde{\mathbf{V}}_{b, t, h} = \sum_{k=1}^{H_{\text{kv}}} W_{\text{route}, b, t, h, k} \cdot \mathbf{V}_{\text{raw}, b, :, k}
+\end{equation}
+سپس امتیازهای توجه و بافتار نهایی با اعمال ضرب داخلی، ماسک‌های علّی/پدینگ و نرم‌سازی بیشینه هموار استاندارد محاسبه می‌گردد:
+\begin{equation}
+\mathbf{S}_h = \frac{\mathbf{Q}_h \tilde{\mathbf{K}}_h^\top}{\sqrt{d}}, \quad \mathbf{A}_h = \operatorname{softmax}(\mathbf{S}_h + \mathbf{M}), \quad \mathbf{O}_h = \mathbf{A}_h \tilde{\mathbf{V}}_h
+\end{equation}
+در نهایت، تانسورهای خروجی کلیه سرها ادغام شده و از پروجکشن خروجی عبور داده می‌شوند:
+\begin{equation}
+\mathbf{O} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_{H_q}) \mathbf{W}_O
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_qcqa_attention}
+\mathcal{C}_{\text{qcqa\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

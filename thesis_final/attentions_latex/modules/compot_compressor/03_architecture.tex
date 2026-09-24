@@ -1,0 +1,11 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/compot\_compressor.py} مستقر بوده و شامل ارکان زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{COMPOTLinear}:} لایه فاکتورسازی‌شده جایگزین \lr{nn.Linear} و \lr{Conv1D} که عملگر گذر رو به جلو را در دو مرحله زیر-مربعی اجرا می‌کند:
+    \begin{equation}
+    y = ((x \cdot A^\top) \cdot B^\top) + b
+    \end{equation}
+    این کلاس ویژگی \lr{is\_custom\_attention = True} را تنظیم کرده و از بازسازی کامل وزن برحسب نیاز با متد \lr{get\_weight()} پشتیبانی می‌نماید.
+    \item \textbf{متد کلاسی \lr{from\_linear\_and\_activations}:} کالبدشکافی وزن لایه اصلی، بررسی جهت ترانهاده برای لایه‌های خاص \lr{Conv1D} با ابعاد معکوس، استخراج فعال‌سازی‌ها، محاسبه خطای بازسازی نسبی (\lr{reconstruction\_error}) و برگرداندن لایه فشرده با رتبه مهارشده.
+    \item \textbf{کلاس \lr{COMPOTCompressor}:} مدیریت کشف لایه‌های هدف ترنسفورمر، فیلتر کردن لایه‌های نامناسب طبق سازوکار \lr{should\_compress\_linear}، جمع‌آوری تانسورهای فعال‌سازی کالیبراسیون و جایگزینی ماژولار در گراف مدل.
+\end{itemize}

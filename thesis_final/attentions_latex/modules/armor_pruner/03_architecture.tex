@@ -1,0 +1,10 @@
+\subsection{معماری و پیاده‌سازی}
+این ماژول در فایل \lr{Codes/framework/compression\_engine/armor\_pruner.py} تحت دو کلاس اصلی طراحی و در رجیستری فشرده‌سازی با نام‌های \lr{armor\_pruner}، \lr{armor} و \lr{armor\_compressor} ثبت شده است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{ARMORLinear}:} جایگزین لایه‌های خطی استاندارد (\lr{nn.Linear} و \lr{Conv1D}) می‌شود. در فرآیند گذر پیشرو (\lr{Forward Pass})، محاسبات به صورت دو شاخه موازی انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} (\mathbf{W}_{\text{sparse}} \odot \mathbf{M}_{2:4})^\top + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+    \end{equation}
+    هسته تنک ماتریس پایه ثابت شده و شاخه کم‌مرتبه قابلیت تنظیم دقیق گرادیانی را در صورت نیاز حفظ می‌کند. ماسک تنک به عنوان یک بافر غیردائمی (\lr{non-persistent buffer}) ذخیره شده تا در اندازه فایل مدل سربار ایجاد نکند.
+    \item \textbf{کلاس \lr{ARMORPruner}:} کنترل‌کننده فرآیند هرس که با اعمال فیلترهای معماری (\lr{should\_compress\_linear}) لایه‌های هدف را شناسایی کرده، داده‌های کالیبراسیون را استخراج می‌نماید، برآورد حساسیت را انجام داده و با ارزیابی آستانه خطای فروبنیوس (\lr{max\_error})، در صورت فراتر رفتن خطا، مسیر بازگشت ایمن به وزن‌های اولیه (\lr{fallback}) را اجرا می‌کند.
+\end{itemize}

@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Order | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB |
-| DistilBERT | **PADRe** | **90.37** | -0.34 | 0.9050 | 0.85 | 339 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 712 MB |
-| RoBERTa | **PADRe** | **64.56** | -14.00 | 0.7066 | 0.85 | 388 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 793 MB |
-| GPT-2 | **PADRe** | **50.92** | -28.44 | 0.6748 | 0.85 | 569 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Padre** | **90.37%** | -0.11% | PASS | 0.9050 | 0 | **0.99x** | 338.7 MB | 19.6 |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Padre** | **64.56%** | -10.55% | PASS | 0.7066 | 0 | **0.94x** | 388.2 MB | 29.1 |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Padre** | **50.92%** | -9.86% | PASS_LOW | 0.6748 | 0 | **0.99x** | 568.6 MB | 27.6 |
 
 ## 7.2 Order Ablation
 

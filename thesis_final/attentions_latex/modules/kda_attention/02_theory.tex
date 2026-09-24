@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید بردار ورودی پنهان $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ با ماتریس‌های نگاشت به سرهای توجه با بعد $d$ تجزیه شود. در هر سر توجه، پارامتر یادگیرنده میرایی با نام $\beta_h$ تعریف می‌گردد که ضریب میرایی در هر گام زمانی را به صورت $\gamma_h = \operatorname{clamp}(\sigma(\beta_h), \epsilon, 1 - \epsilon)$ تعیین می‌نماید.
+
+فرمولاسیون توجه برای حالت بازگشتی گام‌به‌گام یا تجمعی به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{S}_t = \gamma_h \mathbf{S}_{t-1} + \mathbf{K}_t^T \mathbf{V}_t
+\end{equation}
+\begin{equation}
+\mathbf{z}_t = \gamma_h \mathbf{z}_{t-1} + \mathbf{K}_t^T \mathbf{1}
+\end{equation}
+که در آن $\mathbf{S}_t \in \mathbb{R}^{d \times d_v}$ ماتریس حالت تجمعی مخفی و $\mathbf{z}_t \in \mathbb{R}^{d \times 1}$ بردار نرمال‌سازی مخرج است. خروجی در گام $t$ به شکل کسری از ضرب بردار پرس‌وجو به دست می‌آید:
+\begin{equation}
+\mathbf{y}_t = \frac{\mathbf{Q}_t \mathbf{S}_t}{\mathbf{Q}_t \mathbf{z}_t + \epsilon}
+\end{equation}
+
+در حالت پردازش موازی دسته‌ای روی پردازنده‌های گرافیکی، این فرآیند از طریق فرمولاسیون قطعه‌بندی‌شده درون‌پاره‌ای و بین‌پاره‌ای (\lr{Chunked Scan Formulation}) برای هر قطعه با طول $C$ اجرا می‌گردد:
+\begin{equation}
+\mathbf{D}_{\text{intra}}(i, j) = \exp\left((i - j) \log \gamma_h\right) \cdot \mathbb{I}(i \ge j)
+\end{equation}
+\begin{equation}
+\mathbf{O}_{\text{intra}} = \left( (\mathbf{Q}_c \mathbf{K}_c^T) \odot \mathbf{D}_{\text{intra}} \right) \mathbf{V}_c
+\end{equation}
+\begin{equation}
+\mathbf{O}_{\text{inter}} = (\mathbf{Q}_c \mathbf{S}_{\text{prev}}) \odot \exp\left((i + 1) \log \gamma_h\right)
+\end{equation}
+خروجی پاره از جمع این دو مقدار و تقسیم بر مخرج معادل حاصل می‌گردد. در مدل‌های دوطرفه (\lr{Bidirectional}) نظیر \lr{DistilBERT} و \lr{RoBERTa}، برای حفظ جریان اطلاعات از هر دو سو، پویش در هر دو جهت رفت و برگشت به صورت مستقل اجرا شده و خروجی‌ها با هم ترکیب می‌گردند.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_kda_attention}
+\mathcal{C}_{\text{kda\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

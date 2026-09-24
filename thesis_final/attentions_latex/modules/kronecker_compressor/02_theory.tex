@@ -1,0 +1,39 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ داده شده باشد. ابعاد ورودی و خروجی به عوامل متعادل فاکتورگیری می‌شوند:
+\begin{equation}
+d_{\text{out}} = m_1 \cdot m_2, \quad d_{\text{in}} = n_1 \cdot n_2
+\end{equation}
+که در آن ابعاد به گونه‌ای انتخاب می‌شوند که اختلاف $|m_1 - m_2|$ و $|n_1 - n_2|$ کمینه گردد. سپس ماتریس وزن با حاصل‌ضرب کرونکر دو ماتریس فاکتور $\mathbf{A} \in \mathbb{R}^{m_1 \times n_1}$ و $\mathbf{B} \in \mathbb{R}^{m_2 \times n_2}$ بازنمایی می‌شود:
+\begin{equation}
+\mathbf{W} \approx \mathbf{A} \otimes \mathbf{B} = \begin{bmatrix} 
+A_{11}\mathbf{B} & \cdots & A_{1n_1}\mathbf{B} \\ 
+\vdots & \ddots & \vdots \\ 
+A_{m_11}\mathbf{B} & \cdots & A_{m_1n_1}\mathbf{B} 
+\end{bmatrix}
+\end{equation}
+تعداد پارامترهای وزن از $d_{\text{out}} d_{\text{in}} = m_1 m_2 n_1 n_2$ به $m_1 n_1 + m_2 n_2$ کاهش می‌یابد که کاهش مرتبه‌ای عظیمی را نشان می‌دهد.
+
+برای محاسبه ضرب پیشرو $\mathbf{y} = \mathbf{x} (\mathbf{A} \otimes \mathbf{B})^\top + \mathbf{b}$، از مشخصه دوخطی ضرب کرونکر استفاده می‌شود تا محاسبات بدون تشکیل ماتریس کامل $\mathbf{W}$ انجام گیرد:
+\begin{enumerate}
+    \item ورودی $\mathbf{x} \in \mathbb{R}^{K \times d_{\text{in}}}$ به ابعاد $(K \cdot n_1, n_2)$ تغییر شکل یافته و با $\mathbf{B}^\top$ منقبض می‌شود:
+    \begin{equation}
+    \mathbf{X}_B = \text{reshape}(\mathbf{x}, [K \cdot n_1, n_2]) \, \mathbf{B}^\top \in \mathbb{R}^{(K \cdot n_1) \times m_2}
+    \end{equation}
+    \item نتیجه ترانهاده شده و با $\mathbf{A}^\top$ ضرب می‌گردد:
+    \begin{equation}
+    \mathbf{X}_A = \text{reshape}(\mathbf{X}_B^\top, [K \cdot m_2, n_1]) \, \mathbf{A}^\top \in \mathbb{R}^{(K \cdot m_2) \times m_1}
+    \end{equation}
+    \item تانسور حاصل به شکل $(K, m_1 \cdot m_2)$ بازآرایی شده و بایاس به آن افزوده می‌شود.
+\end{enumerate}
+
+در لایه‌هایی که تجزیه غیربدیهی کرونکر امکان‌پذیر نباشد (نظیر ابعاد اول)، ماژول به صورت خودکار به تجزیه کم‌رتبه بهینه‌سازی‌شده \lr{SVD} با رتبه انتخابی سوییچ می‌کند.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_kronecker_compressor}
+\mathcal{C}_{\text{kronecker\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+این ماژول در فایل \lr{Codes/framework/compression\_engine/hybrid\_svd\_layer.py} پیاده‌سازی شده و تحت شناسه‌های \lr{hybrid\_svd}، \lr{hybrid\_svd\_layer} و \lr{direct\_svd\_encoder} در رجیستری فشرده‌سازی به ثبت رسیده است. اجزای اصلی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{کلاس \lr{HybridSVDCompressor}:} مدیریت هوشمند شناسایی لایه‌های خطی و تبدیل آن‌ها به \lr{SVDLinear} با رعایت سازگاری با معماری‌های مختلف (\lr{GPT-2, RoBERTa, DistilBERT}).
+    \item \textbf{پشتیبانی از تفکیک لایه‌های توجه (\lr{Target Attention Only}):} امکان فیلتر کردن لایه‌ها برای فشرده‌سازی انحصاری پروجکشن‌های \lr{q\_proj, k\_proj, v\_proj, o\_proj, c\_attn}.
+    \item \textbf{ماژول موروثی \lr{SVDSingleHead}:} حفظ پیاده‌سازی تاریخی برخط جهت سازگاری با کدهای پیشین به همراه ثبت هشدار منسوخ‌شدن (\lr{Deprecation Warning}).
+    \item \textbf{محاسبه نسبت فشرده‌سازی واقعی:} ارزیابی کاهش پارامترها و محاسبه ضریب فشرده‌سازی (\lr{Compression Rate}) به صورت پویا در طول فرآیند جایگزینی.
+\end{itemize}

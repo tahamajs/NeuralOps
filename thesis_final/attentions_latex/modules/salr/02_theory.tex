@@ -1,0 +1,34 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی لایه \lr{SALR} مبتنی بر تجزیه ماتریس وزن اولیه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ به دو مؤلفه خطی مقطوع به همراه یک بردار پوشش ماسک تنک است:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با بازآرایی مؤلفه‌ها در ماتریس‌های فاکتور $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}$:
+\begin{equation}
+\mathbf{U} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2}, \quad \mathbf{V} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top
+\end{equation}
+
+جهت اعمال تنک‌سازی در فضای میانی، یک ماسک ستونی $\mathbf{m} \in \{0, 1\}^{r \times 1}$ بر روی کانال‌های میانی فاکتور $\mathbf{V}$ اعمال می‌شود. این ماسک بر اساس نرم فروبنیوس یا واریانس اثرگذاری هر یک از رتبه‌ها با نرخ تنک‌سازی هدف $s \in [0, 0.90]$ تشکیل می‌گردد:
+\begin{equation}
+m_k = \begin{cases}
+1, & \text{if } \|\mathbf{V}_{k, :}\|_2 \ge \tau_s \\
+0, & \text{otherwise}
+\end{cases}
+\end{equation}
+که در آن $\tau_s$ صدک متناظر با نرخ تنک‌سازی $s$ است.
+
+در مرحله انتشار رو به جلو (\lr{Forward Pass})، نگاشت ورودی $\mathbf{x} \in \mathbb{R}^{B \times d_{\text{in}}}$ با رابطه ترکیبی زیر محاسبه می‌گردد:
+\begin{equation}
+\mathbf{y} = \left(\mathbf{x} (\mathbf{V} \odot (\mathbf{m} \mathbf{1}_{d_{\text{in}}}^\top))^\top \right) \mathbf{U}^\top + \mathbf{b} + \gamma \left( \mathbf{x} \mathbf{A}_{\text{LoRA}}^\top \mathbf{B}_{\text{LoRA}}^\top \right)
+\end{equation}
+که در آن $\mathbf{A}_{\text{LoRA}} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B}_{\text{LoRA}} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ ماتریس‌های انطباق کمکی بوده و $\gamma = \frac{\alpha_{\text{lora}}}{r_{\text{lora}}}$ ضریب مقیاس‌گذاری تنظیم‌پذیر است.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_salr}
+\mathcal{C}_{\text{salr}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

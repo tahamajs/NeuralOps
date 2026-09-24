@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{adaptive\_ranks} بر روی مدل‌های مرجع نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_adaptive_ranks} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{adaptive\_ranks} روی مدل‌های پایه}
+\label{tab:benchmark_adaptive_ranks}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9051} & \lr{312.2 MB} & \lr{162,477 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{66.97\%} & \lr{0.7338} & \lr{531.7 MB} & \lr{93,259 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{59.06\%} & \lr{0.6490} & \lr{395.9 MB} & \lr{82,839 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{81.88\%} & \lr{0.7980} & \lr{1878.0 MB} & \lr{4,497 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{90.14\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

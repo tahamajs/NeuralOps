@@ -1,0 +1,34 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن اولیه یک لایه به صورت $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ باشد. برای تعداد خوشه‌های مشخص $k \le 256$ (معادل کوانتایش ۸ بیتی یا کمتر)، الگوریتم یک‌بعدی لوید (\lr{Lloyd's Algorithm}) با مقداردهی اولیه مبتنی بر چندک‌ها بر روی بردار تخت‌شده وزن‌ها اجرا می‌شود:
+\begin{equation}
+\mathcal{C} = \{c_1, c_2, \dots, c_k\}, \quad c_j \in \mathbb{R}
+\end{equation}
+شاخص هر درایه وزن به نزدیک‌ترین مرکز خوشه تخصیص می‌یابد:
+\begin{equation}
+I_{ij} = \arg\min_{m \in \{1, \dots, k\}} |W_{ij} - c_m|
+\end{equation}
+ماتریس بازسازی‌شده وزن‌ها $\mathbf{\hat{W}}$ به صورت زیر بازتعریف می‌گردد:
+\begin{equation}
+\hat{W}_{ij} = c_{I_{ij}}
+\end{equation}
+در حین گذر پیشرو، خروجی به کمک ماتریس بازسازی‌شده و آداپتور کم‌مرتبه \lr{LoRA} محاسبه می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{\hat{W}}^\top + \frac{\alpha}{r} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+\end{equation}
+که در آن $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ پارامترهای کم‌رتبه انطباقی هستند.
+
+به دلیل گسسته بودن نگاشت شاخص‌ها، گرادیان نسبت به ورودی و مراکز خوشه‌ها در گذر برگشتی با استفاده از قاعده \lr{STE} محاسبه می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial \mathbf{x}} = \frac{\partial \mathcal{L}}{\partial \mathbf{y}} \mathbf{\hat{W}}, \quad \frac{\partial \mathcal{L}}{\partial c_m} = \sum_{(i, j): I_{ij} = m} \left( \frac{\partial \mathcal{L}}{\partial \hat{W}_{ij}} \right)
+\end{equation}
+که از طریق عملگر پاشش تجمعی (\lr{scatter\_add}) روی مراکز خوشه‌ها با بازدهی بالا قابل محاسبه است.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_kmeans_quantize}
+\mathcal{C}_{\text{kmeans\_quantize}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

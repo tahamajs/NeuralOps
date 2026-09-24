@@ -1,4 +1,6 @@
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{gqa\_attention}}
+
+مبانی نظری این معماری مبتنی بر دستاوردهای علمی \cite{ainslie2023gqa} است.
 \label{sec:gqa_attention}
 
 \subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
@@ -73,7 +75,7 @@ R = \frac{H_Q}{H_{KV}} \in \mathbb{N}^+, \quad d = \frac{D}{H_Q}
 \subsubsection*{ردگیری گام‌به‌گام تانسورها در متد \lr{forward}}
 جدول \ref{tab:gqa_tensor_trace} مراحل تبدیل ابعادی تانسورها را در طول اجرای ماژول به تصویر می‌کشد.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{ردگیری ابعاد تانسورها در مراحل مختلف اجرای ماژول \lr{GroupedQueryAttention}}
@@ -117,7 +119,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی تجربی ماژول \lr{gqa\_attention} در چارچوب یکپارچه آزمایشگاهی رساله بر روی وظیفه استاندارد طبقه‌بندی احساسات \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن، به انجام رسیده است. جدول \ref{tab:gqa_master_results} کارنامه تجربی معتبر و استخراج‌شده از پایگاه داده مستند نتایج را نشان می‌دهد.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی ارزیابی آزمایشگاهی ماژول \lr{gqa\_attention} بر روی مدل‌های پایه در وظیفه \lr{GLUE SST-2}}
@@ -137,7 +139,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 \end{tabular}
 \end{table}
 
-بررسی کمّی داده‌های تجربی موید آن است که ماژول \lr{gqa\_attention} با ثبت دقت چشمگیر \textbf{89.91\%} و شاخص \lr{F1-Score} تراز اول \textbf{0.9033} بر روی مدل \lr{DistilBERT}، بالاترین کیفیت بازنمایی زبانی را به ثبت رسانده است. دستیابی به توان عملیاتی فوق‌العاده \textbf{96,233.27 tok/s} با مصرف حافظه ناچیز \textbf{324.69 MB}، کارایی استثنایی این معماری را اثبات می‌کند.
+بررسی کمّی داده‌های تجربی موید آن است که ماژول \lr{gqa\_attention} با ثبت دقت چشمگیر \textbf{89.91\%} و شاخص \lr{F1-Score} تراز اول \textbf{0.9033} بر روی مدل \lr{DistilBERT}، بالاترین کیفیت بازنمایی زبانی را به ثبت رسانده است. دستیابی به توان عملیاتی قابل توجه \textbf{96,233.27 tok/s} با مصرف حافظه ناچیز \textbf{324.69 MB}، کارایی بالا این معماری را اثبات می‌کند.
 
 \subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار رده‌های کلاسی \lr{(Interpretation \& Error Analysis)}}
 
@@ -157,7 +159,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 
 \subsubsection*{نقاط قوت ساختاری \lr{(Key Architectural Strengths)}}
 \begin{itemize}
-    \item \textbf{توازن بی‌نظیر میان حافظه و ظرفیت بازنمایی:} مهار ردپای حافظه کی‌وی‌کش به ضریب خطی $1/R$ بدون افت محسوس دقت زبانی.
+    \item \textbf{توازن قابل توجه میان حافظه و ظرفیت بازنمایی:} مهار ردپای حافظه کی‌وی‌کش به ضریب خطی $1/R$ بدون افت محسوس دقت زبانی.
     \item \textbf{انطباق بدون نیاز به آموزش از صفر \lr{(Zero-Cost Upcycling)}:} قابلیت تبدیل مستقیم چک‌پوینت‌های پیش‌آموخته \lr{MHA} به \lr{GQA} از طریق میانگین‌گیری متقارن وزن‌های کلید و مقدار.
     \item \textbf{یکپارچگی بومی با آداپتورهای کم‌مرتبه \lr{(LoRA)}:} پیاده‌سازی ماژول بر بستر کلاس \lr{LoRALinear} با امکان انطباق سریع پارامتری و تضمین سلامت وزن‌ها با پایش نرم فروبنیوس.
 \end{itemize}
@@ -197,3 +199,13 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
     \item \textbf{Ainslie, J., Lee-Thorp, J., de Jong, M., Zemlyanskiy, Y., Fedus, F., \& Bhoonah, S. (2023).} GQA: Training Generalized Grouped-Query Attention Models is Efficient. \textit{arXiv preprint arXiv:2305.13245}.
 \end{enumerate}
 \end{latin}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_gqa_attention}
+\mathcal{C}_{\text{gqa\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

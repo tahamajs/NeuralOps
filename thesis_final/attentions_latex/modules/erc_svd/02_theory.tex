@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تجزیه مقادیر منفرد $\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top$، مقادیر منفرد به ترتیب نزولی $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_d \ge 0$ مرتب شده‌اند. انرژی کل ماتریس بر حسب نُرم فروبنیوس برابر است با:
+\begin{equation}
+\|\mathbf{W}\|_F^2 = \sum_{i=1}^d \sigma_i^2
+\end{equation}
+تقریب رتبه $r$ ماتریس وزن به صورت $\mathbf{W}_r = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^\top$ دارای خطای برشی با فرم بسته زیر است:
+\begin{equation}
+\|\mathbf{W} - \mathbf{W}_r\|_F^2 = \sum_{i=r+1}^d \sigma_i^2
+\end{equation}
+با تعیین آستانه خطای مجاز $\epsilon_{\text{allowed}} \in (0, 1)$، ماژول کمترین رتبه $r^*$ را بر اساس نسبت انرژی انباشته محاسبه می‌کند:
+\begin{equation}
+\frac{\sum_{i=r^*+1}^d \sigma_i^2}{\sum_{i=1}^d \sigma_i^2} \le \epsilon_{\text{allowed}}^2 \iff \frac{\sum_{i=1}^{r^*} \sigma_i^2}{\sum_{i=1}^d \sigma_i^2} \ge 1 - \epsilon_{\text{allowed}}^2
+\end{equation}
+با به دست آمدن $r^*$، با شرط عدم تجاوز از سقف بازدهی فشرده‌سازی $\frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}}$، فاکتورهای چپ و راست با تفکیک متقارن توان مقادیر منفرد ساخته می‌شوند:
+\begin{equation}
+\mathbf{U}_{r^*} = \mathbf{U}_{:, :r^*} \mathbf{\Sigma}_{:r^*}^{1/2}, \quad \mathbf{V}_{r^*} = \mathbf{\Sigma}_{:r^*}^{1/2} \mathbf{V}_{:, :r^*}^\top
+\end{equation}
+و لایه با ماژول فاکتورگیری‌شده جایگزین می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{comp}} = \mathbf{U}_{r^*} \mathbf{V}_{r^*}, \quad \mathbf{y} = (\mathbf{x} \mathbf{V}_{r^*}^\top) \mathbf{U}_{r^*}^\top + \mathbf{b}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_erc_svd}
+\mathcal{C}_{\text{erc\_svd}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

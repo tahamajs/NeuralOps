@@ -12,14 +12,14 @@
 ### Table 7.1: SST-2 results with $m = 64$, $K = 4$.
 
 <!-- source: results/unified_Primal/distilbert/summary.csv line 2 -->
-| Model | Module | Acc | Δ | F1 | Attn mem | Time | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 128 KB | 1.90 s | 183 MB |
-| DistilBERT | **Primal** | **90.14** | -0.57 | 0.9034 | **12 KB** | 2.5 s | 668 MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 128 KB | 4.10 s | 712 MB |
-| RoBERTa | **Primal** | **68.00** | -10.56 | 0.6767 | **12 KB** | 5.3 s | 1442 MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 128 KB | 4.20 s | 793 MB |
-| GPT-2 | **Primal** | **63.07** | -16.29 | 0.6349 | **12 KB** | 5.5 s | 1685 MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Primal** | **90.14%** | -0.34% | PASS | 0.9034 | 0 | **1.00x** | 668.3 MB | 3.9s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Primal** | **68.00%** | -7.11% | PASS | 0.6767 | 0 | **1.00x** | 1441.8 MB | 7.4s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Primal** | **63.07%** | +2.29% | PASS | 0.6349 | 0 | **1.00x** | 1684.6 MB | 8.1s |
 
 **Attention memory** = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 

@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}$ و $\mathbf{K} \in \mathbb{R}^{B \times H \times L \times d}$ تانسورهای پرس‌وجو و کلید پس از اعمال پروجکشن‌های خطی مجهز به لورا و اعمال تعبیه‌های مکانی \lr{RoPE} باشند.
+
+\paragraph{۱. نگاشت شبه‌باینری پیوسته:}
+برای تقریب علامت بردارها $\operatorname{sgn}(x) \in \{-1, +1\}$ به صورت مشتق‌پذیر، از تابع تانژانت هذلولوی با فاکتور شیب‌دهی ۵ و مقیاس‌های یادگیرنده اختصاصی هر سر $\mathbf{s}_Q, \mathbf{s}_K \in \mathbb{R}^H$ استفاده می‌شود:
+\begin{align}
+\tilde{\mathbf{Q}} &= \tanh\left(5.0 \cdot \mathbf{Q} \odot \mathbf{s}_Q\right) \in (-1, 1)^{B \times H \times L \times d}, \\
+\tilde{\mathbf{K}} &= \tanh\left(5.0 \cdot \mathbf{K} \odot \mathbf{s}_K\right) \in (-1, 1)^{B \times H \times L \times d}
+\end{align}
+
+\paragraph{۲. ارتباط ضرب داخلی شبه‌باینری با فاصله همینگ:}
+برای دو بردار کاملاً باینری $\mathbf{u}, \mathbf{v} \in \{-1, +1\}^d$، فاصله همینگ برابر است با تعداد بیت‌های ناهمخوان:
+\begin{equation}
+D_H(\mathbf{u}, \mathbf{v}) = \sum_{i=1}^d \mathbb{I}_{[u_i \ne v_i]} = \frac{1}{4} \sum_{i=1}^d (u_i - v_i)^2 = \frac{d - \langle \mathbf{u}, \mathbf{v} \rangle}{2}
+\end{equation}
+بنابراین منفی فاصله همینگ متناسب با $\langle \mathbf{u}, \mathbf{v} \rangle - d$ است. با جایگزینی بردارهای شبه‌باینری پیوسته $\tilde{\mathbf{Q}}$ و $\tilde{\mathbf{K}}$، شباهت همینگ نرمال‌شده با مقیاس دمای یادگیرنده مثبت $T = \operatorname{Softplus}(\tau) + 10^{-3}$ به صورت زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{S}_{i, j} = \frac{T}{2 \sqrt{d}} \left( \sum_{k=1}^d \tilde{Q}_{i, k} \tilde{K}_{j, k} - d \right)
+\end{equation}
+از آنجا که مقدار ضرب داخلی در بازه $(-d, d)$ قرار دارد، مقدار داخل پرانتز در بازه $(-2d, 0)$ مقید شده و رفتاری کاملا سازگار با لگاریتم احتمال بیشینه هموار بروز می‌دهد.
+
+\paragraph{۳. ماسک‌گذاری و تجمیع خروجی:}
+پس از افزودن ماسک‌های توجه علّی یا پدینگ، ماتریس احتمال با استفاده از بیشینه هموار ممیز شناور محاسبه شده و مقادیر ترکیب می‌گردند:
+\begin{equation}
+\mathbf{A} = \operatorname{Softmax}\left(\mathbf{S} + \mathbf{M}\right), \quad \mathbf{O} = \operatorname{LoRA-Linear}_O(\mathbf{A} \mathbf{V})
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hamming_attention}
+\mathcal{C}_{\text{hamming\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

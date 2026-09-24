@@ -1,74 +1,80 @@
-\subsection{کالبدشکافی ماژول \lr{hgrn2\_outer}}
+\section{ماژول توجه بازگشتی ضرب بیرونی (HGRN-2 Outer-Product Attention)}
+\label{sec:module_hgrn2_outer}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم نوآورانه \lr{hgrn2\_outer} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: \textbf{چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟}
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-برای درک معماری ضرب بیرونی \lr{hgrn2\_outer}، فرآیند چاپ کلیشه‌ای یک اثر هنری چندرنگ را تصور کنید. در هر چرخش غلتک، یک لایه رنگی کامل از طریق برخورد سطح مقطع شابلون با بوم ایجاد می‌شود. ماتریس بیرونی کلید-مقدار در این ماژول، در هر گام زمانی یک تصویر همبستگی کامل $\mathbf{k}_t \mathbf{v}_t^T$ را بر روی ماتریس حافظه پنهان حک می‌کند تا بدون نیاز به فهرست‌بندی تک‌تک توکن‌ها، پیوندهای مفهومی عمیق بازنمایی شوند.
+شبکه‌های بازگشتی با گیت سلسله‌مراتبی نسخه دو با ضرب بیرونی \lr{(HGRN-2 Outer-Product)} پاسخی بنیادین به یکی از محدودیت‌های کلیدی مدل‌های خطی بر مبنای ضرب داخلی هستند: \textbf{چگونه می‌توان بدون تحمل پیچیدگی محاسباتی و حافظه‌ای مرتبه دو $\mathcal{O}(N^2)$، ظرفیت حافظه انجمنی مدل را برای یادگیری ارتباطات متقاطع میان ابعاد پنهان گسترش داد؟} در مدل‌های ساده بازگشتی برداری، حالت پنهان در هر سر به شکل یک بردار $d$-بعدی فشرده می‌شود که این امر گنجایش تداعی مفاهیم چندگانه در یک گام زمانی را به شدت محدود می‌سازد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-در این مدل، وضعیت پنهان به شکل یک ماتریس دوبعدی $\mathbf{H}_t \in \mathbb{R}^{d \times d}$ گسترش می‌یابد:
+ماژول \lr{HGRN2OuterBlock} با گسترش بردار حالت پنهان به یک ماتریس کامل دوبعدی $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ از طریق ضرب بیرونی بردارهای کلید و مقدار $\mathbf{k}_t \otimes \mathbf{v}_t = \mathbf{k}_t \mathbf{v}_t^T$، ظرفیت حافظه انجمنی را به میزان $\mathcal{O}(d^2)$ افزایش می‌دهد. در این الگوریتم، با بهره‌گیری از گیت فراموشی کران‌دار در فضای لگاریتمی و نرمال‌سازی پیوسته مخرج، محاسبات با پیچیدگی زمانی خطی $\mathcal{O}(N \cdot d^2)$ و مصرف حافظه مستقل از طول دنباله برای استنتاج انجام می‌پذیرد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ نمایش پنهان توکن‌های ورودی باشد. نگاشت‌های پروجکشن پرس‌وجو، کلید و مقدار با تطبیق‌دهنده‌های کم‌مرتبه لورا تولید شده و جهت تضمین پایداری عددی و نامنفی بودن هسته، تبدیل کرنلی بر روی آن‌ها اعمال می‌شود:
 \begin{align}
-\mathbf{H}_t &= \operatorname{diag}(\mathbf{g}_t) \mathbf{H}_{t-1} + \mathbf{k}_t \mathbf{v}_t^T \\
-\mathbf{y}_t &= \mathbf{q}_t \mathbf{H}_t
+\mathbf{q}_t &= \operatorname{ELU}(\operatorname{LoRA-Linear}_Q(\mathbf{x}_t)) + 1.0, \\
+\mathbf{k}_t &= \frac{\operatorname{ELU}(\operatorname{LoRA-Linear}_K(\mathbf{x}_t)) + 1.0}{\sqrt{d}}, \\
+\mathbf{v}_t &= \operatorname{LoRA-Linear}_V(\mathbf{x}_t)
 \end{align}
-استفاده از خاصیت شرکت‌پذیری ضرب در مرحله استنتاج باعث می‌شود حافظه مورد نیاز برای ذخیره تاریخچه مستقل از طول توالی و از مرتبه $\mathcal{O}(d^2)$ باقی بماند.
+که در آن ابعاد بردارها به صورت چندسره با بعد سر $d = D/H$ در نظر گرفته می‌شوند.
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{hgrn2\_outer.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\paragraph{۱. گیت فراموشی کران‌دار لگاریتمی:}
+برای جلوگیری از اشباع گیت و افت شدید گرادیان در گام‌های متوالی، گیت زوال $\mathbf{f}_t \in (0, 1)$ از طریق نگاشت غیرخطی تابع پلاس هموار \lr{Softplus} با کران‌های سخت محاسبه می‌شود:
+\begin{equation}
+\mathbf{f}_t = \exp\left( \operatorname{clamp}\left( -\operatorname{Softplus}(\mathbf{W}_f \mathbf{x}_t + \mathbf{b}_f), -3.0, -10^{-4} \right) \right)
+\end{equation}
+
+\paragraph{۲. رابطه بازگشتی ماتریس ضرب بیرونی و مخرج:}
+در هر سر توجه و در گام زمانی $t$، وضعیت پنهان ماتریسی $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ و بردار تجمع مخرج $\mathbf{z}_t \in \mathbb{R}^d$ با رابطه بازگشتی زیر به‌روزرسانی می‌شوند:
+\begin{align}
+\mathbf{S}_t &= \mathbf{f}_t \odot \mathbf{S}_{t-1} + (1 - \mathbf{f}_t) \odot \left(\mathbf{k}_t \mathbf{v}_t^T\right), \\
+\mathbf{z}_t &= \mathbf{f}_t \odot \mathbf{z}_{t-1} + (1 - \mathbf{f}_t) \odot \mathbf{k}_t
+\end{align}
+سپس خروجی توجه با ضرب پرس‌وجو در ماتریس حافظه و نرمال‌سازی توسط ضرب داخلی پرس‌وجو با بردار مخرج استخراج می‌گردد:
+\begin{equation}
+\mathbf{num}_t = \mathbf{q}_t \mathbf{S}_t \in \mathbb{R}^d, \quad \operatorname{denom}_t = \max\left(\langle \mathbf{q}_t, \mathbf{z}_t \rangle, 1.0\right), \quad \mathbf{y}_t^{\text{fwd}} = \frac{\mathbf{num}_t}{\operatorname{denom}_t}
+\end{equation}
+
+برای مدل‌های انکودر دوطرفه (مانند \lr{DistilBERT} و \lr{RoBERTa})، یک اسکن بازگشتی معکوس پادعلّی $\mathbf{y}_t^{\text{bwd}}$ از انتهای توالی به ابتدا نیز محاسبه شده و خروجی نهایی از میانگین‌گیری متقارن $\mathbf{y}_t = \frac{1}{2}(\mathbf{y}_t^{\text{fwd}} + \mathbf{y}_t^{\text{bwd}})$ به دست می‌آید. در نهایت، با عبور از \lr{LayerNorm} روی بعد سرها و لایه پروجکشن خروجی، تانسور نهایی تولید می‌شود:
+\begin{equation}
+\mathbf{o}_t = \operatorname{LoRA-Linear}_O\left( \operatorname{LayerNorm}(\mathbf{y}_t) \right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول تحت عنوان \lr{HGRN2OuterBlock} در فایل \lr{Codes/framework/attentions/hgrn2\_outer.py} پیاده‌سازی شده و از کلاس مرجع \lr{BaseAttention} ارث‌بری می‌کند. این ماژول در رجیستری چارچوب با شناسه رسمی \lr{hgrn2\_outer} ثبت شده است.
+
+مشخصه‌های کلیدی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{اسکن بازگشتی در دقت کامل:} متد \lr{\_outer\_scan\_parallel} ماتریس‌های حالت $\mathbf{S}$ و بردارهای $\mathbf{z}$ را در حافظه \lr{FP32} تخصیص می‌دهد تا انباشت خطاهای گردکردن در دنباله‌های طولانی به حداقل برسد.
+    \item \textbf{کاهش حافظه به $\mathcal{O}(1)$ در استنتاج:} در حین پردازش خودبازگشتی، نیازی به ذخیره‌سازی دنباله گذشته در بافر کش \lr{KV} نبوده و نگهداری ماتریس با بعد ثابت $d \times d$ کافی است.
+    \item \textbf{سازگاری کامل با GQA و RoPE:} ماژول از تعبیه مکانی دورانی با تابع \lr{apply\_rotary\_pos\_emb} و بسط سرهای کلید/مقدار با \lr{repeat\_kv} پشتیبانی می‌کند.
+    \item \textbf{انتقال وزن‌های پیش‌آموزش‌دیده:} متد سازگار \lr{copy\_weights} امکان بارگذاری دقیق پارامترهای وزن‌های پیش‌آموزش‌دیده از مدل‌های مختلف را فراهم می‌سازد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی جامع عملکرد ماژول \lr{hgrn2\_outer} بر روی بنچمارک استاندارد \lr{GLUE SST-2} تحت شرایط آزمایشگاهی کنترل‌شده انجام شده است. نتایج قطعی استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_hgrn2_outer} خلاصه شده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{hgrn2\_outer} بر روی ۴ مدل پایه}
+\label{tab:benchmark_hgrn2_outer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{43.81\%} & \lr{0.4068} & \lr{357.08 MB} & \lr{16,854.18 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.34\%} & \lr{0.4355} & \lr{685.64 MB} & \lr{8,864.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{48.62\%} & \lr{0.6203} & \lr{569.81 MB} & \lr{9,386.81 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{50.46\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشاهده می‌شود، ماژول \lr{hgrn2\_outer} از منظر سخت‌افزاری بسیار کم‌مصرف بوده و اوج حافظه آن در مدل‌های سبک در محدوده \lr{357 MB} تا \lr{685 MB} مهار شده است. نرخ توان عملیاتی در \lr{DistilBERT} به میزان چشمگیر \lr{16,854 tok/s} و در \lr{GPT-2} به \lr{9,386 tok/s} رسیده است. مدل بر روی \lr{Qwen} وضعیت \lr{PASS} را با دقت \lr{50.46\%} احراز کرده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+با وجود راندمان بالای سخت‌افزاری، دقت زبانی در تمامی مدل‌ها در بازه ۴۳.۸۱٪ تا ۵۰.۴۶٪ قرار گرفته و سه مدل در وضعیت \lr{PASS\_LOW} ارزیابی شده‌اند:
 \begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} اجرای عملگر تخصصی معماری با حذف درایه‌های زائد و استخراج مؤلفه‌های اصلی اطلاعات.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
+    \item \textbf{تحلیل افت دقت به زیر تراز شانس در \lr{DistilBERT} (۴۳.۸۱٪):} این مقدار حتی کمتر از پیش‌بینی تصادفی با توزیع اکثریت کلاس‌ها است. علت بنیادین این پدیده، شکست ساختار ماتریس ضرب بیرونی $\mathbf{k}_t \mathbf{v}_t^T$ در برقراری انطباق سریع با وزن‌های اولیه انکودر مسطح است. از آنجا که فضای نمایش لایه‌های پیش‌آموزش‌دیده \lr{DistilBERT} بر مبنای ضرب داخلی دو به دو شکل گرفته است، جایگزینی ناگهانی آن با انباشت ضرب بیرونی بدون بازآموزی عمیق، توزیع گرادیان پس‌انتشار را دچار انحراف شدید کرده و باعث پیش‌بینی کلاس اقلیت گردیده است.
+    \item \textbf{تنگنای بازگشتی در مدل‌های ترتیبی:} عدم دسترسی مستقیم توکن‌ها به لایه‌های پیشین بدون گذر از ماتریس حالت $\mathbf{S}$، مدل را در درک الگوهای نحوی محلی در لایه‌های ابتدایی ناتوان ساخته و دقت را در محدوده ۴۸٪ تا ۵۰٪ متوقف کرده است.
 \end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
-\begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
-\end{itemize}
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.5\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-مهار مصرف حافظه بر روی \lr{750.0 MB} همراه با شاخص F1 معادل \lr{85.2\%}، حاکی از ظرفیت بازنمایی بالای حافظه ماتریسی بدون تحمل سربار مربعی طول دنباله است. عدم انباشت توکن‌ها در حافظه کش مانع از سرریز حافظه در توالی‌های طویل می‌گردد.
-
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
-    \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
-    \node [state, right=1.0cm of disc] (recurr) {بروزرسانی حالت $h_t = \bar{\mathbf{A}} h_{t-1} + \bar{\mathbf{B}} x_t$};
-    \node [outblock, right=1.0cm of recurr] (out) {خروجی خطی $y_t = \mathbf{C} h_t$};
-
-    \draw [->, thick, draw=blue!80] (input) -- (disc);
-    \draw [->, thick, draw=teal!80] (disc) -- (recurr);
-    \draw [->, thick, draw=orange!80] (recurr) -- (out);
-
-    \path [->, thick, draw=orange!90] (recurr) edge [loop above] node [font=\footnotesize] {حافظه $\mathcal{O}(1)$} (recurr);
-\end{tikzpicture}
-\end{center}
-
-
-

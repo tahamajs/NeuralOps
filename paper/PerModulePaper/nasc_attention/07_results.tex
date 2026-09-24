@@ -5,22 +5,24 @@
 
 \textbf{Table 7.1: Accuracy on SST-2 validation.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{Time} & \textbf{Status} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & Dense & 1.9 s & PASS \\
-DistilBERT & \textbf{NASC} & \textbf{90.48} & \textbf{-0.23} & 0.9075 & models/weights.pt & 1.42x & PASS \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & Dense & 4.1 s & PASS \\
-RoBERTa & \textbf{NASC} & \textbf{89.22} & \textbf{+10.66} & 0.9011 & models/weights.pt & 2.3 s & PASS \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & Dense & 4.2 s & PASS \\
-GPT-2 & \textbf{NASC} & \textbf{85.32} & \textbf{+5.96} & 0.8683 & Cascade & 2.3 s & PASS \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Nasc Attention} & \textbf{89.11\%} & -1.37\% & PASS & 0.8917 & 0 & \textbf{0.99$\times$} & 339.6 MB & 12.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Nasc Attention} & \textbf{85.55\%} & +10.44\% & PASS & 0.8587 & 0 & \textbf{0.94$\times$} & 388.0 MB & 24.0 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Nasc Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.99$\times$} & 1514.1 MB & 54.5 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Key observations:}
 

@@ -1,0 +1,69 @@
+\section{ماژول entropy\_budget\_allocation (Global Entropy Budget SVD Compressor)}
+\label{sec:module_entropy_budget_allocation}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+در سیستم‌های فشرده‌سازی مبتنی بر تجزیه ماتریسی مقادیر منفرد (\lr{SVD})، یکی از بزرگترین معضلات فنی، تعیین شیوه تخصیص رتبه به صورت بهینه و همبسته در سراسر کل شبکه (\lr{Global Rank Allocation}) است. اغلب روش‌های موجود یا به تخصیص محلی مستقل در هر لایه روی می‌آورند، یا ماتریس‌های فعال‌سازی ورودی را بدون در نظر گرفتن همبستگی و سفیدی آماری فاکتورگیری می‌کنند که موجب تشدید خطای بازسازی در گام‌های بعدی می‌شود.
+
+ماژول فشرده‌سازی \lr{EntropyBudgetAllocation} با نام‌های رجیستری \lr{entropy\_budget} و \lr{entropy\_budget\_allocation}، رویکردی سراسری برای تخصیص بودجه رتبه بر اساس آنتروپی اطلاعاتی مقادیر منفرد وزن‌های سفیدشده با فعال‌سازی (\lr{Whitened Activation Entropy}) ارائه می‌دهد. این ماژول با ادغام ماتریس کوواریانس فعال‌سازی‌های تجربی در طول گذر کالیبراسیون و محاسبه توزیع آنتروپی شانون، مشخص می‌سازد که کدام لایه‌ها و مؤلفه‌های طیفی حامل بیشترین چگالی محتوایی هستند؛ سپس بودجه سراسری را با تفکیک متقارن مقادیر منفرد به لایه‌های اختصاصی \lr{SVDLinear} تبدیل می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در مرحله کالیبراسیون، ماتریس کوواریانس تجمعی فعال‌سازی‌های ورودی $\mathbf{C}_X \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ برای هر لایه استخراج و با مقادیر ویژه منظم‌سازی می‌گردد:
+\begin{equation}
+\mathbf{C}_X = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\top, \quad \mathbf{C}_X^{1/2} = \mathbf{Q} \mathbf{\Lambda}^{1/2} \mathbf{Q}^\top, \quad \mathbf{C}_X^{-1/2} = \mathbf{Q} \mathbf{\Lambda}^{-1/2} \mathbf{Q}^\top
+\end{equation}
+ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با جذر کوواریانس پیش‌شرط‌سازی شده و تجزیه مقادیر منفرد بر روی ماتریس سفیدشده انجام می‌پذیرد:
+\begin{equation}
+\mathbf{M} = \mathbf{W} \mathbf{C}_X^{1/2} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+طیف مقادیر منفرد $\mathbf{\Sigma} = \operatorname{diag}(\sigma_1, \dots, \sigma_d)$ با نرمال‌سازی به یک توزیع احتمالاتی بر روی زیرفضاها تبدیل می‌شود:
+\begin{equation}
+p_i = \frac{\sigma_i}{\sum_{j=1}^d \sigma_j + \epsilon}
+\end{equation}
+آنتروپی شانون طیف در مقیاس بیت به فرم زیر محاسبه می‌گردد:
+\begin{equation}
+H(\mathbf{\Sigma}) = -\sum_{i=1}^d p_i \log_2(p_i)
+\end{equation}
+برای هر مؤلفه کاندید $i \in [r_{\text{floor}}, r_{\max}]$، امتیاز اهمیت اطلاعاتی $\mathcal{S}_{l, i}$ تعریف می‌شود:
+\begin{equation}
+\mathcal{S}_{l, i} = \frac{\sigma_{l, i}^2}{H(\mathbf{\Sigma}_l)}
+\end{equation}
+تمام مؤلفه‌های طیفی در سراسر لایه‌ها با امتیاز $\mathcal{S}_{l, i}$ مرتب شده و باقیمانده بودجه سراسری به برترین مؤلفه‌ها تخصیص می‌یابد تا رتبه بهینه $r_l$ تعیین گردد. در نهایت فاکتورهای کم‌رتبه به صورت متقارن و متعادل با معکوس جذر کوواریانس تشکیل می‌شوند:
+\begin{equation}
+\mathbf{U}_{r_l} = \mathbf{U}_l[:, :r_l] \mathbf{\Sigma}_l[:r_l]^{1/2}, \quad \mathbf{V}_{r_l} = (\mathbf{\Sigma}_l[:r_l]^{1/2} \mathbf{V}_l[:, :r_l]^\top) \mathbf{C}_{X, l}^{-1/2}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در \lr{Codes/framework/compression\_engine/entropy\_budget\_allocation.py} تعبیه شده و خصوصیات کلیدی زیر را شامل می‌شود:
+\begin{itemize}
+    \item \textbf{جمع‌آوری هوک‌های کوواریانس با دقت مضاعف (\lr{Double-Precision Hooks}):} ذخیره‌سازی ممان‌های درجه دوم فعال‌سازی‌ها در فاز کالیبراسیون و محاسبه تجزیه هرمیتی \lr{torch.linalg.eigh} با کف مقادیر ویژه مثبت معین.
+    \item \textbf{تخصیص بودجه سراسری بر مبنای صف اولویت:} توزیع دقیق رتبه‌ها در سراسر لایه‌ها متناسب با بودجه کلی $\alpha_{\text{budget}} \in (0, 1]$.
+    \item \textbf{جایگزینی فیزیکی با \lr{SVDLinear}:} بازسازی لایه‌های متراکم و لایه‌های \lr{Conv1D} در قالب ماژول فاکتورگیری‌شده به همراه حفظ پارامترهای کمکی \lr{LoRA}.
+    \item \textbf{پالایش خطا و محافظت از لایه‌های حساس:} امکان فعال‌سازی پرچم \lr{target\_attention\_only} جهت فشرده‌سازی انحصاری پروجکشن‌های توجه و انجماد لایه‌های \lr{MLP}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{entropy\_budget\_allocation} بر روی مدل‌های پایه بر اساس رکوردهای آزمایشگاهی ثبت‌شده در جدول \ref{tab:benchmark_entropy_budget_allocation} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{entropy\_budget\_allocation} بر روی مدل‌های پایه}
+\label{tab:benchmark_entropy_budget_allocation}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9099} & \lr{357.28 MB} & \lr{129,878.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.15\%} & \lr{0.9425} & \lr{503.28 MB} & \lr{13,889.95 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول مشاهده می‌شود، ماژول با موفقیت بر روی هر دو انکودر زبانی \lr{DistilBERT} (با دقت \lr{90.60\%} و توان بالای ۱۲۹ هزار توکن بر ثانیه) و \lr{RoBERTa} (با دقت \lr{94.15\%} و شاخص F1 معادل \lr{0.9425}) وضعیت \lr{PASS} را احراز نموده است. بنچ‌مارک بر روی \lr{GPT-2} اجرا نگردیده (\lr{NOT\_RUN}) و مدل \lr{Qwen} در فاز اولیه به دلیل حجم حافظه در حالت \lr{SKIP} قرار گرفته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+محدودیت عمده این رویکرد، وابستگی زیاد به پایداری عددی ماتریس معکوس جذر کوواریانس $\mathbf{C}_X^{-1/2}$ در لایه‌هایی با ابعاد پنهان بزرگ است. چنانچه درایه‌های ماتریس کوواریانس نزدیک به تکین باشند، کوچک‌ترین نوسان در مقادیر ویژه کوچک، خطای عددی عظیمی در مؤلفه $\mathbf{V}_{r_l}$ ایجاد کرده و به افت شدید دقت منجر می‌شود. تعبیه پارامتر پایدارکننده تیکونوف (\lr{eps damping}) و پشتیبانی از مسیر بازگشت خودکار در پیاده‌سازی برای تخفیف این عارضه تعبیه شده است.

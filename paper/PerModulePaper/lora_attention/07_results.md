@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Trainable | Frozen |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 66.9M |
-| DistilBERT | **LoRA Attn** | **89.91** | -0.80 | 0.9033 | 0.85 | 66.4M |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 124.6M |
-| RoBERTa | **LoRA Attn** | **58.03** | -20.53 | 0.6856 | 0.85 | 123.7M |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 124.4M |
-| GPT-2 | **LoRA Attn** | **51.26** | -28.10 | 0.6763 | 0.85 | 123.5M |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Lora Attention** | **89.91%** | -0.57% | PASS | 0.9033 | 0 | **0.98x** | 334.4 MB | 3.3s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Lora Attention** | **58.03%** | -17.08% | PASS | 0.6856 | 0 | **0.93x** | 390.9 MB | 6.3s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Lora Attention** | **51.26%** | -9.52% | PASS_LOW | 0.6763 | 0 | **0.98x** | 580.0 MB | 7.1s |
 
 **Key observations:**
 

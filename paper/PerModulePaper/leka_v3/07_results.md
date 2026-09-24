@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | L_land | W | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | — | 183 MB |
-| DistilBERT | **LEKAv3** | **70.53** | -20.18 | 0.7653 | 0.85 | 0.85 | 354 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | — | 712 MB |
-| RoBERTa | **LEKAv3** | **50.92** | -27.64 | 0.6748 | 0.85 | 0.85 | 405 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | — | 793 MB |
-| GPT-2 | **LEKAv3** | **50.92** | -28.44 | 0.6748 | 0.85 | 0.85 | 580 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Leka V3** | **78.21%** | -12.73% | PASS | 0.7907 | 24 | **0.99x** | 349.6 MB | 19.3s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Leka V3** | **52.06%** | -23.40% | PASS_LOW | 0.6785 | 48 | **0.93x** | 683.3 MB | 39.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Leka V3** | **66.74%** | -21.10% | PASS | 0.7344 | 72 | **0.99x** | 345.7 MB | 43.3s |
 
 ## 7.2 Parameter Analysis
 

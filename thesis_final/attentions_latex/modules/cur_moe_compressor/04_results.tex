@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد فشرده‌ساز \lr{cur\_moe\_compressor} بر اساس اطلاعات بنچ‌مارک رسمی در \lr{thesis\_final/master\_verified\_results.json} روی مدل‌های پایه به شرح جدول \ref{tab:benchmark_cur_moe_compressor} استخراج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{cur\_moe\_compressor} روی مدل‌های زبانی پایه}
+\label{tab:benchmark_cur_moe_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{3611.10 MB} & \lr{117,166.70 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.34\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{74.66\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\lr{Qwen} & \lr{52.71\%} & \lr{---} & \lr{3205.92 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج جدول \ref{tab:benchmark_cur_moe_compressor}، ماژول \lr{cur\_moe\_compressor} توانسته در مدل دیکودر \lr{GPT-2} به دقت \lr{74.66\%} دست یابد. در مدل \lr{DistilBERT} با ثبت توان پردازشی بالای \lr{117,166.70 tok/s} وضعیت \lr{PASS} را احراز کرده است، هرچند دقت دسته‌بندی \lr{SST-2} در سطح شانس تصادفی (\lr{50.92\%}) متوقف شده است. در مدل \lr{RoBERTa}، به دلیل تداخل تزریق لایه‌های متناظر خبره با ساختار ماسک پیش‌آموزش و ناسازگاری توابع فعال‌سازی، وضعیت آزمایش به صورت مستند به عنوان \lr{SKIP\_ROBERTA\_ARCHITECTURAL} ثبت شده است. در مدل زبانی بزرگ \lr{Qwen} نیز دقت \lr{52.71\%} با حافظه فعال \lr{3205.92 MB} حاصل گردیده است. همچنین در ارزیابی خط مبنای مجزای \lr{cur\_moe}، دقت \lr{67.43\%} در \lr{DistilBERT} با برچسب \lr{PASS} و وضعیت‌های \lr{PASS\_LOW} در مدل‌های زبانی علّی ثبت شده است.

@@ -382,7 +382,20 @@ The `FASA` architecture incorporates telemetry hooks for tracking singular value
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base transformer model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Inject mixattention_moska module dynamically
+injected_model = inject_attention(model, attn_type="mixattention_moska")
+
+# 3. Verify forward pass
+input_ids = torch.randint(0, 1000, (2, 64))
+outputs = injected_model(input_ids)
+print(f"[PASS] mixattention_moska forward logits shape:", outputs.logits.shape)
 ```
 
 ## Benchmark Results

@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 results with $w = 128$, $k = 2$.**
 
-| Model | Module | Acc | Δ | F1 | Density | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 100% | 183 MB | 1.9 s |
-| DistilBERT | **NSA** | **90.83** | +0.12 | 0.9119 | **50\%%** | 340 MB MB | 1.42x s |
-| RoBERTa | full | 78.56% | — | 0.8124 | 100% | 712 MB | 4.1 s |
-| RoBERTa | **NSA** | **50.92** | -27.64 | 0.6748 | **0.85%** | 671 MB MB | 2.3 s s |
-| GPT-2 | full | 79.36% | — | 0.7978 | 100% | 793 MB | 4.2 s |
-| GPT-2 | **NSA** | **50.92** | -28.44 | 0.6748 | **0.85%** | 569 MB MB | 2.3 s s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Nsa Attention** | **90.83%** | -0.11% | PASS | 0.9119 | 0 | **0.99x** | 339.9 MB | 4.5s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Nsa Attention** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 0 | **0.94x** | 667.9 MB | 8.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Nsa Attention** | **51.03%** | -6.88% | PASS_LOW | 0.6753 | 0 | **0.99x** | 568.7 MB | 9.8s |
 
 **Density** is the average fraction of attended keys per query.
 

@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Δ Params | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | — | 183 MB |
-| DistilBERT | **REAP-MoE** | **90.02** | -0.69 | 0.9030 | 66.4M | 66.4M | 554 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | — | 712 MB |
-| RoBERTa | **REAP-MoE** | **50.92** | -27.64 | 0.6748 | 124.6M | 66.4M | 1062 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | — | 793 MB |
-| GPT-2 | **REAP-MoE** | **52.41** | -26.95 | 0.6790 | 124.4M | 66.4M | 960 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Reap Moe** | **90.02%** | -0.92% | PASS | 0.9030 | 96 | **0.61x** | 554.2 MB | 10.3s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Reap Moe** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 192 | **0.57x** | 1062.1 MB | 21.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Reap Moe** | **52.41%** | -5.50% | PASS_LOW | 0.6790 | 192 | **0.59x** | 959.5 MB | 21.5s |
 
 **Observations:**
 

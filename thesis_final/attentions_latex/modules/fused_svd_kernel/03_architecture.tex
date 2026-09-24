@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول \lr{FusedSVDKernelAttention} به همراه کلاس لایه زیرین \lr{FusedSVDLinear} و تابع گرادیان سفارشی \lr{\_FusedSVDLinearAutogradFunction} در مسیر \lr{Codes/framework/attentions/fused\_svd\_kernel.py} پیاده‌سازی شده است. مشخصات فنی این پیاده‌سازی شامل موارد زیر است:
+\begin{itemize}
+    \item ادغام کرنل‌های پایتورچ با پیاده‌سازی شتاب‌یافته \lr{Triton JIT} با بلوک‌بندی بهینه هسته‌های تانسوری (\lr{Tensor-Core Blocking}).
+    \item متد سازنده با پارامترهای تنظیمی شامل \lr{config}، \lr{rank} (رتبه برشی SVD)، \lr{use\_fused\_kernel} (فعال‌سازی فیوژن کرنل)، \lr{use\_rms\_norm} (اعمال نرمال‌سازی درون‌ثباتی)، و \lr{dropout}.
+    \item سازوکار مسیر جایگزین ایمن (\lr{Safe Fallback}): در سیستم‌هایی که فاقد محیط کامپایلر تریتون هستند یا بر روی پردازنده‌های ناسازگار اجرا می‌شوند، فرآیند به صورت خودکار به پیاده‌سازی استاندارد پایتورچ شیفت می‌یابد.
+    \item پشتیبانی چندمعماری برای انکودرهای دوبعدی و دیکودرهای تک‌جهته با سرهای GQA.
+\end{itemize}

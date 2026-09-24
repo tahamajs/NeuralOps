@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{vig\_attention} بر روی بنچ‌مارک استاندارد طبقه‌بندی احساسات \lr{SST-2} در طول دنباله ۵۱۲ با سناریوهای آزمون یکنواخت استخراج شده از پایگاه داده مستند \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_vig_attention} خلاصه گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی سخت‌افزاری مکانیزم \lr{vig\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_vig_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{374.99 MB} & \lr{52,731.95 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{425.18 MB} & \lr{33,616.49 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{68,665.61 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_QWEN\_INCOMPATIBLE} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه مقادیر ثبت‌شده، ماژول از منظر مصرف حافظه پایداری بالایی از خود نشان داده است (\lr{374.99 MB} در \lr{DistilBERT} و توان پردازشی \lr{52,731.95 tok/s}). با این وجود، از بعد راندمان بازنمایی معنایی رفتارهای متفاوتی در خانواده‌های گوناگون به ثبت رسیده است.

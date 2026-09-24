@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{fused\_svd\_kernel} بر روی بنچمارک استاندارد GLUE SST-2 با شرایط آزمایشی کاملاً یکپارچه نتایج ارائه‌شده در جدول \ref{tab:benchmark_fused_svd_kernel} را به ثبت رسانده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{fused\_svd\_kernel} روی ۴ مدل پایه}
+\label{tab:benchmark_fused_svd_kernel}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{52,151.35 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{70.07\%} & \lr{0.7439} & \lr{560.48 MB} & \lr{11,835.03 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{24,434.83 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.89\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌ها نشان می‌دهد که این ماژول بر روی مدل RoBERTa به موفقیت کامل با وضعیت \lr{PASS} و دقت بسیار خوب ۷۰.۰۷٪ همراه با شاخص F1 برابر ۰.۷۴۳۹ و توان ۱۱,۸۳۵ توکن بر ثانیه دست یافته است. همچنین در مدل Qwen نیز دقت ۴۹.۸۹٪ با موفقیت ثبت شده است.

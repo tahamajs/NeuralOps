@@ -1,0 +1,35 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در مرحله کالیبراسیون، ماتریس کوواریانس تجمعی فعال‌سازی‌های ورودی $\mathbf{C}_X \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ برای هر لایه استخراج و با مقادیر ویژه منظم‌سازی می‌گردد:
+\begin{equation}
+\mathbf{C}_X = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\top, \quad \mathbf{C}_X^{1/2} = \mathbf{Q} \mathbf{\Lambda}^{1/2} \mathbf{Q}^\top, \quad \mathbf{C}_X^{-1/2} = \mathbf{Q} \mathbf{\Lambda}^{-1/2} \mathbf{Q}^\top
+\end{equation}
+ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با جذر کوواریانس پیش‌شرط‌سازی شده و تجزیه مقادیر منفرد بر روی ماتریس سفیدشده انجام می‌پذیرد:
+\begin{equation}
+\mathbf{M} = \mathbf{W} \mathbf{C}_X^{1/2} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+طیف مقادیر منفرد $\mathbf{\Sigma} = \operatorname{diag}(\sigma_1, \dots, \sigma_d)$ با نرمال‌سازی به یک توزیع احتمالاتی بر روی زیرفضاها تبدیل می‌شود:
+\begin{equation}
+p_i = \frac{\sigma_i}{\sum_{j=1}^d \sigma_j + \epsilon}
+\end{equation}
+آنتروپی شانون طیف در مقیاس بیت به فرم زیر محاسبه می‌گردد:
+\begin{equation}
+H(\mathbf{\Sigma}) = -\sum_{i=1}^d p_i \log_2(p_i)
+\end{equation}
+برای هر مؤلفه کاندید $i \in [r_{\text{floor}}, r_{\max}]$، امتیاز اهمیت اطلاعاتی $\mathcal{S}_{l, i}$ تعریف می‌شود:
+\begin{equation}
+\mathcal{S}_{l, i} = \frac{\sigma_{l, i}^2}{H(\mathbf{\Sigma}_l)}
+\end{equation}
+تمام مؤلفه‌های طیفی در سراسر لایه‌ها با امتیاز $\mathcal{S}_{l, i}$ مرتب شده و باقیمانده بودجه سراسری به برترین مؤلفه‌ها تخصیص می‌یابد تا رتبه بهینه $r_l$ تعیین گردد. در نهایت فاکتورهای کم‌رتبه به صورت متقارن و متعادل با معکوس جذر کوواریانس تشکیل می‌شوند:
+\begin{equation}
+\mathbf{U}_{r_l} = \mathbf{U}_l[:, :r_l] \mathbf{\Sigma}_l[:r_l]^{1/2}, \quad \mathbf{V}_{r_l} = (\mathbf{\Sigma}_l[:r_l]^{1/2} \mathbf{V}_l[:, :r_l]^\top) \mathbf{C}_{X, l}^{-1/2}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_entropy_budget_allocation}
+\mathcal{C}_{\text{entropy\_budget\_allocation}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

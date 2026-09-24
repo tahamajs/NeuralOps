@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی فشرده‌ساز \lr{cachenotes\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_cachenotes_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{cachenotes\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_cachenotes_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{90.94\%} & \lr{0.9127} & \lr{368.29 MB} & \lr{133,508.96 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{81.70\%} & \lr{0.8162} & \lr{456.73 MB} & \lr{193,047.72 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{92.55\%} & \lr{0.9274} & \lr{514.29 MB} & \lr{12,830.05 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (AGNews)} & \lr{81.30\%} & \lr{0.8080} & \lr{743.20 MB} & \lr{40,222.56 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه نتایج تجربی، فشرده‌ساز \lr{cachenotes\_compressor} عملکرد بسیار متعادل و قدرتمندی را در تمامی مدل‌ها به نمایش گذاشته است. در مدل \lr{RoBERTa} به دقت عالی \lr{92.55\%} دست یافته و در مدل \lr{DistilBERT} دقت \lr{90.94\%} را روی SST-2 با توان بالای \lr{133,508} توکن بر ثانیه ثبت نموده است. علاوه بر این، بر روی مدل دیکودری \lr{GPT-2} بر روی دادگان AGNews دقت بالای \lr{81.30\%} با توان \lr{40,222} توکن بر ثانیه به دست آمده و وضعیت \lr{PASS} را احراز کرده است. آزمون روی مدل \lr{Qwen} انجام نشده و وضعیت \lr{NOT\_RUN} ثبت شده است.

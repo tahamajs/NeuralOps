@@ -7,17 +7,20 @@ We evaluate \texttt{hybridkv} across three canonical language understanding task
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 91.06\% & 0.9137 & 1.00$\times$ & -- & 291.9 MB & 46433 & 3.45 s \\
-MNLI & PASS & 81.80\% & 0.8177 & 1.00$\times$ & -- & 293.5 MB & 50796 & 3.41 s \\
-AG News & PASS & 94.30\% & 0.9390 & 1.00$\times$ & -- & 315.5 MB & 30859 & 7.18 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hybridkv} & \textbf{90.94\%} & +0.46\% & PASS & 0.9123 & 0 & \textbf{1.00$\times$} & 337.6 MB & 14.1 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hybridkv} & \textbf{77.18\%} & +2.07\% & PASS & 0.8077 & 0 & \textbf{1.00$\times$} & 361.6 MB & 19.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hybridkv} & \textbf{62.04\%} & +1.26\% & PASS & 0.6783 & 0 & \textbf{1.00$\times$} & 634.9 MB & 18.6 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{hybridkv} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_hybridkv}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

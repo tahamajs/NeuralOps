@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول با عنوان \lr{ReplaceAttention} در فایل \lr{Codes/framework/attentions/replace.py} پیاده‌سازی گردیده است. ویژگی‌های کلیدی پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{پشتیبانی منعطف از رتبه کم‌مرتبه (\lr{\_FactorizedLinear}):} با بررسی پارامتر \lr{rank}، لایه‌های پروجکشن به لایه‌های دو مرحله‌ای بالا/پایین فاکتورگیری‌شده تبدیل می‌شوند.
+    \item \textbf{انطباق چندمعماری با رونویسی دقیق وزن‌ها (\lr{copy\_weights}):} پیاده‌سازی رونویسی وزن‌ها برای معماری‌های تخت نظیر \lr{DistilBERT}، انکودرهای تودرتو نظیر \lr{RoBERTa/BERT}، دیکودرهای علّی نظیر \lr{GPT-2} و معماری‌های نوین با پروجکشن مشترک نظیر \lr{Qwen/LLaMA}.
+    \item \textbf{مسیرهای سریع \lr{SDPA} و مهار \lr{NaN}:} بهره‌گیری از هسته استاندارد \lr{F.scaled\_dot\_product\_attention} به همراه عملگرهای پایدارسازی \lr{torch.nan\_to\_num} جهت جلوگیری از خروج گرادیان‌ها از بازه معتبر.
+\end{itemize}

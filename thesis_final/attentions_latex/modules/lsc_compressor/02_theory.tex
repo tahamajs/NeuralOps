@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی طیفی برای ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ شامل چهار مرحله اساسی است:
+\begin{enumerate}
+    \item \textbf{تبدیل فوریه دو‌بعدی گسسته (\lr{2D Discrete Fourier Transform}):} تبدیل فوریه ماتریس وزن به دامنه فرکانس مختلط انتقال داده می‌شود:
+    \begin{equation}
+    \widehat{\mathbf{W}} = \mathcal{F}_{\text{2D}}(\mathbf{W}) \in \mathbb{C}^{d_{\text{out}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{محاسبه ماتریس دامنه طیفی (\lr{Spectral Magnitude Matrix}):} بزرگی مؤلفه‌های فرکانسی محاسبه می‌گردد:
+    \begin{equation}
+    M_{ij} = |\widehat{\mathbf{W}}_{ij}| = \sqrt{\text{Re}(\widehat{\mathbf{W}}_{ij})^2 + \text{Im}(\widehat{\mathbf{W}}_{ij})^2}
+    \end{equation}
+    \item \textbf{انتخاب مؤلفه‌های پرانرژی (\lr{Top-k Energy Filtering}):} بر اساس حد آستانه بودجه رتبه یا نسبت انرژی تجمعی (\lr{Energy Ratio}) $\gamma \in (0, 1]$، تعداد ضرایب برتر $k$ انتخاب شده و نقشه ماسک دودویی طیفی $\mathbf{M}_{\text{spectral}}$ شکل می‌گیرد:
+    \begin{equation}
+    k = \min(r^2, d_{\text{out}} \cdot d_{\text{in}}), \quad \mathbf{M}_{\text{spectral}} = \mathbb{I}(M_{ij} \ge \tau_k)
+    \end{equation}
+    که در آن $\tau_k$ مقدار $k$-امین ضریب بزرگ‌تر دامنه فرکانسی است.
+    \item \textbf{تبدیل فوریه معکوس و بازسازی وزن (\lr{Inverse 2D DFT}):} وزن فشرده نهایی با محاسبه بخش حقیقی تبدیل معکوس حاصل می‌شود:
+    \begin{equation}
+    \mathbf{W}_{\text{LSC}} = \text{Re}\left(\mathcal{F}_{\text{2D}}^{-1}(\widehat{\mathbf{W}} \odot \mathbf{M}_{\text{spectral}})\right)
+    \end{equation}
+\end{enumerate}
+
+در ساختار ماژولار لایه \lr{LSCPrunedLoRALinear}، گذر پیشرو ترکیبی با شاخه آداپتور کم‌رتبه $\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ به صورت زیر تعریف می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{x} \mathbf{W}_{\text{LSC}}^\top + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top + \mathbf{b}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_lsc_compressor}
+\mathcal{C}_{\text{lsc\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

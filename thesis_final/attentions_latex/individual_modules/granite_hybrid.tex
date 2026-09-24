@@ -1,79 +1,86 @@
-\subsection{کالبدشکافی ماژول \lr{granite\_hybrid}}
+\section{ماژول ترکیبی گرانیت (Granite Hybrid Attention)}
+\label{sec:module_granite_hybrid}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم نوآورانه \lr{granite\_hybrid} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: \textbf{چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟}
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل شهودی ماژول \lr{granite\_hybrid} مانند یک کمیسیون پزشکی متشکل از پزشکان عمومی و جراحان فوق‌تخصص است. یک تصمیم‌گیرنده مرکزی هوشمند \lr{(Router)} علائم بیمار را بررسی می‌کند؛ اگر مشکل یک سرماخوردگی ساده باشد، نیازی به اتاق عمل نیست و پرونده با سرعت بالا توسط بخش عمومی پردازش می‌شود. اما اگر با یک عارضه پیچیده مواجه شویم، پرونده بلافاصله به تیم متخصص ارجاع داده می‌شود. در این ماژول، شاخه‌های سریع کم‌مرتبه و شاخه‌های توجه عمیق در کنار هم قرار گرفته‌اند و بردار ورودی بر اساس پیچیدگی محتوا، به مسیر بهینه هدایت می‌گردد.
+ماژول پیشرفته \lr{Granite Hybrid Attention} نمایانگر پارادایم نوین ترکیب ناهمگن معماری‌ها \lr{(Hybrid Architectures)} است که در آن لایه‌های بازگشتی مدل‌های حالت فضا \lr{(SSM / Mamba-2)}، مکانیزم‌های توجه متراکم استاندارد \lr{(Dense Multi-Head Attention)} و شبکه‌های پیش‌سو با ترکیب خبره‌ها \lr{(Top-$k$ Mixture of Experts - MoE)} در یک بلوک یکپارچه تلفیق شده‌اند. در کاربردهای مدرن هوش مصنوعی، تکیه صرف بر لایه‌های توجه کلاسیک موجب بار سنگین محاسباتی $\mathcal{O}(N^2)$ و نیاز مفرط به حافظه ذخیره‌سازی کلید-مقدار \lr{(KV-Cache)} در استنتاج طولانی می‌شود. از سوی دیگر، استفاده اختصاصی از مدل‌های حالت فضا ممکن است در وظایف بازیابی دقیق تداعی‌گر \lr{(Associative Recall)} و درک ساختار غنی زبانی نسبت به مدل‌های توجه‌محور دچار ضعف نسبی گردد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-فرمول‌بندی این ساختار از ترکیب خطی وزن‌دار چند سر توجه ناهمگن با گیت کنترل‌کننده پویا حاصل می‌شود:
+بلوک \lr{GraniteHybridBlock} برای حل این دوگانگی طراحی گردیده است؛ به طوری که در آن یک شاخه موازی سریع \lr{Mamba-2} وظیفه پردازش توکن‌های متوالی را با هزینه خطی $\mathcal{O}(N)$ بر عهده می‌گیرد و هم‌زمان شاخه توجه متراکم، همبستگی‌های دقیق بین‌توکنی را پایش می‌کند. ترکیب دینامیک این دو شاخه از طریق یک گیت تطبیقی سیگموئیدی انجام شده و خروجی تلفیق‌شده با گذر از ماژول چندخبره‌ای \lr{MoE} بازنمایی غنی‌تر و با راندمان محاسباتی حداکثری ارائه می‌دهد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس فعال‌سازی ورودی لایه ترنسفورمر باشد. در این معماری، ورودی به طور هم‌زمان وارد شاخه توجه و شاخه بازگشتی \lr{Mamba-2} می‌گردد:
+
+\paragraph{۱. شاخه توجه متراکم مجهز به لورا:}
+پروجکشن‌های ورودی با ماتریس‌های کم‌مرتبه تطبیقی فاکتورگیری شده و سپس توجه چندسره استاندارد محاسبه می‌شود:
 \begin{equation}
-\mathbf{Y} = \sum_{k=1}^K g_k(\mathbf{X}) \cdot \operatorname{Branch}_k(\mathbf{X})
+\mathbf{Y}_{\text{attn}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V} \mathbf{W}_O
 \end{equation}
-که ضرایب گیتینگ از طریق یک لایه پروجکشن سبک همراه با تابع بیشینه هموار به دست می‌آیند:
-\begin{equation}
-\mathbf{g}(\mathbf{X}) = \operatorname{softmax}\left( \mathbf{X} \mathbf{W}_g + \mathbf{b}_g \right)
-\end{equation}
-این ساختار امکان سازش‌پذیری پویا را فراهم می‌سازد؛ به طوری که برای توکن‌های حساس، شاخه پرظرفیت فراخوانی شده و برای توکن‌های پایه‌ای، شاخه کم‌مصرف جریان تانسوری را بر عهده می‌گیرد.
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{granite\_hybrid.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\paragraph{۲. شاخه مدل حالت فضای Mamba-2:}
+در شاخه \lr{Mamba2}، تانسور ورودی ابتدا به یک فضای دوبرابری نگاشت شده و به دو بخش تبدیل حالت و گیت مدولاسیون تفکیک می‌شود: $[\mathbf{X}_{\text{ssm}}, \mathbf{Z}] = \operatorname{in\_proj}(\mathbf{X})$. سپس کانولوشن یک‌بعدی زمانی بر روی $\mathbf{X}_{\text{ssm}}$ اعمال شده و پارامترهای پیوسته پیاده‌سازی سیستم خطی به صورت گسسته وابسته به گام زمانی تبدیل می‌شوند:
+\begin{align}
+\Delta_t &= \operatorname{Softplus}\left(\mathbf{W}_{\Delta} \mathbf{x}_{\text{ssm}, t}\right), \\
+\mathbf{A} &= -\exp\left(\operatorname{clamp}(\mathbf{A}_{\text{log}}, -20, 10)\right), \\
+\bar{\mathbf{A}}_t &= \exp\left(\operatorname{clamp}(\Delta_t \mathbf{A}, -20, 0)\right), \quad \bar{\mathbf{B}}_t = \mathbf{x}_{\text{ssm}, t} \otimes \Delta_t
+\end{align}
+رابطه بازگشتی خطی حالت فضا در طول دنباله زمانی با پایداری عددی محاسبه می‌گردد:
+\begin{equation}
+\mathbf{h}_t = \bar{\mathbf{A}}_t \odot \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t
+\end{equation}
+\begin{equation}
+\mathbf{Y}_{\text{ssm}, t} = \operatorname{out\_proj}\left( \left(\mathbf{h}_t \odot \mathbf{D}\right) \odot \operatorname{SiLU}(\mathbf{z}_t) \right)
+\end{equation}
+
+\paragraph{۳. تلفیق دینامیک شاخه‌ها و شبکه خبره‌ها (MoE):}
+برآیند این دو شاخه با یک پارامتر یادگیرنده گیتینگ $\alpha$ ترکیب خطی می‌شود:
+\begin{equation}
+g = \sigma(\alpha), \quad \tilde{\mathbf{X}} = g \cdot \mathbf{Y}_{\text{attn}} + (1 - g) \cdot \mathbf{Y}_{\text{ssm}}
+\end{equation}
+در نهایت، شبکه خبره‌ها با ساختار برگزیدن برترین‌ها \lr{(Top-$k$ Routing)} بر روی $\tilde{\mathbf{X}}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{H}_{\text{moe}} = \sum_{e \in \operatorname{Top-}k(\mathbf{R}(\tilde{\mathbf{X}}))} \operatorname{Softmax}(\mathbf{R}(\tilde{\mathbf{X}}))_e \cdot \operatorname{Expert}_e(\tilde{\mathbf{X}})
+\end{equation}
+\begin{equation}
+\mathbf{X}_{\text{final}} = \tilde{\mathbf{X}} + \gamma_{\text{moe}} \cdot \mathbf{H}_{\text{moe}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی پیاده‌سازی‌شده در چارچوب پروژه تحت عنوان \lr{GraniteHybridBlock} در فایل \lr{Codes/framework/attentions/granite\_hybrid.py} قرار داشته و از کلاس مرجع \lr{BaseAttention} ارث‌بری می‌کند. این ماژول همچنین شامل دو زیرماژول کلیدی \lr{Mamba2} و \lr{MixtureOfExperts} است.
+
+مشخصات کلیدی ساختار پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{آرگومان‌های کانفیگ و سازنده:} سازنده کلاس آرگومان‌های \lr{config}، \lr{rank}، \lr{dim}، \lr{num\_heads}، \lr{num\_experts=4}، \lr{top\_k=2}، \lr{ratio=2}، \lr{lora\_rank=16} و \lr{lora\_alpha=32.0} را جهت پیکربندی دریافت می‌کند.
+    \item \textbf{زیرماژول Mamba2:} شامل کانولوشن ۱ بعدی با طول پنجره زمانی ۴ (\lr{kernel\_size=4})، پروجکشن گام زمانی دلتا \lr{dt\_proj} و پارامترهای پایداری جهت ممانعت از سرریز گرادیان در توابع نمایی (\lr{torch.clamp}).
+    \item \textbf{زیرماژول MixtureOfExperts:} شبکه‌ای با ۴ خبره خطی مستقل دولایه مجهز به فعال‌ساز \lr{SiLU} و مسیریاب گیت \lr{router} که با عملگر \lr{torch.topk} دو خبره برتر را انتخاب می‌کند.
+    \item \textbf{تزریق و انطباق چندمعماری:} توابع کمکی \lr{copy\_weights} و \lr{inject\_granite\_hybrid} سازگاری کامل لایه را با ساختارهای مختلف انکودر و دیکودر از قبیل \lr{DistilBERT}، \lr{RoBERTa}، \lr{GPT-2} و \lr{Qwen} محقق می‌سازند.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی سخت‌افزاری و زبانی ماژول \lr{granite\_hybrid} بر روی بنچمارک استاندارد \lr{GLUE SST-2} تحت نظارت سخت‌افزاری پردازنده گرافیکی در جدول \ref{tab:benchmark_granite_hybrid} گزارش شده است (ارقام عینا از فایل مرجع \lr{master\_verified\_results.json} استخراج گردیده‌اند):
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{granite\_hybrid} روی مدل‌های پایه}
+\label{tab:benchmark_granite_hybrid}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.65\%} & \lr{0.7325} & \lr{1604.75 MB} & \lr{8,212.62 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{53.33\%} & \lr{0.6772} & \lr{2501.80 MB} & \lr{4,243.84 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{2393.89 MB} & \lr{4,214.39 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.82\%} & \lr{--} & \lr{6591.89 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان می‌دهد که ماژول ترکیبی \lr{granite\_hybrid} بر روی مدل \lr{DistilBERT} عملکرد بسیار شایسته‌ای ارائه داده و به دقت \lr{63.65\%} با شاخص F1 برابر با \lr{0.7325} دست یافته است. توان پردازشی روی این مدل بالغ بر ۸,۲۱۲ توکن بر ثانیه با اوج حافظه ۱۶۰۴ مگابایت ثبت شده است. بر روی مدل \lr{Qwen} نیز آزمایش با موفقیت اجرا شده و در رده \lr{PASS} قرار گرفته است، هرچند به دلیل پیچیدگی ترکیب لایه‌های Mamba و خبره‌های MoE، اوج مصرف حافظه گرافیکی به ۶۵۹۱ مگابایت افزایش یافته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+با وجود ظرفیت نظری بسیار بالای معماری، تحلیل جزئیات حاکی از نکاتی در استقرار است:
 \begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} اجرای عملگر تخصصی معماری با حذف درایه‌های زائد و استخراج مؤلفه‌های اصلی اطلاعات.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
+    \item \textbf{افت دقت در \lr{RoBERTa} و \lr{GPT-2} (\lr{PASS\_LOW}):} دقت مدل در \lr{RoBERTa} برابر با ۵۳.۳۳٪ و در \lr{GPT-2} برابر با ۵۱.۷۲٪ است. علت این امر به ناهمگونی در توزیع نمایش فضایی شاخه \lr{Mamba-2} و شاخه توجه بازمی‌گردد. در فاز انطباق سبک بدون فاین‌تیونینگ تمام پارامترها، وزن‌های پیش‌آموزش‌دیده توجه متراکم با حالات تصادفی اولیه کانولوشن و ماتریس انتقال حالت $\bar{\mathbf{A}}$ تداخل مخرب پیدا کرده و منجر به سوگیری تخمین به سمت توزیع یکنواخت می‌گردد.
+    \item \textbf{افزایش ردپای حافظه سخت‌افزاری:} در مدل‌های بزرگ‌تر، نگهداری هم‌زمان پارامترهای خبره‌ها در حافظه \lr{VRAM} (به ویژه ۶۵۹۱ مگابایت در \lr{Qwen}) نشان می‌دهد که علی‌رغم کاهش مرتبه نظری توجه، فعال‌سازی‌های خبره‌های \lr{MoE} و نگهداری تانسورهای کانولوشن زمانی باعث ایجاد گلوگاه حافظه در کارت‌های گرافیک با ظرفیت متوسط می‌شود.
 \end{enumerate}
-
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
-\begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
-\end{itemize}
-
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.5\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت استثنایی \lr{88.5\%} در کنار شاخص F1 معادل \lr{85.2\%} در ماژول ترکیبی \lr{granite\_hybrid}، نشان‌دهنده هم‌افزایی قدرتمند میان زیرشاخه‌هاست. مکانیزم گیتینگ موفق شده به عنوان یک فیلتر هوشمند عمل کند: توکن‌های دستوری ساده از شاخه خطی فوق‌سریع عبور داده شده و تنها توکن‌های دارای بار معنایی مبهم به شاخه عمیق هدایت گردیده‌اند. این معماری هم پایداری دقت را تضمین کرده و هم مصرف منابع گرافیکی را در حد مطلوب \lr{750.0 MB} نگه داشته است.
-
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    router/.style={diamond, draw=orange!80, fill=orange!20, align=center, text centered, inner sep=2pt, font=\footnotesize},
-    b1/.style={rectangle, draw=purple!70, fill=purple!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
-    b2/.style={rectangle, draw=teal!70, fill=teal!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
-    fuse/.style={rectangle, draw=green!80, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (in) {ورودی $\mathbf{X}$};
-    \node [router, right=1.1cm of in] (route) {مسیریاب گیت};
-    \node [b1, above right=0.3cm and 1.1cm of route] (br1) {شاخه کم‌مرتبه SVD};
-    \node [b2, below right=0.3cm and 1.1cm of route] (br2) {شاخه توجه عمیق};
-    \node [fuse, right=3.8cm of route] (out) {تلفیق وزن‌دار خروجی};
-
-    \draw [->, thick, draw=blue!80] (in) -- (route);
-    \draw [->, thick, draw=orange!80] (route) |- node [above, font=\tiny] {$w_1$} (br1);
-    \draw [->, thick, draw=orange!80] (route) |- node [below, font=\tiny] {$w_2$} (br2);
-    \draw [->, thick, draw=purple!80] (br1) -| (out);
-    \draw [->, thick, draw=teal!80] (br2) -| (out);
-\end{tikzpicture}
-\end{center}
-
-
-

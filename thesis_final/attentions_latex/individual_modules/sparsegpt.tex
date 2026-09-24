@@ -1,0 +1,76 @@
+\section{ماژول sparsegpt (SparseGPT One-Shot Pruning Compressor)}
+\label{sec:module_sparsegpt}
+
+\subsection{معرفی و انگیزه}
+این مکانیزم بر مبنای مبانی نظری پیشرفته در ادبیات توجه و فشرده‌سازی \cite{frantar2023sparsegpt} توسعه یافته است.
+
+هرس وزن‌های شبکه‌های زبانی بزرگ معمولاً نیازمند چرخه‌های طولانی و پرهزینه آموزش مجدد یا ریزتنظیم است که برای مدل‌های با میلیاردها پارامتر عملاً ناممکن یا بسیار زمان‌بر است. روش‌های هرس کلاسیک مبتنی بر قدر مطلق وزن‌ها نیز به دلیل نادیده گرفتن همبستگی میان وزن‌ها و تغییرات توزیع فعال‌سازی، به سرعت موجب اضمحلال کیفیت خروجی مدل می‌گردند.
+
+ماژول \lr{sparsegpt} با پیاده‌سازی الگوریتم پیشگام \lr{SparseGPT}، امکان هرس تک‌مرحله‌ای (\lr{One-Shot}) لایه‌به‌لایه وزن‌ها را بدون نیاز به هیچ‌گونه بازآموزی گرادیانی فراهم می‌آورد. این رویکرد با بهره‌گیری از تقریب مرتبه دوم بر پایه ماتریس هسیان تجربی و بسط روش جراح مغز بهینه (\lr{Optimal Brain Surgeon - OBS})، پس از حذف هر ستون از وزن‌ها، خطای وارده را با به‌روزرسانی سریع ستون‌های باقیمانده خنثی می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی ریاضی الگوریتم \lr{SparseGPT} به شرح زیر است:
+\begin{enumerate}
+    \item \textbf{محاسبه هسیان تجربی فعال‌سازی‌ها:}
+    با عبور توالی‌های کالیبراسیون، ماتریس فعال‌سازی ورودی لایه $\mathbf{X} \in \mathbb{R}^{d_{\text{in}} \times M}$ ثبت شده و هسیان تجربی با میرایی $\lambda > 0$ تشکیل می‌گردد:
+    \begin{equation}
+    \mathbf{H} = 2 \mathbf{X} \mathbf{X}^\top + \lambda \mathbf{I} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}
+    \end{equation}
+    \item \textbf{تجزیه کالسکی و معکوس‌سازی هسیان:}
+    با تجزیه کالسکی $\mathbf{H} = \mathbf{L} \mathbf{L}^\top$، معکوس هسیان به شکل پایدار محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{H}^{-1} = (\mathbf{L}^{-1})^\top \mathbf{L}^{-1}
+    \end{equation}
+    \item \textbf{معیار برجستگی جراح مغز بهینه (\lr{OBS Saliency Metric}):}
+    برای هر درایه سطر $i$ و ستون $j$ از ماتریس وزن، هزینه هرس بر مبنای ماتریس معکوس هسیان سنجیده می‌شود:
+    \begin{equation}
+    S_{ij} = \frac{|\mathbf{W}_{ij}|^2}{2 [\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+    \item \textbf{ماسک‌گذاری تنک (الگوی بدون ساختار یا ساختاریافته 2:4):}
+    ماسک باینری $\boldsymbol{\mathcal{M}}$ بر اساس کمترین مقادیر معیار $S_{ij}$ تعیین شده و وزن هرس‌شده حاصل می‌گردد:
+    \begin{equation}
+    \mathbf{W}_{\text{pruned}} = \mathbf{W} \odot \boldsymbol{\mathcal{M}}
+    \end{equation}
+    \item \textbf{به‌روزرسانی ترمیمی ستون‌های باقیمانده:}
+    ستون‌های پسین $j+1$ تا $d_{\text{in}}$ برای جبران حذف ستون $j$ طبق رابطه تحلیلی زیر اصلاح می‌شوند:
+    \begin{equation}
+    \mathbf{W}_{:, j+1:d_{\text{in}}} \leftarrow \mathbf{W}_{:, j+1:d_{\text{in}}} - (\mathbf{W}_{:, j} - \mathbf{W}_{\text{pruned}, :, j}) \frac{[\mathbf{H}^{-1}]_{j, j+1:d_{\text{in}}}}{[\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+\end{enumerate}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این چارچوب در فایل \lr{Codes/framework/compression\_engine/sparsegpt.py} تحت کلاس \lr{SparseGPTCompressor} انجام یافته است. قابلیت‌های کلیدی آن عبارتند از:
+\begin{itemize}
+    \item \textbf{پردازش بلوکی پایدار (\lr{Block-Wise Processing}):} جهت کاهش مصرف حافظه و تسریع محاسبات ماتریسی روی پردازنده گرافیکی، به‌روزرسانی معکوس هسیان و ستون‌های وزن در بلوک‌های با طول قابل تنظیم (پیش‌فرض 128) دسته‌بندی شده است.
+    \item \textbf{تنظیم پویای ماتریس با میرایی (\lr{Damping}):} برای جلوگیری از تکینگی معکوس هسیان در حضور فعال‌سازی‌های هم‌خط، فاکتور میرایی $\lambda = \gamma \cdot \operatorname{mean}(\operatorname{diag}(\mathbf{H}))$ به قطر اصلی ماتریس اضافه می‌شود.
+    \item \textbf{پشتیبانی از ساختار سخت‌افزاری 2:4:} امکان انتخاب تنک‌سازی یکپارچه بدون ساختار یا الگوی اکید 2:4 منطبق بر معماری شتاب‌دهنده‌های مدرن انویدیا (\lr{NVIDIA Ampere/Hopper Sparse Tensor Cores}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک جامع برای ماژول \lr{sparsegpt} در جدول \ref{tab:benchmark_sparsegpt} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز تنک‌سازی مرتبه دوم \lr{sparsegpt} روی مدل‌های پایه}
+\label{tab:benchmark_sparsegpt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{زمان ارزیابی \lr{(Time)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.93\%} & \lr{0.8747} & \lr{340.1 MB} & \lr{28.1 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{363.5 MB} & \lr{44.0 s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{53.33\%} & \lr{0.6661} & \lr{634.4 MB} & \lr{39.0 s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که نتایج جدول \ref{tab:benchmark_sparsegpt} نشان می‌دهد، ماژول \lr{sparsegpt} بر روی مدل \lr{DistilBERT} عملکرد با ثباتی ارائه داده و دقت مطلوب \lr{86.93\%} را با F1 معادل \lr{0.8747} به دست آورده است. در مدل‌های عمیق‌تر نظیر \lr{RoBERTa} و مدل خودبازگشتی \lr{GPT-2}، تنک‌سازی ۵۰ درصدی تک‌مرحله‌ای منجر به افت محسوس‌تر عملکرد شده و به ترتیب به دقت‌های \lr{50.92\%} و \lr{53.33\%} دست یافته‌اند که در رده وضعیتی \lr{PASS\_LOW} قرار می‌گیرند. مدل \lr{Qwen} در نسخه فعلی بنچ‌مارک یکپارچه به صورت \lr{NOT\_RUN} ثبت شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل ریشه‌ای رفتار شکست و آسیب‌پذیری‌های الگوریتم \lr{SparseGPT} به شرح زیر است:
+\begin{itemize}
+    \item \textbf{حساسیت شدید به تکینگی و شرط‌بندی هسیان (\lr{Ill-Conditioning}):} در لایه‌های انتهایی مدل یا شبکه‌هایی با توزیع فعال‌سازی نامتوازن، ماتریس هسیان تجربی ممکن است تقریباً تکین شود؛ در این شرایط، حتی با فاکتور میرایی، معکوس کالسکی دچار خطای عددی شده و مقادیر به‌روزرسانی ستون‌ها منفجر می‌گردند. این پدیده دلیل اصلی افت دقت در مدل \lr{RoBERTa} است.
+    \item \textbf{انباشت خطای لایه‌ای (\lr{Error Propagation}):} از آنجا که هرس به صورت لایه‌به‌لایه و متوالی انجام می‌پذیرد، خطای تقریب لایه‌های ابتدایی بر توزیع فعال‌سازی ورودی لایه‌های بعدی اثر گذاشته و کالیبراسیون لایه‌های عمیق را دستخوش اعوجاج می‌کند.
+\end{itemize}

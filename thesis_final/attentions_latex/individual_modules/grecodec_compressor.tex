@@ -1,0 +1,70 @@
+\section{ماژول grecodec\_compressor (GreCoDeC Compressor)}
+\label{sec:module_grecodec_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+کاهش مرتبه ماتریس‌های وزن (\lr{Low-Rank Factorization}) یکی از راهبردهای بنیادی در فشرده‌سازی شبکه‌های عصبی عمیق و مدل‌های زبانی بزرگ است. با این حال، تجزیه مقادیر منفرد کلاسیک (\lr{SVD}) به صورت تحلیلی و ایستا بر روی وزن‌های اولیه اعمال می‌شود و هیچ‌گونه انعطاف‌پذیری یا گام‌های بهینه‌سازی تکرارشونده برای انطباق هندسی ماتریس‌های فاکتورگیری‌شده با توزیع فعال‌سازی‌ها یا بازیابی گرادیانی ارائه نمی‌دهد. همچنین هزینه محاسباتی \lr{SVD} در ماتریس‌های بسیار بزرگ نیازمند الگوریتم‌های جایگزین بهینه‌سازی محدب یا شبه‌محدب است.
+
+موتور فشرده‌سازی \lr{GreCoDeC (Greedy Coordinate Descent Low-Rank Compressor)} با الهام از روش‌های نزول مختصاتی حریصانه، ماتریس وزن لایه‌های خطی را به دو فاکتور کم‌مرتبه $\mathbf{U}$ و $\mathbf{V}$ تجزیه نموده و به صورت تکرارشونده و متناوب، ماتریس‌های فاکتور را برای کمینه‌سازی خطای بازسازی فروبنیوس بهینه‌سازی می‌کند. علاوه بر آن، با ادغام اختیاری آداپتورهای \lr{LoRA} و امکان تنظیم تعادل نرم متقارن بین فاکتورها، پایداری عددی و سازگاری بالا با انواع مدل‌های انکودر و دیکودر حاصل می‌گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن اولیه لایه خطی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه هدف $r \ll \min(d_{\text{in}}, d_{\text{out}})$ باشد. هدف حل مسئله کمینه‌سازی خطای بازسازی به فرم زیر است:
+\begin{equation}
+\min_{\mathbf{U}, \mathbf{V}} \frac{1}{2} \|\mathbf{W} - \mathbf{U} \mathbf{V}\|_F^2
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}$ هستند. در الگوریتم نزول مختصاتی حریصانه (\lr{GreCoDeC})، ابتدا مقداردهی اولیه فاکتورها با تجزیه اولیه \lr{SVD} یا توزیع تصادفی انجام می‌شود:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_0 \mathbf{\Sigma}_0 \mathbf{V}_0^\top \implies \mathbf{U}^{(0)} = \mathbf{U}_0[:, :r] \mathbf{\Sigma}_0[:r]^{1/2}, \quad \mathbf{V}^{(0)} = \mathbf{\Sigma}_0[:r]^{1/2} \mathbf{V}_0[:, :r]^\top
+\end{equation}
+سپس در هر تکرار $t = 1, \dots, T_{\text{max}}$، به‌روزرسانی‌های متناوب به روش حداقل مربعات منظم‌شده صورت می‌پذیرد:
+\begin{align}
+\mathbf{U}^{(t)} &= \mathbf{W} (\mathbf{V}^{(t-1)})^\top \left( \mathbf{V}^{(t-1)} (\mathbf{V}^{(t-1)})^\top + \epsilon \mathbf{I}_r \right)^{-1} \\
+\mathbf{V}^{(t)} &= \left( (\mathbf{U}^{(t)})^\top \mathbf{U}^{(t)} + \epsilon \mathbf{I}_r \right)^{-1} (\mathbf{U}^{(t)})^\top \mathbf{W}
+\end{align}
+پس از همگرایی تکرارها، جهت جلوگیری از بیش‌جهش یا محو شدن گرادیان‌ها در یکی از فاکتورها، عمل متوازن‌سازی متقارن نرم (\lr{Symmetrical Norm Balancing}) اعمال می‌شود:
+\begin{equation}
+s_k = \sqrt{\frac{\|\mathbf{U}_{:, k}\|_2}{\|\mathbf{V}_{k, :}\|_2}}, \quad \mathbf{U}_{:, k} \leftarrow \mathbf{U}_{:, k} / s_k, \quad \mathbf{V}_{k, :} \leftarrow \mathbf{V}_{k, :} \cdot s_k, \quad \forall k \in \{1, \dots, r\}
+\end{equation}
+محاسبه لایه خطی فشرده‌شده به شکل زنجیره‌ای زیر انجام می‌شود که مرتبه محاسباتی را از $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ به $\mathcal{O}(r(d_{\text{in}} + d_{\text{out}}))$ کاهش می‌دهد:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}^\top) \mathbf{U}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این موتور در فایل \lr{Codes/framework/compression\_engine/grecodec\_compressor.py} قرار داشته و با شناسه‌های \lr{grecodec} و \lr{grecodec\_compressor\_class} در \lr{COMPRESSOR\_REGISTRY} به ثبت رسیده است. اجزای اصلی معماری عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول خطی \lr{GreCoDeCLinear}:} جایگزین لایه‌های \lr{nn.Linear} و \lr{Conv1D} شده و دارای دو پارامتر $\mathbf{U}$ و $\mathbf{V}$ است.
+    \item \textbf{پشتیبانی از تفکیک لایه‌های توجه (\lr{Target Attention Only}):} قابلیت محدودسازی فشرده‌سازی تنها به پروجکشن‌های توجه (\lr{q\_proj, k\_proj, v\_proj, o\_proj, c\_attn, c\_proj}) یا اعمال فراگیر بر تمام لایه‌های خطی مدل.
+    \item \textbf{مکانیزم گیت کنترل خطا (\lr{Max Error Threshold}):} اگر خطای نسبی فروبنیوس $\|\mathbf{W} - \mathbf{U}\mathbf{V}\|_F / \|\mathbf{W}\|_F$ فراتر از حد مجاز تنظیم‌شده باشد، لایه به حالت پشتیبان بازگردانده می‌شود.
+    \item \textbf{تزریق موازی آداپتور \lr{LoRA}:} تثبیت فاکتورهای پایه $\mathbf{U}$ و $\mathbf{V}$ و آموزش‌پذیر نگه داشتن آداپتورهای کم‌مرتبه \lr{LoRA} برای بازیابی سریع دقت در فاز تنظیم مجدد (\lr{Fine-tuning Recovery}).
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک ماژول \lr{grecodec\_compressor} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_grecodec_compressor} خلاصه شده است. داده‌ها به صورت دقیق از نتایج ثبت‌شده در فایل‌های خلاصه بنچ‌مارک استخراج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{grecodec\_compressor} بر روی مدل‌های پایه}
+\label{tab:benchmark_grecodec_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9069} & \lr{310.69 MB} & \lr{173,191.15 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.53\%} & \lr{0.8936} & \lr{321.64 MB} & \lr{42,992.33 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.57\%} & \lr{0.8380} & \lr{398.74 MB} & \lr{60,393.06 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{grecodec\_compressor} پایداری بسیار بالایی در حفظ دقت نشان داده است؛ دقت در \lr{DistilBERT} برابر با \lr{90.37\%} (افت اندک \lr{-0.11\%} نسبت به خط مبنا) و در \lr{RoBERTa} معادل \lr{88.53\%} به دست آمده است. در مدل خودبازگشتی \lr{GPT-2} دقت مدل فشرده‌شده حتی با افزایش \lr{+1.26\%} به \lr{82.57\%} ارتقا یافته و تمامی مدل‌های تست‌شده وضعیت موفقیت‌آمیز \lr{PASS} را کسب کرده‌اند. ارزیابی مدل \lr{Qwen} به علت عدم انطباق پیکربندی در بنچ‌مارک چهارمدلی در وضعیت \lr{NOT\_RUN} قرار دارد.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل فنی رفتار این ماژول محدودیت‌های زیر را آشکار می‌سازد:
+\begin{itemize}
+    \item \textbf{پایداری ماتریس‌های وارون و رگولاریزاسیون:} الگوریتم نزول مختصاتی نیازمند حل مکرر دستگاه‌های خطی با ماتریس‌های $\mathbf{V}\mathbf{V}^\top$ و $\mathbf{U}^\top\mathbf{U}$ است. در صورت بدحالت بودن ماتریس وزن اولیه یا کوچک بودن رتبه انتخابی، رگولاریزاسیون تیکونوف ناکافی می‌تواند سبب ناپایداری عددی و توقف زودهنگام تکرارها گردد.
+    \item \textbf{انحراف خطا در لایه‌های غيرخطی عمیق:} اگرچه بهینه‌سازی مختصاتی خطای فروبنیوس موضعی لایه را به حداقل می‌رساند، اما این معیار نسبت به تغییرات توزیع ورودی در لایه‌های بعدی آگاه نیست و در لایه‌های بسیار عمیق مدل‌های زبانی فوق‌بزرگ، انباشت خطای موضعی ممکن است نیازمند گام‌های کالیبراسیون داده‌محور باشد.
+\end{itemize}

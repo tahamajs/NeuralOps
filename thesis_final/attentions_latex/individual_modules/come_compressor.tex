@@ -1,0 +1,72 @@
+\section{ماژول come\_compressor (Concatenation and Layer Shedding Compressor)}
+\label{sec:module_come_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+افزایش مقیاس مدل‌های زبانی بزرگ، چالش‌های بنیادینی را در حافظه فعال و توان عملیاتی استنتاج پدید آورده است. بخش عمده‌ای از زمان تاخیر محاسباتی ناشی از گذر متوالی تانسورهای پنهان از میان ده‌ها لایه ترنسفورمر یکسان است. بررسی همبستگی میان‌لایه‌ای نشان می‌دهد که بازنمایی لایه‌های مجاور در اعماق میانی ترنسفورمرها دارای افزونگی معنایی بالایی بوده و شباهت کسینوسی حالت‌های پنهان میان لایه‌های متوالی اغلب به بیش از ۰٫۹۵ می‌رسد.
+
+ماژول \lr{come\_compressor} (مخفف \lr{CoMe: Layer Concatenation and Shedding with Learnable Inter-Layer Interpolation Adapters}) با هدف هرس ساختاری لایه‌ها (\lr{Structured Layer Shedding}) به همراه پل‌های درون‌یابی آموزش‌پذیر میان‌لایه‌ای (\lr{Learnable Inter-Layer Interpolation Bridges}) طراحی گردیده است. رویکرد مرسوم حذف لایه‌ها به دلیل شکست پیوستگی نمایش و شوک ناگهانی به جریان پسماند (\lr{Residual Stream})، افت دقت شدیدی را تجربه می‌کند. ماژول \lr{come\_compressor} با جایگزینی شکاف‌های ناشی از حذف لایه‌ها توسط پل‌های کم‌مرتبه سبک با مقداردهی خنثی (\lr{Identity-Initialized Bridges})، پیوستگی جریان نمایش پنهان را حفظ کرده و اجازه می‌دهد مدل فشرده‌شده بدون نیاز به پیش‌آموزش مجدد، به سرعت همگرا شود.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی نظری ماژول \lr{come\_compressor} بر دو پایه اصلی استوار است:
+
+\subsubsection*{۱. گزینش یکنواخت لایه‌ها و هرس فاصله‌دار (Uniform Strided Layer Selection)}
+فرض کنید مدل زبانی اولیه دارای $L$ لایه ترنسفورمر باشد و هدف حفظ $K < L$ لایه باشد. اندیس لایه‌های برگزیده جهت نگهداری ($\mathcal{I}_{\text{keep}}$) به صورت یکنواخت و فاصله‌دار در سراسر ژرفای شبکه برگزیده می‌شوند:
+\begin{equation}
+\mathcal{I}_{\text{keep}} = \{i_0, i_1, \dots, i_{K-1}\}, \quad i_k = \left\lfloor k \cdot \frac{L-1}{K-1} \right\rceil
+\end{equation}
+با این استراتژی، لایه‌های اول و آخر مدل (که نقشی حیاتی در استخراج ویژگی‌های اولیه و تولید خروجی ایفا می‌کنند) همواره حفظ شده و لایه‌های میانی به صورت متوازن هرس می‌گردند.
+
+\subsubsection*{۲. پل‌های درون‌یابی تطبیقی میان‌لایه‌ای (Learnable Linear Interpolation Bridges)}
+در هر نقطه‌ای که شکاف لایه‌ای پدید آید ($i_{k+1} > i_k + 1$)، یک آداپتور درون‌یابی خطی تحت کلاس \lr{CoMeBridge} تعبیه می‌شود تا پرش ایجادشده در جریان پسماند را جبران کند:
+\begin{equation}
+h_k^{\text{bridged}} = h_k + \alpha_k \left( W_{\text{bridge}}^{(k)} h_k - h_k \right)
+\end{equation}
+که در آن $W_{\text{bridge}}^{(k)} \in \mathbb{R}^{D \times D}$ ماتریس پروجکشن پل و $\alpha_k \in \mathbb{R}$ ضریب مقیاس آموزش‌پذیر است. در بدو مقداردهی ($t=0$):
+\begin{equation}
+W_{\text{bridge}} = I, \quad \alpha_k = \alpha_{\text{init}} \implies h_k^{\text{bridged}} = h_k
+\end{equation}
+این مقداردهی همانی متقارن تضمین می‌کند که تعبیه پل‌ها هیچ‌گونه انحراف یا شوک اولیه‌ای در تانسورهای پنهان ایجاد نمی‌نماید و در طول ریزتنظیم، شبکه توانایی یادگیری تبدیل خطی بهینه میان فضاهای ناپیوسته را دارا می‌باشد.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/come\_compressor.py} مستقر بوده و شامل اجزای مهندسی زیر است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{CoMeBridge}:} پل پروجکشن خطی که به صورت چندریختی انواع خروجی‌های پایتورچ شامل \lr{Tensor}، \lr{Tuple}، \lr{Dict} و \lr{BaseModelOutput} را مدیریت کرده و عملگر درون‌یابی را منحصراً روی تانسور حالت‌های پنهان اعمال می‌نماید.
+    \item \textbf{کلاس \lr{CoMeBridgedLayer}:} پوسته‌ای ساختاری که لایه ترنسفورمر نگه داشته شده را دربرگرفته و بلافاصله پس از اجرای گذر رو به جلو، پل درون‌یابی را فراخوانی می‌کند.
+    \item \textbf{کلاس \lr{CoMeLoRALinear}:} آداپتورهای کم‌مرتبه \lr{LoRA} کمکی تعبیه‌شده در لایه‌های نگه داشته شده تا فرآیند ریکاوری سریع طی چند گام بهینه‌سازی را تسهیل نمایند.
+    \item \textbf{موتور فشرده‌ساز \lr{CoMeCompressor}:} مدیریت کل چرخه فشرده‌سازی، کالیبراسیون مجدد لایه‌های نرمال‌سازی (\lr{recalibrate\_layernorms}) و اتصال پل‌ها به ماژول‌های \lr{nn.ModuleList}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{come\_compressor} بر روی مجموعه‌داده اعتبارسنجی \lr{GLUE SST-2} و پردازنده گرافیکی به ثبت نتایج معتبر جدول \ref{tab:benchmark_come_compressor} منتهی شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی و ارزیابی جامع ماژول \lr{come\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_come_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.24\%} & \lr{0.8701} & \lr{179.06 MB} & \lr{72,211.64 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{78.33\%} & \lr{0.8177} & \lr{276.45 MB} & \lr{18,269.81 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{73.17\%} & \lr{0.7776} & \lr{332.05 MB} & \lr{21,796.34 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{0.5570} & \lr{1796.78 MB} & \lr{1,289.77 tok/s} & \lr{FAIL} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول \ref{tab:benchmark_come_compressor} مشاهده می‌شود، ماژول با موفقیت موفق به کاهش ۳۳٫۳ درصدی لایه‌ها در مدل‌های انکودر و دیکودر گردیده و در \lr{DistilBERT} با حفظ ۴ لایه از ۶ لایه به دقت درخشان ۸۶٫۲۴٪ با کاهش محسوس اوج حافظه به ۱۷۹٫۰۶ مگابایت دست یافته است. در مدل \lr{RoBERTa} و \lr{GPT-2} نیز با هرس ۴ لایه از ۱۲ لایه، دقت‌های بالای ۷۸٪ و ۷۳٪ حاصل شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل داده‌های آماری و شکست در مدل \lr{Qwen} نکات ساختاری مهمی را آشکار می‌سازد:
+\begin{itemize}
+    \item \textbf{ناسازگاری ماسک علّی در مدل \lr{Qwen} (\lr{RuntimeError}):} در ارزیابی مدل \lr{Qwen}، خطای نوع داده‌ای رخ داده است:
+    \begin{quote}
+    \lr{\small RuntimeError: Expected attn\_mask dtype to be bool or float or to match query dtype, but got attn\_mask.dtype: \_\_int64 and query.dtype: struct c10::Half instead.}
+    \end{quote}
+    این عدم تطابق داده ناشی از تفاوت نوع ماسک علّی ۶۴ بیتی در پایپ‌لاین تولید متوالی توکن با محاسبات نیم‌پایدار \lr{FP16/BF16} لایه‌های دست‌نخورده بوده است که منجر به توقف فرآیند ارزیابی و ثبت وضعیت \lr{FAIL} در ارزیابی اتوماتیک گردیده است.
+    \item \textbf{انباشت خطای درون‌یابی در شبکه‌های بسیار عمیق:} با افزایش ژرفای مدل به بالای ۲۰ لایه، خطای درون‌یابی خطی بدون آموزش عمیق چندلایه‌ای انباشته شده و تنظیم یک ضریب مقیاس ایستا برای بازسازی پویایی‌های غیرخطی کافی نخواهد بود.
+\end{itemize}

@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Ratio | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× | 183 MB |
-| DistilBERT | **Compressed MHA** | **50.92** | -39.79 | 0.6748 | 48.5M | **1.38×** | 291 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 1.00× | 712 MB |
-| RoBERTa | **Compressed MHA** | **50.92** | -27.64 | 0.6748 | 95.0M | **1.31×** | 575 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 1.00× | 793 MB |
-| GPT-2 | **Compressed MHA** | **50.92** | -28.44 | 0.6748 | 95.0M | **1.31×** | 471 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Compressed Mha** | **50.92%** | -40.02% | PASS_LOW | 0.6748 | 0 | **1.24x** | 185.7 MB | 11.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Compressed Mha** | **50.92%** | +0.00% | PASS_LOW | 0.6748 | 0 | **1.18x** | 341.2 MB | 21.7s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Compressed Mha** | **51.03%** | +1.49% | PASS_LOW | 0.6743 | 0 | **1.26x** | 285.5 MB | 23.8s |
 
 **Key observations:**
 

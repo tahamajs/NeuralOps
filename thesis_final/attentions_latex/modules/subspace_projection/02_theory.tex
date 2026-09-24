@@ -1,0 +1,33 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرمول‌بندی تجزیه زیرفضا و نگاشت در این ماژول به صورت زیر تبیین می‌گردد:
+\begin{enumerate}
+    \item \textbf{تجزیه زیرفضای متعامد با SVD:}
+    ماتریس وزن اصلی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با تجزیه مقادیر منفرد تجزیه می‌شود:
+    \begin{equation}
+    \mathbf{W} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top
+    \end{equation}
+    سپس دو ماتریس عامل به گونه‌ای استخراج می‌شوند که $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ پایه تصویرگر و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ ماتریس انبساط ضرایب باشد:
+    \begin{equation}
+    \mathbf{A} = \mathbf{V}_r^\top, \quad \mathbf{B} = \mathbf{U}_r \boldsymbol{\Sigma}_r \implies \mathbf{W} \approx \mathbf{B} \mathbf{A}
+    \end{equation}
+    \item \textbf{محاسبه گذر پیشرو لایه فاکتورگیری‌شده:}
+    ورودی $\mathbf{x} \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ در گذر پیشرو مستقیماً از طریق دو تبدیل خطی متوالی نگاشت می‌یابد:
+    \begin{equation}
+    \mathbf{x}_{\text{proj}} = \mathbf{x} \mathbf{A}^\top \in \mathbb{R}^{B \times L \times r}, \quad \mathbf{y}_{\text{base}} = \mathbf{x}_{\text{proj}} \mathbf{B}^\top + \mathbf{b}
+    \end{equation}
+    \item \textbf{الحاق تطبیق‌دهنده کم‌مرتبه (\lr{LoRA Integration}):}
+    در صورت فعال‌بودن شاخه آداپتور، خروجی کلی لایه از ترکیب تبدیل زیرفضا و سهم گرادیانی آداپتور حاصل می‌شود:
+    \begin{equation}
+    \mathbf{y} = \mathbf{y}_{\text{base}} + \frac{\alpha_{\text{lora}}}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}_{\text{lora}}^\top) \mathbf{B}_{\text{lora}}^\top
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_subspace_projection}
+\mathcal{C}_{\text{subspace\_projection}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,41 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی این الگوریتم در سه گام ریاضی پیوسته انجام می‌گیرد:
+\begin{enumerate}
+    \item \textbf{چرخش یکامتعامد مختصات (\lr{Orthogonal Coordinate Rotation}):}
+    جهت همگن‌سازی توزیع مقادیر پرت فعال‌سازی‌ها در تمامی جهات، یک ماتریس یکامتعامد تصادفی هاار $\mathbf{Q} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ با شرط $\mathbf{Q}^\top \mathbf{Q} = \mathbf{I}$ با استفاده از تجزیه \lr{QR} تولید می‌گردد. با توجه به نامتغیر بودن ضرب ماتریسی تحت نگاشت یکامتعامد:
+    \begin{equation}
+    \mathbf{W} \mathbf{X} = (\mathbf{W} \mathbf{Q}) (\mathbf{Q}^\top \mathbf{X}) = \tilde{\mathbf{W}} \tilde{\mathbf{X}}
+    \end{equation}
+    که در آن $\tilde{\mathbf{W}} = \mathbf{W} \mathbf{Q}$ و $\tilde{\mathbf{X}} = \mathbf{Q}^\top \mathbf{X}$ مقادیر وزن و فعال‌سازی در فضای مختصات چرخیده‌شده هستند.
+
+    \item \textbf{برش زیرفضا بر پایه واریانس فعال‌سازی‌ها (\lr{Variance-Based Subspace Slicing}):}
+    واریانس کانال‌های فعال‌سازی چرخیده‌شده محاسبه گردیده و $r = \lfloor d_{\text{in}} \cdot \rho \rfloor$ کانال با بیشترین واریانس به عنوان زیرفضای بااهمیت انتخاب می‌شوند:
+    \begin{equation}
+    \mathcal{I} = \operatorname{Top-}r(\operatorname{Var}(\tilde{\mathbf{X}})), \quad \mathbf{P}_r = [\mathbf{e}_i]_{i \in \mathcal{I}} \in \mathbb{R}^{d_{\text{in}} \times r}
+    \end{equation}
+    ماتریس‌های وزن و ورودی برش‌یافته به صورت زیر حاصل می‌گردند:
+    \begin{equation}
+    \mathbf{W}_{\text{sliced}} = \tilde{\mathbf{W}} \mathbf{P}_r \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{X}_{\text{sliced}} = \mathbf{P}_r^\top \tilde{\mathbf{X}} \in \mathbb{R}^{r \times N}
+    \end{equation}
+
+    \item \textbf{کوانتیزاسیون غیریکنواخت ۴ بیتی با جبران هسیان مرتبه دوم (\lr{Second-Order OBS INT4}):}
+    ماتریس هسیان تجربی به همراه جمله میراسازی تیخونوف $\lambda$ تشکیل می‌شود:
+    \begin{equation}
+    \mathbf{H} = \frac{2}{N} \mathbf{X}_{\text{sliced}} \mathbf{X}_{\text{sliced}}^\top + \lambda \mathbf{I}_r
+    \end{equation}
+    سپس عناصر ستون‌های وزن به ترتیب با کتاب‌کد گوسی \lr{AstroQuantizer} کوانتیزه شده و خطای گردکردن به صورت معکوس روی ستون‌های بعدی جبران می‌گردد:
+    \begin{equation}
+    \mathbf{W}_{:, j+1:r} \leftarrow \mathbf{W}_{:, j+1:r} - \left( \mathbf{w}_j - q(\mathbf{w}_j) \right) \frac{[\mathbf{H}^{-1}]_{j, j+1:r}}{[\mathbf{H}^{-1}]_{jj}}
+    \end{equation}
+    که در آن $q(\cdot)$ نگاشت به نزدیک‌ترین مرکز خوشه غیرخطی در کتاب‌کد بهینه‌شده توزیع نرمال است.
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_rotational_slicegpt_int4}
+\mathcal{C}_{\text{rotational\_slicegpt\_int4}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

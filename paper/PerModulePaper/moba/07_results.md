@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 183 MB |
-| DistilBERT | **Mamba SSM** | **73.62** | -17.09 | 0.7516 | 66.4MM | 329 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **Mamba SSM** | **84.17** | +5.61 | 0.8583 | 124.6MM | 379 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **Mamba SSM** | **50.92** | -28.44 | 0.6748 | 124.4MM | 569 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Moba** | **73.62%** | -16.86% | PASS | 0.7516 | 0 | **0.99x** | 329.0 MB | 5.8s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Moba** | **84.17%** | +9.06% | PASS | 0.8583 | 0 | **0.94x** | 379.1 MB | 10.6s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Moba** | **50.92%** | -9.86% | PASS_LOW | 0.6748 | 0 | **0.99x** | 569.5 MB | 13.5s |
 
 ## 7.2 Parameter Analysis
 

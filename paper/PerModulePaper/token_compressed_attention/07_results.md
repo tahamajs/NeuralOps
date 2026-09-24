@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | KV Len | ρ | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 128 | — | 183 MB |
-| DistilBERT | **TCA** | **50.92** | -39.79 | 0.6748 | 0.85 | 50\% | 323 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 128 | — | 712 MB |
-| RoBERTa | **TCA** | **50.92** | -27.64 | 0.6748 | 0.85 | 50\% | 369 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 128 | — | 793 MB |
-| GPT-2 | **TCA** | **50.92** | -28.44 | 0.6748 | 0.85 | 50\% | 571 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Token Compressed** | **78.21%** | -12.73% | PASS | 0.7875 | 0 | **0.99x** | 323.2 MB | 19.8 |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Token Compressed** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 0 | **0.93x** | 650.8 MB | 26.2 |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Token Compressed** | **51.38%** | -6.53% | PASS_LOW | 0.6763 | 0 | **0.99x** | 571.0 MB | 28.7 |
 
 **Key observations:**
 

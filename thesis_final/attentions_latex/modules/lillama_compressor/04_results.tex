@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{lillama\_compressor} بر روی مدل‌های زبانی پایه در چارچوب بنچ‌مارک استاندارد و مقادیر ثبت‌شده در \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_lillama_compressor} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{lillama\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_lillama_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.50\%} & \lr{0.8868} & \lr{337.59 MB} & \lr{187,624.63 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.44\%} & \lr{0.8603} & \lr{583.49 MB} & \lr{100,764.43 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.88\%} & \lr{0.6835} & \lr{634.91 MB} & \lr{70,009.59 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+داده‌های تجربی نشان می‌دهند که ماژول بر روی مدل‌های انکودر به سطح بسیار بالایی از کارایی دست یافته است؛ به طوری که در \lr{DistilBERT} دقت \lr{87.50\%} همراه با شاخص F1 برابر با \lr{0.8868} و توان پردازشی بالا \lr{187,624.63 tok/s} را به ثبت رسانده است. در مدل \lr{RoBERTa} نیز دقت \lr{85.44\%} با پایداری کامل حاصل شده است. با این حال، در مدل‌های اتورگرسیو نظیر \lr{GPT-2} (\lr{56.88\%}) و \lr{Qwen} (\lr{49.08\%}) افت دقت مشاهده می‌شود.

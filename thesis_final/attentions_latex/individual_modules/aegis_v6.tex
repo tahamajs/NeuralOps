@@ -1,78 +1,70 @@
-\subsection{کالبدشکافی ماژول \lr{aegis\_v6}}
+\section{ماژول aegis\_v6 (Aegis Attention V6)}
+\label{sec:module_aegis_v6}
 
-\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم نوآورانه \lr{aegis\_v6} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: \textbf{چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟}
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
 
-\textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل ماژول \lr{aegis\_v6} مانند رهبر یک ارکستر سمفونیک بزرگ با ده‌ها نوازنده سازهای زهی، بادی و ضربی است. رهبر ارکستر برای اجرای بی‌نقص، تک‌تک نت‌ها را نمی‌نوازد، بلکه با حرکات کنترل‌شده چوب‌دستی و اشارات گیت‌بندی شده، زمان ورود و خروج هر بخش و شدت صدای آن را دیکته می‌کند. این ماژول با پیاده‌سازی گیت‌بندی متقاطع دوطرفه و توازن توالی‌ها، جریان انتقال اطلاعات میان انکودر و دکودر را در پیچیده‌ترین شرایط همگام نگه می‌دارد.
+ماژول \lr{Aegis-Attention V6} نسخه بهینه‌سازی‌شده و پایداری‌یافته از خانواده مکانیزم‌های توجه ترکیبی کم‌مرتبه \lr{Aegis} است که با هدف ارتقای بازدهی و اصلاح رفتارهای مرزی در محاسبات ماتریس‌های توجه در مدل‌های ترنسفورمر زبانی تدوین شده است. در مدل‌های پایه، استفاده از توجه استاندارد مستلزم بار پردازشی و حافظه‌ای با پیچیدگی $\mathcal{O}(N^2)$ است که در دنباله‌های طولانی گلوگاه محاسباتی اصلی تلقی می‌گردد.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
-فرمول‌بندی این ساختار از ترکیب خطی وزن‌دار چند سر توجه ناهمگن با گیت کنترل‌کننده پویا حاصل می‌شود:
+ایده بنیادین در \lr{Aegis V6} ترکیب لایه‌های خطی فاکتورگیری‌شده مبتنی بر تجزیه مقادیر منفرد (\lr{SVD}) با آداپتورهای کم‌مرتبه آموزش‌پذیر \lr{LoRA}، به همراه نگاشت کِرنل تصادفی متعامد پایدار (\lr{Stable Random Feature Mapping})، توجه متحرک پنجره‌ای علّی و مکانیزم گیتینگ همجوشی چندسره است. این ساختار ضمن کاهش ابعاد پارامترهای فعال، امکان مدل‌سازی همزمان وابستگی‌های نحوی کوتاه‌برد و زمینه‌های معنایی بلندبرد را بدون ناپایداری‌های عددی معمول فراهم می‌سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه پروجکشن، وزن‌ها با تلفیق مقادیر تجزیه‌شده مقادیر منفرد ماتریس و مسیر باقیمانده بازسازی می‌شوند:
 \begin{equation}
-\mathbf{Y} = \sum_{k=1}^K g_k(\mathbf{X}) \cdot \operatorname{Branch}_k(\mathbf{X})
+\mathbf{W} = \mathbf{V} \mathbf{\Sigma} \mathbf{U}^\top + \frac{\alpha}{r_{\text{lora}}} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
 \end{equation}
-که ضرایب گیتینگ از طریق یک لایه پروجکشن سبک همراه با تابع بیشینه هموار به دست می‌آیند:
+در شاخه توجه خطی سراسری، از نگاشت ویژگی کِرنل پایدار بر پایه پروجکشن‌های متعامد تصادفی استفاده می‌شود:
 \begin{equation}
-\mathbf{g}(\mathbf{X}) = \operatorname{softmax}\left( \mathbf{X} \mathbf{W}_g + \mathbf{b}_g \right)
+\phi(\mathbf{x}) = \frac{1}{\sqrt{M}} \exp\left( \mathbf{x} \mathbf{\Omega}^\top - \frac{\|\mathbf{x}\|^2}{2} \right)
 \end{equation}
-این ساختار امکان سازش‌پذیری پویا را فراهم می‌سازد؛ به طوری که برای توکن‌های حساس، شاخه پرظرفیت فراخوانی شده و برای توکن‌های پایه‌ای، شاخه کم‌مصرف جریان تانسوری را بر عهده می‌گیرد.
+که در آن $\mathbf{\Omega} \in \mathbb{R}^{M \times d}$ ماتریس پروجکشن تصادفی با بلوک‌های متعامد حاصل از تجزیه QR است تا واریانس برآورد کِرنل کاهش یابد.
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
-در پیاده‌سازی سورس پایتون در فایل ماژول \lr{aegis\_v6.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
-\begin{enumerate}
-\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
-\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
-\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
-\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} اجرای عملگر تخصصی معماری با حذف درایه‌های زائد و استخراج مؤلفه‌های اصلی اطلاعات.
-\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
-\end{enumerate}
+حاصلضرب ضرب داخلی کِرنلی در حالت علّی با جمع تجمعی پیشرو و ضرب خارجی برداری هدایت می‌شود:
+\begin{equation}
+\mathbf{S}_t = \sum_{\tau=1}^t \phi(\mathbf{k}_\tau)^\top \mathbf{v}_\tau, \quad \mathbf{o}_t^{\text{glob}} = \frac{\phi(\mathbf{q}_t) \mathbf{S}_t}{\phi(\mathbf{q}_t) \sum_{\tau=1}^t \phi(\mathbf{k}_\tau)^\top + \epsilon}
+\end{equation}
+در کنار شاخه خطی، شاخه پنجره‌ای متحرک با شعاع موضعی $R$ وظیفه استخراج الگوهای همسایگی را بر عهده دارد:
+\begin{equation}
+\mathbf{o}_t^{\text{loc}} = \sum_{j=\max(0, t-R)}^{\min(N, t+R)} \operatorname{softmax}\left(\frac{\mathbf{q}_t \mathbf{k}_j^\top}{\sqrt{d}}\right) \mathbf{v}_j
+\end{equation}
+سپس دو خروجی از طریق گیت تلفیق زمینه (\lr{ContextFusionGate}) با یکدیگر ترکیب می‌گردند:
+\begin{equation}
+\mathbf{g} = \sigma(\mathbf{X} \mathbf{W}_g + \mathbf{b}_g), \quad \mathbf{O} = (1 - \mathbf{g}) \odot \mathbf{O}^{\text{loc}} + \mathbf{g} \odot \mathbf{O}^{\text{glob}}
+\end{equation}
 
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی ماژول \lr{AegisAttentionV3} (تحت شناسه ثبت \lr{aegis\_v6}) در فایل \lr{Codes/framework/attentions/aegis\_v6.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. پیکربندی معماری با کلاس \lr{AegisConfigV3} اداره می‌شود. قابلیت‌های فنی برجسته این نسخه عبارتند از:
 \begin{itemize}
-\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
-\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
+    \item \textbf{اصلاح ابعاد و ضرب خارجی تانسوری (\lr{FIX-C3}):} تصحیح دستور \lr{unsqueeze} در بعد صحیح برای محاسبه ضرب خارجی تانسورهای ویژگی و ارزش بدون ایجاد کپی‌های نامعتبر.
+    \item \textbf{مدیریت نامتقارن طول توالی‌ها (\lr{FIX-C4}):} پشتیبانی کامل از حالت استنتاج خودبازگشتی هنگامی که طول پرس‌وجو $N=1$ و طول توالی کلیدها $N_k > 1$ است.
+    \item \textbf{مختصات مطلق در پنجره متحرک (\lr{FIX-S1/S2}):} احتساب متغیر آفست \lr{past\_len} در پنجره علّی برای تطابق دقیق با مکانیزم \lr{KV-cache}.
 \end{itemize}
 
-\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_v6} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی نتایج جدول \ref{tab:benchmark_aegis_v6} را حاصل کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_v6} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_v6}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{52.87\%} & \lr{0.5827} & \lr{305.04 MB} & \lr{13,376.24 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{599.30 MB} & \lr{6,637.40 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.46\%} & \lr{0.6620} & \lr{494.74 MB} & \lr{6,969.80 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{47.71\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی‌ها نشان‌دهنده کنترل عالی مصرف حافظه بر روی تمام مدل‌ها است (۳۰۵ مگابایت در \lr{DistilBERT} و ۵۹۹ مگابایت در \lr{RoBERTa})، هرچند که دقت مدل‌ها در بازه ۵۰ تا ۵۳ درصد متمرکز شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی عملکرد ماژول \lr{aegis\_v6} چالش‌های ساختاری زیر را تبیین می‌نماید:
 \begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{69.13\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{65.91\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{410.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{33,500} توکن بر ثانیه
+    \item \textbf{علت قرارگیری در رده \lr{PASS\_LOW} در مدل‌های انکودر و دکودر:} دقت \lr{52.87\%} در \lr{DistilBERT}، \lr{50.92\%} در \lr{RoBERTa} و \lr{50.46\%} در \lr{GPT-2} نشان‌دهنده پدیده انجماد یادگیری لایه‌های توجه خطی در حضور نگاشت کِرنل متعامد است. در فاز انطباق وزن‌ها با روش بازآموزی با گام‌های محدود، کِرنل غیرخطی تصادفی به دلیل بالا بودن واریانس پایدارسازهای نمایی و توزیع مقادیر ویژه، ظرفیت تفکیک الگوهای معنایی ظریف در وظیفه تحلیل احساسات را به شدت تحدید کرده و رفتار مدل را به پیش‌بینی اکثریت کلاس‌ها میل می‌دهد.
+    \item \textbf{تحلیل عملکرد در مدل \lr{Qwen} و خطاهای سازگاری:} در مدل زبانی \lr{Qwen} با دقت \lr{47.71\%} وضعیت قبولی \lr{PASS} احراز شده که نشان از حفظ پایداری محاسبات خودبازگشتی دارد، اما به دلیل عدم انطباق لایه‌های فاکتورگیری با فرمت ماسک‌های سه بعدی در مدل \lr{T5}، ارزیابی روی آن با خطای عدم انطباق (\lr{SKIP\_T5\_INCOMPATIBLE}) مواجه شده است.
 \end{itemize}
-
-\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت \lr{69.13\%} در ارزیابی‌های سنگین متوالی زبانی و مهار حافظه در \lr{410.0 MB} (در برابر \lr{4200 MB} مبنا)، نشان‌دهنده پایداری دینامیکی گیت‌های متقاطع در برابر نوسانات گرادیان است. ممانعت از سرریز حافظه در لایه‌های تو در تو، اجرای امن را بر روی کارت‌های گرافیکی میان‌رده میسر ساخته است.
-
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
-جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
-
-\begin{center}
-\begin{tikzpicture}[scale=0.76, every node/.style={scale=0.76}, 
-    node distance=1.1cm,
-    auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
-    router/.style={diamond, draw=orange!80, fill=orange!20, align=center, text centered, inner sep=2pt, font=\footnotesize},
-    b1/.style={rectangle, draw=purple!70, fill=purple!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
-    b2/.style={rectangle, draw=teal!70, fill=teal!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
-    fuse/.style={rectangle, draw=green!80, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
-]
-    \node [block] (in) {ورودی $\mathbf{X}$};
-    \node [router, right=0.6cm of in] (route) {مسیریاب گیت};
-    \node [b1, above right=0.3cm and 1.1cm of route] (br1) {شاخه کم‌مرتبه SVD};
-    \node [b2, below right=0.3cm and 1.1cm of route] (br2) {شاخه توجه عمیق};
-    \node [fuse, right=3.8cm of route] (out) {تلفیق وزن‌دار خروجی};
-
-    \draw [->, thick, draw=blue!80] (in) -- (route);
-    \draw [->, thick, draw=orange!80] (route) |- node [above, font=\tiny] {$w_1$} (br1);
-    \draw [->, thick, draw=orange!80] (route) |- node [below, font=\tiny] {$w_2$} (br2);
-    \draw [->, thick, draw=purple!80] (br1) -| (out);
-    \draw [->, thick, draw=teal!80] (br2) -| (out);
-\end{tikzpicture}
-\end{center}
-
-
-

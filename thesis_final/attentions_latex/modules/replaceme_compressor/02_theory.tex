@@ -1,0 +1,27 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید یک ترنسفورمر دارای $L$ لایه متوالی به فرم نگاشت‌های $\mathcal{F}_1, \dots, \mathcal{F}_L$ باشد. در این الگوریتم، تعداد $N$ لایه انتهایی (یعنی لایه‌های $L-N+1$ تا $L$) از ساختار شبکه خارج شده و با یک بلوک منفرد جایگزین $\mathcal{G}_{\text{replace}}$ مبادله می‌شوند:
+\begin{equation}
+\mathbf{h}_{L} = \mathcal{G}_{\text{replace}}(\mathbf{h}_{L-N})
+\end{equation}
+
+فرمول‌بندی بلوک جایگزین به صورت پسماند حول لایه‌نرمال تعریف می‌شود تا در لحظه مقداردهی اولیه عملکردی دقیقاً منطبق بر تابع همانی (\lr{Identity Mapping}) داشته باشد:
+\begin{equation}
+\tilde{\mathbf{h}} = \operatorname{LayerNorm}(\mathbf{h})
+\end{equation}
+\begin{equation}
+\Delta \mathbf{h} = \mathbf{W}_{\text{linear}} \tilde{\mathbf{h}} + \mathbf{b} + \frac{\alpha}{r} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}} \tilde{\mathbf{h}}
+\end{equation}
+\begin{equation}
+\mathbf{h}_{\text{out}} = \mathbf{h} + \Delta \mathbf{h}
+\end{equation}
+که در آن وزن‌ها و بایاس لایه خطی $\mathbf{W}_{\text{linear}}$ و $\mathbf{b}$ با صفر مقداردهی اولیه می‌شوند ($\mathbf{W}_{\text{linear}} \leftarrow \mathbf{0}, \mathbf{b} \leftarrow \mathbf{0}$)؛ این مقداردهی خاص موجب می‌شود در ابتدای فرآیند فشرده‌سازی $\Delta \mathbf{h} = \mathbf{0}$ و در نتیجه خروجی بلوک دقیقاً معادل ورودی آن ($\mathbf{h}_{\text{out}} = \mathbf{h}$) باشد که از شوک سیگنالی در شبکه ممانعت به عمل می‌آورد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_replaceme_compressor}
+\mathcal{C}_{\text{replaceme\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

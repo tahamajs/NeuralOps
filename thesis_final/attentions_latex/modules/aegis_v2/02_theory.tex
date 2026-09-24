@@ -1,0 +1,33 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه نگاشت، وزن‌های پروجکشن از ساختار \lr{FactorisedLinear} بهره می‌برند که تجزیه فاکتوری ماتریسی را با آداپتورهای باقیمانده یادگیرنده تلفیق می‌کند:
+\begin{equation}
+\mathbf{W} = \mathbf{W}_{\text{down}} \mathbf{W}_{\text{up}} + \frac{\alpha}{r_{\text{lora}}} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{D \times r}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{r \times D_{\text{out}}}$ ماتریس‌های فاکتورسازی ساختاری هستند.
+
+محاسبه توجه از دو شاخه مکمل تشکیل می‌گردد:
+\begin{enumerate}
+    \item \textbf{توجه محلی پنجره‌ای (\lr{Local Sliding-Window}):}
+    \begin{equation}
+    \mathbf{A}_{i,j}^{\text{loc}} = \frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d}} \cdot \mathbb{I}(|i - j| \le R), \quad \mathbf{O}_{\text{loc}} = \operatorname{softmax}\left(\mathbf{A}^{\text{loc}}\right) \mathbf{V}
+    \end{equation}
+    که در آن $R = W / 2$ شعاع پنجره موضعی است.
+    \item \textbf{توجه خطی کِرنلی سراسری با هرس نرم (\lr{Global Kernel Linear Attention}):} با نگاشت غیرخطی کِرنل $\phi(x) = \operatorname{ELU}(x) + 1$ و اعمال گیت هرس وابسته به زمینه ورودی $\mathbf{g}_{\text{prune}} = \sigma(\mathbf{X} \mathbf{W}_{\text{prune}})$:
+    \begin{equation}
+    \mathbf{O}_{\text{glob}} = \frac{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{V} \right]}{\phi(\mathbf{Q}) \left[ (\phi(\mathbf{K}) \odot \mathbf{g}_{\text{prune}})^\top \mathbf{1} \right] + \epsilon}
+    \end{equation}
+\end{enumerate}
+سپس خروجی دو شاخه توسط گیت ادغام وابسته به سرها تلفیق می‌گردد:
+\begin{equation}
+\boldsymbol{\alpha} = \sigma(\mathbf{X} \mathbf{W}_{\text{fuse}}), \quad \mathbf{O} = (1 - \boldsymbol{\alpha}) \odot \mathbf{O}_{\text{loc}} + \boldsymbol{\alpha} \odot \mathbf{O}_{\text{glob}}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_aegis_v2}
+\mathcal{C}_{\text{aegis\_v2}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی این ماژول بر روی مجموعه داده \lr{GLUE SST-2} در چارچوب بنچمارک یکپارچه انجام شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_svd_linear_decay} خلاصه گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{svd\_linear\_decay} روی مدل‌های پایه}
+\label{tab:benchmark_svd_linear_decay}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{139,908.67 tok/s} & \lr{SKIP\_BERT\_ARCHITECTURAL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{96,436.31 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{64,783.16 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در ارقام جدول مشخص است، توان پردازشی بسیار چشمگیر است (بیش از \lr{139,908 tok/s} در \lr{DistilBERT} با مصرف حافظه محدود \lr{389.51 MB}). با این وجود، وضعیت ارزیابی در تمام مدل‌های استاندارد به عنوان پرش ساختاری (\lr{SKIP\_ARCHITECTURAL}) با دقت گزارش‌شده \lr{0.00\%} مشخص شده است.

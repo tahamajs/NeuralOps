@@ -7,17 +7,20 @@ We evaluate \texttt{dobi} across three canonical language understanding tasks us
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Benchmark} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} & \textbf{Comp. Rate} & \textbf{Recon. Error} & \textbf{Peak VRAM} & \textbf{Throughput (tok/s)} & \textbf{Latency (s)} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-SST-2 & PASS & 91.06\% & 0.9137 & 1.00$\times$ & -- & 312.7 MB & 109829 & 3.49 s \\
-MNLI & PASS & 81.80\% & 0.8177 & 1.00$\times$ & -- & 293.5 MB & 51420 & 4.67 s \\
-AG News & PASS & 94.30\% & 0.9390 & 1.00$\times$ & -- & 315.4 MB & 109157 & 4.12 s \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Dobi} & \textbf{90.71\%} & +0.00\% & PASS_NO_COMPRESSION & 0.9099 & 0 & \textbf{1.00$\times$} & 174.8 MB & 131.6 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Dobi} & \textbf{94.38\%} & +0.00\% & PASS_NO_COMPRESSION & 0.9445 & 0 & \textbf{1.00$\times$} & 511.4 MB & 135.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Dobi} & \textbf{89.33\%} & +0.00\% & PASS_NO_COMPRESSION & 0.8942 & 0 & \textbf{1.00$\times$} & 382.1 MB & 158.9 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical evaluation of \texttt{dobi} across SST-2, MNLI, and AG News on DistilBERT-base.}
-\label{tab:results_dobi}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}

@@ -1,0 +1,9 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی \lr{MLoRQ} در فایل \lr{Codes/framework/compression\_engine/mlorq\_compressor.py} در قالب دو کلاس اصلی زیر سازمان‌یافته است:
+\begin{itemize}
+    \item \textbf{کلاس \lr{MLoRQLoRALinear}:} لایه خطی اختصاصی که وزن پایه فاکتورگیری و کوانتیزه‌شده را به شکل منجمد (\lr{frozen}) نگه داشته و امکان اتصال ادپترهای آموزش‌پذیر \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$) را برای بازیابی دقت یا تنظیم دقیق سریع فراهم می‌کند:
+    \begin{equation}
+    \mathbf{y} = \mathbf{x} \hat{\mathbf{W}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+    \end{equation}
+    \item \textbf{کلاس \lr{MLoRQCompressor}:} مدیریت تخصیص بودجه، جستجوی کاهشی حریصانه برای تعیین $(r_l, b_l)$، اعتبارسنجی خطای فروبنیوس با آستانه \lr{max\_error} (پیش‌فرض $0.50$)، مکانیسم محافظت از لایه‌های حساس و نگاشت امن لایه‌های بازگشتی به وزن پایه (\lr{fallback\_to\_original}).
+\end{itemize}

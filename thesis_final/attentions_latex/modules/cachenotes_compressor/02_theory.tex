@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی در \lr{CacheNotes} از دو مولفه ریاضی وابسته تشکیل شده است:
+\begin{enumerate}
+    \item \textbf{تولیدکننده پیوسته توکن برنامه‌ریزی فشرده‌سازی (\lr{CPT Generator}):} با دریافت توصیف متنی وظیفه $T_{\text{task}}$، ابتدا امبدینگ توکن‌ها توسط یک شبکه رمزگذار به بردار حالت $\mathbf{h} \in \mathbb{R}^{d_h}$ تبدیل می‌شود. برای تولید اهمیت در هر بعد دلخواه $d$ (حتی ابعاد پیوسته)، موقعیت کانال‌ها به صورت فرکانسی در قالب مختصات \lr{NeRF} کدگذاری می‌شود:
+    \begin{equation}
+    \gamma(c) = \left[ \sin(2^0 \pi c), \cos(2^0 \pi c), \dots, \sin(2^{F-1} \pi c), \cos(2^{F-1} \pi c) \right], \quad c = \frac{j}{d}, \quad j \in \{1, \dots, d\}
+    \end{equation}
+    بردار اهمیت نهایی کانال‌ها توسط شبکه پروجکشن بر روی بازه پیوسته $[0.1, 2.0]$ نگاشته می‌شود:
+    \begin{equation}
+    \mathbf{s} = \operatorname{Sigmoid}(\text{MLP}([\mathbf{h}; \gamma(\mathbf{c})])) \cdot 1.9 + 0.1 \in \mathbb{R}^d
+    \end{equation}
+    \item \textbf{تجزیه کم‌مرتبه هدایت‌شده (\lr{CPT-Guided SVD}):} ماتریس وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در قطر بردار اهمیت ورودی یا خروجی پیش‌شرط‌سازی می‌گردد:
+    \begin{equation}
+    \tilde{\mathbf{W}} = \mathbf{W} \operatorname{diag}(\mathbf{s})
+    \end{equation}
+    سپس بر روی $\tilde{\mathbf{W}}$ تجزیه مقادیر منفرد برشی اعمال شده و فاکتورهای کم‌مرتبه پس از بازگردانی مقیاس تشکیل می‌گردند:
+    \begin{equation}
+    \tilde{\mathbf{W}} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \hat{\mathbf{W}} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \operatorname{diag}(\mathbf{s})^{-1}
+    \end{equation}
+    \item \textbf{فشرده‌سازی پویای حافظه پنهان (\lr{KV Cache Compression}):} در زمان استنتاج، توکن‌های حافظه پنهان کلید و مقدار با ضرب در وزن‌های اهمیت $\mathbf{s}$ ارزیابی شده و کم‌اهمیت‌ترین توکن‌ها تا رسیدن به بودجه فشرده‌سازی هرس می‌شوند.
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_cachenotes_compressor}
+\mathcal{C}_{\text{cachenotes\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

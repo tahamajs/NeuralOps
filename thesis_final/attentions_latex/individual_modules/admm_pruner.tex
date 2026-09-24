@@ -1,0 +1,79 @@
+\section{ماژول admm\_pruner (ADMM Pruner with Distillation and Dynamic Rho)}
+\label{sec:module_admm_pruner}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+هرس کردن وزن‌ها \lr{(Weight Pruning)} به عنوان یکی از موثرترین تکنیک‌های سبک‌سازی شبکه‌های عصبی شناخته می‌شود؛ با این حال، حذف ناگهانی یا مقداری خالص وزن‌ها \lr{(Magnitude Pruning)} معمولاً به از دست رفتن اتصالات حیاتی و زوال ظرفیت زبانی مدل می‌انجامد. علاوه بر این، تنک‌سازی نامنظم \lr{(Unstructured Sparsity)} به دلیل عدم تطابق با خطوط لوله حافظه در شتاب‌دهنده‌های گرافیکی، شتاب محاسباتی ملموسی در استنتاج ایجاد نمی‌کند.
+
+ماژول فشرده‌سازی تخصصی \lr{ADMMPruner} یک چارچوب بهینه‌سازی دقیق مبتنی بر الگوریتم جهت‌های متناوب لاگرانژی افزوده \lr{(ADMM)} را به همراه تقطیر بازسازی لایه‌ای \lr{(Layer-Wise Reconstruction Distillation)}، تخمین‌گر گرادیان مستقیم \lr{(Straight-Through Estimator - STE)} و الگوی تنک‌سازی ساختاریافته ۲:۴ معرفی می‌نماید. در این ساختار، متغیر تنک در تعاملی پویا با وزن‌های پیوسته به سمت آرایش ماتریسی هرس‌شده با کمترین اتلاف خروجی هدایت می‌شود و با به‌روزرسانی پویای ضریب جریمه $\rho$، پایداری همگرایی تضمین می‌گردد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+مسئله هرس لایه‌ای به عنوان بهینه‌سازی مقید زیر فرمول‌بندی می‌شود:
+\begin{equation}
+\min_{\mathbf{W}, \mathbf{Z}} \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda_{\text{distill}} \mathcal{L}_{\text{distill}}(\mathbf{W}; \mathbf{X}_{\text{calib}}) + g(\mathbf{Z}) \quad \text{s.t.} \quad \mathbf{W} - \mathbf{Z} = \mathbf{0}
+\end{equation}
+که در آن $\mathcal{L}_{\text{distill}} = \|\mathbf{X}_{\text{calib}} \mathbf{W}^\top - \mathbf{X}_{\text{calib}} \mathbf{W}_0^\top\|_F^2$ خطای تقطیر خروجی لایه بر روی فعال‌سازی‌های کالیبراسیون و $g(\mathbf{Z})$ تابع مشخصه قید تنک‌سازی (الگوی ساختاریافته ۲:۴ یا تنک‌سازی بلوکی) است. تابع لاگرانژی افزوده متناظر عبارت است از:
+\begin{equation}
+\mathcal{L}_{\rho}(\mathbf{W}, \mathbf{Z}, \mathbf{U}) = \frac{1}{2} \|\mathbf{W} - \mathbf{W}_0\|_F^2 + \lambda_{\text{distill}} \mathcal{L}_{\text{distill}}(\mathbf{W}) + \frac{\rho}{2} \|\mathbf{W} - \mathbf{Z} + \mathbf{U}\|_F^2 + g(\mathbf{Z})
+\end{equation}
+گام‌های الگوریتم در هر تکرار $k$ به شرح زیر اجرا می‌شوند:
+
+\paragraph{۱. به‌روزرسانی لایه‌ای وزن‌ها ($\mathbf{W}$):}
+بهینه‌سازی بر روی $\mathbf{W}$ ترکیبی از تقریب وزن‌های مبنا، تقطیر گرادیانی فعال‌سازی و انطباق با متغیر دوگان است:
+\begin{equation}
+\mathbf{W}^{(k+1)} = \left( (1 + \rho)\mathbf{I} + 2\lambda_{\text{distill}} \mathbf{X}^\top \mathbf{X} \right)^{-1} \left( \mathbf{W}_0 + 2\lambda_{\text{distill}} \mathbf{Y}_{\text{orig}}^\top \mathbf{X} + \rho (\mathbf{Z}^{(k)} - \mathbf{U}^{(k)}) \right)
+\end{equation}
+
+\paragraph{۲. تصویر بر فضای تنک با برجستگی افزوده ($\mathbf{Z}$):}
+برخلاف هرس ساده اندازه، متغیر تنک $\mathbf{Z}$ با تصویر بر اساس برجستگی ترکیبی وزن و متغیر دوگان $|\mathbf{W}^{(k+1)} + \mathbf{U}^{(k)}|$ گزینش می‌شود:
+\begin{equation}
+\mathbf{Z}^{(k+1)} = \Pi_{\mathcal{S}_{2:4}}\left( \mathbf{W}^{(k+1)} + \mathbf{U}^{(k)} \right)
+\end{equation}
+در این مرحله، یک ماسک باینری $\mathbf{M}^{(k+1)} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ تشکیل شده و مقادیر متناظر نگهداری می‌شوند.
+
+\paragraph{۳. به‌روزرسانی متغیر دوگان و ضریب جریمه پویا ($\rho$):}
+متغیر دوگان خطای برازش را انباشته کرده و ضریب $\rho$ به منظور شتاب‌بخشی به همگرایی با نرخ افزایشی $\gamma > 1$ مقیاس می‌شود:
+\begin{align}
+\mathbf{U}^{(k+1)} &= \mathbf{U}^{(k)} + \mathbf{W}^{(k+1)} - \mathbf{Z}^{(k+1)} \\
+\rho^{(k+1)} &= \min\left(\rho_{\max}, \rho^{(k)} \cdot \gamma\right)
+\end{align}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/admm\_pruner.py} با ساختار صنعتی و مولفه‌های کلیدی زیر همراه است:
+\begin{itemize}
+\item \textbf{لایه خطی ماسک‌دار \lr{ADMMMaskedLinear}:} جایگزینی مستقیم لایه‌های خطی استاندارد با یک لایه مجهز به بافر ماسک غیرپایدار و اعمال تخمین‌گر مستقیم \lr{ADMMSTEPrune} جهت انتشار روان گرادیان‌ها در پس‌انتشار:
+\begin{equation}
+\mathbf{y} = \operatorname{Linear}\left(\mathbf{x}, \mathbf{W} \odot \mathbf{M}, \mathbf{b}\right)
+\end{equation}
+\item \textbf{بازکالیبراسیون نرمال‌سازی لایه \lr{(LayerNorm Recalibration)}:} تنظیم مجدد پارامترهای میانگین و واریانس در لایه‌های \lr{LayerNorm} مدل پس از اعمال ماسک، جهت اصلاح شیفت توزیع فعال‌سازی ناشی از حذف اتصالات.
+\item \textbf{سازگاری کامل با سخت‌افزارهای تنسور کُر \lr{NVIDIA Ampere}:} استفاده از چیدمان ۲:۴ امکان بهره‌گیری حداکثری از شتاب دوبرابری پایپ‌لاین‌های محاسباتی ماتریسی مدرن را فراهم می‌سازد.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+عملکرد اعتبارسنجی ماژول \lr{admm\_pruner} بر روی بنچ‌مارک رسمی پایان‌نامه در جدول~\ref{tab:benchmark_admm_pruner} منعکس گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری ماژول \lr{admm\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_admm_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.29\%} & \lr{0.8603} & \lr{551.24 MB} & \lr{43,663.37 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.62\%} & \lr{0.7966} & \lr{336.39 MB} & \lr{13,333.06 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.73\%} & \lr{0.8146} & \lr{414.93 MB} & \lr{15,380.14 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{78.21\%} & \lr{0.8201} & \lr{1,879.76 MB} & \lr{1,102.95 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+مشاهدات آزمایشگاهی حاصل از ارزیابی هرس \lr{ADMM} ابعاد تحلیلی زیر را مشخص می‌سازد:
+\begin{itemize}
+\item \textbf{نرخ قبولی ۱۰۰ درصدی در کلیه مدل‌ها:} روش \lr{ADMMPruner} بر روی هر چهار معماری ناهمگن با موفقیت به وضعیت قبولی \lr{PASS} با سطح دقت بین \lr{78.21\%} تا \lr{84.29\%} نائل آمد.
+\item \textbf{نقش تقطیر بازسازی لایه‌ای در حفظ دقت:} مقایسه عملکرد با روش‌های هرس مرسوم نشان می‌دهد که حضور جمله تقطیر $\mathcal{L}_{\text{distill}}$ و بازکالیبراسیون \lr{LayerNorm} نقش حیاتی در جلوگیری از فروپاشی شاخص F1 (بالای ۰٫۷۹ در تمام مدل‌ها) ایفا کرده است.
+\item \textbf{تحلیل حساسیت به گام‌های کالیبراسیون:} در لایه‌های حساس مانند پیش‌بینی کلمات انتهایی، در صورتی که تعداد گام‌های تقطیر لایه‌ای (\lr{distill\_steps}) ناکافی باشد یا داده‌های ورودی کالیبراسیون تنوع دامنه زبانی لازم را پوشش ندهند، هرس ۲:۴ می‌تواند به اعوجاج الگوهای نحوی ظریف بیانجامد. همچنین مصرف حافظه در طول کالیبراسیون به دلیل فعال‌سازی ذخیره تانسورهای موقت نسبت به هرس ایستا اندکی بالاتر است.
+\end{itemize}

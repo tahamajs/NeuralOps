@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+کلاس مرجع \lr{Jamba2Block} در فایل \lr{Codes/framework/attentions/jamba.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} بهره می‌گیرد. نکات برجسته معماری آن عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژولار بودن اجزا:} تلفیق ماژول \lr{SimpleSSM} و \lr{SVDMambaSub}، استفاده از لایه‌های خطی سازگار \lr{LoRALinear} با فاکتورگیری رتبه $r=16$ و ماتریس‌های تطبیقی آلفا $\alpha=32$.
+    \item \textbf{سازگاری با ساختارهای چندگانه:} پشتیبانی کامل از انتقال وزن‌های مدل‌های مختلف (\lr{copy\_weights}) شامل ترنسفورمرهای انکودر تو در تو، ترنسفورمرهای دیکودر (\lr{GPT-2} و \lr{Qwen}) با ترازگذاری ابعاد سرها از طریق تکرار کلید-مقدار (\lr{repeat\_kv}).
+    \item \textbf{مسیر بهینه \lr{Flash/SDPA}:} تعبیه الگوریتم \lr{scaled\_dot\_product\_attention} برای ممانعت از پر شدن حافظه گرافیکی (\lr{OOM}) در محاسبات شاخه \lr{MHA}.
+\end{itemize}

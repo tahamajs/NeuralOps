@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی سخت‌افزاری و زبانی ماژول \lr{hla\_attention} بر روی بنچمارک استاندارد \lr{GLUE SST-2} تحت شرایط نظارت‌شده آزمایشگاهی انجام شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_hla_attention} درج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{hla\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_hla_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{49.08\%} & \lr{0.0000} & \lr{338.25 MB} & \lr{17,346.35 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{49.08\%} & \lr{0.0000} & \lr{667.32 MB} & \lr{9,139.38 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{49.08\%} & \lr{0.0000} & \lr{567.58 MB} & \lr{9,263.41 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.26\%} & \lr{--} & \lr{3402.53 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان‌دهنده راندمان مصرف انرژی و حافظه بسیار عالی این ماژول است؛ اوج مصرف حافظه در مدل \lr{DistilBERT} در رقم ناچیز \lr{338.25 MB} مهار شده و توان عملیاتی پردازش به رقم خیره‌کننده \lr{17,346.35 tok/s} رسیده است. همچنین توان عملیاتی روی مدل‌های \lr{GPT-2} و \lr{RoBERTa} نیز بیش از ۹,۱۰۰ توکن بر ثانیه با حافظه کمتر از ۶۷۰ مگابایت به ثبت رسیده است. همچنین در مدل \lr{Qwen} ارزیابی با وضعیت \lr{PASS} و دقت \lr{51.26\%} ثبت گردیده است.

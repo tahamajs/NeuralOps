@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_fusionattn} details empirical evaluation metrics acro
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & distilbert & fusion\_attn & PASS\_NO\_COMPRESSION & 90.6 & 0.9091 \\
-\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & gpt2 & fusion\_attn & PASS\_NO\_COMPRESSION & 79.36 & 0.7978 \\
-\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & roberta & fusion\_attn & PASS\_NO\_COMPRESSION & 62.61 & 0.5821 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Fusion Attn} & \textbf{89.91\%} & -0.57\% & PASS & 0.9033 & 0 & \textbf{0.99$\times$} & 328.1 MB & 2.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Fusion Attn} & \textbf{84.52\%} & -4.24\% & PASS & 0.8635 & 0 & \textbf{0.94$\times$} & 399.5 MB & 6.9 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Fusion Attn} & \textbf{82.11\%} & +0.80\% & PASS & 0.8274 & 0 & \textbf{1.00$\times$} & 340.9 MB & 7.1 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{fusionattn}.}
-\label{tab:results_acc_fusionattn}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

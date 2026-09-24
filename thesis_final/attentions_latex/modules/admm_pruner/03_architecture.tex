@@ -1,0 +1,10 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/admm\_pruner.py} با ساختار صنعتی و مولفه‌های کلیدی زیر همراه است:
+\begin{itemize}
+\item \textbf{لایه خطی ماسک‌دار \lr{ADMMMaskedLinear}:} جایگزینی مستقیم لایه‌های خطی استاندارد با یک لایه مجهز به بافر ماسک غیرپایدار و اعمال تخمین‌گر مستقیم \lr{ADMMSTEPrune} جهت انتشار روان گرادیان‌ها در پس‌انتشار:
+\begin{equation}
+\mathbf{y} = \operatorname{Linear}\left(\mathbf{x}, \mathbf{W} \odot \mathbf{M}, \mathbf{b}\right)
+\end{equation}
+\item \textbf{بازکالیبراسیون نرمال‌سازی لایه \lr{(LayerNorm Recalibration)}:} تنظیم مجدد پارامترهای میانگین و واریانس در لایه‌های \lr{LayerNorm} مدل پس از اعمال ماسک، جهت اصلاح شیفت توزیع فعال‌سازی ناشی از حذف اتصالات.
+\item \textbf{سازگاری کامل با سخت‌افزارهای تنسور کُر \lr{NVIDIA Ampere}:} استفاده از چیدمان ۲:۴ امکان بهره‌گیری حداکثری از شتاب دوبرابری پایپ‌لاین‌های محاسباتی ماتریسی مدرن را فراهم می‌سازد.
+\end{itemize}

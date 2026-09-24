@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{padre\_attention} بر روی مجموعه داده اعتبارسنجی استاندارد \lr{GLUE SST-2} با طول توالی ۵۱۲ بر روی پردازنده گرافیکی با شرایط آزمایشگاهی یکسان صورت پذیرفته است. مقادیر مستخرج از پایگاه داده اعتبارسنجی‌شده در جدول \ref{tab:benchmark_padre_attention} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{padre\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_padre_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9050} & \lr{338.66 MB} & \lr{61,064.72 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{64.56\%} & \lr{0.7066} & \lr{388.22 MB} & \lr{32,568.51 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{568.59 MB} & \lr{30,183.95 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{PADRe} بر روی مدل \lr{DistilBERT} به دقت قابل توجه \lr{90.37\%} و شاخص F1 معادل \lr{0.9050} دست یافته است، در حالی که اوج مصرف حافظه گرافیکی در حد \lr{338.66 MB} و توان عملیاتی بسیار بالای \lr{61,064.72 tok/s} به ثبت رسیده است. همچنین در مدل \lr{RoBERTa} دقت \lr{64.56\%} و F1 معادل \lr{0.7066} ثبت شده است.

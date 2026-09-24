@@ -4,22 +4,24 @@
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 \\
-DistilBERT & \textbf{HGRN2-GDN} & \textbf{53.56} & -37.15 & 0.6788 & 66.4M & 0.85 \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 \\
-RoBERTa & \textbf{HGRN2-GDN} & \textbf{52.98} & -25.58 & 0.6103 & 124.6M & 0.85 \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 \\
-GPT-2 & \textbf{HGRN2-GDN} & \textbf{51.03} & -28.33 & 0.6743 & 124.4M & 0.85 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hgrn2 Gated Deltanet} & \textbf{54.70\%} & -36.24\% & PASS_LOW & 0.6483 & 0 & \textbf{0.60$\times$} & 514.2 MB & 937.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hgrn2 Gated Deltanet} & \textbf{52.98\%} & -22.48\% & PASS_LOW & 0.6103 & 0 & \textbf{0.57$\times$} & 993.4 MB & 334.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hgrn2 Gated Deltanet} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6743 & 0 & \textbf{0.53$\times$} & 1044.0 MB & 196.8 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \subsection{Parameter Analysis}
 

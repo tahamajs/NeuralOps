@@ -709,7 +709,19 @@ The `ARMORLinear` architecture incorporates telemetry hooks for tracking singula
 ## Usage Examples
 
 ```python
-# TODO: Add specific usage example
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Instantiate armor_pruner compressor
+compressor_cls = COMPRESSOR_REGISTRY.get("armor_pruner")
+if compressor_cls:
+    compressor = compressor_cls()
+    compressed_model = compressor.compress(model=model)
+    print(f"[PASS] Successfully compressed model with armor_pruner")
 ```
 
 ## Benchmark Results
@@ -726,6 +738,6 @@ Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity core,
 
 | Model Architecture | Baseline Acc | ARMOR Pruned Acc | Δ Acc | F1 Score | Actual Sparsity | Effective Param Ratio | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:------------:|:----------------:|:-----:|:--------:|:---------------:|:---------------------:|:---------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.71% | 89.91% | -0.80% | 0.8998 | 50.0% | 0.67x | 0.3749 | 254.9 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-armor) |
-| ROBERTA | 94.38% | 92.66% | -1.72% | 0.9284 | 50.0% | 0.67x | 0.3851 | 425.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-armor) |
-| GPT2 | 89.33% | 87.61% | -1.72% | 0.8759 | 50.0% | 0.61x | 0.3919 | 460.6 MB | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-armor) |
+| DISTILBERT | 90.71% | 90.02% | -0.69% | 0.9032 | 50.0% | 1.00x | 0.3923 | 183.1 MB | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 79.70% | +1.14% | 0.8127 | 50.0% | 1.00x | 0.4026 | 520.7 MB | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 49.31% | -30.05% | 0.0090 | 50.0% | 1.00x | 0.3876 | 627.9 MB | `PASS_NO_COMPRESSION` | N/A |

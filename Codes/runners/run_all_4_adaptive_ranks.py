@@ -35,8 +35,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("AdaptiveRanksOrchestrator")
 
 # Set working directory to project root
-if os.path.exists(r"D:\svd_project"):
-    os.chdir(r"D:\svd_project")
+if os.path.exists(r"PROJECT_ROOT"):
+    os.chdir(r"PROJECT_ROOT")
 project_root = Path.cwd()
 
 # Ensure Codes is in sys.path

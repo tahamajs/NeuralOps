@@ -1,0 +1,8 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/replaceme\_compressor.py} مستقر بوده و در \lr{COMPRESSOR\_REGISTRY} با نام‌های \lr{replaceme} و \lr{replaceme\_compressor} به ثبت رسیده است. ویژگی‌های معماری آن عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول جایگزین \lr{ReplacementBlock}:} کپسوله‌سازی ماژول جایگزین با کنترل چندگانه تاپل‌های خروجی (\lr{return\_tuple}) و پشتیبانی از امضاهای متغیر ورودی به گونه‌ای طراحی شده که با انواع ساختارهای ترنسفورمر هماهنگ باشد.
+    \item \textbf{پیمایش خودکار گراف مدل (\lr{Layer Discovery}):} متد \lr{\_find\_transformer\_layers} به صورت خودکار و تعمیم‌پذیر مسیر لایه‌های ساختاری در مدل‌های گوناگون نظیر \lr{DistilBERT} (\lr{transformer.layer})، \lr{RoBERTa/BERT} (\lr{encoder.layer})، \lr{GPT-2} (\lr{transformer.h}) و \lr{Qwen} (\lr{model.layers}) را شناسایی می‌نماید.
+    \item \textbf{تنظیم‌پذیری تعداد لایه‌های حذفی:} پارامتر \lr{remove\_layers} امکان کنترل درجه تهاجم فشرده‌سازی را بسته به محدودیت‌های محاسباتی فراهم می‌آورد.
+    \item \textbf{تعبیه آداپتورهای \lr{LoRA}:} اضافه کردن ماتریس‌های کم‌مرتبه آموزش‌پذیر $\mathbf{A}_{\text{lora}}$ و $\mathbf{B}_{\text{lora}}$ درون بلوک جایگزین به منظور یادگیری الگوهای جبرانی در گام‌های ریزتنظیم.
+\end{itemize}

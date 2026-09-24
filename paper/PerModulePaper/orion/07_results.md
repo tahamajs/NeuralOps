@@ -11,14 +11,14 @@
 
 **Table 7.1: Accuracy and parameter reduction on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Reduction | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× | 1.9 s |
-| DistilBERT | **ORION** | **55.50** | **-35.21** | 0.6959 | **66.4MM** | **48.2\%×** | 1.42x |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.65M | 1.00× | 4.1 s |
-| RoBERTa | **ORION** | **50.92** | **-27.64** | 0.6748 | **124.6MM** | **45.1\%×** | 2.3 s |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.44M | 1.00× | 4.2 s |
-| GPT-2 | **ORION** | **50.92** | **-28.44** | 0.6748 | **124.4MM** | **46.0\%×** | 2.3 s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Orion Module** | **55.85%** | -35.09% | PASS_LOW | 0.6971 | 0 | **1.23x** | 300.3 MB | 10.2s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Orion Module** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 0 | **1.17x** | 584.6 MB | 19.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Orion Module** | **50.80%** | -7.11% | PASS_LOW | 0.6733 | 0 | **1.25x** | 496.8 MB | 23.9s |
 
 **Key observations:**
 

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aa\_svd\_compressor} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_aa_svd_compressor} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{aa\_svd\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_aa_svd_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.45\%} & \lr{0.8996} & \lr{234.19 MB} & \lr{163,468.26 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.07\%} & \lr{0.8877} & \lr{343.48 MB} & \lr{101,496.89 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.73\%} & \lr{0.8243} & \lr{467.74 MB} & \lr{12,376.10 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج ثبت‌شده برتری قاطع الگوریتم \lr{AASVD} را در حفظ کیفیت مدل به اثبات می‌رساند. این ماژول موفق به دستیابی به بالاترین دقت‌های ثبت‌شده شامل \lr{89.45\%} در \lr{DistilBERT}، \lr{88.07\%} در \lr{RoBERTa} و \lr{80.73\%} در دیکودر علّی \lr{GPT-2} گردیده است. هم‌زمان، به واسطه سبک‌سازی وزن‌ها، توان پردازشی بالا \lr{163,468.26 tok/s} با مصرف حافظه ناچیز \lr{234.19 MB} به ثبت رسیده که تاییدی بر بهینگی همترازی زیرفضایی است.

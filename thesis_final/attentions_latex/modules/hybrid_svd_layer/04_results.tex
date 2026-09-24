@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی بنچ‌مارک فشرده‌ساز \lr{hybrid\_svd\_layer} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_hybrid_svd_layer} مستند گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{hybrid\_svd\_layer} بر روی مدل‌های پایه}
+\label{tab:benchmark_hybrid_svd_layer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.18\%} & \lr{0.7715} & \lr{258.70 MB} & \lr{155,604.92 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{630.13 MB} & \lr{81,996.21 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.15\%} & \lr{0.6748} & \lr{619.22 MB} & \lr{67,161.52 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{0.00\%} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج بنچ‌مارک نشان می‌دهد که ماژول \lr{hybrid\_svd\_layer} با اعمال ضریب فشرده‌سازی موثر \lr{1.91x} در مدل \lr{DistilBERT}، مصرف حافظه را به شکل چشمگیری به \lr{258.70 MB} کاهش داده و توان عملیاتی بالای \lr{155,604.92 tok/s} را به همراه دقت قابل قبول \lr{77.18\%} ارائه کرده و با موفقیت وضعیت \lr{PASS} را احراز نموده است. در مدل‌های \lr{RoBERTa} و \lr{GPT-2}، با توجه به فشرده‌سازی تهاجمی بیش از ۷۰ لایه خطی با نرخ بیش از دو برابر، افت دقت در غیاب کالیبراسیون داده‌محور مشاهده شده و وضعیت \lr{PASS\_LOW} ثبت گردیده است. در مدل \lr{Qwen}، به علت عدم تطابق نام‌گذاری لایه‌ها در اسکریپت قدیمی، اجرا با خطا متوقف و به صورت \lr{SKIP} مستند شده است.

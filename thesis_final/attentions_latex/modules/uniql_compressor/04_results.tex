@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی بنچ‌مارک فشرده‌ساز \lr{uniql\_compressor} بر روی مدل‌های زبانی در جدول \ref{tab:benchmark_uniql_compressor} ارائه گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{uniql\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_uniql_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9027} & \lr{339.22 MB} & \lr{150,882.16 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{82.45\%} & \lr{0.8468} & \lr{359.04 MB} & \lr{104,803.31 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.89\%} & \lr{0.6634} & \lr{635.04 MB} & \lr{72,184.34 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه داده‌های اعتبارسنجی بنچ‌مارک، ماژول \lr{uniql\_compressor} به یکی از درخشان‌ترین نتایج فشرده‌سازی در کل سیستم دست یافته است. در مدل \lr{DistilBERT} با ثبت دقت قابل توجه \lr{90.14\%} و نرخ پردازش بسیار بالای \lr{150,882.16} توکن بر ثانیه، پایداری کامل مدل تضمین شده است. همچنین در مدل \lr{RoBERTa} دقت \lr{82.45\%} با شاخص F1 برابر با \lr{0.8468} و در مدل تولیدی \lr{GPT-2} دقت \lr{60.89\%} با وضعیت \lr{PASS} حاصل گردیده است. مدل \lr{Qwen} در ارزیابی جامع یکپارچه اجرا نشده و به صورت \lr{NOT\_RUN} نشانه‌گذاری شده است.

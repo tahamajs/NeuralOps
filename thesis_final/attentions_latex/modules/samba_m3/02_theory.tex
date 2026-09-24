@@ -1,0 +1,43 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ نمایش پنهان ورودی لایه باشد که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. این تانسور به صورت هم‌زمان وارد دو شاخه محاسباتی موازی می‌گردد:
+
+\textbf{۱. شاخه توجه محلی پنجره متحرک (\lr{Chunked Sliding-Window Attention}):}
+تانسورهای پروجکشن پرس‌وجو، کلید و مقدار با سرهای \lr{GQA} محاسبه می‌شوند:
+\begin{equation}
+\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}, \quad \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H_{\text{kv}} \times L \times d}
+\end{equation}
+برای ممانعت از تشکیل ماتریس کامل $L \times L$ در حافظه، محاسبه توجه محلی با اندازه پنجره $W$ انجام می‌پذیرد:
+\begin{equation}
+\mathbf{O}_{\text{attn}} = \operatorname{LocalWindowAttn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}, W)
+\end{equation}
+که در آن برای هر موقعیت زمانی $i$، تنها توکن‌های واقع در بازه $[i-W, i]$ در محاسبه وزن‌های توجه مشارکت داده می‌شوند.
+
+\textbf{۲. شاخه مامبای طیفی (\lr{Spectral Mamba Branch}):}
+شاخه فضای حالت بر پایه معادلات حالت‌پیوسته گسسته‌سازی‌شده با پارامترهای وابسته به ورودی عمل می‌کند:
+\begin{equation}
+\mathbf{h}_t = \mathbf{\bar{A}}_t \mathbf{h}_{t-1} + \mathbf{\bar{B}}_t \mathbf{x}_t, \quad \mathbf{y}_t = \mathbf{C}_t \mathbf{h}_t
+\end{equation}
+به منظور انطباق طیفی و پایداری فرکانسی، یک بردار مقیاس‌گذاری گام زمانی آموزش‌پذیر $\mathbf{s}_{\text{dt}} \in \mathbb{R}^D$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{O}_{\text{mamba}} = \mathbf{y} \odot \sigma(\mathbf{s}_{\text{dt}})
+\end{equation}
+
+\textbf{۳. ادغام تطبیقی دو شاخه (\lr{Adaptive Fusion Gate}):}
+تلفیق دو جریان پردازشی با ضریب وزنی درگاه یادگیرنده $\alpha = \sigma(\theta_{\text{gate}})$ محاسبه می‌شود:
+\begin{equation}
+\mathbf{O}_{\text{fused}} = \alpha \odot \mathbf{O}_{\text{attn}} + (1 - \alpha) \odot \mathbf{O}_{\text{mamba}}
+\end{equation}
+در نهایت خروجی لایه با اعمال پروجکشن خروجی تشکیل می‌گردد:
+\begin{equation}
+\mathbf{O}_{\text{final}} = \mathbf{O}_{\text{fused}} \mathbf{W}_O
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_samba_m3}
+\mathcal{C}_{\text{samba\_m3}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

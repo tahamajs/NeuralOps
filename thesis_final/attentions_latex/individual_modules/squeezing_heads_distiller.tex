@@ -1,4 +1,6 @@
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{squeezing\_heads\_distiller}}
+
+این ماژول در این پروژه پیاده‌سازی شده و مقاله مستقل ندارد.
 \label{sec:squeezing_heads_distiller}
 
 \subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
@@ -135,7 +137,7 @@
     \end{equation}
 \end{itemize}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     scale=0.82, every node/.style={scale=0.82},
@@ -279,7 +281,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 
 جدول \ref{tab:squeezing_heads_master_results} کارنامه تجربی مستند و استخراج‌شده از پایگاه داده اعتبارسنجی \nolinkurl{master_verified_results.json} را برای این ماژول بر روی معماری‌های پایه مختلف به نمایش می‌گذارد.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{کارنامه تجربی ارزیابی آزمایشگاهی ماژول \lr{squeezing\_heads\_distiller} بر روی مدل‌های پایه در وظیفه \lr{GLUE SST-2}}
@@ -298,7 +300,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 \end{tabular}
 \end{table}
 
-بررسی کمّی داده‌های جدول \ref{tab:squeezing_heads_master_results} نشان می‌دهد که ماژول \lr{squeezing\_heads\_distiller} بر روی مدل \lr{DistilBERT} با ثبت دقت فوق‌العاده \textbf{90.37\%} و شاخص \lr{F1-Score} معادل \textbf{0.9075}، انطباق کامل با خط پایه کامل را به اثبات رسانده است. دستیابی به توان پردازشی \textbf{73,910.38} توکن بر ثانیه در کنار مصرف حافظه ناچیز \textbf{332.46 MB}، کارایی کم‌نظیر این ماژول را در سناریوهای فشرده‌سازی عملیاتی برجسته می‌سازد.
+بررسی کمّی داده‌های جدول \ref{tab:squeezing_heads_master_results} نشان می‌دهد که ماژول \lr{squeezing\_heads\_distiller} بر روی مدل \lr{DistilBERT} با ثبت دقت قابل توجه \textbf{90.37\%} و شاخص \lr{F1-Score} معادل \textbf{0.9075}، انطباق کامل با خط پایه کامل را به اثبات رسانده است. دستیابی به توان پردازشی \textbf{73,910.38} توکن بر ثانیه در کنار مصرف حافظه ناچیز \textbf{332.46 MB}، کارایی کم‌نظیر این ماژول را در سناریوهای فشرده‌سازی عملیاتی برجسته می‌سازد.
 
 \subsubsection*{شاخص‌های تفصیلی کارایی بر روی مدل \lr{DistilBERT}}
 داده‌های لاگ تفصیلی ارزیابی مدل \lr{DistilBERT} حقایق کمّی دیگری را آشکار می‌سازد:
@@ -312,7 +314,7 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 \subsection*{بخش ۶: تحلیل و تفسیر نتایج و رفتار ردههای کلاسی \lr{(Interpretation \& Error Analysis)}}
 تحلیل علمی و موشکافانه یافته‌های آزمایشگاهی مستندشده در جدول \ref{tab:squeezing_heads_master_results}، ابعاد عمیق‌تری از رفتار ماژول \lr{squeezing\_heads\_distiller} را روشن می‌سازد:
 
-\subsubsection*{۱. پایداری ساختاری فوق‌العاده بر روی \lr{DistilBERT}}
+\subsubsection*{۱. پایداری ساختاری قابل توجه بر روی \lr{DistilBERT}}
 همگرایی همزمان شاخص‌های \lr{Precision = 0.9047} و \lr{Recall = 0.9032} در کنار \lr{F1 = 0.9075} بر روی مدل \lr{DistilBERT} اثبات می‌کند که ماتریس درهم‌ریختگی \lr{(Confusion Matrix)} کاملاً متقارن بوده و مدل دچار عارضه فروپاشی به سمت کلاس اکثریت \lr{(Majority Class Collapse)} نشده است. این امر نشان می‌دهد که انقباض سرها به همراه آداپتورهای کم‌مرتبه \lr{LoRA}، نه تنها ویژگی‌های جداسازی خطی ابرصفحه تصمیم در وظیفه \lr{SST-2} را تخریب نکرده، بلکه با حذف نویزهای ناشی از سرهای افزونه، پایداری استنتاج را افزایش داده است.
 
 \subsubsection*{۲. کالبدشکافی رفتار رده‌های کلاسی در مدل‌های \lr{PASS\_LOW}}
@@ -334,8 +336,8 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 
 \subsubsection*{نقاط قوت ساختاری \lr{(Key Architectural Strengths)}}
 \begin{itemize}
-    \item \textbf{بازیابی خیره‌کننده دقت با کمترین پارامتر آموزش‌پذیر:} دستیابی به دقت فوق‌العاده \lr{90.37\%} و شاخص \lr{F1-Score} معادل \lr{0.9075} بر روی مدل \lr{DistilBERT} با آموزش تنها \lr{0.88\%} از کل پارامترهای مدل.
-    \item \textbf{سرعت استنتاج و توان عملیاتی استثنایی:} ثبت توان پردازشی \lr{73,910.38} توکن بر ثانیه بر روی پردازنده گرافیکی لپ‌تاپ \lr{RTX 4070}، که زمینه پردازش زنده و بلادرنگ را مهیا می‌سازد.
+    \item \textbf{بازیابی خیره‌کننده دقت با کمترین پارامتر آموزش‌پذیر:} دستیابی به دقت قابل توجه \lr{90.37\%} و شاخص \lr{F1-Score} معادل \lr{0.9075} بر روی مدل \lr{DistilBERT} با آموزش تنها \lr{0.88\%} از کل پارامترهای مدل.
+    \item \textbf{سرعت استنتاج و توان عملیاتی بالا:} ثبت توان پردازشی \lr{73,910.38} توکن بر ثانیه بر روی پردازنده گرافیکی لپ‌تاپ \lr{RTX 4070}، که زمینه پردازش زنده و بلادرنگ را مهیا می‌سازد.
     \item \textbf{ردپای حافظه به شدت مهارشده:} مصرف ناچیز \lr{332.46 MB} در اوج بار پردازشی که امکان اجرا بر روی سخت‌افزارهای تجاری با منابع محدود را فراهم می‌آورد.
     \item \textbf{سازگاری جامع با معماری‌های ناهمگون:} پشتیبانی ساختاریافته از الگوهای انکودر تخت \lr{(DistilBERT)}، انکودر تودرتو \lr{(RoBERTa)}، دیکودر اتورگرسیو با کانولوشن یک‌بعدی \lr{(GPT-2)} و ساختارهای مدرن \lr{GQA/RoPE} \lr{(Qwen)}.
     \item \textbf{پایداری عددی تثبیت‌شده:} مهار خطاهای ریاضی با استفاده از توابع \lr{torch.nan\_to\_num} و ارزیابی محاسبات ضرب ماتریسی در ممیز شناور ۳۲ بیتی \lr{(FP32)}.
@@ -371,3 +373,13 @@ I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}
 \caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(squeezing\_heads\_distiller)}}
 \label{fig:comp_squeezing_heads_distiller}
 \end{figure}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_squeezing_heads_distiller}
+\mathcal{C}_{\text{squeezing\_heads\_distiller}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

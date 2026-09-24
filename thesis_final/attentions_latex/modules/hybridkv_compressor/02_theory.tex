@@ -1,0 +1,36 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید برای سر توجه $h \in \{1, \dots, H\}$ در طول توالی $T$، تانسورهای کلید و مقدار به ترتیب $\mathbf{K}_h \in \mathbb{R}^{T \times d_k}$ و $\mathbf{V}_h \in \mathbb{R}^{T \times d_v}$ باشند. با توجه به ماتریس نقاب سرهای ایستا $M_{\text{static}}(h) \in \{0, 1\}$، ظرفیت مجاز حافظه نهان تحت نسبت بودجه $\beta \in (0, 1]$ به صورت زیر تعیین می‌شود:
+\begin{equation}
+L_{\text{max}} = \max\left(L_{\text{min}}, \lfloor T_{\text{cache}} \cdot \beta \rfloor \right)
+\end{equation}
+اگر سر توجه ایستا باشد ($M_{\text{static}}(h) = 1$):
+\begin{itemize}
+    \item تعداد $S$ توکن ابتدایی به عنوان جاذب‌های توجه (\lr{Attention Sinks}) همواره در حافظه تثبیت می‌شوند: $\mathcal{I}_{\text{sink}} = \{1, 2, \dots, S\}$.
+    \item مابقی ظرفیت به توکن‌های با بیشترین انرژی توجه یا مقادیر فعال‌سازی بزرگ سراسری (\lr{Heavy Hitters}) اختصاص می‌یابد:
+    \begin{equation}
+    \mathcal{I}_{\text{heavy}} = \operatorname{arg\,top\,k}_{t > S} \left( \|\mathbf{k}_t\|_2 \right), \quad |\mathcal{I}_{\text{heavy}}| = L_{\text{max}} - S
+    \end{equation}
+\end{itemize}
+اگر سر توجه پویا باشد ($M_{\text{static}}(h) = 0$):
+\begin{itemize}
+    \item علاوه بر توکن‌های سینک اولیه، یک پنجره لغزان محلی به طول $W$ برای حفظ آخرین توکن‌های تولیدشده در نظر گرفته می‌شود:
+    \begin{equation}
+    \mathcal{I}_{\text{recent}} = \{T - W + 1, \dots, T\}
+    \end{equation}
+    \item توکن‌های باقی‌مانده بر اساس امتیاز تشابه یا هرس توده‌ای هدایت می‌شوند.
+\end{itemize}
+بدین ترتیب، تانسور حافظه نهان فشرده‌شده به صورت زیر تجمیع و بازسازی می‌گردد:
+\begin{equation}
+\mathbf{K}_{h}^{\text{comp}} = \mathbf{K}_{h}[\mathcal{I}_{\text{retained}}, :], \quad \mathbf{V}_{h}^{\text{comp}} = \mathbf{V}_{h}[\mathcal{I}_{\text{retained}}, :]
+\end{equation}
+که در آن $\mathcal{I}_{\text{retained}} = \mathcal{I}_{\text{sink}} \cup \mathcal{I}_{\text{recent}} \cup \mathcal{I}_{\text{heavy}}$ است.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hybridkv_compressor}
+\mathcal{C}_{\text{hybridkv\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

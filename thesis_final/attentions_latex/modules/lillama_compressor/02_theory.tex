@@ -1,0 +1,37 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید برای یک لایه خطی با ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، جفت فعال‌سازی‌های ورودی و خروجی در حین اجرای گذر پیشرو بر روی مجموعه داده کالیبراسیون به ترتیب $\mathbf{X} \in \mathbb{R}^{N \times d_{\text{in}}}$ و $\mathbf{Y} \in \mathbb{R}^{N \times d_{\text{out}}}$ باشند.
+
+ماتریس هم‌کوواریانس تجربی متقابل میان خروجی و ورودی لایه به صورت زیر محاسبه می‌شود:
+\begin{equation}
+\mathbf{C}_{YX} = \frac{1}{N} \mathbf{Y}^\top \mathbf{X} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+
+این ماتریس رابطه ساختاری میان ویژگی‌های فضای ورودی و خروجی تحت توزیع داده‌های واقعی را کپسوله‌سازی می‌کند. سپس بر روی ماتریس $\mathbf{C}_{YX}$، تجزیه مقادیر منفرد کوتاه و بریده‌شده (\lr{Truncated SVD}) اعمال می‌گردد:
+\begin{equation}
+\mathbf{C}_{YX} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+که در آن $\mathbf{U}_r \in \mathbb{R}^{d_{\text{out}} \times r}$، $\mathbf{\Sigma}_r \in \mathbb{R}^{r \times r}$ و $\mathbf{V}_r \in \mathbb{R}^{d_{\text{in}} \times r}$ بوده و رتبه موثر $r$ با تحلیل نسبت انرژی تجمعی مقادیر منفرد تعیین می‌شود:
+\begin{equation}
+E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2} \ge 0.95
+\end{equation}
+
+وزن بازسازی‌شده تقطیریافته $\mathbf{W}_{\text{distill}}$ به صورت زیر حاصل می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{distill}} = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+
+خطای فروبنیوس نسبی تقریب میان وزن اصلی و وزن تقطیریافته محاسبه می‌گردد:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_{\text{distill}}\|_F}{\|\mathbf{W}\|_F + \epsilon}
+\end{equation}
+چنانچه $\mathcal{E}_{\text{rel}} > \text{max\_error}$ باشد (با مقدار پیش‌فرض $0.20$)، ماژول به صورت خودکار به وزن اصلی لایه رجوع کرده (\lr{Fallback to Original}) تا از تخریب ساختاری مدل جلوگیری به عمل آید.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_lillama_compressor}
+\mathcal{C}_{\text{lillama\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

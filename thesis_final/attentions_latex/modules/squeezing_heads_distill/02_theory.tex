@@ -1,0 +1,42 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ نمایش پنهان ورودی لایه توجه باشد، که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. ساختار پروجکشن‌های لایه با ادغام وزن‌های پایه تثبیت‌شده و آداپتورهای تصحیح‌کننده کم‌مرتبه لورا فرمول‌بندی می‌شود:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) = \mathbf{X} \mathbf{W}_Q + \frac{\alpha}{r} (\mathbf{X} \mathbf{A}_Q) \mathbf{B}_Q, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}_{\text{kv}}) = \mathbf{X}_{\text{kv}} \mathbf{W}_K + \frac{\alpha}{r} (\mathbf{X}_{\text{kv}} \mathbf{A}_K) \mathbf{B}_K, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}_{\text{kv}}) = \mathbf{X}_{\text{kv}} \mathbf{W}_V + \frac{\alpha}{r} (\mathbf{X}_{\text{kv}} \mathbf{A}_V) \mathbf{B}_V
+\end{align}
+که در آن $\mathbf{W}_Q \in \mathbb{R}^{D \times (H \cdot d)}$، $\mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H_{kv} \cdot d)}$ وزن‌های پایه منجمد (\lr{frozen}) بوده و $\mathbf{A} \in \mathbb{R}^{D \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{out}}}$ پارامترهای آموزش‌پذیر با رتبه $r = 16$ و ضریب مقیاس $\alpha = 32.0$ می‌باشند.
+
+\paragraph{۱. انطباق ابعادی و بسط گروهی سرها (GQA Repeat):}
+در صورت تفاوت میان تعداد سرهای پرس‌وجو ($H$) و تعداد سرهای کلید/مقدار ($H_{kv}$)، عملگر تکرار گروهی برای تطابق هندسی اعمال می‌گردد:
+\begin{equation}
+\tilde{\mathbf{K}} = \operatorname{repeat\_kv}(\mathbf{K}, H / H_{kv}), \quad \tilde{\mathbf{V}} = \operatorname{repeat\_kv}(\mathbf{V}, H / H_{kv})
+\end{equation}
+همچنین در صورت حضور تعبیه مکانی دورانی (\lr{RoPE})، متناسب با طول بافر کلید/مقدار در حافظه نهان، تبدیل زاویه‌ای اعمال می‌گردد:
+\begin{equation}
+\mathbf{Q}' = \mathbf{Q} \odot \cos(\mathbf{\Theta}) + \operatorname{rotate\_half}(\mathbf{Q}) \odot \sin(\mathbf{\Theta})
+\end{equation}
+
+\paragraph{۲. محاسبه امتیازات توجه و مسیر سریع سخت‌افزاری:}
+در حالت استاندارد بدون خروجی ماتریس توجه صریح، ماژول از مسیر شتاب‌یافته توجه ضرب داخلی مقیاس‌پذیر سخت‌افزاری (\lr{SDPA}) بهره می‌برد:
+\begin{equation}
+\mathbf{O}_{\text{heads}} = \operatorname{SDPA}\left(\mathbf{Q}', \tilde{\mathbf{K}}', \tilde{\mathbf{V}}', \mathbf{M}_{\text{bias}}\right)
+\end{equation}
+در مسیر غیر‌\lr{SDPA}، ماتریس شباهت نرمال‌سازی‌شده محاسبه و ماسک علّی به صورت پویا اعمال می‌شود:
+\begin{equation}
+\mathbf{S}_{i, j} = \frac{\mathbf{Q}_i {\tilde{\mathbf{K}}_j}^\top}{\sqrt{d}} + \mathbf{M}_{i, j}^{\text{causal}}, \quad \mathbf{P} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{O}_{\text{heads}} = \mathbf{P} \tilde{\mathbf{V}}
+\end{equation}
+خروجی نهایی پس از ادغام سرها و عبور از لایه پروجکشن خروجی با تبدیل لورا بازتولید می‌شود:
+\begin{equation}
+\mathbf{Y} = \operatorname{LoRA-Linear}_O(\mathbf{O}_{\text{heads}}) \in \mathbb{R}^{B \times L \times D}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_squeezing_heads_distill}
+\mathcal{C}_{\text{squeezing\_heads\_distill}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

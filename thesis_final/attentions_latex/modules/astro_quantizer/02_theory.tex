@@ -1,0 +1,31 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند کوانتیزه‌سازی در \lr{AstroQuantizer} در دو مرحله اساسی صورت می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{تخصیص بهینه بیت بر پایه مسئله کوله‌پشتی:} فرض کنید بردار اهمیت تجربی کانال‌های خروجی با $\mathbf{s} \in \mathbb{R}^N$ مشخص شده باشد (محاسبه‌شده از طریق انرژی خروجی یا فیشر تجربی). هدف، تخصیص طول بیت $b_i \in [b_{\text{min}}, b_{\text{max}}]$ برای هر کانال $i \in \{1, \dots, N\}$ به نحوی است که مجموع حساسیت وزنی بیشینه شود:
+    \begin{equation}
+    \max_{\{b_i\}} \sum_{i=1}^N \mathbf{s}_i \cdot b_i \quad \text{subject to} \quad \sum_{i=1}^N b_i \le \operatorname{round}(N \cdot \bar{b}), \quad b_{\text{min}} \le b_i \le b_{\text{max}}
+    \end{equation}
+    که در آن $\bar{b}$ بودجه میانگین بیت هدف است. این مسئله به روش حریصانه دقیق حل می‌شود: کانال‌ها بر حسب اهمیت $\mathbf{s}_i$ به صورت نزولی مرتب شده، ابتدا به تمام کانال‌ها بیت پایه $b_{\text{min}}$ اختصاص یافته و سپس بودجه باقیمانده به کانال‌های دارای بالاترین اهمیت تا سقف $b_{\text{max}}$ تخصیص می‌یابد.
+    \item \textbf{کوانتیزه‌سازی با مقیاس کانالی و ارزیاب \lr{STE}:} برای هر کانال $i$ با طول بیت تخصیص‌یافته $b_i$، محدوده گسسته $[q_{\text{min}}^{(i)}, q_{\text{max}}^{(i)}]$ و فاکتور مقیاس‌گذاری متقارن محاسبه می‌شود:
+    \begin{equation}
+    q_{\text{max}}^{(i)} = 2^{b_i - 1} - 1, \quad q_{\text{min}}^{(i)} = -2^{b_i - 1}, \quad \Delta_i = \frac{\max(|\mathbf{W}_{i, :}|)}{q_{\text{max}}^{(i)}}
+    \end{equation}
+    نگاشت کوانتیزه‌سازی و بازگشت به فضای پیوسته به صورت زیر انجام می‌پذیرد:
+    \begin{equation}
+    \mathbf{W}_{i, j}^{\text{quant}} = \operatorname{clamp}\left(\left\lfloor \frac{\mathbf{W}_{i, j}}{\Delta_i} \right\rceil, q_{\text{min}}^{(i)}, q_{\text{max}}^{(i)}\right) \cdot \Delta_i
+    \end{equation}
+    در گذر پسرو، به دلیل صفر بودن مشتق تابع پله‌ای گردکردن، مشتق معکوس توسط عملگر \lr{STE} مستقیماً عبور داده می‌شود:
+    \begin{equation}
+    \frac{\partial \mathcal{L}}{\partial \mathbf{W}} \approx \frac{\partial \mathcal{L}}{\partial \mathbf{W}^{\text{quant}}}
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_astro_quantizer}
+\mathcal{C}_{\text{astro\_quantizer}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

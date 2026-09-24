@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز آگاه از فعال‌سازی \lr{swift\_svd\_act} بر اساس اطلاعات پایگاه داده اعتبارسنجی یکپارچه \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_swift_svd_act} منعکس گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز آگاه از فعال‌سازی \lr{swift\_svd\_act} روی مدل‌های پایه}
+\label{tab:benchmark_swift_svd_act}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.19 MB} & \lr{146,011.97 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7724} & \lr{301.72 MB} & \lr{91,839.43 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{60.09\%} & \lr{0.6463} & \lr{637.29 MB} & \lr{66,501.09 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{49.08\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+مقایسه نتایج جدول \ref{tab:benchmark_swift_svd_act} با نگارش بدون کالیبراسیون (\lr{swift\_svd}) تفاوت معنادار بهره‌گیری از تصویر زیرفضای فعال‌سازی را اثبات می‌کند: در مدل \lr{RoBERTa} دقت از \lr{50.92\%} به \lr{72.02\%} (جهش ۲۱.۱ درصدی) ارتقا یافته و وضعیت از \lr{PASS\_LOW} به قبولی قطعی \lr{PASS} تغییر یافته است. در مدل خودبازگشت \lr{GPT-2} نیز دقت با ارتقای ۹.۱۷ درصدی به \lr{60.09\%} رسیده و قبولی کامل \lr{PASS} احراز شده است. هم‌زمان، در مدل \lr{DistilBERT} دقت بسیار بالای \lr{90.48\%} با توان عملیاتی خیره‌کننده بیش از ۱۴۶ هزار توکن بر ثانیه و کمترین مصرف حافظه گرافیکی ($301.72$ مگابایت در روبرتا) تثبیت شده است. تمام چهار مدل در این ارزیابی وضعیت قبولی کامل \lr{PASS} را به دست آورده‌اند.

@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن اولیه لایه خطی $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه هدف $r \ll \min(d_{\text{in}}, d_{\text{out}})$ باشد. هدف حل مسئله کمینه‌سازی خطای بازسازی به فرم زیر است:
+\begin{equation}
+\min_{\mathbf{U}, \mathbf{V}} \frac{1}{2} \|\mathbf{W} - \mathbf{U} \mathbf{V}\|_F^2
+\end{equation}
+که در آن $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}$ هستند. در الگوریتم نزول مختصاتی حریصانه (\lr{GreCoDeC})، ابتدا مقداردهی اولیه فاکتورها با تجزیه اولیه \lr{SVD} یا توزیع تصادفی انجام می‌شود:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_0 \mathbf{\Sigma}_0 \mathbf{V}_0^\top \implies \mathbf{U}^{(0)} = \mathbf{U}_0[:, :r] \mathbf{\Sigma}_0[:r]^{1/2}, \quad \mathbf{V}^{(0)} = \mathbf{\Sigma}_0[:r]^{1/2} \mathbf{V}_0[:, :r]^\top
+\end{equation}
+سپس در هر تکرار $t = 1, \dots, T_{\text{max}}$، به‌روزرسانی‌های متناوب به روش حداقل مربعات منظم‌شده صورت می‌پذیرد:
+\begin{align}
+\mathbf{U}^{(t)} &= \mathbf{W} (\mathbf{V}^{(t-1)})^\top \left( \mathbf{V}^{(t-1)} (\mathbf{V}^{(t-1)})^\top + \epsilon \mathbf{I}_r \right)^{-1} \\
+\mathbf{V}^{(t)} &= \left( (\mathbf{U}^{(t)})^\top \mathbf{U}^{(t)} + \epsilon \mathbf{I}_r \right)^{-1} (\mathbf{U}^{(t)})^\top \mathbf{W}
+\end{align}
+پس از همگرایی تکرارها، جهت جلوگیری از بیش‌جهش یا محو شدن گرادیان‌ها در یکی از فاکتورها، عمل متوازن‌سازی متقارن نرم (\lr{Symmetrical Norm Balancing}) اعمال می‌شود:
+\begin{equation}
+s_k = \sqrt{\frac{\|\mathbf{U}_{:, k}\|_2}{\|\mathbf{V}_{k, :}\|_2}}, \quad \mathbf{U}_{:, k} \leftarrow \mathbf{U}_{:, k} / s_k, \quad \mathbf{V}_{k, :} \leftarrow \mathbf{V}_{k, :} \cdot s_k, \quad \forall k \in \{1, \dots, r\}
+\end{equation}
+محاسبه لایه خطی فشرده‌شده به شکل زنجیره‌ای زیر انجام می‌شود که مرتبه محاسباتی را از $\mathcal{O}(d_{\text{in}} d_{\text{out}})$ به $\mathcal{O}(r(d_{\text{in}} + d_{\text{out}}))$ کاهش می‌دهد:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{V}^\top) \mathbf{U}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_grecodec_compressor}
+\mathcal{C}_{\text{grecodec\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

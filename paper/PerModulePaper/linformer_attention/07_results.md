@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | k | VRAM |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB |
-| DistilBERT | **Linformer** | **50.92** | -39.79 | 0.6748 | 0.85 | 1322 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 712 MB |
-| RoBERTa | **Linformer** | **48.17** | -30.39 | 0.4989 | 0.85 | 421 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 793 MB |
-| GPT-2 | **Linformer** | **77.5** | 0.85 | 0.865 | 0.85 | 380 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Linformer** | **90.60%** | -0.34% | PASS | 0.9089 | 24 | **0.99x** | 326.9 MB | 12.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Linformer** | **75.57%** | +0.11% | PASS | 0.7760 | 48 | **0.93x** | 653.3 MB | 25.5s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Linformer** | **51.03%** | -6.88% | PASS_LOW | 0.6753 | 0 | **0.98x** | 573.2 MB | 7.5s |
 
 **Key observations:**
 

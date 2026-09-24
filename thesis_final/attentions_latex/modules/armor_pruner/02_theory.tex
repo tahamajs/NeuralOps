@@ -1,0 +1,35 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+ایده کلیدی \lr{ARMOR} تجزیه ماتریس وزن هدف $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ به دو مولفه مکمل است:
+\begin{equation}
+\hat{\mathbf{W}} = (\mathbf{W} \odot \mathbf{M}_{2:4}) + \frac{\alpha}{r} (\mathbf{B} \mathbf{A})
+\end{equation}
+که در آن $\mathbf{M}_{2:4} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس ماسک تنک ساختاریافته \lr{2:4} است (در هر بلوک پیوسته ۴ عنصری دقیقا ۲ عنصر صفر هستند)، $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ ماتریس‌های تجزیه کم‌مرتبه جبران‌کننده خطا با رتبه $r \ll \min(d_{\text{in}}, d_{\text{out}})$ بوده و $\alpha$ ضریب مقیاس‌گذاری آداپتور \lr{LoRA} است.
+
+برای تعیین عناصر بااهمیت، از تخمین حساسیت مرتبه اول بسط تیلور با مکانیزم مقاوم سه‌سطحی (\lr{Three-Tier Fallback}) استفاده می‌شود:
+\begin{equation}
+\mathbf{S}_{ij} =
+\begin{cases}
+|\mathbf{W}_{ij} \cdot \mathbf{G}_{ij}| & \text{اگر گرادیان معتبر } \mathbf{G} = \frac{\partial \mathcal{L}}{\partial \mathbf{W}} \text{ موجود باشد} \\
+|\mathbf{W}_{ij}| \cdot \mathbb{E}[|\mathbf{X}_j|] & \text{در صورت دسترسی به فعال‌سازی‌های کالیبراسیون } \mathbf{X} \\
+|\mathbf{W}_{ij}| \cdot (1 + \sigma(\mathbf{W})) & \text{مسیر پشتیبان مبتنی بر آمار توزیع وزن}
+\end{cases}
+\end{equation}
+پس از محاسبه ماتریس حساسیت $\mathbf{S}$، عملگر تصویر تنک $\Pi_{2:4}(\mathbf{S})$ در هر گروه ۴‌تایی، دو عنصر با کمترین مقدار حساسیت را صفر می‌کند تا ماسک $\mathbf{M}_{2:4}$ ساخته شود. سپس باقی‌مانده خطای ناشی از هرس محاسبه می‌گردد:
+\begin{equation}
+\mathbf{R} = \mathbf{W} - (\mathbf{W} \odot \mathbf{M}_{2:4})
+\end{equation}
+بر روی این ماتریس باقیمانده، تجزیه مقادیر منفرد برشی (\lr{Truncated SVD}) اعمال شده و فاکتورهای کم‌مرتبه مقداردهی اولیه می‌شوند:
+\begin{equation}
+\mathbf{R} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top \implies \mathbf{B} = \mathbf{U}_r \sqrt{\mathbf{\Sigma}_r}, \quad \mathbf{A} = \sqrt{\mathbf{\Sigma}_r} \mathbf{V}_r^\top
+\end{equation}
+در مرحله نهایی، به منظور هماهنگ‌سازی انحراف معیار خروجی لایه‌ها پس از هرس، لایه‌های نرمال‌سازی با ضریب نسبت واریانس کالیبره می‌گردند (\lr{LayerNorm Recalibration}).
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_armor_pruner}
+\mathcal{C}_{\text{armor\_pruner}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

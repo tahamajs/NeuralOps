@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی‌های تجربی ثبت‌شده برای فشرده‌ساز \lr{tt\_compressor} بر روی مدل‌های بنچ‌مارک در جدول \ref{tab:benchmark_tt_compressor} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{tt\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_tt_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{59.06\%} & \lr{0.7027} & \lr{435.53 MB} & \lr{69,569.97 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{642.71 MB} & \lr{7,882.51 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{CRASH} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشخص است، فشرده‌ساز \lr{tt\_compressor} در مدل \lr{DistilBERT} دقت \lr{59.06\%} و شاخص F1 معادل \lr{0.7027} را به دست آورده است. در مدل \lr{RoBERTa}، به علت افت عملکرد و خطای نسبی بازسازی فروبنیوس بالا، دقت به \lr{50.92\%} افت کرده و وضعیت \lr{PASS\_LOW} ثبت گردیده است. در مدل \lr{GPT-2}، اجرای آزمون به دلیل بروز خطای نرم‌افزاری متغیر درون‌حلقه‌ای (\lr{UnboundLocalError: cannot access local variable 'majority\_count'}) متوقف شده و وضعیت \lr{CRASH} گزارش شده است. این ماژول بر روی مدل \lr{Qwen} ارزیابی نشده است (\lr{NOT\_RUN}).

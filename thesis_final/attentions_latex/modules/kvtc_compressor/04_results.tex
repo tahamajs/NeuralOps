@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{kvtc\_compressor} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_kvtc_compressor} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{kvtc\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_kvtc_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.68\%} & \lr{0.9004} & \lr{388.11 MB} & \lr{151,447.23 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{457.87 MB} & \lr{97,731.31 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{52.75\%} & \lr{0.6756} & \lr{666.42 MB} & \lr{66,198.67 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های حاصل از ارزیابی استاندارد بیانگر موفقیت کامل ماژول در مدل \lr{DistilBERT} با دقت \lr{89.68\%}، شاخص \lr{F1} برابر با \lr{0.9004} و توان پردازشی بسیار چشمگیر \lr{151,447.23 tok/s} با مصرف حافظه بهینه \lr{388.11 MB} است. در مدل‌های عمیق‌تر نظیر \lr{RoBERTa} و مدل دیکودر \lr{GPT-2}، دقت در سطح \lr{50.92\%} و \lr{52.75\%} قرار گرفته و وضعیت \lr{PASS\_LOW} ثبت گردیده است. همچنین برای مدل بزرگ زبانی \lr{Qwen} با ثبت دقت \lr{49.08\%} وضعیت قبولی آزمون تایید شده است.

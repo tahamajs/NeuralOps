@@ -1,0 +1,19 @@
+\subsection{نتایج تجربی}
+عملکرد اعتبارسنجی ماژول \lr{admm\_pruner} بر روی بنچ‌مارک رسمی پایان‌نامه در جدول~\ref{tab:benchmark_admm_pruner} منعکس گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری ماژول \lr{admm\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_admm_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.29\%} & \lr{0.8603} & \lr{551.24 MB} & \lr{43,663.37 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.62\%} & \lr{0.7966} & \lr{336.39 MB} & \lr{13,333.06 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{80.73\%} & \lr{0.8146} & \lr{414.93 MB} & \lr{15,380.14 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{78.21\%} & \lr{0.8201} & \lr{1,879.76 MB} & \lr{1,102.95 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -11,14 +11,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **SVD-Mamba** | **50.92** | -39.79 | 0.6748 | +48.5\%% | 639 MB MB | 1.42x s |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **SVD-Mamba** | **50.92** | -27.64 | 0.6748 | +48.5\%% | 674 MB MB | 2.3 s s |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **SVD-Mamba** | **50.23** | -29.13 | 0.5553 | +48.5\%% | 883 MB MB | 2.3 s s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Svd Mamba** | **90.02%** | -0.92% | PASS | 0.9034 | 54 | **0.90x** | 811.8 MB | 39.2s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Svd Mamba** | **50.92%** | -24.54% | PASS_LOW | 0.6748 | 60 | **0.92x** | 674.0 MB | 361.9s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Svd Mamba** | **50.23%** | -10.55% | PASS_LOW | 0.5553 | 60 | **0.97x** | 883.1 MB | 555.0s |
 
 ## 7.2 Parameter Analysis
 

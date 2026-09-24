@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{gfws\_d} بر روی مدل‌های بنچ‌مارک بر اساس نتایج ثبت‌شده در فایل‌های ارزیابی رسمی \lr{results/final\_paper\_run/summary.csv}، سویپ‌های تاییدشده و ارزیابی جامع \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_gfws_d_compressor} بازتاب یافته است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{gfws\_d\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_gfws_d_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.29\%} & \lr{0.8469} & \lr{1,336.70 MB} & \lr{59,231.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{توضیح تحلیلی نتایج:} ماژول در مدل \lr{DistilBERT} عملکرد موفقیت‌آمیز و استواری را ثبت کرده و با دستیابی به دقت \lr{84.29\%}، شاخص \lr{F1} برابر \lr{0.8469} و توان \lr{59,231.20 tok/s} نشان استاندارد \lr{PASS} را دریافت کرده است (در سویپ‌های اضافی تکمیلی \lr{SST-2} دقت‌های تا \lr{90.83\%} نیز با تنظیمات رتبه دیگر گزارش شده است). در مقابل، در ارزیابی اولیه روی مدل \lr{RoBERTa}، به علت عدم همخوانی نام در زمان فراخوانی رجیستری (\lr{gfws\_d\_compressor} در برابر شناسه ثبت‌شده \lr{gfws\_d}) وضعیت \lr{FAIL} گزارش شده که در فاز مهندسی خط لوله اصلاح گردیده است. مدل‌های \lr{GPT-2} و \lr{Qwen} در سویپ اصلی به صورت \lr{NOT\_RUN} باقی مانده‌اند.

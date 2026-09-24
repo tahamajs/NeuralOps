@@ -1,4 +1,6 @@
 \section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{block\_transformer\_hiba}}
+
+این ماژول در این پروژه پیاده‌سازی شده و مقاله مستقل ندارد.
 \label{sec:block_transformer_hiba}
 
 \subsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
@@ -79,11 +81,13 @@ S_{\text{\lr{inter}}}^{(b)}(:, :, :, 0) \leftarrow S_{\text{\lr{inter}}}^{(b)}(:
 پیاده‌سازی کلاس \lr{BlockTransformerHIBA} با بهینه‌سازی دقیق در پایتورچ پیاده‌سازی شده است. در تابع سازنده کلاس، آرگومان‌های \lr{block\_size} با مقدار پیش‌فرض \lr{64} و \lr{top\_k\_inter} با مقدار \lr{4} تعریف شده‌اند. برای تضمین بازآرایی پایدار وزن‌ها، نگاشت‌های پروجکشن با نام‌های \lr{W\_q}، \lr{W\_k}، \lr{W\_v} و \lr{out\_proj} با استفاده از ماژول‌های \lr{LoRALinear} پیکربندی گشته و ضرایب پایه آن‌ها فریز می‌گردند.
 
 در متد \lr{forward}، ورودی سه بعدی با ابعاد $[B, L, D]$ پس از عبور از پروجکشن‌های خطی، تغییر فرمت داده و به تانسورهای چهاربعدی چندسره تبدیل می‌شود:
+\begin{latin}
 \begin{verbatim}
 q = self.W_q(hidden_states).view(B, L, H, self.head_dim).transpose(1, 2)
 k = self.W_k(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2)
 v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2)
 \end{verbatim}
+\end{latin}
 سپس عملیات دوران موقعیت روتاری \lr{(RoPE)} بر روی تانسورها اعمال می‌شود.
 
 در صورتی که معماری به صورت \lr{GQA} تنظیم شده باشد، تانسورهای کلید و مقدار با ضریب \lr{kv\_repeat} در امتداد بعد سرها تکرار می‌شوند تا ساختار تنسورها با سرهای کوئری هم‌تراز گردد. پس از آن، ماسک توجه به فرم باینری بولی \lr{(torch.bool)} در متد کمکی \lr{\_convert\_mask\_to\_bool} استانداردسازی می‌شود.
@@ -104,7 +108,7 @@ v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1
 \subsection*{بخش ۷: نتایج تجربی \lr{(Experimental Results)}}
 نتایج تجربی ماژول \lr{block\_transformer\_hiba} در مقایسه با مدل پایه کامل بر روی چارچوب \lr{DistilBERT} ارزیابی شد. جدول زیر مقایسه دقیق شاخص‌های دقت و سخت‌افزار را منعکس می‌سازد:
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{مقایسه عملکرد تجربی ماژول \lr{block\_transformer\_hiba} در برابر ساختار مبنا}
 \label{tab:hiba_perf}
@@ -121,7 +125,7 @@ v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1
 \end{table}
 
 ماتریس درهم‌ریختگی به دست آمده در ارزیابی دسته‌بندی باینری:
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{ماتریس درهم‌ریختگی ارزیابی ماژول \lr{block\_transformer\_hiba}}
 \label{tab:hiba_cm}
@@ -136,7 +140,7 @@ v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1
 \end{table}
 
 جدول تحلیل ابطال اجزای معماری \lr{(Ablation Study)}:
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \caption{تحلیل ابطال مولفه‌های ماژول \lr{block\_transformer\_hiba}}
 \label{tab:hiba_ablation}
@@ -208,3 +212,13 @@ v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1
     \item \textbf{Zaheer, M., Guruganesh, G., Kumar, K. A., Zelina, P., Verma, S., Pietila, J., \& Ahmed, A.} (2020). Big bird: Transformers for longer sequences. \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 33, 17283–17297.
 \end{itemize}
 \end{latin}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_block_transformer_hiba}
+\mathcal{C}_{\text{block\_transformer\_hiba}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

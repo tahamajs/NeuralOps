@@ -1,0 +1,43 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ نمایانگر نمایش‌های پنهان ورودی برای دسته به اندازه $B$، طول توالی $N$ و بعد پنهان $D$ باشد. تانسورهای پرس‌وجو ($\mathbf{Q}$)، کلید ($\mathbf{K}$) و مقدار ($\mathbf{V}$) با تعداد سرهای $H$ و بعد هر سر $d$ ($D = H \cdot d$) تعریف می‌شوند:
+\begin{equation}
+\mathbf{Q}_h = \mathbf{X} \mathbf{W}_h^Q, \quad \mathbf{K}_h = \mathbf{X} \mathbf{W}_h^K, \quad \mathbf{V}_h = \mathbf{X} \mathbf{W}_h^V
+\end{equation}
+
+در این ماژول، دو شاخه محاسباتی موازی جریان می‌یابند:
+\begin{enumerate}
+    \item \textbf{شاخه توجه استاندارد (\lr{Standard Softmax Branch}):}
+    \begin{equation}
+    \mathbf{O}_h^{\text{softmax}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}_h \mathbf{K}_h^T}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V}_h
+    \end{equation}
+    که در آن $\mathbf{M}$ نشان‌دهنده ماتریس ماسک توجه (علّی یا ماسک پرکردگی) است.
+    
+    \item \textbf{شاخه توجه خطی هسته‌محور (\lr{Linear Branch}):}
+    با بهره‌گیری از نگاشت ویژگی فعال‌سازی $\phi(\mathbf{x}) = \operatorname{ELU}(\mathbf{x}) + 1.0 \ge 0$، ضرب ماتریسی بر اساس خاصیت شرکت‌پذیری بدون محاسبه صریح ماتریس $N \times N$ به شکل زیر محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{O}_h^{\text{linear}} = \frac{\phi(\mathbf{Q}_h) \left( \phi(\mathbf{K}_h)^T \mathbf{V}_h \right)}{\phi(\mathbf{Q}_h) \left( \sum_{i=1}^N \phi(\mathbf{K}_{h, i}) \right)^T + \epsilon}
+    \end{equation}
+    در مدل‌های خودبازگشتی (\lr{Autoregressive Decoders})، این شاخه به صورت تکه‌ای (\lr{Chunked causal linear scan}) با انباشت حالات مخفی $\mathbf{S}_k = \mathbf{S}_{k-1} + \phi(\mathbf{K}_k)^T \mathbf{V}_k$ در ابعاد زمانی به صورت خطی پیاده‌سازی می‌گردد.
+\end{enumerate}
+
+گیت تلفیق سرها به ازای بردار ویژگی هر موقعیت $\mathbf{x}_t$ به صورت زیر است:
+\begin{equation}
+g_h(\mathbf{x}_t) = \sigma\left(\mathbf{w}_h^T \mathbf{x}_t + b_h\right), \quad b_h \approx 10.0
+\end{equation}
+خروجی نهایی پیش از تصویرسازی نگاشت پایانی از برهم‌نهی وزندار این دو شاخه حاصل می‌شود:
+\begin{equation}
+\mathbf{O}_h = g_h \odot \mathbf{O}_h^{\text{softmax}} + (1 - g_h) \odot \mathbf{O}_h^{\text{linear}}
+\end{equation}
+\begin{equation}
+\mathbf{Y} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_H) \mathbf{W}^O
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hybrid_attention}
+\mathcal{C}_{\text{hybrid\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

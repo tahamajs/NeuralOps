@@ -1,0 +1,70 @@
+\section{ماژول faq\_quantizer (Feature-Activation-Aware Quantizer)}
+\label{sec:module_faq_quantizer}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+کوانتایزاسیون وزن‌ها و فعال‌سازی‌ها به قالب‌های با بیت‌پایین (مانند اعداد صحیح ۸ بیتی، \lr{INT8}) یکی از پرکاربردترین استراتژی‌های کاهش حجم مدل و ارتقای پهنای باند حافظه در استنتاج شبکه‌های زبانی است. با این حال، کوانتایزاسیون استاندارد و یکنواخت به شدت در برابر ناهمگونی دامنه‌های ویژگی آسیب‌پذیر است؛ در لایه‌های ترنسفورمر، برخی کانال‌های فعال‌سازی دارای مقادیر دورافتاده (\lr{Outliers}) با دامنه‌های بسیار بزرگ هستند که در صورت نادیده گرفته شدن، خطای گردکردن سایر ویژگی‌های ظریف را تشدید کرده و به تخریب چشمگیر خروجی شبکه می‌انجامند.
+
+ماژول فشرده‌ساز \lr{FAQQuantizer} با نام‌های ثبتی \lr{faq} و \lr{faq\_quantizer} («کوانتایزه‌کننده آگاه از فعال‌سازی ویژگی‌ها» یا \lr{Feature-Activation-Aware Quantization})، بر مبنای مقیاس‌گذاری متقابل کانال‌ها عمل می‌کند. این روش با پایش آماری ممان دوم فعال‌سازی‌ها در فاز کالیبراسیون، گام‌های کوانتایزاسیون را در هر کانال به گونه‌ای مقیاس‌بندی می‌کند که نویز ناشی از خطای کوانتایزاسیون در جهت کانال‌های با بار اطلاعاتی بیشتر کمینه گردد. این ماژول همچنین با پیاده‌سازی لایه اختصاصی \lr{FAQLinear} و تقریب گرادیان سرراست (\lr{Straight-Through Estimator, STE})، بستر مناسبی برای تنظیم دقیق با \lr{LoRA} فراهم می‌سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در طول فاز کالیبراسیون با دسته‌های داده ورودی، میانگین توان دوم فعال‌سازی‌ها برای هر کانال ورودی $j \in \{1, \dots, d_{\text{in}}\}$ محاسبه می‌شود:
+\begin{equation}
+s_j = \sqrt{\mathbb{E}[x_j^2] + \epsilon}, \quad \bar{s} = \frac{1}{d_{\text{in}}} \sum_{k=1}^{d_{\text{in}}} s_k, \quad \tilde{s}_j = \frac{s_j}{\bar{s}}
+\end{equation}
+بردار مقیاس فعال‌سازی $\mathbf{s} \in \mathbb{R}^{d_{\text{in}}}$ به عنوان پیش‌شرط‌ساز در ماتریس وزن لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ضرب می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{scaled}} = \mathbf{W} \cdot \operatorname{diag}(\mathbf{s})
+\end{equation}
+سپس عملگر کوانتایزاسیون و واکوانتایزاسیون شبه‌کوانتایز (\lr{Fake Quantization}) با وضوح $b$ بیتی (به طور پیش‌فرض $b=8$) به صورت متقارن بر روی وزن مقیاس‌یافته اعمال می‌شود:
+\begin{equation}
+\Delta_i = \frac{\max_j |W_{\text{scaled}, i, j}|}{2^{b-1} - 1}, \quad \widehat{\mathbf{W}}_{\text{scaled}} = \operatorname{clip}\left(\left\lfloor \frac{\mathbf{W}_{\text{scaled}}}{\mathbf{\Delta}} \right\rceil, -2^{b-1}+1, 2^{b-1}-1\right) \odot \mathbf{\Delta}
+\end{equation}
+ماتریس وزن بازسازی‌شده با خنثی‌سازی ضریب مقیاس‌بندی کانال به دست می‌آید:
+\begin{equation}
+\widehat{\mathbf{W}} = \widehat{\mathbf{W}}_{\text{scaled}} \cdot \operatorname{diag}(\mathbf{s})^{-1}
+\end{equation}
+در حین پس‌انتشار گرادیان، از برآوردگر گرادیان سرراست (\lr{STE}) برای عبور گرادیان از عملگر گردکردن غیرمشتق‌پذیر بهره گرفته می‌شود:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial \mathbf{W}_{\text{scaled}}} \approx \frac{\partial \mathcal{L}}{\partial \widehat{\mathbf{W}}_{\text{scaled}}} \cdot \mathbb{I}\left(|\mathbf{W}_{\text{scaled}}| \le \mathbf{\Delta} (2^{b-1}-1)\right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/faq\_quantizer.py} تعبیه شده و شامل ویژگی‌های مهندسی زیر است:
+\begin{itemize}
+    \item \textbf{ماژول سفارشی \lr{FAQLinear}:} ذخیره مقیاس‌های کانال در بافر غیرماندگار (\lr{non-persistent buffer})، پشتیبانی همزمان از بایاس کوانتایزه‌شده و ادغام مستقیم آداپتورهای \lr{LoRA} با مقیاس‌بندی استاندارد $\frac{\alpha}{r}$.
+    \item \textbf{کالیبراسیون تجربی مقاوم با \lr{DataLoader}:} استخراج ممان‌های ورودی با استفاده از هوک‌های پیش‌رو و امکان کالیبراسیون بر روی چندین دسته ورودی بدون اشغال حافظه گرافیکی.
+    \item \textbf{محافظت از لایه‌های حساس (\lr{Selective Quantization}):} پرهیز از اعمال کوانتایزاسیون به لایه‌های طبقه‌بند، سر خروجی، و درایه‌های توجه نامتقارن \lr{GQA} در مدل‌های زبانی.
+    \item \textbf{سازوکار مهار تزریق مکرر (\lr{Double-Injection Guard}):} ممانعت از بازکوانتایزاسیون ناخواسته مدل در فراخوانی‌های پیاپی.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+نتایج بنچ‌مارک آزمایشگاهی ثبت‌شده برای ماژول \lr{faq\_quantizer} در جدول \ref{tab:benchmark_faq_quantizer} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز \lr{faq\_quantizer} بر روی مدل‌های پایه}
+\label{tab:benchmark_faq_quantizer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.60\%} & \lr{0.9099} & \lr{425.17 MB} & \lr{42,763.62 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.15\%} & \lr{0.9429} & \lr{632.34 MB} & \lr{3,431.77 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{CRASH} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه داده‌های تجربی، کوانتایزاسیون \lr{FAQ} در انکودرهای \lr{DistilBERT} (دقت \lr{90.60\%}) و \lr{RoBERTa} (دقت \lr{94.15\%} با شاخص F1 معادل \lr{0.9429}) عملکردی بسیار پایدار ثبت نموده و با موفقیت از دروازه کیفیت گذشته است (\lr{PASS}). با این حال، در مدل \lr{GPT-2} اجرای آزمون با خطای بحرانی زیر مواجه شده و در وضعیت \lr{CRASH} ثبت شده است:
+\begin{center}
+\small
+\lr{UnboundLocalError: cannot access local variable 'majority\_count' where it is not associated with a value}
+\end{center}
+برای مدل \lr{Qwen} آزمون اجرا نگردیده و در وضعیت \lr{SKIP} قرار گرفته است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل شکست در مدل \lr{GPT-2} نشان داد که متغیر محلی در تابع کارخانه‌ای ارزیابی پرپلکسیتی مقداردهی نشده بود که ناشی از باگ پیاده‌سازی اسکریپت آزمون کارخانه‌ای در شاخه ارزیابی متنی است. علاوه بر این، در حین شبیه‌سازی استنتاج بدون هسته‌های سخت‌افزاری سطح پایین، عملگرهای شبیه‌ساز کوانتایزاسیون (\lr{Fake Quantization}) سربار تاخیر بیشتری نسبت به استنتاج ممیز شناور ایجاد می‌کنند، به طوری که توان استنتاج در مدل \lr{RoBERTa} به \lr{3,431.77 tok/s} تنزل یافته است؛ دستیابی به شتاب سخت‌افزاری واقعی مستلزم یکپارچه‌سازی با هسته‌های \lr{TensorRT-LLM} یا \lr{CUTLASS INT8} خواهد بود.

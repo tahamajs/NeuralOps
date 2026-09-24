@@ -6,20 +6,20 @@ Table~\ref{tab:results_acc_replace} details empirical evaluation metrics across 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & full & PASS & 90.48 & 0.9077 \\
-\texttt{results/unified\_replace/distilbert/summary.csv} & distilbert & replace & FAIL & 0.0 & 0.9077 \\
-\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & full & PASS & 60.78 & 0.6354 \\
-\texttt{results/unified\_replace/gpt2/summary.csv} & gpt2 & replace & FAIL & 0.0 & 0.6354 \\
-\texttt{results/unified\_replace/roberta/summary.csv} & roberta & full & PASS & 75.11 & 0.7586 \\
-\texttt{results/unified\_replace/roberta/summary.csv} & roberta & replace & FAIL & 0.0 & 0.7586 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Replace} & \textbf{0.00\%} & -90.48\% & FAIL & 0.9077 & 0 & \textbf{1.00$\times$} & 389.5 MB & 0.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Replace} & \textbf{0.00\%} & -75.11\% & FAIL & 0.7586 & 0 & \textbf{1.00$\times$} & 298.7 MB & 0.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Replace} & \textbf{0.00\%} & -60.78\% & FAIL & 0.6354 & 0 & \textbf{1.00$\times$} & 793.2 MB & 0.5 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{replace}.}
-\label{tab:results_acc_replace}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

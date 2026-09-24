@@ -11,14 +11,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params Δ | Time |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s |
-| DistilBERT | **routing** | **63.76** | -26.95 | 0.6708 | +48.5\%% | 1.42x |
-| RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s |
-| RoBERTa | **routing** | **50.92** | -27.64 | 0.6748 | +48.5\%% | 2.3 s |
-| GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s |
-| GPT-2 | **routing** | **50.92** | -28.44 | 0.6748 | +48.5\%% | 2.3 s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Routing** | **53.33%** | -37.61% | PASS_LOW | 0.6276 | 24 | **0.99x** | 338.2 MB | 58.9s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Routing** | **49.08%** | -26.38% | PASS_LOW | 0.0000 | 48 | **0.94x** | 669.3 MB | 187.9s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Routing** | **66.51%** | -21.33% | PASS | 0.7311 | 72 | **1.00x** | 338.9 MB | 139.3s |
 
 ## 7.2 Parameter Analysis
 

@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,Tensor Train (TT) Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,81.08%,-9.40%,0.7919,PASS,0,0.90x,508.1 MB,26.3
+roberta,0,75.11%,50.92%,-24.19%,0.6748,PASS_LOW,0,0.90x,684.0 MB,36.5
+gpt2,0,60.78%,50.92%,-9.86%,0.6748,PASS_LOW,0,0.97x,784.1 MB,60.7

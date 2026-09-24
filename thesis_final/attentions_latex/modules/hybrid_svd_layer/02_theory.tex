@@ -1,0 +1,28 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در لایه فاکتورگیری‌شده مبتنی بر وزن، ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه انتخابی $r \le \min(d_{\text{in}}, d_{\text{out}})$ از طریق تجزیه مقادیر منفرد اقتصادی (\lr{Thin SVD}) تجزیه می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+با توزیع متقارن مقادیر منفرد بر روی مولفه‌های چپ و راست، دو ماتریس تجزیه‌شده به دست می‌آیند:
+\begin{equation}
+\mathbf{W}_1 = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}, \quad \mathbf{W}_2 = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \in \mathbb{R}^{d_{\text{out}} \times r}
+\end{equation}
+گذر پیشرو برای تانسور ورودی $\mathbf{x} \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ به دو ضرب متوالی ماتریسی شکسته می‌شود:
+\begin{equation}
+\mathbf{y} = (\mathbf{x} \mathbf{W}_1^\top) \mathbf{W}_2^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} (\mathbf{x} \mathbf{A}^\top) \mathbf{B}^\top
+\end{equation}
+خطای نسبی بازسازی فروبنیوس در هر لایه محاسبه شده و با آستانه مجاز $\tau_{\text{max}}$ مقایسه می‌گردد:
+\begin{equation}
+\mathcal{E}_{\text{rel}} = \frac{\|\mathbf{W} - \mathbf{W}_2 \mathbf{W}_1\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+اگر $\mathcal{E}_{\text{rel}} > \tau_{\text{max}}$، فرآیند فشرده‌سازی لایه لغو شده و ساختار اصلی لایه دست‌نخورده حفظ می‌گردد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_hybrid_svd_layer}
+\mathcal{C}_{\text{hybrid\_svd\_layer}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

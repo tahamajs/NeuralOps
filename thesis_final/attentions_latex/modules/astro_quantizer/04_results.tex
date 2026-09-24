@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی \lr{astro\_quantizer} بر روی مدل‌های مرجع در جدول \ref{tab:benchmark_astro_quantizer} به تفکیک ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{astro\_quantizer} روی مدل‌های پایه}
+\label{tab:benchmark_astro_quantizer}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{90.48\%} & \lr{0.9064} & \lr{368.29 MB} & \lr{171,343.82 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{81.80\%} & \lr{0.8174} & \lr{457.35 MB} & \lr{184,967.17 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{94.04\%} & \lr{0.9421} & \lr{514.29 MB} & \lr{12,245.45 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (WikiText-2)} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{CRASH} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌طور که در جدول مشاهده می‌شود، ماژول \lr{astro\_quantizer} در مدل‌های انکودری \lr{RoBERTa} و \lr{DistilBERT} بالاترین دقت‌های کل موتور فشرده‌سازی را به ثبت رسانده است: در مدل \lr{RoBERTa} دقت قابل توجه \lr{94.04\%} با شاخص F1 معادل \lr{0.9421} حاصل شده و در \lr{DistilBERT} روی دادگان SST-2 دقت \lr{90.48\%} و روی MNLI دقت \lr{81.80\%} به دست آمده است. این ارقام نشان‌دهنده اثربخشی خارق‌العاده تخصیص غیریکنواخت بیت بر پایه اطلاعات فیشر است. روی مدل‌های خانواده \lr{Qwen} تستی صورت نگرفته و در وضعیت \lr{NOT\_RUN} قرار دارد.

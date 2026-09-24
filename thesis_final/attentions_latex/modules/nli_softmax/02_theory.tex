@@ -1,0 +1,24 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گذر پیشرو (\lr{Forward Pass})، توزیع توجه از طریق فرمولاسیون پایدار بیشینه‌ساز نرم بر روی بعد آخر ماتریس ضرب شباهت محاسبه می‌شود:
+\begin{equation}
+y_i = \frac{\exp(x_i - \max_k x_k)}{\sum_j \exp(x_j - \max_k x_k)}, \quad \forall i
+\end{equation}
+در گذر پسرو (\lr{Backward Pass})، مشتق تحلیلی نسبت به ورودی $x$ با استفاده از بردار گرادیان پس‌انتشاریافته $g_i = \frac{\partial \mathcal{L}}{\partial y_i}$ به فرم زیر تدوین می‌گردد:
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial x_i} = y_i \left( g_i - \sum_j g_j y_j \right) = y_i (g_i - \mathbf{g} \cdot \mathbf{y})
+\end{equation}
+به منظور جلوگیری از فروپاشی دقت در محاسبات نیم‌دقت (\lr{FP16/BF16})، مقادیر خروجی به صورت برخط مورد ارزیابی قرار گرفته و مقادیر غیرمعتبر (\lr{NaN/Inf}) پاکسازی شده و تحت بازه امن مهار می‌گردند:
+\begin{equation}
+\operatorname{Clamp}\left(\frac{\partial \mathcal{L}}{\partial x_i}\right) = \max\left(-C, \min\left(C, \frac{\partial \mathcal{L}}{\partial x_i}\right)\right), \quad C = 65000.0
+\end{equation}
+این ساختار مانع از انفجار گرادیان در توالی‌های طولانی با امتیازات شباهت بسیار بالا یا پایین می‌شود.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_nli_softmax}
+\mathcal{C}_{\text{nli\_softmax}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

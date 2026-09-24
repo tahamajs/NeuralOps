@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{swift\_svd} بر اساس پایگاه داده اعتبارسنجی یکپارچه \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_swift_svd} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز سریع فرم‌بسته \lr{swift\_svd} روی مدل‌های پایه}
+\label{tab:benchmark_swift_svd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9101} & \lr{335.49 MB} & \lr{136,020.15 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{629.70 MB} & \lr{73,089.63 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{755.65 MB} & \lr{61,757.75 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+یافته‌های آزمایشگاهی نشان می‌دهند که فشرده‌ساز \lr{swift\_svd} در مدل سبک \lr{DistilBERT} عملکردی قابل توجه با دقت \lr{90.71\%}، شاخص F1 معادل \lr{0.9101} و سرعت بالا \lr{136,020.15 tok/s} به نمایش گذاشته است. سرعت قابل توجه بالا به دلیل ساختار بهینه ضرب ماتریسی دو مرحله‌ای و حذف لایه‌های زائد به دست آمده است. در مدل‌های سنگین‌تر نظیر \lr{RoBERTa} و \lr{GPT-2}، دقت در محدوده \lr{50.92\%} با برچسب قبولی مرزی \lr{PASS\_LOW} پایدار شده و در مدل زبانی بزرگ \lr{Qwen} دقت \lr{49.08\%} با وضعیت قبولی \lr{PASS} به ثبت رسیده است.

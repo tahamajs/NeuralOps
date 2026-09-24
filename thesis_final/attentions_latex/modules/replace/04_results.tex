@@ -1,0 +1,19 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{replace} بر روی مجموعه داده اعتبارسنجی \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج جدول \ref{tab:benchmark_replace} را ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{replace} روی مدل‌های پایه}
+\label{tab:benchmark_replace}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.51 MB} & \lr{144,873.64 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.71 MB} & \lr{86,937.12 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{63,288.70 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,65 @@
+\section{ماژول replaceme\_compressor (ReplaceMe Layer Removal Compressor)}
+\label{sec:module_replaceme_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+یکی از موثرترین رویکردها برای کاهش نمایی تاخیر و حجم پارامترها در مدل‌های بزرگ ترنسفورمر، هرس در سطح لایه (\lr{Layer Pruning}) است. در شبکه‌های عمیق، لایه‌های انتهایی یا بخش‌های مشخصی از شبکه به سبب افزونگی بازنمایی (\lr{Representational Redundancy}) قابلیت جایگزینی با ساختارهای سبک‌تر خطی بدون افت چشمگیر عملکرد را دارا هستند. با این حال، حذف ناگهانی لایه‌ها پیوستگی انتشار سیگنال در طول گراف محاسباتی و انحراف ابعادی تانسورها را بر هم می‌زند.
+
+ماژول \lr{replaceme\_compressor} با نام فارسی «فشرده‌ساز جایگزینی لایه‌ها ReplaceMe» به عنوان بخشی از موتور جامع فشرده‌سازی، راه‌حلی ساختاریافته برای حذف $N$ لایه انتهایی انکودر یا دیکودر و جایگزینی مستقیم آن‌ها با یک بلوک سبک پسماند خطی (\lr{Lightweight Linear Residual Block}) ارائه می‌دهد. این ماژول تطبیق کامل هندسه تنسورها و سازگاری با انواع امضاهای ورودی لایه‌ها را تضمین می‌نماید.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید یک ترنسفورمر دارای $L$ لایه متوالی به فرم نگاشت‌های $\mathcal{F}_1, \dots, \mathcal{F}_L$ باشد. در این الگوریتم، تعداد $N$ لایه انتهایی (یعنی لایه‌های $L-N+1$ تا $L$) از ساختار شبکه خارج شده و با یک بلوک منفرد جایگزین $\mathcal{G}_{\text{replace}}$ مبادله می‌شوند:
+\begin{equation}
+\mathbf{h}_{L} = \mathcal{G}_{\text{replace}}(\mathbf{h}_{L-N})
+\end{equation}
+
+فرمول‌بندی بلوک جایگزین به صورت پسماند حول لایه‌نرمال تعریف می‌شود تا در لحظه مقداردهی اولیه عملکردی دقیقاً منطبق بر تابع همانی (\lr{Identity Mapping}) داشته باشد:
+\begin{equation}
+\tilde{\mathbf{h}} = \operatorname{LayerNorm}(\mathbf{h})
+\end{equation}
+\begin{equation}
+\Delta \mathbf{h} = \mathbf{W}_{\text{linear}} \tilde{\mathbf{h}} + \mathbf{b} + \frac{\alpha}{r} \mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}} \tilde{\mathbf{h}}
+\end{equation}
+\begin{equation}
+\mathbf{h}_{\text{out}} = \mathbf{h} + \Delta \mathbf{h}
+\end{equation}
+که در آن وزن‌ها و بایاس لایه خطی $\mathbf{W}_{\text{linear}}$ و $\mathbf{b}$ با صفر مقداردهی اولیه می‌شوند ($\mathbf{W}_{\text{linear}} \leftarrow \mathbf{0}, \mathbf{b} \leftarrow \mathbf{0}$)؛ این مقداردهی خاص موجب می‌شود در ابتدای فرآیند فشرده‌سازی $\Delta \mathbf{h} = \mathbf{0}$ و در نتیجه خروجی بلوک دقیقاً معادل ورودی آن ($\mathbf{h}_{\text{out}} = \mathbf{h}$) باشد که از شوک سیگنالی در شبکه ممانعت به عمل می‌آورد.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/replaceme\_compressor.py} مستقر بوده و در \lr{COMPRESSOR\_REGISTRY} با نام‌های \lr{replaceme} و \lr{replaceme\_compressor} به ثبت رسیده است. ویژگی‌های معماری آن عبارتند از:
+\begin{itemize}
+    \item \textbf{ماژول جایگزین \lr{ReplacementBlock}:} کپسوله‌سازی ماژول جایگزین با کنترل چندگانه تاپل‌های خروجی (\lr{return\_tuple}) و پشتیبانی از امضاهای متغیر ورودی به گونه‌ای طراحی شده که با انواع ساختارهای ترنسفورمر هماهنگ باشد.
+    \item \textbf{پیمایش خودکار گراف مدل (\lr{Layer Discovery}):} متد \lr{\_find\_transformer\_layers} به صورت خودکار و تعمیم‌پذیر مسیر لایه‌های ساختاری در مدل‌های گوناگون نظیر \lr{DistilBERT} (\lr{transformer.layer})، \lr{RoBERTa/BERT} (\lr{encoder.layer})، \lr{GPT-2} (\lr{transformer.h}) و \lr{Qwen} (\lr{model.layers}) را شناسایی می‌نماید.
+    \item \textbf{تنظیم‌پذیری تعداد لایه‌های حذفی:} پارامتر \lr{remove\_layers} امکان کنترل درجه تهاجم فشرده‌سازی را بسته به محدودیت‌های محاسباتی فراهم می‌آورد.
+    \item \textbf{تعبیه آداپتورهای \lr{LoRA}:} اضافه کردن ماتریس‌های کم‌مرتبه آموزش‌پذیر $\mathbf{A}_{\text{lora}}$ و $\mathbf{B}_{\text{lora}}$ درون بلوک جایگزین به منظور یادگیری الگوهای جبرانی در گام‌های ریزتنظیم.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{replaceme\_compressor} بر اساس اطلاعات پایگاه داده اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_replaceme_compressor} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز جایگزینی لایه‌ها \lr{replaceme\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_replaceme_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{82.00\%} & \lr{0.8363} & \lr{280.53 MB} & \lr{174,328.74 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.62\%} & \lr{0.8302} & \lr{325.00 MB} & \lr{100,713.97 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.77\%} & \lr{0.6808} & \lr{573.61 MB} & \lr{77,041.49 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{88.76\%} & -- & -- & -- & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد که این الگوریتم در تمامی محک‌های چهارگانه موفقیت قطعی \lr{PASS} را احراز کرده است. در مدل زبانی بزرگ \lr{Qwen}، این روش بالاترین دقت معادل \lr{88.76\%} را به ثبت رسانده است. هم‌زمان در مدل‌های انکودر نظیر \lr{DistilBERT} و \lr{RoBERTa} دقت‌های بالای ۸۰ درصد با سرعت پردازشی خیره‌کننده بیش از ۱۷۴ هزار توکن بر ثانیه و کمترین مصرف حافظه ($280.53$ مگابایت) حاصل شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل شرایط عملیاتی و محدودیت‌های این ماژول بیانگر موارد زیر است:
+\begin{itemize}
+    \item \textbf{افت عملکرد در وظایف زبانی پیچیده با افزایش تعداد لایه‌های حذفی:} در مدل‌های خودبازگشت نظیر \lr{GPT-2} با حذف بیش از ۲ لایه بدون آموزش جبرانی مجدد، افت در دقت درک زمینه پدید می‌آید چرا که لایه‌های انتهایی وظیفه شکل‌دهی به پیش‌بینی توکن‌های نهایی را بر عهده دارند.
+    \item \textbf{وابستگی عملکرد به یکنواختی ابعاد پنهان:} این روش به یکنواخت بودن ابعاد ورودی و خروجی لایه‌ها (\lr{hidden\_size}) متکی است و در مدل‌هایی که ابعاد لایه‌ها در بخش‌های مختلف تغییر می‌کند نیازمند پروجکشن‌های ابعادی اضافی خواهد بود.
+\end{itemize}

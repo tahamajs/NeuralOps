@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{salt\_attention} بر روی مجموعه‌داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی در جدول \ref{tab:benchmark_salt_attention} گزارش گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{salt\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_salt_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{80.28\%} & \lr{0.8102} & \lr{337.76 MB} & \lr{65,883.04 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{338.51 MB} & \lr{36,946.38 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{583.32 MB} & \lr{32,671.41 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس داده‌های مستند جدول، ماژول \lr{salt\_attention} بر روی مدل \lr{DistilBERT} به دقت شایان توجه \lr{80.28\%} و شاخص F1 معادل \lr{0.8102} با مصرف حافظه محدود \lr{337.76 MB} و توان عملیاتی \lr{65,883.04 tok/s} دست یافته و با موفقیت دروازه کیفی \lr{PASS} را پشت سر گذاشته است.

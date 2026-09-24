@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی‌های تجربی فشرده‌ساز \lr{svd\_linear} بر اساس اطلاعات پایگاه داده اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_svd_linear} آورده شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز خطی کم‌مرتبه \lr{svd\_linear} روی مدل‌های پایه}
+\label{tab:benchmark_svd_linear}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{86.58\%} & \lr{0.8765} & \lr{294.38 MB} & \lr{64,874.54 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{54.01\%} & \lr{0.6889} & \lr{339.31 MB} & \lr{39,113.72 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{57.22\%} & \lr{0.6804} & \lr{496.14 MB} & \lr{31,287.91 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{0.00\%} & -- & -- & -- & \lr{SKIP\_NO\_SUPPORT} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد که ماژول \lr{svd\_linear} در مدل انکودر \lr{DistilBERT} به دقت برجسته \lr{86.58\%} با شاخص F1 معادل \lr{0.8765} و توان پردازشی \lr{64,874.54 tok/s} در حافظه کمینه \lr{294.38 MB} دست یافته است. در مدل خودبازگشت \lr{GPT-2}، با دقت \lr{57.22\%} معیار قبولی کامل \lr{PASS} احراز شده است. در مدل \lr{RoBERTa} دقت \lr{54.01\%} و وضعیت \lr{PASS\_LOW} به ثبت رسیده و برای مدل \lr{Qwen} به دلیل ساختار نامتقارن توجه در سربرگ‌های کوئری و کلید-مقدار (\lr{GQA}) و عدم پشتیبانی اولیه نگاشت ابعادی، وضعیت به صورت \lr{SKIP\_NO\_SUPPORT} علامت‌گذاری شده است.

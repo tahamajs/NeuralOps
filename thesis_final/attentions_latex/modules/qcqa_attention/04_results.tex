@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{qcqa\_attention} بر روی بنچ‌مارک استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی در شرایط کاملاً کنترل‌شده انجام گرفته است. داده‌های رسمی استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_qcqa_attention} درج شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{qcqa\_attention} روی مدل‌های پایه}
+\label{tab:benchmark_qcqa_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.76\%} & \lr{0.7299} & \lr{334.32 MB} & \lr{67,004.99 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.03\%} & \lr{0.6748} & \lr{382.56 MB} & \lr{34,912.42 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6738} & \lr{568.75 MB} & \lr{31,268.37 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{51.72\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{QCQA} بر روی مدل \lr{DistilBERT} دقت \lr{63.76\%} و شاخص F1 معادل \lr{0.7299} را به ثبت رسانده و اوج مصرف حافظه گرافیکی را در حد بسیار پایین \lr{334.32 MB} با توان عملیاتی خیره‌کننده \lr{67,004.99 tok/s} تثبیت کرده است.

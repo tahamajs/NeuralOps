@@ -1,0 +1,44 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در طول مرحله کالیبراسیون داده‌محور، خروجی‌های هر لایه تحت نمونه‌های متنی متنوع ثبت می‌شوند. فرض کنید $\mathbf{X}_{\text{out}} \in \mathbb{R}^{B \times d_{\text{out}}}$ ماتریس فعال‌سازی‌های خروجی لایه در یک دسته باشد. ماتریس کوواریانس یا گشتاور مرتبه دوم خروجی $\mathbf{H}$ به صورت زیر تعریف می‌گردد:
+\begin{equation}
+\mathbf{H} = \mathbb{E}\left[\mathbf{X}_{\text{out}}^\top \mathbf{X}_{\text{out}}\right] \in \mathbb{R}^{d_{\text{out}} \times d_{\text{out}}}
+\end{equation}
+انرژی هر کانال خروجی یا نورون $i \in \{1, \dots, d_{\text{out}}\}$ با عناصر قطری این ماتریس تقریب زده می‌شود:
+\begin{equation}
+\mathbf{s}_i = \mathbf{H}_{i, i} = \frac{1}{B} \sum_{k=1}^B (\mathbf{X}_{\text{out}})_{k, i}^2
+\end{equation}
+در صورت عدم دسترسی به داده‌های کالیبراسیون، از تقریب انرژی استاتیک وزن‌ها استفاده می‌شود:
+\begin{equation}
+\mathbf{s}_i^{\text{static}} = \sum_{j=1}^{d_{\text{in}}} \mathbf{W}_{i, j}^2 = \|\mathbf{W}_{i, :}\|_2^2
+\end{equation}
+سپس متناسب با نرخ ابقای کانال‌ها (\lr{keep\_ratio}) تحت عنوان $\gamma \in (0, 1]$، تعداد ابعاد نگه‌داشته‌شده محاسبه می‌شود:
+\begin{equation}
+k = \max(1, \lfloor \gamma \cdot d_{\text{out}} \rfloor)
+\end{equation}
+و شاخص‌های بالاترین مقادیر انرژی انتخاب می‌گردند:
+\begin{equation}
+\mathcal{K} = \text{Top-}k(\mathbf{s}, k), \quad \mathbf{m}_i = \begin{cases} 1 & i \in \mathcal{K} \\ 0 & i \notin \mathcal{K} \end{cases}
+\end{equation}
+سطرهای هرس‌شده در ماتریس وزن صفر می‌گردند:
+\begin{equation}
+\mathbf{W}_{\text{pruned}} = \text{diag}(\mathbf{m}) \mathbf{W}
+\end{equation}
+در حالت تنکی سخت‌افزاری $2:4$ (\lr{structured\_24})، ماتریس برجستگی $\mathbf{S} = \mathbf{s} \mathbf{1}_{d_{\text{in}}}^\top$ ساخته شده و ماسک تنکی متناظر به ازای هر ۴ درایه در طول بعد صفر اعمال می‌شود:
+\begin{equation}
+\mathbf{W}_{\text{pruned}} = \text{Apply24Mask}(\mathbf{W}, \text{saliency}=\mathbf{S})
+\end{equation}
+خطای نسبی فروبنیوس بازسازی ماتریس کنترل می‌شود:
+\begin{equation}
+\mathcal{E} = \frac{\|\mathbf{W} - \mathbf{W}_{\text{pruned}}\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+اگر $\mathcal{E} > \tau_{\text{max}}$ باشد، لایه به وزن‌های اولیه بازمی‌گردد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_flat_llm}
+\mathcal{C}_{\text{flat\_llm}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

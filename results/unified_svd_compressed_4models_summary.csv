@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,SVD_COMPRESSED Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.94%,86.93%,-4.01%,0.8790,PASS,0,1.15x,294.1 MB,57.3
+roberta,0,75.46%,50.92%,-24.54%,0.6748,PASS_LOW,0,1.09x,587.2 MB,56.3
+gpt2,0,87.84%,76.15%,-11.69%,0.7965,PASS,0,1.17x,300.3 MB,66.8

@@ -1,0 +1,27 @@
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{SALR} در آزمون‌های بنچ‌مارک روی مدل‌های مختلف در جدول \ref{tab:benchmark_salr} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{SALR} بر روی مدل‌های استاندارد}
+\label{tab:benchmark_salr}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9067} & \lr{310.69 MB} & \lr{136,607.38 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{80.96\%} & \lr{0.8363} & \lr{364.29 MB} & \lr{84,414.74 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{58.94\%} & \lr{0.6679} & \lr{635.79 MB} & \lr{63,444.33 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های تجربی نشان می‌دهد:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، دقت عالی \lr{90.37\%} با شاخص \lr{F1} معادل \lr{0.9067} به دست آمده است که تقریباً انطباق کامل با مدل پایه داشته و توان محاسباتی به رقم چشمگیر \lr{136,607.38 tok/s} بالغ گردیده است.
+    \item در مدل \lr{RoBERTa}، دقت مدل به \lr{80.96\%} رسیده که رشدی معادل \lr{+5.85\%} نسبت به خط مبنای ۷۵.۱۱ درصدی نشان داده و با وضعیت موفق \lr{PASS} ارزیابی شده است.
+    \item در مدل زبانی \lr{GPT-2}، دقت \lr{58.94\%} و شاخص \lr{F1} برابر با \lr{0.6679} با مصرف حافظه بهینه \lr{635.79 MB} و سرعت پردازش \lr{63,444.33 tok/s} ثبت گردیده است.
+    \item اجرای مدل \lr{Qwen} به علت محدودیت‌های منابع محاسباتی در راند جاری در وضعیت \lr{SKIP} گزارش شده است.
+\end{itemize}

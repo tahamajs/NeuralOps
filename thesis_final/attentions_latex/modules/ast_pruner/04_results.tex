@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی آزمایشگاهی فشرده‌ساز \lr{ast\_pruner} بر روی سناریوهای مختلف اعتبارسنجی در جدول \ref{tab:benchmark_ast_pruner} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{ast\_pruner} روی مدل‌های پایه}
+\label{tab:benchmark_ast_pruner}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT (SST-2)} & \lr{89.91\%} & \lr{0.9007} & \lr{367.76 MB} & \lr{180,139.24 tok/s} & \lr{PASS} \\
+\lr{DistilBERT (MNLI)} & \lr{77.20\%} & \lr{0.7701} & \lr{456.73 MB} & \lr{197,609.05 tok/s} & \lr{PASS} \\
+\lr{RoBERTa (SST-2)} & \lr{88.76\%} & \lr{0.8889} & \lr{514.29 MB} & \lr{12,190.79 tok/s} & \lr{PASS} \\
+\lr{GPT-2 (WikiText-2)} & \lr{99.72\%} & \lr{0.0000} & \lr{561.06 MB} & \lr{12,318.77 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشخص است، فشرده‌ساز \lr{ast\_pruner} با دستیابی به نرخ گذردهی خارق‌العاده \lr{180,139} توکن بر ثانیه روی مدل \lr{DistilBERT}، یکی از سریع‌ترین و کارآمدترین ماژول‌ها در سناریوی استنتاج بلادرنگ به شمار می‌رود و دقت بسیار بالای \lr{89.91\%} را روی دادگان SST-2 ثبت نموده است. همچنین روی مدل \lr{RoBERTa} به دقت \lr{88.76\%} رسیده و بر روی \lr{GPT-2} آزمون متنی فشرده‌سازی پرپلکسیتی را با موفقیت (\lr{PASS}) پشت سر گذاشته است. روی مدل‌های سری \lr{Qwen} این ماژول تست نشده و با علامت \lr{NOT\_RUN} مشخص شده است.

@@ -1,0 +1,80 @@
+\section{ماژول تقطیر فشردگی سرهای توجه (Squeezing Heads Distill)}
+\label{sec:module_squeezing_heads_distill}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+مکانیزم تقطیر فشردگی سرهای توجه \lr{(Squeezing Heads Attention Distillation Layer)} با هدف کاهش ظرفیت محاسباتی سرهای توجه چندگانه از طریق انطباق ساختاریافته و فشرده‌سازی لایه‌های توجه بدون افت ظرفیت یادگیری طراحی شده است. در شبکه‌های ترنسفورمر استاندارد، افزونگی قابل‌ملاحظه‌ای میان سرهای موازی توجه وجود دارد؛ به طوری که بخش عمده‌ای از سرها الگوهای مشابهی از ماتریس همبستگی را بازتولید می‌کنند. این پدیده موسوم به «افزونگی چندسره» موجب هدررفت توان پردازشی و افزایش غیرضروری پهنای باند حافظه حین پردازش می‌شود.
+
+ماژول \lr{SqueezingHeadsDistiller} که در رجیستری چارچوب با نام‌های \lr{squeezing\_heads\_distill}، \lr{squeezing\_heads} و \lr{squeezing\_heads\_distiller} ثبت گردیده است، چارچوبی منعطف جهت فشرده‌سازی ظرفیت سرها و انطباق وزن‌های پیش‌آموزش‌دیده با بهره‌گیری از آداپتورهای کم‌مرتبه لورا \lr{(LoRA)} ارائه می‌دهد. این ماژول امکان پشتیبانی همزمان از انکودرهای مسطح (\lr{DistilBERT})، انکودرهای تودرتو (\lr{RoBERTa/BERT})، دیکودرهای علّی مبتنی بر کانولوشن خطی (\lr{GPT-2}) و معماری‌های پیشرفته با توجه پرس‌وجوی گروه‌بندی‌شده (\lr{GQA}) و تعبیه مکانی دورانی (\lr{RoPE}) نظیر \lr{Qwen} را دارا می‌باشد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ نمایش پنهان ورودی لایه توجه باشد، که در آن $B$ اندازه دسته، $L$ طول دنباله و $D$ بعد پنهان مدل است. ساختار پروجکشن‌های لایه با ادغام وزن‌های پایه تثبیت‌شده و آداپتورهای تصحیح‌کننده کم‌مرتبه لورا فرمول‌بندی می‌شود:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) = \mathbf{X} \mathbf{W}_Q + \frac{\alpha}{r} (\mathbf{X} \mathbf{A}_Q) \mathbf{B}_Q, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}_{\text{kv}}) = \mathbf{X}_{\text{kv}} \mathbf{W}_K + \frac{\alpha}{r} (\mathbf{X}_{\text{kv}} \mathbf{A}_K) \mathbf{B}_K, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}_{\text{kv}}) = \mathbf{X}_{\text{kv}} \mathbf{W}_V + \frac{\alpha}{r} (\mathbf{X}_{\text{kv}} \mathbf{A}_V) \mathbf{B}_V
+\end{align}
+که در آن $\mathbf{W}_Q \in \mathbb{R}^{D \times (H \cdot d)}$، $\mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H_{kv} \cdot d)}$ وزن‌های پایه منجمد (\lr{frozen}) بوده و $\mathbf{A} \in \mathbb{R}^{D \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{out}}}$ پارامترهای آموزش‌پذیر با رتبه $r = 16$ و ضریب مقیاس $\alpha = 32.0$ می‌باشند.
+
+\paragraph{۱. انطباق ابعادی و بسط گروهی سرها (GQA Repeat):}
+در صورت تفاوت میان تعداد سرهای پرس‌وجو ($H$) و تعداد سرهای کلید/مقدار ($H_{kv}$)، عملگر تکرار گروهی برای تطابق هندسی اعمال می‌گردد:
+\begin{equation}
+\tilde{\mathbf{K}} = \operatorname{repeat\_kv}(\mathbf{K}, H / H_{kv}), \quad \tilde{\mathbf{V}} = \operatorname{repeat\_kv}(\mathbf{V}, H / H_{kv})
+\end{equation}
+همچنین در صورت حضور تعبیه مکانی دورانی (\lr{RoPE})، متناسب با طول بافر کلید/مقدار در حافظه نهان، تبدیل زاویه‌ای اعمال می‌گردد:
+\begin{equation}
+\mathbf{Q}' = \mathbf{Q} \odot \cos(\mathbf{\Theta}) + \operatorname{rotate\_half}(\mathbf{Q}) \odot \sin(\mathbf{\Theta})
+\end{equation}
+
+\paragraph{۲. محاسبه امتیازات توجه و مسیر سریع سخت‌افزاری:}
+در حالت استاندارد بدون خروجی ماتریس توجه صریح، ماژول از مسیر شتاب‌یافته توجه ضرب داخلی مقیاس‌پذیر سخت‌افزاری (\lr{SDPA}) بهره می‌برد:
+\begin{equation}
+\mathbf{O}_{\text{heads}} = \operatorname{SDPA}\left(\mathbf{Q}', \tilde{\mathbf{K}}', \tilde{\mathbf{V}}', \mathbf{M}_{\text{bias}}\right)
+\end{equation}
+در مسیر غیر‌\lr{SDPA}، ماتریس شباهت نرمال‌سازی‌شده محاسبه و ماسک علّی به صورت پویا اعمال می‌شود:
+\begin{equation}
+\mathbf{S}_{i, j} = \frac{\mathbf{Q}_i {\tilde{\mathbf{K}}_j}^\top}{\sqrt{d}} + \mathbf{M}_{i, j}^{\text{causal}}, \quad \mathbf{P} = \operatorname{Softmax}(\mathbf{S}), \quad \mathbf{O}_{\text{heads}} = \mathbf{P} \tilde{\mathbf{V}}
+\end{equation}
+خروجی نهایی پس از ادغام سرها و عبور از لایه پروجکشن خروجی با تبدیل لورا بازتولید می‌شود:
+\begin{equation}
+\mathbf{Y} = \operatorname{LoRA-Linear}_O(\mathbf{O}_{\text{heads}}) \in \mathbb{R}^{B \times L \times D}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/attentions/squeezing\_heads\_distill.py} انجام شده و شامل ۱۳ تدبیر سخت‌سازی سیستمی (\lr{SQ-FIX-01} تا \lr{SQ-FIX-13}) است:
+\begin{itemize}
+    \item \textbf{انتقال مقاوم وزن‌ها (\lr{copy\_weights}):} استخراج صحیح پروجکشن‌های ادغام‌شده \lr{c\_attn} در \lr{GPT-2}، نگاشت لایه‌های تفکیک‌شده انکودرهای تودرتوی \lr{RoBERTa/BERT} و مدیریت لایه‌های پروجکشن خطی انکودر مسطح \lr{DistilBERT}.
+    \item \textbf{محافظت در برابر تزریق چندباره (\lr{Double-Injection Guard}):} بررسی پرچم \lr{\_is\_squeezing\_heads\_injected} برای ممانعت از بازنویسی مکرر لایه‌ها در فرآیند تزریق مدل.
+    \item \textbf{مدیریت پیشرفته حافظه نهان توکن‌ها (\lr{KV-Cache}):} پیاده‌سازی ساختار کش دوگانه بر پایه \lr{tuple} و شیء \lr{DynamicCache} متناسب با کتابخانه‌های مدرن ترنسفورمرز برای تسریع استنتاج گام‌به‌گام.
+    \item \textbf{پایداری عددی:} مهار مقادیر مفقود یا نامعتبر با استفاده از \lr{torch.nan\_to\_num} در خروجی لایه.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{squeezing\_heads\_distill} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} تحت شرایط نظارت‌شده آزمایشگاهی انجام شده است. ارقام موثق استخراج‌شده از \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_squeezing_heads_distill} درج گردیده‌اند:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{squeezing\_heads\_distill} روی مدل‌های پایه}
+\label{tab:benchmark_squeezing_heads_distill}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.37\%} & \lr{0.9075} & \lr{332.46 MB} & \lr{71,868.72 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{51.49\%} & \lr{0.6754} & \lr{379.87 MB} & \lr{46,530.27 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.61\%} & \lr{0.6774} & \lr{568.71 MB} & \lr{35,939.75 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{--} & \lr{--} & \lr{--} & \lr{--} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان‌دهنده موفقیت کامل معماری در مدل انکودر مسطح \lr{DistilBERT} با ثبت دقت چشمگیر \lr{90.37\%} و شاخص F1 برابر \lr{0.9075} با اشغال تنها \lr{332.46 MB} حافظه گرافیکی و توان عملیاتی بسیار بالای \lr{71,868.72 tok/s} است. وضعیت دروازه کیفیت برای این ماژول به عنوان \lr{PASS} ارزیابی شده است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی عملکرد ماژول در مدل‌های \lr{RoBERTa} و \lr{GPT-2} نیازمند تحلیل ساختاری است:
+\begin{enumerate}
+    \item \textbf{تحلیل افت دقت به محدوده ۵۱٪ در \lr{RoBERTa} و \lr{GPT-2}:} دقت ثبت‌شده در حدود \lr{51.49\%} و \lr{51.61\%} نشان‌دهنده وضعیت \lr{PASS\_LOW} در نزدیکی آستانه شانس تصادفی است. در معماری \lr{RoBERTa}، به دلیل ساختار تودرتوی بلوک سلف‌اتنشن و لایه‌های نرمال‌سازی پس از پروجکشن متراکم، انجماد وزن‌های اصلی و استفاده از رتبه پایین لورا ($r=16$) ظرفیت تطبیق فوری گرادیان در فاز بازیابی سریع تک‌دوره‌ای را محدود می‌سازد.
+    \item \textbf{تداخل با پروجکشن کانوولوشن علّی در \lr{GPT-2}:} در مدل \lr{GPT-2}، نگاشت ماتریس‌های ادغام‌شده وزنی \lr{c\_attn} با هندسه ماتریس ترانهاده و جبران ماسک مثلثی باعث ایجاد ناهماهنگی در دامنه مقیاس لایه‌های خروجی پیش‌آموزش‌دیده شده و نیاز به تعداد دوره‌های آموزش انطباقی بیشتری برای خروج از حوضچه جذب کلاس غالب دارد.
+\end{enumerate}

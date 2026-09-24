@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{samba\_m3} بر روی مجموعه داده اعتبارسنجی \lr{GLUE SST-2} با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی انجام شده است. نتایج معتبر ثبت‌شده در پایگاه داده \lr{master\_verified\_results.json} در جدول \ref{tab:benchmark_samba_m3} درج گردیده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{samba\_m3} روی مدل‌های پایه}
+\label{tab:benchmark_samba_m3}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.53\%} & \lr{0.8904} & \lr{418.72 MB} & \lr{2,271.24 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7578} & \lr{712.34 MB} & \lr{77,891.66 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.19 MB} & \lr{66,561.11 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{SAMBA-M3} بر روی مدل پایه انکودر \lr{DistilBERT} به دقت چشمگیر \lr{88.53\%} و شاخص F1 معادل \lr{0.8904} با مصرف حافظه \lr{418.72 MB} دست یافته و با موفقیت به رده \lr{PASS} صعود کرده است. همچنین در مدل زبانی بزرگ \lr{Qwen} دقت \lr{49.08\%} حاصل شده است.

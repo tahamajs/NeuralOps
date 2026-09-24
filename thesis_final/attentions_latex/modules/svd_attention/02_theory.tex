@@ -1,0 +1,44 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ ماتریس بازنمایی لایه ورودی باشد. در ماژول \lr{SVDLinearAttention}، پروجکشن‌های پایه پرس‌وجو، کلید و مقدار همراه با شاخه‌های کم‌مرتبه لورا تولید می‌شوند:
+\begin{align}
+\mathbf{Q} &= \operatorname{LoRA-Linear}_Q(\mathbf{X}) \in \mathbb{R}^{B \times H \times N \times d}, \\
+\mathbf{K} &= \operatorname{LoRA-Linear}_K(\mathbf{X}_{\text{kv}}) \in \mathbb{R}^{B \times H \times N \times d}, \\
+\mathbf{V} &= \operatorname{LoRA-Linear}_V(\mathbf{X}_{\text{kv}}) \in \mathbb{R}^{B \times H \times N \times d}
+\end{align}
+
+\paragraph{۱. استخراج زیرفضای مقادیر منفرد ماتریس کلید:}
+در حین مقداردهی اولیه یا انتقال وزن‌ها (\lr{copy\_weights})، بر روی ماتریس وزن کلید $\mathbf{W}_K \in \mathbb{R}^{D_{\text{kv}} \times D}$ تجزیه مقادیر منفرد اعمال می‌گردد:
+\begin{equation}
+\mathbf{W}_K = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+سپس $r$ بردار نخست ماتریس راست $\mathbf{V}$ (سطرهای اول $\mathbf{V}^\top$) به عنوان ماتریس پایه پروجکشن ثابت $\mathbf{P}_{\text{svd}} \in \mathbb{R}^{D \times r}$ انتخاب و تثبیت می‌گردد.
+
+\paragraph{۲. انقباض دنباله و متعامدسازی QR:}
+برای یک ورودی با طول دنباله $N > r + 8$، توکن‌های دنباله در فضای ویژگی تصویر شده و ماتریس تصویربرداری متعامد $\mathbf{U}_r$ با فاکتورسازی QR فشرده محاسبه می‌شود:
+\begin{equation}
+\mathbf{S}_{\text{seq}} = \mathbf{X}_{\text{kv}} \mathbf{P}_{\text{svd}} \in \mathbb{R}^{B \times N \times r}, \quad \mathbf{U}_r, \mathbf{R} = \operatorname{QR}(\mathbf{S}_{\text{seq}}), \quad \mathbf{U}_r \in \mathbb{R}^{B \times N \times r}
+\end{equation}
+سپس تانسورهای کلید و مقدار در امتداد بعد توالی بر روی این پایه متعامد انقباض می‌یابند:
+\begin{equation}
+\mathbf{K}_{\text{proj}} = \mathbf{U}_r^\top \mathbf{K} \in \mathbb{R}^{B \times H \times r \times d}, \quad \mathbf{V}_{\text{proj}} = \mathbf{U}_r^\top \mathbf{V} \in \mathbb{R}^{B \times H \times r \times d}
+\end{equation}
+
+\paragraph{۳. محاسبه ماتریس توجه فشرده:}
+ضرب داخلی توجه میان پرس‌وجو با طول کامل $N$ و کلید فشرده با طول $r$ شکل می‌گیرد:
+\begin{equation}
+\mathbf{A}_{\text{compressed}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}_{\text{proj}}^\top}{\sqrt{d}}\right) \in \mathbb{R}^{B \times H \times N \times r}
+\end{equation}
+\begin{equation}
+\mathbf{O} = \operatorname{LoRA-Linear}_O\left(\mathbf{A}_{\text{compressed}} \mathbf{V}_{\text{proj}}\right) \in \mathbb{R}^{B \times N \times D}
+\end{equation}
+در صورت کوتاه بودن توالی ($N \le r + 8$)، ماژول به صورت خودکار به مسیر سریع توجه کامل استاندارد (\lr{SDPA}) سوئیچ می‌کند تا از خطای ناشی از تقریب در طول‌های ناچیز پرهیز شود.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_svd_attention}
+\mathcal{C}_{\text{svd\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

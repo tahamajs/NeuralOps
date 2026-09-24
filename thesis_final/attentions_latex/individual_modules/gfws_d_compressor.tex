@@ -1,0 +1,83 @@
+\section{ماژول gfws\_d\_compressor (Generalized Fisher / Covariance-Weighted SVD Compressor)}
+\label{sec:module_gfws_d_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+در تجزیه مقادیر منفرد حساس به فعال‌سازی، ساده‌سازی ماتریس همبستگی ورودی‌ها به مقادیر قطری منجر به از دست رفتن همبستگی متقابل (\lr{Cross-Covariance}) میان ابعاد گوناگون فضای پنهان ترنسفورمر می‌شود. این پدیده به طور خاص در شبکه‌های زبانی که دارای بردارهای فعال‌سازی شدیداً همبسته در ابعاد مشخصی هستند، دقت تقریب وزن‌ها را با افت مواجه می‌سازد.
+
+ماژول فشرده‌سازی \lr{GFWSVD / GFWS-D (Generalized Fisher / Covariance-Weighted SVD Compressor)} با هدف پوشش کامل ماتریس کوواریانس تجربی و اعمال سفیدسازی کامل ماتریسی (\lr{Full Covariance Whitening}) بر وزن‌ها طراحی گردیده است. در این شیوه، ماتریس کوواریانس کامل با منظم‌سازی میراگرانه تثبیت شده و جذر متقارن آن از طریق تجزیه ویژه محاسبه می‌شود. پس از تبدیل ماتریس وزن به فضای سفیدشده، تجزیه مقادیر منفرد اجرا شده و در نهایت با ضرب در معکوس جذر کوواریانس، ماتریس به فضای اصلی بازگردانده می‌شود. این ماژول همچنین از مکانیزم لایه‌های خطی سازگار با آداپتورهای کم‌مرتبه \lr{GFWSLoRALinear} بهره می‌برد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گام نخست، ماتریس کوواریانس تجربی فعال‌سازی‌های ورودی $\mathbf{C} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ با عبور دسته‌های کالیبراسیون از مدل تخمین زده می‌شود:
+\begin{equation}
+\mathbf{C} = \frac{1}{N} \sum_{k=1}^N \mathbf{X}_k^\top \mathbf{X}_k
+\end{equation}
+جهت رفع تکینگی و تضمین قطعی معین مثبت بودن، ماتریس با ضریب میراگر $\lambda_{\text{damp}}$ و میانگین درایه‌های قطری منظم‌سازی می‌شود:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{C} + \max\left(\lambda_{\text{damp}} \cdot \text{mean}(\text{diag}(\mathbf{C})), 10^{-6}\right) \mathbf{I}
+\end{equation}
+سپس تجزیه مقادیر ویژه متقارن بر روی $\mathbf{C}_{\text{reg}}$ اجرا می‌شود:
+\begin{equation}
+\mathbf{C}_{\text{reg}} = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\top, \quad \mathbf{\Lambda} = \text{diag}(\lambda_1, \dots, \lambda_{d_{\text{in}}})
+\end{equation}
+با برش مقادیر ویژه به آستانه عددی $\lambda_i \ge 10^{-6}$، جذر ماتریس و معکوس جذر آن به صورت متقارن محاسبه می‌گردند:
+\begin{equation}
+\mathbf{C}^{1/2} = \mathbf{Q} \mathbf{\Lambda}^{1/2} \mathbf{Q}^\top, \quad \mathbf{C}^{-1/2} = \mathbf{Q} \mathbf{\Lambda}^{-1/2} \mathbf{Q}^\top
+\end{equation}
+ماتریس وزن اولیه لایه $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با ضرب در جذر کوواریانس سفیدسازی می‌شود:
+\begin{equation}
+\mathbf{M} = \mathbf{W} \mathbf{C}^{1/2} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}
+\end{equation}
+سپس تجزیه مقادیر منفرد تقلیل‌یافته با رتبه $r$ بر روی $\mathbf{M}$ اعمال می‌شود:
+\begin{equation}
+\mathbf{M} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top
+\end{equation}
+ماتریس بازسازی‌شده سفیدشده $\mathbf{M}_r = \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top$ از طریق معکوس جذر کوواریانس دی‌سفیدسازی (\lr{De-whitening}) می‌گردد:
+\begin{equation}
+\widehat{\mathbf{W}} = \mathbf{M}_r \mathbf{C}^{-1/2}
+\end{equation}
+خطای نسبی بازسازی فروبنیوس ارزیابی می‌شود:
+\begin{equation}
+\mathcal{E} = \frac{\|\mathbf{W} - \widehat{\mathbf{W}}\|_F}{\|\mathbf{W}\|_F}
+\end{equation}
+اگر $\mathcal{E} \le \tau_{\text{max}}$ باشد، وزن تقریب‌زده شده جایگزین می‌گردد؛ در غیر این صورت، ماژول ابتدا به تجزیه مقادیر منفرد استاندارد (\lr{Standard SVD Fallback}) و در صورت عدم برآورده شدن کیفیت، به وزن‌های اولیه رجوع می‌کند.
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/gfws\_d\_compressor.py} مستقر بوده و تحت نام‌های \lr{gfws} و \lr{gfws\_d} در \lr{COMPRESSOR\_REGISTRY} ثبت شده است. نکات فنی پیاده‌سازی شامل موارد زیر است:
+\begin{itemize}
+    \item \textbf{ماژول ترکیبی \lr{GFWSLoRALinear}:} لایه‌های خطی را به همراه وزن پایه فشرده‌شده منجمد و ساختار موازی آداپتورهای \lr{LoRA} برای فاز بازیابی پارامتری در یک واحد کپسوله می‌کند.
+    \item \textbf{استراتژی بازگشت دوبخشی (\lr{Dual Fallback Mechanism}):} در صورت وقوع ناپایداری در سفیدسازی کوواریانس یا تجاوز خطای دی‌سفیدسازی، ماژول نخست تجزیه \lr{Standard SVD} را آزموده و سپس در صورت لزوم به وزن دست‌نخورده اولیه برمی‌گردد.
+    \item \textbf{محاسبات کامل در فضای \lr{FP32}:} تمامی مراحل تجزیه ویژه، سفیدسازی و تجزیه مقادیر منفرد در دقت اعشاری ۳۲بیتی به منظور حفظ پایداری عددی مقادیر ویژه کوچک انجام شده و در پایان به دقت لایه نگاشت می‌شود.
+    \item \textbf{پشتیبانی از لایه‌های یک‌بعدی کانوولوشن (\lr{Conv1D}):} تشخیص ابعاد و تغییر فرمت برداری لایه‌های پروجکشن در مدل‌های بر پایه \lr{GPT} به شکل خودکار پشتیبانی می‌شود.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{gfws\_d} بر روی مدل‌های بنچ‌مارک بر اساس نتایج ثبت‌شده در فایل‌های ارزیابی رسمی \lr{results/final\_paper\_run/summary.csv}، سویپ‌های تاییدشده و ارزیابی جامع \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_gfws_d_compressor} بازتاب یافته است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{gfws\_d\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_gfws_d_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.29\%} & \lr{0.8469} & \lr{1,336.70 MB} & \lr{59,231.20 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.0000} & \lr{0.00 MB} & \lr{0.00 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{توضیح تحلیلی نتایج:} ماژول در مدل \lr{DistilBERT} عملکرد موفقیت‌آمیز و استواری را ثبت کرده و با دستیابی به دقت \lr{84.29\%}، شاخص \lr{F1} برابر \lr{0.8469} و توان \lr{59,231.20 tok/s} نشان استاندارد \lr{PASS} را دریافت کرده است (در سویپ‌های اضافی تکمیلی \lr{SST-2} دقت‌های تا \lr{90.83\%} نیز با تنظیمات رتبه دیگر گزارش شده است). در مقابل، در ارزیابی اولیه روی مدل \lr{RoBERTa}، به علت عدم همخوانی نام در زمان فراخوانی رجیستری (\lr{gfws\_d\_compressor} در برابر شناسه ثبت‌شده \lr{gfws\_d}) وضعیت \lr{FAIL} گزارش شده که در فاز مهندسی خط لوله اصلاح گردیده است. مدل‌های \lr{GPT-2} و \lr{Qwen} در سویپ اصلی به صورت \lr{NOT\_RUN} باقی مانده‌اند.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل ساختاری رفتار فشرده‌ساز \lr{GFWS-D} محدودیت‌های زیر را برجسته می‌سازد:
+\begin{itemize}
+    \item \textbf{حساسیت شدید مرحله دی‌سفیدسازی (\lr{De-whitening Instability}):} ضرب ماتریس کم‌رتبه تقریب‌زده در معکوس جذر کوواریانس $\mathbf{C}^{-1/2}$ در صورتی که ابعاد فعال‌سازی حاوی مقادیر ویژه بسیار کوچک باشند، خطای تقریب را بزرگ‌نمایی می‌کند. این پدیده می‌تواند منجر به تجاوز خطای فروبنیوس از آستانه مجاز و اجبار ماژول به رجوع به \lr{Standard SVD} گردد.
+    \item \textbf{سربار حافظه و محاسبات تجزیه ویژه:} محاسبه کامل ماتریس کوواریانس $d_{\text{in}} \times d_{\text{in}}$ و اجرای تجزیه مقادیر ویژه $\mathcal{O}(d_{\text{in}}^3)$ مصرف حافظه کالیبراسیون را به \lr{1,336.70 MB} رسانده و در مدل‌های بزرگ با پهنای پنهان فراتر از ۴۰۹۶ چالش حافظه ایجاد می‌نماید.
+    \item \textbf{ناسازگاری موقت نام‌گذاری در رجیستری:} تجربه شکست آزمون در \lr{RoBERTa} نشان داد که تفاوت نام ماژول در فایل‌های فراخوان با رشته‌های ثبت‌شده در رجیستری (\lr{gfws} در برابر نام کامل فایل) می‌تواند مانع بارگذاری خودکار فشرده‌ساز شود که نیازمند تجمیع کامل نام مستعار (\lr{Aliases}) در سطح کد است.
+\end{itemize}

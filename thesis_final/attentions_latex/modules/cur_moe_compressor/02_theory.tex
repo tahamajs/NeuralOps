@@ -1,0 +1,38 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید ماتریس وزن یکی از لایه‌های خبره یا شبکه پیش‌خور به صورت $\mathbf{W} \in \mathbb{R}^{m \times n}$ تعریف شده باشد که در آن $m = d_{\text{out}}$ و $n = d_{\text{in}}$ است. تقریب \lr{CUR} به دنبال تجزیه این ماتریس به ضرب سه ماتریس با مرتبه تقلیل‌یافته $r \ll \min(m, n)$ است:
+\begin{equation}
+\mathbf{W} \approx \mathbf{C} \, \mathbf{U}_{\text{core}} \, \mathbf{R}
+\end{equation}
+که در آن $\mathbf{C} \in \mathbb{R}^{m \times c}$ زیرمجموعه‌ای شامل $c$ ستون از ماتریس $\mathbf{W}$، ماتریس $\mathbf{R} \in \mathbb{R}^{r_{\text{rows}} \times n}$ زیرمجموعه‌ای شامل $r_{\text{rows}}$ سطر از $\mathbf{W}$ (در حالت متقارن $c = r_{\text{rows}} = r$) و ماتریس $\mathbf{U}_{\text{core}} \in \mathbb{R}^{c \times r_{\text{rows}}}$ هسته میانی ارتباط‌دهنده است.
+
+انتخاب سطرها و ستون‌ها بر اساس دو معیار اصلی انجام می‌پذیرد:
+\begin{enumerate}
+    \item \textbf{امتیازات نفوذ آماری (\lr{Leverage Scores}):} با محاسبه تجزیه مقادیر منفرد فشرده $\mathbf{W} = \mathbf{P} \mathbf{\Sigma} \mathbf{Q}^\top$، امتیاز نفوذ ستون $j$ و سطر $i$ به صورت زیر تعیین می‌شود:
+    \begin{equation}
+    p_j^{\text{col}} = \frac{1}{r} \sum_{k=1}^r (\mathbf{Q}_{j, k})^2, \quad p_i^{\text{row}} = \frac{1}{r} \sum_{k=1}^r (\mathbf{P}_{i, k})^2
+    \end{equation}
+    \item \textbf{انرژی فروبنیوس سطرها و ستون‌ها (\lr{Frobenius Energy}):} در روش بدون نیاز به \lr{SVD}، معیار نرم اقلیدسی بردارها به کار گرفته می‌شود:
+    \begin{equation}
+    e_j^{\text{col}} = \frac{\|\mathbf{W}_{:, j}\|_2^2}{\|\mathbf{W}\|_F^2}, \quad e_i^{\text{row}} = \frac{\|\mathbf{W}_{i, :}\|_2^2}{\|\mathbf{W}\|_F^2}
+    \end{equation}
+\end{enumerate}
+
+پس از استخراج قطعی شاخص‌های برتر با سازوکار \lr{Top-k}، ماتریس اشتراک $\mathbf{W}_{\text{sub}} = \mathbf{W}_{I_{\text{rows}}, I_{\text{cols}}} \in \mathbb{R}^{r \times r}$ استخراج می‌شود. هسته میانی $\mathbf{U}_{\text{core}}$ از طریق شبه‌معکوس مور-پنروز منظم‌شده با تیخونوف با فاکتور میرایی $\lambda \ge 10^{-6}$ فرمول‌بندی می‌گردد:
+\begin{equation}
+\mathbf{U}_{\text{core}} = \mathbf{W}_{\text{sub}}^\dagger \approx (\mathbf{W}_{\text{sub}}^\top \mathbf{W}_{\text{sub}} + \lambda \mathbf{I})^{-1} \mathbf{W}_{\text{sub}}^\top
+\end{equation}
+
+تعداد کل پارامترهای لایه از $m \cdot n$ به $r(m + n + r)$ تقلیل می‌یابد. بنابراین قید کاهش پارامتری لایه فشرده به صورت زیر ارزیابی می‌شود:
+\begin{equation}
+r \cdot (m + n + r) < 0.85 \cdot (m \cdot n)
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_cur_moe_compressor}
+\mathcal{C}_{\text{cur\_moe\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

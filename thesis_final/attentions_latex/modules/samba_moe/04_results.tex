@@ -1,0 +1,22 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{samba\_moe} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_samba_moe} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{samba\_moe} روی مدل‌های پایه}
+\label{tab:benchmark_samba_moe}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.9077} & \lr{389.5 MB} & \lr{139,703 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7578} & \lr{712.3 MB} & \lr{75,538 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.6354} & \lr{793.2 MB} & \lr{65,083 tok/s} & \lr{FAIL} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{69.13\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.

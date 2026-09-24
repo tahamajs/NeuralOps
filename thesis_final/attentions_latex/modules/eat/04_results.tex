@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+عملکرد تجربی ماژول \lr{eat} بر روی مجموعه داده GLUE SST-2 با طول دنباله ۵۱۲ بر روی پردازنده گرافیکی NVIDIA RTX 4070 نتایج قابل قبولی را در جدول \ref{tab:benchmark_eat} ثبت کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{eat} روی ۴ مدل پایه}
+\label{tab:benchmark_eat}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{89.91\%} & \lr{0.9033} & \lr{327.69 MB} & \lr{110,050.03 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{82.68\%} & \lr{0.8506} & \lr{399.12 MB} & \lr{44,013.42 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.11\%} & \lr{0.8278} & \lr{340.52 MB} & \lr{37,880.54 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{48.17\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ماژول موفق شده است بالاترین سطح پایداری و دقت زبانی را در میان مدل‌های فشرده‌سازی‌شده ثبت کند؛ دقت بالا ۸۹.۹۱٪ در DistilBERT با توان قابل توجه ۱۱۰,۰۵۰ توکن در ثانیه و اوج حافظه ناچیز ۳۲۷.۶۹ مگابایت، نشانگر بازدهی قابل توجه ترکیب توجه بهینه و انطباق لورا است. بر روی RoBERTa و GPT-2 نیز دقت‌های قدرتمند ۸۲.۶۸٪ و ۸۲.۱۱٪ همراه با شاخص‌های F1 فراتر از ۰.۸۲ حاصل شده است.

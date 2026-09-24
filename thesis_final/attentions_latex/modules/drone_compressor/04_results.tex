@@ -1,0 +1,26 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{drone\_compressor} بر روی مدل‌های معیار بر اساس فایل‌های خروجی تجربی آزمایشگاهی در \lr{results/} به ثبت رسیده و در جدول \ref{tab:benchmark_drone_compressor} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی فشرده‌ساز \lr{drone\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_drone_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.71\%} & \lr{0.9095} & \lr{368.29 MB} & \lr{99,966.34 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{94.04\%} & \lr{0.9421} & \lr{514.29 MB} & \lr{14,583.46 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.0000} & \lr{816.23 MB} & \lr{1,420.86 tok/s} & \lr{PASS\_NO\_COMPRESSION} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP\_NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی نتایج جدول \ref{tab:benchmark_drone_compressor} نکات حائز اهمیتی را نشان می‌دهد:
+\begin{itemize}
+    \item در مدل‌های انکودر، ماژول \lr{drone\_compressor} با برتری چشمگیر عمل کرده و به دقت خارق‌العاده \lr{94.04\%} و شاخص اف‌وان \lr{0.9421} در \lr{RoBERTa} و دقت \lr{90.71\%} با توان پردازشی \lr{99,966.34 tok/s} در \lr{DistilBERT} دست یافته و نشان قطعی \lr{PASS} را احراز نموده است.
+    \item در مدل دیکودر \lr{GPT-2} بر روی ارزیابی زبانی \lr{WikiText-2}، به دلیل فیلتر شدن لایه‌ها بر مبنای شرط \lr{target\_attention\_only} و برابری ابعاد هسته‌ها، هیچ لایه‌ای فشرده نشده و مدل در وضعیت مستند \lr{PASS\_NO\_COMPRESSION} (با پرپلکسیتی ارزیابی‌شده \lr{41.35}) ثبت شده است.
+    \item برای مدل مقیاس بزرگ \lr{Qwen}، به دلیل محدودیت‌های حافظه در سرور بنچ‌مارک و اولویت‌بندی آزمون‌های آگاه از فعال‌سازی، آزمایش به عنوان \lr{SKIP\_NOT\_RUN} نشانه‌گذاری شده است.
+\end{itemize}

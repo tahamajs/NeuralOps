@@ -4,22 +4,24 @@
 
 \textbf{Table 7.1: Main results on SST-2.}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{k} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB \\
-DistilBERT & \textbf{Linformer} & \textbf{50.92} & -39.79 & 0.6748 & 0.85 & 1322 MB MB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB \\
-RoBERTa & \textbf{Linformer} & \textbf{48.17} & -30.39 & 0.4989 & 0.85 & 421 MB MB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB \\
-GPT-2 & \textbf{Linformer} & \textbf{77.5} & 0.85 & 0.865 & 0.85 & 380 MB MB \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Linformer} & \textbf{90.60\%} & -0.34\% & PASS & 0.9089 & 24 & \textbf{0.99$\times$} & 326.9 MB & 12.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Linformer} & \textbf{75.57\%} & +0.11\% & PASS & 0.7760 & 48 & \textbf{0.93$\times$} & 653.3 MB & 25.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Linformer} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6753 & 0 & \textbf{0.98$\times$} & 573.2 MB & 7.5 & -- \\
 \bottomrule
 \end{tabular}
-\end{table}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
 
 \textbf{Key observations:}
 

@@ -1,0 +1,27 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک برای ماژول \lr{saes\_svd\_v2} روی مدل‌های پایه استاندارد در جدول \ref{tab:benchmark_saes_svd_v2} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز \lr{saes\_svd\_v2} بر روی مدل‌های ارزیابی}
+\label{tab:benchmark_saes_svd_v2}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{87.50\%} & \lr{0.8868} & \lr{338.84 MB} & \lr{131,480.74 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.44\%} & \lr{0.8542} & \lr{364.29 MB} & \lr{83,020.03 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{56.88\%} & \lr{0.6835} & \lr{635.79 MB} & \lr{67,372.75 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه مندرجات جدول:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، الگوریتم به دقت مطلوب \lr{87.50\%} و شاخص \lr{F1} معادل \lr{0.8868} دست یافته و توان عملیاتی بسیار بالای \lr{131,480.74 tok/s} را به ثبت رسانده است.
+    \item در مدل \lr{RoBERTa}، ماژول به عملکرد درخشان \lr{85.44\%} ارتقا یافته که افزایشی به میزان \lr{+10.33\%} نسبت به خط مبنای اولیه نشان داده و وضعیت موفقیت‌آمیز \lr{PASS} را رقم زده است.
+    \item در مدل تولیدی \lr{GPT-2}، دقت \lr{56.88\%} همراه با شاخص \lr{F1} برابر با \lr{0.6835} با مصرف حافظه پایدار \lr{635.79 MB} و سرعت پردازش \lr{67,372.75 tok/s} حاصل گردیده است.
+    \item ارزیابی مدل \lr{Qwen} به علت محدودیت‌های زمان‌بندی و حافظه به صورت پیش‌فرض در وضعیت \lr{SKIP} قرار گرفته است.
+\end{itemize}

@@ -1,86 +1,252 @@
-% Chapter 4: Monograph inputs for verified 84 deduplicated passing modules
-% Formatted with \section for correct Table of Contents generation
+% ==============================================================================
+% فصل چهارم: تک‌نگاری‌های تحلیلی و کالبدشکافی ۸۴ مکانیزم برتر و تاییدشده توجه
+% ==============================================================================
+
+\section{خانواده اول: مکانیزم‌های فاکتورسازی تانسوری، تقریب کم‌مرتبه و تجزیه مقادیر منفرد (Low-Rank \& SVD)}
+این خانواده بر پایه تقریب ماتریس‌های تصویر و ماتریس توجه از طریق فاکتورسازی کم‌مرتبه و تجزیه مقادیر منفرد (SVD) بنا شده‌اند تا پیچیدگی محاسباتی و ردپای حافظه پارامترها را کاهش دهند.
+
+\input{attentions_latex/individual_modules/adaptive_svd_attention.tex}
+\input{attentions_latex/individual_modules/asvd_attention.tex}
+\input{attentions_latex/individual_modules/lora_attention.tex}
+\input{attentions_latex/individual_modules/minimal_aurora.tex}
+\input{attentions_latex/individual_modules/minimal_nova.tex}
+\input{attentions_latex/individual_modules/minimal_prism.tex}
+\input{attentions_latex/individual_modules/minimal_svd.tex}
+\input{attentions_latex/individual_modules/mla_attention.tex}
+\input{attentions_latex/individual_modules/projection_factorized_attn.tex}
+\input{attentions_latex/individual_modules/res_svd.tex}
+\input{attentions_latex/individual_modules/svd_compressed.tex}
+\input{attentions_latex/individual_modules/svd_linear_attention.tex}
+\input{attentions_latex/individual_modules/svd_llm_v2_attention.tex}
+\input{attentions_latex/individual_modules/svd_mamba.tex}
+\input{attentions_latex/individual_modules/svd_projection_attention.tex}
+\input{attentions_latex/individual_modules/tt.tex}
+
+\section{خانواده دوم: مدل‌های حالت‌فضا، شبکه‌های دلتا و ساختارهای ترکیبی مامبا (State-Space \& Mamba Hybrids)}
+این دسته از مکانیزم‌ها از تئوری سیستم‌های خطی تغییرناپذیر با زمان و مدل‌های بازگشتی حالت‌فضا بهره می‌برند تا با هزینه حافظه $\mathcal{O}(1)$ در زمان استنتاج، زمینه طولانی را مدل‌سازی کنند.
+
+\input{attentions_latex/individual_modules/gated_delta_net.tex}
+\input{attentions_latex/individual_modules/gated_deltanet_block.tex}
+\input{attentions_latex/individual_modules/griffin_ssd.tex}
+\input{attentions_latex/individual_modules/hgrn2_gated_deltanet.tex}
+\input{attentions_latex/individual_modules/hgrn2_layer.tex}
+\input{attentions_latex/individual_modules/hymba_transx.tex}
+\input{attentions_latex/individual_modules/jamba_info.tex}
+\input{attentions_latex/individual_modules/mamba.tex}
+\input{attentions_latex/individual_modules/simple_ssm.tex}
+
+\section{خانواده سوم: مکانیزم‌های توجه خلوت، الگوهای محلی، ساختاریافته و بلوکی (Sparse \& Local Attention)}
+این مکانیزم‌ها با محدود ساختن میدان دید توجه به الگوهای محلی، پنجره‌های لغزان، یا نمونه‌برداری‌های تنک، پیوند درجه دوم را به درجه اول تقلیل می‌دهند.
+
+\input{attentions_latex/individual_modules/adaptive_sparse_attention.tex}
+\input{attentions_latex/individual_modules/block_transformer_hiba.tex}
+\input{attentions_latex/individual_modules/nha_attention.tex}
+\input{attentions_latex/individual_modules/nsa_attention.tex}
+
+\section{خانواده چهارم: مکانیزم‌های هرس، کوانتایزاسیون و فشرده‌سازی توکن و سرها (Token Pruning \& Compression)}
+این ماژول‌ها بر پایه حذف توکن‌های حاشیه‌ای و کم‌اهمیت، ادغام سرهای مشابه و فشرده‌سازی بافر کلید/مقدار طراحی شده‌اند.
+
+\input{attentions_latex/individual_modules/compressed_mha.tex}
+\input{attentions_latex/individual_modules/progressive_token_pruning.tex}
+\input{attentions_latex/individual_modules/squeezing_heads_distiller.tex}
+\input{attentions_latex/individual_modules/token_compressed_attention.tex}
+
+\section{خانواده پنجم: معماری‌های مخلوط متخصصان و مسیریابی پویا (MoE \& Dynamic Routing)}
+در این معماری‌ها، فعال‌سازی مشروط و تخصیص پویای منابع به توکن‌های ورودی بر اساس مکانیزم‌های مسیریابی و خوشه‌بندی انجام می‌پذیرد.
+
+\input{attentions_latex/individual_modules/bam_umoe.tex}
+\input{attentions_latex/individual_modules/chela_slay.tex}
+\input{attentions_latex/individual_modules/cluster_attention.tex}
+\input{attentions_latex/individual_modules/expert_choice_moe.tex}
+\input{attentions_latex/individual_modules/moe_deltakv_paged.tex}
+\input{attentions_latex/individual_modules/reap_moe.tex}
+\input{attentions_latex/individual_modules/routing_attention.tex}
+
+\section{خانواده ششم: مکانیزم‌های توجه خطی و تقریب کِرنلی (Linear \& Kernel-based Attention)}
+این خانواده با استفاده از نگاشت‌های ویژگی کِرنل و تعویض ترتیب ضرب ماتریسی بر اساس خاصیت شرکت‌پذیری، توجه استاندارد را با پیچیدگی خطی $\mathcal{O}(N)$ بازفرمول‌بندی می‌کنند.
+
+\input{attentions_latex/individual_modules/SOAFusedAttention.tex}
+\input{attentions_latex/individual_modules/adaptive_span_attention.tex}
+\input{attentions_latex/individual_modules/adasplash_attention.tex}
+\input{attentions_latex/individual_modules/aegis_v5.tex}
+\input{attentions_latex/individual_modules/cosformer.tex}
+\input{attentions_latex/individual_modules/decay_linear_attention.tex}
+\input{attentions_latex/individual_modules/dobi_attention.tex}
+\input{attentions_latex/individual_modules/eat_attention.tex}
+\input{attentions_latex/individual_modules/flash_attention3.tex}
+\input{attentions_latex/individual_modules/flash_attention3_fp8.tex}
 \input{attentions_latex/individual_modules/fusion_attn.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/primal_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/gqa_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/adaptive_sparse_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/adaptive_span_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/adasplash_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/goldfinch_ahn.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/halo_regla.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/nsa_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/nha_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/squeezing_heads_distiller.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/progressive_token_pruning.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/eat_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/infini_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/optimized_hybrid_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/asvd_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/rpc_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/svd_mamba.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/svd_linear_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/res_svd.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/minimal_aurora.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/minimal_nova.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/minimal_prism.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/minimal_svd.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/svd_llm_v2_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/mla_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/dobi_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/nystrom_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/unified_rope.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/tt.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/hgrn2_gated_deltanet.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/hgrn2_layer.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/SOAFusedAttention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/adaptive_svd_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/bam_umoe.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/block_transformer_hiba.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/chela_slay.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/cluster_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/cosformer.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/decay_linear_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/expert_choice_moe.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/flash_attention3.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/flash_attention3_fp8.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/galerkin_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/gated_delta_net.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/gated_deltanet_block.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/griffin_ssd.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/hymba_transx.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/jamba_info.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/vspec.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/leka_v1.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/leka_v2.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/leka_v3.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/linformer_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/tpa_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/lora_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/xattention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/mamba.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/mixattention_moska.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/moe_deltakv_paged.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/nasc_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/nexus.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/orion.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/padre.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/performer_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/phantom.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/projection_factorized_attn.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/rala_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/reap_moe.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/regla_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/routing_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/salt.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/simple_ssm.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/span_expanded_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/svd_projection_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/template_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/token_compressed_attention.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/moba.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/spectra_v2.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/compressed_mha.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/svd_compressed.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/spectron.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/soa_module.tex}
-\input{/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules/aegis_v5.tex}
+\input{attentions_latex/individual_modules/galerkin_attention.tex}
+\input{attentions_latex/individual_modules/goldfinch_ahn.tex}
+\input{attentions_latex/individual_modules/gqa_attention.tex}
+\input{attentions_latex/individual_modules/halo_regla.tex}
+\input{attentions_latex/individual_modules/infini_attention.tex}
+\input{attentions_latex/individual_modules/leka_v1.tex}
+\input{attentions_latex/individual_modules/leka_v2.tex}
+\input{attentions_latex/individual_modules/leka_v3.tex}
+\input{attentions_latex/individual_modules/linformer_attention.tex}
+\input{attentions_latex/individual_modules/mixattention_moska.tex}
+\input{attentions_latex/individual_modules/moba.tex}
+\input{attentions_latex/individual_modules/nasc_attention.tex}
+\input{attentions_latex/individual_modules/nexus.tex}
+\input{attentions_latex/individual_modules/nystrom_attention.tex}
+\input{attentions_latex/individual_modules/optimized_hybrid_attention.tex}
+\input{attentions_latex/individual_modules/orion.tex}
+\input{attentions_latex/individual_modules/padre.tex}
+\input{attentions_latex/individual_modules/performer_attention.tex}
+\input{attentions_latex/individual_modules/phantom.tex}
+\input{attentions_latex/individual_modules/primal_attention.tex}
+\input{attentions_latex/individual_modules/rala_attention.tex}
+\input{attentions_latex/individual_modules/regla_attention.tex}
+\input{attentions_latex/individual_modules/rpc_attention.tex}
+\input{attentions_latex/individual_modules/salt.tex}
+\input{attentions_latex/individual_modules/soa_module.tex}
+\input{attentions_latex/individual_modules/span_expanded_attention.tex}
+\input{attentions_latex/individual_modules/spectra_v2.tex}
+\input{attentions_latex/individual_modules/spectron.tex}
+\input{attentions_latex/individual_modules/template_attention.tex}
+\input{attentions_latex/individual_modules/tpa_attention.tex}
+\input{attentions_latex/individual_modules/unified_rope.tex}
+\input{attentions_latex/individual_modules/vspec.tex}
+\input{attentions_latex/individual_modules/xattention.tex}
+
+
+% ==============================================================================
+% بخش الحاقی دور اول: مکانیزم‌های توجه پیشرفته و هیبرید (Round 1 Additions)
+% ==============================================================================
+\section{کالبدشکافی مکانیزم‌های توجه تکمیلی (بخش اول)}
+
+\input{attentions_latex/individual_modules/aegis_hybrid.tex}
+\input{attentions_latex/individual_modules/aegis_spectron_fp8.tex}
+\input{attentions_latex/individual_modules/aegis_v2.tex}
+\input{attentions_latex/individual_modules/aegis_v6.tex}
+\input{attentions_latex/individual_modules/compressed_attention.tex}
+\input{attentions_latex/individual_modules/compressed_mha_attention.tex}
+\input{attentions_latex/individual_modules/eat.tex}
+\input{attentions_latex/individual_modules/factorised_matrix_state.tex}
+\input{attentions_latex/individual_modules/full_attention.tex}
+\input{attentions_latex/individual_modules/fused_svd_kernel.tex}
+\input{attentions_latex/individual_modules/gated_linear_attention.tex}
+\input{attentions_latex/individual_modules/granite_hybrid.tex}
+\input{attentions_latex/individual_modules/hamming_attention.tex}
+\input{attentions_latex/individual_modules/hgrn2_outer.tex}
+\input{attentions_latex/individual_modules/hla_attention.tex}
+\input{attentions_latex/individual_modules/hybrid_attention.tex}
+\input{attentions_latex/individual_modules/jamba.tex}
+\input{attentions_latex/individual_modules/kda_attention.tex}
+\input{attentions_latex/individual_modules/lola_attention.tex}
+\input{attentions_latex/individual_modules/lsh_attention.tex}
+\input{attentions_latex/individual_modules/mamba_block.tex}
+\input{attentions_latex/individual_modules/mamba_svd_flash.tex}
+\input{attentions_latex/individual_modules/minimal_svd_v2.tex}
+\input{attentions_latex/individual_modules/moba_attention.tex}
+\input{attentions_latex/individual_modules/naive_svd.tex}
+
+% ==========================================
+% Round 2 Modules: Remaining Attentions & Initial Compressors
+% ==========================================
+\input{attentions_latex/individual_modules/padre_attention}
+\input{attentions_latex/individual_modules/qcqa_attention}
+\input{attentions_latex/individual_modules/replace}
+\input{attentions_latex/individual_modules/salt_attention}
+\input{attentions_latex/individual_modules/samba_m3}
+\input{attentions_latex/individual_modules/samba_moe}
+\input{attentions_latex/individual_modules/selective_ssm}
+\input{attentions_latex/individual_modules/soa_attn}
+\input{attentions_latex/individual_modules/spectraformer_attention}
+\input{attentions_latex/individual_modules/spectral_mamba}
+\input{attentions_latex/individual_modules/squeezing_heads_distill}
+\input{attentions_latex/individual_modules/svd_attention}
+\input{attentions_latex/individual_modules/svd_linear_decay}
+\input{attentions_latex/individual_modules/tlinformer_attention}
+\input{attentions_latex/individual_modules/upi_stuffed_mamba}
+\input{attentions_latex/individual_modules/vig_attention}
+\input{attentions_latex/individual_modules/wgqa_attention}
+\input{attentions_latex/individual_modules/zeros_attention}
+\input{attentions_latex/individual_modules/a3_compressor}
+\input{attentions_latex/individual_modules/aa_svd_compressor}
+\input{attentions_latex/individual_modules/aatc_xkv_compressor}
+\input{attentions_latex/individual_modules/adaptive_ranks}
+\input{attentions_latex/individual_modules/adasvd_compressor}
+\input{attentions_latex/individual_modules/admm_compressor}
+\input{attentions_latex/individual_modules/admm_pruner}
+
+% ==========================================
+% Round 3 Modules: Compression Engines (Set 1)
+% ==========================================
+\input{attentions_latex/individual_modules/armor_pruner}
+\input{attentions_latex/individual_modules/ast_pruner}
+\input{attentions_latex/individual_modules/astro_quantizer}
+\input{attentions_latex/individual_modules/bonsai_pruner}
+\input{attentions_latex/individual_modules/cachenotes_compressor}
+\input{attentions_latex/individual_modules/come_compressor}
+\input{attentions_latex/individual_modules/compot_compressor}
+\input{attentions_latex/individual_modules/coopq_quantizer}
+\input{attentions_latex/individual_modules/cr_compressor}
+\input{attentions_latex/individual_modules/cur_compressor}
+\input{attentions_latex/individual_modules/cur_moe_compressor}
+\input{attentions_latex/individual_modules/delta_kv}
+\input{attentions_latex/individual_modules/direct_svd}
+\input{attentions_latex/individual_modules/dobi_svd}
+\input{attentions_latex/individual_modules/drone_compressor}
+\input{attentions_latex/individual_modules/dynamic_rank}
+\input{attentions_latex/individual_modules/enlighten_compressor}
+\input{attentions_latex/individual_modules/entropy_budget_allocation}
+\input{attentions_latex/individual_modules/erc_svd}
+\input{attentions_latex/individual_modules/faq_quantizer}
+\input{attentions_latex/individual_modules/flap}
+\input{attentions_latex/individual_modules/flat_llm}
+\input{attentions_latex/individual_modules/frandi_compressor}
+\input{attentions_latex/individual_modules/fwsvd_compressor}
+\input{attentions_latex/individual_modules/gfws_d_compressor}
+
+% ==========================================
+% Round 4 Modules: Compression Engines (Set 2)
+% ==========================================
+\input{attentions_latex/individual_modules/grecodec_compressor}
+\input{attentions_latex/individual_modules/hashed_net_compressor}
+\input{attentions_latex/individual_modules/huffman_coder}
+\input{attentions_latex/individual_modules/hybrid_svd_layer}
+\input{attentions_latex/individual_modules/hybridkv_compressor}
+\input{attentions_latex/individual_modules/kmeans_quantize}
+\input{attentions_latex/individual_modules/kronecker_compressor}
+\input{attentions_latex/individual_modules/kronecker_tt_lora}
+\input{attentions_latex/individual_modules/kvtc_compressor}
+\input{attentions_latex/individual_modules/liftr}
+\input{attentions_latex/individual_modules/lillama_compressor}
+\input{attentions_latex/individual_modules/lsc_compressor}
+\input{attentions_latex/individual_modules/mamba_shedder}
+\input{attentions_latex/individual_modules/mgie_svd}
+\input{attentions_latex/individual_modules/mgie_svd_compressor}
+\input{attentions_latex/individual_modules/mlorq_compressor}
+\input{attentions_latex/individual_modules/modegpt_compressor}
+\input{attentions_latex/individual_modules/nli_softmax}
+\input{attentions_latex/individual_modules/nmf_compressor}
+\input{attentions_latex/individual_modules/oats_compressor}
+\input{attentions_latex/individual_modules/optimal_subspace_projection}
+\input{attentions_latex/individual_modules/proxsparse}
+\input{attentions_latex/individual_modules/replaceme_compressor}
+\input{attentions_latex/individual_modules/roast_hashed_linear}
+\input{attentions_latex/individual_modules/rotational_slicegpt_int4}
+
+% ==========================================
+% Round 5 Modules: Final Compression Engines
+% ==========================================
+\input{attentions_latex/individual_modules/rpca_compressor}
+\input{attentions_latex/individual_modules/saes_svd_v2}
+\input{attentions_latex/individual_modules/salr}
+\input{attentions_latex/individual_modules/sdrm_compressor}
+\input{attentions_latex/individual_modules/slicegpt}
+\input{attentions_latex/individual_modules/slicegpt_pca}
+\input{attentions_latex/individual_modules/slim_compressor}
+\input{attentions_latex/individual_modules/soka_compressor}
+\input{attentions_latex/individual_modules/sparsegpt}
+\input{attentions_latex/individual_modules/subspace_projection}
+\input{attentions_latex/individual_modules/svd_linear}
+\input{attentions_latex/individual_modules/svd_llm_compressor}
+\input{attentions_latex/individual_modules/swift_svd}
+\input{attentions_latex/individual_modules/swift_svd_act}
+\input{attentions_latex/individual_modules/tomoe_compressor}
+\input{attentions_latex/individual_modules/tt_compressor}
+\input{attentions_latex/individual_modules/uniql_compressor}
+\input{attentions_latex/individual_modules/zerokv_neo_compressor}

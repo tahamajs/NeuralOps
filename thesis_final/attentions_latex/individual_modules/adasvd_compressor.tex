@@ -1,0 +1,74 @@
+\section{ماژول adasvd\_compressor (Adaptive SVD Compressor with ALS and Mean-Shift)}
+\label{sec:module_adasvd_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+تقریب وزن‌های لایه‌های خطی با استفاده از تجزیه مقادیر منفرد \lr{(SVD)} استاندارد معمولاً بدون در نظر گرفتن ماهیت آماری فعال‌سازی‌های ورودی و تغییرات میانگین آنها صورت می‌پذیرد. در شبکه‌های پیشرفته ترنسفورمر، فعال‌سازی‌ها دارای مولفه میانگین غیرصفر بزرگ \lr{(Activation Mean Shift)} و ابعاد پرت با واریانس بسیار شدید هستند که نادیده گرفتن آنها باعث می‌شود ظرفیت گران‌بهای ماتریس‌های کم‌رتبه صرف بازتولید میانگین ایستا به جای واریانس معنایی گردد.
+
+موتور فشرده‌سازی \lr{AdaSVDCompressor} این معضل را از طریق چهار ستون اساسی برطرف می‌کند:
+\begin{enumerate}
+\item \textbf{جذب شیفت میانگین در بایاس \lr{(Mean-Shift Bias Absorption)}:} انتقال میانگین فعال‌سازی ورودی به بردار بایاس لایه بدون صرف هیچ هزینه‌ای از رتبه ماتریسی.
+\item \textbf{کمترین مربعات متناوب وزن‌دار دوجانبه \lr{(Two-Sided Weighted ALS)}:} بهینه‌سازی توأم با لحاظ ماتریس کوواریانس ورودی و ماتریس واریانس خروجی لایه.
+\item \textbf{رتبه موثر نظریه اطلاعاتی \lr{(Information-Theoretic Effective Rank)}:} تعیین تحلیلی رتبه بر مبنای آنتروپی شانون طیف مقادیر تکین.
+\item \textbf{ارزیابی خطای فعال‌سازی متمرکز:} اندازه‌گیری انحراف خروجی در فضای فعال‌سازی توزیع واقعی داده‌ها.
+\end{enumerate}
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گام نخست، میانگین فعال‌سازی‌های ورودی $\boldsymbol{\mu}_x = \mathbb{E}[\mathbf{x}]$ استخراج شده و بردار بایاس به صورت تحلیلی اصلاح می‌گردد:
+\begin{equation}
+\mathbf{b}_{\text{new}} = \mathbf{b} + \mathbf{W} \boldsymbol{\mu}_x
+\end{equation}
+با این تبدیل، عملیات خطی لایه کم‌رتبه در زمان استنتاج حول متغیر متمرکز $\tilde{\mathbf{x}} = \mathbf{x} - \boldsymbol{\mu}_x$ فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{A}\mathbf{B} (\mathbf{x} - \boldsymbol{\mu}_x) + \mathbf{b}_{\text{new}}
+\end{equation}
+در گام دوم، برای بهینه‌سازی ضرایب فاکتورهای کم‌رتبه $\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{in}}}$، هدف حداقل‌سازی خطای وزن‌دار دوجانبه زیر در نظر گرفته می‌شود:
+\begin{equation}
+\min_{\mathbf{A}, \mathbf{B}} \left\| \mathbf{D}^{1/2} (\mathbf{W} - \mathbf{A}\mathbf{B}) \mathbf{C}_X^{1/2} \right\|_F^2
+\end{equation}
+که در آن $\mathbf{C}_X = \mathbb{E}[(\mathbf{x} - \boldsymbol{\mu}_x)(\mathbf{x} - \boldsymbol{\mu}_x)^\top]$ ماتریس کوواریانس ورودی و $\mathbf{D} = \operatorname{diag}(\operatorname{Var}(\mathbf{y}))$ ماتریس قطری واریانس خروجی است. بهینه‌سازی این تابع هزینه از طریق تکرارهای الگوریتم \lr{Weighted ALS} با گام‌های تحلیلی بسته حاصل می‌شود:
+\begin{align}
+\mathbf{A}^{(t+1)} &= \mathbf{W} \mathbf{C}_X \mathbf{B}^{(t)\top} \left( \mathbf{B}^{(t)} \mathbf{C}_X \mathbf{B}^{(t)\top} + \epsilon_B \mathbf{I} \right)^{-1} \\
+\mathbf{B}^{(t+1)} &= \left( \mathbf{A}^{(t+1)\top} \mathbf{D} \mathbf{A}^{(t+1)} + \epsilon_A \mathbf{I} \right)^{-1} \mathbf{A}^{(t+1)\top} \mathbf{D} \mathbf{W}
+\end{align}
+برای تعیین رتبه بهینه $r$， توزیع نرمال‌شده توان مقادیر منفرد ماتریس تبدیل به عنوان یک توزیع احتمالاتی تعریف می‌شود:
+\begin{equation}
+p_i = \frac{\sigma_i^2}{\sum_{j=1}^d \sigma_j^2}, \quad r_{\text{eff}} = \exp\left( - \sum_{i=1}^d p_i \ln p_i \right)
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی کلاس \lr{AdaSVDCompressor} در فایل \lr{Codes/framework/compression\_engine/adasvd\_compressor.py} مستقر گردیده و ویژگی‌های کلیدی زیر را محقق ساخته است:
+\begin{itemize}
+\item \textbf{جایگزینی ماژولار با SVDLinear:} لایه‌های متراکم مبنا با لایه فشرده \lr{SVDLinear} تعویض می‌شوند که به صورت درونی ماتریس‌های پروجکشن دوگانه را با کارایی بهینه به حافظه متصل می‌کند.
+\item \textbf{پیکره کالیبراسیون چنددامنه‌ای:} استفاده از مجموعه نمونه‌های متنی متنوع \lr{(DEFAULT\_CALIBRATION\_CORPUS)} شامل کدهای برنامه‌نویسی، متون علمی و ریاضی جهت برآورد باثبات ماتریس‌های کوواریانس و شیفت میانگین.
+\item \textbf{پشتیبانی از لایه‌های ترنسفورمرهای مدرن:} هدایت صحیح لایه‌های \lr{Conv1D} و شبکه‌های \lr{SwiGLU} با تنظیم گرادیان‌ها در فضای دقت \lr{FP32}.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی جامع ماژول \lr{adasvd\_compressor} بر روی بنچ‌مارک رسمی پایان‌نامه نتایج مندرج در جدول~\ref{tab:benchmark_adasvd} را به همراه داشته است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری ماژول \lr{adasvd\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_adasvd}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{84.86\%} & \lr{0.8514} & \lr{413.21 MB} & \lr{44,807.97 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.84\%} & \lr{0.8868} & \lr{318.35 MB} & \lr{12,363.56 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{77.06\%} & \lr{0.8051} & \lr{393.51 MB} & \lr{15,039.99 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{50.90\%} & \lr{--} & \lr{1,261.09 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+تحلیل کارکرد الگوریتم \lr{AdaSVD} موارد زیر را روشن می‌سازد:
+\begin{itemize}
+\item \textbf{پایداری قابل توجه در مدل‌های کدگذار:} دقت بالا در \lr{RoBERTa} (\lr{87.84\%}) و \lr{DistilBERT} (\lr{84.86\%}) اثربخشی مستقیم جذب شیفت میانگین و برازش \lr{ALS} را در حفظ فضای بازنمایی این مدل‌ها نشان می‌دهد.
+\item \textbf{عملکرد قابل قبول در GPT-2:} ثبت دقت \lr{77.06\%} و F1 معادل \lr{0.8051} در مدل خودهمبسته GPT-2 با اشغال تنها \lr{393.51 MB} حافظه VRAM نشان‌دهنده استحکام فشرده‌سازی در لایه‌های پیش‌بینی کلمه بعدی است.
+\item \textbf{افت دقت در Qwen (تحلیل رتبه موثر):} در مدل مقیاس بزرگ‌تر Qwen2.5، دستیابی به دقت \lr{50.90\%} ناشی از برش خشن ابعاد در لایه‌های \lr{gate\_proj} و \lr{up\_proj} بدون تنظیم دقیق ترمیمی بوده است. همچنین در سناریوهایی که اندازه دسته کالیبراسیون کمتر از ابعاد پنهان شبکه باشد، ماتریس کوواریانس ورودی دچار تکینگی شده و نیازمند تقویت منظم‌سازی تیکونوف در معکوس‌سازی ماتریس‌ها است.
+\end{itemize}

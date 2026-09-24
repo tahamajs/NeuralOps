@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{compressed\_mha\_attention} بر روی بنچمارک استاندارد طبقه بندی متن GLUE SST-2 با شرایط سخت‌افزاری کاملاً یکسان روی پردازنده گرافیکی NVIDIA RTX 4070 نتایج مندرج در جدول \ref{tab:benchmark_compressed_mha_attention} را حاصل کرده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{compressed\_mha\_attention} روی ۴ مدل پایه}
+\label{tab:benchmark_compressed_mha_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{291.06 MB} & \lr{30,900.99 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{575.31 MB} & \lr{14,871.76 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.6748} & \lr{470.53 MB} & \lr{12,135.73 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.82\%} & \lr{--} & \lr{1188.94 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بررسی داده‌های عددی تایید می‌کند که این ماژول با مصرف حافظه گرافیکی بسیار پایین ۲۹۱.۰۶ مگابایت در DistilBERT و توان پردازشی فراتر از ۳۰ هزار توکن بر ثانیه، بهینگی فیزیکی قابل‌ملاحظه‌ای ارائه می‌دهد. با این حال، مقدار دقت در هر سه مدل انکودر و دیکودر بر روی ۵۰.۹۲٪ قرار گرفته است.

@@ -1,0 +1,26 @@
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{cur\_compressor} بر روی مجموعه‌داده \lr{GLUE SST-2} نتایج ثبت‌شده در جدول \ref{tab:benchmark_cur_compressor} را نشان می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول \lr{cur\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_cur_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.42\%} & \lr{0.8910} & \lr{338.34 MB} & \lr{52,426.30 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{90.37\%} & \lr{0.9030} & \lr{336.26 MB} & \lr{11,877.02 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{83.03\%} & \lr{0.8442} & \lr{411.93 MB} & \lr{13,474.58 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس کارنامه تجربی در خط لوله ارزیابی جامع پایان‌نامه، ماژول \lr{cur\_compressor} در هر سه مدل پایه با اقتدار از دروازه کیفیت عبور کرده و وضعیت \lr{PASS} را احراز نموده است:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، دقت درخشان ۸۸٫۴۲٪ با شاخص F1 معادل ۰٫۸۹۱۰ و توان ۵۲,۴۲۶ توکن بر ثانیه به ثبت رسید.
+    \item در مدل \lr{RoBERTa}، به دقت خیره‌کننده ۹۰٫۳۷٪ با شاخص F1 معادل ۰٫۹۰۳۰ و اوج مصرف حافظه بهینه ۳۳۶٫۲۶ مگابایت دست یافت.
+    \item در مدل زایشی دیکودر \lr{GPT-2}، به دقت تحسین‌برانگیز ۸۳٫۰۳٪ با شاخص F1 معادل ۰٫۸۴۴۲ رسید که نشان‌دهنده انطباق‌پذیری بالای هسته فاکتورسازی \lr{CUR} با ساختار مدل‌های پیشرو است.
+\end{itemize}

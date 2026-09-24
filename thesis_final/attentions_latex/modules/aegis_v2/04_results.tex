@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{aegis\_v2} بر روی مجموعه داده بنچ‌مارک \lr{GLUE SST-2} با طول دنباله ۵۱۲ نتایج بسیار برجسته‌ای را ثبت کرده است. مقادیر تجربی اعتبارسنجی‌شده در جدول \ref{tab:benchmark_aegis_v2} منعکس است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{aegis\_v2} روی مدل‌های پایه}
+\label{tab:benchmark_aegis_v2}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{79.82\%} & \lr{0.8151} & \lr{202.31 MB} & \lr{67,307.31 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{72.02\%} & \lr{0.7505} & \lr{591.97 MB} & \lr{4,678.15 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{74.89\%} & \lr{0.7812} & \lr{300.59 MB} & \lr{5,372.02 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{53.79\%} & \lr{---} & \lr{1,195.99 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+همان‌گونه که در جدول مشاهده می‌شود، ماژول \lr{aegis\_v2} موفق شده است در تمامی ۴ مدل اصلی وضعیت قبولی استاندارد (\lr{PASS}) را احراز کند؛ به ویژه دقت \lr{79.82\%} روی \lr{DistilBERT}، \lr{74.89\%} روی \lr{GPT-2} و \lr{72.02\%} روی \lr{RoBERTa} کارایی خیره‌کننده اصلاحات نسخه دوم را اثبات می‌کند.

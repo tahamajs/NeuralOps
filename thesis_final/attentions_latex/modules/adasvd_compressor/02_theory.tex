@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+در گام نخست، میانگین فعال‌سازی‌های ورودی $\boldsymbol{\mu}_x = \mathbb{E}[\mathbf{x}]$ استخراج شده و بردار بایاس به صورت تحلیلی اصلاح می‌گردد:
+\begin{equation}
+\mathbf{b}_{\text{new}} = \mathbf{b} + \mathbf{W} \boldsymbol{\mu}_x
+\end{equation}
+با این تبدیل، عملیات خطی لایه کم‌رتبه در زمان استنتاج حول متغیر متمرکز $\tilde{\mathbf{x}} = \mathbf{x} - \boldsymbol{\mu}_x$ فرمول‌بندی می‌شود:
+\begin{equation}
+\mathbf{y} = \mathbf{A}\mathbf{B} (\mathbf{x} - \boldsymbol{\mu}_x) + \mathbf{b}_{\text{new}}
+\end{equation}
+در گام دوم، برای بهینه‌سازی ضرایب فاکتورهای کم‌رتبه $\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{in}}}$، هدف حداقل‌سازی خطای وزن‌دار دوجانبه زیر در نظر گرفته می‌شود:
+\begin{equation}
+\min_{\mathbf{A}, \mathbf{B}} \left\| \mathbf{D}^{1/2} (\mathbf{W} - \mathbf{A}\mathbf{B}) \mathbf{C}_X^{1/2} \right\|_F^2
+\end{equation}
+که در آن $\mathbf{C}_X = \mathbb{E}[(\mathbf{x} - \boldsymbol{\mu}_x)(\mathbf{x} - \boldsymbol{\mu}_x)^\top]$ ماتریس کوواریانس ورودی و $\mathbf{D} = \operatorname{diag}(\operatorname{Var}(\mathbf{y}))$ ماتریس قطری واریانس خروجی است. بهینه‌سازی این تابع هزینه از طریق تکرارهای الگوریتم \lr{Weighted ALS} با گام‌های تحلیلی بسته حاصل می‌شود:
+\begin{align}
+\mathbf{A}^{(t+1)} &= \mathbf{W} \mathbf{C}_X \mathbf{B}^{(t)\top} \left( \mathbf{B}^{(t)} \mathbf{C}_X \mathbf{B}^{(t)\top} + \epsilon_B \mathbf{I} \right)^{-1} \\
+\mathbf{B}^{(t+1)} &= \left( \mathbf{A}^{(t+1)\top} \mathbf{D} \mathbf{A}^{(t+1)} + \epsilon_A \mathbf{I} \right)^{-1} \mathbf{A}^{(t+1)\top} \mathbf{D} \mathbf{W}
+\end{align}
+برای تعیین رتبه بهینه $r$， توزیع نرمال‌شده توان مقادیر منفرد ماتریس تبدیل به عنوان یک توزیع احتمالاتی تعریف می‌شود:
+\begin{equation}
+p_i = \frac{\sigma_i^2}{\sum_{j=1}^d \sigma_j^2}, \quad r_{\text{eff}} = \exp\left( - \sum_{i=1}^d p_i \ln p_i \right)
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_adasvd_compressor}
+\mathcal{C}_{\text{adasvd\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

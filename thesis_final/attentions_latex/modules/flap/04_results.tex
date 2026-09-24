@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{flap} بر روی مدل‌های انکودر و دیکودر استاندارد بر مبنای داده‌های پایگاه ارزیابی جامع \lr{thesis\_final/master\_verified\_results.json} انجام گرفته است. جدول \ref{tab:benchmark_flap} خلاصه عملکرد ثبت‌شده را نمایش می‌دهد:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{flap} روی مدل‌های پایه}
+\label{tab:benchmark_flap}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.9077} & \lr{311.19 MB} & \lr{164,428.56 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{88.53\%} & \lr{0.8936} & \lr{321.14 MB} & \lr{52,450.16 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{82.68\%} & \lr{0.8405} & \lr{400.26 MB} & \lr{53,356.34 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{60.78\%} & \lr{---} & \lr{---} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+نتایج به‌دست‌آمده نشان می‌دهد که رویکرد نوسان فعال‌سازی موفق شده است دقت مدل‌های انکودر نظیر \lr{DistilBERT} را تا سطح کم‌نظیر \lr{90.48\%} حفظ کند، در حالی که توان عملیاتی بسیار بالای \lr{164,428.56 tok/s} و مصرف حافظه ناچیز \lr{311.19 MB} را تثبیت کرده است. در مدل‌های دیکودر مانند \lr{GPT-2} نیز دقت \lr{82.68\%} همراه با توان بالای \lr{53,356.34 tok/s} حاصل گردیده است.

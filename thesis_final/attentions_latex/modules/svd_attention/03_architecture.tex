@@ -1,0 +1,7 @@
+\subsection{معماری و پیاده‌سازی}
+پیاده‌سازی این مکانیزم در فایل \lr{Codes/framework/attentions/svd\_attention.py} قرار دارد و دارای مشخصات فنی زیر است:
+\begin{itemize}
+    \item \textbf{انتقال وزن‌های پیش‌آموزش‌دیده:} متد \lr{copy\_weights} وزن‌های اولیه را از انواع معماری‌های \lr{DistilBERT, RoBERTa, GPT-2} و \lr{Qwen} بارگذاری نموده و پایه $\mathbf{P}_{\text{svd}}$ را با تجزیه تحلیلی مقداردهی می‌کند.
+    \item \textbf{ثبات گرادیانی و لورا:} زیرفضای $\mathbf{P}_{\text{svd}}$ به عنوان یک بافر منجمد (\lr{frozen buffer}) ثبت شده و سازگاری با داده‌ها صرفاً از طریق پارامترهای آموزش‌پذیر \lr{LoRA} در پروجکشن‌های ورودی و خروجی صورت می‌گیرد.
+    \item \textbf{پشتیبانی از RoPE و GQA:} سازگاری کامل با مدل‌های روز مانند خانواده \lr{Qwen} از طریق توابع \lr{apply\_rotary\_pos\_emb} و \lr{repeat\_kv} برقرار شده است.
+\end{itemize}

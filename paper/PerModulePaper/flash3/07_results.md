@@ -4,14 +4,14 @@
 
 **Table 7.1: SST-2 accuracy.**
 
-| Model | Module | Acc | Δ | F1 | Params | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.90 s |
-| DistilBERT | **Flash3** | **89.91** | -0.80 | 0.9033 | 66.4MM | 317 MB | 1.42x |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB | 4.10 s |
-| RoBERTa | **Flash3** | **83.94** | +5.38 | 0.8606 | 124.6MM | 399 MB | 2.3 s |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB | 4.20 s |
-| GPT-2 | **Flash3** | **82.00** | +2.64 | 0.8222 | 124.4MM | 340 MB | 2.3 s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Flash3 Fp8** | **89.91%** | -0.57% | PASS | 0.9033 | 0 | **0.99x** | 317.2 MB | 2.6s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Flash3 Fp8** | **83.94%** | -4.82% | PASS | 0.8606 | 0 | **0.95x** | 398.8 MB | 6.3s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Flash3 Fp8** | **82.00%** | +0.69% | PASS | 0.8222 | 0 | **1.00x** | 339.8 MB | 6.5s |
 
 ## 7.2 Parameter Analysis
 

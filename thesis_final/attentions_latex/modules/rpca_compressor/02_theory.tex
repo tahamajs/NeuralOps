@@ -1,0 +1,48 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند تجزیه ماتریس وزن $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ بر مبنای مسئله بهینه‌سازی محدب \lr{RPCA} به صورت زیر فرمول‌بندی می‌گردد:
+\begin{equation}
+\min_{\mathbf{L}, \mathbf{S}} \|\mathbf{L}\|_* + \lambda \|\mathbf{S}\|_1 \quad \text{subject to} \quad \mathbf{W} = \mathbf{L} + \mathbf{S}
+\end{equation}
+که در آن $\|\mathbf{L}\|_* = \sum_i \sigma_i(\mathbf{L})$ نرم هسته‌ای (تقریب محدب رتبه ماتریس) و $\|\mathbf{S}\|_1 = \sum_{i,j} |S_{ij}|$ نرم $\ell_1$ (تقریب محدب تَنَکی) است. پارامتر تنظیم‌کننده معمولاً به صورت نظری $\lambda = 1 / \sqrt{\max(d_{\text{out}}, d_{\text{in}})}$ تعیین می‌گردد.
+
+در پیاده‌سازی بلادرنگ ماژول، جهت دستیابی به سرعت بالا در لایه‌های بزرگ شبکه، از الگوریتم بهینه‌سازی افزاینده لاگرانژ نامتعامد (\lr{Inexact ALM / PCP}) با عملگرهای تحلیلی آستانه‌گذاری در تکرارهای متناوب استفاده می‌شود:
+
+\begin{enumerate}
+    \item \textbf{گام تصویر کم‌رتبه با تجزیه مقادیر منفرد مقطوع (\lr{Singular Value Thresholding}):}
+    در هر تکرار $t$، تجزیه مقادیر منفرد مؤلفه کم‌رتبه محاسبه شده و تصویر مقطوع با رتبه هدف $r$ بازسازی می‌گردد:
+    \begin{equation}
+    \mathbf{L}^{(t)} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^\top = \left(\mathbf{U}_{:, :r} \mathbf{\Sigma}_r^{1/2}\right) \left(\mathbf{\Sigma}_r^{1/2} \mathbf{V}_{:r, :}^\top\right)
+    \end{equation}
+    که در آن $r \le \min(d_{\text{out}}, d_{\text{in}} - 1)$ و سقف پارامتری $r \le \left\lfloor \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} + d_{\text{out}}} \right\rfloor - 1$ جهت تضمین کاهش قطعی حجم اعمال می‌شود.
+
+    \item \textbf{محاسبه باقی‌مانده و آستانه‌گذاری نرم مؤلفه تنک (\lr{Soft-Thresholding}):}
+    باقی‌مانده ماتریس نسبت به مؤلفه کم‌رتبه محاسبه شده و عملگر انقباض نرم (\lr{Shrinkage}) با آستانه $\mu$ بر آن اعمال می‌شود:
+    \begin{equation}
+    \mathbf{R}^{(t)} = \mathbf{W} - \mathbf{L}^{(t)}
+    \end{equation}
+    \begin{equation}
+    \mathbf{S}^{(t)} = \mathcal{S}_{\mu}(\mathbf{R}^{(t)}) = \operatorname{sign}(\mathbf{R}^{(t)}) \odot \max(|\mathbf{R}^{(t)}| - \mu, 0)
+    \end{equation}
+
+    \item \textbf{به‌روزرسانی هدف کم‌رتبه:}
+    مؤلفه تنک از ماتریس وزن اولیه تفریق شده و ماتریس کم‌رتبه برای گام بعدی بازآرایی می‌گردد:
+    \begin{equation}
+    \mathbf{L}^{(t+1)} = \mathbf{W} - \mathbf{S}^{(t)}
+    \end{equation}
+\end{enumerate}
+
+پس از همگرایی تکرارها در سقف \lr{max\_iter}، ماتریس حاصله $\mathbf{L}$ از طریق تجزیه دومرحله‌ای به دو فاکتور وزن متوالی $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ تبدیل می‌شود:
+\begin{equation}
+\mathbf{A} = \mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top, \quad \mathbf{B} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2} \implies \mathbf{y} = \mathbf{x} \mathbf{A}^\top \mathbf{B}^\top + \mathbf{b}
+\end{equation}
+در صورت فعال بودن شاخه انطباق سریع، ماتریس تصحیح رتبه-پایین کمکی (\lr{LoRA}) نیز به ساختار لایه فشرده متصل می‌گردد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_rpca_compressor}
+\mathcal{C}_{\text{rpca\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

@@ -1,0 +1,46 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ ماتریس فعال‌سازی ورودی لایه ترنسفورمر باشد. در این معماری، ورودی به طور هم‌زمان وارد شاخه توجه و شاخه بازگشتی \lr{Mamba-2} می‌گردد:
+
+\paragraph{۱. شاخه توجه متراکم مجهز به لورا:}
+پروجکشن‌های ورودی با ماتریس‌های کم‌مرتبه تطبیقی فاکتورگیری شده و سپس توجه چندسره استاندارد محاسبه می‌شود:
+\begin{equation}
+\mathbf{Y}_{\text{attn}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}\right) \mathbf{V} \mathbf{W}_O
+\end{equation}
+
+\paragraph{۲. شاخه مدل حالت فضای Mamba-2:}
+در شاخه \lr{Mamba2}، تانسور ورودی ابتدا به یک فضای دوبرابری نگاشت شده و به دو بخش تبدیل حالت و گیت مدولاسیون تفکیک می‌شود: $[\mathbf{X}_{\text{ssm}}, \mathbf{Z}] = \operatorname{in\_proj}(\mathbf{X})$. سپس کانولوشن یک‌بعدی زمانی بر روی $\mathbf{X}_{\text{ssm}}$ اعمال شده و پارامترهای پیوسته پیاده‌سازی سیستم خطی به صورت گسسته وابسته به گام زمانی تبدیل می‌شوند:
+\begin{align}
+\Delta_t &= \operatorname{Softplus}\left(\mathbf{W}_{\Delta} \mathbf{x}_{\text{ssm}, t}\right), \\
+\mathbf{A} &= -\exp\left(\operatorname{clamp}(\mathbf{A}_{\text{log}}, -20, 10)\right), \\
+\bar{\mathbf{A}}_t &= \exp\left(\operatorname{clamp}(\Delta_t \mathbf{A}, -20, 0)\right), \quad \bar{\mathbf{B}}_t = \mathbf{x}_{\text{ssm}, t} \otimes \Delta_t
+\end{align}
+رابطه بازگشتی خطی حالت فضا در طول دنباله زمانی با پایداری عددی محاسبه می‌گردد:
+\begin{equation}
+\mathbf{h}_t = \bar{\mathbf{A}}_t \odot \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t
+\end{equation}
+\begin{equation}
+\mathbf{Y}_{\text{ssm}, t} = \operatorname{out\_proj}\left( \left(\mathbf{h}_t \odot \mathbf{D}\right) \odot \operatorname{SiLU}(\mathbf{z}_t) \right)
+\end{equation}
+
+\paragraph{۳. تلفیق دینامیک شاخه‌ها و شبکه خبره‌ها (MoE):}
+برآیند این دو شاخه با یک پارامتر یادگیرنده گیتینگ $\alpha$ ترکیب خطی می‌شود:
+\begin{equation}
+g = \sigma(\alpha), \quad \tilde{\mathbf{X}} = g \cdot \mathbf{Y}_{\text{attn}} + (1 - g) \cdot \mathbf{Y}_{\text{ssm}}
+\end{equation}
+در نهایت، شبکه خبره‌ها با ساختار برگزیدن برترین‌ها \lr{(Top-$k$ Routing)} بر روی $\tilde{\mathbf{X}}$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{H}_{\text{moe}} = \sum_{e \in \operatorname{Top-}k(\mathbf{R}(\tilde{\mathbf{X}}))} \operatorname{Softmax}(\mathbf{R}(\tilde{\mathbf{X}}))_e \cdot \operatorname{Expert}_e(\tilde{\mathbf{X}})
+\end{equation}
+\begin{equation}
+\mathbf{X}_{\text{final}} = \tilde{\mathbf{X}} + \gamma_{\text{moe}} \cdot \mathbf{H}_{\text{moe}}
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_granite_hybrid}
+\mathcal{C}_{\text{granite\_hybrid}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

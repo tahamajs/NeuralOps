@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی بنچ‌مارک سخت‌افزاری و آزمون دقت فشرده‌ساز \lr{tomoe\_compressor} بر روی مدل‌های زبانی گوناگون بر پایه نتایج مستند ارزیابی‌های جامع در جدول \ref{tab:benchmark_tomoe_compressor} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{tomoe\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_tomoe_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{69.50\%} & \lr{0.7569} & \lr{427.00 MB} & \lr{9,828.24 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{571.84 MB} & \lr{5,169.98 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{54.24\%} & \lr{0.6780} & \lr{874.64 MB} & \lr{6,994.41 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{tomoe\_compressor} در مدل \lr{DistilBERT} موفق به دستیابی به دقت پایدار \lr{69.50\%} و شاخص F1 معادل \lr{0.7569} با وضعیت معتبر \lr{PASS} شده است. در مدل‌های بزرگ‌تر \lr{RoBERTa} و \lr{GPT-2} به دلیل حساسیت شدید بردارهای بازنمایی پیش‌خوران به تغییرات ناگهانی خلوت‌سازی بدون آموزش طولانی‌مدت مسیریاب، دقت مدل به ترتیب \lr{50.92\%} و \lr{54.24\%} ثبت شده که با برچسب \lr{PASS\_LOW} علامت‌گذاری شده است. مدل \lr{Qwen} در فاز بنچ‌مارک متمرکز ارزیابی نشده و وضعیت آن به عنوان \lr{NOT\_RUN} ثبت شده است.

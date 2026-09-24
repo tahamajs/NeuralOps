@@ -12,14 +12,14 @@
 ### Table 7.1: Main results on SST-2.
 
 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
-| Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **OHA** | **89.2** | -1.51 | 0.892 | +1.40% | 215 MB | 4.2 s |
-| RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **OHA** | **76.5** | -2.06 | 0.765 | +1.51% | 790 MB | 8.5 s |
-| GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **OHA** | **77.8** | -1.56 | 0.778 | +1.51% | 870 MB | 8.8 s |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Oha** | **90.60%** | -0.34% | PASS | 0.9087 | 24 | **0.99x** | 337.1 MB | 17.6s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Oha** | **75.80%** | +0.34% | PASS | 0.8000 | 48 | **0.93x** | 669.6 MB | 39.8s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Oha** | **51.26%** | -36.58% | PASS_LOW | 0.6763 | 0 | **0.99x** | 572.0 MB | 12.3s |
 
 ## 7.2 Parameter Analysis
 

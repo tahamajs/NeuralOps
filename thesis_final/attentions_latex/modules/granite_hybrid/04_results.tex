@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی سخت‌افزاری و زبانی ماژول \lr{granite\_hybrid} بر روی بنچمارک استاندارد \lr{GLUE SST-2} تحت نظارت سخت‌افزاری پردازنده گرافیکی در جدول \ref{tab:benchmark_granite_hybrid} گزارش شده است (ارقام عینا از فایل مرجع \lr{master\_verified\_results.json} استخراج گردیده‌اند):
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچمارک سخت‌افزاری و زبانی مکانیزم \lr{granite\_hybrid} روی مدل‌های پایه}
+\label{tab:benchmark_granite_hybrid}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{63.65\%} & \lr{0.7325} & \lr{1604.75 MB} & \lr{8,212.62 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{53.33\%} & \lr{0.6772} & \lr{2501.80 MB} & \lr{4,243.84 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{2393.89 MB} & \lr{4,214.39 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.82\%} & \lr{--} & \lr{6591.89 MB} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+این ارزیابی نشان می‌دهد که ماژول ترکیبی \lr{granite\_hybrid} بر روی مدل \lr{DistilBERT} عملکرد بسیار شایسته‌ای ارائه داده و به دقت \lr{63.65\%} با شاخص F1 برابر با \lr{0.7325} دست یافته است. توان پردازشی روی این مدل بالغ بر ۸,۲۱۲ توکن بر ثانیه با اوج حافظه ۱۶۰۴ مگابایت ثبت شده است. بر روی مدل \lr{Qwen} نیز آزمایش با موفقیت اجرا شده و در رده \lr{PASS} قرار گرفته است، هرچند به دلیل پیچیدگی ترکیب لایه‌های Mamba و خبره‌های MoE، اوج مصرف حافظه گرافیکی به ۶۵۹۱ مگابایت افزایش یافته است.

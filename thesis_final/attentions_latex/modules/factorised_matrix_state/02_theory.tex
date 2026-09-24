@@ -1,0 +1,32 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{x}_t \in \mathbb{R}^D$ بردار ورودی در گام زمانی $t$ باشد. تانسورهای ویژگی غیرخطی با استفاده از توابع فعال‌سازی مشتق‌پذیر $\phi(\cdot)$ نگاشت می‌شوند:
+\begin{equation}
+\mathbf{q}_t = \phi(\mathbf{x}_t \mathbf{W}_Q), \quad \mathbf{k}_t = \phi(\mathbf{x}_t \mathbf{W}_K), \quad \mathbf{v}_t = \mathbf{x}_t \mathbf{W}_V
+\end{equation}
+حالت حافظه ماتریسی تجمعی $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ از طریق معادله بازگشتی به‌روزرسانی می‌گردد:
+\begin{equation}
+\mathbf{S}_t = \gamma_t \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top
+\end{equation}
+که در آن $\gamma_t = \sigma(\mathbf{x}_t \mathbf{w}_g)$ ضریب زوال حافظه وابسته به محتوا است که نرخ فراموشی اطلاعات گذشته را کنترل می‌کند. به منظور جلوگیری از واگرایی عددی، بردار پایدارکننده نرمال‌سازی $\mathbf{z}_t \in \mathbb{R}^d$ به موازات آن محاسبه می‌شود:
+\begin{equation}
+\mathbf{z}_t = \gamma_t \mathbf{z}_{t-1} + \mathbf{k}_t
+\end{equation}
+پاسخ توجه در گام $t$ با اعمال ضرب داخلی در حالت ماتریسی و نرمال‌سازی به دست می‌آید:
+\begin{equation}
+\mathbf{y}_t = \frac{\mathbf{q}_t \mathbf{S}_t}{\mathbf{q}_t \mathbf{z}_t + \epsilon}
+\end{equation}
+در مرحله نهایی، فاکتورسازی کم‌مرتبه خروجی با رتبه $r \ll D$ به همراه جبران‌سازی لورا اعمال می‌گردد:
+\begin{equation}
+\mathbf{O}_t = \mathbf{y}_t \left( \mathbf{W}_{down} \mathbf{W}_{up} + \frac{\alpha}{r_{lora}} \mathbf{B}_{lora} \mathbf{A}_{lora} \right)
+\end{equation}
+این ساختار به دلیل بی‌نیازی از محاسبه صریح ماتریس توجه دو‌به‌دو، پیچیدگی زمانی را از $\mathcal{O}(N^2)$ به $\mathcal{O}(N \cdot d)$ و پیچیدگی حافظه استنتاج را به $\mathcal{O}(d^2)$ کاهش می‌دهد.
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_factorised_matrix_state}
+\mathcal{C}_{\text{factorised\_matrix\_state}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

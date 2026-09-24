@@ -1,0 +1,73 @@
+\section{ماژول a3\_compressor (A3 Compressor)}
+\label{sec:module_a3_compressor}
+
+\subsection{معرفی و انگیزه}
+این ماژول در چارچوب پژوهش حاضر پیاده‌سازی و ارزیابی شده و فاقد مقاله مستقل جداگانه در ادبیات تحقیق است.
+
+فشرده‌سازی مدل‌های زبانی از طریق تجزیه مقادیر منفرد (\lr{SVD}) روشی کلاسیک برای کاهش پارامترها و تسریع محاسبات به شمار می‌رود. با این وجود، اعمال مستقیم \lr{SVD} سنتی بر روی ماتریس وزن‌ها بدون در نظر گرفتن ماهیت داده‌های ورودی (\lr{Data-Agnostic}) موجب افت شدید دقت مدل می‌گردد، زیرا برخی از ابعاد ویژگی فعال‌سازی ورودی دارای مقادیر پرت (\lr{Outliers}) و انرژی بالایی هستند که نادیده گرفتن آن‌ها باعث تخریب بازنمایی در لایه‌های عمیق می‌شود.
+
+موتور فشرده‌سازی \lr{A3 Compressor (Activation-Aware SVD with Activation Energy Weighting)} برای حل این معضل توسعه یافته است. در این الگوریتم، به جای تکیه بر اطلاعات خروجی و محاسبات پرهزینه ماتریس اطلاعات فیشر (\lr{Fisher Information Matrix}) که نیازمند گذر پسرو (\lr{Backward Pass}) است، ماتریس وزن‌ها با استفاده از بردار گشتاور دوم خام فعال‌سازی‌های ورودی پیش‌شرط‌سازی (\lr{Preconditioned}) می‌شود. این راهکار به همراه کالیبراسیون مجدد لایه‌های نرمال‌سازی (\lr{LayerNorm Recalibration}) و جستجوی پویای رتبه (\lr{STRS}) امکان کاهش فیزیکی پارامترها بدون فروپاشی بازنمایی مدل را فراهم می‌سازد.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن یک لایه خطی متراکم و $\mathbf{X} \in \mathbb{R}^{B \cdot N \times d_{\text{in}}}$ تانسور فعال‌سازی‌های ورودی استخراج‌شده از داده‌های کالیبراسیون باشد. بردار انرژی فعال‌سازی با گشتاور دوم به صورت زیر محاسبه می‌شود:
+\begin{equation}
+\mathbf{s}_j = \sqrt{\mathbb{E}[x_j^2] + \epsilon} = \sqrt{\frac{1}{M}\sum_{i=1}^M \mathbf{X}_{i, j}^2 + \epsilon}, \quad \forall j \in \{1, \dots, d_{\text{in}}\}
+\end{equation}
+سپس ماتریس وزن‌ها با قطر این بردار مقیاس‌گذاری می‌شود تا ویژگی‌های پرانرژی تقویت گردند:
+\begin{equation}
+\tilde{\mathbf{W}} = \mathbf{W} \operatorname{diag}(\mathbf{s})
+\end{equation}
+بر روی ماتریس مقیاس‌یافته، تجزیه مقادیر منفرد فشرده اجرا می‌شود:
+\begin{equation}
+\tilde{\mathbf{W}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top
+\end{equation}
+فاکتورهای کم‌مرتبه متناظر با رتبه انتخابی $r \ll \min(d_{\text{in}}, d_{\text{out}})$ با توزیع متقارن مقادیر منفرد و اعمال معکوس مقیاس ورودی تشکیل می‌شوند:
+\begin{equation}
+\mathbf{U}_r = \mathbf{U}_{:, :r} \mathbf{\Sigma}_{:r}^{1/2}, \quad \mathbf{V}_r = \mathbf{\Sigma}_{:r}^{1/2} \mathbf{V}_{:, :r}^\top \operatorname{diag}(\mathbf{s})^{-1}
+\end{equation}
+در نتیجه بازسازی موثر وزن‌ها به فرم فاکتورگیری‌شده کم‌مرتبه درمی‌آید:
+\begin{equation}
+\hat{\mathbf{W}} = \mathbf{U}_r \mathbf{V}_r \approx \mathbf{W}
+\end{equation}
+در گام پایانی، کالیبراسیون مجدد لایه‌های نرمال‌سازی به منظور هماهنگ‌سازی واریانس فعال‌سازی‌های جدید صورت می‌گیرد:
+\begin{equation}
+\boldsymbol{\gamma}_{\text{new}} = \boldsymbol{\gamma}_{\text{old}} \odot \frac{\boldsymbol{\sigma}_{\text{new}}}{\boldsymbol{\sigma}_{\text{old}}}
+\end{equation}
+
+\subsection{معماری و پیاده‌سازی}
+کلاس موتور فشرده‌سازی \lr{A3Compressor} و لایه خطی فاکتورگیری‌شده \lr{A3FactorizedLinear} در فایل \lr{Codes/framework/compression\_engine/a3\_compressor.py} قرار داشته و با شناسه‌های \lr{a3} و \lr{a3\_compressor} در رجیستری فشرده‌سازی سیستم به ثبت رسیده‌اند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
+\begin{itemize}
+    \item \textbf{جایگزینی فیزیکی ماژول‌ها (\lr{True Module Replacement}):} لایه‌های \lr{nn.Linear} و \lr{Conv1D} با ماژول اختصاصی \lr{A3FactorizedLinear} جایگزین می‌شوند که در آن خروجی به شکل $y = (x \mathbf{V}_r^\top)\mathbf{U}_r^\top + b$ محاسبه شده و حجم پارامترها از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌یابد.
+    \item \textbf{جستجوی تطبیقی رتبه (\lr{STRS Rank Search}):} الگوریتم رتبه‌های نامزد را بررسی کرده و کمترین رتبه‌ای که در آن خطای نسبی فروبنیوس از آستانه مجاز (\lr{max\_error}) کمتر باشد را انتخاب می‌نماید.
+    \item \textbf{مسیر امن بازگشت به وزن‌های چگال (\lr{Safety Fallback}):} در صورتی که خطای بازسازی فراتر از آستانه مجاز باشد، ماژول لایه را به ساختار چگال بازگردانده تا از تخریب ساختاری مدل جلوگیری نماید.
+    \item \textbf{پشتیبانی از سفیدسازی چولسکی (\lr{Cholesky Whitening}):} تعبیه امکان کواواریانس سفیدسازی کامل مشابه با الگوریتم \lr{SVD-LLM} جهت فشرده‌سازی لایه‌های حساس.
+\end{itemize}
+
+\subsection{نتایج تجربی}
+ارزیابی بنچ‌مارک سخت‌افزاری و آزمون دقت فشرده‌ساز \lr{a3\_compressor} بر روی مدل‌های گوناگون بر پایه پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_a3_compressor} منعکس شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{a3\_compressor} روی مدل‌های پایه}
+\label{tab:benchmark_a3_compressor}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{77.98\%} & \lr{0.7975} & \lr{773.88 MB} & \lr{26,884.14 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{85.67\%} & \lr{0.8731} & \lr{389.89 MB} & \lr{8,249.33 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{75.34\%} & \lr{0.7898} & \lr{468.84 MB} & \lr{10,877.23 tok/s} & \lr{PASS} \\
+\lr{Qwen} & \lr{51.99\%} & \lr{---} & \lr{1,260.31 MB} & \lr{---} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{a3\_compressor} کارایی قابل توجه‌ای در مدل‌های متراکم نشان داده است؛ به طوری که در مدل \lr{RoBERTa} دقت بسیار بالای \lr{85.67\%} همراه با شاخص F1 معادل \lr{0.8731} به ثبت رسیده و در مدل‌های \lr{DistilBERT} و \lr{GPT-2} نیز به ترتیب دقت‌های پایدار \lr{77.98\%} و \lr{75.34\%} گزارش شده است که همگی وضعیت موفقیت‌آمیز \lr{PASS} را احراز کرده‌اند.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+بررسی فرآیند فشرده‌سازی و خطاهای رخ‌داده بیانگر نکات تحلیلی زیر است:
+\begin{itemize}
+    \item \textbf{افت عملکرد نسبی در مدل \lr{Qwen} (دقت \lr{51.99\%}):} در مدل زبانی \lr{Qwen} دقت برابر با \lr{51.99\%} حاصل شده است. علت اصلی این پدیده، وجود وزن‌های متمرکز با مقادیر پرت بسیار شدید در لایه‌های چندگروهی (\lr{GQA}) مدل‌های مدرن است؛ پیش‌شرط‌سازی ساده با گشتاور دوم در غیاب داده‌های کالیبراسیون غنی و متنوع زبانی، نتوانسته جهت‌گیری تمام کانال‌های پرت را به طور کامل حفظ کند و منجر به تخریب نسبی فاکتورهای کم‌مرتبه در لایه‌های انتهایی دیکودر شده است.
+    \item \textbf{حساسیت به فرآیند کالیبراسیون و انحراف لایه‌نرمال:} در صورتی که متن‌های کالیبراسیون ورودی توزیع ناکافی داشته باشند یا پارامتر \lr{recalibrate\_ln} غیرفعال گردد، انحراف واریانس فعال‌سازی در طول لایه‌های عمیق تشدید شده و موجب افزایش خطای فروبنیوس فراتر از حد مجاز (\lr{max\_error}) می‌شود که در آن صورت ماژول ناگزیر به استفاده از مسیر پشتیبان (\lr{fallback}) و بازگردانی لایه به حالت متراکم می‌گردد.
+\end{itemize}

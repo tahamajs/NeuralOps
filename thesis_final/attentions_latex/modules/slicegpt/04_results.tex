@@ -1,0 +1,27 @@
+\subsection{نتایج تجربی}
+عملکرد ماژول \lr{SliceGPT} در آزمون‌های بنچ‌مارک ارزیابی چندمدلی در جدول \ref{tab:benchmark_slicegpt} خلاصه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی ماژول فشرده‌ساز برش ابعادی \lr{SliceGPT}}
+\label{tab:benchmark_slicegpt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{80.62\%} & \lr{0.8312} & \lr{339.71 MB} & \lr{126,869.88 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{366.79 MB} & \lr{84,266.24 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{59.06\%} & \lr{0.6270} & \lr{637.16 MB} & \lr{62,933.00 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+تحلیل شواهد تجربی ثبت‌شده نشان می‌دهد:
+\begin{itemize}
+    \item در مدل \lr{DistilBERT}، اعمال برش به دقت رضایت‌بخش \lr{80.62\%} با شاخص \lr{F1} معادل \lr{0.8312} و توان پردازشی بسیار بالای \lr{126,869.88 tok/s} انجامیده و معیار قبولی \lr{PASS} حاصل گردیده است.
+    \item در مدل \lr{GPT-2}، دقت \lr{59.06\%} با افت ناچیز \lr{1.72\%} نسبت به مدل پایه حفظ گردیده و توان محاسباتی به میزان \lr{62,933.00 tok/s} به همراه وضعیت \lr{PASS} ثبت شده است.
+    \item در مدل \lr{RoBERTa}، به دلیل حساسیت اتصالات پسماند به چرخش‌های مختصات و عدم بازتنظیم پس از برش، دقت مدل به \lr{50.92\%} تنزل یافته و وضعیت \lr{PASS\_LOW} ثبت گردیده است.
+    \item اجرای مدل \lr{Qwen} به دلیل الزامات منابع سخت‌افزاری در این فاز در وضعیت \lr{SKIP} قرار گرفته است.
+\end{itemize}

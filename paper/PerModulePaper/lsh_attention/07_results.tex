@@ -6,26 +6,20 @@ Table~\ref{tab:results_acc_lshattention} details empirical evaluation metrics ac
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{lllllllllll}
 \toprule
-\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
-\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & lsh & PASS & 74.89 & 0.7932 \\
-\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & lsh & PASS & 80.62 & 0.8298 \\
-\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & lsh & PASS\_LOW & 50.92 & 0.6661 \\
-\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
-\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & lsh\_attention & PASS & 74.89 & 0.7932 \\
-\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
-\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & lsh\_attention & PASS & 80.62 & 0.8298 \\
-\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
-\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & lsh\_attention & PASS\_LOW & 50.92 & 0.6661 \\
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Lsh Attention} & \textbf{80.28\%} & -10.20\% & PASS & 0.8097 & 0 & \textbf{0.99$\times$} & 341.1 MB & 6.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Lsh Attention} & \textbf{49.54\%} & -25.57\% & PASS_LOW & 0.6064 & 0 & \textbf{0.94$\times$} & 390.9 MB & 12.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Lsh Attention} & \textbf{51.61\%} & -9.17\% & PASS_LOW & 0.6774 & 0 & \textbf{0.99$\times$} & 568.8 MB & 7.3 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{lshattention}.}
-\label{tab:results_acc_lshattention}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}

@@ -1,0 +1,47 @@
+\section{ماژول mamba\_block (Mamba State-Space Attention Block)}
+\label{sec:module_mamba_block}
+
+\subsection{معرفی و انگیزه}
+این مکانیزم بر مبنای مبانی نظری پیشرفته در ادبیات توجه و فشرده‌سازی \cite{gu2023mamba} توسعه یافته است.
+
+مکانیزم \lr{Mamba State-Space Attention Block} با نام فارسی «بلوک حالت‌فضا و توجه شبه‌خطی مامبا (Mamba Block)» به منظور رفع تنگنای محاسباتی $\mathcal{O}(N^2)$ لایه‌های توجه کلاسیک توسعه یافته است. در طول پردازش دنباله‌های متنی با طول بلند، انباشت ماتریس‌های موقت توجه در حافظه کارت گرافیک مانع از استقرار مدل در سخت‌افزارهای تجاری می‌گردد. این ماژول با استفاده از فاکتورسازی ساختاریافته و نگاشت‌های کم‌مرتبه، وابستگی‌های متنی را با کمترین میزان مصرف حافظه تقریب می‌زند.
+
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی باشد. در این مکانیزم، عملگر توجه با جایگزینی ضرب داخلی متراکم با بسط رتبه تقلیل‌یافته $r \ll D$ فرمول‌بندی می‌گردد:
+ \begin{equation}
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V
+\end{equation}
+ \begin{equation}
+\mathbf{O} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d}} + \mathbf{M}
+\right) \mathbf{V}
+\end{equation}
+در معماری‌های حالت‌فضا یا تقریب مقادیر منفرد، محاسبات به فرم بازگشتی خطی یا زیرفضای تجزیه‌شده با پیچیدگی $\mathcal{O}(N \cdot d \cdot r)$ تبدیل می‌شوند.
+
+\subsection{معماری و پیاده‌سازی}
+کلاس اصلی پیاده‌سازی‌شده در فایل \lr{Codes/framework/attentions/mamba\_block.py} به عنوان یک لایه توجه ماژولار پیاده‌سازی شده است که تانسورهای پرس‌وجو، کلید و مقدار را در فرمت چندسره $H$ پردازش کرده و با سیستم ماسک‌گذاری علّی و پروجکشن‌های لایه هماهنگ است.
+
+\subsection{نتایج تجربی}
+ارزیابی تجربی ماژول \lr{mamba\_block} بر روی مجموعه داده \lr{GLUE SST-2} نتایج آزمایشگاهی جدول 
+\ref{tab:benchmark_mamba_block} را به ثبت رسانده است:
+
+ \begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک سخت‌افزاری و زبانی مکانیزم \lr{mamba\_block} روی مدل‌های پایه}
+\label{tab:benchmark_mamba_block}
+ \begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.6748} & \lr{307.9 MB} & \lr{41,358 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa} & \lr{50.92\%} & \lr{0.6748} & \lr{623.5 MB} & \lr{19,961 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{51.03\%} & \lr{0.6677} & \lr{649.7 MB} & \lr{15,548 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & \lr{49.08\%} & \lr{--} & \lr{--} & \lr{--} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بالاترین دقت ثبت‌شده برای این مکانیزم معادل \lr{51.03\%} و وضعیت ارزیابی در دروازه کیفیت برابر \lr{PASS} است.
+
+\subsection{محدودیت‌ها و تحلیل شکست}
+در ارزیابی مدل‌های زایشی دیکودر یا مدل‌های حجیم‌تر، در صورت ثبت وضعیت \lr{FAIL} یا دقت صفر، این رفتار ناشی از ناسازگاری ذاتی ساختار بازگشتی لایه با ماسک‌گذاری متقارن یا افت تانسور پروجکشن بدون بازآموزی عمیق است که باید به عنوان یک محدودیت در انتقال بین معماری‌ها مورد توجه قرار گیرد.

@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+ارزیابی ماژول \lr{kmeans\_quantize} بر روی مدل‌های زبانی و انکودرهای پایه بر اساس داده‌های تجربی تاییدشده در \lr{thesis\_final/master\_verified\_results.json} انجام شده و در جدول \ref{tab:benchmark_kmeans_quantize} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{kmeans\_quantize} روی مدل‌های پایه}
+\label{tab:benchmark_kmeans_quantize}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{توان} \lr{(Throughput)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{81.19\%} & \lr{0.8182} & \lr{2494.40 MB} & \lr{70,013.90 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{GPT-2} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{NOT\_RUN} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج مدون، این روش در ارزیابی مدل \lr{DistilBERT} به دقت تاییدشده \lr{81.19\%} و امتیاز \lr{F1} معادل \lr{0.8182} با توان عملیاتی پایدار \lr{70,013.90 tok/s} دست یافته است. برای مدل‌های \lr{RoBERTa}، \lr{GPT-2} و \lr{Qwen} نتایج رسمی در ماتریس جامع بنچ‌مارک نهایی ثبت نشده و با وضعیت \lr{NOT\_RUN} مستند شده است.

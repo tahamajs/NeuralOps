@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+یافته‌های تجربی بنچ‌مارک برای ماژول \lr{rotational\_slicegpt\_int4} بر پایه ارزیابی‌های مستند در پایگاه داده اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_rotational_slicegpt_int4} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز کوانتیزه‌شده چرخشی \lr{rotational\_slicegpt\_int4} روی مدل‌های پایه}
+\label{tab:benchmark_rotational_slicegpt_int4}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.99\%} & \lr{0.8987} & \lr{339.84 MB} & \lr{143,879.83 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{87.50\%} & \lr{0.8771} & \lr{360.79 MB} & \lr{97,994.80 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{61.70\%} & \lr{0.6706} & \lr{636.04 MB} & \lr{65,800.77 tok/s} & \lr{PASS} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر پایه داده‌های جدول، ترکیب برش ابعادی با چرخش یکامتعامد و کوانتیزاسیون ۴ بیتی به نتایج قابل توجه‌ای در دقت و سرعت دست یافته است؛ در مدل \lr{DistilBERT} دقت ممتاز \lr{88.99\%} با توان محاسباتی فراتر از $143$ هزار توکن بر ثانیه، و در مدل \lr{RoBERTa} دقت بسیار بالای \lr{87.50\%} احراز گردیده است. هم‌چنین در مدل تولیدی \lr{GPT-2} با وجود برش و کوانتیزاسیون سنگین، دقت باثبات \lr{61.70\%} با وضعیت موفقیت‌آمیز \lr{PASS} حاصل شده است.

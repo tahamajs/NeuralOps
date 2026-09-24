@@ -1,0 +1,38 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرآیند فشرده‌سازی لایه‌ها در الگوریتم \lr{SLiM} طی مراحل چهارگانه زیر فرمول‌بندی می‌شود:
+\begin{enumerate}
+    \item \textbf{کوانتیزاسیون $b$-بیت وزن اولیه:}
+    فرض کنید $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ماتریس وزن اصلی باشد. عملگر کوانتیزاسیون یکنواخت با گام مقیاس‌بندی $s$ به فرم زیر اعمال می‌شود:
+    \begin{equation}
+    s = \frac{\max(|\mathbf{W}_0|)}{2^{b-1} - 1}, \quad \mathbf{W}_q = s \cdot \operatorname{clamp}\left( \left\lfloor \frac{\mathbf{W}_0}{s} \right\rceil, -2^{b-1}, 2^{b-1} - 1 \right)
+    \end{equation}
+    \item \textbf{اعمال تنک‌سازی نیمه‌ساختاریافته 2:4:}
+    روی ماتریس کوانتیده‌شده $\mathbf{W}_q$ تصویرگر الگوی تنک 2:4 اعمال می‌گردد که در هر بلوک چهارتایی از عناصر سطر، دو عنصر با کمترین اندازه مطلق را صفر می‌کند:
+    \begin{equation}
+    \mathbf{W}_{sp} = \Pi_{2:4}(\mathbf{W}_q, |\mathbf{W}_q|)
+    \end{equation}
+    \item \textbf{تشکیل ماتریس خطای باقیمانده (\lr{Residual Error}):}
+    اختلاف بین ماتریس متراکم اولیه و وزن تنکِ کوانتیده‌شده محاسبه می‌شود:
+    \begin{equation}
+    \mathbf{R} = \mathbf{W}_0 - \mathbf{W}_{sp}
+    \end{equation}
+    \item \textbf{تقریب کم‌مرتبه باقیمانده با SVD و بازسازی وزن نهایی:}
+    ماتریس خطای باقیمانده $\mathbf{R}$ تحت تجزیه مقادیر منفرد با مرتبه $r$ قرار می‌گیرد:
+    \begin{equation}
+    \mathbf{R} \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top = \mathbf{L}_r
+    \end{equation}
+    در نهایت، ماتریس وزن بازسازی‌شده فشرده به صورت مجموع مؤلفه تنک و تقریب کم‌مرتبه حاصل می‌شود:
+    \begin{equation}
+    \mathbf{W}_{slim} = \mathbf{W}_{sp} + \mathbf{L}_r
+    \end{equation}
+\end{enumerate}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_slim_compressor}
+\mathcal{C}_{\text{slim\_compressor}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.

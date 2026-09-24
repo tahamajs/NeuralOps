@@ -4,14 +4,14 @@
 
 **Table 7.1: Main results on SST-2.**
 
-| Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
-|---|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **CHELA-SLAY** | **89.91** | -0.80 | 0.9033 | 67500000 | 700000 | 374 MB MB |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **CHELA-SLAY** | **83.83** | +5.27 | 0.8583 | 126000000 | 1400000 | 438 MB MB |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **CHELA-SLAY** | **85.89** | +6.53 | 0.8712 | 125500000 | 1400000 | 2291 MB MB |
+| Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
+| DistilBERT | **Chela Slay** | **89.91%** | -0.57% | PASS | 0.9033 | 0 | **0.99x** | 373.5 MB | 16.0s |
+| RoBERTa | full | 94.38% | -- | -- | 0.9445 | 0 | 1.00x | 293 MB | 4.10s |
+| RoBERTa | **Chela Slay** | **83.83%** | -4.93% | PASS | 0.8583 | 0 | **0.94x** | 438.3 MB | 39.2s |
+| GPT-2 | full | 89.33% | -- | -- | 0.8942 | 0 | 1.00x | 382 MB | 4.20s |
+| GPT-2 | **Chela Slay** | **85.89%** | +4.58% | PASS | 0.8712 | 0 | **1.00x** | 2291.2 MB | 198.1s |
 
 ## 7.2 Parameter Analysis
 

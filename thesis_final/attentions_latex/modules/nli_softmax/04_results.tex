@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج حاصل از ارزیابی تجربی بنچ‌مارک ماژول \lr{nli\_softmax} طبق اطلاعات پایگاه نتایج \lr{results/unified\_nli\_softmax\_4models\_summary.json} در جدول \ref{tab:benchmark_nli_softmax} گزارش شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج تجربی و اعتبارسنجی بنچ‌مارک فشرده‌ساز \lr{nli\_softmax} روی مدل‌های پایه}
+\label{tab:benchmark_nli_softmax}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه} \lr{(Base Model)} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه} \lr{(Peak VRAM)} & \textbf{زمان} \lr{(Time)} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.94\%} & \lr{0.9123} & \lr{337.6 MB} & \lr{16.6 s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{0.00\%} & \lr{0.7586} & \lr{298.7 MB} & \lr{20.4 s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{62.04\%} & \lr{0.6783} & \lr{634.9 MB} & \lr{21.9 s} & \lr{PASS} \\
+\lr{Qwen} & \lr{---} & \lr{---} & \lr{---} & \lr{---} & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس نتایج تجربی، ماژول \lr{nli\_softmax} در مدل \lr{DistilBERT} دقت قابل توجه \lr{90.94\%} را به ثبت رسانده که نشان‌دهنده بهبود \lr{+0.46\%} نسبت به مدل پایه است. همچنین در مدل \lr{GPT-2} دقت مدل به \lr{62.04\%} افزایش یافته و بهبود \lr{+1.26\%} را احراز کرده است. با این وجود، در مدل \lr{RoBERTa} وضعیت آزمون با خطای کد خروجی ۱ به صورت \lr{FAIL} ثبت شده است، هرچند که شاخص F1 معادل \lr{0.7586} گزارش شده است. ارزیابی مدل \lr{Qwen} نیز به صورت \lr{SKIP} تعیین گردیده است.

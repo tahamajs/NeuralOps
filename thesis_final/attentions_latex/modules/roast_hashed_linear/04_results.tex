@@ -1,0 +1,21 @@
+\subsection{نتایج تجربی}
+نتایج ارزیابی‌های تجربی ثبت‌شده برای ماژول \lr{roast\_hashed\_linear} در پایگاه اعتبارسنجی \lr{thesis\_final/master\_verified\_results.json} در جدول \ref{tab:benchmark_roast_hashed_linear} ارائه شده است:
+
+\begin{table}[H]
+\centering
+\small
+\caption{نتایج بنچ‌مارک تجربی فشرده‌ساز درهم‌ساز سخت‌افزار-آگاه \lr{roast\_hashed\_linear} روی مدل‌های پایه}
+\label{tab:benchmark_roast_hashed_linear}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.9040} & \lr{337.59 MB} & \lr{54,047.60 tok/s} & \lr{PASS} \\
+\lr{RoBERTa} & \lr{86.81\%} & \lr{0.8791} & \lr{583.49 MB} & \lr{28,100.97 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{51.72\%} & \lr{0.6774} & \lr{634.91 MB} & \lr{27,781.01 tok/s} & \lr{PASS\_LOW} \\
+\lr{Qwen} & -- & -- & -- & -- & \lr{SKIP} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+بر اساس یافته‌های حاصل از بنچ‌مارک تجربی، ماژول \lr{roast\_hashed\_linear} پایداری و دقت بسیار بالایی در مدل‌های انکودر متراکم از خود نشان داده است؛ به طوری که در مدل \lr{DistilBERT} به دقت قابل توجه \lr{90.14\%} با F1 معادل \lr{0.9040} رسیده و در \lr{RoBERTa} دقت \lr{86.81\%} را احراز کرده است. در مدل خودبازگشت \lr{GPT-2} دقت برابر با \lr{51.72\%} و وضعیت \lr{PASS\_LOW} ثبت گردیده و در مدل \lr{Qwen} به علت ناسازگاری لایه‌های چندگروهی در نسخه ارزیابی اولیه، وضعیت به صورت \lr{SKIP} گزارش شده است.

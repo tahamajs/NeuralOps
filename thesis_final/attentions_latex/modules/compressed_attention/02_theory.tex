@@ -1,0 +1,27 @@
+\subsection{مبانی نظری و فرمول‌بندی ریاضی}
+فرض کنید $\mathbf{W} \in \mathbb{R}^{D_{\text{in}} \times D_{\text{out}}}$ ماتریس وزن پروجکشن کامل در لایه توجه باشد. با اعمال تجزیه مقادیر منفرد (\lr{SVD})، ماتریس وزن به صورت زیر بیان می‌گردد:
+\begin{equation}
+\mathbf{W} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top = \sum_{i=1}^{\min(D_{\text{in}}, D_{\text{out}})} \sigma_i \mathbf{u}_i \mathbf{v}_i^\top
+\end{equation}
+با انتخاب رتبه فشرده‌سازی $r \ll \min(D_{\text{in}}, D_{\text{out}})$ بر مبنای حفظ درصد معینی از انرژی مقادیر منفرد ($\sum_{i=1}^r \sigma_i^2 / \sum \sigma_i^2 \ge \rho$)، ماتریس تقریب کم‌مرتبه حاصل می‌شود. به منظور حفظ تقارن عددی و مقیاس‌پذیری پایدار در لایه‌ها، ماتریس قطری مقادیر منفرد به صورت رادیکالی متقارن در میان دو ماتریس چپ و راست توزیع می‌گردد:
+\begin{equation}
+\mathbf{W}_{\text{SVD}} \approx \left(\mathbf{U}_r \mathbf{\Sigma}_r^{1/2}\right) \left(\mathbf{\Sigma}_r^{1/2} \mathbf{V}_r^\top\right)
+\end{equation}
+برای بازیابی افت دقت ناشی از فاکتورسازی، شاخه کم‌مرتبه تطبیقی آموزش‌پذیر \lr{LoRA} با ضریب مقیاس $\frac{\alpha}{r_{\text{lora}}}$ به پروجکشن افزوده می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{X} \mathbf{W}_{\text{SVD}} + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} \mathbf{X} \mathbf{A}_{\text{lora}} \mathbf{B}_{\text{lora}}
+\end{equation}
+پس از استخراج تانسورهای پرس‌وجو، کلید و مقدار و اعمال انحراف مکانی چرخشی \lr{RoPE} و تکرار سرهای گروه‌بندی‌شده \lr{GQA}، ماتریس توجه محاسبه می‌شود:
+\begin{equation}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}, \quad \mathbf{A} = \operatorname{softmax}(\mathbf{S}), \quad \mathbf{O} = \mathbf{A} \mathbf{V} \mathbf{W}_O
+\end{equation}
+
+که در آن $\sigma_i(\mathbf{W})$ بیانگر $i$-امین مقدار منفرد مرتب‌شده ماتریس به صورت نزولی است. نسبت حفظ انرژی طیفی $\eta_r = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{d} \sigma_i^2}$ تضمین می‌کند که با انتخاب آستانه $\tau \ge 0.90$، بیش از نود درصد از پراکندگی واریانس داده‌ها حفظ شده و افت سیگنال در انتشار گرادیان رو به عقب به حداقل ممکن کاهش می‌یابد.
+
+\paragraph{تحلیل مجانبی و پیچیدگی اشتراک حافظه سخت‌افزاری}
+از منظر پیچیدگی محاسباتی و انتقال داده‌ها در سلسومراتب حافظه (حافظه سراسری \lr{HBM} به حافظه محلی \lr{SRAM})، عملیات ضرب ماتریسی در این مکانیزم نیازمند تخصیص بافر موقت با ابعاد فاکتورگیری‌شده است. برای پردازش دنباله‌ای به طول $N$ با بعد مخفی $D$، بار محاسباتی هسته از فرم درجه دو به رابطه زیر تقلیل می‌یابد:
+\begin{equation}
+\label{eq:complexity_compressed_attention}
+\mathcal{C}_{\text{compressed\_attention}} = \mathcal{O}\left( B \cdot N \cdot D \cdot r + B \cdot H \cdot N \cdot d_k \right) \ll \mathcal{O}\left( B \cdot H \cdot N^2 \cdot d_k \right)
+\end{equation}
+این بهبود مرتبه پیچیدگی، با کاهش چشمگیر حجم تبادل تانسورها در گذرگاه‌های ارتباطی کارت گرافیک، مانع از اشباع پهنای باند حافظه (پدیده \lr{Memory-Bound}) در فرآیند استنتاج طولانی‌مدت می‌گردد.
