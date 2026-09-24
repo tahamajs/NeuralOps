@@ -352,13 +352,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_swift_svd",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_rala_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules rala_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_rala_compressor",
@@ -7911,9 +7904,9 @@
       "retries": 0
     },
     {
-      "id": "p12_fill_papers",
-      "type": "cpu",
-      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 220",
+      "id": "p3_gpt2_swift_svd",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules swift_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_swift_svd",
       "status": "active",
       "retries": 0
     }
@@ -9212,6 +9205,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules ressvd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_ressvd",
       "started_at": "2026-09-24T21:07:04.087182",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p12_fill_papers",
+      "id": "p12_fill_papers",
+      "job_type": "cpu",
+      "cmd": "python -u Codes/framework/auto_pipeline.py --process_papers 0 220",
+      "started_at": "2026-09-24T21:19:06.335690",
       "retries": 0,
       "status": "done"
     }
