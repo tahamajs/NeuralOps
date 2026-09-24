@@ -48,13 +48,27 @@ _LEGACY_MAP = {
     "soka": "soka_compressor",
     "swift_svd_compressor": "swift_svd_act",
     "zerokv_neo": "zerokv_neo_compressor",
+    "cur_linear": "cur_compressor",
+    "kronecker_linear": "kronecker_compressor",
+    "tt_linear": "tt_compressor",
+    "hashed_linear": "hashed_net_compressor",
+    "come": "come_compressor",
+    "cure": "cur_moe_compressor",
+    "dobi": "dobi_svd",
+    "dynamic_entropy": "dynamic_rank",
+    "tomoe": "tomoe_compressor",
+    "adaptive_compressor": "adaptive_ranks",
+    "pruning_utils": "framework.core.pruning_utils",
 }
 
 
 def __getattr__(name: str):
     if name in _LEGACY_MAP:
         target = _LEGACY_MAP[name]
-        mod = importlib.import_module(f".{target}", __name__)
+        if target.startswith("framework."):
+            mod = importlib.import_module(target)
+        else:
+            mod = importlib.import_module(f".{target}", __name__)
         sys.modules[f"{__name__}.{name}"] = mod
         return mod
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
