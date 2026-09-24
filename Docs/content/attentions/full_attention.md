@@ -238,7 +238,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | sst2 | `PASS` | N/A | **87.61%** | N/A | 0.8844 | 1.00x | 0 | N/A | 2026-09-24 |
-| **roberta-base** | sst2 | `PASS` | N/A | **78.56%** | N/A | 0.8124 | 1.00x | 0 | N/A | 2026-09-15 |
+| **roberta-base (un-finetuned)** | sst2 | `PASS` | N/A | **78.56%** (archived, untuned base) | N/A | 0.8124 | 1.00x | 0 | N/A | 2026-09-15 |
 | **qwen2.5-0.5b-instruct** | sst2 | `PASS` | N/A | **76.61%** | N/A | 0.7939 | 1.00x | 0 | N/A | 2026-09-14 |
 | **distilbert-sst2** | mnli | `PASS` | N/A | **47.30%** | N/A | 0.3810 | 1.00x | 0 | N/A | 2026-09-18 |
 | **distilbert-sst2** | ag_news | `PASS` | N/A | **49.30%** | N/A | 0.4366 | 1.00x | 0 | N/A | 2026-09-17 |
