@@ -471,8 +471,19 @@ def compute_compression_metrics(
         compression_rate = compression_rate_raw = compression_rate_net = 1.0
         compression_ratio_pct = 0.0
 
-    num_compressed_layers = comp_stats.get("num_compressed", 0)
-    num_fallback_layers = comp_stats.get("num_fallback", 0)
+    num_compressed_layers = comp_stats.get(
+        "num_compressed",
+        comp_stats.get("num_compressed_layers", comp_stats.get("compressed_layers_count", 0)),
+    )
+    if isinstance(comp_stats.get("compressed_layers"), (list, tuple)):
+        num_compressed_layers = max(num_compressed_layers, len(comp_stats["compressed_layers"]))
+
+    num_fallback_layers = comp_stats.get(
+        "num_fallback",
+        comp_stats.get("num_fallback_layers", comp_stats.get("fallback_layer_count", 0)),
+    )
+    if isinstance(comp_stats.get("fallback_layers"), (list, tuple)):
+        num_fallback_layers = max(num_fallback_layers, len(comp_stats["fallback_layers"]))
 
     layer_ranks = dict(comp_stats.get("layer_ranks", {}))
     layer_errors = dict(comp_stats.get("layer_errors", {}))
@@ -3606,16 +3617,16 @@ def run_single_module_main(args) -> dict:
                     err = f"FAIL_PPL_DIVERGED: perplexity ({ppl_num:.2f}) exceeded threshold 100.0"
             else:
                 if acc <= 0.0 or (status == "PENDING" and acc < pass_threshold_pct):
-                    status = "EVAL_FAILED" if acc <= 0.0 else "PASS_LOW"
+                    status = "EVAL_FAILED" if acc <= 0.0 else "FAIL_BELOW_CHANCE"
                     if acc <= 0.0:
                         err = f"EVAL_FAILED: evaluated accuracy is non-positive ({acc:.2f}%)"
                 elif acc >= pass_threshold_pct:
                     status = "PASS"
                 else:
-                    status = "PASS_LOW"
+                    status = "FAIL_BELOW_CHANCE"
 
                 if had_nan:
-                    status = "PASS_LOW"
+                    status = "FAIL_RECOVERY_NAN"
                     err = "note: recovery_loss_nan"
                 elif acc < pass_threshold_pct and status != "EVAL_FAILED":
                     err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
@@ -3639,8 +3650,11 @@ def run_single_module_main(args) -> dict:
                       and comp_metrics.get("num_injected_attention_layers", 0) == 0
                       and not name.startswith("inject_")
                       and base_params_after >= p_before * 0.99):
-                    status = "PASS_NO_COMPRESSION"
-                    err = "note: zero compressed layers, zero injected layers, model unchanged"
+                    if status.startswith("FAIL") or status.startswith("EVAL_FAILED") or status.startswith("SKIP"):
+                        err = f"{status}: zero compressed layers, zero injected layers ({err})".strip(": ")
+                    else:
+                        status = "PASS_NO_COMPRESSION"
+                        err = "note: zero compressed layers, zero injected layers, model unchanged"
 
         # Update per-module full metrics JSON with final classification status and elapsed time
         json_path = out / f"{model_slug}_{name}_full_metrics.json"
