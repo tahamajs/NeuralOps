@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_kronecker_tt_lora_factory",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_factory",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_erc_svd",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules erc_svd --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_erc_svd",
@@ -7825,13 +7818,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_svd_proj_attn",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_proj_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_proj_attn",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_compressed_mha",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules compressed_mha --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_compressed_mha",
@@ -7849,6 +7835,13 @@
       "id": "p3_gpt2_dynamic_entropy_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_kronecker_tt_lora_factory",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules kronecker_tt_lora_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_kronecker_tt_lora_factory",
       "status": "active",
       "retries": 0
     }
@@ -9228,6 +9221,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules mlorq_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_mlorq_compressor",
       "started_at": "2026-09-24T21:34:56.135514",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_svd_proj_attn",
+      "id": "p3_gpt2_svd_proj_attn",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules svd_proj_attn --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_svd_proj_attn",
+      "started_at": "2026-09-24T21:32:04.033468",
       "retries": 0,
       "status": "done"
     }
