@@ -229,37 +229,25 @@ def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[n
     container = getattr(layer, attn_attr, None)
     if container is not None and hasattr(container, "self"):
         container.self = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = True
         return
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
-            if hasattr(new_attn, "is_nested_encoder"):
-                new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
-            if hasattr(new_attn, "is_nested_encoder"):
-                new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "self_attn"):
         layer.self_attn = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "attn"):
         layer.attn = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = False
         return
 
     if hasattr(layer, "self"):
         layer.self = new_attn
-        if hasattr(new_attn, "is_nested_encoder"):
-            new_attn.is_nested_encoder = True
 
 
 INJECT_TO_CLASS_MAP: Dict[str, str] = {
@@ -332,6 +320,12 @@ def replace_attention_in_model(
         attention_params = {}
 
     model_type = getattr(getattr(model, "config", None), "model_type", None)
+
+    if model_type in ("t5", "mt5", "bart", "mbart", "pegasus", "marian"):
+        raise NotImplementedError(
+            f"replace_attention_in_model does not support encoder-decoder "
+            f"models (model_type={model_type}). Cross-attention is not implemented."
+        )
 
     inject_fn = ATTENTION_REGISTRY.get(attention_name)
     if inject_fn is None:
@@ -573,33 +567,45 @@ class ReplaceAttention(BaseAttention):
             if isinstance(target_proj, _FactorizedLinear):
                 try:
                     W = w.detach().float()
+                    # Warn on shape mismatch
                     if W.shape[0] != target_out or W.shape[1] != target_in:
-                        padded = torch.zeros(target_out, target_in, dtype=W.dtype, device=W.device)
-                        r = min(target_out, W.shape[0])
-                        c = min(target_in, W.shape[1])
-                        padded[:r, :c] = W[:r, :c]
-                        W = padded
+                        logger.warning(
+                            "Shape mismatch in copy_into: source %s, target (%d, %d). "
+                            "Using SVD rank-reduction.",
+                            tuple(W.shape), target_out, target_in
+                        )
                     U, S, Vh = torch.linalg.svd(W, full_matrices=False)
                     rank = min(target_proj.rank, U.size(1), Vh.size(0))
                     target_proj.down.weight.data.zero_()
                     target_proj.up.weight.data.zero_()
-                    target_proj.down.weight.data[:rank, :].copy_(Vh[:rank, :].to(target_proj.down.weight.dtype))
+                    target_proj.down.weight.data[:rank, :].copy_(
+                        Vh[:rank, :].to(target_proj.down.weight.dtype)
+                    )
                     US = U[:, :rank] @ torch.diag(S[:rank])
-                    target_proj.up.weight.data[:, :rank].copy_(US.to(target_proj.up.weight.dtype))
+                    target_proj.up.weight.data[:, :rank].copy_(
+                        US.to(target_proj.up.weight.dtype)
+                    )
                     if b is not None and target_proj.up.bias is not None:
                         n = min(b.numel(), target_proj.up.bias.numel())
                         target_proj.up.bias.data[:n].copy_(b[:n].to(target_proj.up.bias.dtype))
                 except Exception as e:
                     logger.warning("SVD init failed: %s", e)
             else:
-                r = min(target_out, w.shape[0])
-                c = min(target_in, w.shape[1])
-                target_proj.weight.data.zero_()
-                target_proj.weight.data[:r, :c].copy_(w[:r, :c].to(target_proj.weight.dtype))
+                # Raise on shape mismatch
+                if w.shape != target_proj.weight.shape:
+                    raise ValueError(
+                        f"Weight shape mismatch: source {tuple(w.shape)} != "
+                        f"target {tuple(target_proj.weight.shape)}. "
+                        f"Refusing to silently zero-pad."
+                    )
+                target_proj.weight.data.copy_(w.to(target_proj.weight.dtype))
                 if b is not None and target_proj.bias is not None:
-                    n = min(b.numel(), target_proj.bias.numel())
-                    target_proj.bias.data.zero_()
-                    target_proj.bias.data[:n].copy_(b[:n].to(target_proj.bias.dtype))
+                    if b.shape != target_proj.bias.shape:
+                        raise ValueError(
+                            f"Bias shape mismatch: {tuple(b.shape)} != "
+                            f"{tuple(target_proj.bias.shape)}"
+                        )
+                    target_proj.bias.data.copy_(b.to(target_proj.bias.dtype))
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal weight extraction for all supported architectures."""
@@ -761,28 +767,29 @@ class ReplaceAttention(BaseAttention):
             elif attention_mask.dim() == 4:
                 attn_mask_sdpa = attention_mask.to(Q.dtype)
 
-        # RE-21: causal is enabled only when attn_mask is None.
-        try:
-            q_sdpa = Q.half() if Q.dtype == torch.float32 else Q
-            k_sdpa = K.half() if K.dtype == torch.float32 else K
-            v_sdpa = V.half() if V.dtype == torch.float32 else V
+        # SDPA does not support returning attention weights or arbitrary head_mask
+        if not output_attentions and head_mask is None:
+            try:
+                q_sdpa = Q.half() if Q.dtype == torch.float32 else Q
+                k_sdpa = K.half() if K.dtype == torch.float32 else K
+                v_sdpa = V.half() if V.dtype == torch.float32 else V
 
-            out_sdpa = F.scaled_dot_product_attention(
-                q_sdpa, k_sdpa, v_sdpa,
-                attn_mask=attn_mask_sdpa,
-                is_causal=is_causal and attn_mask_sdpa is None,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                out_sdpa = F.scaled_dot_product_attention(
+                    q_sdpa, k_sdpa, v_sdpa,
+                    attn_mask=attn_mask_sdpa,
+                    is_causal=is_causal and attn_mask_sdpa is None,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            if self.is_nested_encoder:
-                return out, None
-            result = self.out_proj(out)
-            result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
-            return result, None
-        except Exception as e:
-            logger.debug("SDPA path failed (%s); falling back to explicit attention.", e)
+                if self.is_nested_encoder:
+                    return out, None
+                result = self.out_proj(out)
+                result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
+                return result, None
+            except Exception as e:
+                logger.debug("SDPA path failed (%s); falling back to explicit attention.", e)
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
@@ -812,7 +819,7 @@ class ReplaceAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask[:, :, :1].unsqueeze(-1)
+                head_mask = head_mask.unsqueeze(2)  # (B, H, 1, N) for broadcasting
             probs = probs * head_mask
 
         context = torch.matmul(probs, V)
