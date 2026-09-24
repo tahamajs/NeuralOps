@@ -9,13 +9,6 @@
       "retries": 0
     },
     {
-      "id": "p3_gpt2_frandi_compressor_class",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor_class",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_zerokv",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules zerokv --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_zerokv",
@@ -7953,13 +7946,6 @@
   ],
   "active": [
     {
-      "id": "p4_rob_swift_svd_act",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix roberta_swift_svd_act",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p4_rob_replace",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules replace --parallel 1 --batch_size 4 --output_suffix roberta_replace",
@@ -7977,6 +7963,13 @@
       "id": "p3_gpt2_frandi_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_frandi_compressor_class",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules frandi_compressor_class --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_frandi_compressor_class",
       "status": "active",
       "retries": 0
     }
@@ -9194,6 +9187,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules uniql_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_uniql_factory",
       "started_at": "2026-09-24T20:48:20.172801",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p4_rob_swift_svd_act",
+      "id": "p4_rob_swift_svd_act",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/roberta_sst2 --dataset sst2 --modules swift_svd_act --parallel 1 --batch_size 4 --output_suffix roberta_swift_svd_act",
+      "started_at": "2026-09-24T20:57:10.621262",
       "retries": 0,
       "status": "done"
     }
