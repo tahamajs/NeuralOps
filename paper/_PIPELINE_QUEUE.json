@@ -2,13 +2,6 @@
   "max_parallel": 4,
   "jobs": [
     {
-      "id": "p3_gpt2_pca_quant_compressor",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_compressor",
-      "status": "pending",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_dynamic_rank_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_rank_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_rank_factory",
@@ -8121,13 +8114,6 @@
   ],
   "active": [
     {
-      "id": "p3_gpt2_coopq",
-      "type": "gpu",
-      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq",
-      "status": "active",
-      "retries": 0
-    },
-    {
       "id": "p3_gpt2_bonsai_pruner_factory",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules bonsai_pruner_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_bonsai_pruner_factory",
@@ -8145,6 +8131,13 @@
       "id": "p3_gpt2_drone_compressor",
       "type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules drone_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_drone_compressor",
+      "status": "active",
+      "retries": 0
+    },
+    {
+      "id": "p3_gpt2_pca_quant_compressor",
+      "type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules pca_quant_compressor --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_pca_quant_compressor",
       "status": "active",
       "retries": 0
     }
@@ -9146,6 +9139,15 @@
       "job_type": "gpu",
       "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules dynamic_entropy_svd_factory --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_dynamic_entropy_svd_factory",
       "started_at": "2026-09-24T06:37:06.405781",
+      "retries": 0,
+      "status": "done"
+    },
+    {
+      "job_id": "p3_gpt2_coopq",
+      "id": "p3_gpt2_coopq",
+      "job_type": "gpu",
+      "cmd": "python -u Codes/framework/run_quality_sweep.py --model models/gpt2 --dataset wikitext2 --modules coopq --parallel 1 --batch_size 4 --output_suffix gpt2_wt2_coopq",
+      "started_at": "2026-09-24T06:37:33.072092",
       "retries": 0,
       "status": "done"
     }
