@@ -2715,7 +2715,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                         "num_compressed_layers": num_svd_layers,
                         "num_fallback_layers": 0,
                     }
-                    return perf_metrics, comp_metrics, True, path_name, False
+                    return perf_metrics, comp_metrics, True, path_name, False, 0.0
                 LOG.info("=" * 70)
 
             had_nan = False
@@ -2896,7 +2896,7 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     LOG.debug("Optional HF model export info: %s", hf_save_err)
             except Exception as me_err:
                 LOG.warning("Failed to collect/export full metrics or weights for %s: %s", name, me_err)
-            return perf_metrics, comp_metrics, injected, path_name, had_nan
+            return perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s
         finally:
             if model is not None:
                 try:
@@ -3644,10 +3644,11 @@ def run_single_module_main(args) -> dict:
         model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")
 
         acc = 0.0  # default; overwritten on success or exception
+        recovery_time_s = 0.0
         try:
 
             # Pipeline replaced
-            perf_metrics, comp_metrics, injected, path_name, had_nan = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
+            perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
             # *** Critical: extract acc from perf_metrics on successful run ***
             acc = perf_metrics.get("accuracy_pct", 0.0)
         except TimeoutError as exc:
