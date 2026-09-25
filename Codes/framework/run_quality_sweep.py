@@ -591,6 +591,8 @@ def compute_compression_metrics(
         "num_injected_attention_layers": num_injected_attention,
         "lora_params": lora_params,
         "avg_reconstruction_error": avg_reconstruction_error,
+        "weighted_reconstruction_error": weighted_reconstruction_error,  # ← این خط
+
         "per_layer_reconstruction_errors": layer_errors,
         "per_layer_ranks": layer_ranks,
         "is_unstructured_sparsity": bool(("admm" in module_name.lower() or "sparse" in module_name.lower() or "prun" in module_name.lower()) and compression_rate <= 1.001),
@@ -806,7 +808,9 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
 
         try:
             with torch.autocast(device_type=device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
-                outputs = model(input_batch, labels=target_batch)
+                attn_mask = (input_batch != pad_id).long()
+                outputs = model(input_batch, attention_mask=attn_mask, labels=target_batch)
+
                 loss = outputs.loss.float()
         except Exception as e:
             from framework.utils.logger import LOG
@@ -3270,9 +3274,12 @@ def run_single_module_main(args) -> dict:
                 except Exception as e:
                     LOG.warning("Failed to save fine-tuned checkpoint %s: %s (continuing in-memory)", checkpoint, e)
     if args.precision == "fp16":
-        for name, p in base.named_parameters():
-            if not p.requires_grad:
-                p.data = p.data.half()
+        with torch.no_grad():
+            for name, p in base.named_parameters():
+                if not p.requires_grad and p.dtype != torch.float16:
+                    p.data = p.data.half()
+
+
     base.to("cpu")
     try:
         (out / "finetune_metadata.json").write_text(json.dumps({
@@ -4294,15 +4301,6 @@ def main():
         }
     }
     
-    FIELDS = [
-        "module_name", "status", "accuracy_pct", "perplexity", "ppl_status", "f1_score", "f1_macro",
-        "precision", "recall", "val_loss", "elapsed_s", "peak_vram_mb", "tokens_per_sec",
-        "total_params_before", "total_params_after", "trainable_recovery_params",
-        "compression_rate", "compression_ratio_pct", "flops_reduction_pct",
-        "num_compressed_layers", "num_fallback_layers", "avg_reconstruction_error",
-        "weighted_reconstruction_error", "num_injected_attention_layers",
-        "lora_params", "error", "path", "timestamp"
-    ]
 
     import threading
     csv_write_lock = threading.Lock()
