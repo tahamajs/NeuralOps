@@ -320,6 +320,7 @@ def _moba_fused_block_attn_kernel(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | wikitext2 | `PASS` | 99.72% | **100.00%** | +0.28% | 0.0000 | 1.00x | 12 | N/A | 2026-09-23 |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **76.38%** | -14.22% | 0.7605 | 1.00x | 0 | [svd-linear-attention-distilbert-sst2-moba](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-moba) | 2026-09-25 |
 
 
 The empirical evaluation of `moba_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
