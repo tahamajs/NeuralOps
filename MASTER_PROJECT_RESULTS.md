@@ -344,6 +344,7 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `rpca_compressor` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `rpca_compressor` | RoBERTa | 94.04% | 94.04% | 92.09% (0.3829) | 92.66% (0.2466) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `saes_svd` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
+| `saes_svd` | RoBERTa | 93.92% | [QUEUED] | 91.51% (0.3820) | 92.66% (0.2436) | 1.00× $\to$ 1.04× | **PASS (r=64, 256, 384)** |
 | `saes_svd_v2` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
 | `salr` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 1.00× | **Invariance PASS** |
 | `slicegpt` | DistilBERT | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 1.00× | **Invariance PASS** |
@@ -800,3 +801,21 @@ Systematic evaluation of linear attention, recurrent state-space, and low-rank k
 
 
 
+
+---
+
+## 11. Cross-Domain Transfer Sweeps (AG News)
+
+| Module | Dataset | Accuracy | F1 Score | Compression | Recon Error | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `a3_compressor` | AG News | 72.13% | 0.7528 | 1.03× | 0.3495 | **PASS** |
+| `adasvd_compressor` | AG News | 74.66% | 0.7889 | 1.21× | 0.3409 | **PASS** |
+| `admm_compressor` | AG News | 70.41% | 0.7290 | 1.00× | 0.1564 | **PASS** |
+| `cure` | AG News | 69.84% | 0.7107 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `direct_svd` | AG News | 69.84% | 0.7107 | 1.00× | 0.5880 | **PASS_NO_COMPRESSION** |
+| `kronecker_compressor` | AG News | 72.82% | 0.7346 | 1.04× | — | **PASS** |
+| `mlorq_compressor` | AG News | 70.41% | 0.7273 | 1.00× | 0.0289 | **PASS** |
+| `oats_compressor` | AG News | 70.76% | 0.7255 | 1.00× | 0.3903 | **PASS** |
+| `rpca_compressor` | AG News | 70.30% | 0.7259 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_v2` | AG News | 70.07% | 0.7226 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `salr` | AG News | 70.18% | 0.7257 | 1.00× | — | **PASS_NO_COMPRESSION** |
