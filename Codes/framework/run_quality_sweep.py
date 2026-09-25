@@ -2967,7 +2967,7 @@ def run_single_module_main(args) -> dict:
                 break
 
     # Auto-resolve base models (e.g. roberta-base, gpt2) to fine-tuned classification checkpoints if running on SST-2
-    if args.dataset and "wikitext" not in args.dataset.lower():
+    if args.dataset and "wikitext" not in args.dataset.lower() and args.dataset != "c4":
         model_p = Path(args.model)
         m_name = model_p.name.lower()
         if "roberta" in m_name and "sst2" not in m_name and args.dataset == "sst2":
@@ -4342,6 +4342,8 @@ def main():
             "perplexity":                   result.get("perplexity", ""),
             "ppl_status":                   result.get("ppl_status", ""),
             "long_context_accuracy":        result.get("long_context_accuracy", ""),
+            "calibration_time_s":           result.get("calibration_time_s", 0.0),
+            "recovery_time_s":              result.get("recovery_time_s", 0.0),
             "total_params_before":           result.get("total_params_before", result.get("params_before", 0)),
             "total_params_after":            result.get("total_params_after", result.get("params_after", 0)),
             "trainable_recovery_params":     result.get("trainable_recovery_params", 0),

@@ -107,7 +107,7 @@ def main():
 
         acc_val = float(metrics.get("accuracy_pct", 0.0) or 0.0)
         elapsed_val = float(metrics.get("elapsed_s", 0.0) or 0.0)
-        is_lm = "wikitext" in str(getattr(args, "dataset", "")).lower() or getattr(args, "task_type", "") == "causal_lm"
+        is_lm = "wikitext" in str(getattr(args, "dataset", "")).lower() or str(getattr(args, "dataset", "")).lower() == "c4" or getattr(args, "task_type", "") == "causal_lm"
         if not is_lm and status in ("PASS", "PASS_LOW") and (acc_val <= 0.0 or elapsed_val < 0.5):
             status = "EVAL_FAILED"
             fail_err = f"EVAL_FAILED: invalid evaluation results (acc={acc_val:.2f}%, elapsed={elapsed_val:.2f}s)"
@@ -153,6 +153,8 @@ def main():
             "weighted_reconstruction_error":metrics.get("weighted_reconstruction_error", "") or "",
             "num_injected_attention_layers":int(metrics.get("num_injected_attention_layers", 0) or 0),
             "lora_params":                  int(metrics.get("lora_params", 0) or 0),
+            "calibration_time_s":           float(metrics.get("calibration_time_s", 0.0) or 0.0),
+            "recovery_time_s":              float(metrics.get("recovery_time_s", 0.0) or 0.0),
             # Path
             "path":                         metrics.get("path", "") or "",
             "error":                        error_msg,

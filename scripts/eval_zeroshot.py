@@ -1,22 +1,24 @@
 """
 Zero-shot reasoning evaluation using LM-Evaluation-Harness protocol.
-Evaluates models across PIQA, ARC-Easy, ARC-Challenge, HellaSwag, and WinoGrande.
 """
 import argparse
 import json
-import logging
-from pathlib import Path
-import sys
 import torch
+from pathlib import Path
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import sys
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT / "Codes"))
+# Ensure Codes directory is on sys.path
+HERE = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent
+CODES_DIR = PROJECT_ROOT / "Codes"
+for p in [str(PROJECT_ROOT), str(CODES_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from framework.eval_all_models_datasets import apply_module_to_model
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger(__name__)
 
 TASKS = {
     "piqa": {
@@ -60,29 +62,26 @@ TASKS = {
 }
 
 
-def score_continuation(model, tokenizer, context: str, continuation: str) -> float:
+def score_continuation(model, tokenizer, context, continuation):
     """Compute log-prob of continuation given context."""
-    if not continuation:
-        return float("-inf")
     ctx_ids = tokenizer(context, return_tensors="pt").input_ids
     full_ids = tokenizer(context + continuation, return_tensors="pt").input_ids
     ctx_len = ctx_ids.shape[1]
-    if full_ids.shape[1] <= ctx_len:
-        return float("-inf")
     
+    device = next(model.parameters()).device
     with torch.no_grad():
-        outputs = model(full_ids.to(model.device))
+        outputs = model(full_ids.to(device))
         logits = outputs.logits
     
-    log_probs = torch.log_softmax(logits[0, ctx_len - 1 : -1, :], dim=-1)
-    cont_ids = full_ids[0, ctx_len:]
+    # Log-prob of continuation tokens
+    log_probs = torch.log_softmax(logits[0, ctx_len-1:-1, :], dim=-1)
+    cont_ids = full_ids[0, ctx_len:].to(device)
     score = log_probs.gather(1, cont_ids.unsqueeze(-1)).sum().item()
     return score
 
 
-def eval_task(model, tokenizer, task_name: str, num_samples: int = 500) -> dict:
+def eval_task(model, tokenizer, task_name, num_samples=500):
     cfg = TASKS[task_name]
-    logger.info("Loading dataset for task: %s...", task_name)
     if "config" in cfg:
         ds = load_dataset(cfg["dataset"], cfg["config"], split=cfg["split"])
     else:
@@ -95,104 +94,88 @@ def eval_task(model, tokenizer, task_name: str, num_samples: int = 500) -> dict:
             break
         context = ex[cfg["input_field"]]
         if task_name == "winogrande":
+            # Replace '_' with each option
             choices = [ex["option1"], ex["option2"]]
-            label = int(ex["answer"]) - 1
+            label = int(ex["answer"]) - 1  # 1-indexed -> 0-indexed
             scores = []
             for choice in choices:
                 full = context.replace("_", choice)
                 split = len(context) // 2
-                scores.append(score_continuation(model, tokenizer, full[:split], full[split:]))
-        elif "choices_field" in cfg:
-            raw_choices = ex[cfg["choices_field"]]
-            if isinstance(raw_choices, dict):
-                texts = raw_choices.get("text", [])
-                keys = raw_choices.get("label", [])
-                ans_key = str(ex[cfg["label_field"]])
-                if ans_key in keys:
-                    label = keys.index(ans_key)
-                elif ans_key.isdigit() and len(texts) >= int(ans_key):
-                    label = int(ans_key) - 1
-                elif ans_key in ["A", "B", "C", "D"]:
-                    label = ord(ans_key) - ord("A")
-                else:
-                    label = 0
-                scores = [score_continuation(model, tokenizer, context, " " + c) for c in texts]
-            elif isinstance(raw_choices, list) and len(raw_choices) > 0 and isinstance(raw_choices[0], dict):
-                choices = [c["text"] for c in raw_choices]
-                labels = [str(c["label"]) for c in raw_choices]
-                ans_key = str(ex[cfg["label_field"]])
-                if ans_key in labels:
-                    label = labels.index(ans_key)
-                elif ans_key.isdigit() and len(labels) >= int(ans_key):
-                    label = int(ans_key) - 1
-                elif ans_key in ["A", "B", "C", "D"]:
-                    label = ord(ans_key) - ord("A")
-                else:
-                    label = 0
-                scores = [score_continuation(model, tokenizer, context, " " + c) for c in choices]
+                scores.append(score_continuation(model, tokenizer, 
+                                                 full[:split], full[split:]))
+        elif "choices" in cfg or "choices_field" in cfg:
+            field = cfg.get("choices_field", "choices")
+            raw_choices = ex[field]
+            if isinstance(raw_choices, dict) and "text" in raw_choices and "label" in raw_choices:
+                choices = raw_choices["text"]
+                labels = raw_choices["label"]
             else:
-                choices = raw_choices
-                raw_label = ex[cfg["label_field"]]
-                try:
-                    label = int(raw_label)
-                except ValueError:
-                    label = ord(str(raw_label).upper()) - ord("A")
-                scores = [score_continuation(model, tokenizer, context, " " + c) for c in choices]
+                choices = [c["text"] for c in raw_choices]
+                labels = [c["label"] for c in raw_choices]
+            target_key = str(ex[cfg["label_field"]]).strip()
+            label = labels.index(target_key) if target_key in labels else 0
+            scores = [score_continuation(model, tokenizer, context, " " + c) 
+                     for c in choices]
         else:
-            choices = [ex[f] for f in cfg["choices_fields"]]
+            # PIQA, HellaSwag: list of strings
+            choices = ex[cfg["choices_field"]]
             label = int(ex[cfg["label_field"]])
-            scores = [score_continuation(model, tokenizer, context, " " + c) for c in choices]
+            scores = [score_continuation(model, tokenizer, context, " " + c) 
+                     for c in choices]
         
         pred = max(range(len(scores)), key=lambda j: scores[j])
         if pred == label:
             correct += 1
         total += 1
         
-        if (i + 1) % 100 == 0 or (i + 1) == num_samples:
-            logger.info("  %s: %d/%d, running acc=%.2f%%", task_name, i + 1, num_samples, (correct / total) * 100)
+        if (i + 1) % 100 == 0:
+            print(f"  {task_name}: {i+1}/{num_samples}, acc={correct/total*100:.2f}%")
     
-    acc = (correct / total * 100.0) if total > 0 else 0.0
-    return {"task": task_name, "accuracy": round(acc, 2), "num_samples": total, "correct": correct}
+    acc = correct / total * 100 if total > 0 else 0.0
+    return {"task": task_name, "accuracy": round(acc, 2), "num_samples": total}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--module", default="none", help="Module name to apply or 'none' for dense baseline")
-    ap.add_argument("--model", default="models/gpt2", help="Model path")
-    ap.add_argument("--rank", type=int, default=384, help="Compression rank")
-    ap.add_argument("--tasks", default="piqa,arc_easy,hellaswag,winogrande", help="Comma-separated list of tasks")
-    ap.add_argument("--num_samples", type=int, default=500, help="Number of samples per task")
-    ap.add_argument("--output_dir", required=True, help="Directory to save JSON results")
+    ap.add_argument("--module", required=True)
+    ap.add_argument("--model", default="models/gpt2")
+    ap.add_argument("--tasks", default="piqa,arc_easy,hellaswag,winogrande")
+    ap.add_argument("--num_samples", type=int, default=500)
+    ap.add_argument("--output_dir", required=True)
     args = ap.parse_args()
     
-    logger.info("Loading model and tokenizer: %s...", args.model)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Loading {args.model} on {device}...")
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
-    model = AutoModelForCausalLM.from_pretrained(args.model).cuda()
+    model = AutoModelForCausalLM.from_pretrained(args.model)
+    model.to(device)
     model.eval()
     
     if args.module != "none":
-        logger.info("Applying module %s (rank=%d) to %s...", args.module, args.rank, args.model)
-        model, _ = apply_module_to_model(model, args.module, "compressor", rank=args.rank, device="cuda")
-        model = model.cuda()
-        model.eval()
+        model, _ = apply_module_to_model(model, args.module, "compressor", 
+                                          rank=256, device=torch.device(device))
+        model.to(device)
     
     results = {}
-    task_list = [t.strip() for t in args.tasks.split(",") if t.strip()]
-    for task in task_list:
-        logger.info("=== Evaluating %s ===", task)
-        result = eval_task(model, tokenizer, task, args.num_samples)
-        results[task] = result
-        logger.info("Finished %s: accuracy = %.2f%%", task, result["accuracy"])
+    for task in args.tasks.split(","):
+        task_clean = task.strip()
+        if not task_clean:
+            continue
+        print(f"\n=== Evaluating {task_clean} ===")
+        result = eval_task(model, tokenizer, task_clean, args.num_samples)
+        results[task_clean] = result
+        print(f"  {task_clean}: {result['accuracy']:.2f}%")
     
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{args.module}_zeroshot.json"
-    with open(out_path, "w", encoding="utf-8") as f:
+    out_file = out_dir / f"{args.module}_zeroshot.json"
+    with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
-    logger.info("Zero-shot results successfully saved to: %s", out_path)
+    
+    print(f"\nResults saved to {out_file}")
 
 
 if __name__ == "__main__":

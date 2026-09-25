@@ -31,6 +31,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import math
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -1039,7 +1040,10 @@ class AdaSVDCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         # Step 1: Collect activation statistics
+        t_calib_start = time.monotonic()
         self.calibration_activations = self._collect_activations(calibration_data=calibration_data)
+        self.calibration_time_s = time.monotonic() - t_calib_start
+        logger.info("Calibration time: %.2f s", self.calibration_time_s)
 
         # Step 2: Compute spectral effective rank
         layer_importances = {}
@@ -1154,6 +1158,7 @@ class AdaSVDCompressor(BaseCompressor):
             if self.compressed_layers else 0.0
         )
         stats["avg_reconstruction_error"] = avg_err
+        stats["calibration_time_s"] = getattr(self, "calibration_time_s", 0.0)
         logger.info(
             "AdaSVD compression complete: %d compressed, %d fallback. Avg error: %.4f.",
             len(self.compressed_layers), len(self.fallback_layers), avg_err,
