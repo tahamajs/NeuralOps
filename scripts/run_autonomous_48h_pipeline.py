@@ -136,18 +136,21 @@ def run_single_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: allow up to 4 concurrent tasks, capping VRAM at 4800 MB (never full VRAM)
+    # Dynamic VRAM governor: Keep VRAM between 50% and 90%
     while True:
-        tele = get_vram_and_util()
         with global_lock:
+            tele = get_vram_and_util()
             cur_active = active_workers_counter[0]
-        # Allow new task only if VRAM < 6500 MB AND fewer than 8 tasks currently executing
-        if tele["used_mb"] < 6500 and cur_active < 8:
-            break
-        time.sleep(1)
+            # 90% of 8GB is ~7372MB. We cap at 7000MB to be safe.
+            # We allow up to 6 concurrent workers to ensure high compute util without memory overflow.
+            if tele["used_mb"] < 7000 and cur_active < 6:
+                active_workers_counter[0] += 1
+                break
+        time.sleep(3)
 
-    with global_lock:
-        active_workers_counter[0] += 1
+    # Stagger launches by 10 seconds so the PyTorch VRAM allocation has time to reflect in nvidia-smi 
+    # before the next thread is allowed to pass the VRAM check.
+    time.sleep(10)
 
     log(f"============================================================")
     log(f"[START] {task['name']} (Batch={task.get('batch_size', 64)})")
@@ -418,7 +421,7 @@ def main():
     t_global_start = time.time()
 
     # Launch 8 concurrent workers pulling from the shared pool of remaining tasks
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         future_map = {
             executor.submit(run_task_worker, task, total_pending, idx): task["name"]
             for idx, task in enumerate(pending_tasks)
