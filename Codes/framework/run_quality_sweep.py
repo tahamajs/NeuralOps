@@ -749,8 +749,8 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         chunks.append(input_ids[begin_loc:end_loc])
         trg_lens.append(end_loc - i)
 
-    # Batch chunks dynamically with conservative batch cap (max 8 chunks = 8192 tokens) to prevent high VRAM usage
-    eval_bs = max(1, min(batch_size or 8, 8))
+    # Batch chunks dynamically with balanced cap (12 chunks = 12288 tokens, ~2.1 GB VRAM) to saturate Tensor Cores
+    eval_bs = max(1, min(batch_size or 12, 12))
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else (tokenizer.eos_token_id or 0)
 
     for b_idx in range(0, len(chunks), eval_bs):
@@ -766,8 +766,12 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
             input_batch[j, :c_len] = c
             target_batch[j, c_len - t_len : c_len] = c[c_len - t_len : c_len]
 
-        input_batch = input_batch.to(device)
-        target_batch = target_batch.to(device)
+        if device_type == "cuda":
+            input_batch = input_batch.pin_memory().to(device, non_blocking=True)
+            target_batch = target_batch.pin_memory().to(device, non_blocking=True)
+        else:
+            input_batch = input_batch.to(device)
+            target_batch = target_batch.to(device)
         batch_tokens = sum(batch_trg_lens)
 
         try:
@@ -1183,16 +1187,16 @@ def finetune_lora(
                 "granite", "hymba", "hybrid", "recurrent", "outer"
             )
         )
-        if "qwen" in mod_lower or is_heavy_module:
+        if "qwen" in mod_lower:
             target_micro = 1
-        elif total_vram_gb <= 12.0:
-            target_micro = min(2, curr_batch_size)
-        elif total_vram_gb <= 16.0:
+        elif is_heavy_module:
             target_micro = min(4, curr_batch_size)
+        elif seq_len >= 1024:
+            target_micro = min(8, curr_batch_size)
         else:
-            target_micro = curr_batch_size
+            # Small/standard models (DistilBERT, RoBERTa, GPT-2 at seq_len <= 512)
+            target_micro = min(16, curr_batch_size)
         micro_bs = min(curr_batch_size, target_micro)
-        torch.cuda.empty_cache()
     else:
         micro_bs = curr_batch_size
 
