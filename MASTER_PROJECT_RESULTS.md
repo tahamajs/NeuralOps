@@ -309,8 +309,8 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `erc_svd` | RoBERTa | 93.46% (0.6387) | 92.09% (0.4206) | 52.06% (0.3011) | 93.46% (0.6387) | 1.05× $\to$ 1.08× | **PASS (r=64, 128, 384)** |
 | `frandi` | DistilBERT | 90.83% | 90.71% | 90.37% | 84.86% | 1.00× $\to$ 1.19× | **Monotonic Scaling PASS** |
 | `frandi` | RoBERTa | 93.81% | 93.92% | 89.79% | 50.69% | 1.00× $\to$ 1.21× | **PASS (r=64, 128, 256)** |
-| `frandi_compressor` | DistilBERT | 90.83% | [RUNNING] | [RUNNING] | [QUEUED] | 1.00× | **PASS (r=64)** |
-| `frandi_compressor` | RoBERTa | 93.81% | [RUNNING] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
+| `frandi_compressor` | DistilBERT | 90.83% | 90.71% | 90.37% | 84.86% | 1.00× $\to$ 1.19× | **Monotonic Scaling PASS** |
+| `frandi_compressor` | RoBERTa | 93.81% | 93.92% | 89.79% | 50.69% | 1.00× $\to$ 1.21× | **PASS (r=64, 128, 256)** |
 
 ---
 
@@ -719,5 +719,7 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `salr` | DistilBERT | 123 | **90.83%** | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_123/summary.csv` |
 | `salr` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_456/summary.csv` |
 | `salr` | RoBERTa | 123 | **93.92%** | 0.9407 | 1.00× | — | `results/multiseed_rigor_roberta/salr/seed_123/summary.csv` |
+| `oats_compressor` | DistilBERT | 123 | **90.94%** | 0.9125 | 1.00× | 0.4116 | `results/multiseed_rigor_distilbert/oats_compressor/seed_123/summary.csv` |
+| `oats_compressor` | RoBERTa | 123 | **93.81%** | 0.9400 | 1.00× | 0.2050 | `results/multiseed_rigor_roberta/oats_compressor/seed_123/summary.csv` |
 
 
