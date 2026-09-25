@@ -349,7 +349,7 @@ def modules() -> List[str]:
 def fields(name: str) -> Tuple[str, Optional[str]]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
-    if name in {"ag_news", "imdb"} or "wikitext" in name.lower():
+    if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower():
         return ("text", None)
     if name == "mrpc":
         return ("sentence1", "sentence2")
@@ -2916,6 +2916,8 @@ def run_single_module_main(args) -> dict:
             ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
         elif args.dataset_dir and Path(args.dataset_dir).exists():
             ds = load_from_disk(args.dataset_dir)
+        elif args.dataset in {"ag_news", "agnews"}:
+            ds = load_dataset("fancyzhx/ag_news")
         else:
             ds = load_dataset(args.dataset)
     except Exception as e:
@@ -2924,7 +2926,8 @@ def run_single_module_main(args) -> dict:
         if not fallback_sst2.exists():
             fallback_sst2 = Path(__file__).parent / "data" / "glue_data" / "sst2"
         ds = load_from_disk(str(fallback_sst2))
-    train, val = ds["train"], ds["validation"]
+    train = ds["train"]
+    val = ds["validation"] if "validation" in ds else ds["test"]
     tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "right"
     if tokenizer.pad_token_id is None:
         if tokenizer.eos_token:
