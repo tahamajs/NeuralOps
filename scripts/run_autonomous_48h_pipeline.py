@@ -340,8 +340,8 @@ def build_all_streams():
     seq_mods = ["linformer_attention", "cosformer", "performer", "simple_ssm", "hgrn2_layer", "gated_deltanet_block"]
     s5_tasks = []
     for m in seq_mods:
-        for seq_len in [128, 256, 512, 1024]:
-            bs = 64 if seq_len <= 256 else (32 if seq_len <= 512 else 16)
+        for seq_len in [128, 256, 512]:
+            bs = 64 if seq_len <= 256 else 32
             out = str(BASE_DIR / "results" / "seqlen_48h" / m / f"seq_{seq_len}")
             s5_tasks.append({
                 "name": f"Stream 5 (SeqLen {seq_len}) | {m}",
