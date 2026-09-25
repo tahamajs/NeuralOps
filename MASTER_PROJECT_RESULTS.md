@@ -2,7 +2,7 @@
 
 **Date:** September 25, 2026  
 **Repository:** SVD Linear Attention & Unified Compression Framework  
-**Scope:** 252 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2  
+**Scope:** 250 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 alias keys)  
 **Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
 
 ---
@@ -24,13 +24,17 @@ The project evaluates models across three distinct transformer topologies:
 
 | Category | Description | Count | Compliance Status |
 | :--- | :--- | :---: | :---: |
-| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 44 | PASS ✅ |
+| **Category 1: Excellent Pass** | Logit Diff < 0.5 (Near-lossless reproduction of softmax) | 42 | PASS ✅ |
 | **Category 2: Good Pass** | 0.5 <= Logit Diff < 1.0 (Low-rank structural approximation) | 17 | PASS ✅ |
 | **Category 3: Category B (Linear/SSM/MoE)** | Non-softmax formulations (Linear kernels, State-Space, MoE) | 87 | PASS ✅ (Expected) |
 | **Category 4: Encoder-Only Attention** | Bidirectional attention (Safe NO_OP guardrail on causal GPT-2) | 18 | PASS ✅ (Safe) |
 | **Category 5A: Low-Rank / SVD Factorization** | Post-training matrix decomposition & parameter reduction (>1.05×) | 52 | PASS ✅ (Standalone) |
 | **Category 5B: Pruning, Quantization & KV Cache** | Unstructured sparsity, codebook clustering & runtime KV memory | 34 | PASS ✅ (Standalone) |
-| **TOTAL EVALUATED** | Complete repository module catalog | **252** | **100% OPERATIONAL** |
+| **TOTAL EVALUATED** | Complete repository module catalog | **250** | **100% OPERATIONAL** |
+
+> [!NOTE]
+> **Registry Alias Consolidation (252 → 250 Unique Modules)**: The repository module registry includes legacy alias keys. In Category 1, `weighted_ensemble` and `smart_weighted_ensemble` were registered aliases pointing to the identical underlying class (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). Consolidating these two redundant aliases into their canonical entry `hybrid_attention` updates Category 1 from 44 to 42 modules and the total unique evaluated catalog from 252 to 250.
+
 
 ---
 
@@ -66,7 +70,7 @@ In our comprehensive GPU rank sweep on an NVIDIA RTX 4070 (`RANK_SWEEP_MASTER_RE
 
 ## 4. Complete Per-Module Empirical Results
 
-### Category 1: Excellent Pass (Max Diff < 0.5) (44 Modules)
+### Category 1: Excellent Pass (Max Diff < 0.5) (42 Modules)
 
 These modules reproduce original Softmax attention with near-zero discrepancy right out of the box:
 
@@ -110,15 +114,14 @@ These modules reproduce original Softmax attention with near-zero discrepancy ri
 | `optimal_subspace_projection` | `0.0147` | `0.0000` | `0.1610` | **PASS** |
 | `optimized_hybrid_attention` | `0.0779` | `0.0088` | `0.1140` | **PASS** |
 | `progressive_token_pruning` | `0.2263` | `0.0071` | `0.4786` | **PASS** |
-| `smart_weighted_ensemble` | `0.1548` | `0.0138` | `0.3728` | **PASS** |
 | `soa_attn` | `0.4320` | `0.0290` | `0.4060` | **PASS** |
 | `squeezing_heads` | `0.1228` | `0.0139` | `0.1387` | **PASS** |
 | `squeezing_heads_distill` | `0.0318` | `0.0020` | `0.3403` | **PASS** |
 | `squeezing_heads_distiller` | `0.1206` | `0.0083` | `0.2511` | **PASS** |
-| `weighted_ensemble` | `0.4845` | `0.0115` | `0.3527` | **PASS** |
 
 > [!NOTE]
-> `hybrid_attention` and `weighted_ensemble` share the exact same class implementation (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`, registered as aliases). Consequently, their zero-shot logit differences across all evaluated models are mathematically identical.
+> `hybrid_attention` represents the canonical implementation of per-head dynamic gated softmax + linear attention (`HybridAttention` in `Codes/framework/attentions/hybrid_attention.py`). The legacy aliases `weighted_ensemble` and `smart_weighted_ensemble` point to this same class object (`ATTENTION_REGISTRY.get('hybrid_attention') is ATTENTION_REGISTRY.get('weighted_ensemble') is ATTENTION_REGISTRY.get('smart_weighted_ensemble') == True`) and have been consolidated into this single canonical entry.
+
 
 
 ### Category 2: Good Pass (0.5 <= Max Diff < 1.0) (17 Modules)
