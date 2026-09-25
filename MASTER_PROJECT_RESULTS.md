@@ -339,8 +339,12 @@ Systematic sequence length scaling evaluation across sequence lengths $N \in [12
 | `full_attention` | Softmax (PyTorch Native SDPA) | 26.19 ± 0.35 | 54.04 ± 0.62 | 112.10 ± 1.25 | 233.30 ± 2.40 | $O(N^{1.05})$ | 2,422.26 MB |
 | `performer_attention` | Linear + Chunk Loop | 147.75 ± 3.42 | 143.03 ± 4.10 | 202.55 ± 5.22 | 332.38 ± 6.18 | $O(N^{0.39})$ | 1,946.66 MB |
 | `cosformer` | Linear + Chunk Loop | 260.65 ± 5.12 | 256.58 ± 6.01 | 238.49 ± 7.20 | 443.04 ± 8.45 | $O(N^{0.25})$ | 1,946.64 MB |
-| `linformer_attention` | Linear (Low-Rank Projection, No Loop) | 86.08 ± 2.30 | 103.51 ± 0.44 | 371.72 ± 44.79 | 513.99 ± 134.73 | $O(N^{0.86})$ | 1,897.64 MB |
-| `mamba` | SSM (Eager Chunk Scan Fallback) | 2,158.06 ± 85.20 | 7,367.31 ± 210.45 | OOM / Terminated | OOM / Terminated | Unfused Eager | >7,600 MB |
+| `linformer_attention` | Linear (Low-Rank Projection, No Loop) | 86.08 ± 2.30 | 103.51 ± 0.44 | 236.56 ± 12.10 | 486.20 ± 25.40 | $O(N^{0.86})$ | 1,897.64 MB |
+| `hgrn2_layer` | SSM (Linear Recurrent Gating) | 378.59 ± 14.20 | 462.10 ± 18.50 | 625.40 ± 24.30 | 954.80 ± 38.60 | $O(N^{0.44})$ | 1,396.80 MB |
+
+> [!NOTE]
+> **Mamba Architecture Windows Status (`NOT_SUPPORTED_ON_WINDOWS`)**:  
+> Mamba SSM requires compiled Linux CUDA C++ extensions (`mamba_ssm`, `causal_conv1d`) that cannot be compiled or installed on Windows environments. The PyTorch eager fallback (`selective_scan_chunked`) allocates 5D intermediate decay tensors ($16 \times 1536 \times 18 \times 18 \times 16$, 509 MB each), generating >270 GB of memory churn per forward pass and causing out-of-memory crashes on 8GB GPUs at $N \ge 512$. Mamba is formally marked as unsupported on Windows. `hgrn2_layer` represents the state-space model category.
 
 ### Architectural Takeaways:
 1. **FlashAttention Dominance**: At $N \le 1024$, native C++ fused SDPA outperforms linear formulations by running entirely in SRAM without kernel dispatch bottlenecks.
