@@ -205,6 +205,8 @@ class SVDLinear(nn.Module):
             self.V.data[:r, :].copy_(V_factor[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
 
+@COMPRESSOR_REGISTRY.register("asvd")
+@COMPRESSOR_REGISTRY.register("asvd_compressor")
 @COMPRESSOR_REGISTRY.register("aasvd")
 @COMPRESSOR_REGISTRY.register("aa_svd")
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
@@ -693,6 +695,8 @@ class AASVDCompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("asvd_factory")
+@COMPRESSOR_REGISTRY.register("asvd_compressor_factory")
 @COMPRESSOR_REGISTRY.register("aasvd_factory")
 @COMPRESSOR_REGISTRY.register("aa_svd_factory")
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor_factory")
