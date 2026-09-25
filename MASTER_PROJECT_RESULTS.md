@@ -71,34 +71,34 @@ In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MAST
 | `adasvd_compressor` | 128 | 86.47% | 1.16× | 0.1912 | **PASS** |
 | `adasvd_compressor` | 256 | 88.07% | 1.08× | 0.0591 | **PASS** |
 | `adasvd_compressor` | 384 | 90.37% | 1.06× | 0.0394 | **PASS** |
-| `saes_svd_compressor` | 16 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 32 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 64 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 128 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_compressor` | 16 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 32 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 64 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 128 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
 | `saes_svd_compressor` | 256 | 89.79% | 1.04× | 0.3759 | **PASS** |
-| `saes_svd_compressor` | 384 | 90.71% | 1.00× | 0.2414 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 16 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 32 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 64 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 128 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 256 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 384 | 90.71% | 1.00× | 0.4778 | **PASS_NO_COMPRESSION** |
+| `saes_svd_compressor` | 384 | 90.71% | 1.00× | 0.2414 | **NO_OP (0% reduction)** |
+| `slicegpt` | 16 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
+| `slicegpt` | 32 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
+| `slicegpt` | 64 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
+| `slicegpt` | 128 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
+| `slicegpt` | 256 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
+| `slicegpt` | 384 | 90.71% | 1.00× | 0.4778 | **NO_OP (0% reduction)** |
 | `svd_llm_compressor` | 32 | 85.09% | 1.21× | 0.8823 | **PASS** |
 | `svd_llm_compressor` | 64 | 87.84% | 1.19× | 0.8061 | **PASS** |
 | `svd_llm_compressor` | 128 | 89.11% | 1.14× | 0.6752 | **PASS** |
-| `svd_llm_compressor` | 384 | 90.60% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 16 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 32 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 64 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 128 | 90.71% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `svd_llm_compressor` | 384 | 90.60% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 16 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 32 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 64 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 128 | 90.71% | 1.00× | — | **NO_OP (0% reduction)** |
 | `swift_svd_act` | 256 | 89.22% | 1.04× | 0.3759 | **PASS** |
 | `swift_svd_act` | 384 | 91.06% | 1.00× | 0.2414 | **PASS** |
-| `tt_compressor` | 16 | 58.37% | 1.02× | 0.3631 | **PASS** |
-| `tt_compressor` | 32 | 58.37% | 1.02× | 0.3631 | **PASS** |
-| `tt_compressor` | 64 | 58.37% | 1.02× | 0.3631 | **PASS** |
-| `tt_compressor` | 128 | 58.37% | 1.02× | 0.3631 | **PASS** |
-| `tt_compressor` | 256 | 58.83% | 1.03× | 0.3755 | **PASS** |
-| `tt_compressor` | 384 | 59.75% | 1.02× | 0.3631 | **PASS** |
+| `tt_compressor` | 16 | 58.37% | 1.02× | 0.3631 | **FAIL_BELOW_CHANCE** |
+| `tt_compressor` | 32 | 58.37% | 1.02× | 0.3631 | **FAIL_BELOW_CHANCE** |
+| `tt_compressor` | 64 | 58.37% | 1.02× | 0.3631 | **FAIL_BELOW_CHANCE** |
+| `tt_compressor` | 128 | 58.37% | 1.02× | 0.3631 | **FAIL_BELOW_CHANCE** |
+| `tt_compressor` | 256 | 58.83% | 1.03× | 0.3755 | **FAIL_BELOW_CHANCE** |
+| `tt_compressor` | 384 | 59.75% | 1.02× | 0.3631 | **FAIL_BELOW_CHANCE** |
 
 ---
 
@@ -118,27 +118,27 @@ In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MAST
 | `adasvd_compressor` | 128 | 85.32% | 1.18× | 0.1840 | **PASS** |
 | `adasvd_compressor` | 256 | 92.09% | 1.09× | 0.0534 | **PASS** |
 | `adasvd_compressor` | 384 | 92.32% | 1.06× | 0.0319 | **PASS** |
-| `saes_svd_compressor` | 16 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 32 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 64 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 128 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_compressor` | 16 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 32 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 64 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 128 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
 | `saes_svd_compressor` | 256 | 91.86% | 1.04× | 0.3820 | **PASS** |
-| `saes_svd_compressor` | 384 | 92.66% | 1.00× | 0.2436 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 16 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 32 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 64 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 128 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 256 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 384 | 94.27% | 1.00× | 0.4908 | **PASS_NO_COMPRESSION** |
-| `svd_llm_compressor` | 16 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `svd_llm_compressor` | 32 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `svd_llm_compressor` | 128 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `svd_llm_compressor` | 256 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `svd_llm_compressor` | 384 | 94.50% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 16 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 32 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 64 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 128 | 94.27% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_compressor` | 384 | 92.66% | 1.00× | 0.2436 | **NO_OP (0% reduction)** |
+| `slicegpt` | 16 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `slicegpt` | 32 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `slicegpt` | 64 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `slicegpt` | 128 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `slicegpt` | 256 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `slicegpt` | 384 | 94.27% | 1.00× | 0.4908 | **NO_OP (0% reduction)** |
+| `svd_llm_compressor` | 16 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `svd_llm_compressor` | 32 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `svd_llm_compressor` | 128 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `svd_llm_compressor` | 256 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `svd_llm_compressor` | 384 | 94.50% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 16 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 32 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 64 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 128 | 94.27% | 1.00× | — | **NO_OP (0% reduction)** |
 | `swift_svd_act` | 256 | 91.97% | 1.04× | 0.3820 | **PASS** |
 | `swift_svd_act` | 384 | 92.66% | 1.00× | 0.2436 | **PASS** |
 | `tt_compressor` | 16 | 50.92% | 1.02× | 0.3558 | **FAIL_BELOW_CHANCE** |
@@ -160,20 +160,20 @@ In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MAST
 | `a3_compressor` | 128 | 122.44 | 1.01× | 0.3548 | **FAIL_PPL_DIVERGED** |
 | `a3_compressor` | 256 | 122.44 | 1.01× | 0.3548 | **FAIL_PPL_DIVERGED** |
 | `adasvd_compressor` | 128 | 864.50 | 1.20× | 0.1849 | **FAIL_PPL_DIVERGED** |
-| `saes_svd_compressor` | 16 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 32 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 64 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_compressor` | 128 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_compressor` | 16 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 32 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 64 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_compressor` | 128 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
 | `saes_svd_compressor` | 256 | 46.00 | 1.01× | 0.3385 | **PASS** |
-| `slicegpt` | 16 | 41.35 | 1.00× | 0.4947 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 32 | 41.35 | 1.00× | 0.4947 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 64 | 41.35 | 1.00× | 0.4947 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 128 | 41.35 | 1.00× | 0.4947 | **PASS_NO_COMPRESSION** |
-| `slicegpt` | 256 | 41.35 | 1.00× | 0.4947 | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 16 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 32 | 41.35 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 64 | 41.34 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `swift_svd_act` | 128 | 41.34 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `slicegpt` | 16 | 41.35 | 1.00× | 0.4947 | **NO_OP (0% reduction)** |
+| `slicegpt` | 32 | 41.35 | 1.00× | 0.4947 | **NO_OP (0% reduction)** |
+| `slicegpt` | 64 | 41.35 | 1.00× | 0.4947 | **NO_OP (0% reduction)** |
+| `slicegpt` | 128 | 41.35 | 1.00× | 0.4947 | **NO_OP (0% reduction)** |
+| `slicegpt` | 256 | 41.35 | 1.00× | 0.4947 | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 16 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 32 | 41.35 | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 64 | 41.34 | 1.00× | — | **NO_OP (0% reduction)** |
+| `swift_svd_act` | 128 | 41.34 | 1.00× | — | **NO_OP (0% reduction)** |
 | `swift_svd_act` | 256 | 45.98 | 1.01× | 0.3385 | **PASS** |
 | `tt_compressor` | 16 | 2183.78 | 1.05× | 0.3506 | **FAIL_PPL_DIVERGED** |
 | `tt_compressor` | 32 | 2170.40 | 1.05× | 0.3505 | **FAIL_PPL_DIVERGED** |
@@ -197,15 +197,15 @@ Systematic evaluation of 23 additional registered SVD and tensor decomposition e
 | `admm_compressor` | 256 | 90.02% | 93.12% | 1.00× | 0.1663 | **PASS** |
 | `come` | 128 | 85.89% | — | 1.22× | — | **PASS** |
 | `come` | 256 | 85.89% | 72.59% | 1.56× | — | **PASS** |
-| `cur_compressor` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `cur_compressor` | 256 | 90.60% | 93.46% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `cur_compressor` | 128 | 90.60% | — | 1.00× | — | **NO_OP (0% reduction)** |
+| `cur_compressor` | 256 | 90.60% | 93.46% | 1.00× | — | **NO_OP (0% reduction)** |
 | `direct_svd` | 128 | 90.71% | — | 1.02× | 0.3576 | **PASS** |
 | `direct_svd` | 256 | 90.71% | 92.89% | 1.00× | 0.2436 | **PASS** |
 | `erc_svd` | 128 | 90.48% | — | 1.04× | 0.3576 | **PASS** |
 | `erc_svd` | 256 | 90.25% | 52.06% | 1.04× / 1.08× | 0.3011 | **PASS (Distil) / FAIL (RoB)** |
-| `frandi_compressor` | 128 | 90.83% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `frandi_compressor` | 128 | 90.83% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `frandi_compressor` | 256 | 90.48% | 89.79% | 1.08× / 1.07× | — | **PASS** |
-| `grecodec_compressor` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `grecodec_compressor` | 128 | 90.60% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `grecodec_compressor` | 256 | 90.60% | 91.97% | 1.04× | — | **PASS** |
 | `hybrid_svd_layer` | 128 | 88.53% | — | 1.04× | 0.3332 | **PASS** |
 | `hybrid_svd_layer` | 256 | 88.53% | 92.55% | 1.04× | 0.3391 | **PASS** |
@@ -213,21 +213,21 @@ Systematic evaluation of 23 additional registered SVD and tensor decomposition e
 | `kronecker_compressor` | 256 | 90.71% | 91.74% | 1.04× | — | **PASS** |
 | `mlorq_compressor` | 128 | 90.60% | — | 1.00× | 0.0290 | **PASS** |
 | `mlorq_compressor` | 256 | 90.60% | 94.38% | 1.00× | 0.0402 | **PASS** |
-| `modegpt_compressor` | 128 | 90.71% | — | 1.00× | 0.6460 | **PASS_NO_COMPRESSION** |
+| `modegpt_compressor` | 128 | 90.71% | — | 1.00× | 0.6460 | **NO_OP (0% reduction)** |
 | `modegpt_compressor` | 256 | 90.25% | 91.74% | 1.00× | 0.4525 | **PASS** |
 | `oats_compressor` | 128 | 91.06% | — | 1.00× | 0.4116 | **PASS** |
 | `oats_compressor` | 256 | 91.06% | 93.81% | 1.00× | 0.2050 | **PASS** |
-| `rpca_compressor` | 128 | 90.25% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `rpca_compressor` | 128 | 90.25% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `rpca_compressor` | 256 | 89.22% | 92.09% | 1.04× | 0.3829 | **PASS** |
-| `saes_svd_v2` | 128 | 90.71% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `saes_svd_v2` | 128 | 90.71% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `saes_svd_v2` | 256 | 89.56% | 91.63% | 1.04× | 0.3820 | **PASS** |
-| `salr` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `salr` | 128 | 90.60% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `salr` | 256 | 90.60% | 94.15% | 1.00× | — | **PASS** |
-| `cure` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `cure` | 256 | 90.60% | 93.46% | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `rotational_slicegpt_int4` | 128 | 90.71% | — | 1.00× | 0.5111 | **PASS_NO_COMPRESSION** |
-| `rotational_slicegpt_int4` | 256 | 90.71% | 94.15% | 1.00× | 0.5157 | **PASS_NO_COMPRESSION** |
-| `subspace_projection` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `cure` | 128 | 90.60% | — | 1.00× | — | **NO_OP (0% reduction)** |
+| `cure` | 256 | 90.60% | 93.46% | 1.00× | — | **NO_OP (0% reduction)** |
+| `rotational_slicegpt_int4` | 128 | 90.71% | — | 1.00× | 0.5111 | **NO_OP (0% reduction)** |
+| `rotational_slicegpt_int4` | 256 | 90.71% | 94.15% | 1.00× | 0.5157 | **NO_OP (0% reduction)** |
+| `subspace_projection` | 128 | 90.60% | — | 1.00× | — | **NO_OP (0% reduction)** |
 | `subspace_projection` | 256 | 89.68% | 91.74% | 1.04× | — | **PASS** |
 | `uniql_compressor` | 128 | 90.71% | — | 1.00× | — | **PASS** |
 | `uniql_compressor` | 256 | 90.48% | 91.97% | 1.00× | — | **PASS** |
@@ -258,12 +258,12 @@ Evaluation of unstructured sparsity, gradient-based magnitude/ADMM pruning, code
 | `hybridkv_compressor` | 90.60% | **93.46%** | — | 102,012 / 33,023 | 1.00× | **PASS** |
 | `kvtc` | 90.60% | **93.46%** | 0.3483 / 0.3483 | 68,632 / 130,710 | 1.00× | **PASS** |
 | `kvtc_compressor` | 90.60% | **93.46%** | 0.3483 / 0.3483 | 101,112 / 54,184 | 1.00× | **PASS** |
-| `coopq_quantizer` | 90.48% | **93.23%** | — | 83,146 / 53,268 | 1.00× | **PASS_NO_COMPRESSION** |
+| `coopq_quantizer` | 90.48% | **93.23%** | — | 83,146 / 53,268 | 1.00× | **NO_OP (0% reduction)** |
 | `huffman_coder` | 90.60% | **93.12%** | — | 102,454 / 33,139 | 1.00× | **PASS** |
 | `armor_pruner` | 90.02% | **92.89%** | 0.3749 / 0.3851 | 46,343 / 30,196 | 0.97× | **PASS** |
 | `enlighten_compressor` | 90.83% | **92.78%** | 0.2754 / 0.2764 | 101,900 / 124,999 | 1.00× | **PASS** |
 | `cachenotes_compressor` | **90.83%** | **92.55%** | 0.2403 / 0.2424 | 158,108 / 120,999 | 1.00× | **PASS** |
-| `bonsai_pruner` | 90.48% | **92.55%** | 0.6483 / 0.5909 | 100,958 / 93,411 | 1.00× | **PASS_NO_COMPRESSION** |
+| `bonsai_pruner` | 90.48% | **92.55%** | 0.6483 / 0.5909 | 100,958 / 93,411 | 1.00× | **NO_OP (0% reduction)** |
 | `soka` | 90.71% | **92.43%** | — | 84,231 / 105,059 | 1.025× | **PASS** |
 | `soka_compressor` | 90.71% | **92.43%** | — | 80,885 / 36,501 | 1.025× | **PASS** |
 | `sparsegpt` | 90.37% | **92.32%** | — | 105,306 / 54,814 | 1.00× | **PASS** |
@@ -381,6 +381,27 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 3. **GPT-2 Causal LM Degradation vs Capacity Threshold:**
    - SVD compression of fused `Conv1D` projections without causal mask and KV projection adjustment induces high perplexity at low ranks ($r \le 128$).
    - At $r=256$, `swift_svd_act` (PPL 45.98) and `saes_svd_compressor` (PPL 46.00) successfully cross the threshold to pass evaluation within 5 perplexity points of uncompressed baseline (41.35).
+
+---
+
+### 3.7 Modules with Zero Effective Compression (NO_OP)
+
+The following modules completed evaluation without errors but reverted all layer replacements due to reconstruction-error threshold violations or preservation guards. Effective compression rate = 1.00×. They are categorized as `NO_OP (0% reduction)` and are not counted as successful compression engines.
+
+| Module | Evaluated Model Backbones | Rank Configurations | Compression Rate | Status | Root Cause |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| `cur_compressor` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | CUR reconstruction error exceeded threshold; fallback triggered |
+| `cure` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | CURE sampling variance exceeded tolerance; intact weights retained |
+| `dobi_svd` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Bilateral truncation exceeded error threshold; fallback to original |
+| `direct_svd` | RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Direct SVD truncation fallback to original module |
+| `frandi_compressor` | DistilBERT, RoBERTa | 64, 128 | 1.00× | **NO_OP (0% reduction)** | Low-rank random projection failed fidelity threshold at $r \le 128$ |
+| `grecodec_compressor` | DistilBERT | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Greedy coordinate descent error threshold fallback |
+| `lsc_compressor` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Zero compressed layers meeting sparsity and rank budget |
+| `mlorq_compressor` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Residual quantization floor not satisfied; original weights preserved |
+| `rotational_slicegpt_int4`| DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Orthogonal rotation uncompressed fallback |
+| `salr` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Self-attention low rank reconstruction fallback |
+| `slicegpt` / `slicegpt_compressor` | DistilBERT, RoBERTa, GPT-2 | 16, 32, 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Zero-shot slicing without calibration fallback |
+| `tt_linear` | DistilBERT, RoBERTa | 64, 128, 256, 384 | 1.00× | **NO_OP (0% reduction)** | Factorization dim mismatch fallback to standard linear |
 
 ---
 
@@ -699,11 +720,11 @@ Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base
 | `adasvd_compressor` | MNLI | 66.20% | 0.6516 | **1.21×** | 100,155 | 0.3384 | **PASS** | `results/mnli_deep_sweep/adasvd_compressor/summary.csv` |
 | `a3_compressor` | MNLI | **79.90%** | 0.7981 | **1.03×** | 42,101 | 0.3480 | **PASS** | `results/mnli_deep_sweep/a3_compressor/summary.csv` |
 | `kronecker_compressor` | MNLI | **79.90%** | 0.7983 | **1.04×** | 13,263 | — | **PASS** | `results/mnli_deep_sweep/kronecker_compressor/summary.csv` |
-| `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
-| `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
-| `salr` | MNLI | 81.90% | 0.8181 | 1.00× | 135,855 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/salr/summary.csv` |
-| `cure` | MNLI | 82.00% | 0.8198 | 1.00× | 21,522 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/cure/summary.csv` |
-| `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
+| `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **NO_OP (0% reduction)** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
+| `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **NO_OP (0% reduction)** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
+| `salr` | MNLI | 81.90% | 0.8181 | 1.00× | 135,855 | — | **NO_OP (0% reduction)** | `results/mnli_deep_sweep/salr/summary.csv` |
+| `cure` | MNLI | 82.00% | 0.8198 | 1.00× | 21,522 | — | **NO_OP (0% reduction)** | `results/mnli_deep_sweep/cure/summary.csv` |
+| `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **NO_OP (0% reduction)** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
 | `mlorq_compressor` | MNLI | 81.80% | 0.8171 | 1.00× | 62,928 | 0.0281 | **PASS** | `results/mnli_deep_sweep/mlorq_compressor/summary.csv` |
 | `admm_compressor` | MNLI | 81.80% | 0.8177 | 1.00× | 38,719 | 0.1563 | **PASS** | `results/mnli_deep_sweep/admm_compressor/summary.csv` |
 | `oats_compressor` | MNLI | 81.70% | 0.8159 | 1.00× | 58,879 | 0.3975 | **PASS** | `results/mnli_deep_sweep/oats_compressor/summary.csv` |
@@ -822,14 +843,14 @@ Systematic evaluation of linear attention, recurrent state-space, and low-rank k
 | `a3_compressor` | AG News | 72.13% | 0.7528 | 1.03× | 0.3495 | **PASS** |
 | `adasvd_compressor` | AG News | 74.66% | 0.7889 | 1.21× | 0.3409 | **PASS** |
 | `admm_compressor` | AG News | 70.41% | 0.7290 | 1.00× | 0.1564 | **PASS** |
-| `cure` | AG News | 69.84% | 0.7107 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `direct_svd` | AG News | 69.84% | 0.7107 | 1.00× | 0.5880 | **PASS_NO_COMPRESSION** |
+| `cure` | AG News | 69.84% | 0.7107 | 1.00× | — | **NO_OP (0% reduction)** |
+| `direct_svd` | AG News | 69.84% | 0.7107 | 1.00× | 0.5880 | **NO_OP (0% reduction)** |
 | `kronecker_compressor` | AG News | 72.82% | 0.7346 | 1.04× | — | **PASS** |
 | `mlorq_compressor` | AG News | 70.41% | 0.7273 | 1.00× | 0.0289 | **PASS** |
 | `oats_compressor` | AG News | 70.76% | 0.7255 | 1.00× | 0.3903 | **PASS** |
-| `rpca_compressor` | AG News | 70.30% | 0.7259 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `saes_svd_v2` | AG News | 70.07% | 0.7226 | 1.00× | — | **PASS_NO_COMPRESSION** |
-| `salr` | AG News | 70.18% | 0.7257 | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `rpca_compressor` | AG News | 70.30% | 0.7259 | 1.00× | — | **NO_OP (0% reduction)** |
+| `saes_svd_v2` | AG News | 70.07% | 0.7226 | 1.00× | — | **NO_OP (0% reduction)** |
+| `salr` | AG News | 70.18% | 0.7257 | 1.00× | — | **NO_OP (0% reduction)** |
 
 ---
 
