@@ -1,2 +1,2 @@
 module_name,status,accuracy_pct,perplexity,ppl_status,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-adasvd_compressor,CRASH,0.0,,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1.0,0.0,0.0,0,0,,,0,0,KeyError: 'sentence1',,2026-09-25T08:29:27.515565
+adasvd_compressor,PASS,88.3,0.0,,0.8851,0.883,0.883,0.883,0.2918,38.9,493.07,82795.75,66955010,55160066,2971394,1.2138,17.62,83.32,24,0,0.356,,0,0,,legacy_bert,2026-09-25T08:32:42.691731
