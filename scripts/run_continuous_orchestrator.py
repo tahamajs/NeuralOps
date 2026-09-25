@@ -112,6 +112,20 @@ def main():
             last_audit = time.time()
             res = collect_latest_results()
             log(f"[20-MIN AUDIT] Total completed tasks collected so far: {len(res)}")
+            try:
+                subprocess.run(["git", "add", "results", "MASTER_PROJECT_RESULTS.md"], cwd=str(BASE_DIR), check=False)
+                c_res = subprocess.run(
+                    ["git", "commit", "-m", f"auto: periodic 20-min results sync ({len(res)} tasks)"],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True
+                )
+                if "nothing to commit" not in c_res.stdout.lower() and "clean" not in c_res.stdout.lower():
+                    log(f"[AUTO-COMMIT] Committed periodic results sync ({len(res)} tasks)")
+                    subprocess.run(["git", "push", "origin", "main"], cwd=str(BASE_DIR), timeout=60)
+                    log("[AUTO-PUSH] Synced results with origin/main")
+            except Exception as ce:
+                log(f"[AUTO-COMMIT WARNING] {ce}")
 
     proc.wait()
     log(f"[COMPLETED] Autonomous pipeline exited with code {proc.returncode} in {(time.time() - t0)/3600:.2f} hours.")
