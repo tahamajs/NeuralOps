@@ -142,15 +142,14 @@ def run_single_task(task):
             tele = get_vram_and_util()
             cur_active = active_workers_counter[0]
             # 90% of 8GB is ~7372MB. We cap at 7000MB to be safe.
-            # We allow up to 6 concurrent workers to ensure high compute util without memory overflow.
             if tele["used_mb"] < 7000 and cur_active < 6:
                 active_workers_counter[0] += 1
+                # Sleep INSIDE the lock to physically stagger launches by 8 seconds
+                # so nvidia-smi has time to register the PyTorch memory allocation
+                # before the next thread is permitted to evaluate tele["used_mb"].
+                time.sleep(8)
                 break
         time.sleep(3)
-
-    # Stagger launches by 10 seconds so the PyTorch VRAM allocation has time to reflect in nvidia-smi 
-    # before the next thread is allowed to pass the VRAM check.
-    time.sleep(10)
 
     log(f"============================================================")
     log(f"[START] {task['name']} (Batch={task.get('batch_size', 64)})")
