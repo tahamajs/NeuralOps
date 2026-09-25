@@ -223,6 +223,12 @@ Systematic evaluation of 23 additional registered SVD and tensor decomposition e
 | `saes_svd_v2` | 256 | 89.56% | 91.63% | 1.04× | 0.3820 | **PASS** |
 | `salr` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
 | `salr` | 256 | 90.60% | 94.15% | 1.00× | — | **PASS** |
+| `cure` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `cure` | 256 | 90.60% | 93.46% | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `rotational_slicegpt_int4` | 128 | 90.71% | — | 1.00× | 0.5111 | **PASS_NO_COMPRESSION** |
+| `rotational_slicegpt_int4` | 256 | 90.71% | 94.15% | 1.00× | 0.5157 | **PASS_NO_COMPRESSION** |
+| `subspace_projection` | 128 | 90.60% | — | 1.00× | — | **PASS_NO_COMPRESSION** |
+| `subspace_projection` | 256 | 89.68% | 91.74% | 1.04× | — | **PASS** |
 | `uniql_compressor` | 128 | 90.71% | — | 1.00× | — | **PASS** |
 | `uniql_compressor` | 256 | 90.48% | 91.97% | 1.00× | — | **PASS** |
 
