@@ -639,6 +639,7 @@ Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base
 | `a3_compressor` | MNLI | **79.90%** | 0.7981 | **1.03×** | 42,101 | 0.3480 | **PASS** | `results/mnli_deep_sweep/a3_compressor/summary.csv` |
 | `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
 | `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
+| `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
 
 ---
 
@@ -674,6 +675,7 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `adasvd_compressor` | RoBERTa | 456 | **83.72%** | 0.8486 | 1.23× | 0.3276 | `results/multiseed_rigor_roberta/adasvd_compressor/seed_456/summary.csv` |
 | **Mean ± Std** | **RoBERTa** | **All 3** | **83.30 ± 0.46%** | **0.8472 ± 0.002** | **1.23×** | **0.3276** | **Variance: Low ($<0.5\%$)** |
 | `a3_compressor` | DistilBERT | 123 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_123/summary.csv` |
+| `a3_compressor` | DistilBERT | 456 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_456/summary.csv` |
 | `a3_compressor` | RoBERTa | 123 | **93.12%** | 0.9323 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_123/summary.csv` |
 
 
