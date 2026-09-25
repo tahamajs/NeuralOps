@@ -749,8 +749,8 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         chunks.append(input_ids[begin_loc:end_loc])
         trg_lens.append(end_loc - i)
 
-    # Batch chunks dynamically according to batch_size to maximize GPU compute
-    eval_bs = max(1, min(batch_size or 16, 32))
+    # Batch chunks dynamically with conservative batch cap (max 8 chunks = 8192 tokens) to prevent high VRAM usage
+    eval_bs = max(1, min(batch_size or 8, 8))
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else (tokenizer.eos_token_id or 0)
 
     for b_idx in range(0, len(chunks), eval_bs):
@@ -1329,23 +1329,23 @@ def _auto_parallel_and_batch(
         batch = requested_batch
     else:
         if free_gb >= 6.0:
-            batch = 64
-        elif free_gb >= 4.0:
             batch = 32
-        else:
+        elif free_gb >= 4.0:
             batch = 16
+        else:
+            batch = 8
 
     if explicit_parallel and requested_parallel is not None:
         parallel = requested_parallel
     else:
-        per_worker_gb = 1.8 if batch >= 32 else 1.2
+        per_worker_gb = 2.0 if batch >= 16 else 1.2
         n = int(free_gb // per_worker_gb)
         if free_gb >= 6.0:
-            parallel = 4
+            parallel = 2
         elif free_gb >= 4.0:
-            parallel = 3
+            parallel = 2
         else:
-            parallel = max(1, min(n, 2))
+            parallel = 1
 
     return parallel, batch
 
@@ -1913,11 +1913,13 @@ def parse_args(argv=None):
         except Exception:
             pass
         try:
-            if getattr(args, "max_vram_fraction", None) is not None and 0.0 < args.max_vram_fraction <= 1.0:
-                torch.cuda.set_per_process_memory_fraction(float(args.max_vram_fraction))
+            target_frac = float(args.max_vram_fraction) if getattr(args, "max_vram_fraction", None) is not None else 0.70
+            if 0.0 < target_frac <= 1.0:
+                torch.cuda.set_per_process_memory_fraction(target_frac)
                 LOG.info(
-                    "Configured PyTorch per-process GPU memory fraction: %.1f%%",
-                    args.max_vram_fraction * 100.0,
+                    "Configured PyTorch per-process GPU memory fraction cap: %.1f%% (leaving %.2f GB headroom)",
+                    target_frac * 100.0,
+                    (1.0 - target_frac) * 8.0,
                 )
         except Exception as frac_err:
             LOG.debug("Could not set memory fraction: %s", frac_err)
@@ -2850,9 +2852,10 @@ def run_single_module_main(args) -> dict:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
         try:
-            if getattr(args, "max_vram_fraction", None) is not None and 0.0 < args.max_vram_fraction <= 1.0:
-                torch.cuda.set_per_process_memory_fraction(float(args.max_vram_fraction))
-                LOG.info("Configured PyTorch per-process GPU memory fraction: %.1f%%", args.max_vram_fraction * 100.0)
+            target_frac = float(args.max_vram_fraction) if getattr(args, "max_vram_fraction", None) is not None else 0.70
+            if 0.0 < target_frac <= 1.0:
+                torch.cuda.set_per_process_memory_fraction(target_frac)
+                LOG.info("Configured PyTorch per-process GPU memory fraction cap: %.1f%%", target_frac * 100.0)
             free_mem, _ = torch.cuda.mem_get_info()
             free_gb = free_mem / (1024 ** 3)
             if free_gb < 4.0:
