@@ -75,7 +75,7 @@ def run_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: wait if GPU VRAM usage > 5500 MB to prevent OOM
+    # Dynamic VRAM governor: wait if GPU VRAM usage > 6000 MB to prevent OOM
     while True:
         try:
             mem_out = subprocess.check_output(
@@ -84,7 +84,7 @@ def run_task(task):
                 timeout=5
             )
             used = int(mem_out.strip())
-            if used < 5500:
+            if used < 6000:
                 break
             time.sleep(3)
         except Exception:
@@ -102,8 +102,8 @@ def run_task(task):
         "--model_family", task["model_family"],
         "--dataset", task["dataset"],
         "--rank", str(task["rank"]),
-        "--batch_size", "32",
-        "--max_vram_fraction", "0.70",
+        "--batch_size", "64",
+        "--max_vram_fraction", "0.75",
         "--recovery_steps", str(task["recovery_steps"]),
         "--learning_rate", task["lr"],
         "--seed", "42",
@@ -143,7 +143,7 @@ def run_task(task):
         return False
 
 def main():
-    workers = 2
+    workers = 4
     log(f"Starting High-Performance GPU Sweep Runner ({len(TASKS)} tasks queued across {len(MODULES)} modules, parallel workers = {workers})...")
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
