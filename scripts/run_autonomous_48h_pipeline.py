@@ -141,8 +141,8 @@ def run_single_task(task):
         tele = get_vram_and_util()
         with global_lock:
             cur_active = active_workers_counter[0]
-        # Allow new task only if VRAM < 4800 MB AND fewer than 4 tasks currently executing
-        if tele["used_mb"] < 4800 and cur_active < 4:
+        # Allow new task only if VRAM < 6500 MB AND fewer than 8 tasks currently executing
+        if tele["used_mb"] < 6500 and cur_active < 8:
             break
         time.sleep(1)
 
@@ -219,7 +219,7 @@ def run_task_worker(task, total_pending, task_idx):
         global_completed_counter[0] += 1
         cur_global = global_completed_counter[0]
         if cur_global % 10 == 0:
-            auto_commit_and_push(f"Global 4-Worker Dynamic Checkpoint ({cur_global} tasks completed)")
+            auto_commit_and_push(f"Global 8-Worker Dynamic Checkpoint ({cur_global} tasks completed)")
     log(f"[Dynamic Worker Progress]: Task {task_idx+1}/{total_pending} finished | Global Tasks Recorded: {cur_global}")
     return res
 
@@ -373,7 +373,7 @@ def build_all_streams():
 def main():
     log("============================================================")
     log("Starting Multi-Worker Dynamic High-Performance GPU Pipeline")
-    log("Running 4 Parallel Workers across all remaining tasks (Batch=96-128)")
+    log("Running 8 Parallel Workers across all remaining tasks (Batch=96-128)")
     log(f"Base Directory: {BASE_DIR}")
     log("============================================================")
 
@@ -417,8 +417,8 @@ def main():
 
     t_global_start = time.time()
 
-    # Launch 4 concurrent workers pulling from the shared pool of remaining tasks
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    # Launch 8 concurrent workers pulling from the shared pool of remaining tasks
+    with ThreadPoolExecutor(max_workers=8) as executor:
         future_map = {
             executor.submit(run_task_worker, task, total_pending, idx): task["name"]
             for idx, task in enumerate(pending_tasks)
