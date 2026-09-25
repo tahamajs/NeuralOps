@@ -5,3 +5,4 @@ C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.p
 2026-09-26 00:07:58,865 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
 2026-09-26 00:07:58,890 [INFO] QwenQualitySweep: Running 1 compressor modules via isolated subprocesses (workers=1)
 [ISOLATED] Launching adasvd_compressor (timeout=3600s) -> logs\isolated\adasvd_compressor_r512_gpt2.log
+[ISOLATED] adasvd_compressor exited with code 0 in 85.8s
