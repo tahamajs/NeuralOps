@@ -819,6 +819,7 @@ injected_model = inject_spectron(model=model, spectral_rank=32)
 | BERT | mrpc | `PASS` | 91.06% | **0.00%** | 2592.19 ms | 1331.6 MB |
 | ROBERTA | sst2 | `PASS` | 91.06% | **0.00%** | 2441.38 ms | 1341.5 MB |
 | ROBERTA | mrpc | `PASS` | 91.06% | **0.00%** | 2525.18 ms | 1341.5 MB |
+| **roberta-sst2** | sst2 | `PASS` | 93.46% | **67.55%** | -25.91% | 0.7260 | 1.09x | 12 | [svd-linear-attention-roberta-sst2-spectron](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-sst2-spectron) | 2026-09-25 |
 
 
 ## Limitations & Future Work
