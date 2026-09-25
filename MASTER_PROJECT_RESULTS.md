@@ -311,6 +311,10 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `frandi` | RoBERTa | 93.81% | 93.92% | 89.79% | 50.69% | 1.00× $\to$ 1.21× | **PASS (r=64, 128, 256)** |
 | `frandi_compressor` | DistilBERT | 90.83% | 90.71% | 90.37% | 84.86% | 1.00× $\to$ 1.19× | **Monotonic Scaling PASS** |
 | `frandi_compressor` | RoBERTa | 93.81% | 93.92% | 89.79% | 50.69% | 1.00× $\to$ 1.21× | **PASS (r=64, 128, 256)** |
+| `grecodec` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `grecodec` | RoBERTa | 93.46% | 93.46% | 93.46% | 92.43% | 1.00× | **PASS** |
+| `grecodec_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `hybrid_svd_layer` | DistilBERT | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 89.91% (0.3332) | 1.04× | **Invariance PASS** |
 
 ---
 
@@ -720,6 +724,16 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `salr` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_456/summary.csv` |
 | `salr` | RoBERTa | 123 | **93.92%** | 0.9407 | 1.00× | — | `results/multiseed_rigor_roberta/salr/seed_123/summary.csv` |
 | `oats_compressor` | DistilBERT | 123 | **90.94%** | 0.9125 | 1.00× | 0.4116 | `results/multiseed_rigor_distilbert/oats_compressor/seed_123/summary.csv` |
+| `oats_compressor` | DistilBERT | 456 | **90.71%** | 0.9103 | 1.00× | 0.4116 | `results/multiseed_rigor_distilbert/oats_compressor/seed_456/summary.csv` |
 | `oats_compressor` | RoBERTa | 123 | **93.81%** | 0.9400 | 1.00× | 0.2050 | `results/multiseed_rigor_roberta/oats_compressor/seed_123/summary.csv` |
+| `oats_compressor` | RoBERTa | 456 | **93.92%** | 0.9408 | 1.00× | 0.2050 | `results/multiseed_rigor_roberta/oats_compressor/seed_456/summary.csv` |
+| `cure` | DistilBERT | 123 | 90.60% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/cure/seed_123/summary.csv` |
+| `cure` | DistilBERT | 456 | 90.60% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/cure/seed_456/summary.csv` |
+| `cure` | RoBERTa | 123 | 93.12% | 0.9342 | 1.00× | — | `results/multiseed_rigor_roberta/cure/seed_123/summary.csv` |
+| `cure` | RoBERTa | 456 | 93.35% | 0.9363 | 1.00× | — | `results/multiseed_rigor_roberta/cure/seed_456/summary.csv` |
+| `admm_compressor` | DistilBERT | 123 | 90.48% | 0.9075 | 1.00× | 0.1564 | `results/multiseed_rigor_distilbert/admm_compressor/seed_123/summary.csv` |
+| `admm_compressor` | DistilBERT | 456 | 90.25% | 0.9044 | 1.00× | 0.1564 | `results/multiseed_rigor_distilbert/admm_compressor/seed_456/summary.csv` |
+| `admm_compressor` | RoBERTa | 123 | 93.12% | 0.9312 | 1.00× | 0.1663 | `results/multiseed_rigor_roberta/admm_compressor/seed_123/summary.csv` |
+| `admm_compressor` | RoBERTa | 456 | 93.23% | 0.9324 | 1.00× | 0.1663 | `results/multiseed_rigor_roberta/admm_compressor/seed_456/summary.csv` |
 
 
