@@ -51,6 +51,9 @@ Before evaluating low-rank and linear attention modifications, uncompressed base
 - **RoBERTa-base (12-layer encoder)**: Baseline Accuracy: **94.50%**, F1: `0.9458`, Peak VRAM: 361.2 MB <!-- source: models/roberta_sst2 SOTA sequence classification checkpoint; historical un-finetuned roberta-base was 78.56% -->
 - **GPT-2 (12-layer decoder)**: Baseline Accuracy: **87.84%**, F1: `0.8776`, Peak VRAM: 391.2 MB <!-- source: results/unified_svd_compressed/gpt2/summary.csv line 2 -->
 
+> [!NOTE]
+> **RoBERTa Baseline Note (Historical 78.56% vs. Verified 94.50%)**: Early exploratory scripts evaluated un-finetuned or default checkpoint representations yielding 78.56%. The verified, canonical fine-tuned sequence classification checkpoint (`models/roberta_sst2`) achieves **94.50%** accuracy (F1: 0.9458). All quality sweeps, comparisons, and degradation metrics in this report rigorously reference the 94.50% baseline.
+
 ## 3. Rank Sweep Benchmarks (Ranks 16 to 384)
 
 In our systematic GPU rank sweep on an NVIDIA GeForce RTX 4070 (`RANK_SWEEP_MASTER_REPORT.md` and overnight sweep runs), post-training SVD and low-rank compression engines were evaluated across rank configurations $r \in [16, 32, 64, 128, 256, 384]$ on DistilBERT (SST-2), RoBERTa-base (SST-2), and GPT-2 (WikiText-2).
