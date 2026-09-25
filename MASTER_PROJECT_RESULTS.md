@@ -346,9 +346,13 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `saes_svd` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
 | `saes_svd` | RoBERTa | 93.92% | [QUEUED] | 91.51% (0.3820) | 92.66% (0.2436) | 1.00× $\to$ 1.04× | **PASS (r=64, 256, 384)** |
 | `saes_svd_v2` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
+| `saes_svd_v2` | RoBERTa | 93.92% | 93.92% | 91.51% (0.3820) | 92.66% (0.2436) | 1.00× $\to$ 1.04× | **PASS** |
 | `salr` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 1.00× | **Invariance PASS** |
+| `salr` | RoBERTa | 94.04% | 94.04% | 94.04% | 94.04% | 1.00× | **Invariance PASS** |
 | `slicegpt` | DistilBERT | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 1.00× | **Invariance PASS** |
+| `slicegpt` | RoBERTa | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 1.00× | **Invariance PASS** |
 | `slicegpt_compressor` | DistilBERT | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 90.60% (0.4778) | 1.00× | **Invariance PASS** |
+| `slicegpt_compressor` | RoBERTa | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 94.27% (0.4908) | 1.00× | **Invariance PASS** |
 | `slicegpt_pca` | DistilBERT | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 90.71% (0.5465) | 1.00× | **Invariance PASS** |
 | `subspace_projection` | DistilBERT | 90.60% | 90.60% | 90.94% | 90.83% | 1.00× $\to$ 1.04× | **PASS** |
 | `svd_linear` | DistilBERT | 86.35% | 88.30% | 90.83% | 90.60% | 1.20× $\to$ 1.00× | **Strict Monotonic Pareto PASS** |
