@@ -299,6 +299,10 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `aasvd` | RoBERTa | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 84.17% (0.8210) | 1.21× | **PASS** |
 | `adaptive_compressor` | DistilBERT | 88.65% | 88.65% | 88.65% | 88.65% | 1.04× | **PASS** |
 | `adaptive_compressor` | RoBERTa | 92.32% | 92.32% | 92.32% | 92.32% | 1.05× | **PASS** |
+| `cur_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `cur_compressor` | RoBERTa | 93.46% | 93.46% | 93.46% | 93.46% | 1.00× | **Invariance PASS** |
+| `cur_linear` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `cure` | DistilBERT | 90.60% (r=64) | [QUEUED] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
 
 ---
 
@@ -622,4 +626,54 @@ Systematic sequence length scaling evaluation across sequence lengths $N \in [12
 2. **Chunk Loop Serialization**: Modules relying on Python chunk loops (`performer`, `cosformer`) dispatch over 100,000 separate CUDA kernels, incurring heavy launch latency.
 3. **Linformer Asymptotic Scaling**: `linformer_attention` avoids chunk loops by using sequence projection matrices, achieving $O(N^{0.86})$ empirical scaling and using **524.6 MB less VRAM** than `full_attention` at $N=1024$.
 4. **Fused Kernel Requirement**: Realizing the theoretical $10\times$ speedup of linear attention and SSMs requires compiled fused CUDA/Triton kernels rather than eager PyTorch fallbacks.
+
+---
+
+## 7. Cross-Domain Transfer Sweeps (MNLI & AG News)
+
+Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base fine-tuned):
+
+| Module | Dataset | Accuracy | F1 Score | Compression | Speed (tok/s) | Recon Error | Status | Source |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| `adasvd_compressor` | MNLI | 66.20% | 0.6516 | **1.21×** | 100,155 | 0.3384 | **PASS** | `results/mnli_deep_sweep/adasvd_compressor/summary.csv` |
+| `a3_compressor` | MNLI | **79.90%** | 0.7981 | **1.03×** | 42,101 | 0.3480 | **PASS** | `results/mnli_deep_sweep/a3_compressor/summary.csv` |
+| `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
+| `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
+
+---
+
+## 8. Sequence Length Downstream Accuracy Scaling (DistilBERT / SST-2)
+
+End-to-end classification accuracy and token throughput across input sequence lengths $N \in [128, 256, 512]$:
+
+| Module | SeqLen | Accuracy | F1 Score | Speed (tok/s) | Peak VRAM | Status | Source |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| `linformer_attention` | 128 | **83.37%** | 0.8391 | 38,722 | 531.8 MB | **PASS** | `results/seqlen_48h/linformer_attention/seq_128/summary.csv` |
+| `linformer_attention` | 256 | 82.68% | 0.8320 | 82,314 | 761.9 MB | **PASS** | `results/seqlen_48h/linformer_attention/seq_256/summary.csv` |
+| `linformer_attention` | 512 | 82.00% | 0.8306 | **121,743** | 766.8 MB | **PASS** | `results/seqlen_48h/linformer_attention/seq_512/summary.csv` |
+| `cosformer` | 128 | 78.21% | 0.7894 | 42,447 | 634.3 MB | **PASS** | `results/seqlen_48h/cosformer/seq_128/summary.csv` |
+| `cosformer` | 256 | 77.87% | 0.7863 | 25,904 | 924.6 MB | **PASS** | `results/seqlen_48h/cosformer/seq_256/summary.csv` |
+| `cosformer` | 512 | 78.10% | 0.7861 | 62,045 | 929.3 MB | **PASS** | `results/seqlen_48h/cosformer/seq_512/summary.csv` |
+| `performer` | 128 | 78.90% | 0.7767 | 32,758 | 646.4 MB | **PASS** | `results/seqlen_48h/performer/seq_128/summary.csv` |
+| `performer` | 256 | 78.90% | 0.7767 | 25,932 | 960.8 MB | **PASS** | `results/seqlen_48h/performer/seq_256/summary.csv` |
+
+---
+
+## 9. Multi-Seed Statistical Rigor Benchmark
+
+Verification across independent random seeds (Seeds 42, 123, 456) evaluating stability and variance:
+
+| Module | Model | Seed | Accuracy | F1 Score | Compression | Recon Error | Source |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| `adasvd_compressor` | DistilBERT | 42 | 87.96% | 0.8870 | 1.21× | 0.3560 | `results/deep_rank_distilbert/adasvd_compressor/rank_64/summary.csv` |
+| `adasvd_compressor` | DistilBERT | 123 | 87.16% | 0.8816 | 1.21× | 0.3560 | `results/multiseed_rigor_distilbert/adasvd_compressor/seed_123/summary.csv` |
+| `adasvd_compressor` | DistilBERT | 456 | **88.30%** | 0.8851 | 1.21× | 0.3560 | `results/multiseed_rigor_distilbert/adasvd_compressor/seed_456/summary.csv` |
+| **Mean ± Std** | **DistilBERT** | **All 3** | **87.81 ± 0.58%** | **0.8846 ± 0.002** | **1.21×** | **0.3560** | **Variance: Low ($<0.6\%$)** |
+| `adasvd_compressor` | RoBERTa | 42 | 83.37% | 0.8490 | 1.23× | 0.3276 | `results/deep_rank_roberta/adasvd_compressor/rank_64/summary.csv` |
+| `adasvd_compressor` | RoBERTa | 123 | 82.80% | 0.8441 | 1.23× | 0.3276 | `results/multiseed_rigor_roberta/adasvd_compressor/seed_123/summary.csv` |
+| `adasvd_compressor` | RoBERTa | 456 | **83.72%** | 0.8486 | 1.23× | 0.3276 | `results/multiseed_rigor_roberta/adasvd_compressor/seed_456/summary.csv` |
+| **Mean ± Std** | **RoBERTa** | **All 3** | **83.30 ± 0.46%** | **0.8472 ± 0.002** | **1.23×** | **0.3276** | **Variance: Low ($<0.5\%$)** |
+| `a3_compressor` | DistilBERT | 123 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_123/summary.csv` |
+| `a3_compressor` | RoBERTa | 123 | **93.12%** | 0.9323 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_123/summary.csv` |
+
 
