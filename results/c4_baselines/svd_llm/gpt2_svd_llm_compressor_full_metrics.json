@@ -1,0 +1,78 @@
+{
+    "model": "gpt2_svd_llm_compressor",
+    "performance": {
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "f1_macro": null,
+        "precision": null,
+        "recall": null,
+        "val_loss": 3.822729653098442,
+        "perplexity": 45.728862,
+        "status": "PASS",
+        "elapsed_s": 269.79
+    },
+    "efficiency": {
+        "total_params_before": 124439808,
+        "total_params_after": 118836480,
+        "trainable_recovery_params": 1474560,
+        "compression_rate": 1.0472,
+        "compression_ratio_pct": 4.5,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 12,
+        "num_fallback_layers": 12,
+        "num_injected_attention_layers": 0,
+        "lora_params": 1474560,
+        "avg_reconstruction_error": 0.3921,
+        "weighted_reconstruction_error": 0.3921,
+        "per_layer_reconstruction_errors": {
+            "transformer.h.0.attn.c_attn": 0.3864167332649231,
+            "transformer.h.1.attn.c_attn": 0.3255348801612854,
+            "transformer.h.2.attn.c_attn": 0.3647134006023407,
+            "transformer.h.3.attn.c_attn": 0.40264594554901123,
+            "transformer.h.4.attn.c_attn": 0.38458773493766785,
+            "transformer.h.5.attn.c_attn": 0.35739243030548096,
+            "transformer.h.6.attn.c_attn": 0.3820447325706482,
+            "transformer.h.7.attn.c_attn": 0.39092594385147095,
+            "transformer.h.8.attn.c_attn": 0.4303519129753113,
+            "transformer.h.9.attn.c_attn": 0.45073187351226807,
+            "transformer.h.10.attn.c_attn": 0.42259401082992554,
+            "transformer.h.11.attn.c_attn": 0.4076632261276245
+        },
+        "per_layer_ranks": {
+            "transformer.h.0.attn.c_attn": 384,
+            "transformer.h.1.attn.c_attn": 384,
+            "transformer.h.2.attn.c_attn": 384,
+            "transformer.h.3.attn.c_attn": 384,
+            "transformer.h.4.attn.c_attn": 384,
+            "transformer.h.5.attn.c_attn": 384,
+            "transformer.h.6.attn.c_attn": 384,
+            "transformer.h.7.attn.c_attn": 384,
+            "transformer.h.8.attn.c_attn": 384,
+            "transformer.h.9.attn.c_attn": 384,
+            "transformer.h.10.attn.c_attn": 384,
+            "transformer.h.11.attn.c_attn": 384
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 4764.58984375,
+        "tokens_per_sec": 8209.82288723885
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 583.85,
+        "L_256_vram_mb": 626.96,
+        "L_512_vram_mb": 699.65,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "seed": 42,
+    "git_sha": "89cf61b92",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-25T22:01:56.916220+00:00"
+}
