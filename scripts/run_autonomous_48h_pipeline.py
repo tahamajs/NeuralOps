@@ -34,6 +34,7 @@ TELEMETRY_LOG = LOGS_DIR / "autonomous_48h_telemetry.log"
 global_lock = threading.Lock()
 global_completed_counter = [0]
 active_workers_counter = [0]
+max_allowed_workers = [4]  # Dynamic worker limit governed by VRAM usage (min 2, max 6)
 
 DEPRECATED_FILE = BASE_DIR / "audit" / "deprecated_modules.txt"
 if DEPRECATED_FILE.exists():
@@ -101,10 +102,17 @@ def get_vram_and_util():
     except Exception:
         return {"used_mb": 0, "total_mb": 8188, "util_pct": 0, "temp_c": 0, "power_w": 0.0}
 
-def telemetry_monitor_loop():
-    """Logs hardware telemetry every 5 minutes and verifies targets (VRAM 4-6 GB, Util > 90%)."""
+def vram_governor_loop():
+    """
+    Monitors GPU VRAM every 30 seconds and dynamically adapts worker pool:
+      - RTX 4070 (8GB VRAM): Minimum 4,100 MB (50%), Maximum 7,370 MB (90%)
+      - If VRAM drops below 50% -> increase workers by 1 (max 6)
+      - If VRAM exceeds 90% -> decrease workers by 1 (min 2), sleep 30s to settle
+    """
+    iteration = 0
     while True:
-        time.sleep(300)
+        time.sleep(30)
+        iteration += 1
         tele = get_vram_and_util()
         used = tele["used_mb"]
         total = tele["total_mb"]
@@ -116,9 +124,23 @@ def telemetry_monitor_loop():
         with global_lock:
             act = active_workers_counter[0]
             done = global_completed_counter[0]
+            cur_limit = max_allowed_workers[0]
+
+            if vram_pct < 50.0 and act >= cur_limit:
+                new_limit = min(6, cur_limit + 1)
+                if new_limit > cur_limit:
+                    max_allowed_workers[0] = new_limit
+                    log(f"[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) → increasing max workers to {new_limit}")
+            elif vram_pct > 90.0:
+                new_limit = max(2, cur_limit - 1)
+                if new_limit < cur_limit:
+                    max_allowed_workers[0] = new_limit
+                    log(f"[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) → decreasing max workers to {new_limit}")
+
+            cur_limit = max_allowed_workers[0]
 
         t_line = (
-            f"[5-MIN TELEMETRY] Active Workers: {act} | Completed Tasks: {done} | "
+            f"[30S TELEMETRY] Active: {act}/{cur_limit} workers | Completed: {done} | "
             f"VRAM: {used}/{total} MB ({vram_pct:.1f}%) | GPU Util: {util}% | "
             f"Temp: {temp}C | Power: {pwr:.1f}W"
         )
@@ -126,16 +148,11 @@ def telemetry_monitor_loop():
         try:
             with open(TELEMETRY_LOG, "a", encoding="utf-8") as f:
                 f.write(t_line + "\n")
-            with open(MASTER_LOG, "a", encoding="utf-8") as f:
-                f.write(t_line + "\n")
+            if iteration % 10 == 0:  # Every 5 minutes log to master
+                with open(MASTER_LOG, "a", encoding="utf-8") as f:
+                    f.write(t_line + "\n")
         except Exception:
             pass
-
-        # Target verification alerts
-        if vram_pct < 50.0:
-            log(f"[TELEMETRY ALERT] VRAM is below 50% target ({vram_pct:.1f}%). Parallel streams actively scaling.")
-        if util < 90:
-            log(f"[TELEMETRY NOTE] GPU compute util at {util}%. Concurrency streams saturating Tensor Cores.")
 
 def run_single_task(task):
     summary_path = Path(task["summary_file"])
@@ -154,12 +171,12 @@ def run_single_task(task):
         tele = get_vram_and_util()
         with global_lock:
             cur_active = active_workers_counter[0]
-            # 5 workers * ~1.0-1.2 GB + 1.2 GB base = ~5.0 - 6.5 GB (61% - 79% VRAM)
-            # Never exceed 7,000 MB (safely below the 90% / 7,370 MB limit)
-            if tele["used_mb"] < 6900 and cur_active < 5:
+            cur_limit = max_allowed_workers[0]
+            # Max 7,370 MB hard ceiling (90% of 8,188 MB)
+            if tele["used_mb"] < 7370 and cur_active < cur_limit:
                 active_workers_counter[0] += 1
                 break
-        time.sleep(2)
+        time.sleep(3)
 
     log(f"============================================================")
     log(f"[START] {task['name']} (Batch={task.get('batch_size', 64)})")
@@ -391,10 +408,10 @@ def main():
     log(f"Base Directory: {BASE_DIR}")
     log("============================================================")
 
-    # Start 5-minute hardware telemetry background monitor
-    monitor_thread = threading.Thread(target=telemetry_monitor_loop, daemon=True)
+    # Start 30-second hardware telemetry & VRAM governor background monitor
+    monitor_thread = threading.Thread(target=vram_governor_loop, daemon=True)
     monitor_thread.start()
-    log("[SYSTEM] 5-minute GPU telemetry monitor initialized.")
+    log("[SYSTEM] 30-second adaptive VRAM governor (50%-90% target, max 6 workers) initialized.")
 
     all_streams = build_all_streams()
 
@@ -435,7 +452,7 @@ def main():
     t_global_start = time.time()
 
     # Launch parallel workers pulling from the shared pool of remaining tasks
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         future_map = {
             executor.submit(run_task_worker, task, total_pending, idx): task["name"]
             for idx, task in enumerate(pending_tasks)
