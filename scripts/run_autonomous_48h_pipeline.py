@@ -136,14 +136,14 @@ def run_single_task(task):
         except Exception:
             pass
 
-    # Dynamic VRAM governor: Keep VRAM between 50% and 90%
+    # Dynamic VRAM governor: Target strictly between 50% (~4,100 MB) and 90% (~7,370 MB)
     while True:
         tele = get_vram_and_util()
         with global_lock:
             cur_active = active_workers_counter[0]
-            # Maintain 4 concurrent models: each model allocates ~1.1-1.3 GB VRAM
-            # 4 models * 1.2 GB + 1.2 GB OS base = ~6.0 GB (73% VRAM, solidly in 50%-90% range)
-            if tele["used_mb"] < 6800 and cur_active < 4:
+            # 5 workers * ~1.0-1.2 GB + 1.2 GB base = ~5.0 - 6.5 GB (61% - 79% VRAM)
+            # Never exceed 7,000 MB (safely below the 90% / 7,370 MB limit)
+            if tele["used_mb"] < 6900 and cur_active < 5:
                 active_workers_counter[0] += 1
                 break
         time.sleep(2)
@@ -417,8 +417,8 @@ def main():
 
     t_global_start = time.time()
 
-    # Launch 8 concurrent workers pulling from the shared pool of remaining tasks
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    # Launch parallel workers pulling from the shared pool of remaining tasks
+    with ThreadPoolExecutor(max_workers=5) as executor:
         future_map = {
             executor.submit(run_task_worker, task, total_pending, idx): task["name"]
             for idx, task in enumerate(pending_tasks)
