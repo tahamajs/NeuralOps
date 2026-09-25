@@ -740,18 +740,39 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
     nlls = []
     total_tokens = 0
     
+    # Collect all chunks and target lengths first
+    chunks = []
+    trg_lens = []
     for i in range(0, input_ids.size(0), stride):
         begin_loc = max(i + stride - max_length, 0)
         end_loc = min(i + stride, input_ids.size(0))
-        trg_len = end_loc - i
-        
-        input_chunk = input_ids[begin_loc:end_loc].unsqueeze(0).to(device)
-        target_chunk = input_chunk.clone()
-        target_chunk[:, :-trg_len] = -100  # ignore overlap
-        
+        chunks.append(input_ids[begin_loc:end_loc])
+        trg_lens.append(end_loc - i)
+
+    # Batch chunks dynamically according to batch_size to maximize GPU compute
+    eval_bs = max(1, min(batch_size or 16, 32))
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else (tokenizer.eos_token_id or 0)
+
+    for b_idx in range(0, len(chunks), eval_bs):
+        batch_chunks = chunks[b_idx : b_idx + eval_bs]
+        batch_trg_lens = trg_lens[b_idx : b_idx + eval_bs]
+        max_c_len = max(c.size(0) for c in batch_chunks)
+
+        input_batch = torch.full((len(batch_chunks), max_c_len), pad_id, dtype=torch.long)
+        target_batch = torch.full((len(batch_chunks), max_c_len), -100, dtype=torch.long)
+
+        for j, (c, t_len) in enumerate(zip(batch_chunks, batch_trg_lens)):
+            c_len = c.size(0)
+            input_batch[j, :c_len] = c
+            target_batch[j, c_len - t_len : c_len] = c[c_len - t_len : c_len]
+
+        input_batch = input_batch.to(device)
+        target_batch = target_batch.to(device)
+        batch_tokens = sum(batch_trg_lens)
+
         try:
             with torch.autocast(device_type=device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
-                outputs = model(input_chunk, labels=target_chunk)
+                outputs = model(input_batch, labels=target_batch)
                 loss = outputs.loss.float()
         except Exception as e:
             from framework.utils.logger import LOG
@@ -763,9 +784,9 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
                 "val_loss": float("nan"),
                 "error": str(e),
             }
-            
-        nlls.append(loss.item() * trg_len)
-        total_tokens += trg_len
+
+        nlls.append(loss.item() * batch_tokens)
+        total_tokens += batch_tokens
 
     ppl = math.exp(sum(nlls) / total_tokens) if total_tokens > 0 else float("inf")
     t1 = time.monotonic()
@@ -1308,21 +1329,23 @@ def _auto_parallel_and_batch(
         batch = requested_batch
     else:
         if free_gb >= 6.0:
-            batch = 32
+            batch = 64
         elif free_gb >= 4.0:
-            batch = 16
+            batch = 32
         else:
-            batch = 8
+            batch = 16
 
     if explicit_parallel and requested_parallel is not None:
         parallel = requested_parallel
     else:
-        per_worker_gb = 1.5 if batch >= 16 else 1.0
+        per_worker_gb = 1.8 if batch >= 32 else 1.2
         n = int(free_gb // per_worker_gb)
-        if free_gb >= 4.0:
+        if free_gb >= 6.0:
             parallel = 4
+        elif free_gb >= 4.0:
+            parallel = 3
         else:
-            parallel = max(2, min(n, 3))
+            parallel = max(1, min(n, 2))
 
     return parallel, batch
 
@@ -1884,6 +1907,11 @@ def parse_args(argv=None):
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
+        try:
+            torch.set_float32_matmul_precision("high")
+        except Exception:
+            pass
         try:
             if getattr(args, "max_vram_fraction", None) is not None and 0.0 < args.max_vram_fraction <= 1.0:
                 torch.cuda.set_per_process_memory_fraction(float(args.max_vram_fraction))
