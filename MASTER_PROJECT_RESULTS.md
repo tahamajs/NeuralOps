@@ -637,9 +637,13 @@ Evaluation of compression engines across diverse NLU benchmarks (DistilBERT base
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | `adasvd_compressor` | MNLI | 66.20% | 0.6516 | **1.21×** | 100,155 | 0.3384 | **PASS** | `results/mnli_deep_sweep/adasvd_compressor/summary.csv` |
 | `a3_compressor` | MNLI | **79.90%** | 0.7981 | **1.03×** | 42,101 | 0.3480 | **PASS** | `results/mnli_deep_sweep/a3_compressor/summary.csv` |
+| `kronecker_compressor` | MNLI | **79.90%** | 0.7983 | **1.04×** | 13,263 | — | **PASS** | `results/mnli_deep_sweep/kronecker_compressor/summary.csv` |
 | `direct_svd` | MNLI | 82.00% | 0.8198 | 1.00× | 84,735 | 0.5883 | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/direct_svd/summary.csv` |
 | `saes_svd_v2` | MNLI | 81.90% | 0.8181 | 1.00× | 50,294 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/saes_svd_v2/summary.csv` |
+| `salr` | MNLI | 81.90% | 0.8181 | 1.00× | 135,855 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/salr/summary.csv` |
 | `rpca_compressor` | MNLI | 81.90% | 0.8180 | 1.00× | 15,166 | — | **PASS_NO_COMPRESSION** | `results/mnli_deep_sweep/rpca_compressor/summary.csv` |
+| `mlorq_compressor` | MNLI | 81.80% | 0.8171 | 1.00× | 62,928 | 0.0281 | **PASS** | `results/mnli_deep_sweep/mlorq_compressor/summary.csv` |
+| `oats_compressor` | MNLI | 81.70% | 0.8159 | 1.00× | 58,879 | 0.3975 | **PASS** | `results/mnli_deep_sweep/oats_compressor/summary.csv` |
 
 ---
 
@@ -657,6 +661,8 @@ End-to-end classification accuracy and token throughput across input sequence le
 | `cosformer` | 512 | 78.10% | 0.7861 | 62,045 | 929.3 MB | **PASS** | `results/seqlen_48h/cosformer/seq_512/summary.csv` |
 | `performer` | 128 | 78.90% | 0.7767 | 32,758 | 646.4 MB | **PASS** | `results/seqlen_48h/performer/seq_128/summary.csv` |
 | `performer` | 256 | 78.90% | 0.7767 | 25,932 | 960.8 MB | **PASS** | `results/seqlen_48h/performer/seq_256/summary.csv` |
+| `performer` | 512 | 78.90% | 0.7767 | 45,812 | 970.8 MB | **PASS** | `results/seqlen_48h/performer/seq_512/summary.csv` |
+| `simple_ssm` | 128 | 50.92% | 0.6748 | 611 | 3,985.1 MB | **PASS** | `results/seqlen_48h/simple_ssm/seq_128/summary.csv` |
 
 ---
 
@@ -677,5 +683,14 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `a3_compressor` | DistilBERT | 123 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_123/summary.csv` |
 | `a3_compressor` | DistilBERT | 456 | **90.25%** | 0.9069 | 1.03× | 0.3493 | `results/multiseed_rigor_distilbert/a3_compressor/seed_456/summary.csv` |
 | `a3_compressor` | RoBERTa | 123 | **93.12%** | 0.9323 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_123/summary.csv` |
+| `a3_compressor` | RoBERTa | 456 | **93.00%** | 0.9312 | 1.02× | 0.3449 | `results/multiseed_rigor_roberta/a3_compressor/seed_456/summary.csv` |
+| `direct_svd` | DistilBERT | 123 | 90.60% | 0.9099 | 1.00× | 0.5882 | `results/multiseed_rigor_distilbert/direct_svd/seed_123/summary.csv` |
+| `direct_svd` | DistilBERT | 456 | 90.60% | 0.9099 | 1.00× | 0.5882 | `results/multiseed_rigor_distilbert/direct_svd/seed_456/summary.csv` |
+| `direct_svd` | RoBERTa | 123 | 93.12% | 0.9342 | 1.00× | 0.6008 | `results/multiseed_rigor_roberta/direct_svd/seed_123/summary.csv` |
+| `direct_svd` | RoBERTa | 456 | 93.35% | 0.9363 | 1.00× | 0.6008 | `results/multiseed_rigor_roberta/direct_svd/seed_456/summary.csv` |
+| `saes_svd_v2` | DistilBERT | 123 | 90.71% | 0.9095 | 1.00× | — | `results/multiseed_rigor_distilbert/saes_svd_v2/seed_123/summary.csv` |
+| `saes_svd_v2` | DistilBERT | 456 | 90.71% | 0.9093 | 1.00× | — | `results/multiseed_rigor_distilbert/saes_svd_v2/seed_456/summary.csv` |
+| `saes_svd_v2` | RoBERTa | 123 | 93.81% | 0.9397 | 1.00× | — | `results/multiseed_rigor_roberta/saes_svd_v2/seed_123/summary.csv` |
+| `saes_svd_v2` | RoBERTa | 456 | **94.15%** | 0.9426 | 1.00× | — | `results/multiseed_rigor_roberta/saes_svd_v2/seed_456/summary.csv` |
 
 
