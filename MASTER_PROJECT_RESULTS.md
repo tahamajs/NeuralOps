@@ -320,11 +320,16 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `kronecker_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.25% | **1.04×** | **PASS** |
 | `kronecker_compressor` | RoBERTa | 91.63% | 91.63% | 91.63% | **91.86%** | **1.04×** | **PASS** |
 | `kronecker_tt_lora` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 0.97× | **Invariance PASS** |
-| `kronecker_tt_lora` | RoBERTa | 93.92% | 93.92% | 93.92% | [RUNNING] | 0.97× | **Invariance PASS (r=64, 128, 256)** |
+| `kronecker_tt_lora` | RoBERTa | 93.92% | 93.92% | 93.92% | 93.92% | 0.97× | **Invariance PASS** |
 | `lsc_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `lsc_compressor` | RoBERTa | 94.27% | 94.27% | 94.27% | 94.27% | 1.00× | **Invariance PASS** |
 | `mgie_svd` | DistilBERT | 90.71% (0.7611) | 90.71% (0.6192) | 89.56% (0.4025) | 90.60% (0.2403) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
+| `mgie_svd` | RoBERTa | 94.04% (0.7764) | 94.04% (0.6324) | [RUNNING] | [QUEUED] | 1.00× | **PASS (r=64, 128)** |
 | `mlorq_compressor` | DistilBERT | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 90.60% (0.0290) | 1.00× | **Invariance PASS** |
 | `modegpt` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
+| `modegpt_compressor` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
+| `nmf_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.48% | 1.00× | **PASS** |
+| `oats` | DistilBERT | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 1.00× | **Invariance PASS** |
 
 ---
 
