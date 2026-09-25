@@ -97,7 +97,7 @@ def _forward_with_oom_fallback(model, input_ids, attention_mask, device):
             return torch.cat([logits_1, logits_2], dim=0)
 
 
-def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=16):
+def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=64):
     cfg = TASKS[task_name]
     
     # 1. Lazy load dataset per task
@@ -233,7 +233,9 @@ def eval_task(model, tokenizer, task_name, num_samples=500, batch_size=16):
                 score = c_log_probs.gather(1, c_ids.unsqueeze(-1)).sum().item()
             all_scores[it["meta"]] = score
 
-        if (b_idx + 1) % 25 == 0 or (b_idx + 1) == n_batches:
+        del logits, log_probs, t_input_ids, t_att_mask
+
+        if (b_idx + 1) % 10 == 0 or (b_idx + 1) == n_batches:
             elapsed = time.time() - t0
             eta = (elapsed / (b_idx + 1)) * (n_batches - (b_idx + 1))
             pct = ((b_idx + 1) / n_batches) * 100
@@ -267,7 +269,7 @@ def main():
     ap.add_argument("--model", default="models/gpt2")
     ap.add_argument("--tasks", default="piqa,arc_easy,arc_challenge,hellaswag,winogrande")
     ap.add_argument("--num_samples", type=int, default=500)
-    ap.add_argument("--batch_size", type=int, default=16)
+    ap.add_argument("--batch_size", type=int, default=64)
     ap.add_argument("--output_dir", required=True)
     args = ap.parse_args()
 
