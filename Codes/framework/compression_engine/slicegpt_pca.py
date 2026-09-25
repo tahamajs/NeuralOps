@@ -3,15 +3,37 @@ SliceGPT PCA Compressor: Principal Component Analysis based Dimensionality Slici
 Registered in COMPRESSOR_REGISTRY as 'slicegpt_pca' and 'slicegpt_pca_factory'.
 
 Mathematical Formulation:
-1. Activation Sample Matrix $X \in \mathbb{R}^{N 	imes d_{in}}$
-2. Empirical Covariance: $\Sigma = rac{1}{N - 1} (X - \mu)^	op (X - \mu)$
-3. Eigendecomposition: $\Sigma = V \Lambda V^	op$
-4. Retain principal coordinates covering $(1 - 	ext{sparsity})$ cumulative variance:
-   $$k = \min \left\{ r \;\middle|\; rac{\sum_{i=1}^r \lambda_i}{\sum_{i=1}^d \lambda_i} \ge 1 - 	ext{sparsity} 
-ight\}$$
-5. Transform weights: $W \leftarrow (W V) P_k P_k^	op V^	op$
+1. Activation Sample Matrix X ∈ R^{N × d_in}
+2. Empirical Covariance: Σ = (1/(N-1)) (X - μ)^T (X - μ)
+3. Eigendecomposition: Σ = V Λ V^T
+4. Retain principal coordinates covering (1 - sparsity) cumulative variance:
+   k = min{ r | Σ_{i≤r} λ_i / Σ_i λ_i ≥ 1 - sparsity }
+5. Transform weights: W ← (W V) P_k P_k^T V^T
+   Note: W_reconstructed = W @ V @ diag(1_k) @ V^T has rank ≤ k.
 6. Optional LoRA Adapter Integration:
-   $$y = (W_{	ext{sliced}} x + b) + rac{lpha}{r} (B A x)$$
+   y = (W_sliced x + b) + (α/r) (B A x)
+
+=== REAL COMPRESSION (2026-09-25 FIX) ===
+This version ACTUALLY reduces parameter count by replacing the sliced dense
+weight with an SVDLinear low-rank factorization:
+
+    W_reconstructed = W_pca[:, :keep] @ V[:, :keep].T
+                    = U_factor @ Vt_factor     where:
+                      U_factor  = W_pca[:, :keep]     shape (d_out, keep)
+                      Vt_factor = V[:, :keep].T       shape (keep, d_in)
+
+Parameter count drops from d_out * d_in to (d_out + d_in) * keep.
+
+Production Hardening:
+- Fix 1: Streaming empirical covariance (H21) to avoid memory spikes.
+- Fix 2: Tied-weight protection via visited_modules set.
+- Fix 3: GQA-aware attention projection skipping.
+- Fix 4: Orthogonality validation (QR fallback on non-orthogonal eigh).
+- Fix 5: Proper hook-removal error message (was "copy_weights failed").
+- Fix 6 (2026-09-25): REAL COMPRESSION — replace dense weight with SVDLinear.
+- Fix 7 (2026-09-25): Added is_noop flag and noop_reason to stats.
+- Fix 8 (2026-09-25): Skip SVDLinear replacement when it would not reduce params.
+- Fix 9 (2026-09-25): Preserve existing LoRA adapters during replacement.
 """
 
 from __future__ import annotations
@@ -29,6 +51,15 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import get_calibration_tensors
 from framework.utils.compat import should_compress_linear
 
+# Real low-rank factorization layer
+try:
+    from framework.compression_engine.aa_svd_compressor import SVDLinear
+except Exception as _svd_import_err:  # pragma: no cover
+    SVDLinear = None
+    _SVD_IMPORT_ERROR = str(_svd_import_err)
+else:
+    _SVD_IMPORT_ERROR = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +68,10 @@ class SliceGPTPCALoRALinear(nn.Module):
     Linear layer containing sliced/PCA-projected base weights (frozen)
     with trainable LoRA adapters (lora_A, lora_B) for post-compression fine-tuning.
     Base weights are frozen with requires_grad=False; initial LoRA contribution is zero.
+
+    NOTE: This wrapper stores the base weight densely. For real parameter
+    reduction, the compressor now uses SVDLinear instead. This class is kept
+    for backward compatibility only.
     """
 
     def __init__(
@@ -87,12 +122,12 @@ class SliceGPTPCALoRALinear(nn.Module):
         sliced_weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> SliceGPTPCALoRALinear:
+    ) -> "SliceGPTPCALoRALinear":
         base_mod = getattr(linear, 'base_layer', linear)
         bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
         in_features = getattr(base_mod, 'in_features', sliced_weight.shape[1])
         out_features = getattr(base_mod, 'out_features', sliced_weight.shape[0])
-        
+
         has_existing_lora = hasattr(linear, 'lora_A') and hasattr(linear, 'lora_B')
         effective_lora_r = lora_r
         if has_existing_lora and getattr(linear, 'r', 0) > 0:
@@ -143,6 +178,9 @@ class SliceGPTPCACompressor(BaseCompressor):
     """
     Production-hardened SliceGPT PCA-based compressor that performs activation-aware
     principal coordinate projection and dimension slicing on Linear and Conv1D layers.
+
+    Replaces each sliced dense weight with a real SVDLinear low-rank factorization
+    so that parameter count actually drops from d_out*d_in to (d_out+d_in)*keep.
     """
 
     def __init__(
@@ -199,6 +237,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         self.fallback_layers: List[str] = []
         self.failed_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
         self.stats: Dict[str, Any] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -207,7 +246,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         num_heads = getattr(cfg, 'num_attention_heads', None)
         num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
         is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
-        
+
         name_l = name.lower()
         is_attn_qkv = any(p in name_l for p in [
             'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
@@ -248,6 +287,10 @@ class SliceGPTPCACompressor(BaseCompressor):
         if not is_linear_like:
             return False
 
+        # Skip already-factorized layers
+        if SVDLinear is not None and isinstance(base_mod, SVDLinear):
+            return False
+
         # 4. Tiny layer guard
         if raw_w.numel() < self.min_numel:
             self.skipped_layers.append(name)
@@ -264,7 +307,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         return True
 
     def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
-        """Capture streaming empirical covariance across target layers to eliminate memory spikes (H21)."""
+        """Capture streaming empirical covariance across target layers to avoid memory spikes."""
         self.model.eval()
         sum_x: Dict[str, torch.Tensor] = {}
         sum_xx: Dict[str, torch.Tensor] = {}
@@ -321,7 +364,8 @@ class SliceGPTPCACompressor(BaseCompressor):
                 try:
                     h.remove()
                 except Exception as e:
-                    logger.warning(f"copy_weights failed: {e}")
+                    # Fix 5: corrected error message (was "copy_weights failed")
+                    logger.warning("SliceGPTPCA hook removal failed: %s", e)
 
         cov_map: Dict[str, torch.Tensor] = {}
         for name, n in counts.items():
@@ -331,12 +375,52 @@ class SliceGPTPCACompressor(BaseCompressor):
                 cov_map[name] = cov
         return cov_map
 
+    @staticmethod
+    def _detect_lora(module: nn.Module) -> Tuple[int, float]:
+        """Detect existing LoRA rank and alpha from a wrapped module, if any."""
+        if not hasattr(module, 'lora_A') or module.lora_A is None:
+            return 0, 1.0
+        rank = 0
+        la = getattr(module, 'lora_A', None)
+        if la is not None:
+            if hasattr(la, 'weight') and la.weight is not None and la.weight.dim() >= 1:
+                rank = int(la.weight.shape[0])
+            elif isinstance(la, nn.Parameter) and la.dim() >= 1:
+                rank = int(la.shape[0])
+        alpha = 1.0
+        for attr in ('lora_alpha', 'alpha'):
+            a = getattr(module, attr, None)
+            if a is not None:
+                try:
+                    alpha = float(a)
+                except (TypeError, ValueError):
+                    pass
+                break
+        return rank, alpha
+
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """
-        Compresses the model using PCA-based principal subspace projection and slicing.
+        Compresses the model using PCA-based principal subspace projection and
+        real low-rank factorization (SVDLinear).
+
         Returns (compressed_model, stats).
         """
+        if SVDLinear is None:
+            logger.error(
+                "SliceGPTPCA: SVDLinear could not be imported (%s). Cannot perform "
+                "real compression; returning model unchanged.",
+                _SVD_IMPORT_ERROR,
+            )
+            stats = self.get_compression_stats()
+            stats.update({
+                'is_noop': True,
+                'noop_reason': 'svd_linear_import_failed',
+                'method': 'slicegpt_pca_unavailable',
+            })
+            return self.model, stats
+
         self.layer_errors = {}
+        self.layer_ranks = {}
         self.visited_modules.clear()
         self.sliced_layers.clear()
         self.protected_layers.clear()
@@ -347,6 +431,8 @@ class SliceGPTPCACompressor(BaseCompressor):
         activations_map = self._collect_layer_activations()
         sliced_layers_count = 0
         pruned_features_count = 0
+        total_params_before = 0
+        total_params_after = 0
 
         target_items = [(n, m) for n, m in self.model.named_modules() if self._is_target_module(n, m)]
 
@@ -373,6 +459,8 @@ class SliceGPTPCACompressor(BaseCompressor):
                 else:
                     W = raw_w.contiguous().float()
                 d_out, d_in = W.shape
+
+                total_params_before += d_out * d_in
 
                 cov_mat = activations_map.get(name, None)
                 if cov_mat is not None and cov_mat.shape[0] == d_in and cov_mat.shape[1] == d_in:
@@ -409,22 +497,27 @@ class SliceGPTPCACompressor(BaseCompressor):
                 else:
                     keep = max(1, int(d_in * (1.0 - self.sparsity)))
 
-                # Rotate weight into PCA coordinate space
+                # Rank cannot exceed min(d_out, d_in)
+                effective_keep = min(keep, d_out, d_in)
+
+                # Rotate weight into PCA coordinate space and truncate
                 W_pca = torch.matmul(W, V)
+                W_trunc = W_pca.clone()
+                if effective_keep < d_in:
+                    W_trunc[:, effective_keep:] = 0.0
 
-                # Slice / zero out trailing PCA components
-                if keep < d_in:
-                    W_pca[:, keep:] = 0.0
-
-                # Rotate back to original coordinate basis
-                W_reconstructed = torch.matmul(W_pca, V.T)
+                # Reconstruct truncated weight for error measurement
+                W_reconstructed = torch.matmul(W_trunc, V.T)
 
                 # Relative Frobenius error validation
                 norm_orig = torch.norm(W, p='fro').clamp_min(1e-8)
                 rel_err = (torch.norm(W - W_reconstructed, p='fro') / norm_orig).item()
                 self.layer_errors[name] = float(rel_err)
 
-                is_invalid = torch.isnan(W_reconstructed).any() or torch.isinf(W_reconstructed).any()
+                is_invalid = (
+                    torch.isnan(W_reconstructed).any()
+                    or torch.isinf(W_reconstructed).any()
+                )
                 if rel_err > self.max_error:
                     logger.warning(
                         'SliceGPTPCA: reconstruction error %.4f on %s exceeded threshold %.4f.',
@@ -433,30 +526,100 @@ class SliceGPTPCACompressor(BaseCompressor):
                     is_invalid = True
 
                 if is_invalid and self.fallback_to_original:
-                    logger.warning("Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.", name)
+                    logger.warning(
+                        "Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. "
+                        "It will not be fine-tuned.",
+                        name,
+                    )
                     self.fallback_layers.append(name)
                     for p in module.parameters():
                         p.requires_grad = False
+                    total_params_after += d_out * d_in
                     continue
 
-                if keep < d_in:
-                    pruned_features_count += (d_in - keep)
+                # === REAL LOW-RANK FACTORIZATION ===
+                # W_reconstructed = W_pca[:, :keep] @ V[:, :keep].T
+                # Factor:
+                #   U_factor  = W_pca[:, :keep]      shape (d_out, keep)
+                #   Vt_factor = V[:, :keep].T        shape (keep, d_in)
+                U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
+                Vt_factor = V[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
 
-                # Commit compressed layer (with optional LoRA adapter)
-                if self.use_lora and self.lora_r > 0:
-                    lora_layer = SliceGPTPCALoRALinear.from_linear(
-                        linear=module,
-                        sliced_weight=W_reconstructed.to(dtype=dtype, device=device),
-                        lora_r=self.lora_r,
-                        lora_alpha=self.lora_alpha,
+                factorized_params = effective_keep * (d_out + d_in)
+                # Only apply if it actually reduces parameter count
+                if factorized_params >= d_out * d_in:
+                    logger.info(
+                        "SliceGPTPCA: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
+                        effective_keep, name, factorized_params, d_out * d_in,
                     )
-                    replace_module(self.model, name, lora_layer)
-                else:
-                    final_w = W_reconstructed.t().contiguous() if is_conv1d else W_reconstructed.contiguous()
-                    base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
+                    total_params_after += d_out * d_in
+                    continue
 
+                # Detect existing LoRA adapters so we can preserve their weights
+                existing_lora_r, existing_lora_alpha = self._detect_lora(module)
+                if self.use_lora and self.lora_r > 0 and existing_lora_r == 0:
+                    used_lora_r = self.lora_r
+                    used_lora_alpha = self.lora_alpha
+                else:
+                    used_lora_r = existing_lora_r
+                    used_lora_alpha = existing_lora_alpha
+
+                # Build the SVDLinear factorization
+                svd_layer = SVDLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=effective_keep,
+                    bias=(getattr(base_mod, 'bias', None) is not None and base_mod.bias is not None),
+                    dtype=dtype,
+                    device=device,
+                    lora_r=used_lora_r,
+                    lora_alpha=used_lora_alpha,
+                )
+                svd_layer.set_low_rank_factors(U_factor, Vt_factor)
+
+                # Copy bias
+                if (
+                    getattr(base_mod, 'bias', None) is not None
+                    and base_mod.bias is not None
+                    and getattr(svd_layer, 'bias', None) is not None
+                ):
+                    svd_layer.bias.data.copy_(base_mod.bias.data)
+
+                # Copy existing LoRA adapters if present
+                if existing_lora_r > 0 and getattr(svd_layer, 'lora_A', None) is not None:
+                    try:
+                        src_la = getattr(module.lora_A, 'weight', module.lora_A)
+                        src_lb = getattr(module.lora_B, 'weight', module.lora_B)
+                        la_target = svd_layer.lora_A
+                        lb_target = svd_layer.lora_B
+                        if (
+                            hasattr(src_la, 'data')
+                            and la_target is not None
+                            and src_la.shape == la_target.shape
+                        ):
+                            la_target.data.copy_(src_la.data)
+                        if (
+                            hasattr(src_lb, 'data')
+                            and lb_target is not None
+                            and src_lb.shape == lb_target.shape
+                        ):
+                            lb_target.data.copy_(src_lb.data)
+                    except Exception as e_lora:
+                        logger.debug('SliceGPTPCA LoRA copy skipped on %s: %s', name, e_lora)
+
+                # Replace module
+                is_wrapped = hasattr(module, 'base_layer')
+                if is_wrapped:
+                    module.base_layer = svd_layer
+                else:
+                    replace_module(self.model, name, svd_layer)
+
+                self.layer_ranks[name] = effective_keep
                 self.sliced_layers.append(name)
                 sliced_layers_count += 1
+                if effective_keep < d_in:
+                    pruned_features_count += (d_in - effective_keep)
+                total_params_after += factorized_params
 
             except Exception as e_layer:
                 logger.warning('SliceGPTPCA: Failed to compress %s: %s', name, e_layer)
@@ -476,10 +639,16 @@ class SliceGPTPCACompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        compression_rate = (
+            total_params_before / max(1, total_params_after)
+            if total_params_after > 0 else 1.0
+        )
+
         stats = self.get_compression_stats()
         stats.update({
             'sliced_layers': self.sliced_layers,
             'sliced_layer_count': sliced_layers_count,
+            'layer_ranks': self.layer_ranks,
             'pruned_features': pruned_features_count,
             'protected_layers': self.protected_layers,
             'protected_layer_count': len(self.protected_layers),
@@ -497,9 +666,31 @@ class SliceGPTPCACompressor(BaseCompressor):
             'target_attention_only': self.target_attention_only,
             'use_lora': self.use_lora,
             'lora_r': self.lora_r,
-            'method': 'slicegpt_pca',
+            'total_params_before': total_params_before,
+            'total_params_after': total_params_after,
+            'compression_rate': round(compression_rate, 4),
+            'num_compressed': sliced_layers_count,
+            'num_compressed_layers': sliced_layers_count,
+            'num_fallback': len(self.fallback_layers),
+            'num_fallback_layers': len(self.fallback_layers),
+            'is_noop': (total_params_after >= total_params_before),
+            'noop_reason': (
+                'no_factorizable_layers_or_fallback_all'
+                if total_params_after >= total_params_before else None
+            ),
+            'method': 'slicegpt_pca_real_low_rank_factorization',
         })
         self.stats = stats
+
+        logger.info(
+            "SliceGPTPCA (real): %d layers factorized, avg recon error %.4f, "
+            "params %d -> %d (%.2fx compression)",
+            sliced_layers_count,
+            avg_err,
+            total_params_before,
+            total_params_after,
+            compression_rate,
+        )
         return self.model, stats
 
 
