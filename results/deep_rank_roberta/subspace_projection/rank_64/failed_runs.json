@@ -1,0 +1,12 @@
+[
+  {
+    "module": "subspace_projection",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "PASS_NO_COMPRESSION",
+    "perplexity": "",
+    "accuracy_pct": 93.69,
+    "error": "note: zero compressed layers, zero injected layers, model unchanged",
+    "timestamp": "2026-09-25T19:00:19.764158"
+  }
+]
