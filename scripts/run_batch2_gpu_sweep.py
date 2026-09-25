@@ -75,6 +75,21 @@ def run_task(task):
         except Exception:
             pass
 
+    # Dynamic VRAM governor: wait if GPU VRAM usage > 5500 MB to prevent OOM
+    while True:
+        try:
+            mem_out = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+                text=True,
+                timeout=5
+            )
+            used = int(mem_out.strip())
+            if used < 5500:
+                break
+            time.sleep(3)
+        except Exception:
+            break
+
     log(f"============================================================")
     log(f"[START] {task['name']}")
     log(f"============================================================")
@@ -128,33 +143,29 @@ def run_task(task):
         return False
 
 def main():
-    log(f"Starting High-Performance GPU Sweep Runner ({len(TASKS)} tasks queued across {len(MODULES)} modules)...")
-    completed, skipped, failed = 0, 0, 0
+    workers = 2
+    log(f"Starting High-Performance GPU Sweep Runner ({len(TASKS)} tasks queued across {len(MODULES)} modules, parallel workers = {workers})...")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    for i, task in enumerate(TASKS):
-        log(f"Progress: [{i+1}/{len(TASKS)}] (Done: {completed}, Skipped: {skipped}, Failed: {failed})")
-        # Ensure GPU has settled
-        time.sleep(2)
-        summary_path = Path(task["summary_file"])
-        if summary_path.exists() and summary_path.stat().st_size > 50:
+    completed, failed = 0, 0
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        future_to_task = {executor.submit(run_task, t): t for t in TASKS}
+        for future in as_completed(future_to_task):
+            t = future_to_task[future]
             try:
-                with open(summary_path, "r", encoding="utf-8") as f:
-                    c = f.read()
-                if "CRASH_NO_OUTPUT" not in c and ("PASS" in c or "FAIL" in c):
-                    skipped += 1
-                    continue
-            except Exception:
-                pass
-
-        success = run_task(task)
-        if success:
-            completed += 1
-        else:
-            failed += 1
+                success = future.result()
+                if success:
+                    completed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                log(f"[ERROR] Task {t['name']} failed with exception: {e}")
+                failed += 1
+            log(f"Batch 2 Status: [Completed: {completed} | Failed: {failed} | Total: {len(TASKS)}]")
 
     log(f"============================================================")
-    log(f"High-Performance GPU Sweep Runner Finished!")
-    log(f"Total: {len(TASKS)} | Completed: {completed} | Skipped: {skipped} | Failed: {failed}")
+    log(f"High-Performance Parallel GPU Sweep Runner Finished!")
+    log(f"Total: {len(TASKS)} | Completed: {completed} | Failed: {failed}")
     log(f"============================================================")
 
 if __name__ == "__main__":
