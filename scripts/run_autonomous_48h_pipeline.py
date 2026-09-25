@@ -305,10 +305,12 @@ def build_all_streams():
             ("distilbert", "models/distilbert_sst2", "bert", "2e-4"),
         ]:
             out = str(BASE_DIR / "results" / f"attn_{model_tag}" / m)
+            timeout_val = 180 if m == "mamba_svd_flash" else 300
             s3_tasks.append({
                 "name": f"Stream 3 (Attn) | {model_tag.upper()} | {m}",
                 "module": m, "model": m_path, "model_family": fam, "dataset": "sst2",
                 "batch_size": 64, "lr": lr, "out_dir": out, "summary_file": f"{out}/summary.csv",
+                "timeout": timeout_val,
             })
     streams["STREAM_3_ATTENTIONS"] = s3_tasks
 
