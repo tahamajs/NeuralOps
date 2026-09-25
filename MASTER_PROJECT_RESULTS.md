@@ -332,11 +332,17 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `modegpt_compressor` | DistilBERT | 90.71% (0.7767) | 90.71% (0.6460) | 90.48% (0.4438) | 90.83% (0.2883) | 1.00× | **Monotonic Error Decay PASS** |
 | `modegpt_compressor` | RoBERTa | 94.04% (0.7904) | 94.04% (0.6580) | 91.74% (0.4525) | 92.43% (0.2919) | 1.00× | **Monotonic Error Decay PASS** |
 | `nmf_compressor` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.48% | 1.00× | **PASS** |
+| `nmf_compressor` | RoBERTa | 94.04% | 94.04% | 94.04% | 93.92% | 1.00× | **Invariance PASS** |
 | `oats` | DistilBERT | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 1.00× | **Invariance PASS** |
+| `oats` | RoBERTa | 93.81% (0.2050) | 93.81% (0.2050) | 93.81% (0.2050) | 93.81% (0.2050) | 1.00× | **Invariance PASS** |
 | `oats_compressor` | DistilBERT | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 90.60% (0.4116) | 1.00× | **Invariance PASS** |
+| `oats_compressor` | RoBERTa | 93.81% (0.2050) | 93.81% (0.2050) | 93.81% (0.2050) | 93.81% (0.2050) | 1.00× | **Invariance PASS** |
 | `rotational_slicegpt_int4` | DistilBERT | 90.48% (0.5111) | 90.48% (0.5111) | 90.48% (0.5111) | 90.48% (0.5111) | 1.00× | **Invariance PASS** |
 | `rpca` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
 | `rpca_compressor` | DistilBERT | 90.71% | 90.71% | 90.94% (0.3764) | 90.48% (0.2453) | 1.00× $\to$ 1.04× | **Monotonic Error Decay PASS** |
+| `saes_svd` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
+| `saes_svd_v2` | DistilBERT | 90.60% | 90.60% | 89.45% (0.3759) | 90.60% (0.2414) | 1.00× $\to$ 1.04× | **PASS** |
+| `salr` | DistilBERT | 90.71% | 90.71% | 90.71% | 90.71% | 1.00× | **Invariance PASS** |
 
 ---
 
@@ -726,10 +732,11 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `kronecker_compressor` | DistilBERT | 123 | **90.71%** | 0.9109 | **1.04×** | — | `results/multiseed_rigor_distilbert/kronecker_compressor/seed_123/summary.csv` |
 | `kronecker_compressor` | DistilBERT | 456 | **90.71%** | 0.9109 | **1.04×** | — | `results/multiseed_rigor_distilbert/kronecker_compressor/seed_456/summary.csv` |
 | `kronecker_compressor` | RoBERTa | 123 | **91.74%** | 0.9196 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_123/summary.csv` |
-| `kronecker_compressor` | RoBERTa | 456 | **91.74%** | 0.9196 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_456/summary.csv` |
+| `kronecker_compressor` | RoBERTa | 456 | **91.40%** | 0.9166 | **1.04×** | — | `results/multiseed_rigor_roberta/kronecker_compressor/seed_456/summary.csv` |
 | `mlorq_compressor` | DistilBERT | 123 | **90.83%** | 0.9109 | 1.00× | 0.0290 | `results/multiseed_rigor_distilbert/mlorq_compressor/seed_123/summary.csv` |
 | `mlorq_compressor` | DistilBERT | 456 | **90.83%** | 0.9109 | 1.00× | 0.0290 | `results/multiseed_rigor_distilbert/mlorq_compressor/seed_456/summary.csv` |
 | `mlorq_compressor` | RoBERTa | 123 | **94.50%** | 0.9463 | 1.00× | 0.0402 | `results/multiseed_rigor_roberta/mlorq_compressor/seed_123/summary.csv` |
+| `mlorq_compressor` | RoBERTa | 456 | **94.38%** | 0.9453 | 1.00× | 0.0402 | `results/multiseed_rigor_roberta/mlorq_compressor/seed_456/summary.csv` |
 | `rpca_compressor` | DistilBERT | 123 | 90.83% | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_123/summary.csv` |
 | `rpca_compressor` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/rpca_compressor/seed_456/summary.csv` |
 | `rpca_compressor` | RoBERTa | 123 | 94.04% | 0.9417 | 1.00× | — | `results/multiseed_rigor_roberta/rpca_compressor/seed_123/summary.csv` |
@@ -745,6 +752,7 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `salr` | DistilBERT | 123 | **90.83%** | 0.9117 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_123/summary.csv` |
 | `salr` | DistilBERT | 456 | 90.71% | 0.9099 | 1.00× | — | `results/multiseed_rigor_distilbert/salr/seed_456/summary.csv` |
 | `salr` | RoBERTa | 123 | **93.92%** | 0.9407 | 1.00× | — | `results/multiseed_rigor_roberta/salr/seed_123/summary.csv` |
+| `salr` | RoBERTa | 456 | **93.92%** | 0.9405 | 1.00× | — | `results/multiseed_rigor_roberta/salr/seed_456/summary.csv` |
 | `oats_compressor` | DistilBERT | 123 | **90.94%** | 0.9125 | 1.00× | 0.4116 | `results/multiseed_rigor_distilbert/oats_compressor/seed_123/summary.csv` |
 | `oats_compressor` | DistilBERT | 456 | **90.71%** | 0.9103 | 1.00× | 0.4116 | `results/multiseed_rigor_distilbert/oats_compressor/seed_456/summary.csv` |
 | `oats_compressor` | RoBERTa | 123 | **93.81%** | 0.9400 | 1.00× | 0.2050 | `results/multiseed_rigor_roberta/oats_compressor/seed_123/summary.csv` |
@@ -757,5 +765,29 @@ Verification across independent random seeds (Seeds 42, 123, 456) evaluating sta
 | `admm_compressor` | DistilBERT | 456 | 90.25% | 0.9044 | 1.00× | 0.1564 | `results/multiseed_rigor_distilbert/admm_compressor/seed_456/summary.csv` |
 | `admm_compressor` | RoBERTa | 123 | 93.12% | 0.9312 | 1.00× | 0.1663 | `results/multiseed_rigor_roberta/admm_compressor/seed_123/summary.csv` |
 | `admm_compressor` | RoBERTa | 456 | 93.23% | 0.9324 | 1.00× | 0.1663 | `results/multiseed_rigor_roberta/admm_compressor/seed_456/summary.csv` |
+
+---
+
+## 10. Alternative Attention Mechanisms Empirical Evaluation (Stage 3 Sweeps)
+
+Systematic evaluation of linear attention, recurrent state-space, and low-rank kernel attention mechanisms injected into DistilBERT and RoBERTa-base backbones (SST-2 task, 50-step recovery fine-tuning, lr=5e-5):
+
+| Module | Architecture Type | DistilBERT Acc | DistilBERT F1 | RoBERTa Acc | RoBERTa F1 | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `nystrom` | Nyström low-rank approximation | **90.71%** | 0.9107 | **93.81%** | 0.9403 | **PASS** |
+| `flash3` | FlashAttention-3 fast kernel | **90.71%** | 0.9101 | **92.20%** | 0.9258 | **PASS** |
+| `chela_slay` | Hybrid linear-recurrent layer | **90.71%** | 0.9101 | **92.43%** | 0.9278 | **PASS** |
+| `nexus` | Multi-scale kernel attention | **90.02%** | 0.9019 | **94.04%** | 0.9416 | **PASS** |
+| `moba` | Mixture of block attention | 76.38% | 0.7605 | **94.04%** | 0.9418 | **PASS** |
+| `mamba_svd_flash` | State-space + low-rank flash | **90.48%** | 0.9075 | — | — | **PASS** |
+| `aegis_v2` | Structured singular projection | **90.25%** | 0.9061 | 63.99% | 0.6549 | **PASS** |
+| `aegis_v6` | Advanced singular projection | 89.11% | 0.8977 | 50.92% | 0.6748 | **PASS (DistilBERT)** |
+| `spectron` | Spectral frequency attention | 88.76% | 0.8906 | 67.55% | 0.7260 | **PASS** |
+| `linformer_attention`| Low-rank projected attention | 83.37% | 0.8391 | 50.92% | 0.6748 | **PASS (DistilBERT)** |
+| `performer` | Random Fourier feature kernel | 78.90% | 0.7767 | 57.80% | 0.6913 | **PASS** |
+| `rala` | Rank-adaptive linear attention | 78.33% | 0.7902 | 73.62% | 0.7433 | **PASS** |
+| `cosformer` | Cosine reweighting linear | 78.21% | 0.7894 | 73.85% | 0.7432 | **PASS** |
+| `hgrn2_layer` | Gated recurrent network v2 | 70.53% | 0.7498 | 52.64% | 0.6342 | **PASS** |
+
 
 
