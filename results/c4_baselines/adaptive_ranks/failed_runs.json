@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adaptive_ranks",
+    "model": "models/gpt2",
+    "dataset": "c4",
+    "status": "FAIL_PPL_DIVERGED",
+    "perplexity": 119.795018,
+    "accuracy_pct": 0.0,
+    "error": "FAIL_PPL_DIVERGED: perplexity (119.80) exceeded threshold 100.0",
+    "timestamp": "2026-09-26T01:43:33.944717"
+  }
+]
