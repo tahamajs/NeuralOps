@@ -82,10 +82,25 @@ def score_continuation(model, tokenizer, context, continuation):
 
 def eval_task(model, tokenizer, task_name, num_samples=500):
     cfg = TASKS[task_name]
-    if "config" in cfg:
-        ds = load_dataset(cfg["dataset"], cfg["config"], split=cfg["split"])
-    else:
-        ds = load_dataset(cfg["dataset"], split=cfg["split"])
+    PARQUET_URLS = {
+        "piqa": "https://huggingface.co/datasets/ybisk/piqa/resolve/refs%2Fconvert%2Fparquet/plain_text/validation/0000.parquet",
+        "arc_easy": "https://huggingface.co/datasets/allenai/ai2_arc/resolve/refs%2Fconvert%2Fparquet/ARC-Easy/test/0000.parquet",
+        "arc_challenge": "https://huggingface.co/datasets/allenai/ai2_arc/resolve/refs%2Fconvert%2Fparquet/ARC-Challenge/test/0000.parquet",
+        "hellaswag": "https://huggingface.co/datasets/Rowan/hellaswag/resolve/refs%2Fconvert%2Fparquet/default/validation/0000.parquet",
+        "winogrande": "https://huggingface.co/datasets/allenai/winogrande/resolve/refs%2Fconvert%2Fparquet/winogrande_xl/validation/0000.parquet",
+    }
+    try:
+        if task_name in PARQUET_URLS:
+            ds = load_dataset("parquet", data_files=PARQUET_URLS[task_name], split="train")
+        elif "config" in cfg:
+            ds = load_dataset(cfg["dataset"], cfg["config"], split=cfg["split"])
+        else:
+            ds = load_dataset(cfg["dataset"], split=cfg["split"])
+    except Exception as e:
+        if task_name in PARQUET_URLS:
+            ds = load_dataset("parquet", data_files=PARQUET_URLS[task_name], split="train")
+        else:
+            raise e
     
     correct = 0
     total = 0
@@ -103,8 +118,16 @@ def eval_task(model, tokenizer, task_name, num_samples=500):
                 split = len(context) // 2
                 scores.append(score_continuation(model, tokenizer, 
                                                  full[:split], full[split:]))
-        elif "choices" in cfg or "choices_field" in cfg:
-            field = cfg.get("choices_field", "choices")
+        elif task_name == "piqa":
+            choices = [ex["sol1"], ex["sol2"]]
+            label = int(ex["label"])
+            scores = [score_continuation(model, tokenizer, context, " " + c) for c in choices]
+        elif task_name == "hellaswag":
+            choices = ex["endings"]
+            label = int(ex["label"])
+            scores = [score_continuation(model, tokenizer, context, " " + c) for c in choices]
+        elif "choices_field" in cfg:
+            field = cfg["choices_field"]
             raw_choices = ex[field]
             if isinstance(raw_choices, dict) and "text" in raw_choices and "label" in raw_choices:
                 choices = raw_choices["text"]
@@ -117,8 +140,7 @@ def eval_task(model, tokenizer, task_name, num_samples=500):
             scores = [score_continuation(model, tokenizer, context, " " + c) 
                      for c in choices]
         else:
-            # PIQA, HellaSwag: list of strings
-            choices = ex[cfg["choices_field"]]
+            choices = [ex[f] for f in cfg.get("choices_fields", [])]
             label = int(ex[cfg["label_field"]])
             scores = [score_continuation(model, tokenizer, context, " " + c) 
                      for c in choices]
