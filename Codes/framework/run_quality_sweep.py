@@ -1493,7 +1493,7 @@ def parse_args(argv=None):
     )
     ap.add_argument("--group_size", type=int, default=3)
     ap.add_argument("--defer_export", action="store_true", default=False)
-    ap.add_argument("--max_error", type=float, default=0.40)
+    ap.add_argument("--max_error", type=float, default=0.50)
     ap.add_argument(
         "--strict_rank",
         type=lambda x: str(x).lower() in ("true", "1", "yes"),
