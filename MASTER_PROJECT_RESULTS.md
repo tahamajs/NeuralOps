@@ -301,8 +301,9 @@ Systematic fine-grained rank scaling evaluation of Category 5A SVD compression e
 | `adaptive_compressor` | RoBERTa | 92.32% | 92.32% | 92.32% | 92.32% | 1.05× | **PASS** |
 | `cur_compressor` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
 | `cur_compressor` | RoBERTa | 93.46% | 93.46% | 93.46% | 93.46% | 1.00× | **Invariance PASS** |
-| `cur_linear` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
-| `cure` | DistilBERT | 90.60% (r=64) | [QUEUED] | [QUEUED] | [QUEUED] | 1.00× | **PASS (r=64)** |
+| `cure` | DistilBERT | 90.60% | 90.60% | [QUEUED] | [QUEUED] | 1.00× | **Invariance PASS (r=64, 128)** |
+| `dobi_svd` | DistilBERT | 90.60% | 90.60% | 90.60% | 90.60% | 1.00× | **Invariance PASS** |
+| `direct_svd` | RoBERTa | 93.46% | 93.46% | [QUEUED] | [QUEUED] | 1.00× | **Invariance PASS (r=64, 128)** |
 
 ---
 
