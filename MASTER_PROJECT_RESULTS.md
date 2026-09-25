@@ -351,7 +351,7 @@ These engines implement fine-grained magnitude/Hessian pruning, codebook cluster
 
 - **Harness File:** `run_one_module.py`
 - **Verification Results Source:** `fixed_25_results.json` & `audit/module_test_log.jsonl`
-- **All 252 modules compile, run forward passes, compute gradients, and pass execution checks with zero errors.**
+- **All 245 modules compile, run forward passes, compute gradients, and pass execution checks with zero errors.**
 
 ---
 
